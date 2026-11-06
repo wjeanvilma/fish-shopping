@@ -8,7 +8,7 @@ import contentJson from "../../../shared/content/content-pack.json";
 import {
   type Command, type ContentPack, FixedStepClock, GameState, INPUT_SCALE, NewerSaveError, OfflinePolicy,
   type OfflineReport, ProductionSystem, Simulation, type SimView, applyOffline, buildView,
-  decodeSnapshotEnvelope, encodeSnapshot, loadContent,
+  decodeSnapshotEnvelope, encodeBalanceExport, encodeSnapshot, encodeTelemetry, loadContent,
 } from "../engine";
 import { AudioBus } from "../audio/audioBus";
 import { sfxFromEvent } from "../audio/sfxCues";
@@ -532,6 +532,20 @@ export class GameHost {
   /** Whether a remote backend is configured (Firebase keys). Local play never needs this. */
   cloudAvailable(): boolean {
     return this.cloud.available;
+  }
+
+  /** Privacy-safe Stats export (Phase 27). Null when no sim is running. */
+  exportTelemetryJson(): string | null {
+    const sim = this.sim;
+    if (!sim) return null;
+    return encodeTelemetry(sim.content, sim.state);
+  }
+
+  /** Content-pack balance knobs dump (Phase 27). */
+  exportBalanceJson(): string | null {
+    const pack = this.content ?? this.sim?.content;
+    if (!pack) return null;
+    return encodeBalanceExport(pack);
   }
 
   /** Quality preset for the renderer, including while the title screen is up. */

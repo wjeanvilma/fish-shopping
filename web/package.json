@@ -9,7 +9,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "content:validate": "vite-node scripts/validate-content.ts",
+    "content:catalog": "vite-node scripts/validate-content.ts --catalog"
   },
   "dependencies": {
     "ajv": "8.17.1",

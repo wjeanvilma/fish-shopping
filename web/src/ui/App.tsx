@@ -384,6 +384,8 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           settings={state.settings}
           cloudAvailable={host.cloudAvailable()}
           onChange={(partial) => host.updateSettings(partial)}
+          onExportTelemetry={() => host.exportTelemetryJson()}
+          onExportBalance={() => host.exportBalanceJson()}
           onClose={() => host.setSettingsOpen(false)}
         />
       )}
@@ -465,15 +467,27 @@ function PausePanel({ onResume, onSettings, onTitle }: {
   );
 }
 
-function SettingsPanel({ settings, cloudAvailable, onChange, onClose }: {
+function SettingsPanel({ settings, cloudAvailable, onChange, onExportTelemetry, onExportBalance, onClose }: {
   settings: GameSettings;
   cloudAvailable: boolean;
   onChange: (partial: Partial<GameSettings>) => void;
+  onExportTelemetry: () => string | null;
+  onExportBalance: () => string | null;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [exportNote, setExportNote] = useState<string | null>(null);
   useEffect(() => closeRef.current?.focus(), []);
   const scales: JoystickScale[] = [0.75, 1, 1.25];
+  const copyJson = async (label: string, json: string | null, emptyMsg: string) => {
+    if (!json) { setExportNote(emptyMsg); return; }
+    try {
+      await navigator.clipboard.writeText(json);
+      setExportNote(`${label} copied`);
+    } catch {
+      setExportNote(`Could not copy ${label.toLowerCase()}`);
+    }
+  };
   return (
     <div className="scrim" onClick={onClose}>
       <div className="panel sheet settings-sheet" role="dialog" aria-modal="true" aria-label="Settings" onClick={(e) => e.stopPropagation()}>
@@ -518,6 +532,23 @@ function SettingsPanel({ settings, cloudAvailable, onChange, onClose }: {
             </button>
           </li>
         </ul>
+        <div className="small" style={{ marginTop: 12 }}>Telemetry</div>
+        <div className="small muted">Privacy-safe counters and content balance knobs. Copied as JSON.</div>
+        <div className="quality-row">
+          <button
+            className="button"
+            onClick={() => void copyJson("Play stats", onExportTelemetry(), "Start a harbor to export play stats")}
+          >
+            Copy stats
+          </button>
+          <button
+            className="button ghost"
+            onClick={() => void copyJson("Balance knobs", onExportBalance(), "Balance export unavailable")}
+          >
+            Copy balance
+          </button>
+        </div>
+        {exportNote && <div className="small" style={{ marginTop: 8 }}>{exportNote}</div>}
         <div className="small" style={{ marginTop: 12 }}>Quality</div>
         <div className="quality-row">
           {(["low", "medium", "high"] as const).map((q) => (

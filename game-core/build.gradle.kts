@@ -30,3 +30,18 @@ tasks.test {
     // ./gradlew :game-core:test -PrecordFixtures=true rewrites shared/fixtures/starter-line.json
     systemProperty("recordFixtures", providers.gradleProperty("recordFixtures").getOrElse("false"))
 }
+
+/** Phase 28: load + cross-ref validate shared/content/content-pack.json (Kotlin side). */
+tasks.register<JavaExec>("validateContent") {
+    group = "verification"
+    description = "Validate shared/content/content-pack.json via ContentLoader + ContentValidator"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.willio.jeanvilma.fishshopping.core.content.ContentValidateKt")
+    val pack = rootProject.layout.projectDirectory.file("shared/content/content-pack.json")
+    args(pack.asFile.absolutePath)
+    if (project.hasProperty("catalog")) {
+        args("--catalog")
+    }
+    inputs.file(pack)
+    inputs.files(sourceSets["main"].runtimeClasspath)
+}

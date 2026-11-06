@@ -53,6 +53,13 @@ web/
 
 Both clients load `shared/content` and `shared/assets` directly, so they cannot drift.
 
+Content tooling (Phase 28): edit `shared/content/content-pack.json` against
+`shared/schema/content-pack.schema.json` (`$schema` is already set). Validate before
+commit with `cd web && npm run content:validate` (Ajv + cross-refs) and/or
+`./gradlew :game-core:validateContent`. List species/recipes/quests with
+`npm run content:catalog` or `./gradlew :game-core:validateContent -Pcatalog`.
+CI (`.github/workflows/ci.yml`) runs both validators plus `:game-core:test` and web vitest.
+
 ## Build and run
 
 Open the folder in Android Studio and sync. Then:
@@ -79,10 +86,14 @@ to serve customers.
 
 ### When rules or content change
 
+* Content edits (species / recipes / quests / …): keep `$schema` linked, then
+  `cd web && npm run content:validate` and `./gradlew :game-core:validateContent`.
+  Use `npm run content:catalog` to review the pack inventory.
 * Layout changes: `python3 shared/tools/generate_blockout.py`
 * Intentional balance/rule changes: `./gradlew :game-core:test -PrecordFixtures=true`,
   review the diff of `shared/fixtures/starter-line.json`, and commit it with the change.
   Then run `npm test` in `web/` and port the same change until it passes too.
+* CI (`.github/workflows/ci.yml`) re-runs content validate + both test suites on every push/PR.
 
 ## Parity contract (Kotlin <-> TypeScript)
 

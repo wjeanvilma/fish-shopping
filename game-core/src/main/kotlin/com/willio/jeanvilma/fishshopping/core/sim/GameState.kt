@@ -8,7 +8,7 @@ import com.willio.jeanvilma.fishshopping.core.world.HarborWorldStash
 import java.util.TreeMap
 import java.util.TreeSet
 
-/** Stat keys referenced by content (quests, tutorial). */
+/** Stat keys referenced by content (quests, tutorial) and privacy-safe telemetry. */
 object Stats {
     const val FISH_CAUGHT = "stat.fish_caught"
     const val MACHINE_INPUTS = "stat.machine_inputs"
@@ -38,6 +38,17 @@ object Stats {
     const val MAINTENANCE_PAID = "stat.maintenance_paid"
     const val ITEMS_SPOILED = "stat.items_spoiled"
     const val PRESTIGE_COMPLETED = "stat.prestige_completed"
+
+    /** Stable ordered list for telemetry exports (zeros included). */
+    val ALL: List<String> = listOf(
+        FISH_CAUGHT, MACHINE_INPUTS, OUTPUTS_COLLECTED, COUNTER_STOCKED,
+        SALES, ITEMS_SOLD, REVENUE, LOST_CUSTOMERS, UPGRADES_BOUGHT,
+        TIMING_BONUSES, RARE_CATCHES, PREMIUM_SALES, BULK_SALES, UNMET_PREFERENCE_SALES,
+        WORKERS_HIRED, WORKER_FISH_CAUGHT, WORKER_ITEMS_MOVED, LEASES_EXPIRED, WAGES_PAID,
+        QUESTS_COMPLETED, CONTRACTS_COMPLETED, CONTRACTS_FAILED, CONTRACT_REVENUE,
+        CONTRACT_ITEMS_DELIVERED, HARBORS_TRAVELED, MAINTENANCE_PAID, ITEMS_SPOILED,
+        PRESTIGE_COMPLETED,
+    )
 }
 
 enum class WorkerTaskPhase {

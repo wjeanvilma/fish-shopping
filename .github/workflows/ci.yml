@@ -1,0 +1,47 @@
+# Phase 28 — schema + cross-ref content gate and Kotlin/web parity fixtures.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  content-and-parity:
+    name: Content validate + parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Validate content (JSON Schema + TS cross-refs)
+        working-directory: web
+        run: npm run content:validate
+
+      - name: Validate content (Kotlin ContentLoader)
+        run: ./gradlew :game-core:validateContent --no-daemon
+
+      - name: Kotlin sim + shared fixtures
+        run: ./gradlew :game-core:test --no-daemon
+
+      - name: Web engine + parity fixtures
+        working-directory: web
+        run: npm test

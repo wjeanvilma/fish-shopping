@@ -34,6 +34,17 @@ export const Stats = {
   PRESTIGE_COMPLETED: "stat.prestige_completed",
 } as const;
 
+/** Stable ordered list for telemetry exports (zeros included). */
+export const STAT_KEYS: readonly string[] = [
+  Stats.FISH_CAUGHT, Stats.MACHINE_INPUTS, Stats.OUTPUTS_COLLECTED, Stats.COUNTER_STOCKED,
+  Stats.SALES, Stats.ITEMS_SOLD, Stats.REVENUE, Stats.LOST_CUSTOMERS, Stats.UPGRADES_BOUGHT,
+  Stats.TIMING_BONUSES, Stats.RARE_CATCHES, Stats.PREMIUM_SALES, Stats.BULK_SALES, Stats.UNMET_PREFERENCE_SALES,
+  Stats.WORKERS_HIRED, Stats.WORKER_FISH_CAUGHT, Stats.WORKER_ITEMS_MOVED, Stats.LEASES_EXPIRED, Stats.WAGES_PAID,
+  Stats.QUESTS_COMPLETED, Stats.CONTRACTS_COMPLETED, Stats.CONTRACTS_FAILED, Stats.CONTRACT_REVENUE,
+  Stats.CONTRACT_ITEMS_DELIVERED, Stats.HARBORS_TRAVELED, Stats.MAINTENANCE_PAID, Stats.ITEMS_SPOILED,
+  Stats.PRESTIGE_COMPLETED,
+];
+
 export type WorkerTaskPhase = "NONE" | "WALK_TO_WORK" | "WORK" | "PICKUP" | "WALK_TO_DROP" | "DROP";
 
 /** Hired staff. Fishers catch into [bag] and deliver to machines; porters haul machine output to counters. */

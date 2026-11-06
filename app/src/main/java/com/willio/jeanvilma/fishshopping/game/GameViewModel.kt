@@ -4,10 +4,15 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.willio.jeanvilma.fishshopping.audio.AudioBus
+import com.willio.jeanvilma.fishshopping.audio.sfxFromEvent
+import com.willio.jeanvilma.fishshopping.cloud.CloudSyncCoordinator
+import com.willio.jeanvilma.fishshopping.core.content.BalanceExport
 import com.willio.jeanvilma.fishshopping.core.content.ContentLoader
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
 import com.willio.jeanvilma.fishshopping.core.persistence.NewerSaveException
 import com.willio.jeanvilma.fishshopping.core.persistence.SnapshotCodec
+import com.willio.jeanvilma.fishshopping.core.persistence.SyncSource
 import com.willio.jeanvilma.fishshopping.core.sim.Command
 import com.willio.jeanvilma.fishshopping.core.sim.FixedStepClock
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
@@ -17,12 +22,9 @@ import com.willio.jeanvilma.fishshopping.core.sim.OfflineReport
 import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import com.willio.jeanvilma.fishshopping.core.sim.Simulation
+import com.willio.jeanvilma.fishshopping.core.sim.Telemetry
 import com.willio.jeanvilma.fishshopping.core.sim.applyOffline
 import com.willio.jeanvilma.fishshopping.core.sim.view
-import com.willio.jeanvilma.fishshopping.audio.AudioBus
-import com.willio.jeanvilma.fishshopping.audio.sfxFromEvent
-import com.willio.jeanvilma.fishshopping.cloud.CloudSyncCoordinator
-import com.willio.jeanvilma.fishshopping.core.persistence.SyncSource
 import com.willio.jeanvilma.fishshopping.persistence.GameSettings
 import com.willio.jeanvilma.fishshopping.persistence.JoystickSide
 import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
@@ -492,6 +494,18 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Whether a remote backend is configured (Firebase keys). Local play never needs this. */
     fun cloudAvailable(): Boolean = cloud.available
+
+    /** Privacy-safe Stats export (Phase 27). Null when no sim is running. */
+    fun exportTelemetryJson(): String? {
+        val s = sim ?: return null
+        return Telemetry.encode(s.content, s.state)
+    }
+
+    /** Content-pack balance knobs dump (Phase 27). */
+    fun exportBalanceJson(): String? {
+        val pack = content ?: sim?.content ?: return null
+        return BalanceExport.encode(pack)
+    }
 
     fun setMachinePaused(stationId: String, paused: Boolean) {
         commands += Command.SetMachinePaused(stationId, paused)

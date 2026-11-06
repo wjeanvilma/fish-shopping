@@ -410,6 +410,8 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                     onJoystickScale = { vm.updateSettings(joystickScale = it) },
                     onTapToMove = { vm.updateSettings(tapToMove = it) },
                     onCloudSync = { vm.updateSettings(cloudSyncEnabled = it) },
+                    onExportTelemetry = { vm.exportTelemetryJson() },
+                    onExportBalance = { vm.exportBalanceJson() },
                     onClose = { vm.setSettingsOpen(false) },
                 )
             }
@@ -573,10 +575,14 @@ private fun SettingsPanel(
     onJoystickScale: (Float) -> Unit,
     onTapToMove: (Boolean) -> Unit,
     onCloudSync: (Boolean) -> Unit,
+    onExportTelemetry: () -> String?,
+    onExportBalance: () -> String?,
     onClose: () -> Unit,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var exportNote by remember { mutableStateOf<String?>(null) }
     Surface(
-        Modifier.width(400.dp).heightIn(max = 480.dp).then(rememberSheetClicks()),
+        Modifier.width(400.dp).heightIn(max = 520.dp).then(rememberSheetClicks()),
         shape = PanelShape,
         color = PanelSurface,
         shadowElevation = 8.dp,
@@ -681,8 +687,46 @@ private fun SettingsPanel(
                 }
                 Switch(checked = settings.cloudSyncEnabled, onCheckedChange = onCloudSync)
             }
+            Text("Telemetry", fontWeight = FontWeight.SemiBold)
+            Text(
+                "Privacy-safe counters and content balance knobs. Copied as JSON.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Ink.copy(alpha = 0.7f),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = {
+                        val json = onExportTelemetry()
+                        exportNote = if (json != null) {
+                            copyTextToClipboard(context, "Fish Shopping telemetry", json)
+                            "Play stats copied"
+                        } else {
+                            "Start a harbor to export play stats"
+                        }
+                    },
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                ) { Text("Copy stats") }
+                OutlinedButton(
+                    onClick = {
+                        val json = onExportBalance()
+                        exportNote = if (json != null) {
+                            copyTextToClipboard(context, "Fish Shopping balance", json)
+                            "Balance knobs copied"
+                        } else {
+                            "Balance export unavailable"
+                        }
+                    },
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                ) { Text("Copy balance") }
+            }
+            exportNote?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Action) }
         }
     }
+}
+
+private fun copyTextToClipboard(context: android.content.Context, label: String, text: String) {
+    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+    clipboard.setPrimaryClip(android.content.ClipData.newPlainText(label, text))
 }
 
 @Composable
