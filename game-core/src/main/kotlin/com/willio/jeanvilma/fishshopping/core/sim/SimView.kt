@@ -52,6 +52,8 @@ data class SimView(
      */
     val customerPathWaypoints: List<PathPointView>,
     val tutorialText: String?,
+    /** Phase 30 HUD objective: tutorial, active quest, or empty-state tip. */
+    val objective: ObjectiveView?,
     val upgrades: List<UpgradeView>,
     /** Non-null while a harbor rush window is active. */
     val rush: RushBannerView?,
@@ -443,6 +445,7 @@ fun Simulation.view(): SimView {
         customerEntryZMm = harbor.customerEntry.z,
         customerPathWaypoints = harbor.customerPathWaypoints.map { PathPointView(it.x, it.z) },
         tutorialText = c.tutorial.getOrNull(s.tutorialIndex)?.text,
+        objective = Coaching.objective(c, s),
         upgrades = c.upgrades.map { u ->
             val a = UpgradeSystem.availability(c, s, u)
             UpgradeView(

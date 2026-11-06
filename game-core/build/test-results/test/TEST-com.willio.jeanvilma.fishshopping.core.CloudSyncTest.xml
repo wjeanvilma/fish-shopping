@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.willio.jeanvilma.fishshopping.core.CloudSyncTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-06T19:19:22.684Z" hostname="Mac" time="0.057">
+  <properties/>
+  <testcase name="newestChecksumValidWins" classname="com.willio.jeanvilma.fishshopping.core.CloudSyncTest" time="0.052"/>
+  <testcase name="peekRejectsBadChecksum" classname="com.willio.jeanvilma.fishshopping.core.CloudSyncTest" time="0.001"/>
+  <testcase name="corruptRemoteIsIgnored" classname="com.willio.jeanvilma.fishshopping.core.CloudSyncTest" time="0.001"/>
+  <testcase name="equalAgeKeepsLocal" classname="com.willio.jeanvilma.fishshopping.core.CloudSyncTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

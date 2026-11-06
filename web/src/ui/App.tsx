@@ -60,12 +60,20 @@ function TitleScreen({ host, hasSave }: { host: GameHost; hasSave: boolean }) {
     <div className="center">
       <div className="panel center-card" role="dialog" aria-label="Fish Shopping">
         <h2>Fish Shopping</h2>
+        <p className="title-tagline">Catch, cut, sell — run your harbor market</p>
         <div className="title-actions">
-          {hasSave && (
-            <button className="button" onClick={() => void host.continueGame()}>Continue</button>
+          {hasSave ? (
+            <>
+              <button className="button" onClick={() => void host.continueGame()}>Continue</button>
+              <button className="button ghost" onClick={startNew}>New Game</button>
+            </>
+          ) : (
+            <button className="button" onClick={startNew}>Play</button>
           )}
-          <button className={hasSave ? "button ghost" : "button"} onClick={startNew}>New Game</button>
         </div>
+        {!hasSave && (
+          <p className="title-funnel-hint">First session: fish → cut → stock → sell</p>
+        )}
       </div>
     </div>
   );
@@ -293,10 +301,13 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           Upgrades <kbd>U</kbd>
         </button>
       </div>
-      {v.tutorialText && (
+      {v.objective && (
         <div className="panel objective">
-          <div className="eyebrow">Next</div>
-          <div>{v.tutorialText}</div>
+          <div className="eyebrow">
+            {v.objective.eyebrow}
+            {v.objective.detail ? <span className="objective-detail"> {v.objective.detail}</span> : null}
+          </div>
+          <div>{v.objective.text}</div>
         </div>
       )}
       {touch ? (

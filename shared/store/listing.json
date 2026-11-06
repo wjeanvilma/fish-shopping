@@ -1,0 +1,27 @@
+{
+  "appName": "Fish Shopping",
+  "shortDescription": "Catch, cut, and sell fish in a cozy 3D harbor market.",
+  "fullDescription": "Run your own waterfront fish market. Cast from the pier, process catches on the cutter, stock the counter, and serve a growing crowd. Hire staff, unlock upgrades, take delivery contracts, and expand to new harbors — all with a fixed 20 Hz simulation shared by Android and web.\n\nFirst session loop: fish → cut → stock → sell.",
+  "keywords": [
+    "fishing",
+    "tycoon",
+    "management",
+    "idle",
+    "3d",
+    "harbor",
+    "market"
+  ],
+  "category": "Simulation",
+  "contentRating": "Everyone",
+  "supportUrl": "",
+  "privacyPolicyUrl": "",
+  "screenshotShots": [
+    "Title — Play / Continue funnel",
+    "Pier casting with timing reel",
+    "Cutter pads and flying transfers",
+    "Counter service with customers",
+    "Upgrades / staff / goals panels"
+  ],
+  "iconNotes": "Use app mipmap / adaptive icon; web favicon in web/public/favicon.svg",
+  "featureGraphicNotes": "1024×500 harbor pier with logo wordmark Fish Shopping"
+}

@@ -6,7 +6,10 @@ import { CameraRig } from "../src/game/cameraRig";
 import { stickFromTapTarget } from "../src/presenters/tapToMove";
 import {
   CustomerCrowd,
+  crowdDrawCapForQuality,
   FLYING_TRANSFER_DURATION_S,
+  FLYING_TRANSFER_POOL,
+  flyingTransferPoolForQuality,
   FlyingTransfers,
   IDLE_SPEED_M_PER_S,
   PlayerSmoother,
@@ -160,5 +163,28 @@ describe("FlyingTransfers", () => {
     expect(flies.spawn(cue)).toBe(false);
     const frame = flies.update(0.01);
     expect(frame[0]!.kind).toBe("portion");
+  });
+
+  it("honors quality VFX budgets (Phase 29)", () => {
+    expect(flyingTransferPoolForQuality("low")).toBe(4);
+    expect(flyingTransferPoolForQuality("medium")).toBe(8);
+    expect(flyingTransferPoolForQuality("high")).toBe(FLYING_TRANSFER_POOL);
+    const flies = new FlyingTransfers(12);
+    flies.setBudget(flyingTransferPoolForQuality("low"));
+    const cue = {
+      fromXMm: 0, fromZMm: 0, toXMm: 1000, toZMm: 0, itemId: "species.silver_sprat",
+    };
+    for (let i = 0; i < 4; i++) expect(flies.spawn(cue)).toBe(true);
+    expect(flies.spawn(cue)).toBe(false);
+  });
+});
+
+describe("CustomerCrowd quality draw cap", () => {
+  it("clamps draw slots by quality without growing the GLB pool", () => {
+    expect(crowdDrawCapForQuality("low", 6)).toBe(3);
+    expect(crowdDrawCapForQuality("high", 6)).toBe(6);
+    const crowd = new CustomerCrowd(6);
+    crowd.setDrawCap(crowdDrawCapForQuality("low", 6));
+    expect(crowd.poolSize).toBe(6);
   });
 });

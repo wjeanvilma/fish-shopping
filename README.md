@@ -122,6 +122,7 @@ Phase 1 (cross-platform spike) exists on both clients with grey-box art: a chara
 water, a machine, HUD overlay, and save/load. Phase 2 ("core loop") rules exist in both
 engines and are covered by shared fixtures. Item
 stacks (bag, cutter input/output, counter) and walking customers are visible on both
-clients. Not yet built: worker automation, flying transfer animations, contracts, harbor map, offline
-earnings (needs workers), cloud sync, audio, and the remaining
-screens from the screen inventory. Search for `TODO(blueprint` in the code.
+clients. Quality presets (Phase 29) scale render cost; Phase 30 ships tutorial/empty-state
+coaching, title funnel, store listing copy (`shared/store/listing.json`), save recovery
+audit tests, and a release fixture pin (`shared/fixtures/RELEASE_PIN.json`). The sim stays
+fixed at 20 Hz. Search for `TODO(blueprint` in the code.

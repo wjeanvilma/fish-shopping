@@ -1,4 +1,5 @@
 /** Immutable presentation snapshot for the HUD and renderer. Mirrors game-core sim/SimView.kt. */
+import { coachingObjective, type ObjectiveView } from "./coaching";
 import { queueSlot, rectCenterX, rectCenterZ } from "./content";
 import { compareStrings } from "./foundations";
 import type { MachineStatus } from "./state";
@@ -148,6 +149,8 @@ export interface SimView {
   customerEntryZMm: number;
   customerPathWaypoints: { xMm: number; zMm: number }[];
   tutorialText: string | null;
+  /** Phase 30 HUD objective: tutorial, active quest, or empty-state tip. */
+  objective: ObjectiveView | null;
   upgrades: UpgradeView[];
   rush: RushBannerView | null;
   /** True while a hired supervisor is posted (boosts haul demand scoring). */
@@ -366,6 +369,7 @@ export function buildView(sim: Simulation): SimView {
     customerEntryZMm: h.customerEntry.z,
     customerPathWaypoints: (h.customerPathWaypoints ?? []).map((p) => ({ xMm: p.x, zMm: p.z })),
     tutorialText: c.tutorial[s.tutorialIndex]?.text ?? null,
+    objective: coachingObjective(c, s),
     upgrades: c.upgrades.map((u) => {
       const a = UpgradeSystem.availability(c, s, u);
       return {

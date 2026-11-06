@@ -23,6 +23,7 @@ import com.google.android.filament.gltfio.UbershaderProvider
 import com.google.android.filament.utils.Utils
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import com.willio.jeanvilma.fishshopping.game.CameraRig
+import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.math.cos
@@ -38,9 +39,10 @@ import kotlin.math.sin
  *
  * Item stacks, character locomotion, flying transfers, and water tint/bob are driven
  * from SimView / [FlyingTransferCue]s by the presenters in Presenters.kt, mirrored by
- * the web renderer.
+ * the web renderer. Phase 29 wires [QualityPreset] into shadows, MSAA, crowd/VFX budgets,
+ * and soft frame-time auto-downgrade (20 Hz sim stays fixed).
  *
- * TODO(blueprint): occlusion fade, quality presets, per-asset loading per harbor.
+ * TODO(blueprint): occlusion fade, per-asset loading per harbor.
  */
 class HarborRenderer(private val context: Context, private val sceneAsset: String) {
 
@@ -104,6 +106,10 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
 
     private var lastFrameNanos = 0L
     private var elapsed = 0.0
+    private var requestedQuality = QualityPreset.MEDIUM
+    private var sessionQuality = QualityPreset.MEDIUM
+    private var appliedQuality: QualityPreset? = null
+    private val frameTiming = FrameTiming()
 
     init {
         view.scene = scene
@@ -154,6 +160,7 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
             .toList().toIntArray()
         customerBodies = IntArray(customerRoots.size) { loaded.getFirstEntityByName("CustomerBody_$it") }
         crowd = CustomerCrowd(customerRoots.size)
+        crowd.setDrawCap(crowdDrawCapForQuality(FrameTiming.toPresenterQuality(sessionQuality), customerRoots.size))
         playerSmooth = PlayerSmoother()
 
         stackSlots.clear()
@@ -173,6 +180,9 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
         flyFish = IntArray(flyCount) { fish[it] ?: 0 }
         flyPortion = IntArray(flyCount) { portion[it] ?: 0 }
         flying = FlyingTransfers(flyCount)
+        flying.setBudget(
+            minOf(flyCount, flyingTransferPoolForQuality(FrameTiming.toPresenterQuality(sessionQuality))),
+        )
         stackSlots.values.forEach { setVisible(it, false) }
         flyFish.forEach { setVisible(it, false) }
         flyPortion.forEach { setVisible(it, false) }
@@ -207,7 +217,14 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
     }
 
     /** Called once per display frame from a Choreographer callback. */
-    fun render(frameTimeNanos: Long, sim: SimView?) {
+    fun render(frameTimeNanos: Long, sim: SimView?, quality: QualityPreset = QualityPreset.MEDIUM) {
+        if (quality != requestedQuality) {
+            requestedQuality = quality
+            sessionQuality = quality
+            frameTiming.reset()
+            appliedQuality = null
+        }
+        applyQuality(sessionQuality)
         if (sim != null) updateScene(frameTimeNanos, sim)
         val chain = swapChain ?: return
         if (!uiHelper.isReadyToRender) return
@@ -217,10 +234,42 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
         }
     }
 
+    /** Effective quality after session soft-downgrade (presentation-only). */
+    fun effectiveQuality(): QualityPreset = sessionQuality
+
+    /**
+     * Phase 29 quality → Filament cost: shadows + MSAA + crowd/VFX budgets.
+     * low: no shadows / no MSAA; medium: shadows; high: shadows + 4x MSAA.
+     */
+    private fun applyQuality(quality: QualityPreset) {
+        if (quality == appliedQuality) return
+        appliedQuality = quality
+        val shadowsOn = quality != QualityPreset.LOW
+        view.isShadowingEnabled = shadowsOn
+        val lm = engine.lightManager
+        val sunInst = lm.getInstance(sun)
+        if (sunInst != 0) lm.setShadowCaster(sunInst, shadowsOn)
+        val msaa = View.MultiSampleAntiAliasingOptions()
+        msaa.enabled = quality == QualityPreset.HIGH
+        msaa.sampleCount = 4
+        view.multiSampleAntiAliasingOptions = msaa
+        val pq = FrameTiming.toPresenterQuality(quality)
+        crowd.setDrawCap(crowdDrawCapForQuality(pq, customerRoots.size))
+        flying.setBudget(minOf(flying.poolSize, flyingTransferPoolForQuality(pq)))
+    }
+
     private fun updateScene(frameTimeNanos: Long, sim: SimView) {
         val dt = if (lastFrameNanos == 0L) 0.0 else ((frameTimeNanos - lastFrameNanos) / 1e9).coerceIn(0.0, 0.25)
         lastFrameNanos = frameTimeNanos
         elapsed += dt
+        if (dt > 0.0 && frameTiming.sample(dt, FrameTiming.targetMs(sessionQuality))) {
+            val next = FrameTiming.downgrade(sessionQuality)
+            if (next != sessionQuality) {
+                sessionQuality = next
+                appliedQuality = null
+                applyQuality(next)
+            }
+        }
 
         val pose = playerSmooth.update(sim.player, dt)
         val tm = engine.transformManager

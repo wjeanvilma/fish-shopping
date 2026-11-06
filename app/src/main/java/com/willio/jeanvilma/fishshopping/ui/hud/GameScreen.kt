@@ -102,6 +102,7 @@ fun GameScreen(vm: GameViewModel) {
         HarborView(
             viewProvider = { vm.latestView },
             transferProvider = { vm.drainFlyingTransfers() },
+            qualityProvider = { vm.renderQuality() },
             modifier = Modifier.fillMaxSize(),
             sceneAsset = sceneAsset,
         )
@@ -283,15 +284,20 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 Text("Upgrades")
             }
         }
-        // Left edge: tracked objective with one clear next step.
-        v.tutorialText?.let { text ->
+        // Left edge: tutorial / quest / empty-state coaching (Phase 30).
+        v.objective?.let { obj ->
             Surface(
                 Modifier.align(Alignment.CenterStart).widthIn(max = 220.dp),
                 shape = PanelShape, color = PanelSurface.copy(alpha = 0.92f),
             ) {
                 Column(Modifier.padding(12.dp)) {
-                    Text("NEXT", style = MaterialTheme.typography.labelSmall, color = Action)
-                    Text(text, fontWeight = FontWeight.Medium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(obj.eyebrow, style = MaterialTheme.typography.labelSmall, color = Action)
+                        obj.detail?.let {
+                            Text(it, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        }
+                    }
+                    Text(obj.text, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -495,19 +501,37 @@ private fun CarryIndicator(v: SimView, onOpen: () -> Unit, modifier: Modifier) {
 private fun TitleScreen(hasSave: Boolean, vm: GameViewModel) {
     var confirmNew by remember { mutableStateOf(false) }
     CenterCard {
-        Column(Modifier.widthIn(min = 240.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.widthIn(min = 280.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Fish Shopping", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Catch, cut, sell — run your harbor market",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+            )
             Spacer(Modifier.height(16.dp))
-            Button(
-                onClick = vm::continueGame,
-                enabled = hasSave,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-            ) { Text("Continue") }
-            Spacer(Modifier.height(8.dp))
-            Button(
-                onClick = { if (hasSave) confirmNew = true else vm.newGame() },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-            ) { Text("New Game") }
+            if (hasSave) {
+                Button(
+                    onClick = vm::continueGame,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                ) { Text("Continue") }
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { confirmNew = true },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                ) { Text("New Game") }
+            } else {
+                Button(
+                    onClick = vm::newGame,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                ) { Text("Play") }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "First session: fish → cut → stock → sell",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                )
+            }
         }
     }
     if (confirmNew) {

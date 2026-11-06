@@ -11,13 +11,32 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 
-/** Default pool size for flying transfer meshes (Fly_N_fish|portion in the GLB). */
+/** Max pool size for flying transfer meshes (Fly_N_fish|portion in the GLB). */
 const val FLYING_TRANSFER_POOL = 12
 /** Arc flight time in seconds. */
 const val FLYING_TRANSFER_DURATION_S = 0.35
 /** Peak height of the parabolic arc above the ground (meters). */
 const val FLYING_TRANSFER_ARC_HEIGHT_M = 0.9
 private const val FLYING_TRANSFER_BASE_Y_M = 0.25
+
+/** Quality-scaled VFX budget (Phase 29). Caps concurrent arcs; never exceeds GLB pool. */
+enum class PresenterQuality { LOW, MEDIUM, HIGH }
+
+fun flyingTransferPoolForQuality(quality: PresenterQuality): Int = when (quality) {
+    PresenterQuality.LOW -> 4
+    PresenterQuality.MEDIUM -> 8
+    PresenterQuality.HIGH -> FLYING_TRANSFER_POOL
+}
+
+/** Soft crowd draw cap by quality; clamped to the GLB customer pool at bind time. */
+fun crowdDrawCapForQuality(quality: PresenterQuality, glbPool: Int): Int {
+    val cap = when (quality) {
+        PresenterQuality.LOW -> 3
+        PresenterQuality.MEDIUM -> 5
+        PresenterQuality.HIGH -> 8
+    }
+    return max(0, min(glbPool, cap))
+}
 
 /*
  * Renderer-independent presentation logic, mirrored in web/src/render/presenters.ts.
@@ -179,6 +198,16 @@ class CustomerCrowd(poolSize: Int) {
     )
 
     private val members = arrayOfNulls<Member>(poolSize)
+    /** Soft draw budget ≤ GLB pool (Phase 29). Indices ≥ drawCap stay unused. */
+    private var drawCap = poolSize
+
+    val poolSize: Int get() = members.size
+
+    /** Clamp how many customers may occupy pooled models. */
+    fun setDrawCap(cap: Int) {
+        drawCap = max(0, min(members.size, cap))
+        for (i in drawCap until members.size) members[i] = null
+    }
 
     fun update(v: SimView, dt: Double): List<CharacterPose?> {
         val present = v.customers.associateBy { it.id }
@@ -191,8 +220,9 @@ class CustomerCrowd(poolSize: Int) {
         }
         for (c in v.customers) {
             if (members.any { it?.id == c.id }) continue
-            val free = members.indexOfFirst { it == null }
-            if (free < 0) continue // pool exhausted: customer simply is not drawn
+            var free = -1
+            for (i in 0 until drawCap) if (members[i] == null) { free = i; break }
+            if (free < 0) continue // pool / quality budget exhausted: customer simply is not drawn
             members[free] = Member(c.id, c.xMm / 1000.0, c.zMm / 1000.0, 0.0, leaving = false)
         }
 
@@ -313,14 +343,27 @@ class FlyingTransfers(poolSize: Int = FLYING_TRANSFER_POOL) {
     )
 
     private val slots = arrayOfNulls<Slot>(poolSize)
+    private var budget = poolSize
+
+    val poolSize: Int get() = slots.size
+
+    /**
+     * Quality VFX budget. Growing expands capacity up to the GLB pool; shrinking
+     * drops excess arcs immediately.
+     */
+    fun setBudget(n: Int) {
+        budget = max(0, min(slots.size, n))
+        for (i in budget until slots.size) slots[i] = null
+    }
 
     fun clear() {
         for (i in slots.indices) slots[i] = null
     }
 
-    /** Enqueue a cue; returns false when the pool is full. */
+    /** Enqueue a cue; returns false when the quality budget is full. */
     fun spawn(cue: FlyingTransferCue): Boolean {
-        val free = slots.indexOfFirst { it == null }
+        var free = -1
+        for (i in 0 until budget) if (slots[i] == null) { free = i; break }
         if (free < 0) return false
         slots[free] = Slot(
             fromX = cue.fromXMm / 1000.0,

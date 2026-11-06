@@ -2,6 +2,7 @@
 export * from "./foundations";
 export * from "./content";
 export * from "./contentCatalog";
+export * from "./coaching";
 export * from "./inventory";
 export * from "./state";
 export * from "./simulation";

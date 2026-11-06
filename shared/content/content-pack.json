@@ -927,7 +927,7 @@
   "tutorial": [
     {
       "id": "tutorial.walk_to_pier",
-      "text": "Walk to the end of the pier",
+      "text": "Walk to the pier end — cast where the water meets the boards",
       "advanceOn": {
         "kind": "enter_zone",
         "zone": "zone.pier_end"
@@ -935,7 +935,7 @@
     },
     {
       "id": "tutorial.catch_three",
-      "text": "Catch 3 fish",
+      "text": "Catch 3 fish (hold to cast, tap Reel in the green window)",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.fish_caught",
@@ -944,7 +944,7 @@
     },
     {
       "id": "tutorial.deliver_cutter",
-      "text": "Bring the fish to the cutter",
+      "text": "Carry fish to the teal pad left of the cutter",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.machine_inputs",
@@ -953,7 +953,7 @@
     },
     {
       "id": "tutorial.collect_output",
-      "text": "Collect portions from the cutter output",
+      "text": "Pick up portions from the pad on the cutter's right",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.outputs_collected",
@@ -962,7 +962,7 @@
     },
     {
       "id": "tutorial.stock_counter",
-      "text": "Stock the counter",
+      "text": "Stock the counter so customers can buy",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.counter_stocked",
@@ -971,7 +971,7 @@
     },
     {
       "id": "tutorial.serve_customer",
-      "text": "Stand at the counter to serve a customer",
+      "text": "Stand at the counter until a sale rings up",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.sales",

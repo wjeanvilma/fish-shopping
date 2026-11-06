@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.willio.jeanvilma.fishshopping.core.StarterLineFixtureTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-06T19:19:23.171Z" hostname="Mac" time="0.026">
+  <properties/>
+  <testcase name="midRunSnapshotMatchesSharedFixture" classname="com.willio.jeanvilma.fishshopping.core.StarterLineFixtureTest" time="0.009"/>
+  <testcase name="replayMatchesSharedFixture" classname="com.willio.jeanvilma.fishshopping.core.StarterLineFixtureTest" time="0.016"/>
+  <testcase name="firstSessionPromiseIsMet" classname="com.willio.jeanvilma.fishshopping.core.StarterLineFixtureTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

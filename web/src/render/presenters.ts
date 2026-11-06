@@ -4,13 +4,40 @@
  */
 import type { SimView } from "../engine";
 
-/** Default pool size for flying transfer meshes (Fly_N_fish|portion in the GLB). */
+/** Max pool size for flying transfer meshes (Fly_N_fish|portion in the GLB). */
 export const FLYING_TRANSFER_POOL = 12;
 /** Arc flight time in seconds. */
 export const FLYING_TRANSFER_DURATION_S = 0.35;
 /** Peak height of the parabolic arc above the ground (meters). */
 export const FLYING_TRANSFER_ARC_HEIGHT_M = 0.9;
 const FLYING_TRANSFER_BASE_Y_M = 0.25;
+
+/** Quality-scaled VFX budget (Phase 29). Caps concurrent arcs; never exceeds GLB pool. */
+export const FLYING_TRANSFER_POOL_BY_QUALITY = {
+  low: 4,
+  medium: 8,
+  high: FLYING_TRANSFER_POOL,
+} as const;
+
+/**
+ * Soft crowd draw cap by quality (Phase 29). Still transform/visibility only —
+ * never creates meshes. Clamped to the GLB customer pool at bind time.
+ */
+export const CROWD_DRAW_CAP_BY_QUALITY = {
+  low: 3,
+  medium: 5,
+  high: 8,
+} as const;
+
+export type PresenterQuality = keyof typeof FLYING_TRANSFER_POOL_BY_QUALITY;
+
+export function flyingTransferPoolForQuality(quality: PresenterQuality): number {
+  return FLYING_TRANSFER_POOL_BY_QUALITY[quality];
+}
+
+export function crowdDrawCapForQuality(quality: PresenterQuality, glbPool: number): number {
+  return Math.max(0, Math.min(glbPool, CROWD_DRAW_CAP_BY_QUALITY[quality]));
+}
 
 const shortId = (id: string) => id.slice(id.indexOf(".") + 1);
 
@@ -163,9 +190,22 @@ export class CustomerCrowd {
     id: string; x: number; z: number; yaw: number; leaving: boolean; leaveTargetIndex: number;
     walkPhase: number; idlePhase: number;
   })[];
+  /** Soft draw budget ≤ GLB pool (Phase 29). Indices ≥ drawCap stay unused. */
+  private drawCap: number;
 
   constructor(poolSize: number) {
     this.members = Array.from({ length: poolSize }, () => null);
+    this.drawCap = poolSize;
+  }
+
+  get poolSize(): number {
+    return this.members.length;
+  }
+
+  /** Clamp how many customers may occupy pooled models. */
+  setDrawCap(cap: number): void {
+    this.drawCap = Math.max(0, Math.min(this.members.length, Math.floor(cap)));
+    for (let i = this.drawCap; i < this.members.length; i++) this.members[i] = null;
   }
 
   update(v: SimView, dt: number): (CharacterPose | null)[] {
@@ -184,8 +224,11 @@ export class CustomerCrowd {
     // Arrivals: give new customers a free model at their (entry) position.
     for (const c of v.customers) {
       if (this.members.some((m) => m?.id === c.id)) continue;
-      const free = this.members.findIndex((m) => m === null);
-      if (free < 0) continue; // pool exhausted: customer simply is not drawn
+      let free = -1;
+      for (let i = 0; i < this.drawCap; i++) {
+        if (this.members[i] === null) { free = i; break; }
+      }
+      if (free < 0) continue; // pool / quality budget exhausted: customer simply is not drawn
       this.members[free] = {
         id: c.id, x: c.xMm / 1000, z: c.zMm / 1000, yaw: 0,
         leaving: false, leaveTargetIndex: 0, walkPhase: 0, idlePhase: 0,
@@ -291,22 +334,41 @@ export function resolveFlyingTransfer(
  * stack visibility (sim stacks stay authoritative).
  */
 export class FlyingTransfers {
-  private readonly slots: (null | {
+  private slots: (null | {
     fromX: number; fromZ: number; toX: number; toZ: number;
     kind: string; age: number;
   })[];
+  private budget: number;
 
   constructor(poolSize = FLYING_TRANSFER_POOL) {
     this.slots = Array.from({ length: poolSize }, () => null);
+    this.budget = poolSize;
+  }
+
+  get poolSize(): number {
+    return this.slots.length;
+  }
+
+  /**
+   * Quality VFX budget. Growing expands capacity up to the GLB pool; shrinking
+   * drops the oldest excess arcs immediately.
+   */
+  setBudget(n: number): void {
+    const next = Math.max(0, Math.min(this.slots.length, Math.floor(n)));
+    this.budget = next;
+    for (let i = next; i < this.slots.length; i++) this.slots[i] = null;
   }
 
   clear(): void {
     for (let i = 0; i < this.slots.length; i++) this.slots[i] = null;
   }
 
-  /** Enqueue a cue; drops silently when the pool is full. */
+  /** Enqueue a cue; drops silently when the quality budget is full. */
   spawn(cue: FlyingTransferCue): boolean {
-    const free = this.slots.findIndex((s) => s === null);
+    let free = -1;
+    for (let i = 0; i < this.budget; i++) {
+      if (this.slots[i] === null) { free = i; break; }
+    }
     if (free < 0) return false;
     this.slots[free] = {
       fromX: cue.fromXMm / 1000,

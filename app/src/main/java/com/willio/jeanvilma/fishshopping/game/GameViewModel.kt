@@ -117,6 +117,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         return out
     }
 
+    /** Quality preset for the Filament renderer (presentation-only; includes title screen). */
+    fun renderQuality(): QualityPreset = settings.quality
+
     // Owned by the sim thread only.
     private var content: ContentPack? = null
     private var sim: Simulation? = null

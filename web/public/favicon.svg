@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Fish Shopping">
+  <rect width="64" height="64" rx="12" fill="#153449"/>
+  <path fill="#9fd3ea" d="M10 34c8-12 22-16 34-10 4 2 8 6 10 10-2 4-6 8-10 10-12 6-26 2-34-10z"/>
+  <circle cx="42" cy="30" r="2.5" fill="#153449"/>
+  <path fill="#f4d35e" d="M8 34l-5-4v8l5-4z"/>
+</svg>

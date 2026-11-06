@@ -13,11 +13,14 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { SimView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
 import type { QualityPreset } from "../game/settingsStore";
+import { downgradeQuality, FRAME_TARGET_MS, FrameTiming } from "./frameTiming";
 import {
   CUSTOMER_BODY_REST_Y,
   CustomerCrowd,
+  crowdDrawCapForQuality,
   FlyingTransfers,
   FLYING_TRANSFER_POOL,
+  flyingTransferPoolForQuality,
   PLAYER_BODY_REST_Y,
   PLAYER_NOSE_REST_Y,
   PLAYER_NOSE_REST_Z,
@@ -62,7 +65,11 @@ export class HarborScene {
   contextLost = false;
   private cssWidth = 0;
   private cssHeight = 0;
-  private appliedRatio = -1;
+  private appliedKey = "";
+  private requestedQuality: QualityPreset = "medium";
+  /** Session floor: may soft-downgrade under sustained frame misses (Phase 29). */
+  private sessionQuality: QualityPreset = "medium";
+  private readonly frameTiming = new FrameTiming();
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
@@ -124,6 +131,7 @@ export class HarborScene {
       this.customerBodies.push(gltf.scene.getObjectByName(`CustomerBody_${i}`) ?? c);
     }
     this.crowd = new CustomerCrowd(this.customers.length);
+    this.crowd.setDrawCap(crowdDrawCapForQuality(this.sessionQuality, this.customers.length));
     this.playerSmooth = new PlayerSmoother();
     this.slots.clear();
     this.flyFish = [];
@@ -142,7 +150,9 @@ export class HarborScene {
         list[idx] = o;
       }
     });
-    this.flying = new FlyingTransfers(Math.max(this.flyFish.length, this.flyPortion.length, FLYING_TRANSFER_POOL));
+    const flyPool = Math.max(this.flyFish.length, this.flyPortion.length, FLYING_TRANSFER_POOL);
+    this.flying = new FlyingTransfers(flyPool);
+    this.flying.setBudget(Math.min(flyPool, flyingTransferPoolForQuality(this.sessionQuality)));
     this.water = gltf.scene.getObjectByName("Water") ?? null;
     if (this.water && (this.water as THREE.Mesh).isMesh) {
       const mesh = this.water as THREE.Mesh;
@@ -194,21 +204,47 @@ export class HarborScene {
     this.camera.updateProjectionMatrix();
   }
 
-  /** Low draws at 1×; medium and high cap device pixel ratio at 2. */
+  /**
+   * Phase 29 quality → real GPU + VFX cost.
+   * low: 1× DPR, no shadows; medium: ≤1.5× + 1024 shadows; high: ≤2× + 2048 soft shadows.
+   */
   private applyQuality(quality: QualityPreset): void {
     const dpr = window.devicePixelRatio || 1;
-    const ratio = quality === "low" ? 1 : Math.min(dpr, 2);
-    if (ratio === this.appliedRatio) return;
-    this.appliedRatio = ratio;
+    const ratio = quality === "low" ? 1 : quality === "medium" ? Math.min(dpr, 1.5) : Math.min(dpr, 2);
+    const shadowMap = quality === "low" ? 0 : quality === "medium" ? 1024 : 2048;
+    const key = `${quality}:${ratio}:${shadowMap}`;
+    if (key === this.appliedKey) return;
+    this.appliedKey = key;
     this.renderer.setPixelRatio(ratio);
     if (this.cssWidth > 0 && this.cssHeight > 0) {
       this.renderer.setSize(this.cssWidth, this.cssHeight, false);
     }
+    const shadowsOn = shadowMap > 0;
+    this.renderer.shadowMap.enabled = shadowsOn;
+    this.sun.castShadow = shadowsOn;
+    if (shadowsOn) {
+      this.sun.shadow.mapSize.set(shadowMap, shadowMap);
+      this.sun.shadow.map?.dispose();
+      this.sun.shadow.map = null;
+    }
+    this.crowd?.setDrawCap(crowdDrawCapForQuality(quality, this.customers.length));
+    this.flying.setBudget(Math.min(this.flying.poolSize, flyingTransferPoolForQuality(quality)));
+  }
+
+  /** Effective quality after session soft-downgrade (presentation-only). */
+  effectiveQuality(): QualityPreset {
+    return this.sessionQuality;
   }
 
   render(nowMs: number, view: SimView | null, quality: QualityPreset = "medium"): void {
     if (this.contextLost) return;
-    this.applyQuality(quality);
+    if (quality !== this.requestedQuality) {
+      this.requestedQuality = quality;
+      this.sessionQuality = quality;
+      this.frameTiming.reset();
+      this.appliedKey = "";
+    }
+    this.applyQuality(this.sessionQuality);
     if (view) this.update(nowMs, view);
     this.renderer.render(this.scene, this.camera);
   }
@@ -217,6 +253,14 @@ export class HarborScene {
     const dt = this.lastMs === 0 ? 0 : Math.min(0.25, Math.max(0, (nowMs - this.lastMs) / 1000));
     this.lastMs = nowMs;
     this.elapsed += dt;
+    if (dt > 0 && this.frameTiming.sample(dt, FRAME_TARGET_MS[this.sessionQuality])) {
+      const next = downgradeQuality(this.sessionQuality);
+      if (next !== this.sessionQuality) {
+        this.sessionQuality = next;
+        this.appliedKey = "";
+        this.applyQuality(next);
+      }
+    }
 
     const pose = this.playerSmooth.update(v.player, dt);
     if (this.player) {

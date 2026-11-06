@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
+import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 
 /**
  * Hosts the Filament surface under the Compose HUD. The SurfaceView sits behind the
@@ -19,12 +20,14 @@ import com.willio.jeanvilma.fishshopping.core.sim.SimView
 fun HarborView(
     viewProvider: () -> SimView?,
     transferProvider: () -> List<FlyingTransferCue> = { emptyList() },
+    qualityProvider: () -> QualityPreset = { QualityPreset.MEDIUM },
     modifier: Modifier = Modifier,
     sceneAsset: String = "models/sunrise_pier_blockout.glb",
 ) {
     val context = LocalContext.current
     val currentProvider = rememberUpdatedState(viewProvider)
     val currentTransfers = rememberUpdatedState(transferProvider)
+    val currentQuality = rememberUpdatedState(qualityProvider)
     val renderer = remember(sceneAsset) { HarborRenderer(context.applicationContext, sceneAsset) }
 
     AndroidView(
@@ -38,7 +41,7 @@ fun HarborView(
             override fun doFrame(frameTimeNanos: Long) {
                 choreographer.postFrameCallback(this)
                 renderer.enqueueTransfers(currentTransfers.value())
-                renderer.render(frameTimeNanos, currentProvider.value())
+                renderer.render(frameTimeNanos, currentProvider.value(), currentQuality.value())
             }
         }
         choreographer.postFrameCallback(frameCallback)

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.willio.jeanvilma.fishshopping.core.CoachingTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-06T19:19:22.742Z" hostname="Mac" time="0.002">
+  <properties/>
+  <testcase name="tutorialShowsNextWithStepDetail" classname="com.willio.jeanvilma.fishshopping.core.CoachingTest" time="0.001"/>
+  <testcase name="emptyBagFullTipAfterTutorial" classname="com.willio.jeanvilma.fishshopping.core.CoachingTest" time="0.0"/>
+  <testcase name="quietWhenLoopIsHealthy" classname="com.willio.jeanvilma.fishshopping.core.CoachingTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
