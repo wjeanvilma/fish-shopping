@@ -195,16 +195,28 @@ export function buildView(sim: Simulation): SimView {
   const p = s.player;
   const zone = p.zoneId ? h.zones.find((z) => z.id === p.zoneId) : undefined;
 
-  const stations: StationView[] = s.machines.map((m) => ({
-    stationId: m.stationId,
-    status: m.status,
-    inputCount: m.input.usedUnits(),
-    outputCount: m.output.usedUnits(),
-    progress: m.activeBatch ? 1 - m.activeBatch.remainingTicks / m.activeBatch.durationTicks : null,
-    statusText: ProductionSystem.statusText(m, c),
-    preferredRecipeId: m.preferredRecipeId,
-    nextRecipeId: ProductionSystem.nextStartable(c, m)?.id ?? m.activeBatch?.recipeId ?? null,
-  }));
+  const stations: StationView[] = s.machines.map((m) => {
+    const stDef = h.stations.find((st) => st.id === m.stationId)!;
+    const unlocked = ProductionSystem.isUnlocked(stDef, s);
+    const lockName = stDef.requiresUpgrade
+      ? (c.upgradesById.get(stDef.requiresUpgrade)?.name ?? stDef.requiresUpgrade)
+      : "an upgrade";
+    const status = unlocked ? m.status : "LOCKED" as const;
+    return {
+      stationId: m.stationId,
+      status,
+      inputCount: m.input.usedUnits(),
+      outputCount: m.output.usedUnits(),
+      progress: unlocked && m.activeBatch ? 1 - m.activeBatch.remainingTicks / m.activeBatch.durationTicks : null,
+      statusText: unlocked
+        ? ProductionSystem.statusText(m, c)
+        : `Locked — buy ${lockName}`,
+      preferredRecipeId: m.preferredRecipeId,
+      nextRecipeId: unlocked
+        ? (ProductionSystem.nextStartable(c, m)?.id ?? m.activeBatch?.recipeId ?? null)
+        : null,
+    };
+  });
 
   let context: ContextCard | null = null;
   if (zone?.kind === "fishing") {

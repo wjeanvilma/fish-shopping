@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 PALETTE = {
     "ground": "#D9C9A3", "pier": "#9A6B43", "water": "#2E7FA8",
-    "cutter": "#008F95", "smoker": "#8B4513", "counter": "#E8AF4A",
+    "cutter": "#008F95", "smoker": "#8B4513", "grill": "#C45C26", "counter": "#E8AF4A",
     "player": "#153449", "player_nose": "#FBF7EF",
     "customer": "#B3412E", "zone_fishing": "#7FC6E0", "zone_machine_input": "#6FD0C6",
     "zone_machine_output": "#F3D08C", "zone_counter": "#F3D08C",
@@ -130,6 +130,8 @@ def build(content, harbor):
         oid = r["id"]
         if "smoker" in oid:
             key, height = "smoker", 1.4
+        elif "grill" in oid:
+            key, height = "grill", 1.3
         elif "cutter" in oid:
             key, height = "cutter", 1.2
         else:

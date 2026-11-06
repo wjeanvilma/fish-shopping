@@ -56,6 +56,7 @@ object ContentLoader {
                 rareUpgrade = s.optional("rareUpgrade")?.let { ru ->
                     RareUpgradeDef(ru["to"].string(), ru["chancePermille"].int(min = 1, max = 1000))
                 },
+                spoilTier = s.optional("spoilTier")?.int(min = 1, max = 3) ?: 2,
             )
         },
         products = r["products"].list { p ->
@@ -63,6 +64,7 @@ object ContentLoader {
                 id = p["id"].string(), name = p["name"].string(),
                 carryUnits = p["carryUnits"].int(min = 1), unitPrice = p["unitPrice"].long(min = 0),
                 asset = p.optional("asset")?.string(),
+                spoilTier = p.optional("spoilTier")?.int(min = 1, max = 3) ?: 2,
             )
         },
         recipes = r["recipes"].list { rc ->
@@ -226,12 +228,14 @@ object ContentLoader {
         "catch_speed" -> UpgradeEffect.CatchSpeed(n["speedPermille"].int(min = 1))
         "fish_regen" -> UpgradeEffect.FishRegen(n["speedPermille"].int(min = 1))
         "unlock_fishing_spot" -> UpgradeEffect.UnlockFishingSpot(n["zone"].string())
+        "unlock_machine" -> UpgradeEffect.UnlockMachine(n["machine"].string())
         "worker_move_speed" -> UpgradeEffect.WorkerMoveSpeed(n["speedPermille"].int(min = 1))
         "worker_carry" -> UpgradeEffect.WorkerCarry(n["capacityUnits"].int(min = 1))
         "worker_catch_speed" -> UpgradeEffect.WorkerCatchSpeed(n["speedPermille"].int(min = 1))
         "worker_wage" -> UpgradeEffect.WorkerWage(n["coinsPerWorkerPerHour"].int(min = 1))
         "maintenance_discount" -> UpgradeEffect.MaintenanceDiscount(n["coinsOffPerStation"].int(min = 1))
         "bag_spoil_resist" -> UpgradeEffect.BagSpoilResist(n["periodMultPermille"].int(min = 1))
+        "counter_spoil_resist" -> UpgradeEffect.CounterSpoilResist(n["periodMultPermille"].int(min = 1))
         else -> n.fail("unknown upgrade effect kind '$kind'")
     }
 
@@ -261,7 +265,13 @@ object ContentLoader {
             )
         },
         stations = h["stations"].list { s ->
-            StationDef(s["id"].string(), s["machine"].string(), s["inputZone"].string(), s["outputZone"].string())
+            StationDef(
+                s["id"].string(),
+                s["machine"].string(),
+                s["inputZone"].string(),
+                s["outputZone"].string(),
+                requiresUpgrade = s.optional("requiresUpgrade")?.string(),
+            )
         },
         counters = h["counters"].list { c ->
             CounterDef(

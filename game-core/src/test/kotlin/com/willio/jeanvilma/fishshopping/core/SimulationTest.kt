@@ -70,11 +70,45 @@ class SimulationTest {
             if (species.size >= 3) return@repeat
         }
         assertTrue("expected >=3 species from pier table, got $species", species.size >= 3)
-        assertTrue(species.contains(sprat) || species.contains("species.harbor_herring"))
+        assertTrue(species.contains(sprat) || species.contains("species.harbor_herring") ||
+            species.contains("species.dawn_anchovy"))
+        val spotSpecies = sim.content.harborsById.getValue(HARBOR).fishingSpots
+            .first { it.zone == "zone.pier_end" }.species.toSet()
+        val rareTargets = spotSpecies.mapNotNull { id ->
+            sim.content.speciesById.getValue(id).rareUpgrade?.to
+        }.toSet()
         assertTrue(
-            sim.content.harborsById.getValue(HARBOR).fishingSpots
-                .first { it.zone == "zone.pier_end" }.species.containsAll(species),
+            "catches must come from the pier table or its rare upgrades, got $species",
+            spotSpecies.union(rareTargets).containsAll(species),
         )
+    }
+
+    @Test
+    fun speciesRosterIsHarborGatedWithRareUpgradeChains() {
+        val c = Shared.content
+        assertEquals("0.26.0", c.contentVersion)
+        assertEquals(24, c.species.size)
+        val sunrise = c.harborsById.getValue("harbor.sunrise_pier").fishingSpots.flatMap { it.species }
+        val moon = c.harborsById.getValue("harbor.moon_cove").fishingSpots.flatMap { it.species }
+        for (id in listOf(
+            "species.dawn_anchovy", "species.sail_needlefish", "species.tide_bass", "species.reef_perch",
+        )) {
+            assertTrue(id in sunrise)
+            assertTrue(id !in moon)
+        }
+        for (id in listOf(
+            "species.moon_flounder", "species.ink_squid", "species.lava_eel", "species.ghost_lanternfish",
+        )) {
+            assertTrue(id in moon)
+            assertTrue(id !in sunrise)
+        }
+        assertEquals("species.bronze_mullet", c.speciesById.getValue("species.copper_mullet").rareUpgrade!!.to)
+        assertEquals("species.ruby_snapper", c.speciesById.getValue("species.amber_snapper").rareUpgrade!!.to)
+        assertEquals("species.silver_dawn_anchovy", c.speciesById.getValue("species.dawn_anchovy").rareUpgrade!!.to)
+        assertEquals("species.prism_lanternfish", c.speciesById.getValue("species.ghost_lanternfish").rareUpgrade!!.to)
+        c.species.forEach { sp ->
+            assertTrue("${sp.id} missing asset stub", sp.asset!!.matches(Regex("""^models/fish_.+\.glb$""")))
+        }
     }
 
     @Test
@@ -561,7 +595,7 @@ class SimulationTest {
     @Test
     fun smokerTurnsFilletsIntoSmokedFillets() {
         val sim = newSim()
-        assertEquals(2, sim.state.machines.size)
+        assertEquals(3, sim.state.machines.size)
         val s = smoker(sim)
         s.input.add("product.fillet", 1)
         val events = (1..200).flatMap { sim.checkedStep() }
@@ -573,6 +607,101 @@ class SimulationTest {
         assertEquals(1, s.output.quantity("product.smoked_fillet"))
         assertEquals(0, s.input.quantity("product.fillet"))
         assertEquals(MachineStatus.WAITING_FOR_INPUT, s.status)
+    }
+
+    @Test
+    fun harborGrillUnlocksAsSecondProductionLine() {
+        val c = Shared.content
+        assertEquals("0.26.0", c.contentVersion)
+        assertTrue(c.machinesById.containsKey("machine.harbor_grill"))
+        val effect = c.upgradesById.getValue("upgrade.harbor_grill").effect
+        assertTrue(effect is com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine)
+        assertEquals(
+            "machine.harbor_grill",
+            (effect as com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine).machine,
+        )
+        for (harborId in listOf("harbor.sunrise_pier", "harbor.moon_cove")) {
+            val grill = c.harborsById.getValue(harborId).stations.first { it.machine == "machine.harbor_grill" }
+            assertEquals("upgrade.harbor_grill", grill.requiresUpgrade)
+        }
+
+        val sim = newSim()
+        val grill = sim.state.machines.first { it.stationId == "station.grill_1" }
+        sim.checkedStep()
+        assertEquals(MachineStatus.LOCKED, grill.status)
+        val pilot = Autopilot(sim)
+        pilot.walkTo(10700, -4000)
+        assertEquals("zone.grill_in", sim.state.player.zoneId)
+        sim.state.player.bag.add("species.copper_mullet", 1)
+        repeat(20) { sim.checkedStep() }
+        assertTrue(grill.input.isEmpty())
+        assertEquals(1, sim.state.player.bag.quantity("species.copper_mullet"))
+
+        sim.state.completedQuests += "quest.fill_the_hold"
+        sim.state.coins = 200
+        val bought = sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.harbor_grill", "grill-1")))
+        assertTrue(bought.filterIsInstance<GameEvent.UpgradePurchased>().any { !it.replayed })
+        repeat(30) { sim.checkedStep() }
+        assertEquals(0, sim.state.player.bag.quantity("species.copper_mullet"))
+        grill.preferredRecipeId = "recipe.grill_mullet"
+        repeat(150) { sim.checkedStep() }
+        assertEquals(2, grill.output.quantity("product.grilled_fillet"))
+    }
+
+    @Test
+    fun productRecipeTreeSupportsMultiInputAndIntermediateCrafts() {
+        val c = Shared.content
+        assertEquals("0.26.0", c.contentVersion)
+        val productIds = c.products.map { it.id }.toSet()
+        assertTrue(productIds.containsAll(listOf(
+            "product.diced_fish", "product.skewer", "product.soup_stock", "product.ice_packed_crate",
+        )))
+        c.harbors.forEach { harbor ->
+            harbor.counters.forEach { counter ->
+                assertTrue(counter.products.containsAll(listOf(
+                    "product.skewer", "product.soup_stock", "product.ice_packed_crate", "product.diced_fish",
+                )))
+            }
+        }
+
+        val sim = newSim()
+        val cutter = cutter(sim)
+        cutter.preferredRecipeId = "recipe.dice_sprat"
+        cutter.input.add("species.silver_sprat", 1)
+        repeat(90) { sim.checkedStep() }
+        assertEquals(2, cutter.output.quantity("product.diced_fish"))
+
+        cutter.preferredRecipeId = "recipe.harbor_skewers"
+        val diced = cutter.output.quantity("product.diced_fish")
+        cutter.input.add("product.diced_fish", diced)
+        cutter.output.remove("product.diced_fish", diced)
+        repeat(120) { sim.checkedStep() }
+        assertEquals(2, cutter.output.quantity("product.skewer"))
+        assertTrue(cutter.input.isEmpty())
+
+        cutter.preferredRecipeId = "recipe.mixed_grill_skewers"
+        cutter.input.add("species.blue_mackerel", 1)
+        cutter.input.add("species.harbor_herring", 1)
+        repeat(140) { sim.checkedStep() }
+        assertEquals(4, cutter.output.quantity("product.skewer"))
+
+        cutter.preferredRecipeId = "recipe.diced_soup"
+        cutter.input.add("product.diced_fish", 2)
+        repeat(100) { sim.checkedStep() }
+        assertEquals(1, cutter.output.quantity("product.soup_stock"))
+
+        val smoker = smoker(sim)
+        smoker.preferredRecipeId = "recipe.ice_pack_catch"
+        smoker.input.add("species.amber_snapper", 1)
+        smoker.input.add("species.blue_mackerel", 1)
+        repeat(170) { sim.checkedStep() }
+        assertEquals(1, smoker.output.quantity("product.ice_packed_crate"))
+        assertTrue(smoker.input.isEmpty())
+
+        smoker.preferredRecipeId = "recipe.ice_pack_diced"
+        smoker.input.add("product.diced_fish", 3)
+        repeat(150) { sim.checkedStep() }
+        assertEquals(2, smoker.output.quantity("product.ice_packed_crate"))
     }
 
     @Test
@@ -759,8 +888,9 @@ class SimulationTest {
         assertEquals("recipe.herring_portions", sys.cyclePreferredRecipe(sim.content, m))
         // Skip through the rest back to Auto.
         var guard = 0
+        val recipeCount = sim.content.machinesById.getValue(m.machineId).recipes.size
         while (sys.cyclePreferredRecipe(sim.content, m) != null) {
-            check(++guard < 20) { "cycle did not return to Auto" }
+            check(++guard < recipeCount + 2) { "cycle did not return to Auto" }
         }
         assertNull(m.preferredRecipeId)
     }
@@ -794,7 +924,7 @@ class SimulationTest {
     @Test
     fun hireFisherAndPorterIsIdempotentAndShowsStaffPanel() {
         val sim = newSim()
-        assertEquals("0.22.0", Shared.content.contentVersion)
+        assertEquals("0.26.0", Shared.content.contentVersion)
         assertTrue(sim.view().staff.any { it.roleId == "worker.fisher" })
         assertTrue(sim.view().staff.any { it.roleId == "worker.operator" })
         assertTrue(sim.view().staff.any { it.roleId == "worker.cashier" })
@@ -1234,7 +1364,11 @@ class SimulationTest {
         sim.state.coins = 50
         sim.state.maintenanceAccrualTicks = sim.content.economy.maintenancePeriodTicks - 1
         val maint = sim.checkedStep()
-        val stations = sim.harbor.stations.size
+        // Locked grill stations are not billed until unlock_machine is owned.
+        val stations = sim.harbor.stations.count {
+            com.willio.jeanvilma.fishshopping.core.production.ProductionSystem.isUnlocked(it, sim.state)
+        }
+        assertEquals(2, stations)
         assertTrue(maint.filterIsInstance<GameEvent.MaintenancePaid>().any {
             it.stations == stations && it.coins == 2L * stations
         })
@@ -1282,9 +1416,45 @@ class SimulationTest {
     }
 
     @Test
+    fun spoilTiersPreferFragileCounterStockAndSeparateCaseIce() {
+        val c = Shared.content
+        assertEquals("0.26.0", c.contentVersion)
+        assertEquals(3, c.productsById.getValue("product.basic_portion").spoilTier)
+        assertEquals(1, c.productsById.getValue("product.smoked_fillet").spoilTier)
+        assertEquals(3, c.speciesById.getValue("species.silver_sprat").spoilTier)
+
+        val sim = newSim()
+        sim.state.completedQuests += "quest.first_ten_sales"
+        val counter = sim.state.counters.single()
+        sim.state.customers.clear()
+        counter.stock.restore(emptyMap(), emptyMap())
+        counter.stock.add("product.smoked_fillet", 2)
+        counter.stock.add(portion, 2)
+        val eco = com.willio.jeanvilma.fishshopping.core.economy.EconomySystem
+        sim.state.counterSpoilAccrualTicks = eco.counterSpoilPeriodTicks(sim.content, sim.state) - 1
+        val spoiled = sim.checkedStep()
+        val spoilEvt = spoiled.filterIsInstance<GameEvent.ItemsSpoiled>().single { it.location == "counter" }
+        assertEquals(listOf(com.willio.jeanvilma.fishshopping.core.content.ItemQuantity(portion, 1)), spoilEvt.items)
+        assertEquals(1, counter.stock.quantity(portion))
+        assertEquals(2, counter.stock.quantity("product.smoked_fillet"))
+
+        sim.state.coins = 200
+        sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.display_case_ice", "case-1")))
+        assertEquals(2000, sim.state.counterSpoilPeriodMultPermille)
+        assertEquals(1000, sim.state.bagSpoilPeriodMultPermille)
+        counter.stock.add(portion, 1)
+        sim.state.counterSpoilAccrualTicks = 0
+        repeat(sim.content.economy.counterSpoilPeriodTicks) { sim.checkedStep() }
+        assertEquals(2, counter.stock.quantity(portion))
+        sim.state.counterSpoilAccrualTicks = sim.content.economy.counterSpoilPeriodTicks * 2 - 1
+        sim.checkedStep()
+        assertEquals(1, counter.stock.quantity(portion))
+    }
+
+    @Test
     fun prestigeStaysLockedUntilBusyHarborThenGrantsBonusesAndCosmetics() {
         val sim = newSim()
-        assertEquals("0.22.0", Shared.content.contentVersion)
+        assertEquals("0.26.0", Shared.content.contentVersion)
         val locked = sim.view()
         assertFalse(locked.prestigeUnlocked)
         assertEquals("Requires: Busy harbor", locked.prestigeLockedReason)

@@ -118,6 +118,12 @@
           "rarityWeight": {
             "$ref": "#/$defs/positiveInt"
           },
+          "spoilTier": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3,
+            "description": "Bag spoil priority: 3 fragile (removed first), 2 standard, 1 hardy (removed last). Defaults to 2."
+          },
           "asset": {
             "type": [
               "string",
@@ -170,6 +176,12 @@
           },
           "unitPrice": {
             "$ref": "#/$defs/coins"
+          },
+          "spoilTier": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3,
+            "description": "Counter spoil priority: 3 fragile (removed first), 2 standard, 1 preserved (removed last). Defaults to 2."
           },
           "asset": {
             "type": [
@@ -381,6 +393,22 @@
                 "type": "object",
                 "required": [
                   "kind",
+                  "machine"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "unlock_machine"
+                  },
+                  "machine": {
+                    "$ref": "#/$defs/id",
+                    "description": "Machine family unlocked when this upgrade is owned; stations using it must list this upgrade as requiresUpgrade."
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
                   "speedPermille"
                 ],
                 "properties": {
@@ -470,6 +498,22 @@
                   "periodMultPermille": {
                     "$ref": "#/$defs/positiveInt",
                     "description": "Multiplies bag fish spoilage period (2000 = half as fast)."
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "periodMultPermille"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "counter_spoil_resist"
+                  },
+                  "periodMultPermille": {
+                    "$ref": "#/$defs/positiveInt",
+                    "description": "Multiplies counter product spoilage period (2000 = half as fast)."
                   }
                 }
               }
@@ -1183,6 +1227,10 @@
                 },
                 "outputZone": {
                   "$ref": "#/$defs/id"
+                },
+                "requiresUpgrade": {
+                  "$ref": "#/$defs/id",
+                  "description": "Optional upgrade that must be owned before this station accepts transfers or runs batches."
                 }
               }
             }

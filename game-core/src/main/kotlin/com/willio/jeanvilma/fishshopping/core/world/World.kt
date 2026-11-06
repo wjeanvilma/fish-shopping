@@ -3,6 +3,7 @@ package com.willio.jeanvilma.fishshopping.core.world
 import com.willio.jeanvilma.fishshopping.core.content.HarborDef
 import com.willio.jeanvilma.fishshopping.core.content.ZoneKind
 import com.willio.jeanvilma.fishshopping.core.inventory.Transfers
+import com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
 import com.willio.jeanvilma.fishshopping.core.sim.SafeMath
 import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
@@ -76,23 +77,29 @@ object TransferSystem {
         val moved: Boolean = when (zone.kind) {
             ZoneKind.MACHINE_INPUT -> {
                 val station = ctx.harbor.stations.first { it.inputZone == zone.id }
-                val machine = ctx.state.machines.first { it.stationId == station.id }
-                val accepted = ctx.content.machinesById.getValue(machine.machineId).recipes
-                    .flatMap { ctx.content.recipesById.getValue(it).inputs.map { iq -> iq.item } }.toSet()
-                Transfers.moveFirstAccepted(p.bag, machine.input) { it in accepted }
-                    ?.also { item ->
-                        ctx.state.bumpStat(Stats.MACHINE_INPUTS)
-                        ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, p.bag.id, machine.input.id, item, 1))
-                    } != null
+                if (!ProductionSystem.isUnlocked(station, ctx.state)) false
+                else {
+                    val machine = ctx.state.machines.first { it.stationId == station.id }
+                    val accepted = ctx.content.machinesById.getValue(machine.machineId).recipes
+                        .flatMap { ctx.content.recipesById.getValue(it).inputs.map { iq -> iq.item } }.toSet()
+                    Transfers.moveFirstAccepted(p.bag, machine.input) { it in accepted }
+                        ?.also { item ->
+                            ctx.state.bumpStat(Stats.MACHINE_INPUTS)
+                            ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, p.bag.id, machine.input.id, item, 1))
+                        } != null
+                }
             }
             ZoneKind.MACHINE_OUTPUT -> {
                 val station = ctx.harbor.stations.first { it.outputZone == zone.id }
-                val machine = ctx.state.machines.first { it.stationId == station.id }
-                Transfers.moveFirstAccepted(machine.output, p.bag) { true }
-                    ?.also { item ->
-                        ctx.state.bumpStat(Stats.OUTPUTS_COLLECTED)
-                        ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, machine.output.id, p.bag.id, item, 1))
-                    } != null
+                if (!ProductionSystem.isUnlocked(station, ctx.state)) false
+                else {
+                    val machine = ctx.state.machines.first { it.stationId == station.id }
+                    Transfers.moveFirstAccepted(machine.output, p.bag) { true }
+                        ?.also { item ->
+                            ctx.state.bumpStat(Stats.OUTPUTS_COLLECTED)
+                            ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, machine.output.id, p.bag.id, item, 1))
+                        } != null
+                }
             }
             ZoneKind.COUNTER -> {
                 val counter = ctx.state.counters.first { c -> ctx.harbor.counters.first { it.id == c.counterId }.zone == zone.id }

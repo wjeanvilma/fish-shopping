@@ -1,10 +1,11 @@
 package com.willio.jeanvilma.fishshopping.core.sim
 
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
+import com.willio.jeanvilma.fishshopping.core.economy.EconomySystem
 import com.willio.jeanvilma.fishshopping.core.progression.ProgressionSystem
 
 /**
- * First-session / empty-state coaching for the HUD (Phase 30).
+ * First-session / empty-state coaching for the HUD (Phase 30 / Phase 4 spoil tips).
  * Presentation-only: never mutates state. Mirrored by web/src/engine/coaching.ts.
  */
 data class ObjectiveView(
@@ -66,7 +67,26 @@ object Coaching {
         ) {
             return "Drop raw fish on a teal input pad to start cutting"
         }
-        // Quiet when the player already knows the loop.
+
+        if (EconomySystem.unlocked(content, state)) {
+            val fragileOnCounter = state.counters.any { counter ->
+                counter.stock.contents().any { (id, qty) ->
+                    qty > 0 && EconomySystem.spoilTier(content, id) >= 3
+                }
+            }
+            if (fragileOnCounter && "upgrade.display_case_ice" !in state.ownedUpgrades) {
+                return "Fragile counter stock spoils first — buy display case ice"
+            }
+            val fishInBag = bag.contents().any { (id, qty) ->
+                qty > 0 && id in content.speciesById
+            }
+            if (fishInBag && "upgrade.ice_box" !in state.ownedUpgrades) {
+                return "Raw fish in your bag will spoil — buy an ice box"
+            }
+            if (stocked >= 8 && waiting == 0) {
+                return "Counter stock is aging — sell before the next spoil cycle"
+            }
+        }
         return null
     }
 }

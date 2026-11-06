@@ -33,4 +33,14 @@ describe("coaching", () => {
     state.bumpStat(Stats.MACHINE_INPUTS, 2);
     expect(emptyStateTip(content, state)).toBeNull();
   });
+
+  it("warns about fragile counter spoil pressure", () => {
+    const state = GameState.newGame(content, "harbor.sunrise_pier", 1);
+    state.tutorialIndex = content.tutorial.length;
+    for (const q of content.quests) state.completedQuests.add(q.id);
+    state.bumpStat(Stats.FISH_CAUGHT, 5);
+    state.bumpStat(Stats.MACHINE_INPUTS, 2);
+    state.counters[0]!.stock.add("product.basic_portion", 2);
+    expect(emptyStateTip(content, state)).toMatch(/display case ice/i);
+  });
 });

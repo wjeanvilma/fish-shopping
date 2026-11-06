@@ -1,10 +1,10 @@
 /**
- * First-session / empty-state coaching for the HUD (Phase 30).
+ * First-session / empty-state coaching for the HUD (Phase 30 / Phase 4 spoil tips).
  * Presentation-only: never mutates state. Mirrors game-core Coaching.kt.
  */
 import type { ContentPack } from "./content";
 import { Stats, type GameState } from "./state";
-import { ProgressionSystem } from "./systems";
+import { EconomySystem, ProgressionSystem } from "./systems";
 
 export interface ObjectiveView {
   /** Short label: NEXT / GOAL / TIP */
@@ -43,7 +43,7 @@ export function coachingObjective(content: ContentPack, state: GameState): Objec
 }
 
 /** Situational empty-state hints after the scripted tutorial. */
-export function emptyStateTip(_content: ContentPack, state: GameState): string | null {
+export function emptyStateTip(content: ContentPack, state: GameState): string | null {
   const bag = state.player.bag;
   if (bag.usedUnits() >= bag.capacityUnits && bag.usedUnits() > 0) {
     return "Bag full — deliver fish to a station pad";
@@ -65,6 +65,22 @@ export function emptyStateTip(_content: ContentPack, state: GameState): string |
     state.stat(Stats.MACHINE_INPUTS) === 0
   ) {
     return "Drop raw fish on a teal input pad to start cutting";
+  }
+
+  if (EconomySystem.unlocked(content, state)) {
+    const fragileOnCounter = state.counters.some((counter) =>
+      counter.stock.contents().some(([id, qty]) => qty > 0 && EconomySystem.spoilTier(content, id) >= 3),
+    );
+    if (fragileOnCounter && !state.ownedUpgrades.has("upgrade.display_case_ice")) {
+      return "Fragile counter stock spoils first — buy display case ice";
+    }
+    const fishInBag = bag.contents().some(([id, qty]) => qty > 0 && content.speciesById.has(id));
+    if (fishInBag && !state.ownedUpgrades.has("upgrade.ice_box")) {
+      return "Raw fish in your bag will spoil — buy an ice box";
+    }
+    if (stocked >= 8 && waiting === 0) {
+      return "Counter stock is aging — sell before the next spoil cycle";
+    }
   }
   return null;
 }

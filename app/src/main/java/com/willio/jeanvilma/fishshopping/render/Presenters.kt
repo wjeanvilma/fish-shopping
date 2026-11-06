@@ -38,6 +38,30 @@ fun crowdDrawCapForQuality(quality: PresenterQuality, glbPool: Int): Int {
     return max(0, min(glbPool, cap))
 }
 
+/** Phase 31 — distance fade for zone pads / far helpers (presentation-only). */
+const val OCCLUSION_NEAR_M = 14.0
+const val OCCLUSION_FAR_M = 32.0
+/** Soft crossfade duration when swapping harbor GLBs. */
+const val HARBOR_TRANSITION_S = 0.35
+
+/** True for blockout nodes that may soft-fade with distance (Zone_* pads). */
+fun isOcclusionFadeName(name: String): Boolean = name.startsWith("Zone_")
+
+/**
+ * 1 at/near the player, 0 beyond [farM]. Linear between near and far.
+ * Pure helper mirrored in presenters.ts.
+ */
+fun occlusionOpacity(
+    distanceM: Double,
+    nearM: Double = OCCLUSION_NEAR_M,
+    farM: Double = OCCLUSION_FAR_M,
+): Double {
+    if (farM <= nearM) return if (distanceM <= nearM) 1.0 else 0.0
+    if (distanceM <= nearM) return 1.0
+    if (distanceM >= farM) return 0.0
+    return 1.0 - (distanceM - nearM) / (farM - nearM)
+}
+
 /*
  * Renderer-independent presentation logic, mirrored in web/src/render/presenters.ts.
  * Pure functions of SimView: they decide what is drawn, never what happens.

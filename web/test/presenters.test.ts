@@ -12,6 +12,10 @@ import {
   flyingTransferPoolForQuality,
   FlyingTransfers,
   IDLE_SPEED_M_PER_S,
+  isOcclusionFadeName,
+  occlusionOpacity,
+  OCCLUSION_FAR_M,
+  OCCLUSION_NEAR_M,
   PlayerSmoother,
   WALK_SPEED_REF_M_PER_S,
   locomoteFromMotion,
@@ -186,5 +190,16 @@ describe("CustomerCrowd quality draw cap", () => {
     const crowd = new CustomerCrowd(6);
     crowd.setDrawCap(crowdDrawCapForQuality("low", 6));
     expect(crowd.poolSize).toBe(6);
+  });
+});
+
+describe("occlusion fade (Phase 31)", () => {
+  it("fades Zone pads between near and far distances", () => {
+    expect(isOcclusionFadeName("Zone_pier_end")).toBe(true);
+    expect(isOcclusionFadeName("Player")).toBe(false);
+    expect(occlusionOpacity(0)).toBe(1);
+    expect(occlusionOpacity(OCCLUSION_NEAR_M)).toBe(1);
+    expect(occlusionOpacity(OCCLUSION_FAR_M)).toBe(0);
+    expect(occlusionOpacity((OCCLUSION_NEAR_M + OCCLUSION_FAR_M) / 2)).toBeCloseTo(0.5, 5);
   });
 });

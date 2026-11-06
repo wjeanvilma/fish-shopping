@@ -80,6 +80,7 @@ export const TransferSystem = {
     switch (zone.kind) {
       case "machine_input": {
         const station = ctx.harbor.stations.find((st) => st.inputZone === zone.id)!;
+        if (!ProductionSystem.isUnlocked(station, s)) break;
         const m = s.machines.find((mm) => mm.stationId === station.id)!;
         const accepted = new Set(ctx.content.machinesById.get(m.machineId)!.recipes
           .flatMap((rid) => ctx.content.recipesById.get(rid)!.inputs.map((iq) => iq.item)));
@@ -88,6 +89,7 @@ export const TransferSystem = {
       }
       case "machine_output": {
         const station = ctx.harbor.stations.find((st) => st.outputZone === zone.id)!;
+        if (!ProductionSystem.isUnlocked(station, s)) break;
         const m = s.machines.find((mm) => mm.stationId === station.id)!;
         transferred(m.output, p.bag, Transfers.moveFirstAccepted(m.output, p.bag, () => true), Stats.OUTPUTS_COLLECTED);
         break;
@@ -276,6 +278,14 @@ const fits = (content: ContentPack, inv: Inventory, items: readonly ItemQuantity
   items.reduce((sum, iq) => sum + content.carryUnits(iq.item) * iq.quantity, 0) <= inv.freeUnits();
 
 export const ProductionSystem = {
+  isUnlocked(def: { requiresUpgrade?: string | null }, state: GameState): boolean {
+    return !def.requiresUpgrade || state.ownedUpgrades.has(def.requiresUpgrade);
+  },
+
+  stationDef(ctx: StepContext, stationId: string) {
+    return ctx.harbor.stations.find((st) => st.id === stationId)!;
+  },
+
   durationFor(m: MachineState, recipe: RecipeDef): number {
     return m.recipeDurations.get(recipe.id) ?? recipe.durationTicks;
   },
@@ -326,6 +336,11 @@ export const ProductionSystem = {
 
   stepMachine(ctx: StepContext, m: MachineState): void {
     const s = ctx.state;
+    const station = ProductionSystem.stationDef(ctx, m.stationId);
+    if (!ProductionSystem.isUnlocked(station, s)) {
+      m.status = "LOCKED";
+      return;
+    }
     if (m.paused) {
       m.status = "PAUSED";
       return;
@@ -365,7 +380,10 @@ export const ProductionSystem = {
     ctx.emit({ type: "batch_started", tick: s.tick, batchId: next.id, stationId: m.stationId, recipeId: startable.id });
   },
 
-  statusText(m: MachineState, content: ContentPack): string {
+  statusText(m: MachineState, content: ContentPack, lockedReason?: string | null): string {
+    if (m.status === "LOCKED") {
+      return lockedReason ?? "Locked — buy an upgrade";
+    }
     switch (m.status) {
       case "WAITING_FOR_INPUT": return ProductionSystem.waitingText(m, content);
       case "PROCESSING": {
@@ -374,6 +392,7 @@ export const ProductionSystem = {
       }
       case "OUTPUT_FULL": return ProductionSystem.outputFullText(m, content);
       case "PAUSED": return "Paused";
+      case "LOCKED": return lockedReason ?? "Locked — buy an upgrade";
     }
   },
 
@@ -752,8 +771,10 @@ export const UpgradeSystem = {
       s.maintenanceDiscountPerStation = Math.max(s.maintenanceDiscountPerStation, effect.coinsOffPerStation);
     } else if (effect.kind === "bag_spoil_resist") {
       s.bagSpoilPeriodMultPermille = Math.max(s.bagSpoilPeriodMultPermille, effect.periodMultPermille);
+    } else if (effect.kind === "counter_spoil_resist") {
+      s.counterSpoilPeriodMultPermille = Math.max(s.counterSpoilPeriodMultPermille, effect.periodMultPermille);
     }
-    // unlock_fishing_spot is gated by ownedUpgrades in FishingSystem
+    // unlock_fishing_spot / unlock_machine are gated by ownedUpgrades in FishingSystem / ProductionSystem
   },
 };
 
@@ -1101,6 +1122,18 @@ export const EconomySystem = {
     return Math.max(1, scaled);
   },
 
+  counterSpoilPeriodTicks(content: ContentPack, s: GameState): number {
+    const base = content.economy.counterSpoilPeriodTicks;
+    const scaled = idiv(SafeMath.multiply(base, s.counterSpoilPeriodMultPermille), 1000);
+    return Math.max(1, scaled);
+  },
+
+  spoilTier(content: ContentPack, itemId: string): number {
+    return content.productsById.get(itemId)?.spoilTier
+      ?? content.speciesById.get(itemId)?.spoilTier
+      ?? 2;
+  },
+
   step(ctx: StepContext): void {
     if (!EconomySystem.unlocked(ctx.content, ctx.state)) return;
     accrueMaintenance(ctx);
@@ -1117,7 +1150,7 @@ function accrueMaintenance(ctx: StepContext): void {
   s.maintenanceAccrualTicks++;
   if (s.maintenanceAccrualTicks < eco.maintenancePeriodTicks) return;
   s.maintenanceAccrualTicks = 0;
-  const stations = ctx.harbor.stations.length;
+  const stations = ctx.harbor.stations.filter((st) => ProductionSystem.isUnlocked(st, s)).length;
   if (stations <= 0) return;
   const cost = rate * stations;
   const paid = Math.min(cost, s.coins);
@@ -1134,7 +1167,8 @@ function accrueCounterSpoil(ctx: StepContext): void {
   const eco = ctx.content.economy;
   if (eco.counterSpoilUnits <= 0) return;
   s.counterSpoilAccrualTicks++;
-  if (s.counterSpoilAccrualTicks < eco.counterSpoilPeriodTicks) return;
+  const period = EconomySystem.counterSpoilPeriodTicks(ctx.content, s);
+  if (s.counterSpoilAccrualTicks < period) return;
   s.counterSpoilAccrualTicks = 0;
   const lost: ItemQuantity[] = [];
   let remaining = eco.counterSpoilUnits;
@@ -1167,7 +1201,7 @@ function accrueBagFishSpoil(ctx: StepContext): void {
 
 /**
  * Removes up to [units] from [inv]. When [preferProducts] is true, only products;
- * otherwise only species (raw fish). Deterministic sorted item-id order.
+ * otherwise only species (raw fish). Higher spoil tiers first, then sorted ids.
  */
 function removeSpoilUnits(
   inv: Inventory,
@@ -1177,10 +1211,14 @@ function removeSpoilUnits(
   into: ItemQuantity[],
 ): number {
   let left = units;
+  // Higher spoilTier first (fragile), then stable id order for parity.
   const ids = inv.contents()
     .map(([id]) => id)
     .filter((id) => (preferProducts ? content.productsById.has(id) : content.speciesById.has(id)))
-    .sort(compareStrings);
+    .sort((a, b) => {
+      const tierCmp = EconomySystem.spoilTier(content, b) - EconomySystem.spoilTier(content, a);
+      return tierCmp !== 0 ? tierCmp : compareStrings(a, b);
+    });
   for (const id of ids) {
     if (left <= 0) break;
     const have = inv.available(id);
@@ -1848,6 +1886,7 @@ function findHaul(ctx: StepContext, w: WorkerState): HaulOffer | null {
   let best: HaulOffer | null = null;
   for (const m of machinesByStation(ctx)) {
     const station = ctx.harbor.stations.find((s) => s.id === m.stationId)!;
+    if (!ProductionSystem.isUnlocked(station, ctx.state)) continue;
     const zone = zonePoint(ctx.harbor, station.outputZone);
     for (const [itemId] of m.output.contents()) {
       if (!counterAccepts(cdef, itemId)) continue;
@@ -1872,12 +1911,15 @@ function findMachineHaul(ctx: StepContext, w: WorkerState): HaulOffer | null {
   let best: HaulOffer | null = null;
   for (const src of machinesByStation(ctx)) {
     const srcStation = ctx.harbor.stations.find((s) => s.id === src.stationId)!;
+    if (!ProductionSystem.isUnlocked(srcStation, ctx.state)) continue;
     const zone = zonePoint(ctx.harbor, srcStation.outputZone);
     for (const [itemId] of src.output.contents()) {
       if (src.output.available(itemId) < 1) continue;
       if (w.bag.roomFor(itemId) < 1) continue;
       for (const dst of machinesByStation(ctx)) {
         if (dst.stationId === src.stationId) continue;
+        const dstStation = ctx.harbor.stations.find((s) => s.id === dst.stationId)!;
+        if (!ProductionSystem.isUnlocked(dstStation, ctx.state)) continue;
         const accepted = acceptedInputs(ctx, dst.machineId);
         if (!accepted.has(itemId)) continue;
         if (!destHasRoom(ctx, dst.input, itemId, w.id)) continue;
@@ -1920,9 +1962,11 @@ function findFishableSpot(ctx: StepContext, w: WorkerState) {
 }
 
 function porterMayHaul(ctx: StepContext, itemId: string, supervisor: boolean): boolean {
-  const machineWants = ctx.state.machines.some((m) =>
-    acceptedInputs(ctx, m.machineId).has(itemId) && destHasRoom(ctx, m.input, itemId, ""),
-  );
+  const machineWants = ctx.state.machines.some((m) => {
+    const station = ctx.harbor.stations.find((s) => s.id === m.stationId)!;
+    return ProductionSystem.isUnlocked(station, ctx.state) &&
+      acceptedInputs(ctx, m.machineId).has(itemId) && destHasRoom(ctx, m.input, itemId, "");
+  });
   if (!machineWants) return true;
   if (!supervisor) return false;
   return counterDemandForItem(ctx, itemId) > 0;
@@ -2002,9 +2046,11 @@ function machineDemand(m: MachineState): number {
 }
 
 function machineHungryFor(ctx: StepContext, itemId: string): boolean {
-  return ctx.state.machines.some((m) =>
-    acceptedInputs(ctx, m.machineId).has(itemId) && m.input.roomFor(itemId) >= 1,
-  );
+  return ctx.state.machines.some((m) => {
+    const station = ctx.harbor.stations.find((s) => s.id === m.stationId)!;
+    return ProductionSystem.isUnlocked(station, ctx.state) &&
+      acceptedInputs(ctx, m.machineId).has(itemId) && m.input.roomFor(itemId) >= 1;
+  });
 }
 
 interface MachineDrop { machine: MachineState; x: number; z: number; zoneId: string }
@@ -2012,10 +2058,11 @@ interface CounterDrop { counter: CounterState; x: number; z: number; zoneId: str
 
 function findMachineInputForBag(ctx: StepContext, w: WorkerState): MachineDrop | null {
   for (const m of machinesByStation(ctx)) {
+    const station = ctx.harbor.stations.find((s) => s.id === m.stationId)!;
+    if (!ProductionSystem.isUnlocked(station, ctx.state)) continue;
     const accepted = acceptedInputs(ctx, m.machineId);
     const has = w.bag.contents().some(([item]) => accepted.has(item) && destHasRoom(ctx, m.input, item, w.id));
     if (!has) continue;
-    const station = ctx.harbor.stations.find((s) => s.id === m.stationId)!;
     const zone = zonePoint(ctx.harbor, station.inputZone);
     return { machine: m, x: zone.x, z: zone.z, zoneId: station.inputZone };
   }

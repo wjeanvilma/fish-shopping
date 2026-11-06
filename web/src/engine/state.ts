@@ -103,7 +103,7 @@ export class FishingSpotState {
   constructor(readonly zoneId: string, public stock: number) {}
 }
 
-export type MachineStatus = "WAITING_FOR_INPUT" | "PROCESSING" | "OUTPUT_FULL" | "PAUSED";
+export type MachineStatus = "WAITING_FOR_INPUT" | "PROCESSING" | "OUTPUT_FULL" | "PAUSED" | "LOCKED";
 
 export interface Batch {
   readonly id: string;
@@ -246,6 +246,8 @@ export class GameState {
   maintenanceDiscountPerStation = 0;
   /** Multiplies bag fish spoil period (1000 = content default; rebuilt on load). */
   bagSpoilPeriodMultPermille = 1000;
+  /** Multiplies counter product spoil period (1000 = content default; rebuilt on load). */
+  counterSpoilPeriodMultPermille = 1000;
   /** Permanent catch-speed floor from prestige (rebuilt on load). */
   prestigeCatchSpeedPermille = 1000;
   /** Permanent sale price multiplier from prestige (rebuilt on load). */

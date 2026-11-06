@@ -3,9 +3,11 @@ package com.willio.jeanvilma.fishshopping.core.production
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
 import com.willio.jeanvilma.fishshopping.core.content.ItemQuantity
 import com.willio.jeanvilma.fishshopping.core.content.RecipeDef
+import com.willio.jeanvilma.fishshopping.core.content.StationDef
 import com.willio.jeanvilma.fishshopping.core.inventory.Inventory
 import com.willio.jeanvilma.fishshopping.core.sim.Batch
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
+import com.willio.jeanvilma.fishshopping.core.sim.GameState
 import com.willio.jeanvilma.fishshopping.core.sim.MachineState
 import com.willio.jeanvilma.fishshopping.core.sim.MachineStatus
 import com.willio.jeanvilma.fishshopping.core.sim.StepContext
@@ -20,6 +22,9 @@ import com.willio.jeanvilma.fishshopping.core.sim.StepContext
  * ready recipe in content order). Queue preview lists recipes that can run from current input.
  */
 object ProductionSystem {
+
+    fun isUnlocked(def: StationDef, state: GameState): Boolean =
+        def.requiresUpgrade == null || def.requiresUpgrade in state.ownedUpgrades
 
     fun step(ctx: StepContext) {
         for (m in ctx.state.machines) stepMachine(ctx, m)
@@ -78,6 +83,11 @@ object ProductionSystem {
 
     private fun stepMachine(ctx: StepContext, m: MachineState) {
         val tick = ctx.state.tick
+        val station = ctx.harbor.stations.first { it.id == m.stationId }
+        if (!isUnlocked(station, ctx.state)) {
+            m.status = MachineStatus.LOCKED
+            return
+        }
         if (m.paused) {
             m.status = MachineStatus.PAUSED
             return
@@ -121,7 +131,7 @@ object ProductionSystem {
         items.sumOf { content.carryUnits(it.item) * it.quantity } <= inv.freeUnits()
 
     /** Short player-facing reason for the current state (blueprint: every blocked state shows a reason). */
-    fun statusText(m: MachineState, content: ContentPack): String = when (m.status) {
+    fun statusText(m: MachineState, content: ContentPack, lockedReason: String? = null): String = when (m.status) {
         MachineStatus.WAITING_FOR_INPUT -> waitingText(m, content)
         MachineStatus.PROCESSING -> {
             val id = m.activeBatch?.recipeId
@@ -129,6 +139,7 @@ object ProductionSystem {
         }
         MachineStatus.OUTPUT_FULL -> outputFullText(m, content)
         MachineStatus.PAUSED -> "Paused"
+        MachineStatus.LOCKED -> lockedReason ?: "Locked — buy an upgrade"
     }
 
     private fun waitingText(m: MachineState, content: ContentPack): String {

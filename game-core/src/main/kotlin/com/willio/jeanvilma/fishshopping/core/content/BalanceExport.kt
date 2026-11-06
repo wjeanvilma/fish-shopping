@@ -75,6 +75,7 @@ object BalanceExport {
                             put("baseValue", s.baseValue)
                             put("rarityWeight", s.rarityWeight)
                             put("carryUnits", s.carryUnits)
+                            put("spoilTier", s.spoilTier)
                             val rare = s.rareUpgrade
                             if (rare != null) {
                                 put(
@@ -101,6 +102,7 @@ object BalanceExport {
                             put("id", p.id)
                             put("unitPrice", p.unitPrice)
                             put("carryUnits", p.carryUnits)
+                            put("spoilTier", p.spoilTier)
                         },
                     )
                 }
@@ -332,6 +334,9 @@ object BalanceExport {
         is UpgradeEffect.UnlockFishingSpot -> buildJsonObject {
             put("kind", "unlock_fishing_spot"); put("zone", e.zone)
         }
+        is UpgradeEffect.UnlockMachine -> buildJsonObject {
+            put("kind", "unlock_machine"); put("machine", e.machine)
+        }
         is UpgradeEffect.WorkerMoveSpeed -> buildJsonObject {
             put("kind", "worker_move_speed"); put("speedPermille", e.speedPermille)
         }
@@ -349,6 +354,9 @@ object BalanceExport {
         }
         is UpgradeEffect.BagSpoilResist -> buildJsonObject {
             put("kind", "bag_spoil_resist"); put("periodMultPermille", e.periodMultPermille)
+        }
+        is UpgradeEffect.CounterSpoilResist -> buildJsonObject {
+            put("kind", "counter_spoil_resist"); put("periodMultPermille", e.periodMultPermille)
         }
     }
 }

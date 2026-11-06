@@ -142,6 +142,16 @@ object ContentValidator {
                         "${u.id}: unlock_fishing_spot zone must list this upgrade as requiresUpgrade"
                     }
                 }
+                is UpgradeEffect.UnlockMachine -> {
+                    check(e.machine in p.machinesById) { "${u.id}: unlock_machine unknown '${e.machine}'" }
+                    val stations = p.harbors.flatMap { it.stations }.filter { it.machine == e.machine }
+                    check(stations.isNotEmpty()) { "${u.id}: unlock_machine has no stations for '${e.machine}'" }
+                    stations.forEach { st ->
+                        check(st.requiresUpgrade == u.id) {
+                            "${u.id}: station '${st.id}' must list this upgrade as requiresUpgrade"
+                        }
+                    }
+                }
                 is UpgradeEffect.WorkerMoveSpeed -> check(e.speedPermille > 1000) {
                     "${u.id}: worker_move_speed must exceed 1000 (base speed)"
                 }
@@ -162,6 +172,9 @@ object ContentValidator {
                 }
                 is UpgradeEffect.BagSpoilResist -> check(e.periodMultPermille > 1000) {
                     "${u.id}: bag_spoil_resist must exceed 1000"
+                }
+                is UpgradeEffect.CounterSpoilResist -> check(e.periodMultPermille > 1000) {
+                    "${u.id}: counter_spoil_resist must exceed 1000"
                 }
             }
         }
@@ -256,6 +269,9 @@ object ContentValidator {
                 check(s.machine in p.machinesById) { "${s.id}: unknown machine '${s.machine}'" }
                 check(h.zonesById[s.inputZone]?.kind == ZoneKind.MACHINE_INPUT) { "${s.id}: bad input zone" }
                 check(h.zonesById[s.outputZone]?.kind == ZoneKind.MACHINE_OUTPUT) { "${s.id}: bad output zone" }
+                s.requiresUpgrade?.let { req ->
+                    check(req in p.upgradesById) { "${s.id}: requiresUpgrade unknown '$req'" }
+                }
             }
             fun open(x: Int, z: Int) = h.walkable.any { it.contains(x, z) } && h.obstacles.none { it.contains(x, z) }
             fun openForCustomer(x: Int, z: Int): Boolean {

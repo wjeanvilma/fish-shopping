@@ -217,7 +217,7 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
     if (!m) continue;
     m.paused = mn.get("paused").bool();
     const status = mn.get("status").string();
-    m.status = (["WAITING_FOR_INPUT", "PROCESSING", "OUTPUT_FULL", "PAUSED"] as const).includes(status as MachineStatus)
+    m.status = (["WAITING_FOR_INPUT", "PROCESSING", "OUTPUT_FULL", "PAUSED", "LOCKED"] as const).includes(status as MachineStatus)
       ? (status as MachineStatus) : "WAITING_FOR_INPUT";
     if (version >= 5) {
       const pref = mn.optional("preferredRecipeId")?.string() ?? null;
@@ -436,7 +436,7 @@ function readStash(content: ContentPack, harborId: string, n: Reader, version: n
     if (!m) continue;
     m.paused = mn.get("paused").bool();
     const status = mn.get("status").string();
-    m.status = (["WAITING_FOR_INPUT", "PROCESSING", "OUTPUT_FULL", "PAUSED"] as const).includes(status as MachineStatus)
+    m.status = (["WAITING_FOR_INPUT", "PROCESSING", "OUTPUT_FULL", "PAUSED", "LOCKED"] as const).includes(status as MachineStatus)
       ? (status as MachineStatus) : "WAITING_FOR_INPUT";
     if (version >= 5) {
       const pref = mn.optional("preferredRecipeId")?.string() ?? null;

@@ -122,7 +122,7 @@ class FishingSpotState(val zoneId: String, var stock: Int) {
     var regenProgress = 0
 }
 
-enum class MachineStatus { WAITING_FOR_INPUT, PROCESSING, OUTPUT_FULL, PAUSED }
+enum class MachineStatus { WAITING_FOR_INPUT, PROCESSING, OUTPUT_FULL, PAUSED, LOCKED }
 
 /**
  * In-progress batch. Inputs were removed from the machine at batch start and are
@@ -270,6 +270,8 @@ class GameState(
     var maintenanceDiscountPerStation = 0
     /** Multiplies bag fish spoil period (1000 = content default; rebuilt on load). */
     var bagSpoilPeriodMultPermille = 1000
+    /** Multiplies counter product spoil period (1000 = content default; rebuilt on load). */
+    var counterSpoilPeriodMultPermille = 1000
     /** Permanent catch-speed floor from prestige (rebuilt on load). */
     var prestigeCatchSpeedPermille = 1000
     /** Permanent sale price multiplier from prestige (rebuilt on load). */

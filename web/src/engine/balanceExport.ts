@@ -14,12 +14,14 @@ function effectJson(e: UpgradeEffect): Record<string, unknown> {
     case "catch_speed": return { kind: e.kind, speedPermille: e.speedPermille };
     case "fish_regen": return { kind: e.kind, speedPermille: e.speedPermille };
     case "unlock_fishing_spot": return { kind: e.kind, zone: e.zone };
+    case "unlock_machine": return { kind: e.kind, machine: e.machine };
     case "worker_move_speed": return { kind: e.kind, speedPermille: e.speedPermille };
     case "worker_carry": return { kind: e.kind, capacityUnits: e.capacityUnits };
     case "worker_catch_speed": return { kind: e.kind, speedPermille: e.speedPermille };
     case "worker_wage": return { kind: e.kind, coinsPerWorkerPerHour: e.coinsPerWorkerPerHour };
     case "maintenance_discount": return { kind: e.kind, coinsOffPerStation: e.coinsOffPerStation };
     case "bag_spoil_resist": return { kind: e.kind, periodMultPermille: e.periodMultPermille };
+    case "counter_spoil_resist": return { kind: e.kind, periodMultPermille: e.periodMultPermille };
   }
 }
 
@@ -67,12 +69,13 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
       baseValue: s.baseValue,
       rarityWeight: s.rarityWeight,
       carryUnits: s.carryUnits,
+      spoilTier: s.spoilTier ?? 2,
       rareUpgrade: s.rareUpgrade
         ? { to: s.rareUpgrade.to, chancePermille: s.rareUpgrade.chancePermille }
         : null,
     })),
     products: raw.products.map((pr) => ({
-      id: pr.id, unitPrice: pr.unitPrice, carryUnits: pr.carryUnits,
+      id: pr.id, unitPrice: pr.unitPrice, carryUnits: pr.carryUnits, spoilTier: pr.spoilTier ?? 2,
     })),
     recipes: raw.recipes.map((rec) => ({
       id: rec.id,

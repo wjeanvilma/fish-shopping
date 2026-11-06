@@ -12,8 +12,9 @@ import com.willio.jeanvilma.fishshopping.core.sim.StepContext
 import kotlin.math.min
 
 /**
- * Soft economy sinks (Phase 19): station upkeep and counter/bag spoilage after
- * [EconomyDef.requires] are met. Accrual is ephemeral (not persisted), like wages.
+ * Soft economy sinks (Phase 19 / Phase 4 deepening): station upkeep and tiered
+ * counter/bag spoilage after [EconomyDef.requires] are met. Accrual is ephemeral
+ * (not persisted), like wages. Separate ice upgrades scale bag vs counter periods.
  */
 object EconomySystem {
 
@@ -38,6 +39,17 @@ object EconomySystem {
         return scaled.toInt().coerceAtLeast(1)
     }
 
+    fun counterSpoilPeriodTicks(content: ContentPack, s: GameState): Int {
+        val base = content.economy.counterSpoilPeriodTicks.toLong()
+        val scaled = SafeMath.multiply(base, s.counterSpoilPeriodMultPermille.toLong()) / 1000L
+        return scaled.toInt().coerceAtLeast(1)
+    }
+
+    fun spoilTier(content: ContentPack, itemId: String): Int =
+        content.productsById[itemId]?.spoilTier
+            ?: content.speciesById[itemId]?.spoilTier
+            ?: 2
+
     fun step(ctx: StepContext) {
         if (!unlocked(ctx.content, ctx.state)) return
         accrueMaintenance(ctx)
@@ -53,7 +65,9 @@ object EconomySystem {
         s.maintenanceAccrualTicks++
         if (s.maintenanceAccrualTicks < eco.maintenancePeriodTicks) return
         s.maintenanceAccrualTicks = 0
-        val stations = ctx.harbor.stations.size
+        val stations = ctx.harbor.stations.count {
+            com.willio.jeanvilma.fishshopping.core.production.ProductionSystem.isUnlocked(it, s)
+        }
         if (stations <= 0) return
         val cost = rate.toLong() * stations
         val paid = min(cost, s.coins)
@@ -70,7 +84,8 @@ object EconomySystem {
         val eco = ctx.content.economy
         if (eco.counterSpoilUnits <= 0) return
         s.counterSpoilAccrualTicks++
-        if (s.counterSpoilAccrualTicks < eco.counterSpoilPeriodTicks) return
+        val period = counterSpoilPeriodTicks(ctx.content, s)
+        if (s.counterSpoilAccrualTicks < period) return
         s.counterSpoilAccrualTicks = 0
         val lost = mutableListOf<ItemQuantity>()
         var remaining = eco.counterSpoilUnits
@@ -102,7 +117,7 @@ object EconomySystem {
 
     /**
      * Removes up to [units] from [inv]. When [preferProducts] is true, only products;
-     * otherwise only species (raw fish). Deterministic sorted item-id order.
+     * otherwise only species (raw fish). Higher spoil tiers first, then sorted ids.
      */
     private fun removeUnits(
         inv: Inventory,
@@ -112,9 +127,14 @@ object EconomySystem {
         into: MutableList<ItemQuantity>,
     ): Int {
         var left = units
-        val ids = inv.contents().keys.sorted().filter { id ->
-            if (preferProducts) id in content.productsById else id in content.speciesById
-        }
+        val ids = inv.contents().keys
+            .filter { id ->
+                if (preferProducts) id in content.productsById else id in content.speciesById
+            }
+            .sortedWith(
+                compareByDescending<String> { spoilTier(content, it) }
+                    .thenBy { it },
+            )
         for (id in ids) {
             if (left <= 0) break
             val have = inv.available(id)

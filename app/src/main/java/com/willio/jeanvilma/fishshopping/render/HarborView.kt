@@ -15,6 +15,9 @@ import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 /**
  * Hosts the Filament surface under the Compose HUD. The SurfaceView sits behind the
  * window, so Compose content drawn afterwards appears on top of the 3D world.
+ *
+ * Phase 31: one [HarborRenderer] for the session; harbor GLBs swap via [HarborRenderer.ensureHarbor]
+ * when [sceneAsset] changes (no Filament engine recreate on travel).
  */
 @Composable
 fun HarborView(
@@ -28,12 +31,18 @@ fun HarborView(
     val currentProvider = rememberUpdatedState(viewProvider)
     val currentTransfers = rememberUpdatedState(transferProvider)
     val currentQuality = rememberUpdatedState(qualityProvider)
-    val renderer = remember(sceneAsset) { HarborRenderer(context.applicationContext, sceneAsset) }
+    val renderer = remember { HarborRenderer(context.applicationContext) }
 
     AndroidView(
         modifier = modifier,
         factory = { ctx -> SurfaceView(ctx).also { renderer.attachTo(it) } },
+        update = { renderer.ensureHarbor(sceneAsset) },
     )
+
+    DisposableEffect(sceneAsset) {
+        renderer.ensureHarbor(sceneAsset)
+        onDispose { }
+    }
 
     DisposableEffect(renderer) {
         val choreographer = Choreographer.getInstance()

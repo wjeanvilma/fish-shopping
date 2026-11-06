@@ -20,9 +20,19 @@ export interface PlayerDef {
 export interface RareUpgradeDef { to: string; chancePermille: number }
 export interface SpeciesDef {
   id: string; name: string; carryUnits: number; catchTicks: number; baseValue: number; rarityWeight: number;
+  /** Bag spoil priority: 3 fragile first, 1 hardy last. Defaults to 2. */
+  spoilTier?: number;
   asset?: string | null; rareUpgrade?: RareUpgradeDef | null;
 }
-export interface ProductDef { id: string; name: string; carryUnits: number; unitPrice: number; asset?: string | null }
+export interface ProductDef {
+  id: string;
+  name: string;
+  carryUnits: number;
+  unitPrice: number;
+  /** Counter spoil priority: 3 fragile first, 1 preserved last. Defaults to 2. */
+  spoilTier?: number;
+  asset?: string | null;
+}
 export interface ItemQuantity { item: string; quantity: number }
 export interface RecipeDef { id: string; machine: string; inputs: ItemQuantity[]; outputs: ItemQuantity[]; durationTicks: number }
 export interface MachineDef { id: string; name: string; recipes: string[]; inputCapacityUnits: number; outputCapacityUnits: number }
@@ -32,6 +42,7 @@ export type UpgradeEffect =
   | { kind: "catch_speed"; speedPermille: number }
   | { kind: "fish_regen"; speedPermille: number }
   | { kind: "unlock_fishing_spot"; zone: string }
+  | { kind: "unlock_machine"; machine: string }
   | { kind: "worker_move_speed"; speedPermille: number }
   | { kind: "worker_carry"; capacityUnits: number }
   | { kind: "worker_catch_speed"; speedPermille: number }
@@ -39,7 +50,9 @@ export type UpgradeEffect =
   /** Subtracted from economy.maintenanceCoinsPerStation (floored at 0). */
   | { kind: "maintenance_discount"; coinsOffPerStation: number }
   /** Multiplies bag fish spoilage period (2000 = half as fast). */
-  | { kind: "bag_spoil_resist"; periodMultPermille: number };
+  | { kind: "bag_spoil_resist"; periodMultPermille: number }
+  /** Multiplies counter product spoilage period (2000 = half as fast). */
+  | { kind: "counter_spoil_resist"; periodMultPermille: number };
 export interface UpgradeDef { id: string; name: string; description: string; cost: number; requires: string[]; effect: UpgradeEffect }
 export interface StatGoal { stat: string; atLeast: number }
 export interface QuestReward { coins: number; unlockUpgrades: string[] }
@@ -169,7 +182,13 @@ export interface FishingSpotDef {
   regenCurvePermille: number[];
   requiresUpgrade?: string | null;
 }
-export interface StationDef { id: string; machine: string; inputZone: string; outputZone: string }
+export interface StationDef {
+  id: string;
+  machine: string;
+  inputZone: string;
+  outputZone: string;
+  requiresUpgrade?: string | null;
+}
 export interface PointMm { x: number; z: number }
 export interface CounterDef {
   id: string;
@@ -403,6 +422,9 @@ export function validateContent(p: ContentPack): string[] {
   const unitsOrZero = (item: string) => p.speciesById.get(item)?.carryUnits ?? p.productsById.get(item)?.carryUnits ?? 0;
 
   for (const sp of r.species) {
+    const tier = sp.spoilTier ?? 2;
+    check(tier >= 1 && tier <= 3, () => `${sp.id}: spoilTier must be 1..3`);
+    sp.spoilTier = tier;
     const ru = sp.rareUpgrade;
     if (ru) {
       check(p.speciesById.has(ru.to), () => `${sp.id}: rareUpgrade.to unknown species '${ru.to}'`);
@@ -413,6 +435,11 @@ export function validateContent(p: ContentPack): string[] {
           `${sp.id}: rareUpgrade target must share carryUnits with the base species`);
       }
     }
+  }
+  for (const prod of r.products) {
+    const tier = prod.spoilTier ?? 2;
+    check(tier >= 1 && tier <= 3, () => `${prod.id}: spoilTier must be 1..3`);
+    prod.spoilTier = tier;
   }
   for (const rc of r.recipes) {
     check(p.machinesById.has(rc.machine), () => `${rc.id}: unknown machine '${rc.machine}'`);
@@ -452,6 +479,14 @@ export function validateContent(p: ContentPack): string[] {
       check(!!spot, () => `${u.id}: unlock_fishing_spot unknown zone '${e.zone}'`);
       check(spot?.requiresUpgrade === u.id, () =>
         `${u.id}: unlock_fishing_spot zone must list this upgrade as requiresUpgrade`);
+    } else if (e.kind === "unlock_machine") {
+      check(p.machinesById.has(e.machine), () => `${u.id}: unlock_machine unknown '${e.machine}'`);
+      const stations = r.harbors.flatMap((h) => h.stations).filter((st) => st.machine === e.machine);
+      check(stations.length > 0, () => `${u.id}: unlock_machine has no stations for '${e.machine}'`);
+      for (const st of stations) {
+        check(st.requiresUpgrade === u.id, () =>
+          `${u.id}: station '${st.id}' must list this upgrade as requiresUpgrade`);
+      }
     } else if (e.kind === "worker_move_speed") {
       check(e.speedPermille > 1000, () => `${u.id}: worker_move_speed must exceed 1000 (base speed)`);
     } else if (e.kind === "worker_carry") {
@@ -465,6 +500,8 @@ export function validateContent(p: ContentPack): string[] {
       check(e.coinsOffPerStation >= 1, () => `${u.id}: maintenance_discount must be >= 1`);
     } else if (e.kind === "bag_spoil_resist") {
       check(e.periodMultPermille > 1000, () => `${u.id}: bag_spoil_resist must exceed 1000`);
+    } else if (e.kind === "counter_spoil_resist") {
+      check(e.periodMultPermille > 1000, () => `${u.id}: counter_spoil_resist must exceed 1000`);
     }
   }
   const cycle = findUpgradeCycle(p);
@@ -564,6 +601,9 @@ export function validateContent(p: ContentPack): string[] {
       check(p.machinesById.has(s.machine), () => `${s.id}: unknown machine '${s.machine}'`);
       check(zones.get(s.inputZone)?.kind === "machine_input", () => `${s.id}: bad input zone`);
       check(zones.get(s.outputZone)?.kind === "machine_output", () => `${s.id}: bad output zone`);
+      if (s.requiresUpgrade) {
+        check(p.upgradesById.has(s.requiresUpgrade), () => `${s.id}: requiresUpgrade unknown '${s.requiresUpgrade}'`);
+      }
     }
     const CUSTOMER_PATH_RADIUS_MM = 200;
     const CUSTOMER_PATH_SAMPLE_MM = 200;

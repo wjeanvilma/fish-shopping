@@ -1,6 +1,6 @@
 {
-  "label": "Phase 30 release fixture freeze",
-  "contentVersion": "0.22.0",
+  "label": "Phase 4 counter assortment and spoil tiers fixture freeze",
+  "contentVersion": "0.26.0",
   "schemaVersion": 10,
   "ticksPerSecond": 20,
   "fixtures": [

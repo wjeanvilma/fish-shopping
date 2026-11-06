@@ -27,6 +27,7 @@ import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.sin
 
@@ -40,11 +41,10 @@ import kotlin.math.sin
  * Item stacks, character locomotion, flying transfers, and water tint/bob are driven
  * from SimView / [FlyingTransferCue]s by the presenters in Presenters.kt, mirrored by
  * the web renderer. Phase 29 wires [QualityPreset] into shadows, MSAA, crowd/VFX budgets,
- * and soft frame-time auto-downgrade (20 Hz sim stays fixed).
- *
- * TODO(blueprint): occlusion fade, per-asset loading per harbor.
+ * and soft frame-time auto-downgrade (20 Hz sim stays fixed). Phase 31 swaps harbor GLBs
+ * on demand without recreating Filament and distance-fades Zone_* pads.
  */
-class HarborRenderer(private val context: Context, private val sceneAsset: String) {
+class HarborRenderer(private val context: Context) {
 
     companion object {
         init {
@@ -98,6 +98,9 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
     private var flying = FlyingTransfers(FLYING_TRANSFER_POOL)
     private val pendingTransfers = ConcurrentLinkedQueue<FlyingTransferCue>()
     private var waterEntity = 0
+    /** Zone pads for Phase 31 distance occlusion (entity + ground x/z meters). */
+    private var fadeZones = emptyList<FadeZone>()
+    private var loadedAssetPath: String? = null
 
     private val uiHelper = UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK)
     private var displayHelper: DisplayHelper? = null
@@ -110,6 +113,8 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
     private var sessionQuality = QualityPreset.MEDIUM
     private var appliedQuality: QualityPreset? = null
     private val frameTiming = FrameTiming()
+
+    private data class FadeZone(val entity: Int, val x: Double, val z: Double)
 
     init {
         view.scene = scene
@@ -132,8 +137,6 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
             .castShadows(true)
             .build(engine, sun)
         scene.addEntity(sun)
-
-        loadScene()
     }
 
     /** Queue sim-authoritative transfer arcs (drained on the next frame). */
@@ -141,10 +144,46 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
         pendingTransfers.addAll(cues)
     }
 
-    private fun loadScene() {
-        val bytes = context.assets.open(sceneAsset).use { it.readBytes() }
+    /**
+     * Phase 31: load or swap the harbor GLB without recreating the Filament engine.
+     * No-ops when [assetPath] is already bound.
+     */
+    @Synchronized
+    fun ensureHarbor(assetPath: String) {
+        if (assetPath == loadedAssetPath && asset != null) return
+        unloadHarbor()
+        loadScene(assetPath)
+        loadedAssetPath = assetPath
+    }
+
+    private fun unloadHarbor() {
+        asset?.let {
+            scene.removeEntities(it.entities)
+            assetLoader.destroyAsset(it)
+        }
+        asset = null
+        playerEntity = 0
+        playerBodyEntity = 0
+        playerNoseEntity = 0
+        waterEntity = 0
+        customerRoots = IntArray(0)
+        customerBodies = IntArray(0)
+        crowd = CustomerCrowd(0)
+        playerSmooth = PlayerSmoother()
+        stackSlots.clear()
+        flyFish = IntArray(0)
+        flyPortion = IntArray(0)
+        flying = FlyingTransfers(FLYING_TRANSFER_POOL)
+        flying.setBudget(flyingTransferPoolForQuality(FrameTiming.toPresenterQuality(sessionQuality)))
+        fadeZones = emptyList()
+        pendingTransfers.clear()
+        loadedAssetPath = null
+    }
+
+    private fun loadScene(assetPath: String) {
+        val bytes = context.assets.open(assetPath).use { it.readBytes() }
         val buffer = ByteBuffer.allocateDirect(bytes.size).put(bytes).also { it.flip() }
-        val loaded = assetLoader.createAsset(buffer) ?: error("Could not parse $sceneAsset")
+        val loaded = assetLoader.createAsset(buffer) ?: error("Could not parse $assetPath")
         resourceLoader.loadResources(loaded)
         loaded.releaseSourceData()
         scene.addEntities(loaded.entities)
@@ -166,9 +205,19 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
         stackSlots.clear()
         val fish = HashMap<Int, Int>()
         val portion = HashMap<Int, Int>()
+        val zones = ArrayList<FadeZone>()
+        val tm = engine.transformManager
         for (e in loaded.entities) {
             val name = loaded.getName(e) ?: continue
             if (isStackSlotName(name)) stackSlots[name] = e
+            if (isOcclusionFadeName(name)) {
+                val ti = tm.getInstance(e)
+                if (ti != 0) {
+                    val m = FloatArray(16)
+                    tm.getTransform(ti, m)
+                    zones += FadeZone(e, m[12].toDouble(), m[14].toDouble())
+                }
+            }
             val m = FLY_SLOT.matchEntire(name) ?: continue
             val idx = m.groupValues[1].toInt()
             when (m.groupValues[2]) {
@@ -176,6 +225,7 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
                 "portion" -> portion[idx] = e
             }
         }
+        fadeZones = zones
         val flyCount = max(FLYING_TRANSFER_POOL, max(fish.keys.maxOrNull() ?: -1, portion.keys.maxOrNull() ?: -1) + 1)
         flyFish = IntArray(flyCount) { fish[it] ?: 0 }
         flyPortion = IntArray(flyCount) { portion[it] ?: 0 }
@@ -350,6 +400,12 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
                     // Parameter name differs across Filament ubershader versions; bob still runs.
                 }
             }
+        }
+
+        // Phase 31: distance-fade Zone_* pads (hide when far from the player).
+        for (z in fadeZones) {
+            val d = hypot(z.x - pose.x, z.z - pose.z)
+            setVisible(z.entity, occlusionOpacity(d) > 0.05)
         }
 
         camera.lookAt(

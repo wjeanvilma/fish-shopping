@@ -277,13 +277,20 @@ fun Simulation.view(): SimView {
     val zone = p.zoneId?.let { harbor.zonesById[it] }
 
     val stationViews = s.machines.map { m ->
+        val stDef = harbor.stations.first { it.id == m.stationId }
+        val unlocked = ProductionSystem.isUnlocked(stDef, s)
+        val lockName = stDef.requiresUpgrade?.let { c.upgradesById[it]?.name ?: it } ?: "an upgrade"
+        val status = if (unlocked) m.status else MachineStatus.LOCKED
         val batch = m.activeBatch
-        val progress = batch?.let { 1f - it.remainingTicks.toFloat() / it.durationTicks }
+        val progress = if (unlocked) batch?.let { 1f - it.remainingTicks.toFloat() / it.durationTicks } else null
         StationView(
-            m.stationId, m.status, m.input.usedUnits(), m.output.usedUnits(), progress,
-            statusText = ProductionSystem.statusText(m, c),
+            m.stationId, status, m.input.usedUnits(), m.output.usedUnits(), progress,
+            statusText = if (unlocked) ProductionSystem.statusText(m, c)
+            else "Locked — buy $lockName",
             preferredRecipeId = m.preferredRecipeId,
-            nextRecipeId = ProductionSystem.nextStartable(c, m)?.id ?: m.activeBatch?.recipeId,
+            nextRecipeId = if (unlocked) {
+                ProductionSystem.nextStartable(c, m)?.id ?: m.activeBatch?.recipeId
+            } else null,
         )
     }
 

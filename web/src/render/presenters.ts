@@ -39,6 +39,32 @@ export function crowdDrawCapForQuality(quality: PresenterQuality, glbPool: numbe
   return Math.max(0, Math.min(glbPool, CROWD_DRAW_CAP_BY_QUALITY[quality]));
 }
 
+/** Phase 31 — distance fade for zone pads / far helpers (presentation-only). */
+export const OCCLUSION_NEAR_M = 14;
+export const OCCLUSION_FAR_M = 32;
+/** Soft crossfade duration when swapping harbor GLBs. */
+export const HARBOR_TRANSITION_S = 0.35;
+
+/** True for blockout nodes that may soft-fade with distance (Zone_* pads). */
+export function isOcclusionFadeName(name: string): boolean {
+  return name.startsWith("Zone_");
+}
+
+/**
+ * 1 at/near the player, 0 beyond [farM]. Linear between near and far.
+ * Pure helper mirrored in Presenters.kt.
+ */
+export function occlusionOpacity(
+  distanceM: number,
+  nearM = OCCLUSION_NEAR_M,
+  farM = OCCLUSION_FAR_M,
+): number {
+  if (!(farM > nearM)) return distanceM <= nearM ? 1 : 0;
+  if (distanceM <= nearM) return 1;
+  if (distanceM >= farM) return 0;
+  return 1 - (distanceM - nearM) / (farM - nearM);
+}
+
 const shortId = (id: string) => id.slice(id.indexOf(".") + 1);
 
 /**

@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/content-pack.schema.json",
-  "contentVersion": "0.22.0",
+  "contentVersion": "0.26.0",
   "ticksPerSecond": 20,
   "units": {
     "distance": "millimetres (integer); x/z ground plane, y is up",
@@ -29,7 +29,8 @@
       "rareUpgrade": {
         "to": "species.golden_sprat",
         "chancePermille": 40
-      }
+      },
+      "spoilTier": 3
     },
     {
       "id": "species.harbor_herring",
@@ -38,7 +39,8 @@
       "catchTicks": 60,
       "baseValue": 1,
       "rarityWeight": 80,
-      "asset": "models/fish_harbor_herring.glb"
+      "asset": "models/fish_harbor_herring.glb",
+      "spoilTier": 3
     },
     {
       "id": "species.blue_mackerel",
@@ -51,7 +53,8 @@
       "rareUpgrade": {
         "to": "species.gilt_mackerel",
         "chancePermille": 30
-      }
+      },
+      "spoilTier": 2
     },
     {
       "id": "species.copper_mullet",
@@ -60,7 +63,12 @@
       "catchTicks": 100,
       "baseValue": 5,
       "rarityWeight": 35,
-      "asset": "models/fish_copper_mullet.glb"
+      "asset": "models/fish_copper_mullet.glb",
+      "rareUpgrade": {
+        "to": "species.bronze_mullet",
+        "chancePermille": 28
+      },
+      "spoilTier": 2
     },
     {
       "id": "species.amber_snapper",
@@ -69,7 +77,12 @@
       "catchTicks": 160,
       "baseValue": 8,
       "rarityWeight": 18,
-      "asset": "models/fish_amber_snapper.glb"
+      "asset": "models/fish_amber_snapper.glb",
+      "rareUpgrade": {
+        "to": "species.ruby_snapper",
+        "chancePermille": 22
+      },
+      "spoilTier": 1
     },
     {
       "id": "species.king_grouper",
@@ -78,7 +91,112 @@
       "catchTicks": 220,
       "baseValue": 15,
       "rarityWeight": 8,
-      "asset": "models/fish_king_grouper.glb"
+      "asset": "models/fish_king_grouper.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.dawn_anchovy",
+      "name": "Dawn anchovy",
+      "carryUnits": 1,
+      "catchTicks": 50,
+      "baseValue": 1,
+      "rarityWeight": 90,
+      "asset": "models/fish_dawn_anchovy.glb",
+      "rareUpgrade": {
+        "to": "species.silver_dawn_anchovy",
+        "chancePermille": 45
+      },
+      "spoilTier": 3
+    },
+    {
+      "id": "species.sail_needlefish",
+      "name": "Sail needlefish",
+      "carryUnits": 1,
+      "catchTicks": 90,
+      "baseValue": 3,
+      "rarityWeight": 48,
+      "asset": "models/fish_sail_needlefish.glb",
+      "rareUpgrade": {
+        "to": "species.sapphire_needlefish",
+        "chancePermille": 32
+      },
+      "spoilTier": 2
+    },
+    {
+      "id": "species.tide_bass",
+      "name": "Tide bass",
+      "carryUnits": 2,
+      "catchTicks": 130,
+      "baseValue": 6,
+      "rarityWeight": 26,
+      "asset": "models/fish_tide_bass.glb",
+      "rareUpgrade": {
+        "to": "species.crown_bass",
+        "chancePermille": 25
+      },
+      "spoilTier": 2
+    },
+    {
+      "id": "species.reef_perch",
+      "name": "Reef perch",
+      "carryUnits": 2,
+      "catchTicks": 110,
+      "baseValue": 5,
+      "rarityWeight": 30,
+      "asset": "models/fish_reef_perch.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.moon_flounder",
+      "name": "Moon flounder",
+      "carryUnits": 2,
+      "catchTicks": 140,
+      "baseValue": 7,
+      "rarityWeight": 28,
+      "asset": "models/fish_moon_flounder.glb",
+      "rareUpgrade": {
+        "to": "species.opal_flounder",
+        "chancePermille": 24
+      },
+      "spoilTier": 1
+    },
+    {
+      "id": "species.ink_squid",
+      "name": "Ink squid",
+      "carryUnits": 1,
+      "catchTicks": 150,
+      "baseValue": 9,
+      "rarityWeight": 16,
+      "asset": "models/fish_ink_squid.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.lava_eel",
+      "name": "Lava eel",
+      "carryUnits": 2,
+      "catchTicks": 180,
+      "baseValue": 11,
+      "rarityWeight": 12,
+      "asset": "models/fish_lava_eel.glb",
+      "rareUpgrade": {
+        "to": "species.ember_eel",
+        "chancePermille": 20
+      },
+      "spoilTier": 1
+    },
+    {
+      "id": "species.ghost_lanternfish",
+      "name": "Ghost lanternfish",
+      "carryUnits": 1,
+      "catchTicks": 100,
+      "baseValue": 6,
+      "rarityWeight": 22,
+      "asset": "models/fish_ghost_lanternfish.glb",
+      "rareUpgrade": {
+        "to": "species.prism_lanternfish",
+        "chancePermille": 28
+      },
+      "spoilTier": 2
     },
     {
       "id": "species.golden_sprat",
@@ -87,7 +205,8 @@
       "catchTicks": 80,
       "baseValue": 10,
       "rarityWeight": 1,
-      "asset": "models/fish_golden_sprat.glb"
+      "asset": "models/fish_golden_sprat.glb",
+      "spoilTier": 3
     },
     {
       "id": "species.gilt_mackerel",
@@ -96,7 +215,88 @@
       "catchTicks": 120,
       "baseValue": 14,
       "rarityWeight": 1,
-      "asset": "models/fish_gilt_mackerel.glb"
+      "asset": "models/fish_gilt_mackerel.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.bronze_mullet",
+      "name": "Bronze mullet",
+      "carryUnits": 2,
+      "catchTicks": 100,
+      "baseValue": 16,
+      "rarityWeight": 1,
+      "asset": "models/fish_bronze_mullet.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.ruby_snapper",
+      "name": "Ruby snapper",
+      "carryUnits": 2,
+      "catchTicks": 160,
+      "baseValue": 22,
+      "rarityWeight": 1,
+      "asset": "models/fish_ruby_snapper.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.silver_dawn_anchovy",
+      "name": "Silver dawn anchovy",
+      "carryUnits": 1,
+      "catchTicks": 50,
+      "baseValue": 8,
+      "rarityWeight": 1,
+      "asset": "models/fish_silver_dawn_anchovy.glb",
+      "spoilTier": 3
+    },
+    {
+      "id": "species.sapphire_needlefish",
+      "name": "Sapphire needlefish",
+      "carryUnits": 1,
+      "catchTicks": 90,
+      "baseValue": 12,
+      "rarityWeight": 1,
+      "asset": "models/fish_sapphire_needlefish.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.crown_bass",
+      "name": "Crown bass",
+      "carryUnits": 2,
+      "catchTicks": 130,
+      "baseValue": 18,
+      "rarityWeight": 1,
+      "asset": "models/fish_crown_bass.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.opal_flounder",
+      "name": "Opal flounder",
+      "carryUnits": 2,
+      "catchTicks": 140,
+      "baseValue": 20,
+      "rarityWeight": 1,
+      "asset": "models/fish_opal_flounder.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.ember_eel",
+      "name": "Ember eel",
+      "carryUnits": 2,
+      "catchTicks": 180,
+      "baseValue": 28,
+      "rarityWeight": 1,
+      "asset": "models/fish_ember_eel.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.prism_lanternfish",
+      "name": "Prism lanternfish",
+      "carryUnits": 1,
+      "catchTicks": 100,
+      "baseValue": 17,
+      "rarityWeight": 1,
+      "asset": "models/fish_prism_lanternfish.glb",
+      "spoilTier": 2
     }
   ],
   "products": [
@@ -105,28 +305,80 @@
       "name": "Basic portion",
       "carryUnits": 1,
       "unitPrice": 5,
-      "asset": "models/product_basic_portion.glb"
+      "asset": "models/product_basic_portion.glb",
+      "spoilTier": 3
     },
     {
       "id": "product.fillet",
       "name": "Fillet",
       "carryUnits": 1,
       "unitPrice": 12,
-      "asset": "models/product_fillet.glb"
+      "asset": "models/product_fillet.glb",
+      "spoilTier": 2
     },
     {
       "id": "product.premium_portion",
       "name": "Premium portion",
       "carryUnits": 1,
       "unitPrice": 20,
-      "asset": "models/product_premium_portion.glb"
+      "asset": "models/product_premium_portion.glb",
+      "spoilTier": 2
     },
     {
       "id": "product.smoked_fillet",
       "name": "Smoked fillet",
       "carryUnits": 1,
       "unitPrice": 18,
-      "asset": "models/product_smoked_fillet.glb"
+      "asset": "models/product_smoked_fillet.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "product.diced_fish",
+      "name": "Diced fish",
+      "carryUnits": 1,
+      "unitPrice": 3,
+      "asset": "models/product_diced_fish.glb",
+      "spoilTier": 3
+    },
+    {
+      "id": "product.skewer",
+      "name": "Harbor skewer",
+      "carryUnits": 1,
+      "unitPrice": 16,
+      "asset": "models/product_skewer.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "product.soup_stock",
+      "name": "Soup stock",
+      "carryUnits": 1,
+      "unitPrice": 11,
+      "asset": "models/product_soup_stock.glb",
+      "spoilTier": 3
+    },
+    {
+      "id": "product.ice_packed_crate",
+      "name": "Ice-packed crate",
+      "carryUnits": 2,
+      "unitPrice": 48,
+      "asset": "models/product_ice_packed_crate.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "product.grilled_fillet",
+      "name": "Grilled fillet",
+      "carryUnits": 1,
+      "unitPrice": 22,
+      "asset": "models/product_grilled_fillet.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "product.grilled_skewer",
+      "name": "Grilled skewer",
+      "carryUnits": 1,
+      "unitPrice": 24,
+      "asset": "models/product_grilled_skewer.glb",
+      "spoilTier": 2
     }
   ],
   "recipes": [
@@ -282,6 +534,528 @@
         }
       ],
       "durationTicks": 110
+    },
+    {
+      "id": "recipe.dawn_anchovy_portions",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.dawn_anchovy",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 60
+    },
+    {
+      "id": "recipe.sail_needlefish_fillets",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.sail_needlefish",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 95
+    },
+    {
+      "id": "recipe.tide_bass_fillets",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.tide_bass",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 125
+    },
+    {
+      "id": "recipe.reef_perch_fillets",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.reef_perch",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 115
+    },
+    {
+      "id": "recipe.moon_flounder_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.moon_flounder",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 135
+    },
+    {
+      "id": "recipe.ink_squid_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.ink_squid",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 130
+    },
+    {
+      "id": "recipe.lava_eel_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.lava_eel",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 160
+    },
+    {
+      "id": "recipe.ghost_lanternfish_fillets",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.ghost_lanternfish",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 105
+    },
+    {
+      "id": "recipe.bronze_mullet_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.bronze_mullet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 100
+    },
+    {
+      "id": "recipe.ruby_snapper_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.ruby_snapper",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 3
+        }
+      ],
+      "durationTicks": 130
+    },
+    {
+      "id": "recipe.silver_dawn_anchovy_fillets",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.silver_dawn_anchovy",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 55
+    },
+    {
+      "id": "recipe.sapphire_needlefish_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.sapphire_needlefish",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 85
+    },
+    {
+      "id": "recipe.crown_bass_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.crown_bass",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 3
+        }
+      ],
+      "durationTicks": 120
+    },
+    {
+      "id": "recipe.opal_flounder_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.opal_flounder",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 3
+        }
+      ],
+      "durationTicks": 125
+    },
+    {
+      "id": "recipe.ember_eel_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.ember_eel",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 3
+        }
+      ],
+      "durationTicks": 150
+    },
+    {
+      "id": "recipe.prism_lanternfish_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.prism_lanternfish",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 95
+    },
+    {
+      "id": "recipe.dice_sprat",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.silver_sprat",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.diced_fish",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 80
+    },
+    {
+      "id": "recipe.dice_herring",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.harbor_herring",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.diced_fish",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 55
+    },
+    {
+      "id": "recipe.harbor_skewers",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "product.diced_fish",
+          "quantity": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.skewer",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 110
+    },
+    {
+      "id": "recipe.mixed_grill_skewers",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.blue_mackerel",
+          "quantity": 1
+        },
+        {
+          "item": "species.harbor_herring",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.skewer",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 130
+    },
+    {
+      "id": "recipe.diced_soup",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "product.diced_fish",
+          "quantity": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.soup_stock",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 90
+    },
+    {
+      "id": "recipe.anchovy_chowder",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.dawn_anchovy",
+          "quantity": 1
+        },
+        {
+          "item": "species.harbor_herring",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.soup_stock",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 100
+    },
+    {
+      "id": "recipe.ice_pack_catch",
+      "machine": "machine.basic_smoker",
+      "inputs": [
+        {
+          "item": "species.amber_snapper",
+          "quantity": 1
+        },
+        {
+          "item": "species.blue_mackerel",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.ice_packed_crate",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 160
+    },
+    {
+      "id": "recipe.ice_pack_diced",
+      "machine": "machine.basic_smoker",
+      "inputs": [
+        {
+          "item": "product.diced_fish",
+          "quantity": 3
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.ice_packed_crate",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 140
+    },
+    {
+      "id": "recipe.grill_mullet",
+      "machine": "machine.harbor_grill",
+      "inputs": [
+        {
+          "item": "species.copper_mullet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.grilled_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 120
+    },
+    {
+      "id": "recipe.grill_bass",
+      "machine": "machine.harbor_grill",
+      "inputs": [
+        {
+          "item": "species.tide_bass",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.grilled_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 130
+    },
+    {
+      "id": "recipe.grill_snapper",
+      "machine": "machine.harbor_grill",
+      "inputs": [
+        {
+          "item": "species.amber_snapper",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.grilled_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 140
+    },
+    {
+      "id": "recipe.grill_grouper",
+      "machine": "machine.harbor_grill",
+      "inputs": [
+        {
+          "item": "species.king_grouper",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.grilled_fillet",
+          "quantity": 3
+        }
+      ],
+      "durationTicks": 180
+    },
+    {
+      "id": "recipe.grill_diced_skewers",
+      "machine": "machine.harbor_grill",
+      "inputs": [
+        {
+          "item": "product.diced_fish",
+          "quantity": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.grilled_skewer",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 110
+    },
+    {
+      "id": "recipe.grill_flounder",
+      "machine": "machine.harbor_grill",
+      "inputs": [
+        {
+          "item": "species.moon_flounder",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.grilled_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 135
     }
   ],
   "machines": [
@@ -296,7 +1070,29 @@
         "recipe.snapper_premium",
         "recipe.grouper_premium",
         "recipe.golden_sprat_portions",
-        "recipe.gilt_mackerel_premium"
+        "recipe.gilt_mackerel_premium",
+        "recipe.dawn_anchovy_portions",
+        "recipe.sail_needlefish_fillets",
+        "recipe.tide_bass_fillets",
+        "recipe.reef_perch_fillets",
+        "recipe.moon_flounder_premium",
+        "recipe.ink_squid_premium",
+        "recipe.lava_eel_premium",
+        "recipe.ghost_lanternfish_fillets",
+        "recipe.bronze_mullet_premium",
+        "recipe.ruby_snapper_premium",
+        "recipe.silver_dawn_anchovy_fillets",
+        "recipe.sapphire_needlefish_premium",
+        "recipe.crown_bass_premium",
+        "recipe.opal_flounder_premium",
+        "recipe.ember_eel_premium",
+        "recipe.prism_lanternfish_premium",
+        "recipe.dice_sprat",
+        "recipe.dice_herring",
+        "recipe.harbor_skewers",
+        "recipe.mixed_grill_skewers",
+        "recipe.diced_soup",
+        "recipe.anchovy_chowder"
       ],
       "inputCapacityUnits": 10,
       "outputCapacityUnits": 20
@@ -305,10 +1101,26 @@
       "id": "machine.basic_smoker",
       "name": "Basic smoker",
       "recipes": [
-        "recipe.smoke_fillet"
+        "recipe.smoke_fillet",
+        "recipe.ice_pack_catch",
+        "recipe.ice_pack_diced"
       ],
       "inputCapacityUnits": 8,
       "outputCapacityUnits": 12
+    },
+    {
+      "id": "machine.harbor_grill",
+      "name": "Harbor grill",
+      "recipes": [
+        "recipe.grill_mullet",
+        "recipe.grill_bass",
+        "recipe.grill_snapper",
+        "recipe.grill_grouper",
+        "recipe.grill_diced_skewers",
+        "recipe.grill_flounder"
+      ],
+      "inputCapacityUnits": 10,
+      "outputCapacityUnits": 16
     }
   ],
   "upgrades": [
@@ -524,6 +1336,32 @@
       "effect": {
         "kind": "bag_spoil_resist",
         "periodMultPermille": 2000
+      }
+    },
+    {
+      "id": "upgrade.display_case_ice",
+      "name": "Display case ice",
+      "description": "Counter stock spoils half as fast. Preserved products still go last.",
+      "cost": 120,
+      "requires": [
+        "quest.first_ten_sales"
+      ],
+      "effect": {
+        "kind": "counter_spoil_resist",
+        "periodMultPermille": 2000
+      }
+    },
+    {
+      "id": "upgrade.harbor_grill",
+      "name": "Harbor grill",
+      "description": "Install a charcoal grill line for grilled fillets and skewers.",
+      "cost": 150,
+      "requires": [
+        "quest.fill_the_hold"
+      ],
+      "effect": {
+        "kind": "unlock_machine",
+        "machine": "machine.harbor_grill"
       }
     }
   ],
@@ -823,6 +1661,72 @@
         "payout": 50,
         "penalty": 14,
         "weight": 30
+      },
+      {
+        "id": "contract.dawn_anchovy_basket",
+        "name": "Dawn anchovy basket",
+        "description": "Sunrise pier bait shops want a basket of dawn anchovy.",
+        "item": "species.dawn_anchovy",
+        "quantity": 6,
+        "durationTicks": 1700,
+        "payout": 40,
+        "penalty": 10,
+        "weight": 32
+      },
+      {
+        "id": "contract.moon_flounder_crate",
+        "name": "Moon flounder crate",
+        "description": "Moon Cove inns pay well for fresh flounder.",
+        "item": "species.moon_flounder",
+        "quantity": 3,
+        "durationTicks": 1900,
+        "payout": 85,
+        "penalty": 22,
+        "weight": 20
+      },
+      {
+        "id": "contract.skewer_platter",
+        "name": "Skewer platter",
+        "description": "A pier cafe wants harbor skewers for the lunch rush.",
+        "item": "product.skewer",
+        "quantity": 4,
+        "durationTicks": 1800,
+        "payout": 80,
+        "penalty": 20,
+        "weight": 22
+      },
+      {
+        "id": "contract.soup_kettles",
+        "name": "Soup kettles",
+        "description": "Dock kitchens need soup stock before evening service.",
+        "item": "product.soup_stock",
+        "quantity": 3,
+        "durationTicks": 1700,
+        "payout": 55,
+        "penalty": 14,
+        "weight": 24
+      },
+      {
+        "id": "contract.ice_crate_run",
+        "name": "Ice crate run",
+        "description": "A wholesale buyer wants ice-packed crates on ice.",
+        "item": "product.ice_packed_crate",
+        "quantity": 2,
+        "durationTicks": 2100,
+        "payout": 120,
+        "penalty": 30,
+        "weight": 14
+      },
+      {
+        "id": "contract.grill_platter",
+        "name": "Grill platter",
+        "description": "A dockside grill cart needs grilled skewers for the dinner rush.",
+        "item": "product.grilled_skewer",
+        "quantity": 4,
+        "durationTicks": 1900,
+        "payout": 110,
+        "penalty": 28,
+        "weight": 16
       }
     ]
   },
@@ -839,11 +1743,15 @@
       "preferredProducts": [
         {
           "item": "product.basic_portion",
-          "weight": 80
+          "weight": 70
         },
         {
           "item": "product.fillet",
-          "weight": 20
+          "weight": 18
+        },
+        {
+          "item": "product.soup_stock",
+          "weight": 12
         }
       ],
       "unmetPriceMultPermille": 750,
@@ -861,15 +1769,23 @@
       "preferredProducts": [
         {
           "item": "product.basic_portion",
-          "weight": 55
+          "weight": 40
         },
         {
           "item": "product.fillet",
-          "weight": 30
+          "weight": 25
+        },
+        {
+          "item": "product.skewer",
+          "weight": 15
         },
         {
           "item": "product.smoked_fillet",
-          "weight": 15
+          "weight": 12
+        },
+        {
+          "item": "product.grilled_skewer",
+          "weight": 12
         }
       ],
       "unmetPriceMultPermille": 750,
@@ -887,11 +1803,19 @@
       "preferredProducts": [
         {
           "item": "product.premium_portion",
-          "weight": 70
+          "weight": 45
         },
         {
           "item": "product.smoked_fillet",
-          "weight": 30
+          "weight": 15
+        },
+        {
+          "item": "product.skewer",
+          "weight": 15
+        },
+        {
+          "item": "product.grilled_fillet",
+          "weight": 25
         }
       ],
       "unmetPriceMultPermille": 600,
@@ -909,15 +1833,23 @@
       "preferredProducts": [
         {
           "item": "product.fillet",
-          "weight": 50
+          "weight": 35
         },
         {
           "item": "product.smoked_fillet",
-          "weight": 30
+          "weight": 20
         },
         {
           "item": "product.premium_portion",
-          "weight": 20
+          "weight": 15
+        },
+        {
+          "item": "product.soup_stock",
+          "weight": 15
+        },
+        {
+          "item": "product.ice_packed_crate",
+          "weight": 15
         }
       ],
       "unmetPriceMultPermille": 700,
@@ -927,7 +1859,7 @@
   "tutorial": [
     {
       "id": "tutorial.walk_to_pier",
-      "text": "Walk to the pier end — cast where the water meets the boards",
+      "text": "Walk to the pier end \u2014 cast where the water meets the boards",
       "advanceOn": {
         "kind": "enter_zone",
         "zone": "zone.pier_end"
@@ -1001,7 +1933,7 @@
           "id": "area.land",
           "minX": -8000,
           "minZ": -8000,
-          "maxX": 10000,
+          "maxX": 14500,
           "maxZ": 8000
         },
         {
@@ -1040,6 +1972,13 @@
           "minZ": 3500,
           "maxX": 4500,
           "maxZ": 4500
+        },
+        {
+          "id": "footprint.grill_1",
+          "minX": 11400,
+          "minZ": -5000,
+          "maxX": 13000,
+          "maxZ": -3000
         }
       ],
       "zones": [
@@ -1098,16 +2037,35 @@
           "minZ": 2000,
           "maxX": 4500,
           "maxZ": 3500
+        },
+        {
+          "id": "zone.grill_in",
+          "kind": "machine_input",
+          "minX": 10000,
+          "minZ": -5000,
+          "maxX": 11400,
+          "maxZ": -3000
+        },
+        {
+          "id": "zone.grill_out",
+          "kind": "machine_output",
+          "minX": 13000,
+          "minZ": -5000,
+          "maxX": 14400,
+          "maxZ": -3000
         }
       ],
       "fishingSpots": [
         {
           "zone": "zone.pier_end",
           "species": [
+            "species.dawn_anchovy",
             "species.silver_sprat",
             "species.harbor_herring",
+            "species.sail_needlefish",
             "species.blue_mackerel",
             "species.copper_mullet",
+            "species.tide_bass",
             "species.amber_snapper",
             "species.king_grouper"
           ],
@@ -1124,9 +2082,12 @@
         {
           "zone": "zone.pier_spur",
           "species": [
+            "species.dawn_anchovy",
             "species.silver_sprat",
             "species.harbor_herring",
-            "species.blue_mackerel"
+            "species.reef_perch",
+            "species.blue_mackerel",
+            "species.sail_needlefish"
           ],
           "stockMax": 10,
           "regenTicks": 50,
@@ -1152,6 +2113,13 @@
           "machine": "machine.basic_smoker",
           "inputZone": "zone.smoker_in",
           "outputZone": "zone.smoker_out"
+        },
+        {
+          "id": "station.grill_1",
+          "machine": "machine.harbor_grill",
+          "inputZone": "zone.grill_in",
+          "outputZone": "zone.grill_out",
+          "requiresUpgrade": "upgrade.harbor_grill"
         }
       ],
       "counters": [
@@ -1161,7 +2129,13 @@
             "product.basic_portion",
             "product.fillet",
             "product.premium_portion",
-            "product.smoked_fillet"
+            "product.smoked_fillet",
+            "product.diced_fish",
+            "product.skewer",
+            "product.soup_stock",
+            "product.ice_packed_crate",
+            "product.grilled_fillet",
+            "product.grilled_skewer"
           ],
           "capacityUnits": 30,
           "zone": "zone.counter_1",
@@ -1230,7 +2204,7 @@
       "walkable": [
         {
           "id": "area.cove_land",
-          "minX": -10000,
+          "minX": -14500,
           "minZ": -8000,
           "maxX": 8000,
           "maxZ": 8000
@@ -1271,6 +2245,13 @@
           "minZ": 3500,
           "maxX": -1500,
           "maxZ": 4500
+        },
+        {
+          "id": "footprint.cove_grill",
+          "minX": -13000,
+          "minZ": -5000,
+          "maxX": -11400,
+          "maxZ": -3000
         }
       ],
       "zones": [
@@ -1329,6 +2310,22 @@
           "minZ": 2000,
           "maxX": -1500,
           "maxZ": 3500
+        },
+        {
+          "id": "zone.cove_grill_in",
+          "kind": "machine_input",
+          "minX": -11400,
+          "minZ": -5000,
+          "maxX": -10000,
+          "maxZ": -3000
+        },
+        {
+          "id": "zone.cove_grill_out",
+          "kind": "machine_output",
+          "minX": -14400,
+          "minZ": -5000,
+          "maxX": -13000,
+          "maxZ": -3000
         }
       ],
       "fishingSpots": [
@@ -1336,9 +2333,12 @@
           "zone": "zone.cove_end",
           "species": [
             "species.harbor_herring",
+            "species.moon_flounder",
             "species.blue_mackerel",
             "species.copper_mullet",
+            "species.ink_squid",
             "species.amber_snapper",
+            "species.lava_eel",
             "species.king_grouper",
             "species.silver_sprat"
           ],
@@ -1355,7 +2355,9 @@
         {
           "zone": "zone.cove_shelf",
           "species": [
-            "species.silver_sprat",
+            "species.ghost_lanternfish",
+            "species.moon_flounder",
+            "species.ink_squid",
             "species.harbor_herring",
             "species.blue_mackerel"
           ],
@@ -1382,6 +2384,13 @@
           "machine": "machine.basic_smoker",
           "inputZone": "zone.cove_smoker_in",
           "outputZone": "zone.cove_smoker_out"
+        },
+        {
+          "id": "station.cove_grill",
+          "machine": "machine.harbor_grill",
+          "inputZone": "zone.cove_grill_in",
+          "outputZone": "zone.cove_grill_out",
+          "requiresUpgrade": "upgrade.harbor_grill"
         }
       ],
       "counters": [
@@ -1391,7 +2400,13 @@
             "product.basic_portion",
             "product.fillet",
             "product.premium_portion",
-            "product.smoked_fillet"
+            "product.smoked_fillet",
+            "product.diced_fish",
+            "product.skewer",
+            "product.soup_stock",
+            "product.ice_packed_crate",
+            "product.grilled_fillet",
+            "product.grilled_skewer"
           ],
           "capacityUnits": 30,
           "zone": "zone.cove_counter",

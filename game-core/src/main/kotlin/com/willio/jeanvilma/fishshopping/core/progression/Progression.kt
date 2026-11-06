@@ -80,6 +80,7 @@ object UpgradeSystem {
             is UpgradeEffect.FishRegen ->
                 s.player.fishRegenPermille = maxOf(s.player.fishRegenPermille, effect.speedPermille)
             is UpgradeEffect.UnlockFishingSpot -> Unit // gated by ownedUpgrades in FishingSystem
+            is UpgradeEffect.UnlockMachine -> Unit // gated by ownedUpgrades in ProductionSystem
             is UpgradeEffect.WorkerMoveSpeed ->
                 s.workerMoveSpeedPermille = maxOf(s.workerMoveSpeedPermille, effect.speedPermille)
             is UpgradeEffect.WorkerCarry -> {
@@ -96,6 +97,8 @@ object UpgradeSystem {
                 s.maintenanceDiscountPerStation = maxOf(s.maintenanceDiscountPerStation, effect.coinsOffPerStation)
             is UpgradeEffect.BagSpoilResist ->
                 s.bagSpoilPeriodMultPermille = maxOf(s.bagSpoilPeriodMultPermille, effect.periodMultPermille)
+            is UpgradeEffect.CounterSpoilResist ->
+                s.counterSpoilPeriodMultPermille = maxOf(s.counterSpoilPeriodMultPermille, effect.periodMultPermille)
         }
     }
 }

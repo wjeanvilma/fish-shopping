@@ -157,7 +157,35 @@ describe("simulation", () => {
     }
     expect(species.size).toBeGreaterThanOrEqual(3);
     const pier = content.harborsById.get(HARBOR)!.fishingSpots[0]!.species;
-    for (const id of species) expect(pier).toContain(id);
+    const allowed = new Set([
+      ...pier,
+      ...pier.map((id) => content.speciesById.get(id)!.rareUpgrade?.to).filter((x): x is string => !!x),
+    ]);
+    for (const id of species) expect(allowed.has(id)).toBe(true);
+  });
+
+  it("species roster is harbor-gated with rare upgrade chains", () => {
+    expect(content.contentVersion).toBe("0.26.0");
+    expect(content.raw.species.length).toBe(24);
+    const sunrise = content.harborsById.get("harbor.sunrise_pier")!.fishingSpots
+      .flatMap((s) => s.species);
+    const moon = content.harborsById.get("harbor.moon_cove")!.fishingSpots
+      .flatMap((s) => s.species);
+    for (const id of ["species.dawn_anchovy", "species.sail_needlefish", "species.tide_bass", "species.reef_perch"]) {
+      expect(sunrise).toContain(id);
+      expect(moon).not.toContain(id);
+    }
+    for (const id of ["species.moon_flounder", "species.ink_squid", "species.lava_eel", "species.ghost_lanternfish"]) {
+      expect(moon).toContain(id);
+      expect(sunrise).not.toContain(id);
+    }
+    expect(content.speciesById.get("species.copper_mullet")!.rareUpgrade?.to).toBe("species.bronze_mullet");
+    expect(content.speciesById.get("species.amber_snapper")!.rareUpgrade?.to).toBe("species.ruby_snapper");
+    expect(content.speciesById.get("species.dawn_anchovy")!.rareUpgrade?.to).toBe("species.silver_dawn_anchovy");
+    expect(content.speciesById.get("species.ghost_lanternfish")!.rareUpgrade?.to).toBe("species.prism_lanternfish");
+    for (const sp of content.raw.species) {
+      expect(sp.asset).toMatch(/^models\/fish_.+\.glb$/);
+    }
   });
 
   it("fishing only rolls species that fit the bag", () => {
@@ -395,7 +423,7 @@ describe("simulation", () => {
     const sim = newSim();
     const h = sim.harbor;
     expect(h.customerPathWaypoints.length).toBeGreaterThan(0);
-    expect(content.contentVersion).toBe("0.22.0");
+    expect(content.contentVersion).toBe("0.26.0");
     const slot = { x: h.counters[0]!.queueAnchor.x, z: h.counters[0]!.queueAnchor.z };
     const path = CustomerSystem.approachPath(h, slot);
     const routed = CustomerSystem.pathWalkTicks(path, h.customerWalkMmPerTick);
@@ -417,7 +445,7 @@ describe("simulation", () => {
 
   it("smoker turns fillets into smoked fillets", () => {
     const sim = newSim();
-    expect(sim.state.machines).toHaveLength(2);
+    expect(sim.state.machines).toHaveLength(3);
     const s = sim.state.machines.find((mm) => mm.stationId === "station.smoker_1")!;
     s.input.add("product.fillet", 1);
     const events = Array.from({ length: 200 }, () => checkedStep(sim)).flat();
@@ -427,6 +455,94 @@ describe("simulation", () => {
     expect(started[0]).toMatchObject({ recipeId: "recipe.smoke_fillet", stationId: "station.smoker_1" });
     expect(done[0]!.tick - started[0]!.tick).toBe(150);
     expect(s.output.quantity("product.smoked_fillet")).toBe(1);
+  });
+
+  it("harbor grill unlocks as a second production line", () => {
+    expect(content.contentVersion).toBe("0.26.0");
+    expect(content.machinesById.has("machine.harbor_grill")).toBe(true);
+    expect(content.upgradesById.get("upgrade.harbor_grill")!.effect).toEqual({
+      kind: "unlock_machine", machine: "machine.harbor_grill",
+    });
+    for (const harborId of ["harbor.sunrise_pier", "harbor.moon_cove"]) {
+      const grill = content.harborsById.get(harborId)!.stations.find((s) => s.machine === "machine.harbor_grill")!;
+      expect(grill.requiresUpgrade).toBe("upgrade.harbor_grill");
+    }
+
+    const sim = newSim();
+    const grill = sim.state.machines.find((m) => m.stationId === "station.grill_1")!;
+    expect(grill).toBeTruthy();
+    checkedStep(sim);
+    expect(grill.status).toBe("LOCKED");
+    walkTo(sim, 10700, -4000);
+    expect(sim.state.player.zoneId).toBe("zone.grill_in");
+    sim.state.player.bag.add("species.copper_mullet", 1);
+    for (let i = 0; i < 20; i++) checkedStep(sim);
+    expect(grill.input.isEmpty()).toBe(true);
+    expect(sim.state.player.bag.quantity("species.copper_mullet")).toBe(1);
+
+    sim.state.completedQuests.add("quest.fill_the_hold");
+    sim.state.coins = 200;
+    const bought = checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.harbor_grill", requestId: "grill-1" }]);
+    expect(bought.some((e) => e.type === "upgrade_purchased" && !(e as { replayed?: boolean }).replayed)).toBe(true);
+
+    for (let i = 0; i < 30; i++) checkedStep(sim);
+    expect(sim.state.player.bag.quantity("species.copper_mullet")).toBe(0);
+    grill.preferredRecipeId = "recipe.grill_mullet";
+    for (let i = 0; i < 150; i++) checkedStep(sim);
+    expect(grill.output.quantity("product.grilled_fillet")).toBe(2);
+  });
+
+  it("product recipe tree supports multi-input and intermediate crafts", () => {
+    expect(content.contentVersion).toBe("0.26.0");
+    expect(content.raw.products.map((p) => p.id)).toEqual(expect.arrayContaining([
+      "product.diced_fish", "product.skewer", "product.soup_stock", "product.ice_packed_crate",
+    ]));
+    for (const harbor of content.raw.harbors) {
+      for (const counter of harbor.counters) {
+        expect(counter.products).toEqual(expect.arrayContaining([
+          "product.skewer", "product.soup_stock", "product.ice_packed_crate", "product.diced_fish",
+        ]));
+      }
+    }
+
+    const sim = newSim();
+    const cutter = sim.state.machines.find((mm) => mm.stationId === "station.cutter_1")!;
+    cutter.preferredRecipeId = "recipe.dice_sprat";
+    cutter.input.add("species.silver_sprat", 1);
+    for (let i = 0; i < 90; i++) checkedStep(sim);
+    expect(cutter.output.quantity("product.diced_fish")).toBe(2);
+
+    cutter.preferredRecipeId = "recipe.harbor_skewers";
+    // Move diced into input for the next craft.
+    cutter.input.add("product.diced_fish", cutter.output.quantity("product.diced_fish"));
+    cutter.output.remove("product.diced_fish", cutter.output.quantity("product.diced_fish"));
+    for (let i = 0; i < 120; i++) checkedStep(sim);
+    expect(cutter.output.quantity("product.skewer")).toBe(2);
+    expect(cutter.input.isEmpty()).toBe(true);
+
+    cutter.preferredRecipeId = "recipe.mixed_grill_skewers";
+    cutter.input.add("species.blue_mackerel", 1);
+    cutter.input.add("species.harbor_herring", 1);
+    for (let i = 0; i < 140; i++) checkedStep(sim);
+    expect(cutter.output.quantity("product.skewer")).toBe(4);
+
+    cutter.preferredRecipeId = "recipe.diced_soup";
+    cutter.input.add("product.diced_fish", 2);
+    for (let i = 0; i < 100; i++) checkedStep(sim);
+    expect(cutter.output.quantity("product.soup_stock")).toBe(1);
+
+    const smoker = sim.state.machines.find((mm) => mm.stationId === "station.smoker_1")!;
+    smoker.preferredRecipeId = "recipe.ice_pack_catch";
+    smoker.input.add("species.amber_snapper", 1);
+    smoker.input.add("species.blue_mackerel", 1);
+    for (let i = 0; i < 170; i++) checkedStep(sim);
+    expect(smoker.output.quantity("product.ice_packed_crate")).toBe(1);
+    expect(smoker.input.isEmpty()).toBe(true);
+
+    smoker.preferredRecipeId = "recipe.ice_pack_diced";
+    smoker.input.add("product.diced_fish", 3);
+    for (let i = 0; i < 150; i++) checkedStep(sim);
+    expect(smoker.output.quantity("product.ice_packed_crate")).toBe(2);
   });
 
   it("catch speed upgrade shortens cast duration", () => {
@@ -522,8 +638,9 @@ describe("simulation", () => {
     expect(ProductionSystem.cyclePreferredRecipe(content, m)).toBe("recipe.basic_portions");
     expect(ProductionSystem.cyclePreferredRecipe(content, m)).toBe("recipe.herring_portions");
     let guard = 0;
+    const recipeCount = content.machinesById.get(m.machineId)!.recipes.length;
     while (ProductionSystem.cyclePreferredRecipe(content, m) !== null) {
-      expect(++guard).toBeLessThan(20);
+      expect(++guard).toBeLessThan(recipeCount + 2);
     }
     expect(m.preferredRecipeId).toBeNull();
   });
@@ -619,7 +736,7 @@ describe("simulation", () => {
 
   it("hire fisher and porter is idempotent and shows staff", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("0.22.0");
+    expect(content.contentVersion).toBe("0.26.0");
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.fisher")).toBe(true);
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.operator")).toBe(true);
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.cashier")).toBe(true);
@@ -1007,7 +1124,9 @@ describe("simulation", () => {
     sim.state.coins = 50;
     sim.state.maintenanceAccrualTicks = content.economy.maintenancePeriodTicks - 1;
     const maint = checkedStep(sim);
-    const stations = sim.harbor.stations.length;
+    // Locked grill stations are not billed until unlock_machine is owned.
+    const stations = sim.harbor.stations.filter((st) => ProductionSystem.isUnlocked(st, sim.state)).length;
+    expect(stations).toBe(2);
     expect(maint.some((e) => e.type === "maintenance_paid" && e.stations === stations && e.coins === 2 * stations)).toBe(true);
     expect(sim.state.coins).toBe(50 - 2 * stations);
     expect(sim.state.stat("stat.maintenance_paid")).toBe(2 * stations);
@@ -1049,9 +1168,42 @@ describe("simulation", () => {
     expect(sim.state.player.bag.quantity(SPRAT)).toBe(0);
   });
 
+  it("spoil tiers prefer fragile counter stock and separate case ice", () => {
+    expect(content.contentVersion).toBe("0.26.0");
+    expect(content.productsById.get("product.basic_portion")!.spoilTier).toBe(3);
+    expect(content.productsById.get("product.smoked_fillet")!.spoilTier).toBe(1);
+    expect(content.speciesById.get(SPRAT)!.spoilTier).toBe(3);
+
+    const sim = newSim();
+    sim.state.completedQuests.add("quest.first_ten_sales");
+    const counter = sim.state.counters[0]!;
+    sim.state.customers.length = 0;
+    counter.stock.restore({}, {});
+    counter.stock.add("product.smoked_fillet", 2);
+    counter.stock.add(PORTION, 2);
+    sim.state.counterSpoilAccrualTicks = content.economy.counterSpoilPeriodTicks - 1;
+    const spoiled = checkedStep(sim);
+    const spoilEvt = spoiled.find((e) => e.type === "items_spoiled" && e.location === "counter")!;
+    expect(spoilEvt).toMatchObject({ items: [{ item: PORTION, quantity: 1 }] });
+    expect(counter.stock.quantity(PORTION)).toBe(1);
+    expect(counter.stock.quantity("product.smoked_fillet")).toBe(2);
+
+    sim.state.coins = 200;
+    checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.display_case_ice", requestId: "case-1" }]);
+    expect(sim.state.counterSpoilPeriodMultPermille).toBe(2000);
+    expect(sim.state.bagSpoilPeriodMultPermille).toBe(1000);
+    counter.stock.add(PORTION, 1);
+    sim.state.counterSpoilAccrualTicks = 0;
+    for (let i = 0; i < content.economy.counterSpoilPeriodTicks; i++) checkedStep(sim);
+    expect(counter.stock.quantity(PORTION)).toBe(2);
+    sim.state.counterSpoilAccrualTicks = content.economy.counterSpoilPeriodTicks * 2 - 1;
+    checkedStep(sim);
+    expect(counter.stock.quantity(PORTION)).toBe(1);
+  });
+
   it("prestige stays locked until busy harbor, then grants bonuses and cosmetics", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("0.22.0");
+    expect(content.contentVersion).toBe("0.26.0");
     const locked = buildView(sim);
     expect(locked.prestigeUnlocked).toBe(false);
     expect(locked.prestigeLockedReason).toBe("Requires: Busy harbor");

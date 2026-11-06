@@ -80,6 +80,8 @@ data class SpeciesDef(
     val rarityWeight: Int,
     val asset: String?,
     val rareUpgrade: RareUpgradeDef? = null,
+    /** Bag spoil priority: 3 fragile first, 1 hardy last. */
+    val spoilTier: Int = 2,
 )
 
 data class ProductDef(
@@ -88,6 +90,8 @@ data class ProductDef(
     val carryUnits: Int,
     val unitPrice: Long,
     val asset: String?,
+    /** Counter spoil priority: 3 fragile first, 1 preserved last. */
+    val spoilTier: Int = 2,
 )
 
 data class ItemQuantity(val item: String, val quantity: Int)
@@ -117,6 +121,8 @@ sealed interface UpgradeEffect {
     data class FishRegen(val speedPermille: Int) : UpgradeEffect
     /** Ownership unlocks the fishing spot for [zone]; apply is a no-op. */
     data class UnlockFishingSpot(val zone: String) : UpgradeEffect
+    /** Ownership unlocks stations whose machine is [machine]; apply is a no-op. */
+    data class UnlockMachine(val machine: String) : UpgradeEffect
     /** Staff walk-speed multiplier in permille (1250 = 25% faster). */
     data class WorkerMoveSpeed(val speedPermille: Int) : UpgradeEffect
     /** Minimum bag capacity for hired staff. */
@@ -129,6 +135,8 @@ sealed interface UpgradeEffect {
     data class MaintenanceDiscount(val coinsOffPerStation: Int) : UpgradeEffect
     /** Multiplies bag fish spoilage period (2000 = half as fast). */
     data class BagSpoilResist(val periodMultPermille: Int) : UpgradeEffect
+    /** Multiplies counter product spoilage period (2000 = half as fast). */
+    data class CounterSpoilResist(val periodMultPermille: Int) : UpgradeEffect
 }
 
 data class UpgradeDef(
@@ -329,7 +337,13 @@ data class FishingSpotDef(
     val requiresUpgrade: String? = null,
 )
 
-data class StationDef(val id: String, val machine: String, val inputZone: String, val outputZone: String)
+data class StationDef(
+    val id: String,
+    val machine: String,
+    val inputZone: String,
+    val outputZone: String,
+    val requiresUpgrade: String? = null,
+)
 
 data class CounterDef(
     val id: String,

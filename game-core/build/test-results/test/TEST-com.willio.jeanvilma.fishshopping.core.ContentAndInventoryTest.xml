@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.willio.jeanvilma.fishshopping.core.ContentAndInventoryTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-06T19:19:22.744Z" hostname="Mac" time="0.016">
+<testsuite name="com.willio.jeanvilma.fishshopping.core.ContentAndInventoryTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-06T21:24:25.468Z" hostname="Mac" time="0.01">
   <properties/>
-  <testcase name="sharedContentPackIsValid" classname="com.willio.jeanvilma.fishshopping.core.ContentAndInventoryTest" time="0.001"/>
+  <testcase name="sharedContentPackIsValid" classname="com.willio.jeanvilma.fishshopping.core.ContentAndInventoryTest" time="0.0"/>
   <testcase name="transferMovesMinOfAvailableFreeAndRequested" classname="com.willio.jeanvilma.fishshopping.core.ContentAndInventoryTest" time="0.001"/>
   <testcase name="multiUnitItemsRespectCapacity" classname="com.willio.jeanvilma.fishshopping.core.ContentAndInventoryTest" time="0.0"/>
-  <testcase name="validatorReportsBrokenReferencesAndCycles" classname="com.willio.jeanvilma.fishshopping.core.ContentAndInventoryTest" time="0.012"/>
-  <testcase name="reservedStockCannotBeTakenTwice" classname="com.willio.jeanvilma.fishshopping.core.ContentAndInventoryTest" time="0.001"/>
+  <testcase name="validatorReportsBrokenReferencesAndCycles" classname="com.willio.jeanvilma.fishshopping.core.ContentAndInventoryTest" time="0.009"/>
+  <testcase name="reservedStockCannotBeTakenTwice" classname="com.willio.jeanvilma.fishshopping.core.ContentAndInventoryTest" time="0.0"/>
   <testcase name="wrongItemTypeChangesNothing" classname="com.willio.jeanvilma.fishshopping.core.ContentAndInventoryTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

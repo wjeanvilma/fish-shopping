@@ -43,4 +43,17 @@ class CoachingTest {
         state.bumpStat(Stats.MACHINE_INPUTS, 2)
         assertNull(Coaching.emptyStateTip(Shared.content, state))
     }
+
+    @Test
+    fun warnsAboutFragileCounterSpoilPressure() {
+        val state = GameState.newGame(Shared.content, HARBOR, 1)
+        state.tutorialIndex = Shared.content.tutorial.size
+        state.completedQuests.addAll(Shared.content.quests.map { it.id })
+        state.bumpStat(Stats.FISH_CAUGHT, 5)
+        state.bumpStat(Stats.MACHINE_INPUTS, 2)
+        state.counters.single().stock.add("product.basic_portion", 2)
+        val tip = Coaching.emptyStateTip(Shared.content, state)
+        assertNotNull(tip)
+        assertTrue(tip!!.contains("display case ice", ignoreCase = true))
+    }
 }

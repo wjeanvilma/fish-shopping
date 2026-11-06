@@ -125,4 +125,4 @@ stacks (bag, cutter input/output, counter) and walking customers are visible on 
 clients. Quality presets (Phase 29) scale render cost; Phase 30 ships tutorial/empty-state
 coaching, title funnel, store listing copy (`shared/store/listing.json`), save recovery
 audit tests, and a release fixture pin (`shared/fixtures/RELEASE_PIN.json`). The sim stays
-fixed at 20 Hz. Search for `TODO(blueprint` in the code.
+fixed at 20 Hz. Phase 31 streams harbor GLBs on demand and distance-fades Zone pads.

@@ -6,6 +6,7 @@ import com.willio.jeanvilma.fishshopping.core.content.WorkerRoleKind
 import com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
 import com.willio.jeanvilma.fishshopping.core.inventory.Inventory
 import com.willio.jeanvilma.fishshopping.core.inventory.Transfers
+import com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
 import com.willio.jeanvilma.fishshopping.core.sim.CounterState
 import com.willio.jeanvilma.fishshopping.core.sim.FishingSpotState
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
@@ -540,6 +541,7 @@ object WorkerSystem {
         var best: HaulOffer? = null
         for (m in ctx.state.machines.sortedBy { it.stationId }) {
             val station = ctx.harbor.stations.first { it.id == m.stationId }
+            if (!ProductionSystem.isUnlocked(station, ctx.state)) continue
             val zone = ctx.harbor.zonesById.getValue(station.outputZone)
             for ((itemId, _) in m.output.contents()) {
                 if (!cdef.accepts(itemId)) continue
@@ -568,12 +570,15 @@ object WorkerSystem {
         var best: HaulOffer? = null
         for (src in ctx.state.machines.sortedBy { it.stationId }) {
             val srcStation = ctx.harbor.stations.first { it.id == src.stationId }
+            if (!ProductionSystem.isUnlocked(srcStation, ctx.state)) continue
             val zone = ctx.harbor.zonesById.getValue(srcStation.outputZone)
             for ((itemId, _) in src.output.contents()) {
                 if (src.output.available(itemId) < 1) continue
                 if (w.bag.roomFor(itemId) < 1) continue
                 for (dst in ctx.state.machines.sortedBy { it.stationId }) {
                     if (dst.stationId == src.stationId) continue
+                    val dstStation = ctx.harbor.stations.first { it.id == dst.stationId }
+                    if (!ProductionSystem.isUnlocked(dstStation, ctx.state)) continue
                     val accepted = acceptedInputs(ctx, dst.machineId)
                     if (itemId !in accepted) continue
                     if (!destHasRoom(ctx, dst.input, itemId, w.id)) continue
@@ -615,7 +620,9 @@ object WorkerSystem {
     /** Porter leaves intermediates to operators unless a supervisor overrides for counter demand. */
     private fun porterMayHaul(ctx: StepContext, itemId: String, supervisor: Boolean): Boolean {
         val machineWants = ctx.state.machines.any { m ->
-            itemId in acceptedInputs(ctx, m.machineId) && destHasRoom(ctx, m.input, itemId, exceptWorkerId = "")
+            val station = ctx.harbor.stations.first { it.id == m.stationId }
+            ProductionSystem.isUnlocked(station, ctx.state) &&
+                itemId in acceptedInputs(ctx, m.machineId) && destHasRoom(ctx, m.input, itemId, exceptWorkerId = "")
         }
         if (!machineWants) return true
         if (!supervisor) return false
@@ -706,7 +713,9 @@ object WorkerSystem {
 
     private fun machineHungryFor(ctx: StepContext, itemId: String): Boolean =
         ctx.state.machines.any { m ->
-            itemId in acceptedInputs(ctx, m.machineId) && m.input.roomFor(itemId) >= 1
+            val station = ctx.harbor.stations.first { it.id == m.stationId }
+            ProductionSystem.isUnlocked(station, ctx.state) &&
+                itemId in acceptedInputs(ctx, m.machineId) && m.input.roomFor(itemId) >= 1
         }
 
     private fun acceptedInputs(ctx: StepContext, machineId: String): Set<String> =
@@ -715,10 +724,11 @@ object WorkerSystem {
 
     private fun findMachineInputForBag(ctx: StepContext, w: WorkerState): Triple<MachineState, PointMm, String>? {
         for (m in ctx.state.machines.sortedBy { it.stationId }) {
+            val station = ctx.harbor.stations.first { it.id == m.stationId }
+            if (!ProductionSystem.isUnlocked(station, ctx.state)) continue
             val accepted = acceptedInputs(ctx, m.machineId)
             val has = w.bag.contents().keys.any { it in accepted && destHasRoom(ctx, m.input, it, w.id) }
             if (!has) continue
-            val station = ctx.harbor.stations.first { it.id == m.stationId }
             val zone = ctx.harbor.zonesById.getValue(station.inputZone)
             return Triple(m, PointMm(zone.rect.centerX, zone.rect.centerZ), station.inputZone)
         }

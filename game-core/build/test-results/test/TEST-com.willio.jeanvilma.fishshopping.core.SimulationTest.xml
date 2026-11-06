@@ -1,62 +1,66 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.willio.jeanvilma.fishshopping.core.SimulationTest" tests="56" skipped="0" failures="0" errors="0" timestamp="2026-11-06T19:19:22.774Z" hostname="Mac" time="0.396">
+<testsuite name="com.willio.jeanvilma.fishshopping.core.SimulationTest" tests="60" skipped="0" failures="0" errors="0" timestamp="2026-11-06T21:24:25.492Z" hostname="Mac" time="0.603">
   <properties/>
-  <testcase name="questChainLocksRewardsAndShowsLog" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.007"/>
-  <testcase name="prestigeStaysLockedUntilBusyHarborThenGrantsBonusesAndCosmetics" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.002"/>
-  <testcase name="unmetPreferenceLowersPayAndShowsSubstituting" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.005"/>
-  <testcase name="customerAbandonmentReturnsStockAndRecordsNoRevenue" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.021"/>
+  <testcase name="questChainLocksRewardsAndShowsLog" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.014"/>
+  <testcase name="prestigeStaysLockedUntilBusyHarborThenGrantsBonusesAndCosmetics" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.005"/>
+  <testcase name="unmetPreferenceLowersPayAndShowsSubstituting" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.007"/>
+  <testcase name="customerAbandonmentReturnsStockAndRecordsNoRevenue" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.025"/>
   <testcase name="emptyPierShowsSoftFeedbackInView" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
   <testcase name="workerUpgradesBoostCarryCatchAndChargeWages" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.002"/>
   <testcase name="customersWalkInBeforeTheyCanBeServed" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.004"/>
-  <testcase name="sidePierLockedUntilUpgradeThenFishes" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.002"/>
+  <testcase name="sidePierLockedUntilUpgradeThenFishes" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.003"/>
   <testcase name="cyclePreferredRecipeRotatesAutoAndRecipes" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
-  <testcase name="pierCatchTableProducesMultipleSpecies" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.033"/>
-  <testcase name="operatorTakesIntermediatesBeforePorterWithoutSupervisor" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.038"/>
+  <testcase name="pierCatchTableProducesMultipleSpecies" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.035"/>
+  <testcase name="speciesRosterIsHarborGatedWithRareUpgradeChains" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
+  <testcase name="operatorTakesIntermediatesBeforePorterWithoutSupervisor" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.047"/>
   <testcase name="emptySpotRegenUsesSlowerCurveThanNearFull" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
   <testcase name="snapshotEnvelopeCarriesSavedAtWithoutBreakingChecksum" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.002"/>
   <testcase name="haulLeaseExpiryReleasesReservation" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
-  <testcase name="productLadderProducesFilletAndPremiumAndSellsMixedStock" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.006"/>
-  <testcase name="walkingToPierFillsBagThenStops" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.006"/>
-  <testcase name="cashierServesCustomersWithoutPlayerAtCounter" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.024"/>
+  <testcase name="productLadderProducesFilletAndPremiumAndSellsMixedStock" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.008"/>
+  <testcase name="walkingToPierFillsBagThenStops" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.01"/>
+  <testcase name="cashierServesCustomersWithoutPlayerAtCounter" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.033"/>
+  <testcase name="productRecipeTreeSupportsMultiInputAndIntermediateCrafts" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.005"/>
   <testcase name="obstaclesBlockMovement" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
-  <testcase name="destinationCapacityBlocksOverclaim" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.016"/>
+  <testcase name="destinationCapacityBlocksOverclaim" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.023"/>
   <testcase name="speedUpgradeAppliesToNextBatchOnly" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
   <testcase name="rushWindowsSpikeSpawnRateAndShowBanner" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
-  <testcase name="operatorHaulsFilletFromCutterToSmoker" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.021"/>
-  <testcase name="outputFullStatusNamesBlockedProducts" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
-  <testcase name="smokerTurnsFilletsIntoSmokedFillets" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
+  <testcase name="operatorHaulsFilletFromCutterToSmoker" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.046"/>
+  <testcase name="outputFullStatusNamesBlockedProducts" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
+  <testcase name="smokerTurnsFilletsIntoSmokedFillets" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
   <testcase name="corruptAndNewerSavesAreRefused" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
+  <testcase name="spoilTiersPreferFragileCounterStockAndSeparateCaseIce" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.015"/>
   <testcase name="smokerPadsTransferFilletInAndSmokedOut" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.002"/>
-  <testcase name="schemaOneSaveMigratesWithCustomersAlreadyQueued" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.002"/>
+  <testcase name="schemaOneSaveMigratesWithCustomersAlreadyQueued" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.003"/>
   <testcase name="unmetPreferenceDrainsPatienceFasterWhilePreferredIsOut" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
   <testcase name="fullOutputBlocksWithoutLosingInputs" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
   <testcase name="batchProducesOutputExactlyOnceAfterDuration" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
   <testcase name="moonCoveUnlocksAfterBusyHarborAndTravelStashesWorld" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.002"/>
   <testcase name="offlineApplyRunsWorkersWithoutPlayerZoneActions" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.003"/>
   <testcase name="walkingCustomersDoNotLosePatienceOrReserveStock" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
-  <testcase name="rushEndEmitsEventAndClearsBanner" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
+  <testcase name="rushEndEmitsEventAndClearsBanner" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
   <testcase name="hireFisherAndPorterIsIdempotentAndShowsStaffPanel" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
-  <testcase name="servingAtCounterCommitsEachSaleOnce" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.004"/>
-  <testcase name="filletAndSmokerDurationUpgradesApplyToNextBatch" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
-  <testcase name="restaurantBuyerUsesBulkBasketAndCounterShowsKind" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
-  <testcase name="premiumVisitorPaysTipMultiplier" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
-  <testcase name="economySinksUnlockAfterFirstTenSalesAndChargeOrSpoil" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.014"/>
-  <testcase name="porterHaulsMachineOutputToCounter" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.015"/>
-  <testcase name="supervisorLetsPorterHaulIntermediatesWhenCounterDemands" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.112"/>
-  <testcase name="fishingOnlyRollsSpeciesThatFitTheBag" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.002"/>
+  <testcase name="servingAtCounterCommitsEachSaleOnce" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.007"/>
+  <testcase name="filletAndSmokerDurationUpgradesApplyToNextBatch" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.002"/>
+  <testcase name="restaurantBuyerUsesBulkBasketAndCounterShowsKind" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
+  <testcase name="premiumVisitorPaysTipMultiplier" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
+  <testcase name="economySinksUnlockAfterFirstTenSalesAndChargeOrSpoil" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.031"/>
+  <testcase name="porterHaulsMachineOutputToCounter" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.033"/>
+  <testcase name="supervisorLetsPorterHaulIntermediatesWhenCounterDemands" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.167"/>
+  <testcase name="fishingOnlyRollsSpeciesThatFitTheBag" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.003"/>
   <testcase name="customerRosterDefinesProductPreferences" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
   <testcase name="transferAnchorsCoverBagPadsAndCounter" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
   <testcase name="purchaseIsValidatedAndRetrySafe" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
   <testcase name="preferredRecipeLocksOutOtherReadyInputs" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
   <testcase name="fishRegenUpgradeShortensRestockWait" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
-  <testcase name="catchSpeedUpgradeShortensCastDuration" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
-  <testcase name="contractsStayLockedUntilFirstTenSalesThenPayOutOrPenalize" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
-  <testcase name="fisherCatchesFishAndDeliversToCutter" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.031"/>
-  <testcase name="preferredProductIsReservedFirstAndPaysFullPrice" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
-  <testcase name="perfectReelFinishesCastEarlyAndPaysTimingBonus" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
+  <testcase name="catchSpeedUpgradeShortensCastDuration" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
+  <testcase name="contractsStayLockedUntilFirstTenSalesThenPayOutOrPenalize" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.002"/>
+  <testcase name="harborGrillUnlocksAsSecondProductionLine" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
+  <testcase name="fisherCatchesFishAndDeliversToCutter" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.048"/>
+  <testcase name="preferredProductIsReservedFirstAndPaysFullPrice" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
+  <testcase name="perfectReelFinishesCastEarlyAndPaysTimingBonus" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
   <testcase name="customerApproachFollowsWaypointsAroundObstacles" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
   <testcase name="customerRosterIncludesPremiumAndBulkKinds" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
-  <testcase name="reloadDuringCuttingResumesAndOutputsOnce" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.001"/>
+  <testcase name="reloadDuringCuttingResumesAndOutputsOnce" classname="com.willio.jeanvilma.fishshopping.core.SimulationTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
