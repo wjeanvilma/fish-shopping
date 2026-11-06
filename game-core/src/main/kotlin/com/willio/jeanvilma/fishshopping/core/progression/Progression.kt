@@ -75,6 +75,9 @@ object UpgradeSystem {
                 }
             is UpgradeEffect.CatchSpeed ->
                 s.player.catchSpeedPermille = maxOf(s.player.catchSpeedPermille, effect.speedPermille)
+            is UpgradeEffect.FishRegen ->
+                s.player.fishRegenPermille = maxOf(s.player.fishRegenPermille, effect.speedPermille)
+            is UpgradeEffect.UnlockFishingSpot -> Unit // gated by ownedUpgrades in FishingSystem
         }
     }
 }

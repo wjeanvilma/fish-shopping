@@ -25,6 +25,7 @@ data class ContentPack(
     val machinesById = machines.associateBy { it.id }
     val upgradesById = upgrades.associateBy { it.id }
     val questsById = quests.associateBy { it.id }
+    val customersById = customers.associateBy { it.id }
     val harborsById = harbors.associateBy { it.id }
 
     /** Carry units for any item (species or product). Throws on unknown IDs. */
@@ -46,6 +47,8 @@ data class PlayerDef(
     val transferIntervalTicks: Int,
     /** 1000 = normal catch duration; higher finishes casts faster. */
     val startCatchSpeedPermille: Int,
+    /** 1000 = normal spot regen; higher restocks empty spots faster. */
+    val startFishRegenPermille: Int,
     /** Cast progress (0..1000) where the Reel timing window opens. */
     val timingWindowStartPermille: Int,
     /** Cast progress (0..1000) where the Reel timing window closes (exclusive). */
@@ -96,6 +99,10 @@ sealed interface UpgradeEffect {
     data class RecipeDuration(val machine: String, val recipe: String, val durationTicks: Int) : UpgradeEffect
     /** Catch speed multiplier in permille (1250 = 25% faster). */
     data class CatchSpeed(val speedPermille: Int) : UpgradeEffect
+    /** Spot regen multiplier in permille (1250 = 25% faster restock). */
+    data class FishRegen(val speedPermille: Int) : UpgradeEffect
+    /** Ownership unlocks the fishing spot for [zone]; apply is a no-op. */
+    data class UnlockFishingSpot(val zone: String) : UpgradeEffect
 }
 
 data class UpgradeDef(
@@ -112,13 +119,34 @@ data class StatGoal(val stat: String, val atLeast: Long)
 
 data class QuestDef(val id: String, val name: String, val goal: StatGoal)
 
+enum class CustomerKind(val wire: String) {
+    STANDARD("standard"),
+    PREMIUM("premium"),
+    BULK("bulk");
+
+    companion object {
+        fun fromWire(s: String) = entries.firstOrNull { it.wire == s }
+    }
+}
+
+data class ProductWeight(val item: String, val weight: Int)
+
 data class CustomerDef(
     val id: String,
     val name: String,
+    val kind: CustomerKind,
     val basketMin: Int,
     val basketMax: Int,
     val patienceTicks: Int,
     val spawnWeight: Int,
+    /** Sale multiplier in permille (1500 = +50% for premium visitors). */
+    val priceMultPermille: Int,
+    /** Weighted demand table; empty means any accepted counter product. */
+    val preferredProducts: List<ProductWeight>,
+    /** Applied on top of [priceMultPermille] when the basket is not all preferred product. */
+    val unmetPriceMultPermille: Int,
+    /** Patience drain per tick while preferred stock is missing (2000 = 2×). */
+    val unmetPatienceDrainPermille: Int,
 )
 
 sealed interface TutorialTrigger {
@@ -147,7 +175,16 @@ enum class ZoneKind(val wire: String) {
 
 data class ZoneDef(val id: String, val kind: ZoneKind, val rect: RectMm)
 
-data class FishingSpotDef(val zone: String, val species: List<String>, val stockMax: Int, val regenTicks: Int)
+data class FishingSpotDef(
+    val zone: String,
+    val species: List<String>,
+    val stockMax: Int,
+    val regenTicks: Int,
+    /** Duration multipliers at stock ratios 0..1 (length >= 2). Empty spots take longer. */
+    val regenCurvePermille: List<Int>,
+    /** When set, the spot cannot be fished until this upgrade is owned. */
+    val requiresUpgrade: String? = null,
+)
 
 data class StationDef(val id: String, val machine: String, val inputZone: String, val outputZone: String)
 
@@ -168,6 +205,24 @@ data class CounterDef(
     fun queueSlot(index: Int) = PointMm(queueAnchor.x + index * queueStep.x, queueAnchor.z + index * queueStep.z)
 }
 
+/**
+ * Periodic customer rush. Active when `(tick % periodTicks)` is in
+ * `[startTick, startTick + durationTicks)`. Windows must not wrap the period.
+ */
+data class RushWindowDef(
+    val id: String,
+    val name: String,
+    val periodTicks: Int,
+    val startTick: Int,
+    val durationTicks: Int,
+    /** Spawn rate multiplier (1000 = normal). */
+    val spawnSpeedPermille: Int,
+    /** Extra counter queue slots while active. */
+    val queueBonus: Int,
+) {
+    val endTick: Int get() = startTick + durationTicks
+}
+
 data class HarborDef(
     val id: String,
     val name: String,
@@ -182,6 +237,13 @@ data class HarborDef(
     /** Where customers enter and leave the harbor. */
     val customerEntry: PointMm,
     val customerWalkMmPerTick: Int,
+    /**
+     * Intermediate points on the customer approach polyline
+     * (entry → waypoints → queue slot). Empty = straight line.
+     */
+    val customerPathWaypoints: List<PointMm> = emptyList(),
+    val rushes: List<RushWindowDef> = emptyList(),
 ) {
     val zonesById = zones.associateBy { it.id }
+    val rushesById = rushes.associateBy { it.id }
 }

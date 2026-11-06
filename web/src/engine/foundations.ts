@@ -17,8 +17,10 @@ export const CHECKPOINT_INTERVAL_TICKS = 30 * TICKS_PER_SECOND;
  * 2: customers carry walking state.
  * 3: customers store reservedItems (multi-SKU baskets); counters accept product lists.
  * 4: player stores fishingCatchTicks + reelAttemptedThisCast for mid-cast resume.
+ * 5: machines store preferredRecipeId for multi-recipe selection.
+ * 6: customers store preferredProductId for product demand.
  */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 6;
 
 /** Kotlin-style integer division (truncates toward zero). */
 export function idiv(a: number, b: number): number {

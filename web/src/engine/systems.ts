@@ -2,7 +2,7 @@
  * Per-tick systems. Each function mirrors the Kotlin object of the same name in game-core;
  * keep them line-for-line comparable so fixture mismatches are easy to trace.
  */
-import type { ContentPack, HarborDef, ItemQuantity, PointMm, RecipeDef, UpgradeDef, UpgradeEffect } from "./content";
+import type { ContentPack, HarborDef, ItemQuantity, PointMm, RecipeDef, RushWindowDef, UpgradeDef, UpgradeEffect } from "./content";
 import { queueSlot, rectContains } from "./content";
 import { INPUT_SCALE, SafeMath, idiv } from "./foundations";
 import { Inventory, Transfers } from "./inventory";
@@ -119,6 +119,12 @@ export const FishingSystem = {
     const spotDef = ctx.harbor.fishingSpots.find((f) => f.zone === zone.id)!;
     const spot = s.fishingSpots.find((f) => f.zoneId === zone.id)!;
 
+    if (!FishingSystem.isUnlocked(spotDef, s)) {
+      FishingSystem.clearCast(p);
+      p.reelRequested = false;
+      return;
+    }
+
     if (p.fishingSpecies === null) {
       if (spot.stock <= 0) { p.reelRequested = false; return; }
       const candidates = spotDef.species.map((id) => ctx.content.speciesById.get(id)!)
@@ -160,6 +166,10 @@ export const FishingSystem = {
     FishingSystem.clearCast(p);
   },
 
+  isUnlocked(def: { requiresUpgrade?: string | null }, state: GameState): boolean {
+    return !def.requiresUpgrade || state.ownedUpgrades.has(def.requiresUpgrade);
+  },
+
   catchTicksFor(catchSpeedPermille: number, baseCatchTicks: number): number {
     return Math.max(1, idiv(baseCatchTicks * 1000, catchSpeedPermille));
   },
@@ -168,6 +178,30 @@ export const FishingSystem = {
     if (duration <= 0) return false;
     const permille = idiv(progress * 1000, duration);
     return permille >= startPermille && permille < endPermille;
+  },
+
+  curveMultPermille(curve: readonly number[], stock: number, stockMax: number): number {
+    if (curve.length < 2) throw new Error("regenCurvePermille needs >= 2 entries");
+    if (stockMax <= 0) return curve[0]!;
+    const stockC = Math.max(0, Math.min(stock, stockMax));
+    const t = idiv(stockC * 1000, stockMax);
+    const last = curve.length - 1;
+    const scaled = t * last;
+    const i0 = Math.max(0, Math.min(idiv(scaled, 1000), last - 1));
+    const frac = scaled % 1000;
+    const a = curve[i0]!;
+    const b = curve[i0 + 1]!;
+    return a + idiv((b - a) * frac, 1000);
+  },
+
+  regenTicksFor(
+    def: { stockMax: number; regenTicks: number; regenCurvePermille: readonly number[] },
+    stock: number,
+    fishRegenPermille: number,
+  ): number {
+    const mult = FishingSystem.curveMultPermille(def.regenCurvePermille, stock, def.stockMax);
+    const base = idiv(def.regenTicks * mult, 1000);
+    return Math.max(1, idiv(base * 1000, fishRegenPermille));
   },
 
   commitCatch(ctx: StepContext, zoneId: string, spotZoneId: string, rolledSpeciesId: string, timingBonus: boolean): void {
@@ -200,6 +234,9 @@ export const FishingSystem = {
         type: "fish_caught", tick: s.tick, speciesId: finalSpecies.id, zoneId,
         timingBonus, rareUpgrade: rare,
       });
+      if (spot.stock === 0) {
+        ctx.emit({ type: "fishing_spot_depleted", tick: s.tick, zoneId });
+      }
     }
   },
 
@@ -217,7 +254,8 @@ export const FishingSystem = {
         spot.regenProgress = 0;
         continue;
       }
-      if (++spot.regenProgress >= def.regenTicks) {
+      const needed = FishingSystem.regenTicksFor(def, spot.stock, ctx.state.player.fishRegenPermille);
+      if (++spot.regenProgress >= needed) {
         spot.stock++;
         spot.regenProgress = 0;
       }
@@ -235,6 +273,46 @@ export const ProductionSystem = {
     return m.recipeDurations.get(recipe.id) ?? recipe.durationTicks;
   },
 
+  recipeLabel(recipeId: string): string {
+    return recipeId.replace(/^recipe\./, "").split("_")
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+  },
+
+  machineRecipes(content: ContentPack, machineId: string): RecipeDef[] {
+    return content.machinesById.get(machineId)!.recipes.map((id) => content.recipesById.get(id)!);
+  },
+
+  selectableRecipes(content: ContentPack, m: MachineState): RecipeDef[] {
+    const all = ProductionSystem.machineRecipes(content, m.machineId);
+    if (!m.preferredRecipeId) return all;
+    const locked = all.filter((r) => r.id === m.preferredRecipeId);
+    return locked.length > 0 ? locked : all;
+  },
+
+  queuedReady(content: ContentPack, m: MachineState): RecipeDef[] {
+    return ProductionSystem.selectableRecipes(content, m)
+      .filter((r) => r.inputs.every((iq) => m.input.available(iq.item) >= iq.quantity));
+  },
+
+  nextStartable(content: ContentPack, m: MachineState): RecipeDef | null {
+    return ProductionSystem.queuedReady(content, m).find((r) => fits(content, m.output, r.outputs)) ?? null;
+  },
+
+  cyclePreferredRecipe(content: ContentPack, m: MachineState): string | null {
+    const ids = ProductionSystem.machineRecipes(content, m.machineId).map((r) => r.id);
+    if (ids.length === 0) { m.preferredRecipeId = null; return null; }
+    const cur = m.preferredRecipeId;
+    let next: string | null;
+    if (cur === null) next = ids[0]!;
+    else if (!ids.includes(cur)) next = null;
+    else {
+      const i = ids.indexOf(cur);
+      next = i < 0 || i >= ids.length - 1 ? null : ids[i + 1]!;
+    }
+    m.preferredRecipeId = next;
+    return next;
+  },
+
   step(ctx: StepContext): void {
     for (const m of ctx.state.machines) ProductionSystem.stepMachine(ctx, m);
   },
@@ -244,6 +322,10 @@ export const ProductionSystem = {
     if (m.paused) {
       m.status = "PAUSED";
       return;
+    }
+    if (m.preferredRecipeId) {
+      const allowed = ctx.content.machinesById.get(m.machineId)!.recipes;
+      if (!allowed.includes(m.preferredRecipeId)) m.preferredRecipeId = null;
     }
     const batch = m.activeBatch;
     if (batch) {
@@ -262,8 +344,7 @@ export const ProductionSystem = {
       ctx.emit({ type: "batch_completed", tick: s.tick, batchId: batch.id, stationId: m.stationId });
     }
 
-    const recipes = ctx.content.machinesById.get(m.machineId)!.recipes.map((id) => ctx.content.recipesById.get(id)!);
-    const ready = recipes.filter((r) => r.inputs.every((iq) => m.input.available(iq.item) >= iq.quantity));
+    const ready = ProductionSystem.queuedReady(ctx.content, m);
     const startable = ready.find((r) => fits(ctx.content, m.output, r.outputs));
     if (!startable) {
       m.status = ready.length > 0 ? "OUTPUT_FULL" : "WAITING_FOR_INPUT";
@@ -277,13 +358,41 @@ export const ProductionSystem = {
     ctx.emit({ type: "batch_started", tick: s.tick, batchId: next.id, stationId: m.stationId, recipeId: startable.id });
   },
 
-  statusText(m: MachineState): string {
+  statusText(m: MachineState, content: ContentPack): string {
     switch (m.status) {
-      case "WAITING_FOR_INPUT": return "Needs fish";
-      case "PROCESSING": return "Processing";
-      case "OUTPUT_FULL": return "Output full - collect portions";
+      case "WAITING_FOR_INPUT": return ProductionSystem.waitingText(m, content);
+      case "PROCESSING": {
+        const id = m.activeBatch?.recipeId;
+        return id ? `Processing ${ProductionSystem.recipeLabel(id)}` : "Processing";
+      }
+      case "OUTPUT_FULL": return ProductionSystem.outputFullText(m, content);
       case "PAUSED": return "Paused";
     }
+  },
+
+  waitingText(m: MachineState, content: ContentPack): string {
+    const preferred = m.preferredRecipeId ? content.recipesById.get(m.preferredRecipeId) : undefined;
+    if (preferred) {
+      const missing = preferred.inputs
+        .filter((iq) => m.input.available(iq.item) < iq.quantity)
+        .map((iq) => content.itemName(iq.item));
+      return missing.length === 0
+        ? `Waiting: ${ProductionSystem.recipeLabel(preferred.id)}`
+        : `Needs ${missing.join(", ")} for ${ProductionSystem.recipeLabel(preferred.id)}`;
+    }
+    const names = [...new Set(
+      ProductionSystem.machineRecipes(content, m.machineId).flatMap((r) => r.inputs.map((iq) => content.itemName(iq.item))),
+    )];
+    if (names.length === 1) return `Needs ${names[0]}`;
+    return "Needs input";
+  },
+
+  outputFullText(m: MachineState, content: ContentPack): string {
+    const recipe = m.activeBatch
+      ? content.recipesById.get(m.activeBatch.recipeId)
+      : ProductionSystem.queuedReady(content, m)[0];
+    const products = recipe?.outputs.map((o) => content.itemName(o.item)).join(", ");
+    return products ? `Output full — collect ${products}` : "Output full — collect products";
   },
 };
 
@@ -291,6 +400,7 @@ export const ProductionSystem = {
 
 export const CustomerSystem = {
   step(ctx: StepContext): void {
+    CustomerSystem.announceRushTransitions(ctx);
     CustomerSystem.spawn(ctx);
     const s = ctx.state;
     for (const counter of s.counters) {
@@ -302,7 +412,7 @@ export const CustomerSystem = {
       }
       CustomerSystem.reserveTowardBasket(front, counter, def);
 
-      const availableAccepted = CustomerSystem.acceptedAvailable(counter, def);
+      const availableAccepted = CustomerSystem.acceptedAvailable(front, counter, def);
       const basketReady = front.reserved > 0 &&
         (front.reserved === front.wants || availableAccepted === 0);
       const served = s.player.zoneId === def.zone;
@@ -318,9 +428,16 @@ export const CustomerSystem = {
       }
     }
 
-    // Walkers advance; queued customers lose patience (same order as Kotlin).
     for (const c of s.customers) if (c.walkTicksLeft > 0) c.walkTicksLeft--;
-    const leaving = s.customers.filter((c) => c.arrived && --c.patienceLeft <= 0);
+    const leaving: CustomerState[] = [];
+    for (const c of s.customers) {
+      if (!c.arrived) continue;
+      const counter = s.counters.find((ct) => ct.counterId === c.counterId)!;
+      const def = ctx.harbor.counters.find((d) => d.id === c.counterId)!;
+      const type = ctx.content.customersById.get(c.typeId)!;
+      c.patienceLeft -= CustomerSystem.patienceDrain(c, counter, def, type.unmetPatienceDrainPermille);
+      if (c.patienceLeft <= 0) leaving.push(c);
+    }
     for (const c of leaving) {
       const counter = s.counters.find((ct) => ct.counterId === c.counterId)!;
       CustomerSystem.releaseAll(c, counter);
@@ -334,8 +451,17 @@ export const CustomerSystem = {
   reserveTowardBasket(front: CustomerState, counter: CounterState, def: { products: string[] }): void {
     let need = front.wants - front.reserved;
     if (need <= 0) return;
+    const pref = front.preferredProductId;
+    if (pref && def.products.includes(pref)) {
+      const take = Math.min(need, counter.stock.available(pref));
+      if (take > 0 && counter.stock.reserve(pref, take)) {
+        front.addReservation(pref, take);
+        need -= take;
+        if (need === 0) return;
+      }
+    }
     for (const [itemId] of counter.stock.contents()) {
-      if (!def.products.includes(itemId)) continue;
+      if (!def.products.includes(itemId) || itemId === pref) continue;
       const take = Math.min(need, counter.stock.available(itemId));
       if (take > 0 && counter.stock.reserve(itemId, take)) {
         front.addReservation(itemId, take);
@@ -345,12 +471,27 @@ export const CustomerSystem = {
     }
   },
 
-  acceptedAvailable(counter: CounterState, def: { products: string[] }): number {
+  acceptedAvailable(front: CustomerState, counter: CounterState, def: { products: string[] }): number {
+    if (front.wants - front.reserved <= 0) return 0;
     let n = 0;
     for (const [itemId] of counter.stock.contents()) {
       if (def.products.includes(itemId)) n += counter.stock.available(itemId);
     }
     return n;
+  },
+
+  patienceDrain(
+    c: CustomerState,
+    counter: CounterState,
+    def: { products: string[] },
+    unmetDrainPermille: number,
+  ): number {
+    const pref = c.preferredProductId;
+    if (!pref) return 1;
+    if (c.wants - c.reserved <= 0) return 1;
+    const prefAvailable = def.products.includes(pref) ? counter.stock.available(pref) : 0;
+    if (prefAvailable > 0) return 1;
+    return Math.max(1, idiv(unmetDrainPermille, 1000));
   },
 
   releaseAll(c: CustomerState, counter: CounterState): void {
@@ -360,23 +501,35 @@ export const CustomerSystem = {
 
   pay(ctx: StepContext, c: CustomerState, counter: CounterState): void {
     const s = ctx.state;
+    const type = ctx.content.customersById.get(c.typeId)!;
     const items = [...c.reservedItems.entries()]
       .sort(([a], [b]) => (a < b ? -1 : 1))
       .map(([item, quantity]) => ({ item, quantity }));
-    let amount = 0;
+    let base = 0;
     for (const [itemId, qty] of c.reservedItems) {
       const price = ctx.content.productsById.get(itemId)!.unitPrice;
-      amount = SafeMath.add(amount, SafeMath.multiply(price, qty));
+      base = SafeMath.add(base, SafeMath.multiply(price, qty));
     }
+    const met = c.preferenceMet();
+    let mult = type.priceMultPermille;
+    if (!met) mult = idiv(mult * type.unmetPriceMultPermille, 1000);
+    const amount = idiv(base * mult, 1000);
     const saleId = s.newId("sale");
     s.coins = SafeMath.creditCoins(s.coins, amount);
     s.bumpStat(Stats.SALES);
     s.bumpStat(Stats.ITEMS_SOLD, c.reserved);
     s.bumpStat(Stats.REVENUE, amount);
+    if (type.kind === "premium") s.bumpStat(Stats.PREMIUM_SALES);
+    if (type.kind === "bulk") s.bumpStat(Stats.BULK_SALES);
+    if (!met) s.bumpStat(Stats.UNMET_PREFERENCE_SALES);
     s.record({ id: saleId, type: "sale", coinDelta: amount, tick: s.tick, reference: c.id });
     for (const [itemId, qty] of c.reservedItems) counter.stock.takeReserved(itemId, qty);
     c.clearReservations();
-    ctx.emit({ type: "sale_committed", tick: s.tick, saleId, customerId: c.id, items, coins: amount });
+    ctx.emit({
+      type: "sale_committed", tick: s.tick, saleId, customerId: c.id, items, coins: amount,
+      customerTypeId: type.id, priceMultPermille: mult, preferenceMet: met,
+      preferredProductId: c.preferredProductId,
+    });
   },
 
   /** ceil(straight-line distance / speed), integer only. */
@@ -387,20 +540,119 @@ export const CustomerSystem = {
     return idiv(dist + mmPerTick - 1, mmPerTick);
   },
 
+  /** Approach polyline: entry → harbor waypoints → destination. */
+  approachPath(harbor: HarborDef, destination: PointMm): PointMm[] {
+    return [harbor.customerEntry, ...(harbor.customerPathWaypoints ?? []), destination];
+  },
+
+  pathWalkTicks(path: PointMm[], mmPerTick: number): number {
+    let total = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      total += CustomerSystem.walkTicks(path[i]!, path[i + 1]!, mmPerTick);
+    }
+    return total;
+  },
+
+  /** Point along [path] after [elapsedTicks] of [totalTicks] (distance-weighted). */
+  pointAlongPath(path: PointMm[], elapsedTicks: number, totalTicks: number): { x: number; z: number } {
+    if (path.length === 0) return { x: 0, z: 0 };
+    if (totalTicks <= 0 || elapsedTicks >= totalTicks) {
+      const last = path[path.length - 1]!;
+      return { x: last.x, z: last.z };
+    }
+    if (elapsedTicks <= 0) {
+      const first = path[0]!;
+      return { x: first.x, z: first.z };
+    }
+    const lengths: number[] = [];
+    let totalLen = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      const a = path[i]!, b = path[i + 1]!;
+      const dx = b.x - a.x, dz = b.z - a.z;
+      const len = SafeMath.isqrt(dx * dx + dz * dz);
+      lengths.push(len);
+      totalLen += len;
+    }
+    if (totalLen <= 0) {
+      const last = path[path.length - 1]!;
+      return { x: last.x, z: last.z };
+    }
+    let target = idiv(elapsedTicks * totalLen, totalTicks);
+    for (let i = 0; i < lengths.length; i++) {
+      const len = lengths[i]!;
+      if (target <= len) {
+        const a = path[i]!, b = path[i + 1]!;
+        if (len === 0) return { x: a.x, z: a.z };
+        return {
+          x: a.x + idiv((b.x - a.x) * target, len),
+          z: a.z + idiv((b.z - a.z) * target, len),
+        };
+      }
+      target -= len;
+    }
+    const last = path[path.length - 1]!;
+    return { x: last.x, z: last.z };
+  },
+
   spawn(ctx: StepContext): void {
     const s = ctx.state;
-    if (++s.customerSpawnProgress < ctx.harbor.customerSpawnTicks) return;
+    const interval = CustomerSystem.spawnIntervalTicks(ctx.harbor, s.tick);
+    if (++s.customerSpawnProgress < interval) return;
     s.customerSpawnProgress = 0;
-    const counterDef = ctx.harbor.counters.find((d) => s.customers.filter((c) => c.counterId === d.id).length < d.maxQueue);
+    const rush = CustomerSystem.activeRush(ctx.harbor, s.tick);
+    const counterDef = ctx.harbor.counters.find((d) =>
+      s.customers.filter((c) => c.counterId === d.id).length < CustomerSystem.effectiveMaxQueue(d, rush));
     if (!counterDef) return;
     const types = ctx.content.customers;
     const type = types[s.rng.pickWeighted(types.map((t) => t.spawnWeight))]!;
     const wants = s.rng.nextInRange(type.basketMin, type.basketMax);
+    let preferred: string | null = null;
+    if (type.preferredProducts.length > 0) {
+      const pick = type.preferredProducts[s.rng.pickWeighted(type.preferredProducts.map((p) => p.weight))]!;
+      preferred = counterDef.products.includes(pick.item) ? pick.item : null;
+    }
     const slot = queueSlot(counterDef, s.customers.filter((x) => x.counterId === counterDef.id).length);
-    const c = new CustomerState(s.newId("customer"), type.id, counterDef.id, wants, type.patienceTicks,
-      CustomerSystem.walkTicks(ctx.harbor.customerEntry, slot, ctx.harbor.customerWalkMmPerTick));
+    const path = CustomerSystem.approachPath(ctx.harbor, slot);
+    const c = new CustomerState(
+      s.newId("customer"), type.id, counterDef.id, wants, type.patienceTicks,
+      CustomerSystem.pathWalkTicks(path, ctx.harbor.customerWalkMmPerTick),
+      preferred,
+    );
     s.customers.push(c);
     ctx.emit({ type: "customer_arrived", tick: s.tick, customerId: c.id, counterId: counterDef.id });
+  },
+
+  activeRush(harbor: HarborDef, tick: number): RushWindowDef | null {
+    if (!harbor.rushes?.length || tick <= 0) return null;
+    for (const r of harbor.rushes) {
+      const phase = tick % r.periodTicks;
+      if (phase >= r.startTick && phase < r.startTick + r.durationTicks) return r;
+    }
+    return null;
+  },
+
+  spawnIntervalTicks(harbor: HarborDef, tick: number): number {
+    const rush = CustomerSystem.activeRush(harbor, tick);
+    if (!rush) return harbor.customerSpawnTicks;
+    return Math.max(1, idiv(harbor.customerSpawnTicks * 1000, rush.spawnSpeedPermille));
+  },
+
+  effectiveMaxQueue(def: { maxQueue: number }, rush: RushWindowDef | null): number {
+    return def.maxQueue + (rush?.queueBonus ?? 0);
+  },
+
+  ticksRemaining(rush: RushWindowDef, tick: number): number {
+    const phase = tick % rush.periodTicks;
+    return Math.max(0, rush.startTick + rush.durationTicks - phase);
+  },
+
+  announceRushTransitions(ctx: StepContext): void {
+    const s = ctx.state;
+    const cur = CustomerSystem.activeRush(ctx.harbor, s.tick);
+    const prev = s.tick <= 1 ? null : CustomerSystem.activeRush(ctx.harbor, s.tick - 1);
+    if (prev?.id === cur?.id) return;
+    if (prev) ctx.emit({ type: "rush_ended", tick: s.tick, rushId: prev.id, name: prev.name });
+    if (cur) ctx.emit({ type: "rush_started", tick: s.tick, rushId: cur.id, name: cur.name });
   },
 };
 
@@ -462,9 +714,12 @@ export const UpgradeSystem = {
         const current = m.recipeDurations.get(effect.recipe);
         if (current === undefined || effect.durationTicks < current) m.recipeDurations.set(effect.recipe, effect.durationTicks);
       }
-    } else {
+    } else if (effect.kind === "catch_speed") {
       s.player.catchSpeedPermille = Math.max(s.player.catchSpeedPermille, effect.speedPermille);
+    } else if (effect.kind === "fish_regen") {
+      s.player.fishRegenPermille = Math.max(s.player.fishRegenPermille, effect.speedPermille);
     }
+    // unlock_fishing_spot is gated by ownedUpgrades in FishingSystem
   },
 };
 

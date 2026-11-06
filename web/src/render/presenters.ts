@@ -44,7 +44,9 @@ const QUEUE_YAW = Math.PI;
  * or gave up) walk back to the entry before their model is freed.
  */
 export class CustomerCrowd {
-  private readonly members: (null | { id: string; x: number; z: number; yaw: number; leaving: boolean })[];
+  private readonly members: (null | {
+    id: string; x: number; z: number; yaw: number; leaving: boolean; leaveTargetIndex: number;
+  })[];
 
   constructor(poolSize: number) {
     this.members = Array.from({ length: poolSize }, () => null);
@@ -52,40 +54,48 @@ export class CustomerCrowd {
 
   update(v: SimView, dt: number): (CrowdMember | null)[] {
     const present = new Map(v.customers.map((c) => [c.id, c]));
-    const exitX = v.customerEntryXMm / 1000;
-    const exitZ = v.customerEntryZMm / 1000;
+    const leavePath = buildLeavePathMeters(v);
     const k = 1 - Math.exp(-SMOOTHING_PER_SECOND * dt);
 
-    // Departures: anyone we track who is no longer in the simulation walks out.
-    for (const m of this.members) if (m && !m.leaving && !present.has(m.id)) m.leaving = true;
+    // Departures: anyone we track who is no longer in the simulation walks out along the reverse approach.
+    for (const m of this.members) {
+      if (m && !m.leaving && !present.has(m.id)) {
+        m.leaving = true;
+        m.leaveTargetIndex = 0;
+      }
+    }
 
     // Arrivals: give new customers a free model at their (entry) position.
     for (const c of v.customers) {
       if (this.members.some((m) => m?.id === c.id)) continue;
       const free = this.members.findIndex((m) => m === null);
       if (free < 0) continue; // pool exhausted: customer simply is not drawn
-      this.members[free] = { id: c.id, x: c.xMm / 1000, z: c.zMm / 1000, yaw: 0, leaving: false };
+      this.members[free] = { id: c.id, x: c.xMm / 1000, z: c.zMm / 1000, yaw: 0, leaving: false, leaveTargetIndex: 0 };
     }
 
     return this.members.map((m, i) => {
       if (!m) return null;
-      let tx: number, tz: number;
       if (m.leaving) {
-        const dx = exitX - m.x, dz = exitZ - m.z;
-        const d = Math.hypot(dx, dz);
-        const stepLen = LEAVE_SPEED_M_PER_S * dt;
-        if (d <= Math.max(stepLen, 0.05)) {
-          this.members[i] = null;
-          return null;
+        while (m.leaveTargetIndex < leavePath.length) {
+          const [tx, tz] = leavePath[m.leaveTargetIndex]!;
+          const dx = tx - m.x, dz = tz - m.z;
+          const d = Math.hypot(dx, dz);
+          const stepLen = LEAVE_SPEED_M_PER_S * dt;
+          if (d <= Math.max(stepLen, 0.05)) {
+            m.leaveTargetIndex++;
+            continue;
+          }
+          m.yaw = Math.atan2(dx, dz);
+          m.x += (dx / d) * stepLen;
+          m.z += (dz / d) * stepLen;
+          return { x: m.x, z: m.z, yaw: m.yaw };
         }
-        m.yaw = Math.atan2(dx, dz);
-        m.x += (dx / d) * stepLen;
-        m.z += (dz / d) * stepLen;
-        return { x: m.x, z: m.z, yaw: m.yaw };
+        this.members[i] = null;
+        return null;
       }
       const c = present.get(m.id)!;
-      tx = c.xMm / 1000;
-      tz = c.zMm / 1000;
+      const tx = c.xMm / 1000;
+      const tz = c.zMm / 1000;
       const dx = tx - m.x, dz = tz - m.z;
       const targetYaw = Math.hypot(dx, dz) > 0.02 ? Math.atan2(dx, dz) : c.arrived ? QUEUE_YAW : m.yaw;
       m.x += dx * k;
@@ -97,4 +107,15 @@ export class CustomerCrowd {
       return { x: m.x, z: m.z, yaw: m.yaw };
     });
   }
+}
+
+/** Reverse approach waypoints, then the harbor entry (meters). */
+function buildLeavePathMeters(v: SimView): [number, number][] {
+  const points: [number, number][] = [];
+  for (let i = v.customerPathWaypoints.length - 1; i >= 0; i--) {
+    const p = v.customerPathWaypoints[i]!;
+    points.push([p.xMm / 1000, p.zMm / 1000]);
+  }
+  points.push([v.customerEntryXMm / 1000, v.customerEntryZMm / 1000]);
+  return points;
 }

@@ -1,18 +1,17 @@
 package com.willio.jeanvilma.fishshopping.core.fishing
 
+import com.willio.jeanvilma.fishshopping.core.content.FishingSpotDef
 import com.willio.jeanvilma.fishshopping.core.content.ZoneKind
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
+import com.willio.jeanvilma.fishshopping.core.sim.GameState
 import com.willio.jeanvilma.fishshopping.core.sim.SafeMath
 import com.willio.jeanvilma.fishshopping.core.sim.Stats
 import com.willio.jeanvilma.fishshopping.core.sim.StepContext
 
 /**
- * Automatic fishing while standing in a fishing zone (blueprint "Fishing flow").
- * Requires zone stock and free carry capacity. Zone stock replenishes predictably.
- *
- * Catch speed upgrades shorten cast duration. During a cast, [Command.Reel] in the
- * timing window finishes early and pays a coin bonus equal to the caught species'
- * base value. Rare upgrades may replace the rolled species at commit.
+ * Automatic fishing while standing in an unlocked fishing zone.
+ * Catch speed upgrades shorten cast duration. Reel in the timing window pays a bonus.
+ * Spot stock uses a deplete/regen curve (empty spots restock slower) scaled by fishRegenPermille.
  */
 object FishingSystem {
     fun step(ctx: StepContext) {
@@ -27,6 +26,12 @@ object FishingSystem {
         }
         val spotDef = ctx.harbor.fishingSpots.first { it.zone == zone.id }
         val spot = ctx.state.fishingSpots.first { it.zoneId == zone.id }
+
+        if (!isUnlocked(spotDef, ctx.state)) {
+            clearCast(p)
+            p.reelRequested = false
+            return
+        }
 
         if (p.fishingSpecies == null) {
             if (spot.stock <= 0) {
@@ -76,6 +81,9 @@ object FishingSystem {
         clearCast(p)
     }
 
+    fun isUnlocked(def: FishingSpotDef, state: GameState): Boolean =
+        def.requiresUpgrade == null || def.requiresUpgrade in state.ownedUpgrades
+
     fun catchTicksFor(catchSpeedPermille: Int, baseCatchTicks: Int): Int {
         require(catchSpeedPermille > 0)
         val scaled = (baseCatchTicks.toLong() * 1000L) / catchSpeedPermille.toLong()
@@ -86,6 +94,28 @@ object FishingSystem {
         if (duration <= 0) return false
         val permille = (progress.toLong() * 1000L) / duration.toLong()
         return permille >= startPermille && permille < endPermille
+    }
+
+    /** Linear interpolation of [curve] across stock/stockMax, then scale by fishRegenPermille. */
+    fun regenTicksFor(def: FishingSpotDef, stock: Int, fishRegenPermille: Int): Int {
+        require(fishRegenPermille > 0)
+        val mult = curveMultPermille(def.regenCurvePermille, stock, def.stockMax)
+        val base = (def.regenTicks.toLong() * mult) / 1000L
+        return ((base * 1000L) / fishRegenPermille.toLong()).toInt().coerceAtLeast(1)
+    }
+
+    fun curveMultPermille(curve: List<Int>, stock: Int, stockMax: Int): Int {
+        require(curve.size >= 2)
+        if (stockMax <= 0) return curve.first()
+        val stockC = stock.coerceIn(0, stockMax)
+        val t = (stockC.toLong() * 1000L) / stockMax.toLong() // 0..1000
+        val last = curve.size - 1
+        val scaled = t * last // 0 .. 1000*last
+        val i0 = (scaled / 1000L).toInt().coerceIn(0, last - 1)
+        val frac = (scaled % 1000L).toInt()
+        val a = curve[i0]
+        val b = curve[i0 + 1]
+        return a + ((b - a) * frac) / 1000
     }
 
     private fun commitCatch(
@@ -131,6 +161,9 @@ object FishingSystem {
                     ),
                 )
             }
+            if (spot.stock == 0) {
+                ctx.emit(GameEvent.FishingSpotDepleted(s.tick, zoneId))
+            }
         }
     }
 
@@ -148,7 +181,8 @@ object FishingSystem {
                 spot.regenProgress = 0
                 continue
             }
-            if (++spot.regenProgress >= def.regenTicks) {
+            val needed = regenTicksFor(def, spot.stock, ctx.state.player.fishRegenPermille)
+            if (++spot.regenProgress >= needed) {
                 spot.stock++
                 spot.regenProgress = 0
             }

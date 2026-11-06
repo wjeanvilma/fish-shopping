@@ -1,5 +1,6 @@
 package com.willio.jeanvilma.fishshopping.core.content
 
+import com.willio.jeanvilma.fishshopping.core.sim.SafeMath
 import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
 
 /**
@@ -7,6 +8,10 @@ import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
  * references to existing IDs, an acyclic unlock graph, and layout sanity.
  */
 object ContentValidator {
+
+    /** Clearance radius used when validating customer approach path segments. */
+    private const val CUSTOMER_PATH_RADIUS_MM = 200
+    private const val CUSTOMER_PATH_SAMPLE_MM = 200
 
     fun validate(p: ContentPack): List<String> {
         val errors = mutableListOf<String>()
@@ -22,6 +27,9 @@ object ContentValidator {
         }
         check(p.player.startCatchSpeedPermille >= 1000) {
             "player.startCatchSpeedPermille must be >= 1000"
+        }
+        check(p.player.startFishRegenPermille >= 1000) {
+            "player.startFishRegenPermille must be >= 1000"
         }
 
         // Unique IDs across every collection (IDs are global and namespaced by prefix).
@@ -73,19 +81,61 @@ object ContentValidator {
                 is UpgradeEffect.CatchSpeed -> check(e.speedPermille > p.player.startCatchSpeedPermille) {
                     "${u.id}: catch speed does not exceed the starting catch speed"
                 }
+                is UpgradeEffect.FishRegen -> check(e.speedPermille > p.player.startFishRegenPermille) {
+                    "${u.id}: fish regen does not exceed the starting fish regen"
+                }
+                is UpgradeEffect.UnlockFishingSpot -> {
+                    val spot = p.harbors.flatMap { it.fishingSpots }.firstOrNull { it.zone == e.zone }
+                    check(spot != null) { "${u.id}: unlock_fishing_spot unknown zone '${e.zone}'" }
+                    check(spot?.requiresUpgrade == u.id) {
+                        "${u.id}: unlock_fishing_spot zone must list this upgrade as requiresUpgrade"
+                    }
+                }
             }
         }
         findUpgradeCycle(p)?.let { errors += "Upgrade requirement cycle: ${it.joinToString(" -> ")}" }
 
-        for (c in p.customers) check(c.basketMax >= c.basketMin) { "${c.id}: basketMax < basketMin" }
+        for (c in p.customers) {
+            check(c.basketMax >= c.basketMin) { "${c.id}: basketMax < basketMin" }
+            check(c.priceMultPermille >= 1000) { "${c.id}: priceMultPermille must be >= 1000" }
+            check(c.unmetPriceMultPermille in 1..1000) { "${c.id}: unmetPriceMultPermille must be 1..1000" }
+            check(c.unmetPatienceDrainPermille >= 1000) {
+                "${c.id}: unmetPatienceDrainPermille must be >= 1000"
+            }
+            if (c.kind == CustomerKind.PREMIUM) {
+                check(c.priceMultPermille > 1000) { "${c.id}: premium customers must tip (priceMultPermille > 1000)" }
+            }
+            if (c.kind == CustomerKind.BULK) {
+                check(c.basketMin >= 5) { "${c.id}: bulk customers need basketMin >= 5" }
+            }
+            for (pw in c.preferredProducts) {
+                check(pw.item in p.productsById) { "${c.id}: preferred product unknown '${pw.item}'" }
+            }
+            // Preferred products must be sellable at least somewhere.
+            if (c.preferredProducts.isNotEmpty()) {
+                val sellable = p.harbors.flatMap { h -> h.counters.flatMap { it.products } }.toSet()
+                c.preferredProducts.forEach { pw ->
+                    check(pw.item in sellable) { "${c.id}: preferred '${pw.item}' is not sold at any counter" }
+                }
+            }
+        }
 
         for (h in p.harbors) {
             val zoneIds = h.zonesById.keys
             check(h.walkable.any { it.contains(h.playerSpawn.x, h.playerSpawn.z) }) { "${h.id}: spawn is not walkable" }
             check(h.obstacles.none { it.contains(h.playerSpawn.x, h.playerSpawn.z) }) { "${h.id}: spawn is inside an obstacle" }
+            val fishingZoneIds = h.zones.filter { it.kind == ZoneKind.FISHING }.map { it.id }.toSet()
+            val spotZoneIds = h.fishingSpots.map { it.zone }.toSet()
+            check(fishingZoneIds == spotZoneIds) {
+                "${h.id}: fishing zones and fishingSpots must cover the same zone ids"
+            }
             for (f in h.fishingSpots) {
                 check(h.zonesById[f.zone]?.kind == ZoneKind.FISHING) { "${h.id}: '${f.zone}' is not a fishing zone" }
                 f.species.forEach { s -> check(s in p.speciesById) { "${h.id}: unknown species '$s'" } }
+                check(f.regenCurvePermille.size >= 2) { "${h.id}: '${f.zone}' regenCurvePermille needs >= 2 entries" }
+                f.requiresUpgrade?.let { req ->
+                    check(req in p.upgradesById) { "${h.id}: '${f.zone}' requiresUpgrade unknown '$req'" }
+                }
             }
             for (s in h.stations) {
                 check(s.machine in p.machinesById) { "${s.id}: unknown machine '${s.machine}'" }
@@ -93,15 +143,66 @@ object ContentValidator {
                 check(h.zonesById[s.outputZone]?.kind == ZoneKind.MACHINE_OUTPUT) { "${s.id}: bad output zone" }
             }
             fun open(x: Int, z: Int) = h.walkable.any { it.contains(x, z) } && h.obstacles.none { it.contains(x, z) }
+            fun openForCustomer(x: Int, z: Int): Boolean {
+                val r = CUSTOMER_PATH_RADIUS_MM
+                if (h.walkable.none { it.contains(x, z) }) return false
+                return h.obstacles.none {
+                    x >= it.minX - r && x < it.maxX + r && z >= it.minZ - r && z < it.maxZ + r
+                }
+            }
+            fun segmentClear(a: PointMm, b: PointMm): Boolean {
+                val dx = (b.x - a.x).toLong()
+                val dz = (b.z - a.z).toLong()
+                val dist = SafeMath.isqrt(dx * dx + dz * dz).toInt().coerceAtLeast(1)
+                var d = 0
+                while (d <= dist) {
+                    val x = a.x + ((dx * d) / dist).toInt()
+                    val z = a.z + ((dz * d) / dist).toInt()
+                    if (!openForCustomer(x, z)) return false
+                    d += CUSTOMER_PATH_SAMPLE_MM
+                }
+                return openForCustomer(b.x, b.z)
+            }
             check(open(h.customerEntry.x, h.customerEntry.z)) { "${h.id}: customer entry is not on open walkable ground" }
+            for ((i, wp) in h.customerPathWaypoints.withIndex()) {
+                check(openForCustomer(wp.x, wp.z)) {
+                    "${h.id}: customerPathWaypoints[$i] is not on open walkable ground"
+                }
+            }
+            val rushQueueBonus = h.rushes.maxOfOrNull { it.queueBonus } ?: 0
+            for (r in h.rushes) {
+                check(r.startTick + r.durationTicks <= r.periodTicks) {
+                    "${r.id}: rush window must fit inside periodTicks (no wrap)"
+                }
+                check(r.spawnSpeedPermille >= 1000) {
+                    "${r.id}: spawnSpeedPermille must be >= 1000 (rushes only speed up spawns)"
+                }
+            }
+            h.rushes.groupingBy { it.id }.eachCount().filter { it.value > 1 }.keys
+                .forEach { errors += "${h.id}: duplicate rush '$it'" }
+            for (i in h.rushes.indices) {
+                for (j in i + 1 until h.rushes.size) {
+                    val a = h.rushes[i]
+                    val b = h.rushes[j]
+                    if (a.periodTicks != b.periodTicks) continue
+                    val overlap = a.startTick < b.endTick && b.startTick < a.endTick
+                    check(!overlap) { "${h.id}: rushes '${a.id}' and '${b.id}' overlap" }
+                }
+            }
             for (c in h.counters) {
                 check(c.products.isNotEmpty()) { "${c.id}: needs at least one product" }
                 c.products.forEach { pid -> check(pid in p.productsById) { "${c.id}: unknown product '$pid'" } }
                 check(c.products.toSet().size == c.products.size) { "${c.id}: duplicate products" }
                 check(h.zonesById[c.zone]?.kind == ZoneKind.COUNTER) { "${c.id}: bad counter zone" }
-                for (i in 0 until c.maxQueue) {
+                for (i in 0 until c.maxQueue + rushQueueBonus) {
                     val slot = c.queueSlot(i)
                     check(open(slot.x, slot.z)) { "${c.id}: queue slot $i is not on open walkable ground" }
+                    val path = listOf(h.customerEntry) + h.customerPathWaypoints + slot
+                    for (seg in path.zipWithNext()) {
+                        check(segmentClear(seg.first, seg.second)) {
+                            "${c.id}: customer path to queue slot $i crosses blocked ground"
+                        }
+                    }
                 }
             }
             // Every zone must be reachable: its centre lies on walkable, unobstructed ground.

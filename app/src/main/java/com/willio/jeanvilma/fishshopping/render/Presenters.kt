@@ -50,17 +50,27 @@ data class CrowdMember(val x: Double, val z: Double, val yaw: Double)
  * or gave up) walk back to the entry before their model is freed.
  */
 class CustomerCrowd(poolSize: Int) {
-    private class Member(val id: String, var x: Double, var z: Double, var yaw: Double, var leaving: Boolean)
+    private class Member(
+        val id: String,
+        var x: Double,
+        var z: Double,
+        var yaw: Double,
+        var leaving: Boolean,
+        /** Index into the reverse approach path while leaving (waypoints then entry). */
+        var leaveTargetIndex: Int = 0,
+    )
 
     private val members = arrayOfNulls<Member>(poolSize)
 
     fun update(v: SimView, dt: Double): List<CrowdMember?> {
         val present = v.customers.associateBy { it.id }
-        val exitX = v.customerEntryXMm / 1000.0
-        val exitZ = v.customerEntryZMm / 1000.0
+        val leavePath = buildLeavePathMeters(v)
         val k = 1.0 - exp(-SMOOTHING_PER_SECOND * dt)
 
-        for (m in members) if (m != null && !m.leaving && m.id !in present) m.leaving = true
+        for (m in members) if (m != null && !m.leaving && m.id !in present) {
+            m.leaving = true
+            m.leaveTargetIndex = 0
+        }
         for (c in v.customers) {
             if (members.any { it?.id == c.id }) continue
             val free = members.indexOfFirst { it == null }
@@ -71,18 +81,23 @@ class CustomerCrowd(poolSize: Int) {
         return members.mapIndexed { i, m ->
             if (m == null) return@mapIndexed null
             if (m.leaving) {
-                val dx = exitX - m.x
-                val dz = exitZ - m.z
-                val d = hypot(dx, dz)
-                val step = LEAVE_SPEED_M_PER_S * dt
-                if (d <= max(step, 0.05)) {
-                    members[i] = null
-                    return@mapIndexed null
+                while (m.leaveTargetIndex < leavePath.size) {
+                    val (tx, tz) = leavePath[m.leaveTargetIndex]
+                    val dx = tx - m.x
+                    val dz = tz - m.z
+                    val d = hypot(dx, dz)
+                    val step = LEAVE_SPEED_M_PER_S * dt
+                    if (d <= max(step, 0.05)) {
+                        m.leaveTargetIndex++
+                        continue
+                    }
+                    m.yaw = atan2(dx, dz)
+                    m.x += dx / d * step
+                    m.z += dz / d * step
+                    return@mapIndexed CrowdMember(m.x, m.z, m.yaw)
                 }
-                m.yaw = atan2(dx, dz)
-                m.x += dx / d * step
-                m.z += dz / d * step
-                return@mapIndexed CrowdMember(m.x, m.z, m.yaw)
+                members[i] = null
+                return@mapIndexed null
             }
             val c = present.getValue(m.id)
             val dx = c.xMm / 1000.0 - m.x
@@ -100,6 +115,16 @@ class CustomerCrowd(poolSize: Int) {
             m.yaw += dy * k
             CrowdMember(m.x, m.z, m.yaw)
         }
+    }
+
+    private fun buildLeavePathMeters(v: SimView): List<Pair<Double, Double>> {
+        val points = ArrayList<Pair<Double, Double>>(v.customerPathWaypoints.size + 1)
+        for (i in v.customerPathWaypoints.lastIndex downTo 0) {
+            val p = v.customerPathWaypoints[i]
+            points += p.xMm / 1000.0 to p.zMm / 1000.0
+        }
+        points += v.customerEntryXMm / 1000.0 to v.customerEntryZMm / 1000.0
+        return points
     }
 
     private companion object {

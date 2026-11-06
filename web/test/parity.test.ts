@@ -53,7 +53,7 @@ function expectedState(s: GameState) {
     activeBatchRemaining: m.activeBatch?.remainingTicks ?? -1,
     counterStock: rec(s.counters[0]!.stock.contents()),
     customers: s.customers.length,
-    fishingStock: s.fishingSpots[0]!.stock,
+    fishingStock: Object.fromEntries(s.fishingSpots.map((f) => [f.zoneId, f.stock])),
     ownedUpgrades: [...s.ownedUpgrades].sort(),
     completedQuests: [...s.completedQuests].sort(),
     tutorialIndex: s.tutorialIndex,
@@ -107,6 +107,6 @@ describe("shared fixtures", () => {
     const s = decodeSnapshot(content, v1);
     expect(s.customers.length).toBeGreaterThan(0);
     expect(s.customers.every((c) => c.arrived && c.walkTicksTotal === 0)).toBe(true);
-    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":4,')).toBe(true);
+    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":6,')).toBe(true);
   });
 });

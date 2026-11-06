@@ -36,6 +36,15 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
 .panel { background: color-mix(in srgb, var(--surface) 93%, transparent); border-radius: var(--radius); padding: 12px; box-shadow: 0 2px 10px rgb(21 52 73 / 0.12); }
 .pill { background: color-mix(in srgb, var(--surface) 93%, transparent); border-radius: 999px; padding: 10px 16px; font-weight: 600; min-height: 40px; }
 .coins { background: var(--reward); font-weight: 700; }
+.rush-banner {
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 52px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--action);
+  color: var(--on-action);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .num { font-variant-numeric: tabular-nums; }
 .muted { opacity: 0.6; }
 .small { font-size: 13px; }
@@ -82,7 +91,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 5px; margin: 0 2px; 
 .grow { flex: 1; }
 .owned { color: var(--action); font-weight: 600; padding: 0 12px; }
 
-.toast { position: absolute; top: calc(max(var(--gap), env(safe-area-inset-top)) + 56px); left: 50%; transform: translateX(-50%); background: var(--ink); color: white; border-radius: 999px; padding: 10px 16px; pointer-events: none; }
+.toast { position: absolute; top: calc(max(var(--gap), env(safe-area-inset-top)) + 104px); left: 50%; transform: translateX(-50%); background: var(--ink); color: white; border-radius: 999px; padding: 10px 16px; pointer-events: none; }
 
 .center { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; }
 .center-card { max-width: 420px; text-align: center; padding: 24px; }

@@ -71,6 +71,7 @@ object SnapshotCodec {
                         put("stationId", m.stationId)
                         put("paused", m.paused)
                         put("status", m.status.name)
+                        put("preferredRecipeId", m.preferredRecipeId)
                         put("input", inv(m.input))
                         put("output", inv(m.output))
                         put("activeBatch", m.activeBatch?.let { b ->
@@ -97,6 +98,7 @@ object SnapshotCodec {
                         put("wants", c.wants); put("patienceLeft", c.patienceLeft)
                         put("reservedItems", JsonObject(c.reservedItems.mapValues { JsonPrimitive(it.value) }))
                         put("walkTicksTotal", c.walkTicksTotal); put("walkTicksLeft", c.walkTicksLeft)
+                        put("preferredProductId", c.preferredProductId)
                     })
                 }
             })
@@ -141,6 +143,8 @@ object SnapshotCodec {
      *  - v1 -> v2: customers had no walking state; they were already queued (walk 0).
      *  - v2 -> v3: customers.reserved (int, single SKU) becomes reservedItems map.
      *  - v3 -> v4: player mid-cast fishingCatchTicks + reelAttemptedThisCast.
+     *  - v4 -> v5: machines.preferredRecipeId (null = Auto).
+     *  - v5 -> v6: customers.preferredProductId.
      */
     private fun readState(content: ContentPack, n: Node, version: Int): GameState {
         val harborId = n["harborId"].string()
@@ -180,6 +184,11 @@ object SnapshotCodec {
             val m = s.machines.firstOrNull { it.stationId == mn["stationId"].string() } ?: return@forEach
             m.paused = mn["paused"].bool()
             m.status = MachineStatus.entries.firstOrNull { it.name == mn["status"].string() } ?: MachineStatus.WAITING_FOR_INPUT
+            if (version >= 5) {
+                val pref = mn.optional("preferredRecipeId")?.string()
+                val allowed = content.machinesById[m.machineId]?.recipes.orEmpty()
+                m.preferredRecipeId = pref?.takeIf { it in allowed }
+            }
             readInv(mn["input"], m.input)
             readInv(mn["output"], m.output)
             m.activeBatch = mn.optional("activeBatch")?.let { b ->
@@ -197,9 +206,13 @@ object SnapshotCodec {
         n["customers"].list { cn ->
             val walkTotal = if (version >= 2) cn["walkTicksTotal"].int(min = 0) else 0
             val counterId = cn["counterId"].string()
+            val preferred = if (version >= 6) {
+                cn.optional("preferredProductId")?.string()?.takeIf { it in content.productsById }
+            } else null
             CustomerState(
                 cn["id"].string(), cn["typeId"].string(), counterId,
                 cn["wants"].int(min = 1), cn["patienceLeft"].int(), walkTotal,
+                preferredProductId = preferred,
             ).also { cust ->
                 if (version >= 3) {
                     (cn["reservedItems"].el as? JsonObject)?.forEach { (item, v) ->

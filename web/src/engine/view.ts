@@ -2,17 +2,35 @@
 import { queueSlot } from "./content";
 import type { MachineStatus } from "./state";
 import type { Simulation } from "./simulation";
-import { FishingSystem, ProductionSystem, UpgradeSystem } from "./systems";
+import { CustomerSystem, FishingSystem, ProductionSystem, UpgradeSystem } from "./systems";
 
 export interface ItemCount { itemId: string; name: string; count: number }
-export interface ContextCard { title: string; lines: string[]; progress: number | null }
-export interface StationView { stationId: string; status: MachineStatus; inputCount: number; outputCount: number; progress: number | null }
+export interface ContextCard {
+  title: string;
+  lines: string[];
+  progress: number | null;
+  stationId?: string | null;
+  recipeModeLabel?: string | null;
+}
+export interface StationView {
+  stationId: string;
+  status: MachineStatus;
+  inputCount: number;
+  outputCount: number;
+  progress: number | null;
+  statusText: string;
+  preferredRecipeId: string | null;
+  nextRecipeId: string | null;
+}
 export interface CounterView { counterId: string; stock: number; capacityUnits: number; queue: number }
 /** Presentation-only position: interpolated along the canonical walk, then the current queue slot. */
 export interface CustomerView {
   id: string; counterId: string; queueIndex: number; xMm: number; zMm: number; arrived: boolean; wants: number; reserved: number;
+  typeId: string; typeName: string; kind: string;
+  preferredProductId: string | null; preferredProductName: string | null; preferenceMet: boolean;
 }
 export interface UpgradeView { id: string; name: string; description: string; cost: number; owned: boolean; purchasable: boolean; reason: string | null }
+export interface RushBannerView { rushId: string; name: string; ticksRemaining: number }
 
 export interface SimView {
   tick: number;
@@ -25,6 +43,8 @@ export interface SimView {
   fishingProgress: number | null;
   fishingTimingWindow: boolean;
   fishingCanReel: boolean;
+  fishingSpotEmpty: boolean;
+  fishingRegenProgress: number | null;
   context: ContextCard | null;
   stations: StationView[];
   counters: CounterView[];
@@ -32,8 +52,10 @@ export interface SimView {
   customers: CustomerView[];
   customerEntryXMm: number;
   customerEntryZMm: number;
+  customerPathWaypoints: { xMm: number; zMm: number }[];
   tutorialText: string | null;
   upgrades: UpgradeView[];
+  rush: RushBannerView | null;
 }
 
 export function buildView(sim: Simulation): SimView {
@@ -49,48 +71,85 @@ export function buildView(sim: Simulation): SimView {
     inputCount: m.input.usedUnits(),
     outputCount: m.output.usedUnits(),
     progress: m.activeBatch ? 1 - m.activeBatch.remainingTicks / m.activeBatch.durationTicks : null,
+    statusText: ProductionSystem.statusText(m, c),
+    preferredRecipeId: m.preferredRecipeId,
+    nextRecipeId: ProductionSystem.nextStartable(c, m)?.id ?? m.activeBatch?.recipeId ?? null,
   }));
 
   let context: ContextCard | null = null;
   if (zone?.kind === "fishing") {
+    const spotDef = h.fishingSpots.find((f) => f.zone === zone.id)!;
     const spot = s.fishingSpots.find((f) => f.zoneId === zone.id)!;
+    const unlocked = FishingSystem.isUnlocked(spotDef, s);
     const full = p.bag.freeUnits() === 0;
     const casting = p.fishingSpecies !== null && p.fishingCatchTicks > 0;
     const inWindow = casting && FishingSystem.inTimingWindow(
       p.fishingProgress, p.fishingCatchTicks,
       c.player.timingWindowStartPermille, c.player.timingWindowEndPermille,
     );
+    const empty = unlocked && spot.stock <= 0;
     const lines = [
-      full ? "Bag full - deliver your catch"
-        : casting && inWindow && !p.reelAttemptedThisCast ? "Reel now for a bonus!"
-          : "Fishing...",
-      `Fish here: ${spot.stock}`,
+      !unlocked
+        ? `Locked — buy ${spotDef.requiresUpgrade ? (c.upgradesById.get(spotDef.requiresUpgrade)?.name ?? spotDef.requiresUpgrade) : "an upgrade"}`
+        : full ? "Bag full - deliver your catch"
+          : empty ? "Pier empty — fish are returning"
+            : casting && inWindow && !p.reelAttemptedThisCast ? "Reel now for a bonus!"
+              : "Fishing...",
+      `Fish here: ${spot.stock}/${spotDef.stockMax}`,
     ];
     if (casting) lines.push(`Hooked: ${c.speciesById.get(p.fishingSpecies!)!.name}`);
+    const regenNeeded = FishingSystem.regenTicksFor(spotDef, spot.stock, p.fishRegenPermille);
     context = {
       title: "Fishing spot",
       lines,
-      progress: casting ? p.fishingProgress / p.fishingCatchTicks : null,
+      progress: casting ? p.fishingProgress / p.fishingCatchTicks
+        : unlocked && spot.stock < spotDef.stockMax ? spot.regenProgress / regenNeeded
+          : null,
     };
   } else if (zone?.kind === "machine_input" || zone?.kind === "machine_output") {
     const station = h.stations.find((st) => st.inputZone === zone.id || st.outputZone === zone.id)!;
     const m = s.machines.find((mm) => mm.stationId === station.id)!;
+    const v = stations.find((sv) => sv.stationId === station.id)!;
+    const queue = ProductionSystem.queuedReady(c, m);
+    const queuePreview = queue.length === 0
+      ? "Queue: empty"
+      : `Queue: ${queue.slice(0, 3).map((r) => ProductionSystem.recipeLabel(r.id)).join(" → ")}${queue.length > 3 ? "…" : ""}`;
+    const mode = m.preferredRecipeId ? ProductionSystem.recipeLabel(m.preferredRecipeId) : "Auto";
     context = {
       title: c.machinesById.get(m.machineId)!.name,
       lines: [
-        ProductionSystem.statusText(m),
+        v.statusText,
         `In: ${m.input.usedUnits()}/${m.input.capacityUnits}   Out: ${m.output.usedUnits()}/${m.output.capacityUnits}`,
+        queuePreview,
+        `Recipe: ${mode}`,
       ],
-      progress: stations.find((v) => v.stationId === station.id)!.progress,
+      progress: v.progress,
+      stationId: m.stationId,
+      recipeModeLabel: mode,
     };
   } else if (zone?.kind === "counter") {
     const def = h.counters.find((d) => d.zone === zone.id)!;
     const counter = s.counters.find((ct) => ct.counterId === def.id)!;
-    const queue = s.customers.filter((x) => x.counterId === def.id).length;
+    const queued = s.customers.filter((x) => x.counterId === def.id);
+    const front = queued.find((x) => x.arrived);
     const label = def.products.map((pid) => c.productsById.get(pid)!.name).join(" / ");
+    const lines = [
+      `Stock: ${counter.stock.usedUnits()}/${def.capacityUnits}`,
+      `Queue: ${queued.length}`,
+    ];
+    if (front) {
+      const type = c.customersById.get(front.typeId);
+      const who = type?.name ?? front.typeId;
+      const kindNote = type?.kind === "premium" ? " · tips well"
+        : type?.kind === "bulk" ? " · bulk order" : "";
+      const wantLabel = front.preferredProductId ? c.itemName(front.preferredProductId) : "anything";
+      const subNote = front.preferredProductId && front.reserved > 0 && !front.preferenceMet()
+        ? " · substituting" : "";
+      lines.push(`Front: ${who} wants ${front.wants} ${wantLabel}${kindNote}${subNote}`);
+    }
     context = {
       title: `${label} counter`,
-      lines: [`Stock: ${counter.stock.usedUnits()}/${def.capacityUnits}`, `Queue: ${queue}`],
+      lines,
       progress: counter.checkoutProgress > 0 ? counter.checkoutProgress / def.checkoutTicks : null,
     };
   }
@@ -112,6 +171,19 @@ export function buildView(sim: Simulation): SimView {
         c.player.timingWindowStartPermille, c.player.timingWindowEndPermille,
       ),
     fishingCanReel: p.fishingSpecies !== null && !p.reelAttemptedThisCast,
+    fishingSpotEmpty: (() => {
+      if (!zone || zone.kind !== "fishing") return false;
+      const def = h.fishingSpots.find((f) => f.zone === zone.id)!;
+      const spot = s.fishingSpots.find((f) => f.zoneId === zone.id)!;
+      return FishingSystem.isUnlocked(def, s) && spot.stock <= 0;
+    })(),
+    fishingRegenProgress: (() => {
+      if (!zone || zone.kind !== "fishing") return null;
+      const def = h.fishingSpots.find((f) => f.zone === zone.id)!;
+      const spot = s.fishingSpots.find((f) => f.zoneId === zone.id)!;
+      if (!FishingSystem.isUnlocked(def, s) || spot.stock >= def.stockMax) return null;
+      return spot.regenProgress / FishingSystem.regenTicksFor(def, spot.stock, p.fishRegenPermille);
+    })(),
     context,
     stations,
     counters: s.counters.map((ct) => ({
@@ -124,16 +196,26 @@ export function buildView(sim: Simulation): SimView {
     customers: h.counters.flatMap((def) =>
       s.customers.filter((x) => x.counterId === def.id).map((x, index) => {
         const slot = queueSlot(def, index);
-        const t = x.walkTicksTotal === 0 ? 1 : 1 - x.walkTicksLeft / x.walkTicksTotal;
+        const path = CustomerSystem.approachPath(h, slot);
+        const elapsed = Math.max(0, x.walkTicksTotal - x.walkTicksLeft);
+        const pos = CustomerSystem.pointAlongPath(path, elapsed, x.walkTicksTotal);
+        const type = c.customersById.get(x.typeId);
         return {
           id: x.id, counterId: def.id, queueIndex: index,
-          xMm: h.customerEntry.x + (slot.x - h.customerEntry.x) * t,
-          zMm: h.customerEntry.z + (slot.z - h.customerEntry.z) * t,
+          xMm: pos.x,
+          zMm: pos.z,
           arrived: x.arrived, wants: x.wants, reserved: x.reserved,
+          typeId: x.typeId,
+          typeName: type?.name ?? x.typeId,
+          kind: type?.kind ?? "standard",
+          preferredProductId: x.preferredProductId,
+          preferredProductName: x.preferredProductId ? c.itemName(x.preferredProductId) : null,
+          preferenceMet: x.preferenceMet(),
         };
       })),
     customerEntryXMm: h.customerEntry.x,
     customerEntryZMm: h.customerEntry.z,
+    customerPathWaypoints: (h.customerPathWaypoints ?? []).map((p) => ({ xMm: p.x, zMm: p.z })),
     tutorialText: c.tutorial[s.tutorialIndex]?.text ?? null,
     upgrades: c.upgrades.map((u) => {
       const a = UpgradeSystem.availability(c, s, u);
@@ -144,5 +226,9 @@ export function buildView(sim: Simulation): SimView {
         reason: a.kind === "locked" ? a.reason : a.kind === "too_expensive" ? `Need ${a.missing} more coins` : null,
       };
     }),
+    rush: (() => {
+      const r = CustomerSystem.activeRush(h, s.tick);
+      return r ? { rushId: r.id, name: r.name, ticksRemaining: CustomerSystem.ticksRemaining(r, s.tick) } : null;
+    })(),
   };
 }

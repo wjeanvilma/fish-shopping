@@ -65,6 +65,11 @@ class Simulation(val content: ContentPack, val state: GameState) {
             is Command.PurchaseUpgrade -> UpgradeSystem.purchase(ctx, c.upgradeId, c.requestId)
             is Command.SetMachinePaused -> state.machines.firstOrNull { it.stationId == c.stationId }?.paused = c.paused
             is Command.Reel -> state.player.reelRequested = true
+            is Command.SelectMachineRecipe -> {
+                val m = state.machines.firstOrNull { it.stationId == c.stationId } ?: return
+                val allowed = content.machinesById[m.machineId]?.recipes.orEmpty()
+                m.preferredRecipeId = c.recipeId?.takeIf { it in allowed }
+            }
         }
     }
 }

@@ -20,6 +20,9 @@ object Stats {
     const val UPGRADES_BOUGHT = "stat.upgrades_bought"
     const val TIMING_BONUSES = "stat.timing_bonuses"
     const val RARE_CATCHES = "stat.rare_catches"
+    const val PREMIUM_SALES = "stat.premium_sales"
+    const val BULK_SALES = "stat.bulk_sales"
+    const val UNMET_PREFERENCE_SALES = "stat.unmet_preference_sales"
 }
 
 class PlayerState(
@@ -28,6 +31,8 @@ class PlayerState(
     val bag: Inventory,
     /** 1000 = normal; rebuilt from content + owned catch_speed upgrades on load. */
     var catchSpeedPermille: Int = 1000,
+    /** 1000 = normal; rebuilt from content + owned fish_regen upgrades on load. */
+    var fishRegenPermille: Int = 1000,
 ) {
     var facingX = 0
     var facingZ = SimConstants.INPUT_SCALE
@@ -72,6 +77,11 @@ class MachineState(
     var activeBatch: Batch? = null
     var paused = false
     var status = MachineStatus.WAITING_FOR_INPUT
+    /**
+     * When set, only this recipe may start (waits even if other inputs are ready).
+     * Null = auto: first ready recipe in content order.
+     */
+    var preferredRecipeId: String? = null
 
     /** Recipe duration overrides from upgrades; applied to the next batch. */
     val recipeDurations = TreeMap<String, Int>()
@@ -94,6 +104,8 @@ class CustomerState(
     var patienceLeft: Int,
     /** Ticks needed to walk from the harbor entry to the queue (fixed at spawn). */
     val walkTicksTotal: Int = 0,
+    /** Preferred product rolled at spawn; null means any accepted product. */
+    var preferredProductId: String? = null,
 ) {
     /** Reserved quantities by product id (sorted). [reserved] is the total count. */
     val reservedItems = TreeMap<String, Int>()
@@ -106,6 +118,13 @@ class CustomerState(
 
     fun clearReservations() {
         reservedItems.clear()
+    }
+
+    /** True when there is no preference, or every reserved unit is the preferred product. */
+    fun preferenceMet(): Boolean {
+        val pref = preferredProductId ?: return true
+        if (reserved == 0) return false
+        return reservedItems.keys.all { it == pref }
     }
 
     /** Ticks still walking. A walking customer is not yet queued: no reservations, no patience loss. */
@@ -168,6 +187,7 @@ class GameState(
                 harbor.playerSpawn.x, harbor.playerSpawn.z,
                 Inventory("inv.player_bag", content.player.startCarryCapacityUnits, units),
                 catchSpeedPermille = content.player.startCatchSpeedPermille,
+                fishRegenPermille = content.player.startFishRegenPermille,
             )
             return GameState(
                 harborId = harborId,
@@ -200,6 +220,12 @@ sealed interface Command {
     data class SetMachinePaused(val stationId: String, val paused: Boolean) : Command
     /** Attempt a timing-bonus reel while casting. */
     data object Reel : Command
+    /**
+     * Lock a station to [recipeId], or pass null for Auto.
+     * Prefer [com.willio.jeanvilma.fishshopping.core.production.ProductionSystem.cyclePreferredRecipe]
+     * from the HUD; this command sets an absolute preference.
+     */
+    data class SelectMachineRecipe(val stationId: String, val recipeId: String?) : Command
 }
 
 /** Results of simulation. UI effects consume these but never change economic state. */
@@ -214,11 +240,15 @@ sealed interface GameEvent {
         val timingBonus: Boolean = false,
         val rareUpgrade: Boolean = false,
     ) : GameEvent
+    /** Soft feedback when a fishing spot's stock hits zero. */
+    data class FishingSpotDepleted(override val tick: Long, val zoneId: String) : GameEvent
     data class ItemsTransferred(override val tick: Long, val from: String, val to: String, val itemId: String, val count: Int) : GameEvent
     data class BatchStarted(override val tick: Long, val batchId: String, val stationId: String, val recipeId: String) : GameEvent
     data class BatchCompleted(override val tick: Long, val batchId: String, val stationId: String) : GameEvent
     data class CustomerArrived(override val tick: Long, val customerId: String, val counterId: String) : GameEvent
     data class CustomerLeft(override val tick: Long, val customerId: String, val paid: Boolean) : GameEvent
+    data class RushStarted(override val tick: Long, val rushId: String, val name: String) : GameEvent
+    data class RushEnded(override val tick: Long, val rushId: String, val name: String) : GameEvent
     data class SaleCommitted(
         override val tick: Long,
         val saleId: String,
@@ -226,8 +256,13 @@ sealed interface GameEvent {
         /** Basket lines in sorted product-id order. */
         val items: List<ItemQuantity>,
         val coins: Long,
+        val customerTypeId: String = "",
+        val priceMultPermille: Int = 1000,
+        val preferenceMet: Boolean = true,
+        val preferredProductId: String? = null,
     ) : GameEvent {
         val quantity: Int get() = items.sumOf { it.quantity }
+        val tipped: Boolean get() = priceMultPermille > 1000
     }
     data class UpgradePurchased(override val tick: Long, val upgradeId: String, val receipt: Receipt, val replayed: Boolean) : GameEvent
     data class PurchaseRejected(override val tick: Long, val upgradeId: String, val requestId: String, val reason: String) : GameEvent

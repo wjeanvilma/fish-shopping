@@ -64,6 +64,13 @@ export class Simulation {
       case "reel":
         this.state.player.reelRequested = true;
         break;
+      case "select_machine_recipe": {
+        const m = this.state.machines.find((mm) => mm.stationId === c.stationId);
+        if (!m) break;
+        const allowed = this.content.machinesById.get(m.machineId)?.recipes ?? [];
+        m.preferredRecipeId = c.recipeId && allowed.includes(c.recipeId) ? c.recipeId : null;
+        break;
+      }
     }
   }
 }

@@ -6,8 +6,8 @@
  */
 import contentJson from "../../../shared/content/content-pack.json";
 import {
-  type Command, type ContentPack, FixedStepClock, GameState, INPUT_SCALE, NewerSaveError, Simulation,
-  type SimView, buildView, decodeSnapshot, encodeSnapshot, loadContent,
+  type Command, type ContentPack, FixedStepClock, GameState, INPUT_SCALE, NewerSaveError, ProductionSystem,
+  Simulation, type SimView, buildView, decodeSnapshot, encodeSnapshot, loadContent,
 } from "../engine";
 import { CameraRig } from "./cameraRig";
 import { openSaveStore, type SaveStore } from "./saveStore";
@@ -110,7 +110,13 @@ export class GameHost {
     let transaction = false;
     for (const e of sim.step(batch)) {
       switch (e.type) {
-        case "sale_committed": this.say(`+${e.coins} coins`); transaction = true; break;
+        case "sale_committed": {
+          const tip = e.preferenceMet === false ? " (substituted)"
+            : (e.priceMultPermille ?? 1000) > 1000 ? " Premium tip!" : "";
+          this.say(`+${e.coins} coins${tip}`);
+          transaction = true;
+          break;
+        }
         case "fish_caught":
           if (e.timingBonus) {
             const tip = sim.content.speciesById.get(e.speciesId)?.baseValue ?? 0;
@@ -121,6 +127,14 @@ export class GameHost {
             this.say(`Rare catch: ${sim.content.speciesById.get(e.speciesId)?.name ?? e.speciesId}`);
             transaction = true;
           }
+          break;
+        case "fishing_spot_depleted":
+          this.say("Pier empty — fish are returning");
+          transaction = true;
+          break;
+        case "rush_started":
+          this.say(`${e.name}!`);
+          transaction = true;
           break;
         case "upgrade_purchased":
           if (!e.replayed) { this.say(`Bought ${sim.content.upgradesById.get(e.upgradeId)?.name ?? e.upgradeId}`); transaction = true; }
@@ -171,6 +185,16 @@ export class GameHost {
   reel(): void {
     if (this.upgradesOpen) return;
     this.commands.push({ type: "reel" });
+  }
+
+  /** Cycle Auto → each recipe → Auto for a station (no tick advance). */
+  cycleStationRecipe(stationId: string): void {
+    if (this.upgradesOpen || !this.sim) return;
+    const m = this.sim.state.machines.find((mm) => mm.stationId === stationId);
+    if (!m) return;
+    ProductionSystem.cyclePreferredRecipe(this.sim.content, m);
+    this.latestView = buildView(this.sim);
+    this.publish(true);
   }
 
   // ---- persistence -------------------------------------------------------------------

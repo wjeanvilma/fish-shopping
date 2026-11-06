@@ -5,7 +5,7 @@
  */
 import Ajv2020 from "ajv/dist/2020";
 import schema from "../../../shared/schema/content-pack.schema.json";
-import { TICKS_PER_SECOND } from "./foundations";
+import { SafeMath, TICKS_PER_SECOND } from "./foundations";
 
 export interface PlayerDef {
   startCoins: number;
@@ -13,6 +13,7 @@ export interface PlayerDef {
   moveSpeedMmPerTick: number;
   transferIntervalTicks: number;
   startCatchSpeedPermille: number;
+  startFishRegenPermille: number;
   timingWindowStartPermille: number;
   timingWindowEndPermille: number;
 }
@@ -28,17 +29,40 @@ export interface MachineDef { id: string; name: string; recipes: string[]; input
 export type UpgradeEffect =
   | { kind: "carry_capacity"; capacityUnits: number }
   | { kind: "recipe_duration"; machine: string; recipe: string; durationTicks: number }
-  | { kind: "catch_speed"; speedPermille: number };
+  | { kind: "catch_speed"; speedPermille: number }
+  | { kind: "fish_regen"; speedPermille: number }
+  | { kind: "unlock_fishing_spot"; zone: string };
 export interface UpgradeDef { id: string; name: string; description: string; cost: number; requires: string[]; effect: UpgradeEffect }
 export interface StatGoal { stat: string; atLeast: number }
 export interface QuestDef { id: string; name: string; goal: StatGoal }
-export interface CustomerDef { id: string; name: string; basketMin: number; basketMax: number; patienceTicks: number; spawnWeight: number }
+export type CustomerKind = "standard" | "premium" | "bulk";
+export interface ProductWeight { item: string; weight: number }
+export interface CustomerDef {
+  id: string;
+  name: string;
+  kind: CustomerKind;
+  basketMin: number;
+  basketMax: number;
+  patienceTicks: number;
+  spawnWeight: number;
+  priceMultPermille: number;
+  preferredProducts: ProductWeight[];
+  unmetPriceMultPermille: number;
+  unmetPatienceDrainPermille: number;
+}
 export type TutorialTrigger = { kind: "enter_zone"; zone: string } | ({ kind: "stat" } & StatGoal);
 export interface TutorialStepDef { id: string; text: string; advanceOn: TutorialTrigger }
 export interface RectMm { id: string; minX: number; minZ: number; maxX: number; maxZ: number }
 export type ZoneKind = "fishing" | "machine_input" | "machine_output" | "counter";
 export interface ZoneDef extends RectMm { kind: ZoneKind }
-export interface FishingSpotDef { zone: string; species: string[]; stockMax: number; regenTicks: number }
+export interface FishingSpotDef {
+  zone: string;
+  species: string[];
+  stockMax: number;
+  regenTicks: number;
+  regenCurvePermille: number[];
+  requiresUpgrade?: string | null;
+}
 export interface StationDef { id: string; machine: string; inputZone: string; outputZone: string }
 export interface PointMm { x: number; z: number }
 export interface CounterDef {
@@ -52,6 +76,16 @@ export interface CounterDef {
 export const counterAccepts = (c: CounterDef, itemId: string): boolean => c.products.includes(itemId);
 export const queueSlot = (c: CounterDef, i: number): PointMm =>
   ({ x: c.queueAnchor.x + i * c.queueStep.x, z: c.queueAnchor.z + i * c.queueStep.z });
+/** Periodic rush; active when (tick % periodTicks) is in [startTick, startTick + durationTicks). */
+export interface RushWindowDef {
+  id: string;
+  name: string;
+  periodTicks: number;
+  startTick: number;
+  durationTicks: number;
+  spawnSpeedPermille: number;
+  queueBonus: number;
+}
 export interface HarborDef {
   id: string;
   name: string;
@@ -65,6 +99,9 @@ export interface HarborDef {
   customerSpawnTicks: number;
   customerEntry: PointMm;
   customerWalkMmPerTick: number;
+  /** Intermediate approach points (entry → waypoints → queue). Empty = straight line. */
+  customerPathWaypoints: PointMm[];
+  rushes: RushWindowDef[];
 }
 
 export interface RawContentPack {
@@ -98,6 +135,7 @@ export class ContentPack {
   readonly machinesById: Map<string, MachineDef>;
   readonly upgradesById: Map<string, UpgradeDef>;
   readonly questsById: Map<string, QuestDef>;
+  readonly customersById: Map<string, CustomerDef>;
   readonly harborsById: Map<string, HarborDef>;
 
   constructor(readonly raw: RawContentPack) {
@@ -107,6 +145,7 @@ export class ContentPack {
     this.machinesById = byId(raw.machines);
     this.upgradesById = byId(raw.upgrades);
     this.questsById = byId(raw.quests);
+    this.customersById = byId(raw.customers);
     this.harborsById = byId(raw.harbors);
   }
 
@@ -168,6 +207,8 @@ export function validateContent(p: ContentPack): string[] {
     "player.timingWindowStartPermille must be < timingWindowEndPermille");
   check(r.player.startCatchSpeedPermille >= 1000, () =>
     "player.startCatchSpeedPermille must be >= 1000");
+  check(r.player.startFishRegenPermille >= 1000, () =>
+    "player.startFishRegenPermille must be >= 1000");
 
   const allIds = [...r.species, ...r.products, ...r.recipes, ...r.machines, ...r.upgrades, ...r.quests,
     ...r.customers, ...r.tutorial, ...r.harbors].map((x) => x.id);
@@ -214,39 +255,127 @@ export function validateContent(p: ContentPack): string[] {
     } else if (e.kind === "recipe_duration") {
       check(p.machinesById.has(e.machine), () => `${u.id}: unknown machine '${e.machine}'`);
       check(p.recipesById.has(e.recipe), () => `${u.id}: unknown recipe '${e.recipe}'`);
-    } else {
+    } else if (e.kind === "catch_speed") {
       check(e.speedPermille > r.player.startCatchSpeedPermille, () =>
         `${u.id}: catch speed does not exceed the starting catch speed`);
+    } else if (e.kind === "fish_regen") {
+      check(e.speedPermille > r.player.startFishRegenPermille, () =>
+        `${u.id}: fish regen does not exceed the starting fish regen`);
+    } else {
+      const spot = r.harbors.flatMap((h) => h.fishingSpots).find((f) => f.zone === e.zone);
+      check(!!spot, () => `${u.id}: unlock_fishing_spot unknown zone '${e.zone}'`);
+      check(spot?.requiresUpgrade === u.id, () =>
+        `${u.id}: unlock_fishing_spot zone must list this upgrade as requiresUpgrade`);
     }
   }
   const cycle = findUpgradeCycle(p);
   if (cycle) errors.push(`Upgrade requirement cycle: ${cycle.join(" -> ")}`);
 
-  for (const c of r.customers) check(c.basketMax >= c.basketMin, () => `${c.id}: basketMax < basketMin`);
+  for (const c of r.customers) {
+    check(c.basketMax >= c.basketMin, () => `${c.id}: basketMax < basketMin`);
+    check(c.priceMultPermille >= 1000, () => `${c.id}: priceMultPermille must be >= 1000`);
+    check(c.unmetPriceMultPermille >= 1 && c.unmetPriceMultPermille <= 1000, () =>
+      `${c.id}: unmetPriceMultPermille must be 1..1000`);
+    check(c.unmetPatienceDrainPermille >= 1000, () =>
+      `${c.id}: unmetPatienceDrainPermille must be >= 1000`);
+    if (c.kind === "premium") {
+      check(c.priceMultPermille > 1000, () => `${c.id}: premium customers must tip (priceMultPermille > 1000)`);
+    }
+    if (c.kind === "bulk") {
+      check(c.basketMin >= 5, () => `${c.id}: bulk customers need basketMin >= 5`);
+    }
+    for (const pw of c.preferredProducts) {
+      check(p.productsById.has(pw.item), () => `${c.id}: preferred product unknown '${pw.item}'`);
+    }
+    if (c.preferredProducts.length > 0) {
+      const sellable = new Set(r.harbors.flatMap((h) => h.counters.flatMap((ct) => ct.products)));
+      for (const pw of c.preferredProducts) {
+        check(sellable.has(pw.item), () => `${c.id}: preferred '${pw.item}' is not sold at any counter`);
+      }
+    }
+  }
 
   for (const h of r.harbors) {
     const zones = new Map(h.zones.map((z) => [z.id, z]));
     const open = (x: number, z: number) => h.walkable.some((w) => rectContains(w, x, z)) && !h.obstacles.some((o) => rectContains(o, x, z));
     check(h.walkable.some((w) => rectContains(w, h.playerSpawn.x, h.playerSpawn.z)), () => `${h.id}: spawn is not walkable`);
     check(!h.obstacles.some((o) => rectContains(o, h.playerSpawn.x, h.playerSpawn.z)), () => `${h.id}: spawn is inside an obstacle`);
+    const fishingZoneIds = new Set(h.zones.filter((z) => z.kind === "fishing").map((z) => z.id));
+    const spotZoneIds = new Set(h.fishingSpots.map((f) => f.zone));
+    check(
+      fishingZoneIds.size === spotZoneIds.size && [...fishingZoneIds].every((id) => spotZoneIds.has(id)),
+      () => `${h.id}: fishing zones and fishingSpots must cover the same zone ids`,
+    );
     for (const f of h.fishingSpots) {
       check(zones.get(f.zone)?.kind === "fishing", () => `${h.id}: '${f.zone}' is not a fishing zone`);
       f.species.forEach((s) => check(p.speciesById.has(s), () => `${h.id}: unknown species '${s}'`));
+      check(f.regenCurvePermille.length >= 2, () => `${h.id}: '${f.zone}' regenCurvePermille needs >= 2 entries`);
+      if (f.requiresUpgrade) {
+        check(p.upgradesById.has(f.requiresUpgrade), () => `${h.id}: '${f.zone}' requiresUpgrade unknown '${f.requiresUpgrade}'`);
+      }
     }
     for (const s of h.stations) {
       check(p.machinesById.has(s.machine), () => `${s.id}: unknown machine '${s.machine}'`);
       check(zones.get(s.inputZone)?.kind === "machine_input", () => `${s.id}: bad input zone`);
       check(zones.get(s.outputZone)?.kind === "machine_output", () => `${s.id}: bad output zone`);
     }
+    const CUSTOMER_PATH_RADIUS_MM = 200;
+    const CUSTOMER_PATH_SAMPLE_MM = 200;
+    const openForCustomer = (x: number, z: number): boolean => {
+      if (!h.walkable.some((w) => rectContains(w, x, z))) return false;
+      const r = CUSTOMER_PATH_RADIUS_MM;
+      return !h.obstacles.some((o) =>
+        x >= o.minX - r && x < o.maxX + r && z >= o.minZ - r && z < o.maxZ + r);
+    };
+    const segmentClear = (a: PointMm, b: PointMm): boolean => {
+      const dx = b.x - a.x;
+      const dz = b.z - a.z;
+      const dist = Math.max(1, SafeMath.isqrt(dx * dx + dz * dz));
+      for (let d = 0; d <= dist; d += CUSTOMER_PATH_SAMPLE_MM) {
+        const x = a.x + Math.trunc((dx * d) / dist);
+        const z = a.z + Math.trunc((dz * d) / dist);
+        if (!openForCustomer(x, z)) return false;
+      }
+      return openForCustomer(b.x, b.z);
+    };
     check(open(h.customerEntry.x, h.customerEntry.z), () => `${h.id}: customer entry is not on open walkable ground`);
+    const waypoints = h.customerPathWaypoints ?? [];
+    waypoints.forEach((wp, i) => {
+      check(openForCustomer(wp.x, wp.z), () => `${h.id}: customerPathWaypoints[${i}] is not on open walkable ground`);
+    });
+    const rushes = h.rushes ?? [];
+    const rushQueueBonus = rushes.reduce((m, r) => Math.max(m, r.queueBonus), 0);
+    for (const rush of rushes) {
+      check(rush.startTick + rush.durationTicks <= rush.periodTicks, () =>
+        `${rush.id}: rush window must fit inside periodTicks (no wrap)`);
+      check(rush.spawnSpeedPermille >= 1000, () =>
+        `${rush.id}: spawnSpeedPermille must be >= 1000 (rushes only speed up spawns)`);
+    }
+    duplicates(rushes.map((r) => r.id)).forEach((id) => errors.push(`${h.id}: duplicate rush '${id}'`));
+    for (let i = 0; i < rushes.length; i++) {
+      for (let j = i + 1; j < rushes.length; j++) {
+        const a = rushes[i]!;
+        const b = rushes[j]!;
+        if (a.periodTicks !== b.periodTicks) continue;
+        const aEnd = a.startTick + a.durationTicks;
+        const bEnd = b.startTick + b.durationTicks;
+        check(!(a.startTick < bEnd && b.startTick < aEnd), () =>
+          `${h.id}: rushes '${a.id}' and '${b.id}' overlap`);
+      }
+    }
     for (const c of h.counters) {
       check(c.products.length > 0, () => `${c.id}: needs at least one product`);
       c.products.forEach((pid) => check(p.productsById.has(pid), () => `${c.id}: unknown product '${pid}'`));
       check(new Set(c.products).size === c.products.length, () => `${c.id}: duplicate products`);
       check(zones.get(c.zone)?.kind === "counter", () => `${c.id}: bad counter zone`);
-      for (let i = 0; i < c.maxQueue; i++) {
+      for (let i = 0; i < c.maxQueue + rushQueueBonus; i++) {
         const slot = queueSlot(c, i);
         check(open(slot.x, slot.z), () => `${c.id}: queue slot ${i} is not on open walkable ground`);
+        const path = [h.customerEntry, ...waypoints, slot];
+        for (let s = 0; s < path.length - 1; s++) {
+          check(segmentClear(path[s]!, path[s + 1]!), () =>
+            `${c.id}: customer path to queue slot ${i} crosses blocked ground`);
+        }
       }
     }
     for (const z of h.zones) {

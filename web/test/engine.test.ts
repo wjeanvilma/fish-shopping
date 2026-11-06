@@ -3,9 +3,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  type Command, ContentError, FixedStepClock, FishingSystem, GameState, Inventory, NewerSaveError, OfflinePolicy,
-  OFFLINE_CAP_TICKS, SafeMath, Simulation, SnapshotError, Transfers, buildView, decodeSnapshot,
-  encodeSnapshot, loadContent, MS_PER_TICK,
+  type Command, ContentError, CustomerState, CustomerSystem, FixedStepClock, FishingSystem, GameState, Inventory, NewerSaveError,
+  OfflinePolicy, OFFLINE_CAP_TICKS, ProductionSystem, SafeMath, Simulation, SnapshotError, Transfers, buildView,
+  decodeSnapshot, encodeSnapshot, loadContent, MS_PER_TICK,
 } from "../src/engine";
 
 const raw = readFileSync(resolve(__dirname, "../../shared/content/content-pack.json"), "utf8");
@@ -15,6 +15,8 @@ const SPRAT = "species.silver_sprat";
 const PORTION = "product.basic_portion";
 
 const newSim = (seed = 1234) => new Simulation(content, GameState.newGame(content, HARBOR, seed));
+const cutter = (sim: Simulation) => sim.state.machines.find((m) => m.stationId === "station.cutter_1")!;
+const smoker = (sim: Simulation) => sim.state.machines.find((m) => m.stationId === "station.smoker_1")!;
 
 function checkedStep(sim: Simulation, cmds: Command[] = []) {
   const events = sim.step(cmds);
@@ -171,7 +173,7 @@ describe("simulation", () => {
     sim.run(5);
     const saved = encodeSnapshot(content, sim.state);
     expect(() => decodeSnapshot(content, saved.replace('"tick":5', '"tick":6'))).toThrow(/Checksum/);
-    expect(() => decodeSnapshot(content, saved.replace('"schemaVersion":4', '"schemaVersion":99'))).toThrow(NewerSaveError);
+    expect(() => decodeSnapshot(content, saved.replace('"schemaVersion":6', '"schemaVersion":99'))).toThrow(NewerSaveError);
     expect(() => decodeSnapshot(content, "{")).toThrow(SnapshotError);
   });
 
@@ -211,6 +213,172 @@ describe("simulation", () => {
     expect(sales.length).toBeGreaterThan(0);
     expect(sales.some((e) => e.type === "sale_committed" && e.coins >= 12)).toBe(true);
     expect(counter.stock.usedUnits()).toBe(0);
+  });
+
+  it("premium visitor pays tip multiplier", () => {
+    const sim = newSim();
+    const counter = sim.state.counters[0]!;
+    counter.stock.add(PORTION, 1);
+    const type = content.customersById.get("customer.premium_visitor")!;
+    sim.state.customers.push(new CustomerState("customer.test_premium", type.id, counter.counterId, 1, 9999, 0));
+    walkTo(sim, 3000, 2750);
+    const events = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
+    const sales = events.filter((e) => e.type === "sale_committed");
+    expect(sales).toHaveLength(1);
+    expect(sales[0]).toMatchObject({ priceMultPermille: type.priceMultPermille, coins: 7 });
+    expect(sim.state.stat("stat.premium_sales")).toBe(1);
+  });
+
+  it("restaurant buyer uses bulk basket and counter shows kind", () => {
+    const sim = newSim();
+    const type = content.customersById.get("customer.restaurant_buyer")!;
+    expect(type.kind).toBe("bulk");
+    expect(type.basketMin).toBeGreaterThanOrEqual(6);
+    const counter = sim.state.counters[0]!;
+    counter.stock.add(PORTION, 10);
+    sim.state.customers.push(new CustomerState("customer.test_bulk", type.id, counter.counterId, 8, 9999, 0));
+    walkTo(sim, 3000, 2750);
+    checkedStep(sim);
+    expect(buildView(sim).context!.lines.some((l) => /Restaurant/.test(l) && /bulk/.test(l))).toBe(true);
+    const events = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
+    const sales = events.filter((e) => e.type === "sale_committed");
+    expect(sales).toHaveLength(1);
+    expect(sales[0]!.type === "sale_committed" && sales[0].items.reduce((n, i) => n + i.quantity, 0)).toBe(8);
+    expect(sim.state.stat("stat.bulk_sales")).toBe(1);
+  });
+
+  it("customer roster includes premium and bulk kinds", () => {
+    expect(content.customers.some((c) => c.kind === "premium" && c.priceMultPermille > 1000)).toBe(true);
+    expect(content.customers.some((c) => c.kind === "bulk" && c.basketMin >= 6)).toBe(true);
+  });
+
+  it("preferred product is reserved first and pays full price", () => {
+    const sim = newSim();
+    const counter = sim.state.counters[0]!;
+    const fillet = "product.fillet";
+    counter.stock.add(PORTION, 2);
+    counter.stock.add(fillet, 1);
+    const type = content.customersById.get("customer.local_shopper")!;
+    sim.state.customers.push(new CustomerState(
+      "customer.test_pref_met", type.id, counter.counterId, 1, 9999, 0, fillet,
+    ));
+    walkTo(sim, 3000, 2750);
+    checkedStep(sim);
+    const front = sim.state.customers[0]!;
+    expect(front.reservedItems.get(fillet)).toBe(1);
+    expect(front.preferenceMet()).toBe(true);
+    expect(buildView(sim).context!.lines.some((l) => /Fillet/.test(l) && !/substituting/.test(l))).toBe(true);
+    const events = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
+    const sales = events.filter((e) => e.type === "sale_committed");
+    expect(sales).toHaveLength(1);
+    expect(sales[0]).toMatchObject({
+      preferenceMet: true, preferredProductId: fillet,
+      priceMultPermille: type.priceMultPermille, coins: 12,
+    });
+    expect(sim.state.stat("stat.unmet_preference_sales")).toBe(0);
+  });
+
+  it("unmet preference lowers pay and shows substituting", () => {
+    const sim = newSim();
+    const counter = sim.state.counters[0]!;
+    counter.stock.add(PORTION, 1);
+    const type = content.customersById.get("customer.premium_visitor")!;
+    const preferred = "product.premium_portion";
+    sim.state.customers.push(new CustomerState(
+      "customer.test_pref_unmet", type.id, counter.counterId, 1, 9999, 0, preferred,
+    ));
+    walkTo(sim, 3000, 2750);
+    checkedStep(sim);
+    expect(sim.state.customers[0]!.preferenceMet()).toBe(false);
+    expect(buildView(sim).context!.lines.some((l) => /substituting/.test(l) && /Premium portion/.test(l))).toBe(true);
+    const events = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
+    const sales = events.filter((e) => e.type === "sale_committed");
+    expect(sales).toHaveLength(1);
+    expect(sales[0]).toMatchObject({
+      preferenceMet: false, preferredProductId: preferred,
+      priceMultPermille: 900, coins: 4,
+    });
+    expect(sim.state.stat("stat.unmet_preference_sales")).toBe(1);
+  });
+
+  it("unmet preference drains patience faster while preferred is out", () => {
+    const sim = newSim();
+    const counter = sim.state.counters[0]!;
+    const type = content.customersById.get("customer.local_shopper")!;
+    sim.state.customers.push(new CustomerState(
+      "customer.test_pref_drain", type.id, counter.counterId, 1, 100, 0, "product.fillet",
+    ));
+    sim.run(10);
+    expect(sim.state.customers[0]!.patienceLeft).toBe(80);
+  });
+
+  it("customer roster defines product preferences", () => {
+    expect(content.customers.every((c) => c.preferredProducts.length > 0)).toBe(true);
+    expect(content.customers.every((c) => c.unmetPriceMultPermille >= 1 && c.unmetPriceMultPermille <= 1000)).toBe(true);
+    expect(content.customers.every((c) => c.unmetPatienceDrainPermille >= 1000)).toBe(true);
+  });
+
+  it("rush windows spike spawn rate and show banner", () => {
+    const sim = newSim();
+    const harbor = sim.harbor;
+    expect(harbor.rushes.length).toBeGreaterThan(0);
+    const lunch = harbor.rushes.find((r) => r.id === "rush.lunch")!;
+    sim.state.tick = lunch.startTick - 1;
+    expect(CustomerSystem.activeRush(harbor, sim.state.tick)).toBeNull();
+    expect(CustomerSystem.spawnIntervalTicks(harbor, sim.state.tick)).toBe(harbor.customerSpawnTicks);
+    expect(buildView(sim).rush).toBeNull();
+
+    const events = checkedStep(sim);
+    const started = events.filter((e) => e.type === "rush_started");
+    expect(started).toHaveLength(1);
+    expect(started[0]).toMatchObject({ rushId: lunch.id, name: lunch.name });
+    expect(CustomerSystem.activeRush(harbor, sim.state.tick)?.id).toBe(lunch.id);
+    const expectedInterval = Math.trunc((harbor.customerSpawnTicks * 1000) / lunch.spawnSpeedPermille);
+    expect(CustomerSystem.spawnIntervalTicks(harbor, sim.state.tick)).toBe(expectedInterval);
+    expect(buildView(sim).rush).toMatchObject({ name: lunch.name, ticksRemaining: lunch.durationTicks });
+
+    sim.state.customers = [];
+    sim.state.customerSpawnProgress = 0;
+    const arrivals = Array.from({ length: expectedInterval }, () => checkedStep(sim)).flat()
+      .filter((e) => e.type === "customer_arrived");
+    expect(arrivals.length).toBeGreaterThan(0);
+    expect(CustomerSystem.effectiveMaxQueue(harbor.counters[0]!, lunch))
+      .toBe(harbor.counters[0]!.maxQueue + lunch.queueBonus);
+  });
+
+  it("rush end emits event and clears banner", () => {
+    const sim = newSim();
+    const lunch = sim.harbor.rushes.find((r) => r.id === "rush.lunch")!;
+    sim.state.tick = lunch.startTick + lunch.durationTicks - 1;
+    expect(CustomerSystem.activeRush(sim.harbor, sim.state.tick)).not.toBeNull();
+    const events = checkedStep(sim);
+    expect(events.filter((e) => e.type === "rush_ended")).toHaveLength(1);
+    expect(CustomerSystem.activeRush(sim.harbor, sim.state.tick)).toBeNull();
+    expect(buildView(sim).rush).toBeNull();
+  });
+
+  it("customer approach follows waypoints around obstacles", () => {
+    const sim = newSim();
+    const h = sim.harbor;
+    expect(h.customerPathWaypoints.length).toBeGreaterThan(0);
+    expect(content.contentVersion).toBe("0.12.0");
+    const slot = { x: h.counters[0]!.queueAnchor.x, z: h.counters[0]!.queueAnchor.z };
+    const path = CustomerSystem.approachPath(h, slot);
+    const routed = CustomerSystem.pathWalkTicks(path, h.customerWalkMmPerTick);
+    const straight = CustomerSystem.walkTicks(h.customerEntry, slot, h.customerWalkMmPerTick);
+    expect(routed).toBeGreaterThan(straight);
+
+    sim.state.counters[0]!.stock.add(PORTION, 1);
+    sim.run(h.customerSpawnTicks);
+    const c = sim.state.customers[0]!;
+    expect(c.walkTicksTotal).toBe(routed);
+    sim.run(Math.trunc(c.walkTicksTotal / 2));
+    const view = buildView(sim).customers[0]!;
+    const sx = h.customerEntry.x + (slot.x - h.customerEntry.x) * 0.5;
+    const sz = h.customerEntry.z + (slot.z - h.customerEntry.z) * 0.5;
+    const chordDist = Math.hypot(view.xMm - sx, view.zMm - sz);
+    expect(chordDist).toBeGreaterThan(200);
+    expect(buildView(sim).customerPathWaypoints).toHaveLength(h.customerPathWaypoints.length);
   });
 
   it("smoker turns fillets into smoked fillets", () => {
@@ -257,6 +425,137 @@ describe("simulation", () => {
     expect(sim.state.stat("stat.timing_bonuses")).toBeGreaterThanOrEqual(1);
     expect(sim.state.coins).toBeGreaterThan(beforeCoins);
     expect(sim.state.player.fishingSpecies).toBeNull();
+  });
+
+  it("preferred recipe locks out other ready inputs", () => {
+    const sim = newSim();
+    const m = cutter(sim);
+    m.input.add(SPRAT, 1);
+    m.input.add("species.harbor_herring", 1);
+    const events = [
+      ...checkedStep(sim, [{ type: "select_machine_recipe", stationId: "station.cutter_1", recipeId: "recipe.herring_portions" }]),
+      ...Array.from({ length: 100 }, () => checkedStep(sim)).flat(),
+    ];
+    expect(m.preferredRecipeId).toBe("recipe.herring_portions");
+    const started = events.filter((e) => e.type === "batch_started");
+    expect(started).toHaveLength(1);
+    expect(started[0]).toMatchObject({ recipeId: "recipe.herring_portions" });
+    expect(m.input.quantity("species.harbor_herring")).toBe(0);
+    expect(m.input.quantity(SPRAT)).toBe(1);
+  });
+
+  it("output full status names blocked products", () => {
+    const sim = newSim();
+    const m = cutter(sim);
+    m.output.add(PORTION, 19);
+    m.input.add(SPRAT, 1);
+    for (let i = 0; i < 5; i++) checkedStep(sim);
+    expect(m.status).toBe("OUTPUT_FULL");
+    const text = ProductionSystem.statusText(m, content);
+    expect(text).toMatch(/Output full/);
+    expect(text).toMatch(/Basic portion/);
+    expect(buildView(sim).stations.find((s) => s.stationId === "station.cutter_1")!.statusText).toMatch(/collect/);
+  });
+
+  it("fillet and smoker duration upgrades apply to next batch", () => {
+    const sim = newSim();
+    sim.state.completedQuests.add("quest.first_ten_sales");
+    sim.state.coins = 10_000;
+    checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.cutter_speed_2", requestId: "r1" }]);
+    checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.cutter_fillet_speed", requestId: "r2" }]);
+    checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.smoker_speed_2", requestId: "r3" }]);
+    const c = cutter(sim);
+    c.input.add("species.blue_mackerel", 1);
+    const cutterEvents = Array.from({ length: 150 }, () => checkedStep(sim)).flat();
+    const started = cutterEvents.filter((e) => e.type === "batch_started");
+    const done = cutterEvents.filter((e) => e.type === "batch_completed");
+    expect(started[0]).toMatchObject({ recipeId: "recipe.mackerel_fillets" });
+    expect(done[0]!.tick - started[0]!.tick).toBe(100);
+
+    const sm = smoker(sim);
+    sm.input.add("product.fillet", 1);
+    const smokeEvents = Array.from({ length: 150 }, () => checkedStep(sim)).flat();
+    const smokeStarted = smokeEvents.filter((e) => e.type === "batch_started");
+    const smokeDone = smokeEvents.filter((e) => e.type === "batch_completed");
+    expect(smokeStarted[0]).toMatchObject({ recipeId: "recipe.smoke_fillet" });
+    expect(smokeDone[0]!.tick - smokeStarted[0]!.tick).toBe(120);
+  });
+
+  it("cycle preferred recipe rotates auto and recipes", () => {
+    const sim = newSim();
+    const m = cutter(sim);
+    expect(m.preferredRecipeId).toBeNull();
+    expect(ProductionSystem.cyclePreferredRecipe(content, m)).toBe("recipe.basic_portions");
+    expect(ProductionSystem.cyclePreferredRecipe(content, m)).toBe("recipe.herring_portions");
+    let guard = 0;
+    while (ProductionSystem.cyclePreferredRecipe(content, m) !== null) {
+      expect(++guard).toBeLessThan(20);
+    }
+    expect(m.preferredRecipeId).toBeNull();
+  });
+
+  it("empty spot regen uses slower curve than near-full", () => {
+    const sim = newSim();
+    const def = content.harborsById.get(HARBOR)!.fishingSpots.find((f) => f.zone === "zone.pier_end")!;
+    const empty = FishingSystem.regenTicksFor(def, 0, 1000);
+    const nearlyFull = FishingSystem.regenTicksFor(def, def.stockMax - 1, 1000);
+    expect(empty).toBeGreaterThan(nearlyFull);
+    const spot = sim.state.fishingSpots.find((f) => f.zoneId === "zone.pier_end")!;
+    spot.stock = 0;
+    spot.regenProgress = 0;
+    for (let i = 0; i < empty - 1; i++) checkedStep(sim);
+    expect(spot.stock).toBe(0);
+    checkedStep(sim);
+    expect(spot.stock).toBe(1);
+  });
+
+  it("fish regen upgrade shortens restock wait", () => {
+    const sim = newSim();
+    const def = content.harborsById.get(HARBOR)!.fishingSpots.find((f) => f.zone === "zone.pier_end")!;
+    expect(FishingSystem.regenTicksFor(def, 0, 1250)).toBeLessThan(FishingSystem.regenTicksFor(def, 0, 1000));
+    sim.state.player.fishRegenPermille = 1250;
+    const needed = FishingSystem.regenTicksFor(def, 0, 1250);
+    const spot = sim.state.fishingSpots.find((f) => f.zoneId === "zone.pier_end")!;
+    spot.stock = 0;
+    spot.regenProgress = 0;
+    for (let i = 0; i < needed - 1; i++) checkedStep(sim);
+    expect(spot.stock).toBe(0);
+    checkedStep(sim);
+    expect(spot.stock).toBe(1);
+  });
+
+  it("side pier locked until upgrade then fishes", () => {
+    const sim = newSim();
+    // Onto the pier, then north onto the spur (no diagonal shortcut over water).
+    walkTo(sim, -12750, 0);
+    walkTo(sim, -12750, 3000);
+    expect(sim.state.player.zoneId).toBe("zone.pier_spur");
+    expect(buildView(sim).context!.lines[0]).toMatch(/^Locked/);
+    for (let i = 0; i < 40; i++) checkedStep(sim);
+    expect(sim.state.player.fishingSpecies).toBeNull();
+    expect(sim.state.stat("stat.fish_caught")).toBe(0);
+    sim.state.coins = 10_000;
+    const buy = checkedStep(sim, [
+      { type: "purchase_upgrade", upgradeId: "upgrade.bag_capacity_2", requestId: "req-bag" },
+      { type: "purchase_upgrade", upgradeId: "upgrade.tide_chart", requestId: "req-tide" },
+      { type: "purchase_upgrade", upgradeId: "upgrade.side_pier", requestId: "req-spur" },
+    ]);
+    expect(buy.some((e) => e.type === "upgrade_purchased" && e.upgradeId === "upgrade.side_pier")).toBe(true);
+    for (let i = 0; i < 400 && sim.state.stat("stat.fish_caught") < 1; i++) checkedStep(sim);
+    expect(sim.state.stat("stat.fish_caught")).toBeGreaterThanOrEqual(1);
+  });
+
+  it("empty pier shows soft feedback in view", () => {
+    const sim = newSim();
+    walkTo(sim, -14250, 0);
+    const spot = sim.state.fishingSpots.find((f) => f.zoneId === "zone.pier_end")!;
+    spot.stock = 0;
+    spot.regenProgress = 0;
+    checkedStep(sim);
+    const v = buildView(sim);
+    expect(v.fishingSpotEmpty).toBe(true);
+    expect(v.fishingRegenProgress).not.toBeNull();
+    expect(v.context!.lines.some((l) => /empty/i.test(l))).toBe(true);
   });
 
   it("smoker pads transfer fillet in and smoked out", () => {

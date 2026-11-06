@@ -98,6 +98,11 @@ object StarterLineFixture {
             is Command.PurchaseUpgrade -> { put("type", "purchase_upgrade"); put("upgradeId", c.upgradeId); put("requestId", c.requestId) }
             is Command.SetMachinePaused -> { put("type", "set_machine_paused"); put("stationId", c.stationId); put("paused", c.paused) }
             is Command.Reel -> put("type", "reel")
+            is Command.SelectMachineRecipe -> {
+                put("type", "select_machine_recipe")
+                put("stationId", c.stationId)
+                put("recipeId", c.recipeId)
+            }
         }
     }
 
@@ -106,6 +111,10 @@ object StarterLineFixture {
         "purchase_upgrade" -> Command.PurchaseUpgrade(o["upgradeId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "set_machine_paused" -> Command.SetMachinePaused(o["stationId"]!!.jsonPrimitive.content, o["paused"]!!.jsonPrimitive.content == "true")
         "reel" -> Command.Reel
+        "select_machine_recipe" -> Command.SelectMachineRecipe(
+            o["stationId"]!!.jsonPrimitive.content,
+            o["recipeId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
+        )
         else -> error("unknown command ${o["type"]}")
     }
 
@@ -124,7 +133,10 @@ object StarterLineFixture {
         put("activeBatchRemaining", cutter.activeBatch?.remainingTicks ?: -1)
         put("counterStock", JsonObject(s.counters.single().stock.contents().mapValues { JsonPrimitive(it.value) }))
         put("customers", s.customers.size)
-        put("fishingStock", s.fishingSpots.single().stock)
+        put(
+            "fishingStock",
+            JsonObject(s.fishingSpots.associate { it.zoneId to JsonPrimitive(it.stock) }),
+        )
         put("ownedUpgrades", buildJsonArray { s.ownedUpgrades.forEach { add(JsonPrimitive(it)) } })
         put("completedQuests", buildJsonArray { s.completedQuests.forEach { add(JsonPrimitive(it)) } })
         put("tutorialIndex", s.tutorialIndex)

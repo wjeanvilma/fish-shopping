@@ -58,6 +58,7 @@ export function encodeSnapshot(content: ContentPack, s: GameState): string {
       stationId: m.stationId,
       paused: m.paused,
       status: m.status,
+      preferredRecipeId: m.preferredRecipeId,
       input: inv(m.input),
       output: inv(m.output),
       activeBatch: m.activeBatch
@@ -73,6 +74,7 @@ export function encodeSnapshot(content: ContentPack, s: GameState): string {
       id: c.id, typeId: c.typeId, counterId: c.counterId, wants: c.wants, patienceLeft: c.patienceLeft,
       reservedItems: Object.fromEntries([...c.reservedItems.entries()].sort(([a], [b]) => (a < b ? -1 : 1))),
       walkTicksTotal: c.walkTicksTotal, walkTicksLeft: c.walkTicksLeft,
+      preferredProductId: c.preferredProductId,
     })),
     ownedUpgrades: [...s.ownedUpgrades].sort(compareStrings),
     completedQuests: [...s.completedQuests].sort(compareStrings),
@@ -110,6 +112,8 @@ export function decodeSnapshot(content: ContentPack, text: string): GameState {
  *  - v1 -> v2: customers had no walking state; they were already queued (walk 0).
  *  - v2 -> v3: customers.reserved (int, single SKU) becomes reservedItems map.
  *  - v3 -> v4: player mid-cast fishingCatchTicks + reelAttemptedThisCast.
+ *  - v4 -> v5: machines.preferredRecipeId (null = Auto).
+ *  - v5 -> v6: customers.preferredProductId.
  */
 function readState(content: ContentPack, n: Reader, version: number): GameState {
   const harborId = n.get("harborId").string();
@@ -155,6 +159,11 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
     const status = mn.get("status").string();
     m.status = (["WAITING_FOR_INPUT", "PROCESSING", "OUTPUT_FULL", "PAUSED"] as const).includes(status as MachineStatus)
       ? (status as MachineStatus) : "WAITING_FOR_INPUT";
+    if (version >= 5) {
+      const pref = mn.optional("preferredRecipeId")?.string() ?? null;
+      const allowed = content.machinesById.get(m.machineId)?.recipes ?? [];
+      m.preferredRecipeId = pref && allowed.includes(pref) ? pref : null;
+    }
     readInv(mn.get("input"), m.input);
     readInv(mn.get("output"), m.output);
     const b = mn.optional("activeBatch");
@@ -175,8 +184,14 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
   for (const cn of n.get("customers").list()) {
     const walkTotal = version >= 2 ? cn.get("walkTicksTotal").int(0) : 0;
     const counterId = cn.get("counterId").string();
+    const preferred = version >= 6
+      ? (() => {
+        const raw = cn.optional("preferredProductId")?.string() ?? null;
+        return raw && content.productsById.has(raw) ? raw : null;
+      })()
+      : null;
     const c = new CustomerState(cn.get("id").string(), cn.get("typeId").string(), counterId,
-      cn.get("wants").int(1), cn.get("patienceLeft").int(), walkTotal);
+      cn.get("wants").int(1), cn.get("patienceLeft").int(), walkTotal, preferred);
     if (version >= 3) {
       for (const [item, v] of cn.get("reservedItems").entries()) {
         const qty = v.int(1);

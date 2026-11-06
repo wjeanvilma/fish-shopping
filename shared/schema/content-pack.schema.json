@@ -40,6 +40,7 @@
         "moveSpeedMmPerTick",
         "transferIntervalTicks",
         "startCatchSpeedPermille",
+        "startFishRegenPermille",
         "timingWindowStartPermille",
         "timingWindowEndPermille"
       ],
@@ -59,6 +60,10 @@
         "startCatchSpeedPermille": {
           "$ref": "#/$defs/positiveInt",
           "description": "1000 = normal catch duration; higher finishes casts faster."
+        },
+        "startFishRegenPermille": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "1000 = normal spot regen; higher restocks empty spots faster."
         },
         "timingWindowStartPermille": {
           "type": "integer",
@@ -333,6 +338,38 @@
                     "description": "Catch speed multiplier in permille (1250 = 25% faster)."
                   }
                 }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "speedPermille"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "fish_regen"
+                  },
+                  "speedPermille": {
+                    "$ref": "#/$defs/positiveInt",
+                    "description": "Fish-spot regen multiplier in permille (1250 = 25% faster)."
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "zone"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "unlock_fishing_spot"
+                  },
+                  "zone": {
+                    "$ref": "#/$defs/id",
+                    "description": "Fishing zone unlocked when this upgrade is owned."
+                  }
+                }
               }
             ]
           }
@@ -371,10 +408,15 @@
         "required": [
           "id",
           "name",
+          "kind",
           "basketMin",
           "basketMax",
           "patienceTicks",
-          "spawnWeight"
+          "spawnWeight",
+          "priceMultPermille",
+          "preferredProducts",
+          "unmetPriceMultPermille",
+          "unmetPatienceDrainPermille"
         ],
         "properties": {
           "id": {
@@ -384,6 +426,15 @@
           "name": {
             "type": "string",
             "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "premium",
+              "bulk"
+            ],
+            "description": "Presentation/economy tier: premium tips more; bulk takes large baskets."
           },
           "basketMin": {
             "$ref": "#/$defs/positiveInt"
@@ -396,6 +447,38 @@
           },
           "spawnWeight": {
             "$ref": "#/$defs/positiveInt"
+          },
+          "priceMultPermille": {
+            "$ref": "#/$defs/positiveInt",
+            "description": "Sale price multiplier in permille (1500 = 50% tip for premium visitors)."
+          },
+          "preferredProducts": {
+            "type": "array",
+            "description": "Weighted product demand; empty means any accepted counter product.",
+            "items": {
+              "type": "object",
+              "required": [
+                "item",
+                "weight"
+              ],
+              "properties": {
+                "item": {
+                  "$ref": "#/$defs/id"
+                },
+                "weight": {
+                  "$ref": "#/$defs/positiveInt"
+                }
+              }
+            }
+          },
+          "unmetPriceMultPermille": {
+            "$ref": "#/$defs/positiveInt",
+            "maximum": 1000,
+            "description": "Extra price multiplier when the basket is not all preferred product (750 = 25% less)."
+          },
+          "unmetPatienceDrainPermille": {
+            "$ref": "#/$defs/positiveInt",
+            "description": "Patience drain per tick while preferred stock is missing (2000 = 2x)."
           }
         }
       }
@@ -476,7 +559,9 @@
           "counters",
           "customerSpawnTicks",
           "customerEntry",
-          "customerWalkMmPerTick"
+          "customerWalkMmPerTick",
+          "customerPathWaypoints",
+          "rushes"
         ],
         "properties": {
           "id": {
@@ -537,7 +622,8 @@
                 "zone",
                 "species",
                 "stockMax",
-                "regenTicks"
+                "regenTicks",
+                "regenCurvePermille"
               ],
               "properties": {
                 "zone": {
@@ -555,6 +641,18 @@
                 },
                 "regenTicks": {
                   "$ref": "#/$defs/positiveInt"
+                },
+                "regenCurvePermille": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": {
+                    "$ref": "#/$defs/positiveInt"
+                  },
+                  "description": "Regen duration multipliers at stock ratios 0..1 (empty is slower = stock pressure)."
+                },
+                "requiresUpgrade": {
+                  "$ref": "#/$defs/id",
+                  "description": "Optional upgrade that must be owned before this spot can be fished."
                 }
               }
             }
@@ -646,6 +744,62 @@
           },
           "customerWalkMmPerTick": {
             "$ref": "#/$defs/positiveInt"
+          },
+          "customerPathWaypoints": {
+            "type": "array",
+            "description": "Intermediate points for the customer approach polyline (entry → waypoints → queue slot). Empty means a straight walk. Segments must stay on open walkable ground.",
+            "items": {
+              "$ref": "#/$defs/point"
+            }
+          },
+          "rushes": {
+            "type": "array",
+            "description": "Periodic rush windows that spike customer spawn rate and queue capacity. Active when (tick % periodTicks) is in [startTick, startTick + durationTicks).",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "name",
+                "periodTicks",
+                "startTick",
+                "durationTicks",
+                "spawnSpeedPermille",
+                "queueBonus"
+              ],
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/id",
+                  "pattern": "^rush\\.[a-z0-9_]+$"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "periodTicks": {
+                  "$ref": "#/$defs/positiveInt",
+                  "description": "Length of the repeating day/cycle in ticks."
+                },
+                "startTick": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647,
+                  "description": "Offset within the period when the rush begins (inclusive)."
+                },
+                "durationTicks": {
+                  "$ref": "#/$defs/positiveInt"
+                },
+                "spawnSpeedPermille": {
+                  "$ref": "#/$defs/positiveInt",
+                  "description": "Spawn rate multiplier (1000 = normal). Interval = customerSpawnTicks * 1000 / spawnSpeedPermille."
+                },
+                "queueBonus": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 16,
+                  "description": "Extra queue slots available at every counter while this rush is active."
+                }
+              }
+            }
           }
         }
       }

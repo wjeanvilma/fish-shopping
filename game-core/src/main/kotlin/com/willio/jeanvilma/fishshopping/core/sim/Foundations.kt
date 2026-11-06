@@ -25,8 +25,10 @@ object SimConstants {
      * 2: customers carry walking state.
      * 3: customers store reservedItems (multi-SKU baskets); counters accept product lists.
      * 4: player stores fishingCatchTicks + reelAttemptedThisCast for mid-cast resume.
+     * 5: machines store preferredRecipeId for multi-recipe selection.
+     * 6: customers store preferredProductId for product demand.
      */
-    const val SCHEMA_VERSION = 4
+    const val SCHEMA_VERSION = 6
 }
 
 /** Integer arithmetic that refuses to leave the shared safe range. */

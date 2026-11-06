@@ -102,6 +102,14 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       if (e.code === "Escape") { host.setUpgradesOpen(false); return; }
       if (e.code === "KeyU" && !e.repeat) { host.setUpgradesOpen(!upgradesOpen); return; }
       if ((e.code === "Space" || e.code === "KeyF") && !e.repeat) { e.preventDefault(); host.reel(); return; }
+      if (e.code === "KeyR" && !e.repeat) {
+        const ready = host.getState();
+        if (ready.status === "ready" && ready.view.context?.stationId) {
+          e.preventDefault();
+          host.cycleStationRecipe(ready.view.context.stationId);
+        }
+        return;
+      }
       if (KEY_DIRS[e.code]) { e.preventDefault(); held.add(e.code); apply(); }
     };
     const up = (e: KeyboardEvent) => {
@@ -132,6 +140,11 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
     <div className="hud">
       <div className="pill top-left">{v.harborName}</div>
       <div className="pill coins top-center" aria-live="polite">{formatCoins(v.coins)} coins</div>
+      {v.rush && (
+        <div className="pill rush-banner" aria-live="polite">
+          {v.rush.name} · {formatRushSeconds(v.rush.ticksRemaining)}s
+        </div>
+      )}
       <button className="button top-right" onClick={() => host.setUpgradesOpen(true)}>
         Upgrades <kbd>U</kbd>
       </button>
@@ -146,7 +159,12 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       ) : (
         <div className="panel keys-hint">Move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys</div>
       )}
-      {v.context && <StationCard card={v.context} />}
+      {v.context && (
+        <StationCard
+          card={v.context}
+          onCycleRecipe={v.context.stationId ? () => host.cycleStationRecipe(v.context!.stationId!) : undefined}
+        />
+      )}
       {v.fishingCanReel && (
         <button
           className={`button reel ${v.fishingTimingWindow ? "hot" : ""}`}
@@ -163,7 +181,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
   );
 }
 
-function StationCard({ card }: { card: ContextCard }) {
+function StationCard({ card, onCycleRecipe }: { card: ContextCard; onCycleRecipe?: () => void }) {
   return (
     <div className="panel station-card">
       <strong>{card.title}</strong>
@@ -172,6 +190,11 @@ function StationCard({ card }: { card: ContextCard }) {
         <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(card.progress * 100)}>
           <div style={{ width: `${Math.min(100, Math.max(0, card.progress * 100))}%` }} />
         </div>
+      )}
+      {onCycleRecipe && card.recipeModeLabel && (
+        <button className="button" style={{ marginTop: 8, width: "100%" }} onClick={onCycleRecipe}>
+          Recipe: {card.recipeModeLabel} <kbd>R</kbd>
+        </button>
       )}
     </div>
   );
@@ -243,6 +266,10 @@ function CenterCard({ title, children, danger }: { title: string; children: Reac
       </div>
     </div>
   );
+}
+
+function formatRushSeconds(ticksRemaining: number): number {
+  return Math.ceil(ticksRemaining / 20);
 }
 
 /** Compact notation for display only; stored values keep full precision. */

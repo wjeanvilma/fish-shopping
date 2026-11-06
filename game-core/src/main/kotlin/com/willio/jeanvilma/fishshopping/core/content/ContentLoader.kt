@@ -42,6 +42,7 @@ object ContentLoader {
                 moveSpeedMmPerTick = it["moveSpeedMmPerTick"].int(min = 1),
                 transferIntervalTicks = it["transferIntervalTicks"].int(min = 1),
                 startCatchSpeedPermille = it["startCatchSpeedPermille"].int(min = 1),
+                startFishRegenPermille = it["startFishRegenPermille"].int(min = 1),
                 timingWindowStartPermille = it["timingWindowStartPermille"].int(min = 0, max = 1000),
                 timingWindowEndPermille = it["timingWindowEndPermille"].int(min = 0, max = 1000),
             )
@@ -88,10 +89,18 @@ object ContentLoader {
         },
         quests = r["quests"].list { q -> QuestDef(q["id"].string(), q["name"].string(), statGoal(q["goal"])) },
         customers = r["customers"].list { c ->
+            val kindText = c["kind"].string()
+            val kind = CustomerKind.fromWire(kindText) ?: c["kind"].fail("unknown customer kind '$kindText'")
             CustomerDef(
-                id = c["id"].string(), name = c["name"].string(),
+                id = c["id"].string(), name = c["name"].string(), kind = kind,
                 basketMin = c["basketMin"].int(min = 1), basketMax = c["basketMax"].int(min = 1),
                 patienceTicks = c["patienceTicks"].int(min = 1), spawnWeight = c["spawnWeight"].int(min = 1),
+                priceMultPermille = c["priceMultPermille"].int(min = 1),
+                preferredProducts = c["preferredProducts"].list { pw ->
+                    ProductWeight(pw["item"].string(), pw["weight"].int(min = 1))
+                },
+                unmetPriceMultPermille = c["unmetPriceMultPermille"].int(min = 1, max = 1000),
+                unmetPatienceDrainPermille = c["unmetPatienceDrainPermille"].int(min = 1),
             )
         },
         tutorial = r["tutorial"].list { t ->
@@ -116,6 +125,8 @@ object ContentLoader {
             n["machine"].string(), n["recipe"].string(), n["durationTicks"].int(min = 1),
         )
         "catch_speed" -> UpgradeEffect.CatchSpeed(n["speedPermille"].int(min = 1))
+        "fish_regen" -> UpgradeEffect.FishRegen(n["speedPermille"].int(min = 1))
+        "unlock_fishing_spot" -> UpgradeEffect.UnlockFishingSpot(n["zone"].string())
         else -> n.fail("unknown upgrade effect kind '$kind'")
     }
 
@@ -135,8 +146,12 @@ object ContentLoader {
         },
         fishingSpots = h["fishingSpots"].list { f ->
             FishingSpotDef(
-                f["zone"].string(), f["species"].list { it.string() },
-                f["stockMax"].int(min = 1), f["regenTicks"].int(min = 1),
+                zone = f["zone"].string(),
+                species = f["species"].list { it.string() },
+                stockMax = f["stockMax"].int(min = 1),
+                regenTicks = f["regenTicks"].int(min = 1),
+                regenCurvePermille = f["regenCurvePermille"].list { it.int(min = 1) },
+                requiresUpgrade = f.optional("requiresUpgrade")?.string(),
             )
         },
         stations = h["stations"].list { s ->
@@ -152,6 +167,18 @@ object ContentLoader {
         customerSpawnTicks = h["customerSpawnTicks"].int(min = 1),
         customerEntry = point(h["customerEntry"]),
         customerWalkMmPerTick = h["customerWalkMmPerTick"].int(min = 1),
+        customerPathWaypoints = h["customerPathWaypoints"].list { point(it) },
+        rushes = h["rushes"].list { r ->
+            RushWindowDef(
+                id = r["id"].string(),
+                name = r["name"].string(),
+                periodTicks = r["periodTicks"].int(min = 1),
+                startTick = r["startTick"].int(min = 0),
+                durationTicks = r["durationTicks"].int(min = 1),
+                spawnSpeedPermille = r["spawnSpeedPermille"].int(min = 1),
+                queueBonus = r["queueBonus"].int(min = 0, max = 16),
+            )
+        },
     )
 
     private fun point(n: Node) = PointMm(n["x"].int(), n["z"].int())

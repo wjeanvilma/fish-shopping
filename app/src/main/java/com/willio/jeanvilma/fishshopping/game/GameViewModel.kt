@@ -180,6 +180,19 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         commands += Command.Reel
     }
 
+    /** Cycle Auto → each recipe → Auto for the station under the player's feet (no tick advance). */
+    fun cycleStationRecipe(stationId: String) {
+        if (upgradesOpen) return
+        viewModelScope.launch(simDispatcher) {
+            val s = sim ?: return@launch
+            val m = s.state.machines.firstOrNull { it.stationId == stationId } ?: return@launch
+            com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
+                .cyclePreferredRecipe(s.content, m)
+            latestView = s.view()
+            publish(force = true)
+        }
+    }
+
     private fun step(s: Simulation) {
         val batch = ArrayList<Command>()
         var next = commands.poll()
@@ -191,7 +204,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         var transaction = false
         for (e in events) {
             when (e) {
-                is GameEvent.SaleCommitted -> { _messages.tryEmit("+${e.coins} coins"); transaction = true }
+                is GameEvent.SaleCommitted -> {
+                    val tip = when {
+                        e.tipped && e.preferenceMet -> " Premium tip!"
+                        !e.preferenceMet -> " (substituted)"
+                        else -> ""
+                    }
+                    _messages.tryEmit("+${e.coins} coins$tip")
+                    transaction = true
+                }
                 is GameEvent.FishCaught -> {
                     if (e.timingBonus) {
                         val tip = s.content.speciesById[e.speciesId]?.baseValue ?: 0L
@@ -202,6 +223,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                         _messages.tryEmit("Rare catch: ${s.content.speciesById[e.speciesId]?.name ?: e.speciesId}")
                         transaction = true
                     }
+                }
+                is GameEvent.FishingSpotDepleted -> {
+                    _messages.tryEmit("Pier empty — fish are returning")
+                    transaction = true
+                }
+                is GameEvent.RushStarted -> {
+                    _messages.tryEmit("${e.name}!")
+                    transaction = true
                 }
                 is GameEvent.UpgradePurchased -> if (!e.replayed) {
                     _messages.tryEmit("Bought ${s.content.upgradesById[e.upgradeId]?.name ?: e.upgradeId}")

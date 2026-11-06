@@ -15,6 +15,9 @@ export const Stats = {
   UPGRADES_BOUGHT: "stat.upgrades_bought",
   TIMING_BONUSES: "stat.timing_bonuses",
   RARE_CATCHES: "stat.rare_catches",
+  PREMIUM_SALES: "stat.premium_sales",
+  BULK_SALES: "stat.bulk_sales",
+  UNMET_PREFERENCE_SALES: "stat.unmet_preference_sales",
 } as const;
 
 export class PlayerState {
@@ -34,6 +37,7 @@ export class PlayerState {
     public z: number,
     readonly bag: Inventory,
     public catchSpeedPermille = 1000,
+    public fishRegenPermille = 1000,
   ) {}
 }
 
@@ -56,6 +60,8 @@ export class MachineState {
   activeBatch: Batch | null = null;
   paused = false;
   status: MachineStatus = "WAITING_FOR_INPUT";
+  /** Null = Auto; otherwise only this recipe may start. */
+  preferredRecipeId: string | null = null;
   readonly recipeDurations = new Map<string, number>();
   constructor(readonly stationId: string, readonly machineId: string, readonly input: Inventory, readonly output: Inventory) {}
 }
@@ -77,6 +83,7 @@ export class CustomerState {
     readonly wants: number,
     public patienceLeft: number,
     readonly walkTicksTotal = 0,
+    public preferredProductId: string | null = null,
   ) {
     this.walkTicksLeft = walkTicksTotal;
   }
@@ -90,6 +97,13 @@ export class CustomerState {
     this.reservedItems.set(itemId, (this.reservedItems.get(itemId) ?? 0) + count);
   }
   clearReservations(): void { this.reservedItems.clear(); }
+  preferenceMet(): boolean {
+    const pref = this.preferredProductId;
+    if (pref === null) return true;
+    if (this.reserved === 0) return false;
+    for (const id of this.reservedItems.keys()) if (id !== pref) return false;
+    return true;
+  }
   get arrived(): boolean { return this.walkTicksLeft === 0; }
 }
 
@@ -144,6 +158,7 @@ export class GameState {
         h.playerSpawn.x, h.playerSpawn.z,
         new Inventory("inv.player_bag", content.player.startCarryCapacityUnits, units),
         content.player.startCatchSpeedPermille,
+        content.player.startFishRegenPermille,
       ),
       h.fishingSpots.map((f) => new FishingSpotState(f.zone, f.stockMax)),
       h.stations.map((st) => {
@@ -163,17 +178,21 @@ export type Command =
   | { type: "move"; x: number; z: number }
   | { type: "purchase_upgrade"; upgradeId: string; requestId: string }
   | { type: "set_machine_paused"; stationId: string; paused: boolean }
-  | { type: "reel" };
+  | { type: "reel" }
+  | { type: "select_machine_recipe"; stationId: string; recipeId: string | null };
 
 export type GameEvent =
   | { type: "zone_entered"; tick: number; zoneId: string | null }
   | { type: "fish_caught"; tick: number; speciesId: string; zoneId: string; timingBonus?: boolean; rareUpgrade?: boolean }
+  | { type: "fishing_spot_depleted"; tick: number; zoneId: string }
   | { type: "items_transferred"; tick: number; from: string; to: string; itemId: string; count: number }
   | { type: "batch_started"; tick: number; batchId: string; stationId: string; recipeId: string }
   | { type: "batch_completed"; tick: number; batchId: string; stationId: string }
   | { type: "customer_arrived"; tick: number; customerId: string; counterId: string }
   | { type: "customer_left"; tick: number; customerId: string; paid: boolean }
-  | { type: "sale_committed"; tick: number; saleId: string; customerId: string; items: { item: string; quantity: number }[]; coins: number }
+  | { type: "rush_started"; tick: number; rushId: string; name: string }
+  | { type: "rush_ended"; tick: number; rushId: string; name: string }
+  | { type: "sale_committed"; tick: number; saleId: string; customerId: string; items: { item: string; quantity: number }[]; coins: number; customerTypeId?: string; priceMultPermille?: number; preferenceMet?: boolean; preferredProductId?: string | null }
   | { type: "upgrade_purchased"; tick: number; upgradeId: string; receipt: Receipt; replayed: boolean }
   | { type: "purchase_rejected"; tick: number; upgradeId: string; requestId: string; reason: string }
   | { type: "quest_completed"; tick: number; questId: string }

@@ -53,9 +53,11 @@ import com.willio.jeanvilma.fishshopping.core.sim.UpgradeView
 import com.willio.jeanvilma.fishshopping.game.GameUiState
 import com.willio.jeanvilma.fishshopping.game.GameViewModel
 import com.willio.jeanvilma.fishshopping.render.HarborView
+import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
 import com.willio.jeanvilma.fishshopping.ui.theme.Action
 import com.willio.jeanvilma.fishshopping.ui.theme.Danger
 import com.willio.jeanvilma.fishshopping.ui.theme.Ink
+import com.willio.jeanvilma.fishshopping.ui.theme.OnAction
 import com.willio.jeanvilma.fishshopping.ui.theme.PanelSurface
 import com.willio.jeanvilma.fishshopping.ui.theme.Reward
 import kotlinx.coroutines.delay
@@ -128,6 +130,21 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
         Pill(Modifier.align(Alignment.TopCenter), background = Reward) {
             Text("${formatCoins(v.coins)} coins", style = Tabular, fontWeight = FontWeight.Bold, color = Ink)
         }
+        v.rush?.let { rush ->
+            Pill(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 52.dp),
+                background = Action,
+            ) {
+                Text(
+                    "${rush.name} · ${formatRushSeconds(rush.ticksRemaining)}s",
+                    style = Tabular,
+                    fontWeight = FontWeight.Bold,
+                    color = OnAction,
+                )
+            }
+        }
         // Top right: management.
         Button(onClick = { vm.setUpgradesOpen(true) }, modifier = Modifier.align(Alignment.TopEnd).heightIn(min = 48.dp)) {
             Text("Upgrades")
@@ -147,7 +164,13 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
         // Bottom left: joystick.
         Joystick(onMove = vm::setMove, modifier = Modifier.align(Alignment.BottomStart))
         // Bottom centre: station card, only in range.
-        v.context?.let { StationCard(it, Modifier.align(Alignment.BottomCenter)) }
+        v.context?.let { card ->
+            StationCard(
+                card,
+                onCycleRecipe = card.stationId?.let { id -> { vm.cycleStationRecipe(id) } },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
         if (v.fishingCanReel) {
             Button(
                 onClick = vm::reel,
@@ -180,7 +203,7 @@ private val MOVE_KEYS = setOf(
 )
 
 @Composable
-private fun StationCard(card: ContextCard, modifier: Modifier) {
+private fun StationCard(card: ContextCard, onCycleRecipe: (() -> Unit)?, modifier: Modifier) {
     Surface(modifier.widthIn(min = 220.dp, max = 320.dp), shape = PanelShape, color = PanelSurface.copy(alpha = 0.95f)) {
         Column(Modifier.padding(12.dp)) {
             Text(card.title, fontWeight = FontWeight.Bold)
@@ -188,6 +211,12 @@ private fun StationCard(card: ContextCard, modifier: Modifier) {
             card.progress?.let {
                 Spacer(Modifier.height(6.dp))
                 LinearProgressIndicator(progress = { it.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth(), color = Action)
+            }
+            if (onCycleRecipe != null && card.recipeModeLabel != null) {
+                Spacer(Modifier.height(8.dp))
+                Button(onClick = onCycleRecipe, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    Text("Recipe: ${card.recipeModeLabel}")
+                }
             }
         }
     }
@@ -257,7 +286,7 @@ private fun MessageTicker(vm: GameViewModel) {
         }
     }
     message?.let {
-        Box(Modifier.fillMaxSize().safeDrawingPadding().padding(top = 72.dp), contentAlignment = Alignment.TopCenter) {
+        Box(Modifier.fillMaxSize().safeDrawingPadding().padding(top = 120.dp), contentAlignment = Alignment.TopCenter) {
             Pill(background = Ink) { Text(it, color = Color.White) }
         }
     }
@@ -290,3 +319,6 @@ fun formatCoins(c: Long): String = when {
     c >= 10_000 -> "%.1fK".format(c / 1e3)
     else -> c.toString()
 }
+
+private fun formatRushSeconds(ticksRemaining: Int): Int =
+    (ticksRemaining + SimConstants.TICKS_PER_SECOND - 1) / SimConstants.TICKS_PER_SECOND

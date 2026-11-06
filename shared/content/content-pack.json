@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/content-pack.schema.json",
-  "contentVersion": "0.6.0",
+  "contentVersion": "0.12.0",
   "ticksPerSecond": 20,
   "units": {
     "distance": "millimetres (integer); x/z ground plane, y is up",
@@ -13,6 +13,7 @@
     "moveSpeedMmPerTick": 200,
     "transferIntervalTicks": 4,
     "startCatchSpeedPermille": 1000,
+    "startFishRegenPermille": 1000,
     "timingWindowStartPermille": 650,
     "timingWindowEndPermille": 850
   },
@@ -243,6 +244,45 @@
       }
     },
     {
+      "id": "upgrade.cutter_fillet_speed",
+      "name": "Fillet guide",
+      "description": "Mackerel fillets take 5 s instead of 6 s. Applies from the next batch.",
+      "cost": 280,
+      "requires": ["upgrade.cutter_speed_2"],
+      "effect": {
+        "kind": "recipe_duration",
+        "machine": "machine.basic_cutter",
+        "recipe": "recipe.mackerel_fillets",
+        "durationTicks": 100
+      }
+    },
+    {
+      "id": "upgrade.cutter_herring_speed",
+      "name": "Herring jig",
+      "description": "Herring portions take 2.5 s instead of 3.5 s. Applies from the next batch.",
+      "cost": 160,
+      "requires": ["quest.first_ten_sales"],
+      "effect": {
+        "kind": "recipe_duration",
+        "machine": "machine.basic_cutter",
+        "recipe": "recipe.herring_portions",
+        "durationTicks": 50
+      }
+    },
+    {
+      "id": "upgrade.smoker_speed_2",
+      "name": "Hotter smoker",
+      "description": "Smoked fillets take 6 s instead of 7.5 s. Applies from the next batch.",
+      "cost": 350,
+      "requires": ["quest.first_ten_sales"],
+      "effect": {
+        "kind": "recipe_duration",
+        "machine": "machine.basic_smoker",
+        "recipe": "recipe.smoke_fillet",
+        "durationTicks": 120
+      }
+    },
+    {
       "id": "upgrade.rod_speed_2",
       "name": "Carbon rod",
       "description": "Catch fish 25% faster.",
@@ -257,6 +297,22 @@
       "cost": 220,
       "requires": ["upgrade.rod_speed_2"],
       "effect": { "kind": "catch_speed", "speedPermille": 1500 }
+    },
+    {
+      "id": "upgrade.tide_chart",
+      "name": "Tide chart",
+      "description": "Empty fishing spots restock 25% faster.",
+      "cost": 90,
+      "requires": ["upgrade.bag_capacity_2"],
+      "effect": { "kind": "fish_regen", "speedPermille": 1250 }
+    },
+    {
+      "id": "upgrade.side_pier",
+      "name": "Side spur pier",
+      "description": "Unlock a second fishing spot on the north spur.",
+      "cost": 180,
+      "requires": ["upgrade.tide_chart"],
+      "effect": { "kind": "unlock_fishing_spot", "zone": "zone.pier_spur" }
     }
   ],
   "quests": [
@@ -270,18 +326,68 @@
     {
       "id": "customer.local_shopper",
       "name": "Local shopper",
+      "kind": "standard",
       "basketMin": 1,
       "basketMax": 3,
       "patienceTicks": 900,
-      "spawnWeight": 100
+      "spawnWeight": 100,
+      "priceMultPermille": 1000,
+      "preferredProducts": [
+        { "item": "product.basic_portion", "weight": 80 },
+        { "item": "product.fillet", "weight": 20 }
+      ],
+      "unmetPriceMultPermille": 750,
+      "unmetPatienceDrainPermille": 2000
     },
     {
       "id": "customer.family_buyer",
       "name": "Family buyer",
+      "kind": "standard",
       "basketMin": 3,
       "basketMax": 5,
       "patienceTicks": 700,
-      "spawnWeight": 30
+      "spawnWeight": 28,
+      "priceMultPermille": 1000,
+      "preferredProducts": [
+        { "item": "product.basic_portion", "weight": 55 },
+        { "item": "product.fillet", "weight": 30 },
+        { "item": "product.smoked_fillet", "weight": 15 }
+      ],
+      "unmetPriceMultPermille": 750,
+      "unmetPatienceDrainPermille": 2000
+    },
+    {
+      "id": "customer.premium_visitor",
+      "name": "Premium visitor",
+      "kind": "premium",
+      "basketMin": 1,
+      "basketMax": 2,
+      "patienceTicks": 1400,
+      "spawnWeight": 14,
+      "priceMultPermille": 1500,
+      "preferredProducts": [
+        { "item": "product.premium_portion", "weight": 70 },
+        { "item": "product.smoked_fillet", "weight": 30 }
+      ],
+      "unmetPriceMultPermille": 600,
+      "unmetPatienceDrainPermille": 2500
+    },
+    {
+      "id": "customer.restaurant_buyer",
+      "name": "Restaurant buyer",
+      "kind": "bulk",
+      "basketMin": 6,
+      "basketMax": 10,
+      "patienceTicks": 480,
+      "spawnWeight": 10,
+      "priceMultPermille": 1000,
+      "preferredProducts": [
+        { "item": "product.fillet", "weight": 50 },
+        { "item": "product.smoked_fillet", "weight": 30 },
+        { "item": "product.premium_portion", "weight": 20 }
+      ],
+      "unmetPriceMultPermille": 700,
+      "unmetPatienceDrainPermille": 2500
     }
   ],
   "tutorial": [
@@ -300,7 +406,8 @@
       "playerSpawn": { "x": 0, "z": 0 },
       "walkable": [
         { "id": "area.land", "minX": -8000, "minZ": -8000, "maxX": 10000, "maxZ": 8000 },
-        { "id": "area.pier", "minX": -16000, "minZ": -1500, "maxX": -7900, "maxZ": 1500 }
+        { "id": "area.pier", "minX": -16000, "minZ": -1500, "maxX": -7900, "maxZ": 1500 },
+        { "id": "area.pier_spur", "minX": -14500, "minZ": 1500, "maxX": -11000, "maxZ": 4500 }
       ],
       "obstacles": [
         { "id": "footprint.cutter_1", "minX": 2000, "minZ": -5000, "maxX": 4000, "maxZ": -3000 },
@@ -309,6 +416,7 @@
       ],
       "zones": [
         { "id": "zone.pier_end", "kind": "fishing", "minX": -16000, "minZ": -1500, "maxX": -12500, "maxZ": 1500 },
+        { "id": "zone.pier_spur", "kind": "fishing", "minX": -14500, "minZ": 1500, "maxX": -11000, "maxZ": 4500 },
         { "id": "zone.cutter_in", "kind": "machine_input", "minX": 400, "minZ": -5000, "maxX": 2000, "maxZ": -3000 },
         { "id": "zone.cutter_out", "kind": "machine_output", "minX": 4000, "minZ": -5000, "maxX": 5600, "maxZ": -3000 },
         { "id": "zone.smoker_in", "kind": "machine_input", "minX": 5600, "minZ": -5000, "maxX": 7000, "maxZ": -3000 },
@@ -326,8 +434,21 @@
             "species.amber_snapper",
             "species.king_grouper"
           ],
-          "stockMax": 30,
-          "regenTicks": 40
+          "stockMax": 18,
+          "regenTicks": 40,
+          "regenCurvePermille": [2000, 1500, 1000, 850, 700]
+        },
+        {
+          "zone": "zone.pier_spur",
+          "species": [
+            "species.silver_sprat",
+            "species.harbor_herring",
+            "species.blue_mackerel"
+          ],
+          "stockMax": 10,
+          "regenTicks": 50,
+          "regenCurvePermille": [1800, 1400, 1100, 900, 750],
+          "requiresUpgrade": "upgrade.side_pier"
         }
       ],
       "stations": [
@@ -364,7 +485,32 @@
       ],
       "customerSpawnTicks": 160,
       "customerEntry": { "x": 9500, "z": 6500 },
-      "customerWalkMmPerTick": 100
+      "customerWalkMmPerTick": 100,
+      "customerPathWaypoints": [
+        { "x": 7500, "z": 7000 },
+        { "x": 4500, "z": 7000 },
+        { "x": 3500, "z": 5800 }
+      ],
+      "rushes": [
+        {
+          "id": "rush.lunch",
+          "name": "Lunch rush",
+          "periodTicks": 2400,
+          "startTick": 600,
+          "durationTicks": 400,
+          "spawnSpeedPermille": 2500,
+          "queueBonus": 2
+        },
+        {
+          "id": "rush.evening",
+          "name": "Evening rush",
+          "periodTicks": 2400,
+          "startTick": 1600,
+          "durationTicks": 300,
+          "spawnSpeedPermille": 2000,
+          "queueBonus": 1
+        }
+      ]
     }
   ]
 }

@@ -36,7 +36,7 @@ describe("CustomerCrowd", () => {
     const v = buildView(sim);
     frame = crowd.update(v, 0.016);
     expect(frame.filter(Boolean)).toHaveLength(1); // still visible, walking out
-    for (let i = 0; i < 400 && frame.some(Boolean); i++) frame = crowd.update(v, 0.05);
+    for (let i = 0; i < 800 && frame.some(Boolean); i++) frame = crowd.update(v, 0.05);
     expect(frame.every((m) => m === null)).toBe(true);
   });
 });
