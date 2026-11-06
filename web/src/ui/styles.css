@@ -69,8 +69,16 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
 .top-actions { top: max(var(--gap), env(safe-area-inset-top)); right: max(var(--gap), env(safe-area-inset-right)); display: flex; gap: 8px; }
 .pause-button { top: calc(max(var(--gap), env(safe-area-inset-top)) + 48px); left: max(var(--gap), env(safe-area-inset-left)); }
 .objective { left: max(var(--gap), env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); max-width: 220px; }
-.joystick, .keys-hint { left: max(var(--gap), env(safe-area-inset-left)); bottom: max(var(--gap), env(safe-area-inset-bottom)); }
-.keys-hint { font-size: 14px; }
+.joystick-pad, .keys-hint {
+  bottom: max(var(--gap), env(safe-area-inset-bottom));
+  width: min(42vw, 280px);
+  height: min(48vh, 320px);
+}
+.joystick-left, .keys-hint-left { left: max(var(--gap), env(safe-area-inset-left)); right: auto; }
+.joystick-right, .keys-hint-right { right: max(var(--gap), env(safe-area-inset-right)); left: auto; }
+.keys-hint { font-size: 14px; width: auto; height: auto; }
+.joystick-pad { touch-action: none; }
+.settings-sheet { max-height: min(480px, calc(100vh - 32px)); }
 .station-card { left: 50%; bottom: max(var(--gap), env(safe-area-inset-bottom)); transform: translateX(-50%); min-width: 220px; max-width: 320px; }
 .reel {
   left: 50%; bottom: calc(max(var(--gap), env(safe-area-inset-bottom)) + 110px);
@@ -100,7 +108,18 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 5px; margin: 0 2px; 
 .progress { height: 6px; border-radius: 3px; background: var(--surface-muted); margin-top: 8px; overflow: hidden; }
 .progress > div { height: 100%; background: var(--action); }
 
-.stick { width: var(--stick); height: var(--stick); border-radius: 50%; background: rgb(251 247 239 / 0.35); border: 3px solid rgb(21 52 73 / 0.5); display: grid; place-items: center; touch-action: none; }
+.stick {
+  position: absolute;
+  width: var(--stick);
+  height: var(--stick);
+  border-radius: 50%;
+  background: rgb(251 247 239 / 0.35);
+  border: 3px solid rgb(21 52 73 / 0.5);
+  display: grid;
+  place-items: center;
+  touch-action: none;
+  pointer-events: none;
+}
 .stick-knob { width: 38%; height: 38%; border-radius: 50%; background: rgb(255 255 255 / 0.9); border: 4px solid var(--ink); pointer-events: none; }
 
 .scrim { position: absolute; inset: 0; background: rgb(21 52 73 / 0.25); display: grid; place-items: center; }

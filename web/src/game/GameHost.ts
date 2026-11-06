@@ -10,10 +10,14 @@ import {
   type OfflineReport, ProductionSystem, Simulation, type SimView, applyOffline, buildView,
   decodeSnapshotEnvelope, encodeSnapshot, loadContent,
 } from "../engine";
+import { AudioBus } from "../audio/audioBus";
+import { sfxFromEvent } from "../audio/sfxCues";
+import { CloudSyncCoordinator } from "../cloud/cloudSyncCoordinator";
 import { CameraRig } from "./cameraRig";
 import { openSaveStore, type SaveStore } from "./saveStore";
 import { loadSettings, saveSettings, type GameSettings, type QualityPreset } from "./settingsStore";
 import { resolveFlyingTransfer, type FlyingTransferCue } from "../render/presenters";
+import { stickFromTapTarget, type TapTarget } from "../presenters/tapToMove";
 
 export type HostState =
   | { status: "loading" }
@@ -59,6 +63,8 @@ export class GameHost {
   private sim: Simulation | null = null;
   private store: SaveStore | null = null;
   private settings: GameSettings = loadSettings();
+  private readonly audio = new AudioBus();
+  private readonly cloud = new CloudSyncCoordinator();
   private allowSaving = true;
   private rotateOnNextSave = true;
   private upgradesOpen = false;
@@ -77,6 +83,10 @@ export class GameHost {
   private saveChain: Promise<void> = Promise.resolve();
   private lastCheckpointEpochMs: number | null = null;
   private pendingOfflineReport: OfflineReport | null = null;
+  /** Presentation-only tap-to-move destination (cleared by stick/keys or on arrival). */
+  private tapTarget: TapTarget | null = null;
+  /** True while joystick/keyboard is holding a non-zero stick. */
+  private stickActive = false;
 
   /** Latest snapshot for the renderer (updated every tick). */
   latestView: SimView | null = null;
@@ -96,8 +106,14 @@ export class GameHost {
 
   /** Idempotent: React StrictMode mounts effects twice in development. */
   start(): Promise<void> {
+    this.audio.setMuted(this.settings.muted);
     this.starting ??= this.doStart();
     return this.starting;
+  }
+
+  /** Unlock Web Audio after a user gesture (click / key / touch). */
+  unlockAudio(): void {
+    this.audio.unlock();
   }
 
   private async doStart(): Promise<void> {
@@ -134,6 +150,7 @@ export class GameHost {
     if (this.booting || this.state.status !== "title" || !this.content || !this.store) return;
     this.booting = true;
     try {
+      await this.cloud.clearRemote(this.settings);
       await this.store.clear();
       this.rotateOnNextSave = true;
       const state = GameState.newGame(this.content, START_HARBOR, (Math.random() * 2 ** 32) | 0);
@@ -193,7 +210,24 @@ export class GameHost {
   }
 
   private async restoreOrCreate(content: ContentPack): Promise<{ state: GameState; savedAtEpochMs: number | null }> {
-    for (const [label, text] of await this.store!.readCandidates()) {
+    const candidates = await this.store!.readCandidates();
+    const localLatest = candidates.find(([label]) => label === "latest")?.[1] ?? null;
+    const pull = await this.cloud.pullMerge(this.settings, localLatest);
+    if (pull.settings !== this.settings) {
+      this.settings = pull.settings;
+      saveSettings(this.settings);
+    }
+    if (pull.decision.source === "remote" && pull.decision.text) {
+      try {
+        await this.store!.write(pull.decision.text, true);
+        const decoded = decodeSnapshotEnvelope(content, pull.decision.text);
+        this.say("Restored newer cloud save");
+        return decoded;
+      } catch (e) {
+        console.warn("Cloud save unusable:", e);
+      }
+    }
+    for (const [label, text] of candidates) {
       try {
         const decoded = decodeSnapshotEnvelope(content, text);
         if (label !== "latest") {
@@ -251,6 +285,7 @@ export class GameHost {
       this.clock.reset();
       return;
     }
+    this.applyTapToMove();
     const ticks = this.clock.advance(nowMs);
     for (let i = 0; i < ticks; i++) this.step(sim);
     if (ticks > 0) this.publish(false);
@@ -261,6 +296,8 @@ export class GameHost {
     let transaction = false;
     const transferred: { from: string; to: string; itemId: string }[] = [];
     for (const e of sim.step(batch)) {
+      const cue = sfxFromEvent(e);
+      if (cue) this.audio.play(cue);
       switch (e.type) {
         case "items_transferred":
           transferred.push({ from: e.from, to: e.to, itemId: e.itemId });
@@ -373,7 +410,35 @@ export class GameHost {
   /** Joystick / keys in screen space: x right, y down, each -1..1. */
   setMove(screenX: number, screenY: number): void {
     if (this.panelOpen) return;
+    const active = Math.hypot(screenX, screenY) > 0.01;
+    this.stickActive = active;
+    if (active) this.tapTarget = null;
     this.enqueueMove(screenX, screenY);
+  }
+
+  /**
+   * Presentation-only tap-to-move. Coordinates are ground millimetres from
+   * [CameraRig.groundFromNdc].
+   */
+  setTapMove(xMm: number, zMm: number): void {
+    if (this.panelOpen || !this.settings.tapToMove) return;
+    this.stickActive = false;
+    this.tapTarget = { xMm, zMm };
+  }
+
+  private applyTapToMove(): void {
+    if (this.stickActive || this.panelOpen || !this.settings.tapToMove) return;
+    const target = this.tapTarget;
+    if (!target) return;
+    const view = this.latestView;
+    if (!view) return;
+    const stick = stickFromTapTarget(view.player.xMm, view.player.zMm, target);
+    if (!stick) {
+      this.tapTarget = null;
+      this.enqueueMove(0, 0);
+    } else {
+      this.enqueueMove(stick.sx, stick.sy);
+    }
   }
 
   private enqueueMove(screenX: number, screenY: number): void {
@@ -416,6 +481,8 @@ export class GameHost {
       this.settingsOpen = which === "settings";
       this.bagOpen = which === "bag";
       this.stationOpen = which === "station";
+      this.tapTarget = null;
+      this.stickActive = false;
       this.enqueueMove(0, 0);
     } else {
       switch (which) {
@@ -443,11 +510,28 @@ export class GameHost {
   setBagOpen(open: boolean): void { this.setPanelOpen("bag", open); }
   setStationOpen(open: boolean): void { this.setPanelOpen("station", open); }
 
-  /** Presentation settings (mute, quality). Not part of the parity save. */
+  /** Presentation settings (mute, quality, a11y, cloud). Not part of the parity save. */
   updateSettings(partial: Partial<GameSettings>): void {
     this.settings = { ...this.settings, ...partial };
+    if (!this.settings.tapToMove) this.tapTarget = null;
+    this.audio.setMuted(this.settings.muted);
+    if (this.settings.cloudSyncEnabled && !this.cloud.available) {
+      this.say("Cloud sync on — configure Firebase keys to link a remote save");
+    }
+    if (this.settings.cloudSyncEnabled) {
+      void this.cloud.ensureAccount(this.settings).then(({ settings }) => {
+        this.settings = settings;
+        saveSettings(this.settings);
+        this.publish(true);
+      });
+    }
     saveSettings(this.settings);
     this.publish(true);
+  }
+
+  /** Whether a remote backend is configured (Firebase keys). Local play never needs this. */
+  cloudAvailable(): boolean {
+    return this.cloud.available;
   }
 
   /** Quality preset for the renderer, including while the title screen is up. */
@@ -532,8 +616,16 @@ export class GameHost {
     const text = encodeSnapshot(sim.content, sim.state, now);
     const rotate = this.rotateOnNextSave;
     this.rotateOnNextSave = true;
+    const syncSettings = this.settings;
     this.saveChain = this.saveChain
       .then(() => store.write(text, rotate))
+      .then(() => this.cloud.push(syncSettings, text))
+      .then((pushed) => {
+        if (pushed.cloudAccountId !== syncSettings.cloudAccountId) {
+          this.settings = pushed;
+          saveSettings(this.settings);
+        }
+      })
       .catch((e) => console.error("Save failed", e));
   }
 

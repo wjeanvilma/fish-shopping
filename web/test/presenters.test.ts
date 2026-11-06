@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { GameState, Simulation, buildView, loadContent } from "../src/engine";
+import { CameraRig } from "../src/game/cameraRig";
+import { stickFromTapTarget } from "../src/presenters/tapToMove";
 import {
   CustomerCrowd,
   FLYING_TRANSFER_DURATION_S,
@@ -94,6 +96,31 @@ describe("locomotion", () => {
       pose = smooth.update({ xMm: settledAt, zMm: 0, facingX: 1000, facingZ: 0, zoneId: null }, 0.05);
     }
     expect(pose.idle).toBe(true);
+  });
+});
+
+describe("tap-to-move", () => {
+  it("stickPointsTowardTarget_andClearsOnArrival", () => {
+    const far = stickFromTapTarget(0, 0, { xMm: 5000, zMm: 0 });
+    expect(far).not.toBeNull();
+    expect(far!.sx).toBeCloseTo(-1, 2);
+    expect(far!.sy).toBeCloseTo(0, 2);
+    expect(stickFromTapTarget(0, 0, { xMm: 100, zMm: 0 })).toBeNull();
+    expect(stickFromTapTarget(0, 0, null)).toBeNull();
+  });
+
+  it("groundFromNdc_rightMapsTowardNegativeX", () => {
+    const center = CameraRig.groundFromNdc(0, 0, 16 / 9, 0, 0)!;
+    const right = CameraRig.groundFromNdc(0.4, 0, 16 / 9, 0, 0)!;
+    expect(right.xMm).toBeLessThan(center.xMm);
+  });
+
+  it("screenToWorld_inverseMatchesStickMapping", () => {
+    const stick = stickFromTapTarget(0, 0, { xMm: 0, zMm: 8000 })!;
+    const [wx, wz] = CameraRig.screenToWorld(stick.sx, stick.sy);
+    expect(wx).toBeCloseTo(0, 2);
+    expect(wz).toBeGreaterThan(0.9);
+    expect(Math.hypot(wx, wz)).toBeCloseTo(1, 2);
   });
 });
 

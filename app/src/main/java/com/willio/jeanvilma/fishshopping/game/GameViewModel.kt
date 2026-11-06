@@ -19,12 +19,20 @@ import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import com.willio.jeanvilma.fishshopping.core.sim.Simulation
 import com.willio.jeanvilma.fishshopping.core.sim.applyOffline
 import com.willio.jeanvilma.fishshopping.core.sim.view
+import com.willio.jeanvilma.fishshopping.audio.AudioBus
+import com.willio.jeanvilma.fishshopping.audio.sfxFromEvent
+import com.willio.jeanvilma.fishshopping.cloud.CloudSyncCoordinator
+import com.willio.jeanvilma.fishshopping.core.persistence.SyncSource
 import com.willio.jeanvilma.fishshopping.persistence.GameSettings
+import com.willio.jeanvilma.fishshopping.persistence.JoystickSide
 import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 import com.willio.jeanvilma.fishshopping.persistence.SettingsStore
 import com.willio.jeanvilma.fishshopping.persistence.SnapshotStore
 import com.willio.jeanvilma.fishshopping.render.FlyingTransferCue
 import com.willio.jeanvilma.fishshopping.render.resolveFlyingTransfer
+import com.willio.jeanvilma.fishshopping.ui.hud.TapTarget
+import com.willio.jeanvilma.fishshopping.ui.hud.stickFromTapTarget
+import kotlin.math.hypot
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
@@ -78,6 +86,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val ioExecutor = Executors.newSingleThreadExecutor { Thread(it, "fish-save") }
     private val store = SnapshotStore(app.filesDir)
     private val settingsStore = SettingsStore(app)
+    private val audio = AudioBus(app)
+    private val cloud = CloudSyncCoordinator()
 
     private val _ui = MutableStateFlow<GameUiState>(GameUiState.Loading)
     val ui: StateFlow<GameUiState> = _ui
@@ -139,12 +149,19 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Wall clock of the last checkpoint; used for offline catch-up on resume/load. */
     private var lastCheckpointEpochMs: Long? = null
     private var pendingOfflineReport: OfflineReport? = null
+    /** Presentation-only tap-to-move destination (cleared by stick/keys or on arrival). */
+    @Volatile
+    private var tapTarget: TapTarget? = null
+    /** True while joystick/keyboard is holding a non-zero stick. */
+    @Volatile
+    private var stickActive = false
 
     private val panelOpen get() = upgradesOpen || staffOpen || questsOpen || contractsOpen || mapOpen
         || pauseOpen || settingsOpen || bagOpen || stationOpen
         || pendingOfflineReport != null
 
     init {
+        audio.setMuted(settings.muted)
         viewModelScope.launch(simDispatcher) { load() }
     }
 
@@ -156,6 +173,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             }
             content = pack
             settings = settingsStore.load()
+            audio.setMuted(settings.muted)
             publishTitle(store.readCandidates().isNotEmpty())
         } catch (e: NewerSaveException) {
             allowSaving = false
@@ -194,6 +212,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             val pack = content ?: return@launch
             booting = true
             try {
+                cloud.clearRemote(settings)
                 store.clear()
                 rotateOnNextSave = true
                 val state = GameState.newGame(pack, START_HARBOR, Random.nextInt())
@@ -259,6 +278,20 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Latest valid snapshot, falling back to the previous one (blueprint "Recovery"). */
     private fun restoreOrCreate(pack: ContentPack): Restored {
+        val localLatest = store.readCandidates().firstOrNull { it.first == "latest" }?.second
+        val pull = cloud.pullMerge(settings, localLatest)
+        if (pull.settings != settings) {
+            settings = pull.settings
+            settingsStore.save(settings)
+        }
+        if (pull.decision.source == SyncSource.REMOTE && pull.decision.text != null) {
+            runCatching {
+                store.write(pull.decision.text, rotate = true)
+                val decoded = SnapshotCodec.decodeEnvelope(pack, pull.decision.text)
+                _messages.tryEmit("Restored newer cloud save")
+                return Restored(decoded.state, decoded.savedAtEpochMs)
+            }.onFailure { Log.w(TAG, "Cloud save unusable: ${it.message}") }
+        }
         for ((label, text) in store.readCandidates()) {
             try {
                 val decoded = SnapshotCodec.decodeEnvelope(pack, text)
@@ -288,6 +321,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             while (isActive) {
                 val s = sim
                 if (s != null && _ui.value is GameUiState.Ready && !panelOpen) {
+                    applyTapToMove()
                     val ticks = clock.advance(System.nanoTime())
                     repeat(ticks) { step(s) }
                     if (ticks > 0) publish(force = false)
@@ -328,7 +362,32 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Joystick in screen space: x right, y down, each -1..1. */
     fun setMove(screenX: Float, screenY: Float) {
         if (panelOpen) return
+        val active = hypot(screenX.toDouble(), screenY.toDouble()) > 0.01
+        stickActive = active
+        if (active) tapTarget = null
         enqueueMove(screenX, screenY)
+    }
+
+    /**
+     * Presentation-only tap-to-move. [xMm]/[zMm] are ground millimetres from [CameraRig.groundFromNdc].
+     */
+    fun setTapMove(xMm: Int, zMm: Int) {
+        if (panelOpen || !settings.tapToMove) return
+        stickActive = false
+        tapTarget = TapTarget(xMm, zMm)
+    }
+
+    private fun applyTapToMove() {
+        if (stickActive || panelOpen || !settings.tapToMove) return
+        val target = tapTarget ?: return
+        val view = latestView ?: return
+        val stick = stickFromTapTarget(view.player.xMm, view.player.zMm, target)
+        if (stick == null) {
+            tapTarget = null
+            enqueueMove(0f, 0f)
+        } else {
+            enqueueMove(stick.sx, stick.sy)
+        }
     }
 
     private fun enqueueMove(screenX: Float, screenY: Float) {
@@ -367,6 +426,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         settingsOpen = which == Panel.SETTINGS
         bagOpen = which == Panel.BAG
         stationOpen = which == Panel.STATION
+        tapTarget = null
+        stickActive = false
         enqueueMove(0f, 0f)
     }
 
@@ -396,13 +457,41 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         stationOpen = false
     }
 
-    /** Presentation settings (mute, quality). Not part of the parity save. */
-    fun updateSettings(muted: Boolean = settings.muted, quality: QualityPreset = settings.quality) {
-        val next = GameSettings(muted = muted, quality = quality)
+    /** Presentation settings (mute, quality, a11y, cloud). Not part of the parity save. */
+    fun updateSettings(
+        muted: Boolean = settings.muted,
+        quality: QualityPreset = settings.quality,
+        joystickSide: JoystickSide = settings.joystickSide,
+        joystickScale: Float = settings.joystickScale,
+        tapToMove: Boolean = settings.tapToMove,
+        cloudSyncEnabled: Boolean = settings.cloudSyncEnabled,
+    ) {
+        var next = GameSettings(
+            muted = muted,
+            quality = quality,
+            joystickSide = joystickSide,
+            joystickScale = GameSettings.clampScale(joystickScale),
+            tapToMove = tapToMove,
+            cloudSyncEnabled = cloudSyncEnabled,
+            cloudAccountId = settings.cloudAccountId,
+        )
+        if (next.cloudSyncEnabled && !cloud.available) {
+            // Still allow the opt-in flag; pushes no-op until Firebase keys are configured.
+            _messages.tryEmit("Cloud sync on — configure Firebase keys to link a remote save")
+        }
+        if (next.cloudSyncEnabled) {
+            val (withAccount, _) = cloud.ensureAccount(next)
+            next = withAccount
+        }
         settings = next
+        if (!next.tapToMove) tapTarget = null
+        audio.setMuted(next.muted)
         settingsStore.save(next)
         viewModelScope.launch(simDispatcher) { publish(force = true) }
     }
+
+    /** Whether a remote backend is configured (Firebase keys). Local play never needs this. */
+    fun cloudAvailable(): Boolean = cloud.available
 
     fun setMachinePaused(stationId: String, paused: Boolean) {
         commands += Command.SetMachinePaused(stationId, paused)
@@ -477,6 +566,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         var transaction = false
         val transferred = ArrayList<GameEvent.ItemsTransferred>()
         for (e in events) {
+            sfxFromEvent(e)?.let { audio.play(it) }
             when (e) {
                 is GameEvent.ItemsTransferred -> transferred += e
                 is GameEvent.SaleCommitted -> {
@@ -595,8 +685,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val text = SnapshotCodec.encode(s.content, s.state, savedAtEpochMs = now)
         val rotate = rotateOnNextSave
         rotateOnNextSave = true
+        val syncSettings = settings
         ioExecutor.execute {
             runCatching { store.write(text, rotate) }.onFailure { Log.e(TAG, "Save failed", it) }
+            val pushed = cloud.push(syncSettings, text)
+            if (pushed.cloudAccountId != syncSettings.cloudAccountId) {
+                settings = pushed
+                settingsStore.save(pushed)
+            }
         }
     }
 

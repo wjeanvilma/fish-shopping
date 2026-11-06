@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import sunriseSceneUrl from "../../../shared/assets/models/sunrise_pier_blockout.glb?url";
 import moonSceneUrl from "../../../shared/assets/models/moon_cove_blockout.glb?url";
 import type { ActiveContractView, ContextCard, ContractOfferView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SimView, StaffHireView, StationView, UpgradeView } from "../engine";
-import type { GameSettings } from "../game/settingsStore";
+import { CameraRig } from "../game/cameraRig";
+import type { GameSettings, JoystickScale } from "../game/settingsStore";
 import { GameHost, type HostState } from "../game/GameHost";
 import { HarborScene, hasWebGL2 } from "../render/HarborScene";
 import { Joystick } from "./Joystick";
@@ -17,6 +18,16 @@ export function App() {
   const [host] = useState(() => new GameHost());
   const state = useSyncExternalStore(host.subscribe, host.getState);
   const [webgl2] = useState(hasWebGL2);
+
+  useEffect(() => {
+    const unlock = () => host.unlockAudio();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, [host]);
 
   if (!webgl2) {
     return (
@@ -102,6 +113,33 @@ function World({ host }: { host: GameHost }) {
     };
     const onPageHide = () => host.pause();
 
+    let tapDown: { x: number; y: number; id: number } | null = null;
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      tapDown = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    };
+    const onPointerUp = (e: PointerEvent) => {
+      // Tap-to-move: short presses only (ignore drag). HUD chrome sits above and eats its own taps.
+      const down = tapDown;
+      tapDown = null;
+      if (!down || down.id !== e.pointerId || e.button !== 0) return;
+      if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 12) return;
+      const st = host.getState();
+      if (st.status !== "ready" || !st.settings.tapToMove) return;
+      if (st.pauseOpen || st.settingsOpen || st.bagOpen || st.stationOpen || st.upgradesOpen
+        || st.staffOpen || st.questsOpen || st.contractsOpen || st.mapOpen || st.offlineReport) {
+        return;
+      }
+      const view = host.latestView;
+      if (!view) return;
+      const r = canvas.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) return;
+      const ndcX = ((e.clientX - r.left) / r.width) * 2 - 1;
+      const ndcY = -(((e.clientY - r.top) / r.height) * 2 - 1);
+      const hit = CameraRig.groundFromNdc(ndcX, ndcY, r.width / r.height, view.player.xMm, view.player.zMm);
+      if (hit) host.setTapMove(hit.xMm, hit.zMm);
+    };
+
     void (async () => {
       await host.start();
       if (disposed) return;
@@ -112,6 +150,8 @@ function World({ host }: { host: GameHost }) {
     })();
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", onPageHide);
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointerup", onPointerUp);
 
     return () => {
       disposed = true;
@@ -120,6 +160,8 @@ function World({ host }: { host: GameHost }) {
       observer.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", onPageHide);
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointerup", onPointerUp);
       scene.dispose();
     };
   }, [host]);
@@ -258,9 +300,15 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
         </div>
       )}
       {touch ? (
-        <Joystick className="joystick" onMove={(x, y) => host.setMove(x, y)} />
+        <Joystick
+          side={state.settings.joystickSide}
+          scale={state.settings.joystickScale}
+          onMove={(x, y) => host.setMove(x, y)}
+        />
       ) : (
-        <div className="panel keys-hint">Move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys</div>
+        <div className={`panel keys-hint keys-hint-${state.settings.joystickSide}`}>
+          Move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys
+        </div>
       )}
       {v.context && (
         <StationCard
@@ -334,6 +382,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       {settingsOpen && state.status === "ready" && (
         <SettingsPanel
           settings={state.settings}
+          cloudAvailable={host.cloudAvailable()}
           onChange={(partial) => host.updateSettings(partial)}
           onClose={() => host.setSettingsOpen(false)}
         />
@@ -416,16 +465,18 @@ function PausePanel({ onResume, onSettings, onTitle }: {
   );
 }
 
-function SettingsPanel({ settings, onChange, onClose }: {
+function SettingsPanel({ settings, cloudAvailable, onChange, onClose }: {
   settings: GameSettings;
+  cloudAvailable: boolean;
   onChange: (partial: Partial<GameSettings>) => void;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => closeRef.current?.focus(), []);
+  const scales: JoystickScale[] = [0.75, 1, 1.25];
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Settings" onClick={(e) => e.stopPropagation()}>
+      <div className="panel sheet settings-sheet" role="dialog" aria-modal="true" aria-label="Settings" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-header">
           <h2>Settings</h2>
           <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
@@ -433,11 +484,37 @@ function SettingsPanel({ settings, onChange, onClose }: {
         <ul className="upgrade-list">
           <li>
             <div className="grow">
-              <strong>Mute (coming soon)</strong>
-              <div className="small muted">Audio is not in the harbor yet.</div>
+              <strong>Mute</strong>
+              <div className="small muted">Silences catch, sale, machine, rush, and upgrade stingers.</div>
             </div>
             <button className="button" aria-pressed={settings.muted} onClick={() => onChange({ muted: !settings.muted })}>
               {settings.muted ? "On" : "Off"}
+            </button>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Tap to move</strong>
+              <div className="small muted">Tap the harbor to walk there. Stick and keys still work.</div>
+            </div>
+            <button className="button" aria-pressed={settings.tapToMove} onClick={() => onChange({ tapToMove: !settings.tapToMove })}>
+              {settings.tapToMove ? "On" : "Off"}
+            </button>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Cloud sync</strong>
+              <div className="small muted">
+                {cloudAvailable
+                  ? "Optional. Newest checksummed save wins across devices."
+                  : "Optional. Set VITE_FIREBASE_API_KEY + VITE_FIREBASE_PROJECT_ID to link a remote."}
+              </div>
+            </div>
+            <button
+              className="button"
+              aria-pressed={settings.cloudSyncEnabled}
+              onClick={() => onChange({ cloudSyncEnabled: !settings.cloudSyncEnabled })}
+            >
+              {settings.cloudSyncEnabled ? "On" : "Off"}
             </button>
           </li>
         </ul>
@@ -453,6 +530,35 @@ function SettingsPanel({ settings, onChange, onClose }: {
               {q}
             </button>
           ))}
+        </div>
+        <div className="small" style={{ marginTop: 12 }}>Joystick side</div>
+        <div className="quality-row">
+          {(["left", "right"] as const).map((side) => (
+            <button
+              key={side}
+              className={settings.joystickSide === side ? "button" : "button ghost"}
+              aria-pressed={settings.joystickSide === side}
+              onClick={() => onChange({ joystickSide: side })}
+            >
+              {side}
+            </button>
+          ))}
+        </div>
+        <div className="small" style={{ marginTop: 12 }}>Joystick size</div>
+        <div className="quality-row">
+          {scales.map((s) => {
+            const label = s === 0.75 ? "S" : s === 1.25 ? "L" : "M";
+            return (
+              <button
+                key={s}
+                className={settings.joystickScale === s ? "button" : "button ghost"}
+                aria-pressed={settings.joystickScale === s}
+                onClick={() => onChange({ joystickScale: s })}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

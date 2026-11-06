@@ -11,14 +11,28 @@ android {
         }
     }
 
+    // Optional Firebase REST keys from local.properties (never required for local play).
+    fun localProp(key: String): String {
+        val f = rootProject.file("local.properties")
+        if (!f.exists()) return ""
+        f.readLines().forEach { line ->
+            val t = line.trim()
+            if (t.isEmpty() || t.startsWith("#")) return@forEach
+            val i = t.indexOf('=')
+            if (i <= 0) return@forEach
+            if (t.substring(0, i).trim() == key) return t.substring(i + 1).trim()
+        }
+        return ""
+    }
     defaultConfig {
         applicationId = "com.willio.jeanvilma.fishshopping"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "FIREBASE_API_KEY", "\"${localProp("fish.firebase.apiKey")}\"")
+        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"${localProp("fish.firebase.projectId")}\"")
     }
 
     buildTypes {
@@ -34,6 +48,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +20,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -65,10 +72,12 @@ import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import com.willio.jeanvilma.fishshopping.core.sim.StaffHireView
 import com.willio.jeanvilma.fishshopping.core.sim.StationView
 import com.willio.jeanvilma.fishshopping.core.sim.UpgradeView
+import com.willio.jeanvilma.fishshopping.game.CameraRig
 import com.willio.jeanvilma.fishshopping.game.GameUiState
-import com.willio.jeanvilma.fishshopping.persistence.GameSettings
-import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 import com.willio.jeanvilma.fishshopping.game.GameViewModel
+import com.willio.jeanvilma.fishshopping.persistence.GameSettings
+import com.willio.jeanvilma.fishshopping.persistence.JoystickSide
+import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 import com.willio.jeanvilma.fishshopping.render.HarborView
 import com.willio.jeanvilma.fishshopping.ui.theme.Action
 import com.willio.jeanvilma.fishshopping.ui.theme.Danger
@@ -119,6 +128,13 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
     val v = state.view
     val focus = remember { FocusRequester() }
     val keys = remember { mutableStateListOf<Key>() }
+    var harborSize by remember { mutableStateOf(IntSize.Zero) }
+    var harborOrigin by remember { mutableStateOf(Offset.Zero) }
+    var tapZoneOrigin by remember { mutableStateOf(Offset.Zero) }
+    val settings = state.settings
+    val anyPanel = state.offlineReport != null || state.pauseOpen || state.settingsOpen
+        || state.bagOpen || state.stationOpen || state.upgradesOpen || state.staffOpen
+        || state.questsOpen || state.contractsOpen || state.mapOpen
 
     BackHandler {
         when {
@@ -137,7 +153,14 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
-    Box(Modifier.fillMaxSize()) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .onGloballyPositioned {
+                harborSize = IntSize(it.size.width, it.size.height)
+                harborOrigin = it.positionInRoot()
+            },
+    ) {
     Box(
         Modifier
             .fillMaxSize()
@@ -163,6 +186,36 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 true
             },
     ) {
+        // Tap-to-move zone opposite the stick so it does not fight the floating pad.
+        if (settings.tapToMove && !anyPanel) {
+            val tapAlign = if (settings.joystickSide == JoystickSide.LEFT) {
+                Alignment.CenterEnd
+            } else {
+                Alignment.CenterStart
+            }
+            Box(
+                Modifier
+                    .align(tapAlign)
+                    .fillMaxWidth(0.55f)
+                    .fillMaxHeight()
+                    .onGloballyPositioned { tapZoneOrigin = it.positionInRoot() }
+                    .pointerInput(v.player.xMm, v.player.zMm, harborSize, tapZoneOrigin, harborOrigin) {
+                        detectTapGestures { local ->
+                            val w = harborSize.width.coerceAtLeast(1)
+                            val h = harborSize.height.coerceAtLeast(1)
+                            val x = (tapZoneOrigin.x - harborOrigin.x) + local.x
+                            val y = (tapZoneOrigin.y - harborOrigin.y) + local.y
+                            val ndcX = (2f * x / w) - 1f
+                            val ndcY = 1f - (2f * y / h)
+                            val hit = CameraRig.groundFromNdc(
+                                ndcX, ndcY, w.toFloat() / h.toFloat(),
+                                v.player.xMm, v.player.zMm,
+                            ) ?: return@detectTapGestures
+                            vm.setTapMove(hit.first, hit.second)
+                        }
+                    },
+            )
+        }
         // Top left: current harbor + rating stars (prestige-lite).
         Pill(Modifier.align(Alignment.TopStart)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -242,8 +295,20 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 }
             }
         }
-        // Bottom left: joystick.
-        Joystick(onMove = vm::setMove, modifier = Modifier.align(Alignment.BottomStart))
+        // Floating joystick pad on the chosen side (appears under the finger).
+        val stickAlign = if (settings.joystickSide == JoystickSide.LEFT) {
+            Alignment.BottomStart
+        } else {
+            Alignment.BottomEnd
+        }
+        Joystick(
+            onMove = vm::setMove,
+            diameter = (GameSettings.BASE_DIAMETER_DP * settings.joystickScale).dp,
+            modifier = Modifier
+                .align(stickAlign)
+                .fillMaxWidth(0.42f)
+                .fillMaxHeight(0.48f),
+        )
         // Bottom centre: station card, only in range.
         v.context?.let { card ->
             StationCard(
@@ -338,8 +403,13 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
             OverlayScrim(onDismiss = { vm.setSettingsOpen(false) }) {
                 SettingsPanel(
                     settings = state.settings,
+                    cloudAvailable = vm.cloudAvailable(),
                     onMuted = { vm.updateSettings(muted = it) },
                     onQuality = { vm.updateSettings(quality = it) },
+                    onJoystickSide = { vm.updateSettings(joystickSide = it) },
+                    onJoystickScale = { vm.updateSettings(joystickScale = it) },
+                    onTapToMove = { vm.updateSettings(tapToMove = it) },
+                    onCloudSync = { vm.updateSettings(cloudSyncEnabled = it) },
                     onClose = { vm.setSettingsOpen(false) },
                 )
             }
@@ -496,12 +566,17 @@ private fun PausePanel(onResume: () -> Unit, onSettings: () -> Unit, onTitle: ()
 @Composable
 private fun SettingsPanel(
     settings: GameSettings,
+    cloudAvailable: Boolean,
     onMuted: (Boolean) -> Unit,
     onQuality: (QualityPreset) -> Unit,
+    onJoystickSide: (JoystickSide) -> Unit,
+    onJoystickScale: (Float) -> Unit,
+    onTapToMove: (Boolean) -> Unit,
+    onCloudSync: (Boolean) -> Unit,
     onClose: () -> Unit,
 ) {
     Surface(
-        Modifier.width(400.dp).then(rememberSheetClicks()),
+        Modifier.width(400.dp).heightIn(max = 480.dp).then(rememberSheetClicks()),
         shape = PanelShape,
         color = PanelSurface,
         shadowElevation = 8.dp,
@@ -513,9 +588,9 @@ private fun SettingsPanel(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Mute (coming soon)", fontWeight = FontWeight.SemiBold)
+                    Text("Mute", fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Audio is not in the harbor yet.",
+                        "Silences catch, sale, machine, rush, and upgrade stingers.",
                         style = MaterialTheme.typography.bodySmall,
                         color = Ink.copy(alpha = 0.7f),
                     )
@@ -543,6 +618,68 @@ private fun SettingsPanel(
                         ) { Text(label) }
                     }
                 }
+            }
+            Text("Joystick side")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                JoystickSide.entries.forEach { side ->
+                    val label = if (side == JoystickSide.LEFT) "Left" else "Right"
+                    val selected = settings.joystickSide == side
+                    if (selected) {
+                        Button(onClick = { onJoystickSide(side) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(label)
+                        }
+                    } else {
+                        OutlinedButton(onClick = { onJoystickSide(side) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(label)
+                        }
+                    }
+                }
+            }
+            Text("Joystick size")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GameSettings.SCALE_OPTIONS.forEach { scale ->
+                    val label = when (scale) {
+                        0.75f -> "S"
+                        1.25f -> "L"
+                        else -> "M"
+                    }
+                    val selected = settings.joystickScale == scale
+                    if (selected) {
+                        Button(onClick = { onJoystickScale(scale) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(label)
+                        }
+                    } else {
+                        OutlinedButton(onClick = { onJoystickScale(scale) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(label)
+                        }
+                    }
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Tap to move", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Tap the harbor to walk there. Stick and keys still work.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.7f),
+                    )
+                }
+                Switch(checked = settings.tapToMove, onCheckedChange = onTapToMove)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Cloud sync", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (cloudAvailable) {
+                            "Optional. Newest checksummed save wins across devices."
+                        } else {
+                            "Optional. Add fish.firebase.* to local.properties to link a remote."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.7f),
+                    )
+                }
+                Switch(checked = settings.cloudSyncEnabled, onCheckedChange = onCloudSync)
             }
         }
     }
