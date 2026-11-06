@@ -44,7 +44,7 @@ class ContentAndInventoryTest {
         assertEquals("tutorial.first_contract", c.tutorial[7].id)
         assertEquals("tutorial.hire_staff", c.tutorial[8].id)
         assertEquals("tutorial.grill_line", c.tutorial[9].id)
-        assertEquals(3, c.prestige.milestones.size)
+        assertEquals(6, c.prestige.milestones.size)
         assertEquals(listOf(0L, 250L, 750L, 1500L, 3000L), c.prestige.ratingThresholds)
         assertEquals(10, c.harborsById.getValue("harbor.sunrise_pier").counters.single().products.size)
         assertEquals(3, c.harborsById.getValue("harbor.sunrise_pier").stations.size)

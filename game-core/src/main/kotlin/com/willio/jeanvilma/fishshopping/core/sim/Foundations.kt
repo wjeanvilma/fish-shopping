@@ -30,7 +30,7 @@ object SimConstants {
      * 7: workers list (hired staff + bags + task state).
      * 8: contract board offers + active timed deliveries.
      */
-    const val SCHEMA_VERSION = 10
+    const val SCHEMA_VERSION = 12
 }
 
 /** Integer arithmetic that refuses to leave the shared safe range. */

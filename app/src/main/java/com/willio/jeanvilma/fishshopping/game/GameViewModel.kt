@@ -553,6 +553,20 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun buyBait(baitId: String) {
+        commands += Command.BuyBait(baitId, UUID.randomUUID().toString())
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    fun selectBait(baitId: String?) {
+        commands += Command.SelectBait(baitId)
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
     fun reel() {
         if (panelOpen) return
         commands += Command.Reel
@@ -596,7 +610,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     transaction = true
                 }
                 is GameEvent.FishCaught -> {
-                    if (e.timingBonus) {
+                    if (e.personalBest) {
+                        val name = s.content.itemName(e.speciesId)
+                        _messages.tryEmit("New trophy: $name · ${e.sizePermille}%")
+                        transaction = true
+                    } else if (e.timingBonus) {
                         val tip = s.content.speciesById[e.speciesId]?.baseValue ?: 0L
                         _messages.tryEmit("Perfect reel! +$tip")
                         transaction = true
@@ -605,6 +623,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                         _messages.tryEmit("Rare catch: ${s.content.speciesById[e.speciesId]?.name ?: e.speciesId}")
                         transaction = true
                     }
+                }
+                is GameEvent.TrophySetCompleted -> {
+                    val setName = s.content.trophySetsById[e.setId]?.name ?: e.setId
+                    _messages.tryEmit("Gallery complete: $setName")
+                    transaction = true
                 }
                 is GameEvent.FishingSpotDepleted -> {
                     _messages.tryEmit("Pier empty — fish are returning")

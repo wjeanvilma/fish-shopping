@@ -56,6 +56,10 @@ object BalanceExport {
                 put("counterSpoilUnits", e.counterSpoilUnits)
                 put("bagFishSpoilPeriodTicks", e.bagFishSpoilPeriodTicks)
                 put("bagFishSpoilUnits", e.bagFishSpoilUnits)
+                put(
+                    "scarcityPriceCurvePermille",
+                    JsonArray(e.scarcityPriceCurvePermille.map { JsonPrimitive(it) }),
+                )
             },
         )
         put(
@@ -136,6 +140,23 @@ object BalanceExport {
             },
         )
         put(
+            "bait",
+            buildJsonArray {
+                for (b in content.bait) {
+                    add(
+                        buildJsonObject {
+                            put("id", b.id)
+                            put("carryUnits", b.carryUnits)
+                            put("packQuantity", b.packQuantity)
+                            put("cost", b.cost)
+                            put("rareSpeciesWeightMultPermille", b.rareSpeciesWeightMultPermille)
+                            put("rareChanceBonusPermille", b.rareChanceBonusPermille)
+                        },
+                    )
+                }
+            },
+        )
+        put(
             "recipes",
             buildJsonArray {
                 for (r in content.recipes) {
@@ -184,6 +205,12 @@ object BalanceExport {
                             put("priceMultPermille", c.priceMultPermille)
                             put("unmetPriceMultPermille", c.unmetPriceMultPermille)
                             put("unmetPatienceDrainPermille", c.unmetPatienceDrainPermille)
+                            put(
+                                "dayPartSpawnMultPermille",
+                                buildJsonObject {
+                                    for ((k, v) in c.dayPartSpawnMultPermille.toSortedMap()) put(k, v)
+                                },
+                            )
                         },
                     )
                 }
@@ -203,6 +230,7 @@ object BalanceExport {
                                 put("durationTicks", r.durationTicks)
                                 put("spawnSpeedPermille", r.spawnSpeedPermille)
                                 put("queueBonus", r.queueBonus)
+                                put("priceMultPermille", r.priceMultPermille)
                             },
                         )
                     }
@@ -317,6 +345,33 @@ object BalanceExport {
                                     put("durationTicks", t.durationTicks)
                                     put("payout", t.payout)
                                     put("penalty", t.penalty)
+                                    put("kind", t.kind.wire)
+                                    put("payoutEscalatePermille", t.payoutEscalatePermille)
+                                    put("penaltyEscalatePermille", t.penaltyEscalatePermille)
+                                    put("maxStreak", t.maxStreak)
+                                    put("failCooldownTicks", t.failCooldownTicks)
+                                },
+                            )
+                        }
+                    },
+                )
+            },
+        )
+        put(
+            "trophies",
+            buildJsonObject {
+                val t = content.trophies
+                put("sizeMinPermille", t.sizeMinPermille)
+                put("sizeMaxPermille", t.sizeMaxPermille)
+                put(
+                    "sets",
+                    buildJsonArray {
+                        for (set in t.sets) {
+                            add(
+                                buildJsonObject {
+                                    put("id", set.id)
+                                    put("speciesCount", set.species.size)
+                                    put("completeStat", set.completeStat)
                                 },
                             )
                         }
@@ -329,6 +384,10 @@ object BalanceExport {
             buildJsonObject {
                 val p = content.prestige
                 put("ratingThresholds", JsonArray(p.ratingThresholds.map { JsonPrimitive(it) }))
+                put(
+                    "ratingPriceMultPermille",
+                    JsonArray(p.ratingPriceMultPermille.map { JsonPrimitive(it) }),
+                )
                 put(
                     "milestones",
                     buildJsonArray {
@@ -348,6 +407,33 @@ object BalanceExport {
                 )
             },
         )
+        put(
+            "reputation",
+            buildJsonObject {
+                val rep = content.reputation
+                put("minSample", rep.minSample)
+                put("neutralScorePermille", rep.neutralScorePermille)
+                put(
+                    "scoreBandThresholdsPermille",
+                    JsonArray(rep.scoreBandThresholdsPermille.map { JsonPrimitive(it) }),
+                )
+                put(
+                    "kindSpawnMultPermille",
+                    buildJsonArray {
+                        for (row in rep.kindSpawnMultPermille) {
+                            add(
+                                buildJsonObject {
+                                    for ((k, v) in row.toSortedMap()) put(k, v)
+                                },
+                            )
+                        }
+                    },
+                )
+                put("unmetPreferencePenaltyPermille", rep.unmetPreferencePenaltyPermille)
+                put("coachingLostRatioPermille", rep.coachingLostRatioPermille)
+                put("coachingPraiseScorePermille", rep.coachingPraiseScorePermille)
+            },
+        )
     }
 
     fun encode(content: ContentPack): String = build(content).toString()
@@ -362,6 +448,9 @@ object BalanceExport {
         }
         is UpgradeEffect.CatchSpeed -> buildJsonObject {
             put("kind", "catch_speed"); put("speedPermille", e.speedPermille)
+        }
+        is UpgradeEffect.GrantBait -> buildJsonObject {
+            put("kind", "grant_bait"); put("bait", e.bait); put("quantity", e.quantity)
         }
         is UpgradeEffect.TimingWindow -> buildJsonObject {
             put("kind", "timing_window")

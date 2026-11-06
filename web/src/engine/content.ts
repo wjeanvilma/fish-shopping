@@ -37,6 +37,17 @@ export interface ProductDef {
   spoilTier?: number;
   asset?: string | null;
 }
+export interface BaitDef {
+  id: string;
+  name: string;
+  description: string;
+  carryUnits: number;
+  packQuantity: number;
+  cost: number;
+  rareSpeciesWeightMultPermille: number;
+  rareChanceBonusPermille: number;
+  requires: string[];
+}
 export interface ItemQuantity { item: string; quantity: number }
 export interface RecipeDef { id: string; machine: string; inputs: ItemQuantity[]; outputs: ItemQuantity[]; durationTicks: number }
 export interface MachineDef { id: string; name: string; recipes: string[]; inputCapacityUnits: number; outputCapacityUnits: number }
@@ -44,6 +55,7 @@ export type UpgradeEffect =
   | { kind: "carry_capacity"; capacityUnits: number }
   | { kind: "recipe_duration"; machine: string; recipe: string; durationTicks: number }
   | { kind: "catch_speed"; speedPermille: number }
+  | { kind: "grant_bait"; bait: string; quantity: number }
   | {
     kind: "timing_window";
     windowStartPermille: number;
@@ -115,6 +127,28 @@ export interface EconomyDef {
   counterSpoilUnits: number;
   bagFishSpoilPeriodTicks: number;
   bagFishSpoilUnits: number;
+  /**
+   * Phase 12 scarcity price curve: five bands for counter fill ratio 0–20% … 80–100%.
+   * Low stock (early bands) tips above 1000; full shelves sit near 1000.
+   */
+  scarcityPriceCurvePermille: number[];
+}
+
+/** One curated museum set of species trophies. */
+export interface TrophySetDef {
+  id: string;
+  name: string;
+  description: string;
+  species: string[];
+  /** Stat written to 1 when every listed species has a personal best. */
+  completeStat: string;
+}
+
+/** Size-roll bounds and museum sets for the trophy board (Phase 10). */
+export interface TrophiesDef {
+  sizeMinPermille: number;
+  sizeMaxPermille: number;
+  sets: TrophySetDef[];
 }
 
 export interface PrestigeRewardDef {
@@ -141,8 +175,29 @@ export interface PrestigeDef {
   requires: string[];
   /** Revenue thresholds for harbor rating stars 1..5 (non-decreasing). */
   ratingThresholds: number[];
+  /**
+   * Phase 12 soft price multipliers for harbor rating stars 0..5 (length 6).
+   * Applied on top of permanent prestige price bonuses.
+   */
+  ratingPriceMultPermille: number[];
   milestones: PrestigeMilestoneDef[];
 }
+
+/**
+ * Service reputation (Phase 13): computed from lifetime sales vs lost customers.
+ * Distinct from prestige harbor ★ (revenue). Softly biases customer spawn mix.
+ */
+export interface ReputationDef {
+  minSample: number;
+  neutralScorePermille: number;
+  scoreBandThresholdsPermille: number[];
+  kindSpawnMultPermille: Record<string, number>[];
+  unmetPreferencePenaltyPermille: number;
+  coachingLostRatioPermille: number;
+  coachingPraiseScorePermille: number;
+}
+
+export type ContractKind = "standard" | "standing";
 
 export interface ContractTemplateDef {
   id: string;
@@ -154,6 +209,15 @@ export interface ContractTemplateDef {
   payout: number;
   penalty: number;
   weight: number;
+  /** Phase 14: one-shot vs auto-refresh standing order. */
+  kind?: ContractKind;
+  /** Per completed standing cycle, multiply payout by this / 1000 (capped by maxStreak). */
+  payoutEscalatePermille?: number;
+  penaltyEscalatePermille?: number;
+  /** Max escalate steps applied to payout/penalty. */
+  maxStreak?: number;
+  /** After a standing fail, template stays off the board for this many ticks. */
+  failCooldownTicks?: number;
 }
 
 /** Harbor contract board: rotating offers with timed deliveries. */
@@ -165,7 +229,14 @@ export interface ContractsDef {
   requires: string[];
   templates: ContractTemplateDef[];
 }
-export type CustomerKind = "standard" | "premium" | "bulk";
+export type CustomerKind =
+  | "standard"
+  | "premium"
+  | "bulk"
+  | "tourist"
+  | "wholesaler"
+  | "critic"
+  | "night_regular";
 export interface ProductWeight { item: string; weight: number }
 export interface CustomerDef {
   id: string;
@@ -179,11 +250,13 @@ export interface CustomerDef {
   preferredProducts: ProductWeight[];
   unmetPriceMultPermille: number;
   unmetPatienceDrainPermille: number;
+  /** Optional day-part multipliers on spawnWeight (1000 = unchanged). */
+  dayPartSpawnMultPermille?: Record<string, number>;
 }
 export type TutorialTrigger = { kind: "enter_zone"; zone: string } | ({ kind: "stat" } & StatGoal);
 export interface TutorialStepDef { id: string; text: string; advanceOn: TutorialTrigger }
 export interface RectMm { id: string; minX: number; minZ: number; maxX: number; maxZ: number }
-export type ZoneKind = "fishing" | "machine_input" | "machine_output" | "counter";
+export type ZoneKind = "fishing" | "machine_input" | "machine_output" | "counter" | "kiosk";
 export interface ZoneDef extends RectMm { kind: ZoneKind }
 export interface DayPartDef {
   id: string;
@@ -237,6 +310,8 @@ export interface RushWindowDef {
   durationTicks: number;
   spawnSpeedPermille: number;
   queueBonus: number;
+  /** Phase 12 sale price multiplier while active (1000 = unchanged). */
+  priceMultPermille: number;
 }
 export interface HarborDef {
   id: string;
@@ -266,6 +341,7 @@ export interface RawContentPack {
   player: PlayerDef;
   species: SpeciesDef[];
   products: ProductDef[];
+  bait: BaitDef[];
   recipes: RecipeDef[];
   machines: MachineDef[];
   upgrades: UpgradeDef[];
@@ -277,8 +353,12 @@ export interface RawContentPack {
   economy: EconomyDef;
   /** Day-part fishing ecology (Phase 7). */
   ecology: EcologyDef;
+  /** Museum / trophy board (Phase 10). */
+  trophies: TrophiesDef;
   /** End-of-run prestige milestones (Phase 20); additive, never wipes the save. */
   prestige: PrestigeDef;
+  /** Service reputation from served vs abandoned (Phase 13). */
+  reputation: ReputationDef;
   contracts: ContractsDef;
   customers: CustomerDef[];
   tutorial: TutorialStepDef[];
@@ -297,31 +377,45 @@ const byId = <T extends { id: string }>(xs: readonly T[]) => new Map(xs.map((x) 
 export class ContentPack {
   readonly speciesById: Map<string, SpeciesDef>;
   readonly productsById: Map<string, ProductDef>;
+  readonly baitById: Map<string, BaitDef>;
   readonly recipesById: Map<string, RecipeDef>;
   readonly machinesById: Map<string, MachineDef>;
   readonly upgradesById: Map<string, UpgradeDef>;
   readonly questsById: Map<string, QuestDef>;
   readonly workersById: Map<string, WorkerDef>;
   readonly prestigeMilestonesById: Map<string, PrestigeMilestoneDef>;
+  readonly trophySetsById: Map<string, TrophySetDef>;
   readonly contractTemplatesById: Map<string, ContractTemplateDef>;
   readonly customersById: Map<string, CustomerDef>;
   readonly harborsById: Map<string, HarborDef>;
 
   constructor(readonly raw: RawContentPack) {
+    for (const t of raw.contracts.templates) {
+      t.kind = t.kind ?? "standard";
+      t.payoutEscalatePermille = t.payoutEscalatePermille ?? 1000;
+      t.penaltyEscalatePermille = t.penaltyEscalatePermille ?? 1000;
+      t.maxStreak = t.maxStreak ?? 1;
+      t.failCooldownTicks = t.failCooldownTicks ?? 1;
+    }
     for (const h of raw.harbors) {
       h.requires = h.requires ?? [];
       h.customerPathWaypoints = h.customerPathWaypoints ?? [];
-      h.rushes = h.rushes ?? [];
+      h.rushes = (h.rushes ?? []).map((rush) => ({
+        ...rush,
+        priceMultPermille: rush.priceMultPermille ?? 1000,
+      }));
       h.blockoutAsset = `${h.id.includes(".") ? h.id.slice(h.id.indexOf(".") + 1) : h.id}_blockout.glb`;
     }
     this.speciesById = byId(raw.species);
     this.productsById = byId(raw.products);
+    this.baitById = byId(raw.bait);
     this.recipesById = byId(raw.recipes);
     this.machinesById = byId(raw.machines);
     this.upgradesById = byId(raw.upgrades);
     this.questsById = byId(raw.quests);
     this.workersById = byId(raw.workers);
     this.prestigeMilestonesById = byId(raw.prestige.milestones);
+    this.trophySetsById = byId(raw.trophies.sets);
     this.contractTemplatesById = byId(raw.contracts.templates);
     this.customersById = byId(raw.customers);
     this.harborsById = byId(raw.harbors);
@@ -338,22 +432,30 @@ export class ContentPack {
   get offline() { return this.raw.offline; }
   get economy() { return this.raw.economy; }
   get ecology() { return this.raw.ecology; }
+  get bait() { return this.raw.bait; }
+  get trophies() { return this.raw.trophies; }
   get prestige() { return this.raw.prestige; }
+  get reputation() { return this.raw.reputation; }
   get contracts() { return this.raw.contracts; }
   get harbors() { return this.raw.harbors; }
 
   carryUnits = (itemId: string): number => {
-    const u = this.speciesById.get(itemId)?.carryUnits ?? this.productsById.get(itemId)?.carryUnits;
+    const u = this.speciesById.get(itemId)?.carryUnits
+      ?? this.productsById.get(itemId)?.carryUnits
+      ?? this.baitById.get(itemId)?.carryUnits;
     if (u === undefined) throw new Error(`Unknown item ${itemId}`);
     return u;
   };
 
   itemName(itemId: string): string {
-    return this.speciesById.get(itemId)?.name ?? this.productsById.get(itemId)?.name ?? itemId;
+    return this.speciesById.get(itemId)?.name
+      ?? this.productsById.get(itemId)?.name
+      ?? this.baitById.get(itemId)?.name
+      ?? itemId;
   }
 
   isKnownItem(itemId: string): boolean {
-    return this.speciesById.has(itemId) || this.productsById.has(itemId);
+    return this.speciesById.has(itemId) || this.productsById.has(itemId) || this.baitById.has(itemId);
   }
 
   harbor(id: string): HarborDef {
@@ -406,8 +508,25 @@ export function validateContent(p: ContentPack): string[] {
     "player.startFishRegenPermille must be >= 1000");
 
   const allIds = [...r.species, ...r.products, ...r.recipes, ...r.machines, ...r.upgrades, ...r.quests,
-    ...r.workers, ...r.prestige.milestones, ...r.contracts.templates, ...r.customers, ...r.tutorial, ...r.harbors].map((x) => x.id);
+    ...r.bait, ...r.workers, ...r.trophies.sets, ...r.prestige.milestones, ...r.contracts.templates, ...r.customers, ...r.tutorial, ...r.harbors].map((x) => x.id);
   duplicates(allIds).forEach((id) => errors.push(`Duplicate id '${id}'`));
+
+  check(r.bait.length > 0, () => "bait must not be empty");
+  const baitRequirable = new Set([...p.upgradesById.keys(), ...p.questsById.keys()]);
+  for (const b of r.bait) {
+    check(b.carryUnits >= 1, () => `${b.id}: carryUnits must be >= 1`);
+    check(b.packQuantity >= 1, () => `${b.id}: packQuantity must be >= 1`);
+    check(b.cost >= 0, () => `${b.id}: cost must be >= 0`);
+    check(b.rareSpeciesWeightMultPermille >= 1, () => `${b.id}: rareSpeciesWeightMultPermille must be >= 1`);
+    check(b.rareChanceBonusPermille >= 0 && b.rareChanceBonusPermille <= 1000, () =>
+      `${b.id}: rareChanceBonusPermille must be 0..1000`);
+    for (const req of b.requires) {
+      check(baitRequirable.has(req), () => `${b.id}: unknown requirement '${req}'`);
+    }
+  }
+  for (const h of r.harbors) {
+    check(h.zones.some((z) => z.kind === "kiosk"), () => `${h.id}: needs at least one kiosk zone`);
+  }
 
   for (const w of r.workers) {
     check(w.hireCost >= 0, () => `${w.id}: hireCost must be >= 0`);
@@ -431,6 +550,12 @@ export function validateContent(p: ContentPack): string[] {
   check(r.economy.counterSpoilUnits >= 0, () => "economy.counterSpoilUnits must be >= 0");
   check(r.economy.bagFishSpoilPeriodTicks >= 1, () => "economy.bagFishSpoilPeriodTicks must be >= 1");
   check(r.economy.bagFishSpoilUnits >= 0, () => "economy.bagFishSpoilUnits must be >= 0");
+  check(r.economy.scarcityPriceCurvePermille?.length === 5, () =>
+    "economy.scarcityPriceCurvePermille must have exactly 5 bands");
+  for (let i = 0; i < (r.economy.scarcityPriceCurvePermille?.length ?? 0); i++) {
+    check(r.economy.scarcityPriceCurvePermille![i]! >= 1, () =>
+      `economy.scarcityPriceCurvePermille[${i}] must be >= 1`);
+  }
   const economyRequirable = new Set([...p.upgradesById.keys(), ...p.questsById.keys()]);
   for (const req of r.economy.requires) {
     check(economyRequirable.has(req), () => `economy: unknown requirement '${req}'`);
@@ -450,12 +575,67 @@ export function validateContent(p: ContentPack): string[] {
   }
   check(r.ecology.parts[r.ecology.parts.length - 1]!.endPermille === 1000, () =>
     "ecology.parts must end at endPermille 1000");
+  check(r.trophies.sizeMinPermille <= r.trophies.sizeMaxPermille, () =>
+    "trophies: sizeMinPermille must be <= sizeMaxPermille");
+  check(r.trophies.sets.length > 0, () => "trophies.sets must not be empty");
+  check(new Set(r.trophies.sets.map((s) => s.id)).size === r.trophies.sets.length, () =>
+    "trophies.sets ids must be unique");
+  check(new Set(r.trophies.sets.map((s) => s.completeStat)).size === r.trophies.sets.length, () =>
+    "trophies.sets completeStat values must be unique");
+  for (const set of r.trophies.sets) {
+    check(set.species.length > 0, () => `${set.id}: species must not be empty`);
+    check(new Set(set.species).size === set.species.length, () => `${set.id}: species must be unique`);
+    check(set.completeStat.startsWith("stat."), () => `${set.id}: completeStat must start with 'stat.'`);
+    for (const sp of set.species) {
+      check(p.speciesById.has(sp), () => `${set.id}: unknown species '${sp}'`);
+    }
+  }
   check(r.prestige.ratingThresholds.length === 5, () => "prestige.ratingThresholds must have exactly 5 entries");
+  check(r.prestige.ratingPriceMultPermille?.length === 6, () =>
+    "prestige.ratingPriceMultPermille must have exactly 6 entries (stars 0..5)");
+  for (let i = 0; i < (r.prestige.ratingPriceMultPermille?.length ?? 0); i++) {
+    check(r.prestige.ratingPriceMultPermille![i]! >= 1, () =>
+      `prestige.ratingPriceMultPermille[${i}] must be >= 1`);
+  }
   check(r.prestige.milestones.length > 0, () => "prestige.milestones must not be empty");
   for (let i = 1; i < r.prestige.ratingThresholds.length; i++) {
     check(r.prestige.ratingThresholds[i]! >= r.prestige.ratingThresholds[i - 1]!, () =>
       "prestige.ratingThresholds must be non-decreasing");
   }
+  const rep = r.reputation;
+  check(!!rep, () => "reputation is required");
+  check(rep.minSample >= 1, () => "reputation.minSample must be >= 1");
+  check(rep.neutralScorePermille >= 1, () => "reputation.neutralScorePermille must be >= 1");
+  check(rep.scoreBandThresholdsPermille.length > 0, () =>
+    "reputation.scoreBandThresholdsPermille must not be empty");
+  for (let i = 1; i < rep.scoreBandThresholdsPermille.length; i++) {
+    check(rep.scoreBandThresholdsPermille[i]! >= rep.scoreBandThresholdsPermille[i - 1]!, () =>
+      "reputation.scoreBandThresholdsPermille must be non-decreasing");
+  }
+  check(rep.kindSpawnMultPermille.length === rep.scoreBandThresholdsPermille.length + 1, () =>
+    "reputation.kindSpawnMultPermille must have thresholds+1 rows");
+  const kindWires = new Set([
+    "standard", "premium", "bulk", "tourist", "wholesaler", "critic", "night_regular",
+  ]);
+  for (let bandIdx = 0; bandIdx < rep.kindSpawnMultPermille.length; bandIdx++) {
+    const row = rep.kindSpawnMultPermille[bandIdx]!;
+    for (const kind of kindWires) {
+      check(row[kind] !== undefined, () =>
+        `reputation.kindSpawnMultPermille[${bandIdx}] must include every customer kind`);
+    }
+    for (const [kind, mult] of Object.entries(row)) {
+      check(kindWires.has(kind), () =>
+        `reputation.kindSpawnMultPermille[${bandIdx}]: unknown kind '${kind}'`);
+      check(mult >= 1, () =>
+        `reputation.kindSpawnMultPermille[${bandIdx}].${kind} must be >= 1`);
+    }
+  }
+  check(rep.unmetPreferencePenaltyPermille >= 0, () =>
+    "reputation.unmetPreferencePenaltyPermille must be >= 0");
+  check(rep.coachingLostRatioPermille >= 0 && rep.coachingLostRatioPermille <= 1000, () =>
+    "reputation.coachingLostRatioPermille must be 0..1000");
+  check(rep.coachingPraiseScorePermille >= 1, () =>
+    "reputation.coachingPraiseScorePermille must be >= 1");
   check(r.contracts.boardSlots >= 1, () => "contracts.boardSlots must be >= 1");
   check(r.contracts.maxActive >= 1, () => "contracts.maxActive must be >= 1");
   check(r.contracts.refreshPeriodTicks >= 1, () => "contracts.refreshPeriodTicks must be >= 1");
@@ -471,9 +651,24 @@ export function validateContent(p: ContentPack): string[] {
     check(t.payout >= 0, () => `${t.id}: payout must be >= 0`);
     check(t.penalty >= 0, () => `${t.id}: penalty must be >= 0`);
     check(t.weight >= 1, () => `${t.id}: weight must be >= 1`);
+    const kind = t.kind ?? "standard";
+    check(kind === "standard" || kind === "standing", () => `${t.id}: unknown contract kind '${kind}'`);
+    const payoutEsc = t.payoutEscalatePermille ?? 1000;
+    const penaltyEsc = t.penaltyEscalatePermille ?? 1000;
+    const maxStreak = t.maxStreak ?? 1;
+    const failCd = t.failCooldownTicks ?? 1;
+    check(payoutEsc >= 1, () => `${t.id}: payoutEscalatePermille must be >= 1`);
+    check(penaltyEsc >= 1, () => `${t.id}: penaltyEscalatePermille must be >= 1`);
+    check(maxStreak >= 1, () => `${t.id}: maxStreak must be >= 1`);
+    check(failCd >= 1, () => `${t.id}: failCooldownTicks must be >= 1`);
+    if (kind === "standing") {
+      check(payoutEsc >= 1000, () => `${t.id}: standing payoutEscalatePermille must be >= 1000`);
+      check(penaltyEsc >= 1000, () => `${t.id}: standing penaltyEscalatePermille must be >= 1000`);
+    }
   }
 
-  const unitsOrZero = (item: string) => p.speciesById.get(item)?.carryUnits ?? p.productsById.get(item)?.carryUnits ?? 0;
+  const unitsOrZero = (item: string) =>
+    p.speciesById.get(item)?.carryUnits ?? p.productsById.get(item)?.carryUnits ?? p.baitById.get(item)?.carryUnits ?? 0;
 
   for (const sp of r.species) {
     const tier = sp.spoilTier ?? 2;
@@ -525,6 +720,9 @@ export function validateContent(p: ContentPack): string[] {
     } else if (e.kind === "catch_speed") {
       check(e.speedPermille > r.player.startCatchSpeedPermille, () =>
         `${u.id}: catch speed does not exceed the starting catch speed`);
+    } else if (e.kind === "grant_bait") {
+      check(p.baitById.has(e.bait), () => `${u.id}: grant_bait unknown '${e.bait}'`);
+      check(e.quantity >= 1, () => `${u.id}: grant_bait quantity must be >= 1`);
     } else if (e.kind === "timing_window") {
       check(e.windowStartPermille < e.windowEndPermille, () =>
         `${u.id}: timing_window windowStart must be < windowEnd`);
@@ -625,11 +823,27 @@ export function validateContent(p: ContentPack): string[] {
       `${c.id}: unmetPriceMultPermille must be 1..1000`);
     check(c.unmetPatienceDrainPermille >= 1000, () =>
       `${c.id}: unmetPatienceDrainPermille must be >= 1000`);
-    if (c.kind === "premium") {
-      check(c.priceMultPermille > 1000, () => `${c.id}: premium customers must tip (priceMultPermille > 1000)`);
+    if (c.kind === "premium" || c.kind === "tourist" || c.kind === "critic") {
+      check(c.priceMultPermille > 1000, () =>
+        `${c.id}: ${c.kind} customers must tip (priceMultPermille > 1000)`);
     }
-    if (c.kind === "bulk") {
-      check(c.basketMin >= 5, () => `${c.id}: bulk customers need basketMin >= 5`);
+    if (c.kind === "bulk" || c.kind === "wholesaler") {
+      check(c.basketMin >= 5, () => `${c.id}: ${c.kind} customers need basketMin >= 5`);
+    }
+    if (c.kind === "critic") {
+      check(c.preferredProducts.length > 0, () => `${c.id}: critic customers need preferred products`);
+      check(c.unmetPatienceDrainPermille >= 2500, () =>
+        `${c.id}: critic unmetPatienceDrainPermille must be >= 2500`);
+    }
+    if (c.kind === "night_regular") {
+      const night = c.dayPartSpawnMultPermille?.night ?? 1000;
+      const day = c.dayPartSpawnMultPermille?.day ?? 1000;
+      check(night > day, () => `${c.id}: night_regular needs night spawn mult > day`);
+    }
+    const ecologyParts = new Set(r.ecology.parts.map((part) => part.id));
+    for (const [partId, mult] of Object.entries(c.dayPartSpawnMultPermille ?? {})) {
+      check(ecologyParts.has(partId), () => `${c.id}: unknown day-part '${partId}' in dayPartSpawnMultPermille`);
+      check(mult >= 1, () => `${c.id}: dayPartSpawnMultPermille.${partId} must be >= 1`);
     }
     for (const pw of c.preferredProducts) {
       check(p.productsById.has(pw.item), () => `${c.id}: preferred product unknown '${pw.item}'`);
@@ -708,6 +922,8 @@ export function validateContent(p: ContentPack): string[] {
         `${rush.id}: rush window must fit inside periodTicks (no wrap)`);
       check(rush.spawnSpeedPermille >= 1000, () =>
         `${rush.id}: spawnSpeedPermille must be >= 1000 (rushes only speed up spawns)`);
+      check((rush.priceMultPermille ?? 1000) >= 1, () =>
+        `${rush.id}: priceMultPermille must be >= 1`);
     }
     duplicates(rushes.map((r) => r.id)).forEach((id) => errors.push(`${h.id}: duplicate rush '${id}'`));
     for (let i = 0; i < rushes.length; i++) {

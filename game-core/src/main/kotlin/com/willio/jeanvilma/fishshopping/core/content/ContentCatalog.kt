@@ -9,6 +9,8 @@ object ContentCatalog {
         appendLine("counts:")
         appendLine("  species=${pack.species.size}")
         appendLine("  products=${pack.products.size}")
+        appendLine("  bait=${pack.bait.size}")
+        appendLine("  trophySets=${pack.trophies.sets.size}")
         appendLine("  recipes=${pack.recipes.size}")
         appendLine("  machines=${pack.machines.size}")
         appendLine("  upgrades=${pack.upgrades.size}")
@@ -27,6 +29,17 @@ object ContentCatalog {
                 "  ${s.id}  catch=${s.catchTicks}t value=${s.baseValue} weight=${s.rarityWeight}" +
                     (s.rareUpgrade?.let { " rare→${it.to}@${it.chancePermille}" } ?: ""),
             )
+        }
+        appendLine("bait:")
+        for (b in pack.bait) {
+            appendLine(
+                "  ${b.id}  pack=${b.packQuantity} cost=${b.cost}" +
+                    " rareW×${b.rareSpeciesWeightMultPermille} rare+${b.rareChanceBonusPermille}",
+            )
+        }
+        appendLine("trophySets:")
+        for (set in pack.trophies.sets) {
+            appendLine("  ${set.id}  ${set.species.size} species  → ${set.completeStat}")
         }
         appendLine("recipes:")
         for (r in pack.recipes) {

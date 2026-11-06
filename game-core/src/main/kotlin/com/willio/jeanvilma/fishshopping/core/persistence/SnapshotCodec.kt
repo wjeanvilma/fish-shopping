@@ -77,6 +77,8 @@ object SnapshotCodec {
                 put("fishingProgress", p.fishingProgress)
                 put("fishingCatchTicks", p.fishingCatchTicks)
                 put("reelAttemptedThisCast", p.reelAttemptedThisCast)
+                put("preferredBaitId", p.preferredBaitId)
+                put("activeBaitId", p.activeBaitId)
                 put("bag", inv(p.bag))
             })
             put("fishingSpots", encodeFishingSpots(s.fishingSpots))
@@ -107,6 +109,21 @@ object SnapshotCodec {
             put("completedQuests", JsonArray(s.completedQuests.map { JsonPrimitive(it) }))
             put("completedPrestige", JsonArray(s.completedPrestige.map { JsonPrimitive(it) }))
             put("unlockedCosmetics", JsonArray(s.unlockedCosmetics.map { JsonPrimitive(it) }))
+            put(
+                "trophies",
+                buildJsonObject {
+                    for ((speciesId, rec) in s.trophies) {
+                        put(
+                            speciesId,
+                            buildJsonObject {
+                                put("sizePermille", rec.sizePermille)
+                                put("valueCoins", rec.valueCoins)
+                                put("tick", rec.tick)
+                            },
+                        )
+                    }
+                },
+            )
             put("stats", JsonObject(s.stats.mapValues { JsonPrimitive(it.value) }))
             put("purchaseReceipts", JsonObject(s.purchaseReceipts.mapValues { receipt(it.value) }))
             put("ledger", JsonArray(s.ledger.map { receipt(it) }))
@@ -161,6 +178,8 @@ object SnapshotCodec {
      *  - v7 -> v8: contract board offers + active deliveries.
      *  - v8 -> v9: parked harbor worlds (harborStashes).
      *  - v9 -> v10: completedPrestige + unlockedCosmetics.
+     *  - v10 -> v11: player preferredBaitId + activeBaitId.
+     *  - v11 -> v12: trophies map (museum personal bests).
      */
     private fun readState(content: ContentPack, n: Node, version: Int): GameState {
         val harborId = n["harborId"].string()
@@ -188,6 +207,10 @@ object SnapshotCodec {
                 s.player.fishingCatchTicks = com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
                     .catchTicksFor(s.player.catchSpeedPermille, sp.catchTicks)
                 s.player.reelAttemptedThisCast = false
+            }
+            if (version >= 11) {
+                s.player.preferredBaitId = p.optional("preferredBaitId")?.string()?.takeIf { it in content.baitById }
+                s.player.activeBaitId = p.optional("activeBaitId")?.string()?.takeIf { it in content.baitById }
             }
             readInv(p["bag"], s.player.bag)
         }
@@ -317,8 +340,22 @@ object SnapshotCodec {
                 .filter { it in content.prestigeMilestonesById }
                 .forEach { s.completedPrestige += it }
             n["unlockedCosmetics"].list { it.string() }.forEach { s.unlockedCosmetics += it }
+            if (version >= 12) {
+                (n.optional("trophies")?.el as? JsonObject)?.forEach { (speciesId, v) ->
+                    if (speciesId !in content.speciesById) return@forEach
+                    val rec = Node(v, "$.state.trophies.$speciesId")
+                    s.trophies[speciesId] = com.willio.jeanvilma.fishshopping.core.sim.TrophyRecord(
+                        sizePermille = rec["sizePermille"].int(min = 1),
+                        valueCoins = rec["valueCoins"].long(min = 0),
+                        tick = rec["tick"].long(min = 0),
+                    )
+                }
+            }
         }
         (n["stats"].el as? JsonObject)?.forEach { (k, v) -> s.stats[k] = Node(v, "$.state.stats.$k").long() }
+        if (version >= 12) {
+            com.willio.jeanvilma.fishshopping.core.fishing.TrophySystem.rebuildSetStats(content, s)
+        }
         (n["purchaseReceipts"].el as? JsonObject)?.forEach { (k, v) -> s.purchaseReceipts[k] = readReceipt(Node(v, "$.state.purchaseReceipts.$k")) }
         n["ledger"].list(::readReceipt).forEach { s.ledger.addLast(it) }
 

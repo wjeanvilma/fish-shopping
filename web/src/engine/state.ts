@@ -16,9 +16,15 @@ export const Stats = {
   TIMING_BONUSES: "stat.timing_bonuses",
   PERFECT_REELS: "stat.perfect_reels",
   GOOD_REELS: "stat.good_reels",
+  BAIT_BOUGHT: "stat.bait_bought",
+  BAIT_USED: "stat.bait_used",
   RARE_CATCHES: "stat.rare_catches",
   PREMIUM_SALES: "stat.premium_sales",
   BULK_SALES: "stat.bulk_sales",
+  TOURIST_SALES: "stat.tourist_sales",
+  WHOLESALER_SALES: "stat.wholesaler_sales",
+  CRITIC_SALES: "stat.critic_sales",
+  NIGHT_SALES: "stat.night_sales",
   UNMET_PREFERENCE_SALES: "stat.unmet_preference_sales",
   WORKERS_HIRED: "stat.workers_hired",
   WORKER_FISH_CAUGHT: "stat.worker_fish_caught",
@@ -34,17 +40,28 @@ export const Stats = {
   MAINTENANCE_PAID: "stat.maintenance_paid",
   ITEMS_SPOILED: "stat.items_spoiled",
   PRESTIGE_COMPLETED: "stat.prestige_completed",
+  TROPHY_SPECIES: "stat.trophy_species",
+  TROPHY_RECORDS: "stat.trophy_records",
+  TROPHY_SETS_COMPLETE: "stat.trophy_sets_complete",
 } as const;
+
+/** Personal-best specimen mounted on the museum board for one species. */
+export interface TrophyRecord {
+  sizePermille: number;
+  valueCoins: number;
+  tick: number;
+}
 
 /** Stable ordered list for telemetry exports (zeros included). */
 export const STAT_KEYS: readonly string[] = [
   Stats.FISH_CAUGHT, Stats.MACHINE_INPUTS, Stats.OUTPUTS_COLLECTED, Stats.COUNTER_STOCKED,
   Stats.SALES, Stats.ITEMS_SOLD, Stats.REVENUE, Stats.LOST_CUSTOMERS, Stats.UPGRADES_BOUGHT,
-  Stats.TIMING_BONUSES, Stats.PERFECT_REELS, Stats.GOOD_REELS, Stats.RARE_CATCHES, Stats.PREMIUM_SALES, Stats.BULK_SALES, Stats.UNMET_PREFERENCE_SALES,
+  Stats.TIMING_BONUSES, Stats.PERFECT_REELS, Stats.GOOD_REELS, Stats.BAIT_BOUGHT, Stats.BAIT_USED, Stats.RARE_CATCHES,
+  Stats.PREMIUM_SALES, Stats.BULK_SALES, Stats.TOURIST_SALES, Stats.WHOLESALER_SALES, Stats.CRITIC_SALES, Stats.NIGHT_SALES, Stats.UNMET_PREFERENCE_SALES,
   Stats.WORKERS_HIRED, Stats.WORKER_FISH_CAUGHT, Stats.WORKER_ITEMS_MOVED, Stats.LEASES_EXPIRED, Stats.WAGES_PAID,
   Stats.QUESTS_COMPLETED, Stats.CONTRACTS_COMPLETED, Stats.CONTRACTS_FAILED, Stats.CONTRACT_REVENUE,
   Stats.CONTRACT_ITEMS_DELIVERED, Stats.HARBORS_TRAVELED, Stats.MAINTENANCE_PAID, Stats.ITEMS_SPOILED,
-  Stats.PRESTIGE_COMPLETED,
+  Stats.PRESTIGE_COMPLETED, Stats.TROPHY_SPECIES, Stats.TROPHY_RECORDS, Stats.TROPHY_SETS_COMPLETE,
 ];
 
 export type WorkerTaskPhase = "NONE" | "WALK_TO_WORK" | "WORK" | "PICKUP" | "WALK_TO_DROP" | "DROP";
@@ -93,6 +110,8 @@ export class PlayerState {
   fishingCatchTicks = 0;
   reelAttemptedThisCast = false;
   reelRequested = false;
+  preferredBaitId: string | null = null;
+  activeBaitId: string | null = null;
   constructor(
     public x: number,
     public z: number,
@@ -194,17 +213,24 @@ export interface ContractOffer {
 /** Accepted timed delivery job. */
 export class ContractState {
   delivered: number;
+  /** Mutable so standing orders can escalate mid-run (Phase 14). */
+  deadlineTick: number;
+  payout: number;
+  penalty: number;
   constructor(
     readonly id: string,
     readonly templateId: string,
     readonly itemId: string,
     readonly quantity: number,
     delivered: number,
-    readonly deadlineTick: number,
-    readonly payout: number,
-    readonly penalty: number,
+    deadlineTick: number,
+    payout: number,
+    penalty: number,
   ) {
     this.delivered = delivered;
+    this.deadlineTick = deadlineTick;
+    this.payout = payout;
+    this.penalty = penalty;
   }
 }
 
@@ -237,6 +263,8 @@ export class GameState {
   readonly completedQuests = new Set<string>();
   readonly completedPrestige = new Set<string>();
   readonly unlockedCosmetics = new Set<string>();
+  /** Best catch per species id (museum / trophy board). */
+  readonly trophies = new Map<string, TrophyRecord>();
   readonly stats = new Map<string, number>();
   readonly purchaseReceipts = new Map<string, Receipt>();
   readonly ledger: Receipt[] = [];
@@ -323,6 +351,8 @@ export class GameState {
 export type Command =
   | { type: "move"; x: number; z: number }
   | { type: "purchase_upgrade"; upgradeId: string; requestId: string }
+  | { type: "buy_bait"; baitId: string; requestId: string }
+  | { type: "select_bait"; baitId: string | null }
   | { type: "set_machine_paused"; stationId: string; paused: boolean }
   | { type: "reel" }
   | { type: "select_machine_recipe"; stationId: string; recipeId: string | null }
@@ -336,7 +366,9 @@ export type Command =
 
 export type GameEvent =
   | { type: "zone_entered"; tick: number; zoneId: string | null }
-  | { type: "fish_caught"; tick: number; speciesId: string; zoneId: string; timingBonus?: boolean; timingTier?: TimingTier; rareUpgrade?: boolean }
+  | { type: "fish_caught"; tick: number; speciesId: string; zoneId: string; timingBonus?: boolean; timingTier?: TimingTier; rareUpgrade?: boolean; sizePermille?: number; valueCoins?: number; personalBest?: boolean }
+  | { type: "trophy_recorded"; tick: number; speciesId: string; sizePermille: number; valueCoins: number; personalBest: boolean }
+  | { type: "trophy_set_completed"; tick: number; setId: string }
   | { type: "fishing_spot_depleted"; tick: number; zoneId: string }
   | { type: "items_transferred"; tick: number; from: string; to: string; itemId: string; count: number }
   | { type: "batch_started"; tick: number; batchId: string; stationId: string; recipeId: string }
@@ -363,6 +395,8 @@ export type GameEvent =
   | { type: "contract_rejected"; tick: number; referenceId: string; requestId: string; reason: string }
   | { type: "harbor_traveled"; tick: number; fromHarborId: string; toHarborId: string; receipt: Receipt; replayed: boolean }
   | { type: "travel_rejected"; tick: number; harborId: string; requestId: string; reason: string }
+  | { type: "bait_purchased"; tick: number; baitId: string; quantity: number; receipt: Receipt; replayed: boolean }
+  | { type: "bait_purchase_rejected"; tick: number; baitId: string; requestId: string; reason: string }
   | { type: "maintenance_paid"; tick: number; stations: number; coins: number }
   | { type: "items_spoiled"; tick: number; location: "counter" | "bag"; items: ItemQuantity[] }
   | { type: "prestige_unlocked"; tick: number; prestigeId: string; coinsRewarded: number; cosmetic: string | null; catchSpeedPermille: number; priceBonusPermille: number };

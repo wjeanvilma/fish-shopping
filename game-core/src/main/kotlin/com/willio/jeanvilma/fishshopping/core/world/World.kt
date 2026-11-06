@@ -110,7 +110,7 @@ object TransferSystem {
                         ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, p.bag.id, counter.stock.id, item, 1))
                     } != null
             }
-            ZoneKind.FISHING -> false
+            ZoneKind.FISHING, ZoneKind.KIOSK -> false
         }
         if (moved) p.transferCooldown = ctx.content.player.transferIntervalTicks - 1
     }

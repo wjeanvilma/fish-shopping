@@ -2,8 +2,8 @@
  * Per-tick systems. Each function mirrors the Kotlin object of the same name in game-core;
  * keep them line-for-line comparable so fixture mismatches are easy to trace.
  */
-import type { ContentPack, ContractTemplateDef, DayPartDef, FishingSpotDef, HarborDef, ItemQuantity, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, UpgradeDef, UpgradeEffect, WorkerDef } from "./content";
-import type { TimingTier } from "./state";
+import type { BaitDef, ContentPack, ContractTemplateDef, CounterDef, DayPartDef, FishingSpotDef, HarborDef, ItemQuantity, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, SpeciesDef, UpgradeDef, UpgradeEffect, WorkerDef } from "./content";
+import type { TimingTier, TrophyRecord } from "./state";
 import { counterAccepts, queueSlot, rectCenterX, rectCenterZ, rectContains } from "./content";
 import { INPUT_SCALE, SafeMath, TICKS_PER_SECOND, compareStrings, idiv } from "./foundations";
 import { Inventory, Transfers } from "./inventory";
@@ -102,6 +102,7 @@ export const TransferSystem = {
         break;
       }
       case "fishing":
+      case "kiosk":
         break;
     }
     if (moved) p.transferCooldown = ctx.content.player.transferIntervalTicks - 1;
@@ -135,7 +136,10 @@ export const FishingSystem = {
       const candidates = spotDef.species.map((id) => ctx.content.speciesById.get(id)!)
         .filter((sp) => p.bag.roomFor(sp.id) >= 1);
       if (candidates.length === 0) { p.reelRequested = false; return; }
-      const pick = candidates[s.rng.pickWeighted(candidates.map((c) => c.rarityWeight))]!;
+      const bait = BaitSystem.resolveForCast(ctx.content, s);
+      p.activeBaitId = bait?.id ?? null;
+      const weights = candidates.map((sp) => BaitSystem.effectiveWeight(sp, bait));
+      const pick = candidates[s.rng.pickWeighted(weights)]!;
       p.fishingSpecies = pick.id;
       p.fishingProgress = 0;
       p.fishingCatchTicks = FishingSystem.catchTicksFor(
@@ -270,12 +274,19 @@ export const FishingSystem = {
     const p = s.player;
     const spot = s.fishingSpots.find((f) => f.zoneId === spotZoneId)!;
     const rolled = ctx.content.speciesById.get(rolledSpeciesId)!;
+    const activeBait = p.activeBaitId
+      ? ctx.content.baitById.get(p.activeBaitId)
+      : undefined;
+    const bait = activeBait && p.bag.quantity(activeBait.id) >= 1 ? activeBait : undefined;
     let finalId = rolledSpeciesId;
     let rare = false;
     const ru = rolled.rareUpgrade;
-    if (ru && s.rng.nextBelow(1000) < ru.chancePermille) {
-      finalId = ru.to;
-      rare = true;
+    if (ru) {
+      const chance = BaitSystem.rareChancePermille(ru.chancePermille, bait);
+      if (s.rng.nextBelow(1000) < chance) {
+        finalId = ru.to;
+        rare = true;
+      }
     }
     const finalSpecies = ctx.content.speciesById.get(finalId)!;
     if (p.bag.roomFor(finalSpecies.id) >= 1 && spot.stock > 0) {
@@ -283,6 +294,10 @@ export const FishingSystem = {
       spot.stock--;
       s.bumpStat(Stats.FISH_CAUGHT);
       if (rare) s.bumpStat(Stats.RARE_CATCHES);
+      if (bait) {
+        p.bag.remove(bait.id, 1);
+        s.bumpStat(Stats.BAIT_USED);
+      }
       const bonusMult = FishingSystem.timingBonusPermille(ctx.content, timingTier);
       let bonusCoins = 0;
       if (bonusMult > 0) {
@@ -297,9 +312,11 @@ export const FishingSystem = {
         else if (timingTier === "good") s.bumpStat(Stats.GOOD_REELS);
       }
       const timingBonus = timingTier !== "miss";
+      const { sizePermille, valueCoins, personalBest } = TrophySystem.record(ctx, finalSpecies.id, timingTier);
       ctx.emit({
         type: "fish_caught", tick: s.tick, speciesId: finalSpecies.id, zoneId,
         timingBonus, timingTier, rareUpgrade: rare,
+        sizePermille, valueCoins, personalBest,
       });
       if (spot.stock === 0) {
         ctx.emit({ type: "fishing_spot_depleted", tick: s.tick, zoneId });
@@ -312,6 +329,7 @@ export const FishingSystem = {
     p.fishingProgress = 0;
     p.fishingCatchTicks = 0;
     p.reelAttemptedThisCast = false;
+    p.activeBaitId = null;
   },
 
   regenerate(ctx: StepContext): void {
@@ -327,6 +345,174 @@ export const FishingSystem = {
         spot.regenProgress = 0;
       }
     }
+  },
+};
+
+export const BaitSystem = {
+  requirementsMet(s: GameState, bait: BaitDef): boolean {
+    return bait.requires.every((r) => s.ownedUpgrades.has(r) || s.completedQuests.has(r));
+  },
+
+  missingRequirement(content: ContentPack, s: GameState, bait: BaitDef): string | null {
+    const missing = bait.requires.find((r) => !s.ownedUpgrades.has(r) && !s.completedQuests.has(r));
+    if (!missing) return null;
+    return content.upgradesById.get(missing)?.name ?? content.questsById.get(missing)?.name ?? missing;
+  },
+
+  resolveForCast(content: ContentPack, s: GameState): BaitDef | undefined {
+    const preferred = s.player.preferredBaitId;
+    if (preferred) {
+      const def = content.baitById.get(preferred);
+      if (def && s.player.bag.quantity(preferred) >= 1) return def;
+    }
+    return content.bait.find((b) => s.player.bag.quantity(b.id) >= 1);
+  },
+
+  effectiveWeight(species: { rarityWeight: number; rareUpgrade?: { to: string; chancePermille: number } | null }, bait?: BaitDef): number {
+    if (!bait || !species.rareUpgrade) return species.rarityWeight;
+    return Math.max(1, idiv(species.rarityWeight * bait.rareSpeciesWeightMultPermille, 1000));
+  },
+
+  rareChancePermille(baseChance: number, bait?: BaitDef): number {
+    if (!bait) return baseChance;
+    return Math.max(0, Math.min(1000, baseChance + bait.rareChanceBonusPermille));
+  },
+
+  select(s: GameState, content: ContentPack, baitId: string | null): void {
+    if (baitId === null) {
+      s.player.preferredBaitId = null;
+      return;
+    }
+    if (content.baitById.has(baitId)) s.player.preferredBaitId = baitId;
+  },
+
+  buy(ctx: StepContext, baitId: string, requestId: string): void {
+    const s = ctx.state;
+    const prior = s.purchaseReceipts.get(requestId);
+    if (prior) {
+      ctx.emit({ type: "bait_purchased", tick: s.tick, baitId, quantity: 0, receipt: prior, replayed: true });
+      return;
+    }
+    const zone = s.player.zoneId ? ctx.harbor.zones.find((z) => z.id === s.player.zoneId) : undefined;
+    if (!zone || zone.kind !== "kiosk") {
+      ctx.emit({ type: "bait_purchase_rejected", tick: s.tick, baitId, requestId, reason: "Stand at the bait kiosk" });
+      return;
+    }
+    const bait = ctx.content.baitById.get(baitId);
+    if (!bait) {
+      ctx.emit({ type: "bait_purchase_rejected", tick: s.tick, baitId, requestId, reason: "Unknown bait" });
+      return;
+    }
+    if (!BaitSystem.requirementsMet(s, bait)) {
+      const miss = BaitSystem.missingRequirement(ctx.content, s, bait) ?? "an unlock";
+      ctx.emit({ type: "bait_purchase_rejected", tick: s.tick, baitId, requestId, reason: `Requires: ${miss}` });
+      return;
+    }
+    if (s.coins < bait.cost) {
+      ctx.emit({ type: "bait_purchase_rejected", tick: s.tick, baitId, requestId, reason: `Need ${bait.cost - s.coins} more coins` });
+      return;
+    }
+    const room = s.player.bag.roomFor(bait.id);
+    if (room < 1) {
+      ctx.emit({ type: "bait_purchase_rejected", tick: s.tick, baitId, requestId, reason: "Bag full" });
+      return;
+    }
+    const qty = Math.min(bait.packQuantity, room);
+    s.coins -= bait.cost;
+    s.player.bag.add(bait.id, qty);
+    s.bumpStat(Stats.BAIT_BOUGHT, qty);
+    if (s.player.preferredBaitId === null) s.player.preferredBaitId = bait.id;
+    const receipt: Receipt = { id: s.newId("receipt"), type: "bait", coinDelta: -bait.cost, tick: s.tick, reference: requestId };
+    s.purchaseReceipts.set(requestId, receipt);
+    s.record(receipt);
+    ctx.emit({ type: "bait_purchased", tick: s.tick, baitId: bait.id, quantity: qty, receipt, replayed: false });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "bait" });
+  },
+};
+
+export const TrophySystem = {
+  GOOD_SIZE_BONUS: 50,
+  PERFECT_SIZE_BONUS: 100,
+
+  sizeBonusFor(tier: TimingTier): number {
+    if (tier === "perfect") return TrophySystem.PERFECT_SIZE_BONUS;
+    if (tier === "good") return TrophySystem.GOOD_SIZE_BONUS;
+    return 0;
+  },
+
+  rollSizePermille(content: ContentPack, state: GameState, timingTier: TimingTier): number {
+    const min = content.raw.trophies.sizeMinPermille;
+    const max = content.raw.trophies.sizeMaxPermille;
+    const span = max - min + 1;
+    const raw = min + state.rng.nextBelow(span) + TrophySystem.sizeBonusFor(timingTier);
+    return Math.max(min, Math.min(max, raw));
+  },
+
+  valueCoins(species: SpeciesDef, sizePermille: number): number {
+    return Math.max(1, idiv(species.baseValue * sizePermille, 1000));
+  },
+
+  record(ctx: StepContext, speciesId: string, timingTier: TimingTier = "miss"): {
+    sizePermille: number; valueCoins: number; personalBest: boolean;
+  } {
+    const content = ctx.content;
+    const s = ctx.state;
+    const species = content.speciesById.get(speciesId);
+    if (!species) return { sizePermille: 0, valueCoins: 0, personalBest: false };
+    const sizePermille = TrophySystem.rollSizePermille(content, s, timingTier);
+    const valueCoins = TrophySystem.valueCoins(species, sizePermille);
+    const prior = s.trophies.get(speciesId);
+    const isBest = !prior || sizePermille > prior.sizePermille ||
+      (sizePermille === prior.sizePermille && valueCoins > prior.valueCoins);
+    if (!isBest) return { sizePermille, valueCoins, personalBest: false };
+
+    const firstOfSpecies = !prior;
+    const rec: TrophyRecord = { sizePermille, valueCoins, tick: s.tick };
+    s.trophies.set(speciesId, rec);
+    s.bumpStat(Stats.TROPHY_RECORDS);
+    if (firstOfSpecies) s.bumpStat(Stats.TROPHY_SPECIES);
+    ctx.emit({
+      type: "trophy_recorded", tick: s.tick, speciesId, sizePermille, valueCoins, personalBest: true,
+    });
+    TrophySystem.refreshSets(ctx);
+    return { sizePermille, valueCoins, personalBest: true };
+  },
+
+  refreshSets(ctx: StepContext): void {
+    const content = ctx.content;
+    const s = ctx.state;
+    let completedNow = 0;
+    for (const set of content.raw.trophies.sets) {
+      const done = set.species.every((id) => s.trophies.has(id));
+      const was = s.stat(set.completeStat) >= 1;
+      if (done && !was) {
+        s.stats.set(set.completeStat, 1);
+        completedNow++;
+        ctx.emit({ type: "trophy_set_completed", tick: s.tick, setId: set.id });
+      } else if (done && was) {
+        s.stats.set(set.completeStat, 1);
+      } else if (!done) {
+        s.stats.delete(set.completeStat);
+      }
+    }
+    const n = content.raw.trophies.sets.filter((set) => s.stat(set.completeStat) >= 1).length;
+    if (completedNow > 0 || n > 0 || s.stats.has(Stats.TROPHY_SETS_COMPLETE)) {
+      s.stats.set(Stats.TROPHY_SETS_COMPLETE, n);
+    }
+  },
+
+  rebuildSetStats(content: ContentPack, s: GameState): void {
+    for (const set of content.raw.trophies.sets) {
+      const done = set.species.every((id) => s.trophies.has(id));
+      if (done) s.stats.set(set.completeStat, 1);
+      else s.stats.delete(set.completeStat);
+    }
+    const n = content.raw.trophies.sets.filter((set) => s.stat(set.completeStat) >= 1).length;
+    if (n > 0) s.stats.set(Stats.TROPHY_SETS_COMPLETE, n);
+    else s.stats.delete(Stats.TROPHY_SETS_COMPLETE);
+    const speciesCount = s.trophies.size;
+    if (speciesCount > 0) s.stats.set(Stats.TROPHY_SPECIES, speciesCount);
+    else s.stats.delete(Stats.TROPHY_SPECIES);
   },
 };
 
@@ -439,9 +625,6 @@ export const ProductionSystem = {
   },
 
   statusText(m: MachineState, content: ContentPack, lockedReason?: string | null): string {
-    if (m.status === "LOCKED") {
-      return lockedReason ?? "Locked — buy an upgrade";
-    }
     switch (m.status) {
       case "WAITING_FOR_INPUT": return ProductionSystem.waitingText(m, content);
       case "PROCESSING": {
@@ -597,6 +780,8 @@ export const CustomerSystem = {
     const met = c.preferenceMet();
     let mult = type.priceMultPermille;
     if (!met) mult = idiv(mult * type.unmetPriceMultPermille, 1000);
+    const counterDef = ctx.harbor.counters.find((ct) => ct.id === counter.counterId)!;
+    mult = idiv(mult * CustomerSystem.demandPriceMultPermille(ctx.content, s, ctx.harbor, counterDef, counter), 1000);
     mult = idiv(mult * s.prestigePriceBonusPermille, 1000);
     const amount = idiv(base * mult, 1000);
     const saleId = s.newId("sale");
@@ -605,7 +790,11 @@ export const CustomerSystem = {
     s.bumpStat(Stats.ITEMS_SOLD, c.reserved);
     s.bumpStat(Stats.REVENUE, amount);
     if (type.kind === "premium") s.bumpStat(Stats.PREMIUM_SALES);
-    if (type.kind === "bulk") s.bumpStat(Stats.BULK_SALES);
+    else if (type.kind === "bulk") s.bumpStat(Stats.BULK_SALES);
+    else if (type.kind === "tourist") s.bumpStat(Stats.TOURIST_SALES);
+    else if (type.kind === "wholesaler") s.bumpStat(Stats.WHOLESALER_SALES);
+    else if (type.kind === "critic") s.bumpStat(Stats.CRITIC_SALES);
+    else if (type.kind === "night_regular") s.bumpStat(Stats.NIGHT_SALES);
     if (!met) s.bumpStat(Stats.UNMET_PREFERENCE_SALES);
     s.record({ id: saleId, type: "sale", coinDelta: amount, tick: s.tick, reference: c.id });
     for (const [itemId, qty] of c.reservedItems) counter.stock.takeReserved(itemId, qty);
@@ -689,7 +878,7 @@ export const CustomerSystem = {
       s.customers.filter((c) => c.counterId === d.id).length < CustomerSystem.effectiveMaxQueue(d, rush));
     if (!counterDef) return;
     const types = ctx.content.customers;
-    const type = types[s.rng.pickWeighted(types.map((t) => t.spawnWeight))]!;
+    const type = types[s.rng.pickWeighted(types.map((t) => CustomerSystem.effectiveSpawnWeight(ctx.content, s, t)))]!;
     const wants = s.rng.nextInRange(type.basketMin, type.basketMax);
     let preferred: string | null = null;
     if (type.preferredProducts.length > 0) {
@@ -716,6 +905,57 @@ export const CustomerSystem = {
         w.phase === "WORK" &&
         w.taskZoneId === counterZoneId;
     });
+  },
+
+  /** Base spawn weight scaled by day-part (Phase 11) and reputation kind bias (Phase 13). */
+  effectiveSpawnWeight(content: ContentPack, state: GameState, type: { kind: string; spawnWeight: number; dayPartSpawnMultPermille?: Record<string, number> }): number {
+    const part = FishingSystem.dayPartAt(content, state.tick);
+    const dayMult = type.dayPartSpawnMultPermille?.[part.id] ?? 1000;
+    const repMult = ReputationSystem.kindSpawnMultPermille(content, state, type.kind);
+    let weight = type.spawnWeight;
+    weight = idiv(weight * dayMult, 1000);
+    weight = idiv(weight * repMult, 1000);
+    return Math.max(1, weight);
+  },
+
+  /** Soft rush price tip while a rush window is active (Phase 12). */
+  rushPriceMultPermille(harbor: HarborDef, tick: number): number {
+    return CustomerSystem.activeRush(harbor, tick)?.priceMultPermille ?? 1000;
+  },
+
+  /**
+   * Soft scarcity tip from counter fill ratio vs economy.scarcityPriceCurvePermille.
+   * Empty shelves land in band 0; a full counter lands in the last band.
+   */
+  scarcityPriceMultPermille(content: ContentPack, def: CounterDef, counter: CounterState): number {
+    const curve = content.economy.scarcityPriceCurvePermille;
+    if (curve.length === 0 || def.capacityUnits <= 0) return 1000;
+    const used = Math.min(Math.max(0, counter.stock.usedUnits()), def.capacityUnits);
+    const band = Math.min(curve.length - 1, idiv(used * curve.length, def.capacityUnits));
+    return curve[band]!;
+  },
+
+  /** Soft harbor-rating tip from prestige.ratingPriceMultPermille (Phase 12). */
+  ratingPriceMultPermille(content: ContentPack, state: GameState): number {
+    const table = content.prestige.ratingPriceMultPermille;
+    if (table.length === 0) return 1000;
+    const stars = Math.min(table.length - 1, Math.max(0, PrestigeSystem.harborRating(content, state)));
+    return table[stars]!;
+  },
+
+  /** Combined ephemeral demand multiplier (rush × scarcity × rating), excluding permanent prestige. */
+  demandPriceMultPermille(
+    content: ContentPack,
+    state: GameState,
+    harbor: HarborDef,
+    def: CounterDef,
+    counter: CounterState,
+  ): number {
+    let mult = 1000;
+    mult = idiv(mult * CustomerSystem.rushPriceMultPermille(harbor, state.tick), 1000);
+    mult = idiv(mult * CustomerSystem.scarcityPriceMultPermille(content, def, counter), 1000);
+    mult = idiv(mult * CustomerSystem.ratingPriceMultPermille(content, state), 1000);
+    return Math.max(1, mult);
   },
 
   activeRush(harbor: HarborDef, tick: number): RushWindowDef | null {
@@ -791,6 +1031,7 @@ export const UpgradeSystem = {
         s.coins -= u.cost;
         s.ownedUpgrades.add(u.id);
         UpgradeSystem.applyEffect(s, u.effect);
+        UpgradeSystem.grantBaitOnPurchase(ctx, u.effect);
         s.bumpStat(Stats.UPGRADES_BOUGHT);
         const receipt: Receipt = { id: s.newId("receipt"), type: "upgrade", coinDelta: -u.cost, tick: s.tick, reference: requestId };
         s.purchaseReceipts.set(requestId, receipt);
@@ -798,6 +1039,23 @@ export const UpgradeSystem = {
         ctx.emit({ type: "upgrade_purchased", tick: s.tick, upgradeId: u.id, receipt, replayed: false });
         ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "purchase" });
       }
+    }
+  },
+
+  grantBaitOnPurchase(ctx: StepContext, effect: UpgradeEffect): void {
+    if (effect.kind !== "grant_bait") return;
+    const bait = ctx.content.baitById.get(effect.bait);
+    if (!bait) return;
+    const bag = ctx.state.player.bag;
+    let added = 0;
+    for (let i = 0; i < effect.quantity; i++) {
+      if (bag.roomFor(bait.id) < 1) break;
+      bag.add(bait.id, 1);
+      added++;
+    }
+    if (added > 0) {
+      ctx.state.bumpStat(Stats.BAIT_BOUGHT, added);
+      if (ctx.state.player.preferredBaitId === null) ctx.state.player.preferredBaitId = bait.id;
     }
   },
 
@@ -812,6 +1070,8 @@ export const UpgradeSystem = {
       }
     } else if (effect.kind === "catch_speed") {
       s.player.catchSpeedPermille = Math.max(s.player.catchSpeedPermille, effect.speedPermille);
+    } else if (effect.kind === "grant_bait") {
+      // granted only at purchase via grantBaitOnPurchase
     } else if (effect.kind === "timing_window") {
       const p = s.player;
       p.timingWindowStartPermille = Math.min(p.timingWindowStartPermille, effect.windowStartPermille);
@@ -846,7 +1106,7 @@ export const UpgradeSystem = {
     } else if (effect.kind === "counter_spoil_resist") {
       s.counterSpoilPeriodMultPermille = Math.max(s.counterSpoilPeriodMultPermille, effect.periodMultPermille);
     }
-    // unlock_fishing_spot / unlock_machine are gated by ownedUpgrades in FishingSystem / ProductionSystem
+    // unlock_fishing_spot / unlock_machine / grant_bait are purchase-gated or ownership-gated
   },
 };
 
@@ -895,6 +1155,7 @@ function completeQuest(ctx: StepContext, q: QuestDef): void {
     if (!u) continue;
     s.ownedUpgrades.add(uid);
     UpgradeSystem.applyEffect(s, u.effect);
+    UpgradeSystem.grantBaitOnPurchase(ctx, u.effect);
   }
   ctx.emit({
     type: "quest_completed", tick: s.tick, questId: q.id,
@@ -902,6 +1163,65 @@ function completeQuest(ctx: StepContext, q: QuestDef): void {
   });
   ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "quest" });
 }
+
+/**
+ * Service reputation from served vs abandoned counters (Phase 13).
+ * Computed only — never persisted. Distinct from prestige harbor ★.
+ */
+export const ReputationSystem = {
+  BAND_LABELS: ["Poor", "Fair", "Good", "Great", "Excellent"] as const,
+
+  served(state: GameState): number {
+    return state.stat(Stats.SALES);
+  },
+
+  abandoned(state: GameState): number {
+    return state.stat(Stats.LOST_CUSTOMERS);
+  },
+
+  encounters(state: GameState): number {
+    return ReputationSystem.served(state) + ReputationSystem.abandoned(state);
+  },
+
+  /** Serve-rate permille after optional unmet-preference soft penalty. */
+  scorePermille(content: ContentPack, state: GameState): number {
+    const def = content.reputation;
+    const sales = ReputationSystem.served(state);
+    const lost = ReputationSystem.abandoned(state);
+    const total = sales + lost;
+    const raw = total < def.minSample
+      ? def.neutralScorePermille
+      : idiv(sales * 1000, total);
+    const unmet = state.stat(Stats.UNMET_PREFERENCE_SALES);
+    const penalty = sales <= 0 || def.unmetPreferencePenaltyPermille <= 0
+      ? 0
+      : idiv(unmet * def.unmetPreferencePenaltyPermille, sales);
+    return Math.max(1, raw - penalty);
+  },
+
+  band(content: ContentPack, state: GameState): number {
+    const thresholds = content.reputation.scoreBandThresholdsPermille;
+    const score = ReputationSystem.scorePermille(content, state);
+    let b = 0;
+    for (const t of thresholds) {
+      if (score >= t) b++;
+      else break;
+    }
+    return Math.min(thresholds.length, Math.max(0, b));
+  },
+
+  bandLabel(content: ContentPack, state: GameState): string {
+    const b = ReputationSystem.band(content, state);
+    return ReputationSystem.BAND_LABELS[b] ?? ReputationSystem.BAND_LABELS[ReputationSystem.BAND_LABELS.length - 1]!;
+  },
+
+  kindSpawnMultPermille(content: ContentPack, state: GameState, kind: string): number {
+    const table = content.reputation.kindSpawnMultPermille;
+    if (table.length === 0) return 1000;
+    const row = table[Math.min(table.length - 1, Math.max(0, ReputationSystem.band(content, state)))]!;
+    return row[kind] ?? 1000;
+  },
+};
 
 /**
  * Prestige-lite (Phase 20): permanent milestone bonuses and cosmetics without wiping
@@ -1003,6 +1323,28 @@ function completePrestige(ctx: StepContext, m: PrestigeMilestoneDef): void {
  * a penalty (capped by current coins).
  */
 export const ContractSystem = {
+  streakStatKey(templateId: string): string {
+    return `stat.contract_standing_streak.${templateId}`;
+  },
+  cooldownStatKey(templateId: string): string {
+    return `stat.contract_standing_cd.${templateId}`;
+  },
+  standingStreak(state: GameState, templateId: string): number {
+    return Math.max(0, state.stat(ContractSystem.streakStatKey(templateId)));
+  },
+  standingCooldownUntil(state: GameState, templateId: string): number {
+    return state.stat(ContractSystem.cooldownStatKey(templateId));
+  },
+  scaleAmount(base: number, escalatePermille: number, streak: number, maxStreak: number): number {
+    const steps = Math.min(Math.max(0, streak), Math.max(0, maxStreak));
+    let value = base;
+    for (let i = 0; i < steps; i++) value = idiv(value * escalatePermille, 1000);
+    return value;
+  },
+  isStanding(t: { kind?: string } | undefined | null): boolean {
+    return t?.kind === "standing";
+  },
+
   step(ctx: StepContext): void {
     expireDeadlines(ctx);
     maybeRefreshBoard(ctx);
@@ -1039,6 +1381,10 @@ export const ContractSystem = {
     }
     if (s.activeContracts.length >= ctx.content.contracts.maxActive) {
       reject(`Max ${ctx.content.contracts.maxActive} active contracts`);
+      return;
+    }
+    if (s.activeContracts.some((c) => c.templateId === offer.templateId)) {
+      reject("Already running that standing order");
       return;
     }
     for (let i = s.contractOffers.length - 1; i >= 0; i--) {
@@ -1096,15 +1442,21 @@ export const ContractSystem = {
     c.delivered += take;
     s.bumpStat(Stats.CONTRACT_ITEMS_DELIVERED, take);
     if (c.delivered >= c.quantity) {
-      s.activeContracts.splice(idx, 1);
-      s.coins = SafeMath.creditCoins(s.coins, c.payout);
+      const payout = c.payout;
+      s.coins = SafeMath.creditCoins(s.coins, payout);
       s.bumpStat(Stats.CONTRACTS_COMPLETED);
-      s.bumpStat(Stats.CONTRACT_REVENUE, c.payout);
-      const receipt: Receipt = { id: s.newId("contract"), type: "contract_payout", coinDelta: c.payout, tick: s.tick, reference: c.id };
+      s.bumpStat(Stats.CONTRACT_REVENUE, payout);
+      const receipt: Receipt = { id: s.newId("contract"), type: "contract_payout", coinDelta: payout, tick: s.tick, reference: c.id };
       s.record(receipt);
       s.purchaseReceipts.set(requestId, receipt);
       ctx.emit({ type: "contract_delivered", tick: s.tick, contractId: c.id, count: take, completed: true, receipt, replayed: false });
-      ctx.emit({ type: "contract_completed", tick: s.tick, contractId: c.id, templateId: c.templateId, payout: c.payout });
+      ctx.emit({ type: "contract_completed", tick: s.tick, contractId: c.id, templateId: c.templateId, payout });
+      const template = ctx.content.contractTemplatesById.get(c.templateId);
+      if (ContractSystem.isStanding(template)) {
+        refreshStandingJob(s, c, template!);
+      } else {
+        s.activeContracts.splice(idx, 1);
+      }
       ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "contract" });
     } else {
       const receipt: Receipt = { id: s.newId("contract"), type: "contract_deliver", coinDelta: 0, tick: s.tick, reference: `${contractId}:${take}` };
@@ -1114,6 +1466,19 @@ export const ContractSystem = {
     }
   },
 };
+
+function refreshStandingJob(s: GameState, c: ContractState, template: ContractTemplateDef): void {
+  const nextStreak = ContractSystem.standingStreak(s, template.id) + 1;
+  s.stats.set(ContractSystem.streakStatKey(template.id), nextStreak);
+  c.delivered = 0;
+  c.deadlineTick = s.tick + template.durationTicks;
+  c.payout = ContractSystem.scaleAmount(
+    template.payout, template.payoutEscalatePermille ?? 1000, nextStreak, template.maxStreak ?? 1,
+  );
+  c.penalty = ContractSystem.scaleAmount(
+    template.penalty, template.penaltyEscalatePermille ?? 1000, nextStreak, template.maxStreak ?? 1,
+  );
+}
 
 function expireDeadlines(ctx: StepContext): void {
   const s = ctx.state;
@@ -1131,6 +1496,11 @@ function expireDeadlines(ctx: StepContext): void {
       s.record(receipt);
     }
     s.bumpStat(Stats.CONTRACTS_FAILED);
+    const template = ctx.content.contractTemplatesById.get(c.templateId);
+    if (ContractSystem.isStanding(template)) {
+      s.stats.set(ContractSystem.streakStatKey(c.templateId), 0);
+      s.stats.set(ContractSystem.cooldownStatKey(c.templateId), s.tick + (template!.failCooldownTicks ?? 1));
+    }
     ctx.emit({ type: "contract_failed", tick: s.tick, contractId: c.id, templateId: c.templateId, penaltyPaid: paid });
   }
   ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "contract" });
@@ -1155,7 +1525,8 @@ function refreshOffers(ctx: StepContext): void {
   const s = ctx.state;
   const def = ctx.content.contracts;
   s.contractOffers.length = 0;
-  const pool = [...def.templates];
+  const activeTemplates = new Set(s.activeContracts.map((c) => c.templateId));
+  const pool = def.templates.filter((t) => !activeTemplates.has(t.id) && templateEligibleForBoard(s, t));
   const slots = Math.min(def.boardSlots, pool.length);
   for (let n = 0; n < slots; n++) {
     if (pool.length === 0) continue;
@@ -1165,6 +1536,24 @@ function refreshOffers(ctx: StepContext): void {
   }
   s.contractBoardRefreshAt = s.tick + def.refreshPeriodTicks;
   ctx.emit({ type: "contract_board_refreshed", tick: s.tick, offerIds: s.contractOffers.map((o) => o.id) });
+}
+
+function templateEligibleForBoard(s: GameState, t: ContractTemplateDef): boolean {
+  if (!ContractSystem.isStanding(t)) return true;
+  return s.tick >= ContractSystem.standingCooldownUntil(s, t.id);
+}
+
+function offerFrom(s: GameState, t: ContractTemplateDef): ContractOffer {
+  const streak = ContractSystem.isStanding(t) ? ContractSystem.standingStreak(s, t.id) : 0;
+  return {
+    id: s.newId("offer"),
+    templateId: t.id,
+    itemId: t.item,
+    quantity: t.quantity,
+    durationTicks: t.durationTicks,
+    payout: ContractSystem.scaleAmount(t.payout, t.payoutEscalatePermille ?? 1000, streak, t.maxStreak ?? 1),
+    penalty: ContractSystem.scaleAmount(t.penalty, t.penaltyEscalatePermille ?? 1000, streak, t.maxStreak ?? 1),
+  };
 }
 
 // ---------------------------------------------------------------- economy/Economy.kt
@@ -1301,18 +1690,6 @@ function removeSpoilUnits(
     left -= take;
   }
   return left;
-}
-
-function offerFrom(s: GameState, t: ContractTemplateDef): ContractOffer {
-  return {
-    id: s.newId("offer"),
-    templateId: t.id,
-    itemId: t.item,
-    quantity: t.quantity,
-    durationTicks: t.durationTicks,
-    payout: t.payout,
-    penalty: t.penalty,
-  };
 }
 
 // ---------------------------------------------------------------- world/HarborTravel.kt
@@ -1656,7 +2033,11 @@ function fish(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
     spot.stock--;
     ctx.state.bumpStat(Stats.FISH_CAUGHT);
     ctx.state.bumpStat(Stats.WORKER_FISH_CAUGHT);
-    ctx.emit({ type: "fish_caught", tick: ctx.state.tick, speciesId: species.id, zoneId, timingBonus: false, rareUpgrade: false });
+    const { sizePermille, valueCoins, personalBest } = TrophySystem.record(ctx, species.id);
+    ctx.emit({
+      type: "fish_caught", tick: ctx.state.tick, speciesId: species.id, zoneId,
+      timingBonus: false, rareUpgrade: false, sizePermille, valueCoins, personalBest,
+    });
     if (spot.stock === 0) ctx.emit({ type: "fishing_spot_depleted", tick: ctx.state.tick, zoneId });
   }
   clearCast(w);

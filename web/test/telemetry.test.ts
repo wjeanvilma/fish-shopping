@@ -45,6 +45,10 @@ describe("balanceExport", () => {
     expect(economy.maintenanceCoinsPerStation).toBe(content.economy.maintenanceCoinsPerStation);
     expect(Array.isArray(dump.species)).toBe(true);
     expect((dump.species as unknown[]).length).toBe(content.raw.species.length);
+    expect(Array.isArray(dump.bait)).toBe(true);
+    expect((dump.bait as unknown[]).length).toBe(content.raw.bait.length);
+    const trophies = dump.trophies as { sets: unknown[] };
+    expect(trophies.sets.length).toBe(content.raw.trophies.sets.length);
     const text = encodeBalanceExport(content);
     expect(text).toContain("fish.balance.v1");
     expect(text).toContain("maintenancePeriodTicks");

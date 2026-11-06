@@ -29,7 +29,7 @@ PALETTE = {
     "cutter": "#008F95", "smoker": "#8B4513", "grill": "#C45C26", "counter": "#E8AF4A",
     "player": "#153449", "player_nose": "#FBF7EF",
     "customer": "#B3412E", "zone_fishing": "#7FC6E0", "zone_machine_input": "#6FD0C6",
-    "zone_machine_output": "#F3D08C", "zone_counter": "#F3D08C",
+    "zone_machine_output": "#F3D08C", "zone_counter": "#F3D08C", "zone_kiosk": "#C4A35A",
     "fish": "#A9BCCB", "portion": "#F2B9A0",
 }
 

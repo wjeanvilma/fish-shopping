@@ -26,6 +26,16 @@ const val HARBOR = "harbor.sunrise_pier"
 fun newSim(seed: Int = 1234, content: ContentPack = Shared.content) =
     Simulation(content, GameState.newGame(content, HARBOR, seed))
 
+/** Pad counter fill into a scarcity band that pays 1000 (isolates other price mults). */
+fun Simulation.padNeutralScarcity(itemId: String = "product.basic_portion") {
+    val counter = state.counters.single()
+    val def = harbor.counters.first { it.id == counter.counterId }
+    val CS = com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
+    while (CS.scarcityPriceMultPermille(content, def, counter) != 1000) {
+        counter.stock.add(itemId, 1)
+    }
+}
+
 /** Steps one tick and fails the test on any invariant violation. */
 fun Simulation.checkedStep(commands: List<Command> = emptyList()): List<GameEvent> {
     val events = step(commands)

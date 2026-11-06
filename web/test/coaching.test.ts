@@ -87,4 +87,18 @@ describe("coaching", () => {
     });
     expect(emptyStateTip(content, state)).toMatch(/No active jobs/i);
   });
+
+  it("tips when walkouts hurt reputation", () => {
+    const state = GameState.newGame(content, "harbor.sunrise_pier", 1);
+    state.tutorialIndex = content.tutorial.length;
+    for (const q of content.quests) state.completedQuests.add(q.id);
+    state.bumpStat(Stats.FISH_CAUGHT, 5);
+    state.bumpStat(Stats.MACHINE_INPUTS, 2);
+    state.bumpStat(Stats.CONTRACTS_COMPLETED, 1);
+    state.ownedUpgrades.add("upgrade.display_case_ice");
+    state.counters[0]!.stock.add("product.smoked_fillet", 1);
+    state.bumpStat(Stats.SALES, 4);
+    state.bumpStat(Stats.LOST_CUSTOMERS, 6);
+    expect(emptyStateTip(content, state)).toMatch(/walking out/i);
+  });
 });

@@ -1,6 +1,7 @@
 package com.willio.jeanvilma.fishshopping.core.sim
 
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
+import com.willio.jeanvilma.fishshopping.core.customers.ReputationSystem
 import com.willio.jeanvilma.fishshopping.core.economy.EconomySystem
 import com.willio.jeanvilma.fishshopping.core.progression.ProgressionSystem
 
@@ -75,6 +76,22 @@ object Coaching {
             return "Counter is empty — stock portions before the next customer"
         }
 
+        val rep = content.reputation
+        val encounters = ReputationSystem.encounters(state)
+        if (encounters >= rep.minSample.toLong()) {
+            val lostRatio = ((ReputationSystem.abandoned(state) * 1000L) / encounters).toInt()
+            if (lostRatio >= rep.coachingLostRatioPermille) {
+                return "Customers are walking out — keep the counter stocked and staffed"
+            }
+            val sales = ReputationSystem.served(state)
+            if (sales > 0L) {
+                val unmetRatio = ((state.stat(Stats.UNMET_PREFERENCE_SALES) * 1000L) / sales).toInt()
+                if (unmetRatio >= 300) {
+                    return "Guests notice missing favorites — stock preferred products"
+                }
+            }
+        }
+
         if ("quest.first_ten_sales" in state.completedQuests &&
             "quest.first_hire" !in state.completedQuests &&
             state.workers.isEmpty()
@@ -111,6 +128,12 @@ object Coaching {
             if (stocked >= 8 && waiting == 0) {
                 return "Counter stock is aging — sell before the next spoil cycle"
             }
+        }
+
+        if (encounters >= rep.minSample.toLong() &&
+            ReputationSystem.scorePermille(content, state) >= rep.coachingPraiseScorePermille
+        ) {
+            return "Harbor reviews are glowing — keep preferred stock filled"
         }
         return null
     }

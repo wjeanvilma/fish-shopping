@@ -13,13 +13,35 @@ import com.willio.jeanvilma.fishshopping.core.sim.StepContext
 import kotlin.math.min
 
 /**
- * Timed delivery contracts (Phase 17).
+ * Timed delivery contracts (Phase 17) with standing orders (Phase 14).
  *
  * Board posts weighted offers after [ContractsDef.requires] are met; accepting moves
  * an offer into active work. Deliver from the player bag; miss the deadline and pay
  * a penalty (capped by current coins).
+ *
+ * Standing templates auto-refresh the same job after a successful delivery, escalating
+ * payout/penalty by streak. Failures reset streak and apply a content cooldown before
+ * the template can reappear on the board.
  */
 object ContractSystem {
+
+    fun streakStatKey(templateId: String) = "stat.contract_standing_streak.$templateId"
+    fun cooldownStatKey(templateId: String) = "stat.contract_standing_cd.$templateId"
+
+    fun standingStreak(state: GameState, templateId: String): Int =
+        state.stat(streakStatKey(templateId)).toInt().coerceAtLeast(0)
+
+    fun standingCooldownUntil(state: GameState, templateId: String): Long =
+        state.stat(cooldownStatKey(templateId))
+
+    fun scaleAmount(base: Long, escalatePermille: Int, streak: Int, maxStreak: Int): Long {
+        val steps = min(streak.coerceAtLeast(0), maxStreak.coerceAtLeast(0))
+        var value = base
+        repeat(steps) {
+            value = (value * escalatePermille.toLong()) / 1000L
+        }
+        return value
+    }
 
     fun step(ctx: StepContext) {
         expireDeadlines(ctx)
@@ -56,6 +78,10 @@ object ContractSystem {
         }
         if (s.activeContracts.size >= ctx.content.contracts.maxActive) {
             reject("Max ${ctx.content.contracts.maxActive} active contracts")
+            return
+        }
+        if (s.activeContracts.any { it.templateId == offer.templateId }) {
+            reject("Already running that standing order")
             return
         }
         s.contractOffers.removeAll { it.id == offerId }
@@ -113,15 +139,21 @@ object ContractSystem {
         c.delivered += take
         s.bumpStat(Stats.CONTRACT_ITEMS_DELIVERED, take.toLong())
         if (c.delivered >= c.quantity) {
-            s.activeContracts.removeAt(idx)
-            s.coins = SafeMath.creditCoins(s.coins, c.payout)
+            val payout = c.payout
+            s.coins = SafeMath.creditCoins(s.coins, payout)
             s.bumpStat(Stats.CONTRACTS_COMPLETED)
-            s.bumpStat(Stats.CONTRACT_REVENUE, c.payout)
-            val receipt = Receipt(s.newId("contract"), "contract_payout", c.payout, s.tick, c.id)
+            s.bumpStat(Stats.CONTRACT_REVENUE, payout)
+            val receipt = Receipt(s.newId("contract"), "contract_payout", payout, s.tick, c.id)
             s.record(receipt)
             s.purchaseReceipts[requestId] = receipt
             ctx.emit(GameEvent.ContractDelivered(s.tick, c.id, take, completed = true, receipt = receipt, replayed = false))
-            ctx.emit(GameEvent.ContractCompleted(s.tick, c.id, c.templateId, c.payout))
+            ctx.emit(GameEvent.ContractCompleted(s.tick, c.id, c.templateId, payout))
+            val template = ctx.content.contractTemplatesById[c.templateId]
+            if (template != null && template.isStanding) {
+                refreshStandingJob(s, c, template)
+            } else {
+                s.activeContracts.removeAt(idx)
+            }
             ctx.emit(GameEvent.CheckpointRequested(s.tick, "contract"))
         } else {
             val receipt = Receipt(s.newId("contract"), "contract_deliver", 0, s.tick, "$contractId:$take")
@@ -129,6 +161,15 @@ object ContractSystem {
             s.purchaseReceipts[requestId] = receipt
             ctx.emit(GameEvent.ContractDelivered(s.tick, c.id, take, completed = false, receipt = receipt, replayed = false))
         }
+    }
+
+    private fun refreshStandingJob(s: GameState, c: ContractState, template: ContractTemplateDef) {
+        val nextStreak = standingStreak(s, template.id) + 1
+        s.stats[streakStatKey(template.id)] = nextStreak.toLong()
+        c.delivered = 0
+        c.deadlineTick = s.tick + template.durationTicks
+        c.payout = scaleAmount(template.payout, template.payoutEscalatePermille, nextStreak, template.maxStreak)
+        c.penalty = scaleAmount(template.penalty, template.penaltyEscalatePermille, nextStreak, template.maxStreak)
     }
 
     private fun expireDeadlines(ctx: StepContext) {
@@ -144,6 +185,11 @@ object ContractSystem {
                 s.record(receipt)
             }
             s.bumpStat(Stats.CONTRACTS_FAILED)
+            val template = ctx.content.contractTemplatesById[c.templateId]
+            if (template != null && template.isStanding) {
+                s.stats[streakStatKey(template.id)] = 0L
+                s.stats[cooldownStatKey(template.id)] = s.tick + template.failCooldownTicks.toLong()
+            }
             ctx.emit(GameEvent.ContractFailed(s.tick, c.id, c.templateId, paid))
         }
         ctx.emit(GameEvent.CheckpointRequested(s.tick, "contract"))
@@ -169,7 +215,10 @@ object ContractSystem {
         val s = ctx.state
         val def = ctx.content.contracts
         s.contractOffers.clear()
-        val pool = def.templates.toMutableList()
+        val activeTemplates = s.activeContracts.map { it.templateId }.toSet()
+        val pool = def.templates.filter { t ->
+            t.id !in activeTemplates && templateEligibleForBoard(s, t)
+        }.toMutableList()
         val slots = min(def.boardSlots, pool.size)
         repeat(slots) {
             if (pool.isEmpty()) return@repeat
@@ -181,13 +230,21 @@ object ContractSystem {
         ctx.emit(GameEvent.ContractBoardRefreshed(s.tick, s.contractOffers.map { it.id }))
     }
 
-    private fun offerFrom(s: GameState, t: ContractTemplateDef) = ContractOffer(
-        id = s.newId("offer"),
-        templateId = t.id,
-        itemId = t.item,
-        quantity = t.quantity,
-        durationTicks = t.durationTicks,
-        payout = t.payout,
-        penalty = t.penalty,
-    )
+    private fun templateEligibleForBoard(s: GameState, t: ContractTemplateDef): Boolean {
+        if (!t.isStanding) return true
+        return s.tick >= standingCooldownUntil(s, t.id)
+    }
+
+    private fun offerFrom(s: GameState, t: ContractTemplateDef): ContractOffer {
+        val streak = if (t.isStanding) standingStreak(s, t.id) else 0
+        return ContractOffer(
+            id = s.newId("offer"),
+            templateId = t.id,
+            itemId = t.item,
+            quantity = t.quantity,
+            durationTicks = t.durationTicks,
+            payout = scaleAmount(t.payout, t.payoutEscalatePermille, streak, t.maxStreak),
+            penalty = scaleAmount(t.penalty, t.penaltyEscalatePermille, streak, t.maxStreak),
+        )
+    }
 }

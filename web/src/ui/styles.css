@@ -61,6 +61,7 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
 .danger { color: var(--danger); }
 .reward { color: var(--reward); }
 .rating { margin-left: 8px; color: var(--reward); letter-spacing: 0.05em; }
+.rep { margin-left: 4px; opacity: 0.82; font-weight: 600; font-variant-numeric: tabular-nums; }
 .day-part { margin-left: 4px; opacity: 0.72; font-weight: 600; }
 .eyebrow { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--action); font-weight: 700; }
 .objective-detail { color: var(--muted, #6b7c86); font-weight: 600; letter-spacing: 0.04em; }

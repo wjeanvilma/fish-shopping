@@ -11,6 +11,8 @@ data class ContentPack(
     val player: PlayerDef,
     val species: List<SpeciesDef>,
     val products: List<ProductDef>,
+    /** Consumable pier bait (Phase 9). */
+    val bait: List<BaitDef>,
     val recipes: List<RecipeDef>,
     val machines: List<MachineDef>,
     val upgrades: List<UpgradeDef>,
@@ -24,8 +26,12 @@ data class ContentPack(
     val economy: EconomyDef,
     /** Day-part fishing ecology (Phase 7). */
     val ecology: EcologyDef,
+    /** Museum / trophy board (Phase 10). */
+    val trophies: TrophiesDef,
     /** End-of-run prestige milestones (Phase 20); additive, never wipes the save. */
     val prestige: PrestigeDef,
+    /** Service reputation from served vs abandoned (Phase 13). */
+    val reputation: ReputationDef,
     /** Timed delivery contracts board (Phase 17). */
     val contracts: ContractsDef,
     val customers: List<CustomerDef>,
@@ -34,26 +40,29 @@ data class ContentPack(
 ) {
     val speciesById = species.associateBy { it.id }
     val productsById = products.associateBy { it.id }
+    val baitById = bait.associateBy { it.id }
     val recipesById = recipes.associateBy { it.id }
     val machinesById = machines.associateBy { it.id }
     val upgradesById = upgrades.associateBy { it.id }
     val questsById = quests.associateBy { it.id }
     val workersById = workers.associateBy { it.id }
     val prestigeMilestonesById = prestige.milestones.associateBy { it.id }
+    val trophySetsById = trophies.sets.associateBy { it.id }
     val contractTemplatesById = contracts.templates.associateBy { it.id }
     val customersById = customers.associateBy { it.id }
     val harborsById = harbors.associateBy { it.id }
 
-    /** Carry units for any item (species or product). Throws on unknown IDs. */
+    /** Carry units for any item (species, product, or bait). Throws on unknown IDs. */
     fun carryUnits(itemId: String): Int =
         speciesById[itemId]?.carryUnits
             ?: productsById[itemId]?.carryUnits
+            ?: baitById[itemId]?.carryUnits
             ?: error("Unknown item $itemId")
 
     fun itemName(itemId: String): String =
-        speciesById[itemId]?.name ?: productsById[itemId]?.name ?: itemId
+        speciesById[itemId]?.name ?: productsById[itemId]?.name ?: baitById[itemId]?.name ?: itemId
 
-    fun isKnownItem(itemId: String) = itemId in speciesById || itemId in productsById
+    fun isKnownItem(itemId: String) = itemId in speciesById || itemId in productsById || itemId in baitById
 }
 
 data class PlayerDef(
@@ -104,6 +113,21 @@ data class ProductDef(
     val spoilTier: Int = 2,
 )
 
+/** Pier bait consumable; bought at kiosk zones, carried in the player bag. */
+data class BaitDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val carryUnits: Int,
+    val packQuantity: Int,
+    val cost: Long,
+    /** Weight multiplier for species that have a rareUpgrade chain. */
+    val rareSpeciesWeightMultPermille: Int,
+    /** Added to the rare-upgrade roll when this bait is active on the cast. */
+    val rareChanceBonusPermille: Int,
+    val requires: List<String>,
+)
+
 data class ItemQuantity(val item: String, val quantity: Int)
 
 data class RecipeDef(
@@ -127,6 +151,8 @@ sealed interface UpgradeEffect {
     data class RecipeDuration(val machine: String, val recipe: String, val durationTicks: Int) : UpgradeEffect
     /** Catch speed multiplier in permille (1250 = 25% faster). */
     data class CatchSpeed(val speedPermille: Int) : UpgradeEffect
+    /** Grants bait into the bag on purchase only (applyEffect is a no-op on load). */
+    data class GrantBait(val bait: String, val quantity: Int) : UpgradeEffect
     /**
      * Widens reel timing windows idempotently: Good/Perfect starts take min,
      * ends take max (same pattern as catch_speed floors).
@@ -239,6 +265,28 @@ data class EconomyDef(
     val counterSpoilUnits: Int,
     val bagFishSpoilPeriodTicks: Int,
     val bagFishSpoilUnits: Int,
+    /**
+     * Phase 12 scarcity price curve: five bands for counter fill ratio 0–20% … 80–100%.
+     * Low stock (early bands) should tip above 1000; full shelves sit near 1000.
+     */
+    val scarcityPriceCurvePermille: List<Int> = listOf(1150, 1100, 1050, 1000, 1000),
+)
+
+/** One curated museum set of species trophies. */
+data class TrophySetDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val species: List<String>,
+    /** Stat written to 1 when every listed species has a personal best. */
+    val completeStat: String,
+)
+
+/** Size-roll bounds and museum sets for the trophy board (Phase 10). */
+data class TrophiesDef(
+    val sizeMinPermille: Int,
+    val sizeMaxPermille: Int,
+    val sets: List<TrophySetDef>,
 )
 
 data class PrestigeRewardDef(
@@ -265,8 +313,43 @@ data class PrestigeDef(
     val requires: List<String>,
     /** Revenue thresholds for harbor rating stars 1..5 (non-decreasing). */
     val ratingThresholds: List<Long>,
+    /**
+     * Phase 12 soft price multipliers for harbor rating stars 0..5 (length 6).
+     * Applied on top of permanent prestige price bonuses.
+     */
+    val ratingPriceMultPermille: List<Int> = listOf(1000, 1000, 1020, 1040, 1070, 1100),
     val milestones: List<PrestigeMilestoneDef>,
 )
+
+/**
+ * Service reputation (Phase 13): computed from lifetime sales vs lost customers.
+ * Distinct from prestige harbor ★ (revenue). Softly biases customer spawn mix.
+ */
+data class ReputationDef(
+    /** Encounters needed before the score leaves the neutral placeholder. */
+    val minSample: Int,
+    /** Score used while encounters &lt; minSample. */
+    val neutralScorePermille: Int,
+    /** Non-decreasing thresholds that split score into bands (length N → N+1 bands). */
+    val scoreBandThresholdsPermille: List<Int>,
+    /** Per-band customer-kind spawn multipliers (keys = CustomerKind.wire). */
+    val kindSpawnMultPermille: List<Map<String, Int>>,
+    /** Soft score penalty: unmetPreferenceSales * this / max(1, sales). */
+    val unmetPreferencePenaltyPermille: Int,
+    /** Lost/encounters ratio at or above this triggers a walkout coaching tip. */
+    val coachingLostRatioPermille: Int,
+    /** Score at or above this (with enough sample) triggers a praise tip. */
+    val coachingPraiseScorePermille: Int,
+)
+
+enum class ContractKind(val wire: String) {
+    STANDARD("standard"),
+    STANDING("standing");
+
+    companion object {
+        fun fromWire(s: String) = entries.firstOrNull { it.wire == s }
+    }
+}
 
 data class ContractTemplateDef(
     val id: String,
@@ -278,7 +361,18 @@ data class ContractTemplateDef(
     val payout: Long,
     val penalty: Long,
     val weight: Int,
-)
+    /** Phase 14: one-shot vs auto-refresh standing order. */
+    val kind: ContractKind = ContractKind.STANDARD,
+    /** Per completed standing cycle, multiply payout by this / 1000 (capped by maxStreak). */
+    val payoutEscalatePermille: Int = 1000,
+    val penaltyEscalatePermille: Int = 1000,
+    /** Max escalate steps applied to payout/penalty. */
+    val maxStreak: Int = 1,
+    /** After a standing fail, template stays off the board until this many ticks pass. */
+    val failCooldownTicks: Int = 1,
+) {
+    val isStanding: Boolean get() = kind == ContractKind.STANDING
+}
 
 /** Harbor contract board: rotating offers with timed deliveries. */
 data class ContractsDef(
@@ -293,7 +387,11 @@ data class ContractsDef(
 enum class CustomerKind(val wire: String) {
     STANDARD("standard"),
     PREMIUM("premium"),
-    BULK("bulk");
+    BULK("bulk"),
+    TOURIST("tourist"),
+    WHOLESALER("wholesaler"),
+    CRITIC("critic"),
+    NIGHT_REGULAR("night_regular");
 
     companion object {
         fun fromWire(s: String) = entries.firstOrNull { it.wire == s }
@@ -318,6 +416,11 @@ data class CustomerDef(
     val unmetPriceMultPermille: Int,
     /** Patience drain per tick while preferred stock is missing (2000 = 2×). */
     val unmetPatienceDrainPermille: Int,
+    /**
+     * Optional day-part multipliers on [spawnWeight] (1000 = unchanged).
+     * Missing keys default to 1000.
+     */
+    val dayPartSpawnMultPermille: Map<String, Int> = emptyMap(),
 )
 
 sealed interface TutorialTrigger {
@@ -337,7 +440,12 @@ data class RectMm(val id: String, val minX: Int, val minZ: Int, val maxX: Int, v
 }
 
 enum class ZoneKind(val wire: String) {
-    FISHING("fishing"), MACHINE_INPUT("machine_input"), MACHINE_OUTPUT("machine_output"), COUNTER("counter");
+    FISHING("fishing"),
+    MACHINE_INPUT("machine_input"),
+    MACHINE_OUTPUT("machine_output"),
+    COUNTER("counter"),
+    KIOSK("kiosk"),
+    ;
 
     companion object {
         fun fromWire(s: String) = entries.firstOrNull { it.wire == s }
@@ -416,6 +524,8 @@ data class RushWindowDef(
     val spawnSpeedPermille: Int,
     /** Extra counter queue slots while active. */
     val queueBonus: Int,
+    /** Phase 12 sale price multiplier while this rush is active (1000 = unchanged). */
+    val priceMultPermille: Int = 1000,
 ) {
     val endTick: Int get() = startTick + durationTicks
 }

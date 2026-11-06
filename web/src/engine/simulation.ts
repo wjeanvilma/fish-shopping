@@ -3,7 +3,7 @@ import type { ContentPack, HarborDef } from "./content";
 import { CHECKPOINT_INTERVAL_TICKS, INPUT_SCALE } from "./foundations";
 import type { Command, GameEvent, GameState } from "./state";
 import {
-  ContractSystem, CustomerSystem, EconomySystem, FishingSystem, HarborTravelSystem, MovementSystem, PrestigeSystem, ProductionSystem, ProgressionSystem,
+  BaitSystem, ContractSystem, CustomerSystem, EconomySystem, FishingSystem, HarborTravelSystem, MovementSystem, PrestigeSystem, ProductionSystem, ProgressionSystem,
   StepContext, TransferSystem, UpgradeSystem, WorkerSystem, invariantProblems,
 } from "./systems";
 
@@ -85,6 +85,12 @@ export class Simulation {
         break;
       case "travel_to_harbor":
         HarborTravelSystem.travel(ctx, c.harborId, c.requestId);
+        break;
+      case "buy_bait":
+        BaitSystem.buy(ctx, c.baitId, c.requestId);
+        break;
+      case "select_bait":
+        BaitSystem.select(this.state, this.content, c.baitId);
         break;
     }
   }

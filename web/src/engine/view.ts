@@ -4,7 +4,7 @@ import { queueSlot, rectCenterX, rectCenterZ } from "./content";
 import { compareStrings } from "./foundations";
 import type { MachineStatus } from "./state";
 import type { Simulation } from "./simulation";
-import { ContractSystem, CustomerSystem, EconomySystem, FishingSystem, HarborTravelSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, UpgradeSystem, WorkerSystem } from "./systems";
+import { BaitSystem, ContractSystem, CustomerSystem, EconomySystem, FishingSystem, HarborTravelSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, ReputationSystem, UpgradeSystem, WorkerSystem } from "./systems";
 
 export interface ItemCount { itemId: string; name: string; count: number }
 export interface ContextCard {
@@ -25,6 +25,17 @@ export interface StationView {
   nextRecipeId: string | null;
 }
 export interface CounterView { counterId: string; stock: number; capacityUnits: number; queue: number }
+export interface BaitOfferView {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  packQuantity: number;
+  ownedCount: number;
+  purchasable: boolean;
+  reason: string | null;
+  preferred: boolean;
+}
 /** Presentation-only position: interpolated along the canonical walk, then the current queue slot. */
 export interface CustomerView {
   id: string; counterId: string; queueIndex: number; xMm: number; zMm: number; arrived: boolean; wants: number; reserved: number;
@@ -69,6 +80,21 @@ export interface PrestigeView {
   priceBonusPermille: number;
   reason: string | null;
 }
+export interface TrophyEntryView {
+  speciesId: string;
+  name: string;
+  sizePermille: number;
+  valueCoins: number;
+  tick: number;
+}
+export interface TrophySetView {
+  id: string;
+  name: string;
+  description: string;
+  mounted: number;
+  total: number;
+  completed: boolean;
+}
 
 /** completed | active | locked */
 export interface QuestView {
@@ -96,6 +122,10 @@ export interface ContractOfferView {
   penalty: number;
   acceptEnabled: boolean;
   reason: string | null;
+  /** Phase 14 standing order flag. */
+  standing: boolean;
+  /** Current standing streak shown on the board (0 for standard). */
+  standingStreak: number;
 }
 
 export interface ActiveContractView {
@@ -111,6 +141,10 @@ export interface ActiveContractView {
   penalty: number;
   bagAvailable: number;
   deliverEnabled: boolean;
+  /** Phase 14 standing order flag. */
+  standing: boolean;
+  /** Completions in the current standing run. */
+  standingStreak: number;
 }
 
 export interface HarborMapEntryView {
@@ -144,6 +178,9 @@ export interface SimView {
   dayPartId: string;
   dayPartName: string;
   tideChartOwned: boolean;
+  preferredBaitId: string | null;
+  activeBaitId: string | null;
+  baitOffers: BaitOfferView[];
   context: ContextCard | null;
   stations: StationView[];
   counters: CounterView[];
@@ -180,8 +217,18 @@ export interface SimView {
   prestigeLockedReason: string | null;
   /** Harbor rating stars 0..5 from lifetime revenue. */
   harborRating: number;
+  /** Service reputation score permille from served vs abandoned (Phase 13). */
+  reputationScorePermille: number;
+  /** Reputation band index (0 = poor … higher = better). */
+  reputationBand: number;
+  /** Short band label for the HUD strip. */
+  reputationLabel: string;
   prestige: PrestigeView[];
   unlockedCosmetics: string[];
+  /** Museum personal bests (sorted by species id). */
+  trophies: TrophyEntryView[];
+  /** Curated gallery progress for the Goals panel. */
+  trophySets: TrophySetView[];
   /**
    * World anchors for inventory ids used by flying-transfer VFX
    * (items_transferred from/to). Presentation only.
@@ -286,15 +333,24 @@ export function buildView(sim: Simulation): SimView {
     const queued = s.customers.filter((x) => x.counterId === def.id);
     const front = queued.find((x) => x.arrived);
     const label = def.products.map((pid) => c.productsById.get(pid)!.name).join(" / ");
+    const demandMult = CustomerSystem.demandPriceMultPermille(c, s, h, def, counter);
     const lines = [
       `Stock: ${counter.stock.usedUnits()}/${def.capacityUnits}`,
       `Queue: ${queued.length}`,
     ];
+    if (demandMult !== 1000) {
+      const pct = Math.trunc(((demandMult - 1000) * 100) / 1000);
+      lines.push(pct >= 0 ? `Demand prices +${pct}%` : `Demand prices ${pct}%`);
+    }
     if (front) {
       const type = c.customersById.get(front.typeId);
       const who = type?.name ?? front.typeId;
       const kindNote = type?.kind === "premium" ? " · tips well"
-        : type?.kind === "bulk" ? " · bulk order" : "";
+        : type?.kind === "bulk" ? " · bulk order"
+          : type?.kind === "tourist" ? " · tourist tip"
+            : type?.kind === "wholesaler" ? " · wholesale order"
+              : type?.kind === "critic" ? " · picky critic"
+                : type?.kind === "night_regular" ? " · night regular" : "";
       const wantLabel = front.preferredProductId ? c.itemName(front.preferredProductId) : "anything";
       const subNote = front.preferredProductId && front.reserved > 0 && !front.preferenceMet()
         ? " · substituting" : "";
@@ -305,7 +361,42 @@ export function buildView(sim: Simulation): SimView {
       lines,
       progress: counter.checkoutProgress > 0 ? counter.checkoutProgress / def.checkoutTicks : null,
     };
+  } else if (zone?.kind === "kiosk") {
+    const preferred = p.preferredBaitId ? (c.baitById.get(p.preferredBaitId)?.name ?? p.preferredBaitId) : "Auto";
+    context = {
+      title: "Bait kiosk",
+      lines: [
+        "Buy chum packs for rare bites",
+        `Preferred: ${preferred}`,
+        `Bag: ${p.bag.usedUnits()}/${p.bag.capacityUnits}`,
+      ],
+      progress: null,
+    };
   }
+
+  const atKiosk = zone?.kind === "kiosk";
+  const baitOffers: BaitOfferView[] = atKiosk
+    ? c.bait.map((b) => {
+      const locked = !BaitSystem.requirementsMet(s, b);
+      const miss = BaitSystem.missingRequirement(c, s, b);
+      const room = p.bag.roomFor(b.id);
+      const reason = locked ? `Requires: ${miss ?? "an unlock"}`
+        : s.coins < b.cost ? `Need ${b.cost - s.coins} more coins`
+          : room < 1 ? "Bag full"
+            : null;
+      return {
+        id: b.id,
+        name: b.name,
+        description: b.description,
+        cost: b.cost,
+        packQuantity: b.packQuantity,
+        ownedCount: p.bag.quantity(b.id),
+        purchasable: reason === null,
+        reason,
+        preferred: p.preferredBaitId === b.id,
+      };
+    })
+    : [];
 
   return {
     tick: s.tick,
@@ -351,6 +442,9 @@ export function buildView(sim: Simulation): SimView {
       return tier === "miss" ? null : tier;
     })(),
     fishingCanReel: p.fishingSpecies !== null && !p.reelAttemptedThisCast,
+    preferredBaitId: p.preferredBaitId,
+    activeBaitId: p.activeBaitId,
+    baitOffers,
     fishingSpotEmpty: (() => {
       if (!zone || zone.kind !== "fishing") return false;
       const def = h.fishingSpots.find((f) => f.zone === zone.id)!;
@@ -460,6 +554,7 @@ export function buildView(sim: Simulation): SimView {
     contractOffers: s.contractOffers.map((o) => {
       const t = c.contractTemplatesById.get(o.templateId);
       const maxed = s.activeContracts.length >= c.contracts.maxActive;
+      const standing = ContractSystem.isStanding(t);
       return {
         offerId: o.id,
         templateId: o.templateId,
@@ -473,11 +568,14 @@ export function buildView(sim: Simulation): SimView {
         penalty: o.penalty,
         acceptEnabled: !maxed,
         reason: maxed ? "Max active contracts" : null,
+        standing,
+        standingStreak: standing ? ContractSystem.standingStreak(s, o.templateId) : 0,
       };
     }),
     activeContracts: s.activeContracts.map((job) => {
       const t = c.contractTemplatesById.get(job.templateId);
       const bag = s.player.bag.available(job.itemId);
+      const standing = ContractSystem.isStanding(t);
       return {
         contractId: job.id,
         templateId: job.templateId,
@@ -491,6 +589,8 @@ export function buildView(sim: Simulation): SimView {
         penalty: job.penalty,
         bagAvailable: bag,
         deliverEnabled: bag > 0 && job.delivered < job.quantity,
+        standing,
+        standingStreak: standing ? ContractSystem.standingStreak(s, job.templateId) : 0,
       };
     }),
     contractRefreshTicksLeft: s.contractBoardRefreshAt <= 0 ? 0 : Math.max(0, s.contractBoardRefreshAt - s.tick),
@@ -507,6 +607,9 @@ export function buildView(sim: Simulation): SimView {
       return missing ? `Requires: ${missing}` : null;
     })(),
     harborRating: PrestigeSystem.harborRating(c, s),
+    reputationScorePermille: ReputationSystem.scorePermille(c, s),
+    reputationBand: ReputationSystem.band(c, s),
+    reputationLabel: ReputationSystem.bandLabel(c, s),
     prestige: c.prestige.milestones.map((m) => {
       const completed = s.completedPrestige.has(m.id);
       const locked = !completed && !PrestigeSystem.requirementsMet(s, m);
@@ -527,6 +630,26 @@ export function buildView(sim: Simulation): SimView {
       };
     }),
     unlockedCosmetics: [...s.unlockedCosmetics].sort(compareStrings),
+    trophies: [...s.trophies.entries()]
+      .sort(([a], [b]) => compareStrings(a, b))
+      .map(([id, rec]) => ({
+        speciesId: id,
+        name: c.itemName(id),
+        sizePermille: rec.sizePermille,
+        valueCoins: rec.valueCoins,
+        tick: rec.tick,
+      })),
+    trophySets: c.raw.trophies.sets.map((set) => {
+      const mounted = set.species.filter((id) => s.trophies.has(id)).length;
+      return {
+        id: set.id,
+        name: set.name,
+        description: set.description,
+        mounted,
+        total: set.species.length,
+        completed: mounted >= set.species.length,
+      };
+    }),
     transferAnchors: buildTransferAnchors(sim),
   };
 }

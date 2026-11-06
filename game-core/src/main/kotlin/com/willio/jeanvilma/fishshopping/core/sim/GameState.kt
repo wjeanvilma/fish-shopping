@@ -22,9 +22,15 @@ object Stats {
     const val TIMING_BONUSES = "stat.timing_bonuses"
     const val PERFECT_REELS = "stat.perfect_reels"
     const val GOOD_REELS = "stat.good_reels"
+    const val BAIT_BOUGHT = "stat.bait_bought"
+    const val BAIT_USED = "stat.bait_used"
     const val RARE_CATCHES = "stat.rare_catches"
     const val PREMIUM_SALES = "stat.premium_sales"
     const val BULK_SALES = "stat.bulk_sales"
+    const val TOURIST_SALES = "stat.tourist_sales"
+    const val WHOLESALER_SALES = "stat.wholesaler_sales"
+    const val CRITIC_SALES = "stat.critic_sales"
+    const val NIGHT_SALES = "stat.night_sales"
     const val UNMET_PREFERENCE_SALES = "stat.unmet_preference_sales"
     const val WORKERS_HIRED = "stat.workers_hired"
     const val WORKER_FISH_CAUGHT = "stat.worker_fish_caught"
@@ -40,18 +46,29 @@ object Stats {
     const val MAINTENANCE_PAID = "stat.maintenance_paid"
     const val ITEMS_SPOILED = "stat.items_spoiled"
     const val PRESTIGE_COMPLETED = "stat.prestige_completed"
+    const val TROPHY_SPECIES = "stat.trophy_species"
+    const val TROPHY_RECORDS = "stat.trophy_records"
+    const val TROPHY_SETS_COMPLETE = "stat.trophy_sets_complete"
 
     /** Stable ordered list for telemetry exports (zeros included). */
     val ALL: List<String> = listOf(
         FISH_CAUGHT, MACHINE_INPUTS, OUTPUTS_COLLECTED, COUNTER_STOCKED,
         SALES, ITEMS_SOLD, REVENUE, LOST_CUSTOMERS, UPGRADES_BOUGHT,
-        TIMING_BONUSES, PERFECT_REELS, GOOD_REELS, RARE_CATCHES, PREMIUM_SALES, BULK_SALES, UNMET_PREFERENCE_SALES,
+        TIMING_BONUSES, PERFECT_REELS, GOOD_REELS, BAIT_BOUGHT, BAIT_USED, RARE_CATCHES,
+        PREMIUM_SALES, BULK_SALES, TOURIST_SALES, WHOLESALER_SALES, CRITIC_SALES, NIGHT_SALES, UNMET_PREFERENCE_SALES,
         WORKERS_HIRED, WORKER_FISH_CAUGHT, WORKER_ITEMS_MOVED, LEASES_EXPIRED, WAGES_PAID,
         QUESTS_COMPLETED, CONTRACTS_COMPLETED, CONTRACTS_FAILED, CONTRACT_REVENUE,
         CONTRACT_ITEMS_DELIVERED, HARBORS_TRAVELED, MAINTENANCE_PAID, ITEMS_SPOILED,
-        PRESTIGE_COMPLETED,
+        PRESTIGE_COMPLETED, TROPHY_SPECIES, TROPHY_RECORDS, TROPHY_SETS_COMPLETE,
     )
 }
+
+/** Personal-best specimen mounted on the museum board for one species. */
+data class TrophyRecord(
+    val sizePermille: Int,
+    val valueCoins: Long,
+    val tick: Long,
+)
 
 enum class WorkerTaskPhase {
     NONE,
@@ -123,6 +140,10 @@ class PlayerState(
     var reelAttemptedThisCast = false
     /** Set by Command.Reel; consumed by FishingSystem on the same tick. */
     var reelRequested = false
+    /** Preferred bait id for new casts (null = auto first available). */
+    var preferredBaitId: String? = null
+    /** Bait attached to the active cast; consumed on a successful catch. */
+    var activeBaitId: String? = null
 }
 
 /** Reel timing result for a cast (Phase 8). */
@@ -255,8 +276,9 @@ class ContractState(
     val quantity: Int,
     var delivered: Int,
     var deadlineTick: Long,
-    val payout: Long,
-    val penalty: Long,
+    /** Mutable so standing orders can escalate mid-run (Phase 14). */
+    var payout: Long,
+    var penalty: Long,
 )
 
 class GameState(
@@ -278,6 +300,8 @@ class GameState(
     val completedQuests = TreeSet<String>()
     val completedPrestige = TreeSet<String>()
     val unlockedCosmetics = TreeSet<String>()
+    /** Best catch per species id (museum / trophy board). */
+    val trophies = TreeMap<String, TrophyRecord>()
     val stats = TreeMap<String, Long>()
     /** Parked harbor worlds keyed by harbor id (active harbor is live on this state). */
     val harborStashes = TreeMap<String, HarborWorldStash>()
@@ -394,6 +418,10 @@ sealed interface Command {
     data class DeliverContract(val contractId: String, val requestId: String) : Command
     /** Travel to another harbor; [requestId] makes retries idempotent. */
     data class TravelToHarbor(val harborId: String, val requestId: String) : Command
+    /** Buy a bait pack at a kiosk zone; [requestId] makes retries idempotent. */
+    data class BuyBait(val baitId: String, val requestId: String) : Command
+    /** Set preferred bait for future casts, or null to clear (auto). */
+    data class SelectBait(val baitId: String?) : Command
 }
 
 /** Results of simulation. UI effects consume these but never change economic state. */
@@ -408,7 +436,18 @@ sealed interface GameEvent {
         val timingBonus: Boolean = false,
         val timingTier: TimingTier = TimingTier.MISS,
         val rareUpgrade: Boolean = false,
+        val sizePermille: Int = 0,
+        val valueCoins: Long = 0,
+        val personalBest: Boolean = false,
     ) : GameEvent
+    data class TrophyRecorded(
+        override val tick: Long,
+        val speciesId: String,
+        val sizePermille: Int,
+        val valueCoins: Long,
+        val personalBest: Boolean,
+    ) : GameEvent
+    data class TrophySetCompleted(override val tick: Long, val setId: String) : GameEvent
     /** Soft feedback when a fishing spot's stock hits zero. */
     data class FishingSpotDepleted(override val tick: Long, val zoneId: String) : GameEvent
     data class ItemsTransferred(override val tick: Long, val from: String, val to: String, val itemId: String, val count: Int) : GameEvent
@@ -491,6 +530,19 @@ sealed interface GameEvent {
     data class TravelRejected(
         override val tick: Long,
         val harborId: String,
+        val requestId: String,
+        val reason: String,
+    ) : GameEvent
+    data class BaitPurchased(
+        override val tick: Long,
+        val baitId: String,
+        val quantity: Int,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class BaitPurchaseRejected(
+        override val tick: Long,
+        val baitId: String,
         val requestId: String,
         val reason: String,
     ) : GameEvent

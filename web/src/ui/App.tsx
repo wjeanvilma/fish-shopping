@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import sunriseSceneUrl from "../../../shared/assets/models/sunrise_pier_blockout.glb?url";
 import moonSceneUrl from "../../../shared/assets/models/moon_cove_blockout.glb?url";
-import type { ActiveContractView, ContextCard, ContractOfferView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SimView, StaffHireView, StationView, UpgradeView } from "../engine";
+import type { ActiveContractView, BaitOfferView, ContextCard, ContractOfferView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SimView, StaffHireView, StationView, TrophySetView, UpgradeView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
 import type { GameSettings, JoystickScale } from "../game/settingsStore";
 import { GameHost, type HostState } from "../game/GameHost";
@@ -271,7 +271,10 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       <div className="pill top-left">
         {v.harborName}
         {v.harborRating > 0 ? <span className="rating">{"★".repeat(v.harborRating)}</span> : null}
-        <span className="day-part"> · {v.dayPartName}{v.tideChartOwned ? " · tides" : ""}</span>
+        <span className="rep" title={`${v.reputationLabel} · ${Math.trunc(v.reputationScorePermille / 10)}%`}>
+          {" · Rep "}{Math.trunc(v.reputationScorePermille / 10)}%
+        </span>
+        <span className="day-part"> · {v.dayPartName}{v.tideChartOwned ? " · tides" : ""}{v.preferredBaitId ? " · bait set" : ""}</span>
       </div>
       <div className="pill coins top-center" aria-live="polite">{formatCoins(v.coins)} coins</div>
       {v.rush && (
@@ -362,6 +365,8 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           harborRating={v.harborRating}
           prestige={v.prestige}
           unlockedCosmetics={v.unlockedCosmetics}
+          trophySets={v.trophySets}
+          trophiesCount={v.trophies.length}
           onClose={() => host.setQuestsOpen(false)}
         />
       )}
@@ -402,9 +407,23 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
         />
       )}
       {bagOpen && (
-        <BagDetailPanel v={v} onClose={() => host.setBagOpen(false)} />
+        <BagDetailPanel
+          v={v}
+          onSelectBait={(id) => host.selectBait(id)}
+          onClose={() => host.setBagOpen(false)}
+        />
       )}
-      {stationOpen && v.context && (
+      {stationOpen && v.baitOffers.length > 0 && (
+        <BaitKioskPanel
+          offers={v.baitOffers}
+          preferredBaitId={v.preferredBaitId}
+          coins={v.coins}
+          onBuy={(id) => host.buyBait(id)}
+          onSelect={(id) => host.selectBait(id)}
+          onClose={() => host.setStationOpen(false)}
+        />
+      )}
+      {stationOpen && v.context && v.baitOffers.length === 0 && (
         <StationDetailPanel
           card={v.context}
           stations={v.stations}
@@ -608,9 +627,14 @@ function SettingsPanel({ settings, cloudAvailable, onChange, onExportTelemetry, 
   );
 }
 
-function BagDetailPanel({ v, onClose }: { v: SimView; onClose: () => void }) {
+function BagDetailPanel({ v, onSelectBait, onClose }: {
+  v: SimView; onSelectBait: (baitId: string | null) => void; onClose: () => void;
+}) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => closeRef.current?.focus(), []);
+  const baitIds = new Set(v.baitOffers.map((b) => b.id));
+  // Prefer catalog ids from pack via itemId prefix when kiosk offers empty.
+  const isBait = (itemId: string) => itemId.startsWith("bait.") || baitIds.has(itemId);
   return (
     <div className="scrim" onClick={onClose}>
       <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Bag" onClick={(e) => e.stopPropagation()}>
@@ -620,13 +644,76 @@ function BagDetailPanel({ v, onClose }: { v: SimView; onClose: () => void }) {
           <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
         </div>
         {v.bagFishSpoilActive && <p className="small danger">Fish in your bag can spoil.</p>}
+        {v.preferredBaitId && (
+          <p className="small">
+            Preferred bait locked in.
+            {" "}
+            <button className="button ghost" onClick={() => onSelectBait(null)}>Use auto</button>
+          </p>
+        )}
         <ul className="upgrade-list">
           {v.bag.length === 0 ? (
             <li><div className="muted">Empty</div></li>
           ) : v.bag.map((i) => (
             <li key={i.itemId}>
-              <div className="grow"><strong>{i.name}</strong></div>
+              <div className="grow">
+                <strong>{i.name}</strong>
+                {isBait(i.itemId) && v.preferredBaitId === i.itemId && (
+                  <div className="small">Preferred for casts</div>
+                )}
+              </div>
               <span className="num">{i.count}</span>
+              {isBait(i.itemId) && v.preferredBaitId !== i.itemId && (
+                <button className="button ghost" onClick={() => onSelectBait(i.itemId)}>Prefer</button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function BaitKioskPanel({ offers, preferredBaitId, coins, onBuy, onSelect, onClose }: {
+  offers: BaitOfferView[];
+  preferredBaitId: string | null;
+  coins: number;
+  onBuy: (id: string) => void;
+  onSelect: (id: string | null) => void;
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Bait kiosk" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>Bait kiosk</h2>
+          <span className="num">{formatCoins(coins)} coins</span>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        <p className="small">Buy packs for rare bites. Prefer one for the next cast, or auto.</p>
+        <div className="title-actions">
+          <button className="button ghost" disabled={preferredBaitId === null} onClick={() => onSelect(null)}>
+            Auto bait
+          </button>
+        </div>
+        <ul className="upgrade-list">
+          {offers.map((o) => (
+            <li key={o.id}>
+              <div className="grow">
+                <strong>{o.name}</strong>
+                <div className="small">{o.description}</div>
+                <div className="small">Owned {o.ownedCount} · pack of {o.packQuantity}</div>
+                {o.preferred && <div className="small">Preferred</div>}
+                {o.reason && <div className="small danger">{o.reason}</div>}
+              </div>
+              {o.ownedCount > 0 && !o.preferred && (
+                <button className="button ghost" onClick={() => onSelect(o.id)}>Prefer</button>
+              )}
+              <button className="button num" disabled={!o.purchasable} onClick={() => onBuy(o.id)}>
+                {formatCoins(o.cost)}
+              </button>
             </li>
           ))}
         </ul>
@@ -801,6 +888,8 @@ function QuestLogPanel({
   harborRating,
   prestige,
   unlockedCosmetics,
+  trophySets,
+  trophiesCount,
   onClose,
 }: {
   quests: QuestView[];
@@ -809,6 +898,8 @@ function QuestLogPanel({
   harborRating: number;
   prestige: PrestigeView[];
   unlockedCosmetics: string[];
+  trophySets: TrophySetView[];
+  trophiesCount: number;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -821,6 +912,27 @@ function QuestLogPanel({
           <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
         </div>
         <ul className="upgrade-list">
+          <li>
+            <div className="grow">
+              <strong>Trophy board</strong>
+              <div className="small">{trophiesCount} species mounted</div>
+            </div>
+            <span className="num">{trophiesCount}</span>
+          </li>
+          {trophySets.map((set) => (
+            <li key={set.id}>
+              <div className="grow">
+                <strong>{set.name}</strong>
+                <div className="small">{set.description}</div>
+                <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={set.total} aria-valuenow={set.mounted}>
+                  <div style={{ width: `${Math.min(100, Math.max(0, (set.mounted / Math.max(1, set.total)) * 100))}%` }} />
+                </div>
+              </div>
+              <span className={set.completed ? "owned" : "num"}>
+                {set.completed ? "Done" : `${set.mounted}/${set.total}`}
+              </span>
+            </li>
+          ))}
           {quests.map((q) => {
             const rewardBits = [
               ...(q.rewardCoins > 0 ? [`${formatCoins(q.rewardCoins)} coins`] : []),
@@ -922,6 +1034,9 @@ function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLe
               <li key={job.contractId}>
                 <div className="grow">
                   <strong>{job.name}</strong>
+                  {job.standing && (
+                    <div className="small muted">Standing · streak {job.standingStreak}</div>
+                  )}
                   <div className="small">{job.delivered}/{job.quantity} {job.itemName} · {formatRushSeconds(job.ticksRemaining)}s left</div>
                   <div className="small reward">Pay {formatCoins(job.payout)} · fail −{formatCoins(job.penalty)}</div>
                 </div>
@@ -936,6 +1051,11 @@ function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLe
               <li key={offer.offerId}>
                 <div className="grow">
                   <strong>{offer.name}</strong>
+                  {offer.standing && (
+                    <div className="small muted">
+                      Standing{offer.standingStreak > 0 ? ` · streak ${offer.standingStreak}` : ""}
+                    </div>
+                  )}
                   <div className="small">{offer.description}</div>
                   <div className="small">{offer.quantity}× {offer.itemName} · {formatRushSeconds(offer.durationTicks)}s</div>
                   <div className="small reward">+{formatCoins(offer.payout)} / −{formatCoins(offer.penalty)}</div>

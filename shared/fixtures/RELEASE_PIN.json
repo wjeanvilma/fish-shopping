@@ -1,7 +1,7 @@
 {
-  "label": "Phase 8 rod mastery and timing tiers fixture freeze",
-  "contentVersion": "0.30.0",
-  "schemaVersion": 10,
+  "label": "Phase 14 standing orders fixture freeze",
+  "contentVersion": "0.36.0",
+  "schemaVersion": 12,
   "ticksPerSecond": 20,
   "fixtures": [
     "prng-vectors.json",

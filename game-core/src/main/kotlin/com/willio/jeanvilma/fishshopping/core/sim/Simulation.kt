@@ -83,6 +83,8 @@ class Simulation(val content: ContentPack, val state: GameState) {
             is Command.AcceptContract -> ContractSystem.accept(ctx, c.offerId, c.requestId)
             is Command.DeliverContract -> ContractSystem.deliver(ctx, c.contractId, c.requestId)
             is Command.TravelToHarbor -> HarborTravelSystem.travel(ctx, c.harborId, c.requestId)
+            is Command.BuyBait -> com.willio.jeanvilma.fishshopping.core.fishing.BaitSystem.buy(ctx, c.baitId, c.requestId)
+            is Command.SelectBait -> com.willio.jeanvilma.fishshopping.core.fishing.BaitSystem.select(state, content, c.baitId)
         }
     }
 }

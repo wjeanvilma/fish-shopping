@@ -4,7 +4,7 @@
  */
 import type { ContentPack } from "./content";
 import { Stats, type GameState } from "./state";
-import { EconomySystem, ProgressionSystem } from "./systems";
+import { EconomySystem, ProgressionSystem, ReputationSystem } from "./systems";
 
 export interface ObjectiveView {
   /** Short label: NEXT / GOAL / TIP */
@@ -72,6 +72,22 @@ export function emptyStateTip(content: ContentPack, state: GameState): string | 
     return "Counter is empty — stock portions before the next customer";
   }
 
+  const rep = content.reputation;
+  const encounters = ReputationSystem.encounters(state);
+  if (encounters >= rep.minSample) {
+    const lostRatio = Math.trunc((ReputationSystem.abandoned(state) * 1000) / encounters);
+    if (lostRatio >= rep.coachingLostRatioPermille) {
+      return "Customers are walking out — keep the counter stocked and staffed";
+    }
+    const sales = ReputationSystem.served(state);
+    if (sales > 0) {
+      const unmetRatio = Math.trunc((state.stat(Stats.UNMET_PREFERENCE_SALES) * 1000) / sales);
+      if (unmetRatio >= 300) {
+        return "Guests notice missing favorites — stock preferred products";
+      }
+    }
+  }
+
   if (
     state.completedQuests.has("quest.first_ten_sales") &&
     !state.completedQuests.has("quest.first_hire") &&
@@ -106,6 +122,13 @@ export function emptyStateTip(content: ContentPack, state: GameState): string | 
     if (stocked >= 8 && waiting === 0) {
       return "Counter stock is aging — sell before the next spoil cycle";
     }
+  }
+
+  if (
+    encounters >= rep.minSample &&
+    ReputationSystem.scorePermille(content, state) >= rep.coachingPraiseScorePermille
+  ) {
+    return "Harbor reviews are glowing — keep preferred stock filled";
   }
   return null;
 }

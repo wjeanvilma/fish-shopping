@@ -25,14 +25,14 @@ class CloudSyncTest {
     @Test
     fun corruptRemoteIsIgnored() {
         val local = SnapshotCodec.encode(content, GameState.newGame(content, "harbor.sunrise_pier", 3), 5_000L)
-        val decision = CloudSync.choose(local, """{"schemaVersion":10,"checksum":"deadbeef","state":{}}""")
+        val decision = CloudSync.choose(local, """{"schemaVersion":12,"checksum":"deadbeef","state":{}}""")
         assertEquals(SyncSource.LOCAL, decision.source)
         assertEquals(local, decision.text)
     }
 
     @Test
     fun peekRejectsBadChecksum() {
-        assertNull(CloudSync.peek("""{"schemaVersion":10,"checksum":"00000000","state":{"harborId":"x"}}"""))
+        assertNull(CloudSync.peek("""{"schemaVersion":12,"checksum":"00000000","state":{"harborId":"x"}}"""))
         val ok = SnapshotCodec.encode(content, GameState.newGame(content, "harbor.sunrise_pier", 4), 9_000L)
         assertNotNull(CloudSync.peek(ok))
         assertEquals(9_000L, CloudSync.peek(ok)!!.savedAtEpochMs)

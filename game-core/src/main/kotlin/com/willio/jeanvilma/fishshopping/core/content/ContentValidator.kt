@@ -48,9 +48,10 @@ object ContentValidator {
         }
 
         // Unique IDs across every collection (IDs are global and namespaced by prefix).
-        val allIds = p.species.map { it.id } + p.products.map { it.id } + p.recipes.map { it.id } +
+        val allIds = p.species.map { it.id } + p.products.map { it.id } + p.bait.map { it.id } + p.recipes.map { it.id } +
             p.machines.map { it.id } + p.upgrades.map { it.id } + p.quests.map { it.id } +
-                p.workers.map { it.id } + p.prestige.milestones.map { it.id } + p.contracts.templates.map { it.id } +
+                p.workers.map { it.id } + p.trophies.sets.map { it.id } + p.prestige.milestones.map { it.id } +
+                p.contracts.templates.map { it.id } +
                 p.customers.map { it.id } + p.tutorial.map { it.id } + p.harbors.map { it.id }
         allIds.groupingBy { it }.eachCount().filter { it.value > 1 }.keys.forEach { errors += "Duplicate id '$it'" }
 
@@ -76,6 +77,12 @@ object ContentValidator {
         check(p.economy.counterSpoilUnits >= 0) { "economy.counterSpoilUnits must be >= 0" }
         check(p.economy.bagFishSpoilPeriodTicks >= 1) { "economy.bagFishSpoilPeriodTicks must be >= 1" }
         check(p.economy.bagFishSpoilUnits >= 0) { "economy.bagFishSpoilUnits must be >= 0" }
+        check(p.economy.scarcityPriceCurvePermille.size == 5) {
+            "economy.scarcityPriceCurvePermille must have exactly 5 bands"
+        }
+        for ((i, mult) in p.economy.scarcityPriceCurvePermille.withIndex()) {
+            check(mult >= 1) { "economy.scarcityPriceCurvePermille[$i] must be >= 1" }
+        }
         val economyRequirable = p.upgradesById.keys + p.questsById.keys
         p.economy.requires.forEach { req ->
             check(req in economyRequirable) { "economy: unknown requirement '$req'" }
@@ -95,12 +102,73 @@ object ContentValidator {
             prevEnd = part.endPermille
         }
         check(p.ecology.parts.last().endPermille == 1000) { "ecology.parts must end at endPermille 1000" }
+        check(p.trophies.sizeMinPermille <= p.trophies.sizeMaxPermille) {
+            "trophies: sizeMinPermille must be <= sizeMaxPermille"
+        }
+        check(p.trophies.sets.isNotEmpty()) { "trophies.sets must not be empty" }
+        check(p.trophies.sets.map { it.id }.toSet().size == p.trophies.sets.size) {
+            "trophies.sets ids must be unique"
+        }
+        check(p.trophies.sets.map { it.completeStat }.toSet().size == p.trophies.sets.size) {
+            "trophies.sets completeStat values must be unique"
+        }
+        for (set in p.trophies.sets) {
+            check(set.species.isNotEmpty()) { "${set.id}: species must not be empty" }
+            check(set.species.toSet().size == set.species.size) { "${set.id}: species must be unique" }
+            check(set.completeStat.startsWith("stat.")) { "${set.id}: completeStat must start with 'stat.'" }
+            for (sp in set.species) {
+                check(sp in p.speciesById) { "${set.id}: unknown species '$sp'" }
+            }
+        }
         check(p.prestige.ratingThresholds.size == 5) { "prestige.ratingThresholds must have exactly 5 entries" }
+        check(p.prestige.ratingPriceMultPermille.size == 6) {
+            "prestige.ratingPriceMultPermille must have exactly 6 entries (stars 0..5)"
+        }
+        for ((i, mult) in p.prestige.ratingPriceMultPermille.withIndex()) {
+            check(mult >= 1) { "prestige.ratingPriceMultPermille[$i] must be >= 1" }
+        }
         check(p.prestige.milestones.isNotEmpty()) { "prestige.milestones must not be empty" }
         for (i in 1 until p.prestige.ratingThresholds.size) {
             check(p.prestige.ratingThresholds[i] >= p.prestige.ratingThresholds[i - 1]) {
                 "prestige.ratingThresholds must be non-decreasing"
             }
+        }
+        val rep = p.reputation
+        check(rep.minSample >= 1) { "reputation.minSample must be >= 1" }
+        check(rep.neutralScorePermille >= 1) { "reputation.neutralScorePermille must be >= 1" }
+        check(rep.scoreBandThresholdsPermille.isNotEmpty()) {
+            "reputation.scoreBandThresholdsPermille must not be empty"
+        }
+        for (i in 1 until rep.scoreBandThresholdsPermille.size) {
+            check(rep.scoreBandThresholdsPermille[i] >= rep.scoreBandThresholdsPermille[i - 1]) {
+                "reputation.scoreBandThresholdsPermille must be non-decreasing"
+            }
+        }
+        check(rep.kindSpawnMultPermille.size == rep.scoreBandThresholdsPermille.size + 1) {
+            "reputation.kindSpawnMultPermille must have thresholds+1 rows"
+        }
+        val kindWires = CustomerKind.entries.map { it.wire }.toSet()
+        for ((bandIdx, row) in rep.kindSpawnMultPermille.withIndex()) {
+            check(row.keys.containsAll(kindWires)) {
+                "reputation.kindSpawnMultPermille[$bandIdx] must include every customer kind"
+            }
+            for ((kind, mult) in row) {
+                check(kind in kindWires) {
+                    "reputation.kindSpawnMultPermille[$bandIdx]: unknown kind '$kind'"
+                }
+                check(mult >= 1) {
+                    "reputation.kindSpawnMultPermille[$bandIdx].$kind must be >= 1"
+                }
+            }
+        }
+        check(rep.unmetPreferencePenaltyPermille >= 0) {
+            "reputation.unmetPreferencePenaltyPermille must be >= 0"
+        }
+        check(rep.coachingLostRatioPermille in 0..1000) {
+            "reputation.coachingLostRatioPermille must be 0..1000"
+        }
+        check(rep.coachingPraiseScorePermille >= 1) {
+            "reputation.coachingPraiseScorePermille must be >= 1"
         }
         check(p.contracts.boardSlots >= 1) { "contracts.boardSlots must be >= 1" }
         check(p.contracts.maxActive >= 1) { "contracts.maxActive must be >= 1" }
@@ -116,6 +184,18 @@ object ContentValidator {
             check(t.durationTicks >= 1) { "${t.id}: durationTicks must be >= 1" }
             check(t.payout >= 0) { "${t.id}: payout must be >= 0" }
             check(t.penalty >= 0) { "${t.id}: penalty must be >= 0" }
+            check(t.payoutEscalatePermille >= 1) { "${t.id}: payoutEscalatePermille must be >= 1" }
+            check(t.penaltyEscalatePermille >= 1) { "${t.id}: penaltyEscalatePermille must be >= 1" }
+            check(t.maxStreak >= 1) { "${t.id}: maxStreak must be >= 1" }
+            check(t.failCooldownTicks >= 1) { "${t.id}: failCooldownTicks must be >= 1" }
+            if (t.isStanding) {
+                check(t.payoutEscalatePermille >= 1000) {
+                    "${t.id}: standing payoutEscalatePermille must be >= 1000"
+                }
+                check(t.penaltyEscalatePermille >= 1000) {
+                    "${t.id}: standing penaltyEscalatePermille must be >= 1000"
+                }
+            }
             check(t.weight >= 1) { "${t.id}: weight must be >= 1" }
         }
 
@@ -149,6 +229,18 @@ object ContentValidator {
         }
 
         val requirable = p.upgradesById.keys + p.questsById.keys
+        check(p.bait.isNotEmpty()) { "bait must not be empty" }
+        for (b in p.bait) {
+            check(b.carryUnits >= 1) { "${b.id}: carryUnits must be >= 1" }
+            check(b.packQuantity >= 1) { "${b.id}: packQuantity must be >= 1" }
+            check(b.cost >= 0) { "${b.id}: cost must be >= 0" }
+            check(b.rareSpeciesWeightMultPermille >= 1) { "${b.id}: rareSpeciesWeightMultPermille must be >= 1" }
+            check(b.rareChanceBonusPermille in 0..1000) { "${b.id}: rareChanceBonusPermille must be 0..1000" }
+            b.requires.forEach { req -> check(req in requirable) { "${b.id}: unknown requirement '$req'" } }
+        }
+        for (h in p.harbors) {
+            check(h.zones.any { it.kind == ZoneKind.KIOSK }) { "${h.id}: needs at least one kiosk zone" }
+        }
         for (u in p.upgrades) {
             u.requires.forEach { req -> check(req in requirable) { "${u.id}: unknown requirement '$req'" } }
             when (val e = u.effect) {
@@ -161,6 +253,10 @@ object ContentValidator {
                 }
                 is UpgradeEffect.CatchSpeed -> check(e.speedPermille > p.player.startCatchSpeedPermille) {
                     "${u.id}: catch speed does not exceed the starting catch speed"
+                }
+                is UpgradeEffect.GrantBait -> {
+                    check(e.bait in p.baitById) { "${u.id}: grant_bait unknown '${e.bait}'" }
+                    check(e.quantity >= 1) { "${u.id}: grant_bait quantity must be >= 1" }
                 }
                 is UpgradeEffect.TimingWindow -> {
                     check(e.windowStartPermille < e.windowEndPermille) {
@@ -275,11 +371,29 @@ object ContentValidator {
             check(c.unmetPatienceDrainPermille >= 1000) {
                 "${c.id}: unmetPatienceDrainPermille must be >= 1000"
             }
-            if (c.kind == CustomerKind.PREMIUM) {
-                check(c.priceMultPermille > 1000) { "${c.id}: premium customers must tip (priceMultPermille > 1000)" }
+            if (c.kind == CustomerKind.PREMIUM || c.kind == CustomerKind.TOURIST || c.kind == CustomerKind.CRITIC) {
+                check(c.priceMultPermille > 1000) {
+                    "${c.id}: ${c.kind.wire} customers must tip (priceMultPermille > 1000)"
+                }
             }
-            if (c.kind == CustomerKind.BULK) {
-                check(c.basketMin >= 5) { "${c.id}: bulk customers need basketMin >= 5" }
+            if (c.kind == CustomerKind.BULK || c.kind == CustomerKind.WHOLESALER) {
+                check(c.basketMin >= 5) { "${c.id}: ${c.kind.wire} customers need basketMin >= 5" }
+            }
+            if (c.kind == CustomerKind.CRITIC) {
+                check(c.preferredProducts.isNotEmpty()) { "${c.id}: critic customers need preferred products" }
+                check(c.unmetPatienceDrainPermille >= 2500) {
+                    "${c.id}: critic unmetPatienceDrainPermille must be >= 2500"
+                }
+            }
+            if (c.kind == CustomerKind.NIGHT_REGULAR) {
+                val night = c.dayPartSpawnMultPermille["night"] ?: 1000
+                val day = c.dayPartSpawnMultPermille["day"] ?: 1000
+                check(night > day) { "${c.id}: night_regular needs night spawn mult > day" }
+            }
+            val ecologyParts = p.ecology.parts.map { it.id }.toSet()
+            for ((partId, mult) in c.dayPartSpawnMultPermille) {
+                check(partId in ecologyParts) { "${c.id}: unknown day-part '$partId' in dayPartSpawnMultPermille" }
+                check(mult >= 1) { "${c.id}: dayPartSpawnMultPermille.$partId must be >= 1" }
             }
             for (pw in c.preferredProducts) {
                 check(pw.item in p.productsById) { "${c.id}: preferred product unknown '${pw.item}'" }
@@ -363,6 +477,9 @@ object ContentValidator {
                 }
                 check(r.spawnSpeedPermille >= 1000) {
                     "${r.id}: spawnSpeedPermille must be >= 1000 (rushes only speed up spawns)"
+                }
+                check(r.priceMultPermille >= 1) {
+                    "${r.id}: priceMultPermille must be >= 1"
                 }
             }
             h.rushes.groupingBy { it.id }.eachCount().filter { it.value > 1 }.keys

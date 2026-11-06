@@ -243,7 +243,14 @@ object WorkerSystem {
             spot.stock--
             ctx.state.bumpStat(Stats.FISH_CAUGHT)
             ctx.state.bumpStat(Stats.WORKER_FISH_CAUGHT)
-            ctx.emit(GameEvent.FishCaught(ctx.state.tick, species.id, zoneId, timingBonus = false, rareUpgrade = false))
+            val (size, value, personalBest) = com.willio.jeanvilma.fishshopping.core.fishing.TrophySystem.record(ctx, species.id)
+            ctx.emit(
+                GameEvent.FishCaught(
+                    ctx.state.tick, species.id, zoneId,
+                    timingBonus = false, rareUpgrade = false,
+                    sizePermille = size, valueCoins = value, personalBest = personalBest,
+                ),
+            )
             if (spot.stock == 0) ctx.emit(GameEvent.FishingSpotDepleted(ctx.state.tick, zoneId))
         }
         clearCast(w)

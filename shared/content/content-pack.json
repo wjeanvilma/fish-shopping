@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/content-pack.schema.json",
-  "contentVersion": "0.30.0",
+  "contentVersion": "0.36.0",
   "ticksPerSecond": 20,
   "units": {
     "distance": "millimetres (integer); x/z ground plane, y is up",
@@ -1140,6 +1140,20 @@
       }
     },
     {
+      "id": "upgrade.bait_pouch",
+      "name": "Bait pouch",
+      "description": "Buy a starter pack of shrimp nibble bait for the pier kiosk circuit.",
+      "cost": 20,
+      "requires": [
+        "upgrade.bag_capacity_2"
+      ],
+      "effect": {
+        "kind": "grant_bait",
+        "bait": "bait.shrimp_nibble",
+        "quantity": 5
+      }
+    },
+    {
       "id": "upgrade.bag_capacity_3",
       "name": "Fish crate",
       "description": "Carry 12 units.",
@@ -1485,7 +1499,7 @@
     {
       "id": "quest.specialty_kitchen",
       "name": "Specialty kitchen",
-      "description": "Collect 12 finished products from station pads \u2014 smoke, grill, or cut specialty stock.",
+      "description": "Collect 12 finished products from station pads — smoke, grill, or cut specialty stock.",
       "requires": [
         "quest.fill_the_hold"
       ],
@@ -1667,7 +1681,68 @@
     "counterSpoilPeriodTicks": 1800,
     "counterSpoilUnits": 1,
     "bagFishSpoilPeriodTicks": 2400,
-    "bagFishSpoilUnits": 1
+    "bagFishSpoilUnits": 1,
+    "scarcityPriceCurvePermille": [
+      1150,
+      1100,
+      1050,
+      1000,
+      1000
+    ]
+  },
+  "trophies": {
+    "sizeMinPermille": 700,
+    "sizeMaxPermille": 1300,
+    "sets": [
+      {
+        "id": "gallery.sunrise_pier",
+        "name": "Sunrise Pier gallery",
+        "description": "Mount every common Sunrise Pier catch on the museum board.",
+        "species": [
+          "species.dawn_anchovy",
+          "species.silver_sprat",
+          "species.harbor_herring",
+          "species.sail_needlefish",
+          "species.blue_mackerel",
+          "species.copper_mullet",
+          "species.tide_bass",
+          "species.amber_snapper",
+          "species.king_grouper",
+          "species.reef_perch"
+        ],
+        "completeStat": "stat.trophy_set_sunrise_pier"
+      },
+      {
+        "id": "gallery.moon_cove",
+        "name": "Moon Cove gallery",
+        "description": "Mount the four Moon Cove specialty fish.",
+        "species": [
+          "species.moon_flounder",
+          "species.ink_squid",
+          "species.lava_eel",
+          "species.ghost_lanternfish"
+        ],
+        "completeStat": "stat.trophy_set_moon_cove"
+      },
+      {
+        "id": "gallery.rare_gallery",
+        "name": "Rare gallery",
+        "description": "Mount every rare-upgrade specimen.",
+        "species": [
+          "species.golden_sprat",
+          "species.gilt_mackerel",
+          "species.bronze_mullet",
+          "species.ruby_snapper",
+          "species.silver_dawn_anchovy",
+          "species.sapphire_needlefish",
+          "species.crown_bass",
+          "species.opal_flounder",
+          "species.ember_eel",
+          "species.prism_lanternfish"
+        ],
+        "completeStat": "stat.trophy_set_rare_gallery"
+      }
+    ]
   },
   "prestige": {
     "requires": [
@@ -1679,6 +1754,14 @@
       750,
       1500,
       3000
+    ],
+    "ratingPriceMultPermille": [
+      1000,
+      1000,
+      1020,
+      1040,
+      1070,
+      1100
     ],
     "milestones": [
       {
@@ -1734,6 +1817,61 @@
           "priceBonusPermille": 0,
           "cosmetic": "banner.twin_harbors"
         }
+      },
+      {
+        "id": "prestige.sunrise_curator",
+        "name": "Sunrise Curator",
+        "description": "Fill the Sunrise Pier trophy gallery.",
+        "requires": [
+          "prestige.rising_tide"
+        ],
+        "goal": {
+          "stat": "stat.trophy_set_sunrise_pier",
+          "atLeast": 1
+        },
+        "reward": {
+          "coins": 175,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.sunrise_museum"
+        }
+      },
+      {
+        "id": "prestige.moon_curator",
+        "name": "Moon Curator",
+        "description": "Fill the Moon Cove trophy gallery.",
+        "requires": [
+          "prestige.twin_harbors"
+        ],
+        "goal": {
+          "stat": "stat.trophy_set_moon_cove",
+          "atLeast": 1
+        },
+        "reward": {
+          "coins": 200,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.moon_museum"
+        }
+      },
+      {
+        "id": "prestige.rare_curator",
+        "name": "Rare Curator",
+        "description": "Fill the rare-upgrade trophy gallery.",
+        "requires": [
+          "prestige.sunrise_curator",
+          "prestige.moon_curator"
+        ],
+        "goal": {
+          "stat": "stat.trophy_set_rare_gallery",
+          "atLeast": 1
+        },
+        "reward": {
+          "coins": 300,
+          "catchSpeedPermille": 1100,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.rare_gallery"
+        }
       }
     ]
   },
@@ -1759,24 +1897,34 @@
       {
         "id": "contract.portion_order",
         "name": "Portion order",
-        "description": "Stock basic portions for a lunch cart.",
+        "description": "Standing lunch-cart order. Completing refreshes the same run with rising pay.",
         "item": "product.basic_portion",
         "quantity": 2,
         "durationTicks": 2000,
         "payout": 40,
         "penalty": 10,
-        "weight": 120
+        "weight": 120,
+        "kind": "standing",
+        "payoutEscalatePermille": 1100,
+        "penaltyEscalatePermille": 1100,
+        "maxStreak": 5,
+        "failCooldownTicks": 600
       },
       {
         "id": "contract.fillet_rush",
         "name": "Fillet rush",
-        "description": "A cafe needs fillets before the dinner rush.",
+        "description": "Standing cafe fillet run. Completing refreshes with escalating stakes.",
         "item": "product.fillet",
         "quantity": 2,
         "durationTicks": 1400,
         "payout": 70,
         "penalty": 20,
-        "weight": 80
+        "weight": 80,
+        "kind": "standing",
+        "payoutEscalatePermille": 1100,
+        "penaltyEscalatePermille": 1100,
+        "maxStreak": 5,
+        "failCooldownTicks": 600
       },
       {
         "id": "contract.smoked_specialty",
@@ -1992,12 +2140,156 @@
       ],
       "unmetPriceMultPermille": 700,
       "unmetPatienceDrainPermille": 2500
+    },
+    {
+      "id": "customer.harbor_tourist",
+      "name": "Harbor tourist",
+      "kind": "tourist",
+      "basketMin": 1,
+      "basketMax": 3,
+      "patienceTicks": 1100,
+      "spawnWeight": 18,
+      "priceMultPermille": 1250,
+      "preferredProducts": [
+        {
+          "item": "product.skewer",
+          "weight": 35
+        },
+        {
+          "item": "product.grilled_skewer",
+          "weight": 30
+        },
+        {
+          "item": "product.basic_portion",
+          "weight": 20
+        },
+        {
+          "item": "product.soup_stock",
+          "weight": 15
+        }
+      ],
+      "unmetPriceMultPermille": 800,
+      "unmetPatienceDrainPermille": 1800,
+      "dayPartSpawnMultPermille": {
+        "dawn": 700,
+        "day": 1200,
+        "dusk": 1400,
+        "night": 400
+      }
+    },
+    {
+      "id": "customer.wholesaler",
+      "name": "Wholesaler",
+      "kind": "wholesaler",
+      "basketMin": 8,
+      "basketMax": 14,
+      "patienceTicks": 420,
+      "spawnWeight": 8,
+      "priceMultPermille": 1000,
+      "preferredProducts": [
+        {
+          "item": "product.ice_packed_crate",
+          "weight": 45
+        },
+        {
+          "item": "product.fillet",
+          "weight": 25
+        },
+        {
+          "item": "product.diced_fish",
+          "weight": 15
+        },
+        {
+          "item": "product.soup_stock",
+          "weight": 15
+        }
+      ],
+      "unmetPriceMultPermille": 650,
+      "unmetPatienceDrainPermille": 2800,
+      "dayPartSpawnMultPermille": {
+        "dawn": 1500,
+        "day": 1100,
+        "dusk": 600,
+        "night": 300
+      }
+    },
+    {
+      "id": "customer.food_critic",
+      "name": "Food critic",
+      "kind": "critic",
+      "basketMin": 1,
+      "basketMax": 2,
+      "patienceTicks": 1600,
+      "spawnWeight": 6,
+      "priceMultPermille": 1600,
+      "preferredProducts": [
+        {
+          "item": "product.grilled_fillet",
+          "weight": 40
+        },
+        {
+          "item": "product.premium_portion",
+          "weight": 30
+        },
+        {
+          "item": "product.smoked_fillet",
+          "weight": 20
+        },
+        {
+          "item": "product.grilled_skewer",
+          "weight": 10
+        }
+      ],
+      "unmetPriceMultPermille": 500,
+      "unmetPatienceDrainPermille": 3200,
+      "dayPartSpawnMultPermille": {
+        "dawn": 500,
+        "day": 900,
+        "dusk": 1500,
+        "night": 800
+      }
+    },
+    {
+      "id": "customer.night_regular",
+      "name": "Night regular",
+      "kind": "night_regular",
+      "basketMin": 2,
+      "basketMax": 4,
+      "patienceTicks": 1000,
+      "spawnWeight": 12,
+      "priceMultPermille": 1100,
+      "preferredProducts": [
+        {
+          "item": "product.smoked_fillet",
+          "weight": 35
+        },
+        {
+          "item": "product.grilled_fillet",
+          "weight": 25
+        },
+        {
+          "item": "product.soup_stock",
+          "weight": 20
+        },
+        {
+          "item": "product.fillet",
+          "weight": 20
+        }
+      ],
+      "unmetPriceMultPermille": 700,
+      "unmetPatienceDrainPermille": 2200,
+      "dayPartSpawnMultPermille": {
+        "dawn": 250,
+        "day": 200,
+        "dusk": 900,
+        "night": 2500
+      }
     }
   ],
   "tutorial": [
     {
       "id": "tutorial.walk_to_pier",
-      "text": "Walk to the pier end \u2014 cast where the water meets the boards",
+      "text": "Walk to the pier end — cast where the water meets the boards",
       "advanceOn": {
         "kind": "enter_zone",
         "zone": "zone.pier_end"
@@ -2217,6 +2509,14 @@
           "minZ": -5000,
           "maxX": 14400,
           "maxZ": -3000
+        },
+        {
+          "id": "zone.bait_kiosk",
+          "kind": "kiosk",
+          "minX": -7800,
+          "minZ": -2800,
+          "maxX": -6200,
+          "maxZ": -1200
         }
       ],
       "fishingSpots": [
@@ -2356,7 +2656,8 @@
           "startTick": 600,
           "durationTicks": 400,
           "spawnSpeedPermille": 2500,
-          "queueBonus": 2
+          "queueBonus": 2,
+          "priceMultPermille": 1150
         },
         {
           "id": "rush.evening",
@@ -2365,7 +2666,8 @@
           "startTick": 1600,
           "durationTicks": 300,
           "spawnSpeedPermille": 2000,
-          "queueBonus": 1
+          "queueBonus": 1,
+          "priceMultPermille": 1100
         }
       ],
       "requires": []
@@ -2502,6 +2804,14 @@
           "minZ": -5000,
           "maxX": -13000,
           "maxZ": -3000
+        },
+        {
+          "id": "zone.cove_bait_kiosk",
+          "kind": "kiosk",
+          "minX": 6200,
+          "minZ": -2800,
+          "maxX": 7800,
+          "maxZ": -1200
         }
       ],
       "fishingSpots": [
@@ -2639,7 +2949,8 @@
           "startTick": 600,
           "durationTicks": 400,
           "spawnSpeedPermille": 2500,
-          "queueBonus": 2
+          "queueBonus": 2,
+          "priceMultPermille": 1150
         },
         {
           "id": "rush.cove_dusk",
@@ -2648,12 +2959,112 @@
           "startTick": 1600,
           "durationTicks": 300,
           "spawnSpeedPermille": 2000,
-          "queueBonus": 1
+          "queueBonus": 1,
+          "priceMultPermille": 1100
         }
       ],
       "requires": [
         "quest.busy_harbor"
       ]
     }
-  ]
+  ],
+  "bait": [
+    {
+      "id": "bait.shrimp_nibble",
+      "name": "Shrimp nibble",
+      "description": "Pack of 5. Mild bite boost and a small rare-roll bump.",
+      "carryUnits": 1,
+      "packQuantity": 5,
+      "cost": 18,
+      "rareSpeciesWeightMultPermille": 1150,
+      "rareChanceBonusPermille": 40,
+      "requires": []
+    },
+    {
+      "id": "bait.glow_lure",
+      "name": "Glow lure",
+      "description": "Pack of 3. Favors rare-capable fish and raises rare rolls.",
+      "carryUnits": 1,
+      "packQuantity": 3,
+      "cost": 45,
+      "rareSpeciesWeightMultPermille": 1400,
+      "rareChanceBonusPermille": 90,
+      "requires": [
+        "upgrade.rod_speed_2"
+      ]
+    },
+    {
+      "id": "bait.king_chum",
+      "name": "King chum",
+      "description": "Pack of 2. Strong scarce-fish bias and rare chance.",
+      "carryUnits": 1,
+      "packQuantity": 2,
+      "cost": 80,
+      "rareSpeciesWeightMultPermille": 1700,
+      "rareChanceBonusPermille": 150,
+      "requires": [
+        "upgrade.timing_sights"
+      ]
+    }
+  ],
+  "reputation": {
+    "minSample": 8,
+    "neutralScorePermille": 650,
+    "scoreBandThresholdsPermille": [
+      400,
+      550,
+      700,
+      850
+    ],
+    "kindSpawnMultPermille": [
+      {
+        "standard": 1100,
+        "bulk": 1150,
+        "premium": 850,
+        "tourist": 900,
+        "wholesaler": 1100,
+        "critic": 800,
+        "night_regular": 1000
+      },
+      {
+        "standard": 1050,
+        "bulk": 1050,
+        "premium": 950,
+        "tourist": 980,
+        "wholesaler": 1020,
+        "critic": 950,
+        "night_regular": 1000
+      },
+      {
+        "standard": 1000,
+        "bulk": 1000,
+        "premium": 1000,
+        "tourist": 1000,
+        "wholesaler": 1000,
+        "critic": 1000,
+        "night_regular": 1000
+      },
+      {
+        "standard": 950,
+        "bulk": 920,
+        "premium": 1080,
+        "tourist": 1100,
+        "wholesaler": 950,
+        "critic": 1100,
+        "night_regular": 1000
+      },
+      {
+        "standard": 900,
+        "bulk": 850,
+        "premium": 1150,
+        "tourist": 1150,
+        "wholesaler": 900,
+        "critic": 1200,
+        "night_regular": 1000
+      }
+    ],
+    "unmetPreferencePenaltyPermille": 50,
+    "coachingLostRatioPermille": 250,
+    "coachingPraiseScorePermille": 850
+  }
 }

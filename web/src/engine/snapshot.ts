@@ -10,7 +10,7 @@ import {
   ContractState, CounterState, CustomerState, FishingSpotState, GameState, MachineState, WorkerState,
   type HarborWorldStash, type MachineStatus, type Receipt, type WorkerTaskPhase,
 } from "./state";
-import { FishingSystem, PrestigeSystem, UpgradeSystem } from "./systems";
+import { FishingSystem, PrestigeSystem, TrophySystem, UpgradeSystem } from "./systems";
 
 export class SnapshotError extends Error {}
 
@@ -54,6 +54,8 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
       fishingProgress: p.fishingProgress,
       fishingCatchTicks: p.fishingCatchTicks,
       reelAttemptedThisCast: p.reelAttemptedThisCast,
+      preferredBaitId: p.preferredBaitId,
+      activeBaitId: p.activeBaitId,
       bag: inv(p.bag),
     },
     fishingSpots: s.fishingSpots.map((f) => ({ zoneId: f.zoneId, stock: f.stock, regenProgress: f.regenProgress })),
@@ -113,6 +115,14 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
     completedQuests: [...s.completedQuests].sort(compareStrings),
     completedPrestige: [...s.completedPrestige].sort(compareStrings),
     unlockedCosmetics: [...s.unlockedCosmetics].sort(compareStrings),
+    trophies: (() => {
+      const o: Record<string, Json> = {};
+      for (const id of sortedKeys(s.trophies)) {
+        const rec = s.trophies.get(id)!;
+        o[id] = { sizePermille: rec.sizePermille, valueCoins: rec.valueCoins, tick: rec.tick };
+      }
+      return o;
+    })(),
     stats: sortedRecord(s.stats),
     purchaseReceipts: receipts,
     ledger: s.ledger.map(receipt),
@@ -174,6 +184,8 @@ export function decodeSnapshotEnvelope(content: ContentPack, text: string): Deco
  *  - v7 -> v8: contract board offers + active deliveries.
  *  - v8 -> v9: parked harbor worlds (harborStashes).
  *  - v9 -> v10: completedPrestige + unlockedCosmetics.
+ *  - v10 -> v11: player preferredBaitId + activeBaitId.
+ *  - v11 -> v12: trophies map (museum personal bests).
  */
 function readState(content: ContentPack, n: Reader, version: number): GameState {
   const harborId = n.get("harborId").string();
@@ -203,6 +215,12 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
     const sp = content.speciesById.get(s.player.fishingSpecies)!;
     s.player.fishingCatchTicks = FishingSystem.catchTicksFor(s.player.catchSpeedPermille, sp.catchTicks);
     s.player.reelAttemptedThisCast = false;
+  }
+  if (version >= 11) {
+    const preferred = p.optional("preferredBaitId")?.string() ?? null;
+    s.player.preferredBaitId = preferred && content.baitById.has(preferred) ? preferred : null;
+    const active = p.optional("activeBaitId")?.string() ?? null;
+    s.player.activeBaitId = active && content.baitById.has(active) ? active : null;
   }
   readInv(p.get("bag"), s.player.bag);
 
@@ -341,6 +359,19 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
       .forEach((id) => s.completedPrestige.add(id));
     n.get("unlockedCosmetics").list().forEach((x) => s.unlockedCosmetics.add(x.string()));
   }
+  if (version >= 12) {
+    const trophiesNode = n.optional("trophies");
+    if (trophiesNode) {
+      for (const [speciesId, node] of trophiesNode.entries()) {
+        if (!content.speciesById.has(speciesId)) continue;
+        s.trophies.set(speciesId, {
+          sizePermille: node.get("sizePermille").int(1),
+          valueCoins: node.get("valueCoins").int(0),
+          tick: node.get("tick").int(0),
+        });
+      }
+    }
+  }
   for (const [k, v] of n.get("stats").entries()) s.stats.set(k, v.int());
   for (const [k, v] of n.get("purchaseReceipts").entries()) s.purchaseReceipts.set(k, readReceipt(v));
   n.get("ledger").list().forEach((r) => s.ledger.push(readReceipt(r)));
@@ -357,6 +388,7 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
   for (const id of s.completedPrestige) {
     PrestigeSystem.applyReward(s, content.prestigeMilestonesById.get(id)!);
   }
+  if (version >= 12) TrophySystem.rebuildSetStats(content, s);
   return s;
 }
 

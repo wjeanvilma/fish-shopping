@@ -233,6 +233,15 @@ object StarterLineFixture {
                 put("harborId", c.harborId)
                 put("requestId", c.requestId)
             }
+            is Command.BuyBait -> {
+                put("type", "buy_bait")
+                put("baitId", c.baitId)
+                put("requestId", c.requestId)
+            }
+            is Command.SelectBait -> {
+                put("type", "select_bait")
+                put("baitId", c.baitId)
+            }
         }
     }
 
@@ -249,6 +258,10 @@ object StarterLineFixture {
         "accept_contract" -> Command.AcceptContract(o["offerId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "deliver_contract" -> Command.DeliverContract(o["contractId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "travel_to_harbor" -> Command.TravelToHarbor(o["harborId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "buy_bait" -> Command.BuyBait(o["baitId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "select_bait" -> Command.SelectBait(
+            o["baitId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
+        )
         else -> error("unknown command ${o["type"]}")
     }
 

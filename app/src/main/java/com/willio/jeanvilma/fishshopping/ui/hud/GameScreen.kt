@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import com.willio.jeanvilma.fishshopping.core.sim.ContextCard
 import com.willio.jeanvilma.fishshopping.core.sim.MachineStatus
 import com.willio.jeanvilma.fishshopping.core.sim.ActiveContractView
+import com.willio.jeanvilma.fishshopping.core.sim.BaitOfferView
 import com.willio.jeanvilma.fishshopping.core.sim.ContractOfferView
 import com.willio.jeanvilma.fishshopping.core.sim.HarborMapEntryView
 import com.willio.jeanvilma.fishshopping.core.sim.OfflineReport
@@ -71,6 +72,7 @@ import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import com.willio.jeanvilma.fishshopping.core.sim.StaffHireView
 import com.willio.jeanvilma.fishshopping.core.sim.StationView
+import com.willio.jeanvilma.fishshopping.core.sim.TrophySetView
 import com.willio.jeanvilma.fishshopping.core.sim.UpgradeView
 import com.willio.jeanvilma.fishshopping.game.CameraRig
 import com.willio.jeanvilma.fishshopping.game.GameUiState
@@ -230,7 +232,15 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                     )
                 }
                 Text(
-                    "· ${v.dayPartName}${if (v.tideChartOwned) " · tides" else ""}",
+                    "· Rep ${v.reputationScorePermille / 10}%",
+                    style = Tabular,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Ink.copy(alpha = 0.78f),
+                )
+                Text(
+                    "· ${v.dayPartName}" +
+                        (if (v.tideChartOwned) " · tides" else "") +
+                        (if (v.preferredBaitId != null) " · bait set" else ""),
                     style = Tabular,
                     fontWeight = FontWeight.SemiBold,
                     color = Ink.copy(alpha = 0.72f),
@@ -382,6 +392,8 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 harborRating = v.harborRating,
                 prestige = v.prestige,
                 unlockedCosmetics = v.unlockedCosmetics,
+                trophySets = v.trophySets,
+                trophiesCount = v.trophies.size,
                 onClose = { vm.setQuestsOpen(false) },
                 modifier = Modifier.align(Alignment.Center),
             )
@@ -436,11 +448,26 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
         }
         if (state.bagOpen) {
             OverlayScrim(onDismiss = { vm.setBagOpen(false) }) {
-                BagDetailPanel(v, onClose = { vm.setBagOpen(false) })
+                BagDetailPanel(
+                    v = v,
+                    onSelectBait = vm::selectBait,
+                    onClose = { vm.setBagOpen(false) },
+                )
             }
         }
         val stationCard = v.context
-        if (state.stationOpen && stationCard != null) {
+        if (state.stationOpen && v.baitOffers.isNotEmpty()) {
+            OverlayScrim(onDismiss = { vm.setStationOpen(false) }) {
+                BaitKioskPanel(
+                    offers = v.baitOffers,
+                    preferredBaitId = v.preferredBaitId,
+                    coins = v.coins,
+                    onBuy = vm::buyBait,
+                    onSelect = vm::selectBait,
+                    onClose = { vm.setStationOpen(false) },
+                )
+            }
+        } else if (state.stationOpen && stationCard != null) {
             OverlayScrim(onDismiss = { vm.setStationOpen(false) }) {
                 StationDetailPanel(
                     card = stationCard,
@@ -766,7 +793,11 @@ private fun copyTextToClipboard(context: android.content.Context, label: String,
 }
 
 @Composable
-private fun BagDetailPanel(v: SimView, onClose: () -> Unit) {
+private fun BagDetailPanel(
+    v: SimView,
+    onSelectBait: (String?) -> Unit,
+    onClose: () -> Unit,
+) {
     Surface(
         Modifier.width(400.dp).heightIn(max = 360.dp).then(rememberSheetClicks()),
         shape = PanelShape,
@@ -786,16 +817,99 @@ private fun BagDetailPanel(v: SimView, onClose: () -> Unit) {
                     color = Danger,
                 )
             }
+            if (v.preferredBaitId != null) {
+                TextButton(onClick = { onSelectBait(null) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text("Use auto bait")
+                }
+            }
             Spacer(Modifier.height(8.dp))
             if (v.bag.isEmpty()) {
                 Text("Empty", color = Ink.copy(alpha = 0.6f))
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(v.bag, key = { it.itemId }) { item ->
+                        val bait = item.itemId.startsWith("bait.")
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(item.name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                            Column(Modifier.weight(1f)) {
+                                Text(item.name, fontWeight = FontWeight.SemiBold)
+                                if (bait && v.preferredBaitId == item.itemId) {
+                                    Text("Preferred for casts", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
                             Text("${item.count}", style = Tabular)
+                            if (bait && v.preferredBaitId != item.itemId) {
+                                TextButton(
+                                    onClick = { onSelectBait(item.itemId) },
+                                    modifier = Modifier.heightIn(min = 48.dp),
+                                ) { Text("Prefer") }
+                            }
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BaitKioskPanel(
+    offers: List<BaitOfferView>,
+    preferredBaitId: String?,
+    coins: Long,
+    onBuy: (String) -> Unit,
+    onSelect: (String?) -> Unit,
+    onClose: () -> Unit,
+) {
+    Surface(
+        Modifier.width(420.dp).heightIn(max = 480.dp).then(rememberSheetClicks()),
+        shape = PanelShape,
+        color = PanelSurface,
+        shadowElevation = 8.dp,
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Bait kiosk", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                Text("${formatCoins(coins)} coins", style = Tabular)
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            Text(
+                "Buy packs for rare bites. Prefer one for the next cast, or auto.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            TextButton(
+                onClick = { onSelect(null) },
+                enabled = preferredBaitId != null,
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) { Text("Auto bait") }
+            Spacer(Modifier.height(8.dp))
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(offers, key = { it.id }) { offer ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(offer.name, fontWeight = FontWeight.SemiBold)
+                            Text(offer.description, style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                "Owned ${offer.ownedCount} · pack of ${offer.packQuantity}",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            if (offer.preferred) {
+                                Text("Preferred", style = MaterialTheme.typography.bodySmall)
+                            }
+                            offer.reason?.let {
+                                Text(it, style = MaterialTheme.typography.bodySmall, color = Danger)
+                            }
+                        }
+                        if (offer.ownedCount > 0 && !offer.preferred) {
+                            TextButton(
+                                onClick = { onSelect(offer.id) },
+                                modifier = Modifier.heightIn(min = 48.dp),
+                            ) { Text("Prefer") }
+                        }
+                        Button(
+                            onClick = { onBuy(offer.id) },
+                            enabled = offer.purchasable,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        ) { Text(formatCoins(offer.cost)) }
                     }
                 }
             }
@@ -987,6 +1101,13 @@ private fun ContractsPanel(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
                                     Text(job.name, fontWeight = FontWeight.SemiBold)
+                                    if (job.standing) {
+                                        Text(
+                                            "Standing · streak ${job.standingStreak}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Ink.copy(alpha = 0.65f),
+                                        )
+                                    }
                                     Text(
                                         "${job.delivered}/${job.quantity} ${job.itemName} · ${formatRushSeconds(job.ticksRemaining)}s left",
                                         style = MaterialTheme.typography.bodySmall,
@@ -1013,6 +1134,13 @@ private fun ContractsPanel(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(offer.name, fontWeight = FontWeight.SemiBold)
+                                if (offer.standing) {
+                                    Text(
+                                        if (offer.standingStreak > 0) "Standing · streak ${offer.standingStreak}" else "Standing",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Ink.copy(alpha = 0.65f),
+                                    )
+                                }
                                 Text(offer.description, style = MaterialTheme.typography.bodySmall)
                                 Text(
                                     "${offer.quantity}× ${offer.itemName} · ${formatRushSeconds(offer.durationTicks)}s",
@@ -1090,6 +1218,8 @@ private fun QuestLogPanel(
     harborRating: Int,
     prestige: List<PrestigeView>,
     unlockedCosmetics: List<String>,
+    trophySets: List<TrophySetView>,
+    trophiesCount: Int,
     onClose: () -> Unit,
     modifier: Modifier,
 ) {
@@ -1100,6 +1230,34 @@ private fun QuestLogPanel(
                 TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
             }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Trophy board", fontWeight = FontWeight.SemiBold)
+                            Text("$trophiesCount species mounted", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Text("$trophiesCount", style = Tabular)
+                    }
+                }
+                items(trophySets, key = { it.id }) { set ->
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(set.name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                            Text(
+                                if (set.completed) "Done" else "${set.mounted}/${set.total}",
+                                style = Tabular,
+                                color = if (set.completed) Action else Ink,
+                            )
+                        }
+                        Text(set.description, style = MaterialTheme.typography.bodySmall)
+                        LinearProgressIndicator(
+                            progress = {
+                                (set.mounted.toFloat() / set.total.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        )
+                    }
+                }
                 items(quests, key = { it.id }) { q ->
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {

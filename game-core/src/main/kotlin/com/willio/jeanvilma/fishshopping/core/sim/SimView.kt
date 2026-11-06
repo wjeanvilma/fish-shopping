@@ -2,6 +2,7 @@ package com.willio.jeanvilma.fishshopping.core.sim
 
 import com.willio.jeanvilma.fishshopping.core.content.ZoneKind
 import com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
+import com.willio.jeanvilma.fishshopping.core.customers.ReputationSystem
 import com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
 import com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
 import com.willio.jeanvilma.fishshopping.core.contracts.ContractSystem
@@ -44,6 +45,12 @@ data class SimView(
     val dayPartName: String,
     /** True when tide chart is owned (night regen eases + dawn/dusk cast bonus). */
     val tideChartOwned: Boolean,
+    /** Preferred bait id for new casts (null = auto). */
+    val preferredBaitId: String?,
+    /** Active cast bait id, if any. */
+    val activeBaitId: String?,
+    /** Bait for sale while standing in a kiosk (empty elsewhere). */
+    val baitOffers: List<BaitOfferView>,
     val context: ContextCard?,
     val stations: List<StationView>,
     val counters: List<CounterView>,
@@ -87,8 +94,18 @@ data class SimView(
     val prestigeLockedReason: String?,
     /** Harbor rating stars 0..5 from lifetime revenue. */
     val harborRating: Int,
+    /** Service reputation score permille from served vs abandoned (Phase 13). */
+    val reputationScorePermille: Int,
+    /** Reputation band index (0 = poor … higher = better). */
+    val reputationBand: Int,
+    /** Short band label for the HUD strip. */
+    val reputationLabel: String,
     val prestige: List<PrestigeView>,
     val unlockedCosmetics: List<String>,
+    /** Museum personal bests (sorted by species id). */
+    val trophies: List<TrophyEntryView>,
+    /** Curated gallery progress for the Goals panel. */
+    val trophySets: List<TrophySetView>,
     /**
      * World anchors for inventory ids used by flying-transfer VFX
      * ([GameEvent.ItemsTransferred] from/to). Presentation only.
@@ -131,6 +148,18 @@ data class ContextCard(
     val stationId: String? = null,
     /** Auto, or the locked recipe label. */
     val recipeModeLabel: String? = null,
+)
+
+data class BaitOfferView(
+    val id: String,
+    val name: String,
+    val description: String,
+    val cost: Long,
+    val packQuantity: Int,
+    val ownedCount: Int,
+    val purchasable: Boolean,
+    val reason: String?,
+    val preferred: Boolean,
 )
 data class StationView(
     val stationId: String,
@@ -211,6 +240,10 @@ data class ContractOfferView(
     val penalty: Long,
     val acceptEnabled: Boolean,
     val reason: String?,
+    /** Phase 14 standing order flag. */
+    val standing: Boolean = false,
+    /** Current standing streak shown on the board (0 for standard). */
+    val standingStreak: Int = 0,
 )
 
 data class ActiveContractView(
@@ -226,6 +259,10 @@ data class ActiveContractView(
     val penalty: Long,
     val bagAvailable: Int,
     val deliverEnabled: Boolean,
+    /** Phase 14 standing order flag. */
+    val standing: Boolean = false,
+    /** Completions in the current standing run. */
+    val standingStreak: Int = 0,
 )
 
 data class HarborMapEntryView(
@@ -251,6 +288,23 @@ data class PrestigeView(
     val catchSpeedPermille: Int,
     val priceBonusPermille: Int,
     val reason: String?,
+)
+
+data class TrophyEntryView(
+    val speciesId: String,
+    val name: String,
+    val sizePermille: Int,
+    val valueCoins: Long,
+    val tick: Long,
+)
+
+data class TrophySetView(
+    val id: String,
+    val name: String,
+    val description: String,
+    val mounted: Int,
+    val total: Int,
+    val completed: Boolean,
 )
 
 private fun Simulation.customerViews(): List<CustomerView> {
@@ -374,16 +428,25 @@ fun Simulation.view(): SimView {
             val queued = s.customers.filter { it.counterId == def.id }
             val front = queued.firstOrNull { it.arrived }
             val label = def.products.joinToString(" / ") { c.productsById.getValue(it).name }
+            val demandMult = CustomerSystem.demandPriceMultPermille(c, s, harbor, def, counter)
             val lines = mutableListOf(
                 "Stock: ${counter.stock.usedUnits()}/${def.capacityUnits}",
                 "Queue: ${queued.size}",
             )
+            if (demandMult != 1000) {
+                val pct = ((demandMult - 1000) * 100) / 1000
+                lines += if (pct >= 0) "Demand prices +$pct%" else "Demand prices $pct%"
+            }
             if (front != null) {
                 val type = c.customersById[front.typeId]
                 val who = type?.name ?: front.typeId
                 val kindNote = when (type?.kind?.wire) {
                     "premium" -> " · tips well"
                     "bulk" -> " · bulk order"
+                    "tourist" -> " · tourist tip"
+                    "wholesaler" -> " · wholesale order"
+                    "critic" -> " · picky critic"
+                    "night_regular" -> " · night regular"
                     else -> ""
                 }
                 val wantLabel = front.preferredProductId?.let { c.itemName(it) } ?: "anything"
@@ -401,7 +464,47 @@ fun Simulation.view(): SimView {
                 if (counter.checkoutProgress > 0) counter.checkoutProgress.toFloat() / def.checkoutTicks else null,
             )
         }
+        ZoneKind.KIOSK -> {
+            val preferred = p.preferredBaitId?.let { c.baitById[it]?.name } ?: "Auto"
+            ContextCard(
+                title = "Bait kiosk",
+                lines = listOf(
+                    "Buy chum packs for rare bites",
+                    "Preferred: $preferred",
+                    "Bag: ${p.bag.usedUnits()}/${p.bag.capacityUnits}",
+                ),
+                progress = null,
+            )
+        }
         null -> null
+    }
+
+    val atKiosk = zone?.kind == ZoneKind.KIOSK
+    val baitOffers = if (atKiosk) {
+        c.bait.map { b ->
+            val locked = !com.willio.jeanvilma.fishshopping.core.fishing.BaitSystem.requirementsMet(s, b)
+            val miss = com.willio.jeanvilma.fishshopping.core.fishing.BaitSystem.missingRequirement(c, s, b)
+            val room = p.bag.roomFor(b.id)
+            val reason = when {
+                locked -> "Requires: ${miss ?: "an unlock"}"
+                s.coins < b.cost -> "Need ${b.cost - s.coins} more coins"
+                room < 1 -> "Bag full"
+                else -> null
+            }
+            BaitOfferView(
+                id = b.id,
+                name = b.name,
+                description = b.description,
+                cost = b.cost,
+                packQuantity = b.packQuantity,
+                ownedCount = p.bag.quantity(b.id),
+                purchasable = reason == null,
+                reason = reason,
+                preferred = p.preferredBaitId == b.id,
+            )
+        }
+    } else {
+        emptyList()
     }
 
     return SimView(
@@ -468,6 +571,9 @@ fun Simulation.view(): SimView {
         dayPartId = FishingSystem.dayPartAt(c, s.tick).id,
         dayPartName = FishingSystem.dayPartAt(c, s.tick).name,
         tideChartOwned = FishingSystem.hasTideChart(s),
+        preferredBaitId = p.preferredBaitId,
+        activeBaitId = p.activeBaitId,
+        baitOffers = baitOffers,
         context = context,
         stations = stationViews,
         counters = s.counters.map { ct ->
@@ -544,6 +650,7 @@ fun Simulation.view(): SimView {
         contractOffers = s.contractOffers.map { o ->
             val t = c.contractTemplatesById[o.templateId]
             val maxed = s.activeContracts.size >= c.contracts.maxActive
+            val standing = t?.isStanding == true
             ContractOfferView(
                 offerId = o.id,
                 templateId = o.templateId,
@@ -557,11 +664,14 @@ fun Simulation.view(): SimView {
                 penalty = o.penalty,
                 acceptEnabled = !maxed,
                 reason = if (maxed) "Max active contracts" else null,
+                standing = standing,
+                standingStreak = if (standing) ContractSystem.standingStreak(s, o.templateId) else 0,
             )
         },
         activeContracts = s.activeContracts.map { job ->
             val t = c.contractTemplatesById[job.templateId]
             val bag = s.player.bag.available(job.itemId)
+            val standing = t?.isStanding == true
             ActiveContractView(
                 contractId = job.id,
                 templateId = job.templateId,
@@ -575,6 +685,8 @@ fun Simulation.view(): SimView {
                 penalty = job.penalty,
                 bagAvailable = bag,
                 deliverEnabled = bag > 0 && job.delivered < job.quantity,
+                standing = standing,
+                standingStreak = if (standing) ContractSystem.standingStreak(s, job.templateId) else 0,
             )
         },
         contractRefreshTicksLeft = if (s.contractBoardRefreshAt <= 0L) 0
@@ -588,6 +700,9 @@ fun Simulation.view(): SimView {
         prestigeUnlocked = PrestigeSystem.boardUnlocked(c, s),
         prestigeLockedReason = PrestigeSystem.missingBoardRequirement(c, s)?.let { "Requires: $it" },
         harborRating = PrestigeSystem.harborRating(c, s),
+        reputationScorePermille = ReputationSystem.scorePermille(c, s),
+        reputationBand = ReputationSystem.band(c, s),
+        reputationLabel = ReputationSystem.bandLabel(c, s),
         prestige = c.prestige.milestones.map { m ->
             val completed = m.id in s.completedPrestige
             val locked = !completed && !PrestigeSystem.requirementsMet(s, m)
@@ -611,6 +726,26 @@ fun Simulation.view(): SimView {
             )
         },
         unlockedCosmetics = s.unlockedCosmetics.toList(),
+        trophies = s.trophies.entries.map { (id, rec) ->
+            TrophyEntryView(
+                speciesId = id,
+                name = c.itemName(id),
+                sizePermille = rec.sizePermille,
+                valueCoins = rec.valueCoins,
+                tick = rec.tick,
+            )
+        },
+        trophySets = c.trophies.sets.map { set ->
+            val mounted = set.species.count { it in s.trophies }
+            TrophySetView(
+                id = set.id,
+                name = set.name,
+                description = set.description,
+                mounted = mounted,
+                total = set.species.size,
+                completed = mounted >= set.species.size,
+            )
+        },
         transferAnchors = buildTransferAnchors(),
     )
 }

@@ -54,7 +54,10 @@ object FishingSystem {
                 p.reelRequested = false
                 return
             }
-            val pick = candidates[ctx.state.rng.pickWeighted(candidates.map { it.rarityWeight })]
+            val bait = BaitSystem.resolveForCast(ctx.content, ctx.state)
+            p.activeBaitId = bait?.id
+            val weights = candidates.map { BaitSystem.effectiveWeight(it, bait) }
+            val pick = candidates[ctx.state.rng.pickWeighted(weights)]
             p.fishingSpecies = pick.id
             p.fishingProgress = 0
             p.fishingCatchTicks = catchTicksFor(effectiveCatchSpeed(ctx.content, ctx.state), pick.catchTicks)
@@ -199,11 +202,15 @@ object FishingSystem {
         val spot = s.fishingSpots.first { it.zoneId == spotZoneId }
         val rolled = ctx.content.speciesById.getValue(rolledSpeciesId)
 
+        val activeBait = p.activeBaitId?.let { ctx.content.baitById[it] }
+            ?.takeIf { p.bag.quantity(it.id) >= 1 }
+
         // Rare upgrade roll happens at commit, then bag-fit is re-checked for the final species.
         var finalId = rolledSpeciesId
         var rare = false
         rolled.rareUpgrade?.let { ru ->
-            if (s.rng.nextBelow(1000) < ru.chancePermille) {
+            val chance = BaitSystem.rareChancePermille(ru.chancePermille, activeBait)
+            if (s.rng.nextBelow(1000) < chance) {
                 finalId = ru.to
                 rare = true
             }
@@ -215,6 +222,10 @@ object FishingSystem {
             spot.stock--
             s.bumpStat(Stats.FISH_CAUGHT)
             if (rare) s.bumpStat(Stats.RARE_CATCHES)
+            if (activeBait != null) {
+                p.bag.remove(activeBait.id, 1)
+                s.bumpStat(Stats.BAIT_USED)
+            }
             val bonusMult = timingBonusPermille(ctx.content, timingTier)
             var bonusCoins = 0L
             if (bonusMult > 0) {
@@ -231,10 +242,12 @@ object FishingSystem {
                 }
             }
             val timingBonus = timingTier != TimingTier.MISS
+            val (size, value, personalBest) = TrophySystem.record(ctx, finalSpecies.id, timingTier)
             ctx.emit(
                 GameEvent.FishCaught(
                     s.tick, finalSpecies.id, zoneId,
                     timingBonus = timingBonus, timingTier = timingTier, rareUpgrade = rare,
+                    sizePermille = size, valueCoins = value, personalBest = personalBest,
                 ),
             )
             if (bonusCoins > 0) {
@@ -255,6 +268,7 @@ object FishingSystem {
         p.fishingProgress = 0
         p.fishingCatchTicks = 0
         p.reelAttemptedThisCast = false
+        p.activeBaitId = null
     }
 
     private fun regenerate(ctx: StepContext) {

@@ -310,7 +310,11 @@ export class GameHost {
           break;
         }
         case "fish_caught":
-          if (e.timingBonus) {
+          if (e.personalBest) {
+            const name = sim.content.itemName(e.speciesId);
+            this.say(`New trophy: ${name} · ${e.sizePermille}%`);
+            transaction = true;
+          } else if (e.timingBonus) {
             const tip = sim.content.speciesById.get(e.speciesId)?.baseValue ?? 0;
             this.say(`Perfect reel! +${tip}`);
             transaction = true;
@@ -320,6 +324,12 @@ export class GameHost {
             transaction = true;
           }
           break;
+        case "trophy_set_completed": {
+          const setName = sim.content.trophySetsById.get(e.setId)?.name ?? e.setId;
+          this.say(`Gallery complete: ${setName}`);
+          transaction = true;
+          break;
+        }
         case "fishing_spot_depleted":
           this.say("Pier empty — fish are returning");
           transaction = true;
@@ -596,6 +606,22 @@ export class GameHost {
 
   travelToHarbor(harborId: string): void {
     this.commands.push({ type: "travel_to_harbor", harborId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  buyBait(baitId: string): void {
+    this.commands.push({ type: "buy_bait", baitId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  selectBait(baitId: string | null): void {
+    this.commands.push({ type: "select_bait", baitId });
     if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
       this.step(this.sim);
       this.publish(true);

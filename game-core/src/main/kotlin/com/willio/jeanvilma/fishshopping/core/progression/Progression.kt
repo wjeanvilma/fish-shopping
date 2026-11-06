@@ -55,6 +55,7 @@ object UpgradeSystem {
                 s.coins -= u.cost
                 s.ownedUpgrades += u.id
                 applyEffect(s, u.effect)
+                grantBaitOnPurchase(ctx, u.effect)
                 s.bumpStat(Stats.UPGRADES_BOUGHT)
                 val receipt = Receipt(s.newId("receipt"), "upgrade", -u.cost, s.tick, requestId)
                 s.purchaseReceipts[requestId] = receipt
@@ -77,6 +78,7 @@ object UpgradeSystem {
                 }
             is UpgradeEffect.CatchSpeed ->
                 s.player.catchSpeedPermille = maxOf(s.player.catchSpeedPermille, effect.speedPermille)
+            is UpgradeEffect.GrantBait -> Unit // granted only at purchase via grantBaitOnPurchase
             is UpgradeEffect.TimingWindow -> {
                 val p = s.player
                 p.timingWindowStartPermille = minOf(p.timingWindowStartPermille, effect.windowStartPermille)
@@ -110,6 +112,23 @@ object UpgradeSystem {
                 s.bagSpoilPeriodMultPermille = maxOf(s.bagSpoilPeriodMultPermille, effect.periodMultPermille)
             is UpgradeEffect.CounterSpoilResist ->
                 s.counterSpoilPeriodMultPermille = maxOf(s.counterSpoilPeriodMultPermille, effect.periodMultPermille)
+        }
+    }
+
+    /** Purchase-time bait grant (never re-applied on snapshot load). */
+    fun grantBaitOnPurchase(ctx: StepContext, effect: UpgradeEffect) {
+        if (effect !is UpgradeEffect.GrantBait) return
+        val bait = ctx.content.baitById[effect.bait] ?: return
+        val bag = ctx.state.player.bag
+        var added = 0
+        repeat(effect.quantity) {
+            if (bag.roomFor(bait.id) < 1) return@repeat
+            bag.add(bait.id, 1)
+            added++
+        }
+        if (added > 0) {
+            ctx.state.bumpStat(Stats.BAIT_BOUGHT, added.toLong())
+            if (ctx.state.player.preferredBaitId == null) ctx.state.player.preferredBaitId = bait.id
         }
     }
 }
@@ -157,6 +176,7 @@ object ProgressionSystem {
             val u = ctx.content.upgradesById[uid] ?: continue
             s.ownedUpgrades += uid
             UpgradeSystem.applyEffect(s, u.effect)
+            UpgradeSystem.grantBaitOnPurchase(ctx, u.effect)
         }
         ctx.emit(GameEvent.QuestCompleted(s.tick, q.id, reward.coins, reward.unlockUpgrades))
         ctx.emit(GameEvent.CheckpointRequested(s.tick, "quest"))

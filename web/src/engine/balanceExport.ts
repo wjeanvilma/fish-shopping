@@ -30,6 +30,7 @@ function effectJson(e: UpgradeEffect): Record<string, unknown> {
     case "maintenance_discount": return { kind: e.kind, coinsOffPerStation: e.coinsOffPerStation };
     case "bag_spoil_resist": return { kind: e.kind, periodMultPermille: e.periodMultPermille };
     case "counter_spoil_resist": return { kind: e.kind, periodMultPermille: e.periodMultPermille };
+    case "grant_bait": return { kind: e.kind, bait: e.bait, quantity: e.quantity };
   }
 }
 
@@ -68,6 +69,7 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
       counterSpoilUnits: e.counterSpoilUnits,
       bagFishSpoilPeriodTicks: e.bagFishSpoilPeriodTicks,
       bagFishSpoilUnits: e.bagFishSpoilUnits,
+      scarcityPriceCurvePermille: e.scarcityPriceCurvePermille,
     },
     ecology: {
       dayLengthTicks: raw.ecology.dayLengthTicks,
@@ -99,6 +101,14 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
     products: raw.products.map((pr) => ({
       id: pr.id, unitPrice: pr.unitPrice, carryUnits: pr.carryUnits, spoilTier: pr.spoilTier ?? 2,
     })),
+    bait: raw.bait.map((b) => ({
+      id: b.id,
+      carryUnits: b.carryUnits,
+      packQuantity: b.packQuantity,
+      cost: b.cost,
+      rareSpeciesWeightMultPermille: b.rareSpeciesWeightMultPermille,
+      rareChanceBonusPermille: b.rareChanceBonusPermille,
+    })),
     recipes: raw.recipes.map((rec) => ({
       id: rec.id,
       machine: rec.machine,
@@ -116,6 +126,7 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
       priceMultPermille: c.priceMultPermille,
       unmetPriceMultPermille: c.unmetPriceMultPermille,
       unmetPatienceDrainPermille: c.unmetPatienceDrainPermille,
+      dayPartSpawnMultPermille: c.dayPartSpawnMultPermille ?? {},
     })),
     harborRushes: raw.harbors.flatMap((h) =>
       (h.rushes ?? []).map((ru) => ({
@@ -126,6 +137,7 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
         durationTicks: ru.durationTicks,
         spawnSpeedPermille: ru.spawnSpeedPermille,
         queueBonus: ru.queueBonus,
+        priceMultPermille: ru.priceMultPermille ?? 1000,
       })),
     ),
     harbors: raw.harbors.map((h) => ({
@@ -167,10 +179,25 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
       templates: raw.contracts.templates.map((t) => ({
         id: t.id, item: t.item, quantity: t.quantity,
         durationTicks: t.durationTicks, payout: t.payout, penalty: t.penalty,
+        kind: t.kind ?? "standard",
+        payoutEscalatePermille: t.payoutEscalatePermille ?? 1000,
+        penaltyEscalatePermille: t.penaltyEscalatePermille ?? 1000,
+        maxStreak: t.maxStreak ?? 1,
+        failCooldownTicks: t.failCooldownTicks ?? 1,
+      })),
+    },
+    trophies: {
+      sizeMinPermille: raw.trophies.sizeMinPermille,
+      sizeMaxPermille: raw.trophies.sizeMaxPermille,
+      sets: raw.trophies.sets.map((set) => ({
+        id: set.id,
+        speciesCount: set.species.length,
+        completeStat: set.completeStat,
       })),
     },
     prestige: {
       ratingThresholds: raw.prestige.ratingThresholds,
+      ratingPriceMultPermille: raw.prestige.ratingPriceMultPermille,
       milestones: raw.prestige.milestones.map((m) => ({
         id: m.id,
         goalStat: m.goal.stat,
@@ -179,6 +206,15 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
         rewardCatchSpeedPermille: m.reward.catchSpeedPermille,
         rewardPriceBonusPermille: m.reward.priceBonusPermille,
       })),
+    },
+    reputation: {
+      minSample: raw.reputation.minSample,
+      neutralScorePermille: raw.reputation.neutralScorePermille,
+      scoreBandThresholdsPermille: raw.reputation.scoreBandThresholdsPermille,
+      kindSpawnMultPermille: raw.reputation.kindSpawnMultPermille,
+      unmetPreferencePenaltyPermille: raw.reputation.unmetPreferencePenaltyPermille,
+      coachingLostRatioPermille: raw.reputation.coachingLostRatioPermille,
+      coachingPraiseScorePermille: raw.reputation.coachingPraiseScorePermille,
     },
   };
 }

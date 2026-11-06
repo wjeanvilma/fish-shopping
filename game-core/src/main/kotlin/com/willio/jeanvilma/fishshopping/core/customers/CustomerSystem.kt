@@ -1,15 +1,20 @@
 package com.willio.jeanvilma.fishshopping.core.customers
 
+import com.willio.jeanvilma.fishshopping.core.content.ContentPack
 import com.willio.jeanvilma.fishshopping.core.content.CounterDef
+import com.willio.jeanvilma.fishshopping.core.content.CustomerDef
 import com.willio.jeanvilma.fishshopping.core.content.CustomerKind
 import com.willio.jeanvilma.fishshopping.core.content.HarborDef
 import com.willio.jeanvilma.fishshopping.core.content.ItemQuantity
 import com.willio.jeanvilma.fishshopping.core.content.PointMm
 import com.willio.jeanvilma.fishshopping.core.content.RushWindowDef
 import com.willio.jeanvilma.fishshopping.core.content.WorkerRoleKind
+import com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
+import com.willio.jeanvilma.fishshopping.core.progression.PrestigeSystem
 import com.willio.jeanvilma.fishshopping.core.sim.CounterState
 import com.willio.jeanvilma.fishshopping.core.sim.CustomerState
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
+import com.willio.jeanvilma.fishshopping.core.sim.GameState
 import com.willio.jeanvilma.fishshopping.core.sim.Receipt
 import com.willio.jeanvilma.fishshopping.core.sim.SafeMath
 import com.willio.jeanvilma.fishshopping.core.sim.Stats
@@ -155,6 +160,8 @@ object CustomerSystem {
         val met = c.preferenceMet()
         var mult = type.priceMultPermille.toLong()
         if (!met) mult = (mult * type.unmetPriceMultPermille.toLong()) / 1000L
+        val counterDef = ctx.harbor.counters.first { it.id == counter.counterId }
+        mult = (mult * demandPriceMultPermille(ctx.content, s, ctx.harbor, counterDef, counter).toLong()) / 1000L
         mult = (mult * s.prestigePriceBonusPermille.toLong()) / 1000L
         val amount = (base * mult) / 1000L
         val saleId = s.newId("sale")
@@ -162,8 +169,15 @@ object CustomerSystem {
         s.bumpStat(Stats.SALES)
         s.bumpStat(Stats.ITEMS_SOLD, c.reserved.toLong())
         s.bumpStat(Stats.REVENUE, amount)
-        if (type.kind == CustomerKind.PREMIUM) s.bumpStat(Stats.PREMIUM_SALES)
-        if (type.kind == CustomerKind.BULK) s.bumpStat(Stats.BULK_SALES)
+        when (type.kind) {
+            CustomerKind.PREMIUM -> s.bumpStat(Stats.PREMIUM_SALES)
+            CustomerKind.BULK -> s.bumpStat(Stats.BULK_SALES)
+            CustomerKind.TOURIST -> s.bumpStat(Stats.TOURIST_SALES)
+            CustomerKind.WHOLESALER -> s.bumpStat(Stats.WHOLESALER_SALES)
+            CustomerKind.CRITIC -> s.bumpStat(Stats.CRITIC_SALES)
+            CustomerKind.NIGHT_REGULAR -> s.bumpStat(Stats.NIGHT_SALES)
+            CustomerKind.STANDARD -> Unit
+        }
         if (!met) s.bumpStat(Stats.UNMET_PREFERENCE_SALES)
         s.record(Receipt(saleId, "sale", amount, s.tick, c.id))
         for ((itemId, qty) in c.reservedItems) {
@@ -256,7 +270,7 @@ object CustomerSystem {
             s.customers.count { it.counterId == d.id } < effectiveMaxQueue(d, rush)
         } ?: return
         val types = ctx.content.customers
-        val type = types[s.rng.pickWeighted(types.map { it.spawnWeight })]
+        val type = types[s.rng.pickWeighted(types.map { effectiveSpawnWeight(ctx.content, s, it) })]
         val wants = s.rng.nextInRange(type.basketMin, type.basketMax)
         val preferred = if (type.preferredProducts.isEmpty()) null
         else {
@@ -298,6 +312,58 @@ object CustomerSystem {
     fun spawnIntervalTicks(harbor: HarborDef, tick: Long): Int {
         val rush = activeRush(harbor, tick) ?: return harbor.customerSpawnTicks
         return max(1, ((harbor.customerSpawnTicks.toLong() * 1000L) / rush.spawnSpeedPermille).toInt())
+    }
+
+    /** Base spawn weight scaled by day-part (Phase 11) and reputation kind bias (Phase 13). */
+    fun effectiveSpawnWeight(content: ContentPack, state: GameState, type: CustomerDef): Int {
+        val part = FishingSystem.dayPartAt(content, state.tick)
+        val dayMult = type.dayPartSpawnMultPermille[part.id] ?: 1000
+        val repMult = ReputationSystem.kindSpawnMultPermille(content, state, type.kind)
+        var weight = type.spawnWeight.toLong()
+        weight = (weight * dayMult.toLong()) / 1000L
+        weight = (weight * repMult.toLong()) / 1000L
+        return max(1, weight.toInt())
+    }
+
+    /** Soft rush price tip while a rush window is active (Phase 12). */
+    fun rushPriceMultPermille(harbor: HarborDef, tick: Long): Int =
+        activeRush(harbor, tick)?.priceMultPermille ?: 1000
+
+    /**
+     * Soft scarcity tip from counter fill ratio vs [EconomyDef.scarcityPriceCurvePermille].
+     * Empty shelves land in band 0; a full counter lands in the last band.
+     */
+    fun scarcityPriceMultPermille(content: ContentPack, def: CounterDef, counter: CounterState): Int {
+        val curve = content.economy.scarcityPriceCurvePermille
+        if (curve.isEmpty() || def.capacityUnits <= 0) return 1000
+        val used = counter.stock.usedUnits().coerceIn(0, def.capacityUnits)
+        val band = ((used.toLong() * curve.size) / def.capacityUnits.toLong())
+            .toInt()
+            .coerceIn(0, curve.lastIndex)
+        return curve[band]
+    }
+
+    /** Soft harbor-rating tip from [PrestigeDef.ratingPriceMultPermille] (Phase 12). */
+    fun ratingPriceMultPermille(content: ContentPack, state: GameState): Int {
+        val table = content.prestige.ratingPriceMultPermille
+        if (table.isEmpty()) return 1000
+        val stars = PrestigeSystem.harborRating(content, state).coerceIn(0, table.lastIndex)
+        return table[stars]
+    }
+
+    /** Combined ephemeral demand multiplier (rush × scarcity × rating), excluding permanent prestige. */
+    fun demandPriceMultPermille(
+        content: ContentPack,
+        state: GameState,
+        harbor: HarborDef,
+        def: CounterDef,
+        counter: CounterState,
+    ): Int {
+        var mult = 1000L
+        mult = (mult * rushPriceMultPermille(harbor, state.tick).toLong()) / 1000L
+        mult = (mult * scarcityPriceMultPermille(content, def, counter).toLong()) / 1000L
+        mult = (mult * ratingPriceMultPermille(content, state).toLong()) / 1000L
+        return max(1, mult.toInt())
     }
 
     fun effectiveMaxQueue(def: CounterDef, rush: RushWindowDef?): Int =

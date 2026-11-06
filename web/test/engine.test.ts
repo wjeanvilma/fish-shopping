@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   type Command, ContentError, CustomerState, CustomerSystem, FixedStepClock, FishingSystem, GameState, Inventory, NewerSaveError,
-  OfflinePolicy, OFFLINE_CAP_TICKS, ProductionSystem, SafeMath, Simulation, SnapshotError, Transfers, applyOffline,
+  BaitSystem, ContractSystem, OfflinePolicy, OFFLINE_CAP_TICKS, ProductionSystem, ReputationSystem, SafeMath, Simulation, SnapshotError, Transfers, TrophySystem, applyOffline,
   buildView, decodeSnapshot, decodeSnapshotEnvelope, encodeSnapshot, loadContent, MS_PER_TICK,
 } from "../src/engine";
 
@@ -40,6 +40,15 @@ function walkTo(sim: Simulation, x: number, z: number) {
     checkedStep(sim, [{ type: "move", x: Math.trunc((dx * scale) / dist), z: Math.trunc((dz * scale) / dist) }]);
   }
   throw new Error("did not arrive");
+}
+
+/** Pad counter fill into a scarcity band that pays 1000 (isolates other price mults). */
+function padNeutralScarcity(sim: Simulation) {
+  const counter = sim.state.counters[0]!;
+  const def = sim.harbor.counters.find((c) => c.id === counter.counterId)!;
+  while (CustomerSystem.scarcityPriceMultPermille(content, def, counter) !== 1000) {
+    counter.stock.add(PORTION, 1);
+  }
 }
 
 describe("foundations", () => {
@@ -165,7 +174,7 @@ describe("simulation", () => {
   });
 
   it("species roster is harbor-gated with rare upgrade chains", () => {
-    expect(content.contentVersion).toBe("0.30.0");
+    expect(content.contentVersion).toBe("0.36.0");
     expect(content.raw.species.length).toBe(24);
     const sunrise = content.harborsById.get("harbor.sunrise_pier")!.fishingSpots
       .flatMap((s) => s.species);
@@ -235,7 +244,7 @@ describe("simulation", () => {
     sim.run(5);
     const saved = encodeSnapshot(content, sim.state);
     expect(() => decodeSnapshot(content, saved.replace('"tick":5', '"tick":6'))).toThrow(/Checksum/);
-    expect(() => decodeSnapshot(content, saved.replace('"schemaVersion":10', '"schemaVersion":99'))).toThrow(NewerSaveError);
+    expect(() => decodeSnapshot(content, saved.replace('"schemaVersion":12', '"schemaVersion":99'))).toThrow(NewerSaveError);
     expect(() => decodeSnapshot(content, "{")).toThrow(SnapshotError);
   });
 
@@ -281,6 +290,7 @@ describe("simulation", () => {
     const sim = newSim();
     const counter = sim.state.counters[0]!;
     counter.stock.add(PORTION, 1);
+    padNeutralScarcity(sim);
     const type = content.customersById.get("customer.premium_visitor")!;
     sim.state.customers.push(new CustomerState("customer.test_premium", type.id, counter.counterId, 1, 9999, 0));
     walkTo(sim, 3000, 2750);
@@ -305,13 +315,62 @@ describe("simulation", () => {
     const events = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
     const sales = events.filter((e) => e.type === "sale_committed");
     expect(sales).toHaveLength(1);
-    expect(sales[0]!.type === "sale_committed" && sales[0].items.reduce((n, i) => n + i.quantity, 0)).toBe(8);
+    const bulkSale = sales[0]!;
+    expect(bulkSale.type === "sale_committed" && bulkSale.items.reduce((n, i) => n + i.quantity, 0)).toBe(8);
     expect(sim.state.stat("stat.bulk_sales")).toBe(1);
   });
 
-  it("customer roster includes premium and bulk kinds", () => {
+  it("customer roster includes premium, bulk, and phase-11 archetypes", () => {
     expect(content.customers.some((c) => c.kind === "premium" && c.priceMultPermille > 1000)).toBe(true);
     expect(content.customers.some((c) => c.kind === "bulk" && c.basketMin >= 6)).toBe(true);
+    expect(content.customers.some((c) => c.kind === "tourist" && c.id === "customer.harbor_tourist")).toBe(true);
+    expect(content.customers.some((c) => c.kind === "wholesaler" && c.basketMin >= 8)).toBe(true);
+    expect(content.customers.some((c) => c.kind === "critic" && c.unmetPatienceDrainPermille >= 2500)).toBe(true);
+    const night = content.customersById.get("customer.night_regular")!;
+    expect(night.kind).toBe("night_regular");
+    expect((night.dayPartSpawnMultPermille?.night ?? 0)).toBeGreaterThan(night.dayPartSpawnMultPermille?.day ?? 9999);
+  });
+
+  it("night regular spawn weight rises at night and critic sale tracks", () => {
+    const sim = newSim();
+    const nightType = content.customersById.get("customer.night_regular")!;
+    sim.state.tick = 0;
+    const dawnW = CustomerSystem.effectiveSpawnWeight(content, sim.state, nightType);
+    const dayLen = content.ecology.dayLengthTicks;
+    sim.state.tick = Math.floor((dayLen * 850) / 1000);
+    expect(FishingSystem.dayPartAt(content, sim.state.tick).id).toBe("night");
+    const nightW = CustomerSystem.effectiveSpawnWeight(content, sim.state, nightType);
+    expect(nightW).toBeGreaterThan(dawnW);
+
+    const critic = content.customersById.get("customer.food_critic")!;
+    const counter = sim.state.counters[0]!;
+    counter.stock.add("product.grilled_fillet", 1);
+    sim.state.customers.push(new CustomerState("customer.test_critic", critic.id, counter.counterId, 1, 9999, 0, "product.grilled_fillet"));
+    walkTo(sim, 3000, 2750);
+    const events = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
+    expect(events.some((e) => e.type === "sale_committed")).toBe(true);
+    expect(sim.state.stat("stat.critic_sales")).toBe(1);
+  });
+
+  it("tourist and wholesaler kinds show in counter context", () => {
+    const sim = newSim();
+    const counter = sim.state.counters[0]!;
+    counter.stock.add(PORTION, 20);
+    const tourist = content.customersById.get("customer.harbor_tourist")!;
+    sim.state.customers.push(new CustomerState("customer.test_tourist", tourist.id, counter.counterId, 2, 9999, 0));
+    walkTo(sim, 3000, 2750);
+    checkedStep(sim);
+    expect(buildView(sim).context!.lines.some((l) => /tourist tip/.test(l))).toBe(true);
+    sim.state.customers.length = 0;
+    counter.stock.restore({}, {});
+    counter.stock.add(PORTION, 20);
+    const wholesaler = content.customersById.get("customer.wholesaler")!;
+    sim.state.customers.push(new CustomerState("customer.test_wholesale", wholesaler.id, counter.counterId, 8, 9999, 0));
+    checkedStep(sim);
+    expect(buildView(sim).context!.lines.some((l) => /wholesale order/.test(l))).toBe(true);
+    const events = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
+    expect(events.some((e) => e.type === "sale_committed")).toBe(true);
+    expect(sim.state.stat("stat.wholesaler_sales")).toBe(1);
   });
 
   it("preferred product is reserved first and pays full price", () => {
@@ -320,6 +379,7 @@ describe("simulation", () => {
     const fillet = "product.fillet";
     counter.stock.add(PORTION, 2);
     counter.stock.add(fillet, 1);
+    padNeutralScarcity(sim);
     const type = content.customersById.get("customer.local_shopper")!;
     sim.state.customers.push(new CustomerState(
       "customer.test_pref_met", type.id, counter.counterId, 1, 9999, 0, fillet,
@@ -344,6 +404,7 @@ describe("simulation", () => {
     const sim = newSim();
     const counter = sim.state.counters[0]!;
     counter.stock.add(PORTION, 1);
+    padNeutralScarcity(sim);
     const type = content.customersById.get("customer.premium_visitor")!;
     const preferred = "product.premium_portion";
     sim.state.customers.push(new CustomerState(
@@ -361,6 +422,86 @@ describe("simulation", () => {
       priceMultPermille: 900, coins: 4,
     });
     expect(sim.state.stat("stat.unmet_preference_sales")).toBe(1);
+  });
+
+  it("reputation score biases spawn mix and shows in the view", () => {
+    expect(content.contentVersion).toBe("0.36.0");
+    expect(content.reputation.minSample).toBeGreaterThanOrEqual(1);
+    expect(content.reputation.kindSpawnMultPermille).toHaveLength(
+      content.reputation.scoreBandThresholdsPermille.length + 1,
+    );
+
+    const sim = newSim();
+    expect(ReputationSystem.scorePermille(content, sim.state)).toBe(content.reputation.neutralScorePermille);
+    expect(buildView(sim).reputationLabel).toBeTruthy();
+    expect(buildView(sim).reputationScorePermille).toBe(content.reputation.neutralScorePermille);
+
+    const premium = content.customersById.get("customer.premium_visitor")!;
+    const bulk = content.customersById.get("customer.restaurant_buyer")!;
+    const neutralPremium = CustomerSystem.effectiveSpawnWeight(content, sim.state, premium);
+    const neutralBulk = CustomerSystem.effectiveSpawnWeight(content, sim.state, bulk);
+
+    sim.state.bumpStat("stat.sales", 2);
+    sim.state.bumpStat("stat.lost_customers", 10);
+    expect(ReputationSystem.encounters(sim.state)).toBe(12);
+    expect(ReputationSystem.scorePermille(content, sim.state)).toBeLessThan(400);
+    expect(ReputationSystem.band(content, sim.state)).toBe(0);
+    expect(buildView(sim).reputationLabel).toBe("Poor");
+    const poorPremium = CustomerSystem.effectiveSpawnWeight(content, sim.state, premium);
+    const poorBulk = CustomerSystem.effectiveSpawnWeight(content, sim.state, bulk);
+    expect(poorPremium).toBeLessThan(neutralPremium);
+    expect(poorBulk).toBeGreaterThan(neutralBulk);
+
+    sim.state.stats.set("stat.sales", 20);
+    sim.state.stats.set("stat.lost_customers", 1);
+    expect(ReputationSystem.scorePermille(content, sim.state)).toBeGreaterThanOrEqual(850);
+    expect(ReputationSystem.bandLabel(content, sim.state)).toBe("Excellent");
+    const greatPremium = CustomerSystem.effectiveSpawnWeight(content, sim.state, premium);
+    expect(greatPremium).toBeGreaterThan(poorPremium);
+  });
+
+  it("dynamic pricing stacks scarcity rush and rating into sale mult", () => {
+    expect(content.contentVersion).toBe("0.36.0");
+    expect(content.economy.scarcityPriceCurvePermille).toHaveLength(5);
+    expect(content.prestige.ratingPriceMultPermille).toHaveLength(6);
+    const lunch = content.harborsById.get(HARBOR)!.rushes.find((r) => r.id === "rush.lunch")!;
+    expect(lunch.priceMultPermille).toBeGreaterThan(1000);
+
+    const sim = newSim();
+    const counter = sim.state.counters[0]!;
+    const def = sim.harbor.counters.find((c) => c.id === counter.counterId)!;
+    counter.stock.add(PORTION, 1);
+    expect(CustomerSystem.scarcityPriceMultPermille(content, def, counter)).toBe(1150);
+    walkTo(sim, 3000, 2750);
+    checkedStep(sim);
+    expect(buildView(sim).context!.lines.some((l) => /Demand prices \+/.test(l))).toBe(true);
+
+    const type = content.customersById.get("customer.local_shopper")!;
+    sim.state.customers.length = 0;
+    counter.stock.restore({}, {});
+    counter.stock.add(PORTION, 1);
+    sim.state.customers.push(new CustomerState("customer.test_scarce", type.id, counter.counterId, 1, 9999, 0));
+    const scarceEvents = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
+    const scarceSale = scarceEvents.filter((e) => e.type === "sale_committed")[0]!;
+    expect(scarceSale).toMatchObject({ priceMultPermille: 1150, coins: 5 });
+
+    sim.state.customers.length = 0;
+    counter.stock.restore({}, {});
+    padNeutralScarcity(sim);
+    counter.stock.add(PORTION, 1);
+    padNeutralScarcity(sim);
+    sim.state.bumpStat("stat.revenue", 3000);
+    expect(CustomerSystem.ratingPriceMultPermille(content, sim.state)).toBe(1100);
+    sim.state.tick = lunch.startTick;
+    expect(CustomerSystem.rushPriceMultPermille(sim.harbor, sim.state.tick)).toBe(lunch.priceMultPermille);
+    const demand = CustomerSystem.demandPriceMultPermille(content, sim.state, sim.harbor, def, counter);
+    expect(demand).toBe(Math.trunc((lunch.priceMultPermille * 1100) / 1000));
+    expect(demand).toBe(1265);
+
+    sim.state.customers.push(new CustomerState("customer.test_demand", type.id, counter.counterId, 1, 9999, 0));
+    const events = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
+    const sale = events.filter((e) => e.type === "sale_committed")[0]!;
+    expect(sale).toMatchObject({ priceMultPermille: 1265, coins: 6 });
   });
 
   it("unmet preference drains patience faster while preferred is out", () => {
@@ -399,7 +540,7 @@ describe("simulation", () => {
     expect(CustomerSystem.spawnIntervalTicks(harbor, sim.state.tick)).toBe(expectedInterval);
     expect(buildView(sim).rush).toMatchObject({ name: lunch.name, ticksRemaining: lunch.durationTicks });
 
-    sim.state.customers = [];
+    sim.state.customers.length = 0;
     sim.state.customerSpawnProgress = 0;
     const arrivals = Array.from({ length: expectedInterval }, () => checkedStep(sim)).flat()
       .filter((e) => e.type === "customer_arrived");
@@ -423,7 +564,7 @@ describe("simulation", () => {
     const sim = newSim();
     const h = sim.harbor;
     expect(h.customerPathWaypoints.length).toBeGreaterThan(0);
-    expect(content.contentVersion).toBe("0.30.0");
+    expect(content.contentVersion).toBe("0.36.0");
     const slot = { x: h.counters[0]!.queueAnchor.x, z: h.counters[0]!.queueAnchor.z };
     const path = CustomerSystem.approachPath(h, slot);
     const routed = CustomerSystem.pathWalkTicks(path, h.customerWalkMmPerTick);
@@ -458,7 +599,7 @@ describe("simulation", () => {
   });
 
   it("harbor grill unlocks as a second production line", () => {
-    expect(content.contentVersion).toBe("0.30.0");
+    expect(content.contentVersion).toBe("0.36.0");
     expect(content.machinesById.has("machine.harbor_grill")).toBe(true);
     expect(content.upgradesById.get("upgrade.harbor_grill")!.effect).toEqual({
       kind: "unlock_machine", machine: "machine.harbor_grill",
@@ -493,7 +634,7 @@ describe("simulation", () => {
   });
 
   it("product recipe tree supports multi-input and intermediate crafts", () => {
-    expect(content.contentVersion).toBe("0.30.0");
+    expect(content.contentVersion).toBe("0.36.0");
     expect(content.raw.products.map((p) => p.id)).toEqual(expect.arrayContaining([
       "product.diced_fish", "product.skewer", "product.soup_stock", "product.ice_packed_crate",
     ]));
@@ -735,6 +876,94 @@ describe("simulation", () => {
     expect(buildView(sim).dayPartId).toBe("dawn");
   });
 
+  it("bait kiosk sells packs and preferred bait is snapshotted", () => {
+    const sim = newSim();
+    const bait = content.baitById.get("bait.shrimp_nibble")!;
+    sim.state.coins = 100;
+    const coinsBefore = sim.state.coins;
+    const rejected = checkedStep(sim, [{ type: "buy_bait", baitId: bait.id, requestId: "bait-away" }]);
+    expect(rejected.some((e) => e.type === "bait_purchase_rejected")).toBe(true);
+
+    walkTo(sim, -7000, -2000);
+    expect(sim.state.player.zoneId).toBe("zone.bait_kiosk");
+    const offers = buildView(sim).baitOffers;
+    expect(offers.length).toBe(content.bait.length);
+    expect(offers.find((o) => o.id === bait.id)?.purchasable).toBe(true);
+
+    const bought = checkedStep(sim, [{ type: "buy_bait", baitId: bait.id, requestId: "bait-1" }]);
+    expect(bought.some((e) => e.type === "bait_purchased" && e.quantity === bait.packQuantity)).toBe(true);
+    expect(sim.state.coins).toBe(coinsBefore - bait.cost);
+    expect(sim.state.player.bag.quantity(bait.id)).toBe(bait.packQuantity);
+    expect(sim.state.player.preferredBaitId).toBe(bait.id);
+    expect(sim.state.stat("stat.bait_bought")).toBe(bait.packQuantity);
+
+    const replay = checkedStep(sim, [{ type: "buy_bait", baitId: bait.id, requestId: "bait-1" }]);
+    expect(replay.some((e) => e.type === "bait_purchased" && e.replayed)).toBe(true);
+    expect(sim.state.player.bag.quantity(bait.id)).toBe(bait.packQuantity);
+
+    checkedStep(sim, [{ type: "select_bait", baitId: null }]);
+    expect(sim.state.player.preferredBaitId).toBeNull();
+    checkedStep(sim, [{ type: "select_bait", baitId: bait.id }]);
+    expect(sim.state.player.preferredBaitId).toBe(bait.id);
+
+    const saved = encodeSnapshot(content, sim.state);
+    expect(saved).toContain('"preferredBaitId":"bait.shrimp_nibble"');
+    const restored = decodeSnapshot(content, saved);
+    expect(restored.player.preferredBaitId).toBe(bait.id);
+    expect(restored.player.bag.quantity(bait.id)).toBe(bait.packQuantity);
+  });
+
+  it("trophy board records personal bests and completes museum sets", () => {
+    const sim = newSim(7);
+    expect(content.raw.trophies.sets.length).toBeGreaterThanOrEqual(3);
+    walkTo(sim, -14250, 0);
+    for (let i = 0; i < 800 && sim.state.stat("stat.fish_caught") < 1; i++) checkedStep(sim);
+    expect(sim.state.stat("stat.fish_caught")).toBeGreaterThanOrEqual(1);
+    expect(sim.state.trophies.size).toBeGreaterThanOrEqual(1);
+    expect(sim.state.stat("stat.trophy_species")).toBeGreaterThanOrEqual(1);
+    expect(sim.state.stat("stat.trophy_records")).toBeGreaterThanOrEqual(1);
+    const view = buildView(sim);
+    expect(view.trophies.length).toBe(sim.state.trophies.size);
+    expect(view.trophySets.length).toBe(content.raw.trophies.sets.length);
+
+    // Force-complete the Moon Cove set for prestige goal wiring.
+    for (const id of content.trophySetsById.get("gallery.moon_cove")!.species) {
+      sim.state.trophies.set(id, { sizePermille: 1000, valueCoins: 5, tick: sim.state.tick });
+    }
+    TrophySystem.rebuildSetStats(content, sim.state);
+    expect(sim.state.stat("stat.trophy_set_moon_cove")).toBe(1);
+    expect(buildView(sim).trophySets.find((s) => s.id === "gallery.moon_cove")!.completed).toBe(true);
+
+    const saved = encodeSnapshot(content, sim.state);
+    expect(saved.startsWith('{"schemaVersion":12,')).toBe(true);
+    const restored = decodeSnapshot(content, saved);
+    expect(restored.trophies.size).toBe(sim.state.trophies.size);
+    expect(restored.stat("stat.trophy_set_moon_cove")).toBe(1);
+  });
+
+  it("bait pouch grant and catch consume bait with rare modifiers", () => {
+    const sim = newSim();
+    const shrimp = content.baitById.get("bait.shrimp_nibble")!;
+    expect(BaitSystem.effectiveWeight({ rarityWeight: 100, rareUpgrade: { to: "x", chancePermille: 100 } }, shrimp))
+      .toBe(Math.trunc((100 * shrimp.rareSpeciesWeightMultPermille) / 1000));
+    expect(BaitSystem.rareChancePermille(100, shrimp)).toBe(140);
+
+    sim.state.coins = 10_000;
+    sim.state.ownedUpgrades.add("upgrade.bag_capacity_2");
+    sim.state.player.bag.capacityUnits = 12;
+    const grant = checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.bait_pouch", requestId: "pouch-1" }]);
+    expect(grant.some((e) => e.type === "upgrade_purchased")).toBe(true);
+    expect(sim.state.player.bag.quantity(shrimp.id)).toBeGreaterThan(0);
+    expect(sim.state.player.preferredBaitId).toBe(shrimp.id);
+
+    const before = sim.state.player.bag.quantity(shrimp.id);
+    walkTo(sim, -14250, 0);
+    for (let i = 0; i < 800 && sim.state.stat("stat.fish_caught") < 1; i++) checkedStep(sim);
+    expect(sim.state.stat("stat.fish_caught")).toBeGreaterThanOrEqual(1);
+    expect(sim.state.stat("stat.bait_used")).toBeGreaterThanOrEqual(1);
+    expect(sim.state.player.bag.quantity(shrimp.id)).toBe(before - 1);
+  });
+
   it("side pier locked until upgrade then fishes", () => {
     const sim = newSim();
     // Onto the pier, then north onto the spur (no diagonal shortcut over water).
@@ -795,7 +1024,7 @@ describe("simulation", () => {
 
   it("hire fisher and porter is idempotent and shows staff", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("0.30.0");
+    expect(content.contentVersion).toBe("0.36.0");
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.fisher")).toBe(true);
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.operator")).toBe(true);
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.cashier")).toBe(true);
@@ -1089,7 +1318,8 @@ describe("simulation", () => {
     expect(buildView(sim).contractRefreshTicksLeft).toBe(content.contracts.refreshPeriodTicks);
     expect(buildView(sim).contractOffers.every((o) => o.acceptEnabled)).toBe(true);
 
-    const offer = sim.state.contractOffers[0]!;
+    const offer = sim.state.contractOffers.find((o) => content.contractTemplatesById.get(o.templateId)?.kind !== "standing")
+      ?? sim.state.contractOffers[0]!;
     const accepted = checkedStep(sim, [{ type: "accept_contract", offerId: offer.id, requestId: "acc-1" }]);
     expect(accepted.some((e) => e.type === "contract_accepted" && !e.replayed)).toBe(true);
     expect(sim.state.contractOffers.some((o) => o.id === offer.id)).toBe(false);
@@ -1105,21 +1335,23 @@ describe("simulation", () => {
     sim.state.player.bag.capacityUnits = 100;
     sim.state.player.bag.add(job.itemId, job.quantity);
     const coinsBefore = sim.state.coins;
+    const payout = job.payout;
     const delivered = checkedStep(sim, [{ type: "deliver_contract", contractId: job.id, requestId: "del-1" }]);
     expect(delivered.find((e) => e.type === "contract_completed")).toMatchObject({
-      contractId: job.id, templateId: job.templateId, payout: job.payout,
+      contractId: job.id, templateId: job.templateId, payout,
     });
-    expect(sim.state.coins).toBe(coinsBefore + job.payout);
+    expect(sim.state.coins).toBe(coinsBefore + payout);
     expect(sim.state.activeContracts).toHaveLength(0);
     expect(sim.state.player.bag.quantity(job.itemId)).toBe(0);
     expect(sim.state.stat("stat.contracts_completed")).toBe(1);
-    expect(sim.state.stat("stat.contract_revenue")).toBe(job.payout);
+    expect(sim.state.stat("stat.contract_revenue")).toBe(payout);
     expect(sim.state.stat("stat.contract_items_delivered")).toBe(job.quantity);
     const deliverReplay = checkedStep(sim, [{ type: "deliver_contract", contractId: job.id, requestId: "del-1" }]);
     expect(deliverReplay.find((e) => e.type === "contract_delivered")).toMatchObject({ replayed: true, completed: true });
-    expect(sim.state.coins).toBe(coinsBefore + job.payout);
+    expect(sim.state.coins).toBe(coinsBefore + payout);
 
-    const offer2 = sim.state.contractOffers[0]!;
+    const offer2 = sim.state.contractOffers.find((o) => content.contractTemplatesById.get(o.templateId)?.kind !== "standing")
+      ?? sim.state.contractOffers[0]!;
     checkedStep(sim, [{ type: "accept_contract", offerId: offer2.id, requestId: "acc-fail" }]);
     const job2 = sim.state.activeContracts[0]!;
     expect(job2.penalty).toBeGreaterThan(0);
@@ -1132,6 +1364,66 @@ describe("simulation", () => {
     expect(sim.state.coins).toBe(100 - job2.penalty);
     expect(sim.state.activeContracts).toHaveLength(0);
     expect(sim.state.stat("stat.contracts_failed")).toBe(1);
+  });
+
+  it("standing orders refresh escalate and cool down after fail", () => {
+    expect(content.contentVersion).toBe("0.36.0");
+    const standing = content.contractTemplatesById.get("contract.portion_order")!;
+    expect(standing.kind).toBe("standing");
+    expect(standing.payoutEscalatePermille).toBeGreaterThanOrEqual(1000);
+
+    const sim = newSim();
+    sim.state.completedQuests.add("quest.first_ten_sales");
+    checkedStep(sim);
+    // Force a standing offer onto the board.
+    sim.state.contractOffers.length = 0;
+    sim.state.contractOffers.push({
+      id: "offer.standing_test",
+      templateId: standing.id,
+      itemId: standing.item,
+      quantity: standing.quantity,
+      durationTicks: standing.durationTicks,
+      payout: standing.payout,
+      penalty: standing.penalty,
+    });
+    checkedStep(sim, [{ type: "accept_contract", offerId: "offer.standing_test", requestId: "stand-acc" }]);
+    const job = sim.state.activeContracts[0]!;
+    expect(buildView(sim).activeContracts[0]).toMatchObject({ standing: true, standingStreak: 0 });
+
+    sim.state.player.bag.capacityUnits = 100;
+    sim.state.player.bag.add(standing.item, standing.quantity);
+    const basePay = job.payout;
+    const completed = checkedStep(sim, [{ type: "deliver_contract", contractId: job.id, requestId: "stand-del-1" }]);
+    expect(completed.some((e) => e.type === "contract_completed")).toBe(true);
+    expect(sim.state.activeContracts).toHaveLength(1);
+    expect(job.delivered).toBe(0);
+    expect(ContractSystem.standingStreak(sim.state, standing.id)).toBe(1);
+    expect(job.payout).toBe(ContractSystem.scaleAmount(
+      standing.payout, standing.payoutEscalatePermille ?? 1000, 1, standing.maxStreak ?? 1,
+    ));
+    expect(job.payout).toBeGreaterThan(basePay);
+    expect(buildView(sim).activeContracts[0]).toMatchObject({ standing: true, standingStreak: 1 });
+
+    sim.state.player.bag.add(standing.item, standing.quantity);
+    checkedStep(sim, [{ type: "deliver_contract", contractId: job.id, requestId: "stand-del-2" }]);
+    expect(ContractSystem.standingStreak(sim.state, standing.id)).toBe(2);
+    expect(sim.state.stat("stat.contracts_completed")).toBe(2);
+
+    sim.state.tick = job.deadlineTick - 1;
+    sim.state.coins = 500;
+    const failed = checkedStep(sim);
+    expect(failed.some((e) => e.type === "contract_failed")).toBe(true);
+    expect(sim.state.activeContracts).toHaveLength(0);
+    expect(ContractSystem.standingStreak(sim.state, standing.id)).toBe(0);
+    expect(ContractSystem.standingCooldownUntil(sim.state, standing.id)).toBe(
+      sim.state.tick + (standing.failCooldownTicks ?? 1),
+    );
+
+    sim.state.contractOffers.length = 0;
+    sim.state.contractBoardRefreshAt = sim.state.tick;
+    const refreshed = checkedStep(sim);
+    expect(refreshed.some((e) => e.type === "contract_board_refreshed")).toBe(true);
+    expect(sim.state.contractOffers.every((o) => o.templateId !== standing.id)).toBe(true);
   });
 
   it("moon cove unlocks after busy harbor and travel stashes world", () => {
@@ -1186,7 +1478,7 @@ describe("simulation", () => {
     expect(sim.state.stat("stat.harbors_traveled")).toBe(2);
 
     const saved = encodeSnapshot(content, sim.state);
-    expect(saved.startsWith('{"schemaVersion":10,')).toBe(true);
+    expect(saved.startsWith('{"schemaVersion":12,')).toBe(true);
     const restored = decodeSnapshot(content, saved);
     expect(restored.harborId).toBe(HARBOR);
     expect(restored.harborStashes.has("harbor.moon_cove")).toBe(true);
@@ -1260,7 +1552,7 @@ describe("simulation", () => {
   });
 
   it("spoil tiers prefer fragile counter stock and separate case ice", () => {
-    expect(content.contentVersion).toBe("0.30.0");
+    expect(content.contentVersion).toBe("0.36.0");
     expect(content.productsById.get("product.basic_portion")!.spoilTier).toBe(3);
     expect(content.productsById.get("product.smoked_fillet")!.spoilTier).toBe(1);
     expect(content.speciesById.get(SPRAT)!.spoilTier).toBe(3);
@@ -1294,12 +1586,12 @@ describe("simulation", () => {
 
   it("prestige stays locked until busy harbor, then grants bonuses and cosmetics", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("0.30.0");
+    expect(content.contentVersion).toBe("0.36.0");
     const locked = buildView(sim);
     expect(locked.prestigeUnlocked).toBe(false);
     expect(locked.prestigeLockedReason).toBe("Requires: Busy harbor");
     expect(locked.harborRating).toBe(1);
-    expect(locked.prestige).toHaveLength(3);
+    expect(locked.prestige).toHaveLength(6);
     expect(locked.prestige.every((p) => p.status === "locked")).toBe(true);
 
     sim.state.bumpStat("stat.revenue", 1000);
@@ -1312,7 +1604,7 @@ describe("simulation", () => {
     const board = buildView(sim);
     expect(board.prestigeUnlocked).toBe(true);
     expect(board.prestigeLockedReason).toBeNull();
-    expect(board.prestige).toHaveLength(3);
+    expect(board.prestige).toHaveLength(6);
     expect(board.prestige.find((p) => p.id === "prestige.rising_tide")!.status).toBe("active");
     expect(board.prestige.find((p) => p.id === "prestige.harbor_star")!.status).toBe("locked");
     expect(board.prestige.find((p) => p.id === "prestige.twin_harbors")!.status).toBe("active");
@@ -1354,7 +1646,7 @@ describe("simulation", () => {
     ]);
 
     const saved = encodeSnapshot(content, sim.state);
-    expect(saved.startsWith('{"schemaVersion":10,')).toBe(true);
+    expect(saved.startsWith('{"schemaVersion":12,')).toBe(true);
     const restored = decodeSnapshot(content, saved);
     expect([...restored.completedPrestige].sort()).toEqual([
       "prestige.harbor_star",

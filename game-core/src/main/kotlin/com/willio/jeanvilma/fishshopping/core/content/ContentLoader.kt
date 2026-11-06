@@ -71,6 +71,19 @@ object ContentLoader {
                 spoilTier = p.optional("spoilTier")?.int(min = 1, max = 3) ?: 2,
             )
         },
+        bait = r["bait"].list { b ->
+            BaitDef(
+                id = b["id"].string(),
+                name = b["name"].string(),
+                description = b["description"].string(),
+                carryUnits = b["carryUnits"].int(min = 1),
+                packQuantity = b["packQuantity"].int(min = 1),
+                cost = b["cost"].long(min = 0),
+                rareSpeciesWeightMultPermille = b["rareSpeciesWeightMultPermille"].int(min = 1),
+                rareChanceBonusPermille = b["rareChanceBonusPermille"].int(min = 0, max = 1000),
+                requires = b["requires"].list { it.string() },
+            )
+        },
         recipes = r["recipes"].list { rc ->
             RecipeDef(
                 id = rc["id"].string(), machine = rc["machine"].string(),
@@ -147,6 +160,7 @@ object ContentLoader {
                 counterSpoilUnits = e["counterSpoilUnits"].int(min = 0),
                 bagFishSpoilPeriodTicks = e["bagFishSpoilPeriodTicks"].int(min = 1),
                 bagFishSpoilUnits = e["bagFishSpoilUnits"].int(min = 0),
+                scarcityPriceCurvePermille = e["scarcityPriceCurvePermille"].list { it.int(min = 1) },
             )
         },
         ecology = r["ecology"].let { e ->
@@ -163,10 +177,26 @@ object ContentLoader {
                 },
             )
         },
+        trophies = r["trophies"].let { t ->
+            TrophiesDef(
+                sizeMinPermille = t["sizeMinPermille"].int(min = 1),
+                sizeMaxPermille = t["sizeMaxPermille"].int(min = 1),
+                sets = t["sets"].list { s ->
+                    TrophySetDef(
+                        id = s["id"].string(),
+                        name = s["name"].string(),
+                        description = s["description"].string(),
+                        species = s["species"].list { it.string() },
+                        completeStat = s["completeStat"].string(),
+                    )
+                },
+            )
+        },
         prestige = r["prestige"].let { p ->
             PrestigeDef(
                 requires = p["requires"].list { it.string() },
                 ratingThresholds = p["ratingThresholds"].list { it.long(min = 0) },
+                ratingPriceMultPermille = p["ratingPriceMultPermille"].list { it.int(min = 1) },
                 milestones = p["milestones"].list { m ->
                     PrestigeMilestoneDef(
                         id = m["id"].string(),
@@ -186,6 +216,17 @@ object ContentLoader {
                 },
             )
         },
+        reputation = r["reputation"].let { rep ->
+            ReputationDef(
+                minSample = rep["minSample"].int(min = 1),
+                neutralScorePermille = rep["neutralScorePermille"].int(min = 1),
+                scoreBandThresholdsPermille = rep["scoreBandThresholdsPermille"].list { it.int(min = 0, max = 1000) },
+                kindSpawnMultPermille = rep["kindSpawnMultPermille"].list { it.stringIntMap() },
+                unmetPreferencePenaltyPermille = rep["unmetPreferencePenaltyPermille"].int(min = 0),
+                coachingLostRatioPermille = rep["coachingLostRatioPermille"].int(min = 0, max = 1000),
+                coachingPraiseScorePermille = rep["coachingPraiseScorePermille"].int(min = 1),
+            )
+        },
         contracts = r["contracts"].let { c ->
             ContractsDef(
                 boardSlots = c["boardSlots"].int(min = 1),
@@ -193,6 +234,9 @@ object ContentLoader {
                 refreshPeriodTicks = c["refreshPeriodTicks"].int(min = 1),
                 requires = c["requires"].list { it.string() },
                 templates = c["templates"].list { t ->
+                    val kindText = t.optional("kind")?.string() ?: "standard"
+                    val kind = ContractKind.fromWire(kindText)
+                        ?: t.fail("unknown contract kind '$kindText'")
                     ContractTemplateDef(
                         id = t["id"].string(),
                         name = t["name"].string(),
@@ -203,6 +247,11 @@ object ContentLoader {
                         payout = t["payout"].long(min = 0),
                         penalty = t["penalty"].long(min = 0),
                         weight = t["weight"].int(min = 1),
+                        kind = kind,
+                        payoutEscalatePermille = t.optional("payoutEscalatePermille")?.int(min = 1) ?: 1000,
+                        penaltyEscalatePermille = t.optional("penaltyEscalatePermille")?.int(min = 1) ?: 1000,
+                        maxStreak = t.optional("maxStreak")?.int(min = 1) ?: 1,
+                        failCooldownTicks = t.optional("failCooldownTicks")?.int(min = 1) ?: 1,
                     )
                 },
             )
@@ -220,6 +269,7 @@ object ContentLoader {
                 },
                 unmetPriceMultPermille = c["unmetPriceMultPermille"].int(min = 1, max = 1000),
                 unmetPatienceDrainPermille = c["unmetPatienceDrainPermille"].int(min = 1),
+                dayPartSpawnMultPermille = c.optional("dayPartSpawnMultPermille")?.stringIntMap() ?: emptyMap(),
             )
         },
         tutorial = r["tutorial"].list { t ->
@@ -244,6 +294,10 @@ object ContentLoader {
             n["machine"].string(), n["recipe"].string(), n["durationTicks"].int(min = 1),
         )
         "catch_speed" -> UpgradeEffect.CatchSpeed(n["speedPermille"].int(min = 1))
+        "grant_bait" -> UpgradeEffect.GrantBait(
+            bait = n["bait"].string(),
+            quantity = n["quantity"].int(min = 1),
+        )
         "timing_window" -> UpgradeEffect.TimingWindow(
             windowStartPermille = n["windowStartPermille"].int(min = 0, max = 1000),
             windowEndPermille = n["windowEndPermille"].int(min = 0, max = 1000),
@@ -318,6 +372,7 @@ object ContentLoader {
                 durationTicks = r["durationTicks"].int(min = 1),
                 spawnSpeedPermille = r["spawnSpeedPermille"].int(min = 1),
                 queueBonus = r["queueBonus"].int(min = 0, max = 16),
+                priceMultPermille = r.optional("priceMultPermille")?.int(min = 1) ?: 1000,
             )
         },
     )

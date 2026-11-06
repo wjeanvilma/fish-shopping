@@ -20,7 +20,7 @@ describe("chooseCloudSnapshot", () => {
 
   it("ignores corrupt remote and keeps local", () => {
     const local = encodeSnapshot(content, GameState.newGame(content, "harbor.sunrise_pier", 3), 5_000);
-    const decision = chooseCloudSnapshot(local, '{"schemaVersion":10,"checksum":"deadbeef","state":{}}');
+    const decision = chooseCloudSnapshot(local, '{"schemaVersion":12,"checksum":"deadbeef","state":{}}');
     expect(decision.source).toBe("local");
     expect(decision.text).toBe(local);
   });

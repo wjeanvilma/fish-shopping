@@ -38,5 +38,9 @@ class TelemetryTest {
         assertTrue(json.contains("\"maintenanceCoinsPerStation\":${content.economy.maintenanceCoinsPerStation}"))
         assertTrue(json.contains("maintenancePeriodTicks"))
         assertEquals(content.species.size, Regex("\"catchTicks\"").findAll(json).count())
+        assertTrue(json.contains("\"bait\""))
+        assertTrue(json.contains(content.bait.first().id))
+        assertTrue(json.contains("\"trophies\""))
+        assertTrue(json.contains(content.trophies.sets.first().id))
     }
 }

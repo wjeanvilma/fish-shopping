@@ -10,6 +10,8 @@ export function contentCatalogSummary(pack: ContentPack): string {
     "counts:",
     `  species=${r.species.length}`,
     `  products=${r.products.length}`,
+    `  bait=${r.bait.length}`,
+    `  trophySets=${r.trophies.sets.length}`,
     `  recipes=${r.recipes.length}`,
     `  machines=${r.machines.length}`,
     `  upgrades=${r.upgrades.length}`,
@@ -32,6 +34,17 @@ export function contentCatalogDetail(pack: ContentPack): string {
     lines.push(
       `  ${s.id}  catch=${s.catchTicks}t value=${s.baseValue} weight=${s.rarityWeight}${rare}`,
     );
+  }
+  lines.push("bait:");
+  for (const b of r.bait) {
+    lines.push(
+      `  ${b.id}  pack=${b.packQuantity} cost=${b.cost}` +
+        ` rareW×${b.rareSpeciesWeightMultPermille} rare+${b.rareChanceBonusPermille}`,
+    );
+  }
+  lines.push("trophySets:");
+  for (const set of r.trophies.sets) {
+    lines.push(`  ${set.id}  ${set.species.length} species  → ${set.completeStat}`);
   }
   lines.push("recipes:");
   for (const rec of r.recipes) {
