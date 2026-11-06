@@ -1,0 +1,25 @@
+{
+  "description": "Design tokens shared by the Compose HUD and the web CSS. Values from the blueprint's visual system.",
+  "color": {
+    "ink": { "value": "#153449", "use": "Primary text and outlines" },
+    "action": { "value": "#008F95", "use": "Primary actions and active stations" },
+    "reward": { "value": "#E8AF4A", "use": "Earned coins and completed goals" },
+    "surface": { "value": "#FBF7EF", "use": "Warm off-white panels" },
+    "surfaceMuted": { "value": "#EFE8DA", "use": "Secondary panel fill" },
+    "onAction": { "value": "#FFFFFF", "use": "Text on action color" },
+    "danger": { "value": "#B3412E", "use": "Blocked states and errors" },
+    "water": { "value": "#2E7FA8", "use": "3D water tint and sky clear colour reference" }
+  },
+  "size": {
+    "minTouchTargetDp": 48,
+    "joystickDiameterDp": 140,
+    "actionButtonDp": 84,
+    "panelCornerDp": 16,
+    "safeMarginDp": 16
+  },
+  "type": {
+    "family": "system sans-serif",
+    "numeric": "tabular figures for quantities and coins",
+    "scale": { "caption": 12, "body": 14, "label": 16, "title": 20, "display": 28 }
+  }
+}

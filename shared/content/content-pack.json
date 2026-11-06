@@ -1,0 +1,370 @@
+{
+  "$schema": "../schema/content-pack.schema.json",
+  "contentVersion": "0.6.0",
+  "ticksPerSecond": 20,
+  "units": {
+    "distance": "millimetres (integer); x/z ground plane, y is up",
+    "time": "simulation ticks (integer) at ticksPerSecond",
+    "money": "coins (integer)"
+  },
+  "player": {
+    "startCoins": 0,
+    "startCarryCapacityUnits": 5,
+    "moveSpeedMmPerTick": 200,
+    "transferIntervalTicks": 4,
+    "startCatchSpeedPermille": 1000,
+    "timingWindowStartPermille": 650,
+    "timingWindowEndPermille": 850
+  },
+  "species": [
+    {
+      "id": "species.silver_sprat",
+      "name": "Silver sprat",
+      "carryUnits": 1,
+      "catchTicks": 80,
+      "baseValue": 2,
+      "rarityWeight": 100,
+      "asset": "models/fish_silver_sprat.glb",
+      "rareUpgrade": { "to": "species.golden_sprat", "chancePermille": 40 }
+    },
+    {
+      "id": "species.harbor_herring",
+      "name": "Harbor herring",
+      "carryUnits": 1,
+      "catchTicks": 60,
+      "baseValue": 1,
+      "rarityWeight": 80,
+      "asset": "models/fish_harbor_herring.glb"
+    },
+    {
+      "id": "species.blue_mackerel",
+      "name": "Blue mackerel",
+      "carryUnits": 1,
+      "catchTicks": 120,
+      "baseValue": 4,
+      "rarityWeight": 40,
+      "asset": "models/fish_blue_mackerel.glb",
+      "rareUpgrade": { "to": "species.gilt_mackerel", "chancePermille": 30 }
+    },
+    {
+      "id": "species.copper_mullet",
+      "name": "Copper mullet",
+      "carryUnits": 2,
+      "catchTicks": 100,
+      "baseValue": 5,
+      "rarityWeight": 35,
+      "asset": "models/fish_copper_mullet.glb"
+    },
+    {
+      "id": "species.amber_snapper",
+      "name": "Amber snapper",
+      "carryUnits": 2,
+      "catchTicks": 160,
+      "baseValue": 8,
+      "rarityWeight": 18,
+      "asset": "models/fish_amber_snapper.glb"
+    },
+    {
+      "id": "species.king_grouper",
+      "name": "King grouper",
+      "carryUnits": 3,
+      "catchTicks": 220,
+      "baseValue": 15,
+      "rarityWeight": 8,
+      "asset": "models/fish_king_grouper.glb"
+    },
+    {
+      "id": "species.golden_sprat",
+      "name": "Golden sprat",
+      "carryUnits": 1,
+      "catchTicks": 80,
+      "baseValue": 10,
+      "rarityWeight": 1,
+      "asset": "models/fish_golden_sprat.glb"
+    },
+    {
+      "id": "species.gilt_mackerel",
+      "name": "Gilt mackerel",
+      "carryUnits": 1,
+      "catchTicks": 120,
+      "baseValue": 14,
+      "rarityWeight": 1,
+      "asset": "models/fish_gilt_mackerel.glb"
+    }
+  ],
+  "products": [
+    {
+      "id": "product.basic_portion",
+      "name": "Basic portion",
+      "carryUnits": 1,
+      "unitPrice": 5,
+      "asset": "models/product_basic_portion.glb"
+    },
+    {
+      "id": "product.fillet",
+      "name": "Fillet",
+      "carryUnits": 1,
+      "unitPrice": 12,
+      "asset": "models/product_fillet.glb"
+    },
+    {
+      "id": "product.premium_portion",
+      "name": "Premium portion",
+      "carryUnits": 1,
+      "unitPrice": 20,
+      "asset": "models/product_premium_portion.glb"
+    },
+    {
+      "id": "product.smoked_fillet",
+      "name": "Smoked fillet",
+      "carryUnits": 1,
+      "unitPrice": 18,
+      "asset": "models/product_smoked_fillet.glb"
+    }
+  ],
+  "recipes": [
+    {
+      "id": "recipe.basic_portions",
+      "machine": "machine.basic_cutter",
+      "inputs": [{ "item": "species.silver_sprat", "quantity": 1 }],
+      "outputs": [{ "item": "product.basic_portion", "quantity": 2 }],
+      "durationTicks": 100
+    },
+    {
+      "id": "recipe.herring_portions",
+      "machine": "machine.basic_cutter",
+      "inputs": [{ "item": "species.harbor_herring", "quantity": 1 }],
+      "outputs": [{ "item": "product.basic_portion", "quantity": 1 }],
+      "durationTicks": 70
+    },
+    {
+      "id": "recipe.mackerel_fillets",
+      "machine": "machine.basic_cutter",
+      "inputs": [{ "item": "species.blue_mackerel", "quantity": 1 }],
+      "outputs": [{ "item": "product.fillet", "quantity": 2 }],
+      "durationTicks": 120
+    },
+    {
+      "id": "recipe.mullet_fillets",
+      "machine": "machine.basic_cutter",
+      "inputs": [{ "item": "species.copper_mullet", "quantity": 1 }],
+      "outputs": [{ "item": "product.fillet", "quantity": 2 }],
+      "durationTicks": 110
+    },
+    {
+      "id": "recipe.snapper_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [{ "item": "species.amber_snapper", "quantity": 1 }],
+      "outputs": [{ "item": "product.premium_portion", "quantity": 2 }],
+      "durationTicks": 140
+    },
+    {
+      "id": "recipe.grouper_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [{ "item": "species.king_grouper", "quantity": 1 }],
+      "outputs": [{ "item": "product.premium_portion", "quantity": 3 }],
+      "durationTicks": 180
+    },
+    {
+      "id": "recipe.smoke_fillet",
+      "machine": "machine.basic_smoker",
+      "inputs": [{ "item": "product.fillet", "quantity": 1 }],
+      "outputs": [{ "item": "product.smoked_fillet", "quantity": 1 }],
+      "durationTicks": 150
+    },
+    {
+      "id": "recipe.golden_sprat_portions",
+      "machine": "machine.basic_cutter",
+      "inputs": [{ "item": "species.golden_sprat", "quantity": 1 }],
+      "outputs": [{ "item": "product.fillet", "quantity": 2 }],
+      "durationTicks": 90
+    },
+    {
+      "id": "recipe.gilt_mackerel_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [{ "item": "species.gilt_mackerel", "quantity": 1 }],
+      "outputs": [{ "item": "product.premium_portion", "quantity": 2 }],
+      "durationTicks": 110
+    }
+  ],
+  "machines": [
+    {
+      "id": "machine.basic_cutter",
+      "name": "Basic cutter",
+      "recipes": [
+        "recipe.basic_portions",
+        "recipe.herring_portions",
+        "recipe.mackerel_fillets",
+        "recipe.mullet_fillets",
+        "recipe.snapper_premium",
+        "recipe.grouper_premium",
+        "recipe.golden_sprat_portions",
+        "recipe.gilt_mackerel_premium"
+      ],
+      "inputCapacityUnits": 10,
+      "outputCapacityUnits": 20
+    },
+    {
+      "id": "machine.basic_smoker",
+      "name": "Basic smoker",
+      "recipes": ["recipe.smoke_fillet"],
+      "inputCapacityUnits": 8,
+      "outputCapacityUnits": 12
+    }
+  ],
+  "upgrades": [
+    {
+      "id": "upgrade.bag_capacity_2",
+      "name": "Bigger bag",
+      "description": "Carry 8 units instead of 5.",
+      "cost": 40,
+      "requires": [],
+      "effect": { "kind": "carry_capacity", "capacityUnits": 8 }
+    },
+    {
+      "id": "upgrade.bag_capacity_3",
+      "name": "Fish crate",
+      "description": "Carry 12 units.",
+      "cost": 150,
+      "requires": ["upgrade.bag_capacity_2"],
+      "effect": { "kind": "carry_capacity", "capacityUnits": 12 }
+    },
+    {
+      "id": "upgrade.cutter_speed_2",
+      "name": "Sharper cutter",
+      "description": "Basic portions take 4 s instead of 5 s. Applies from the next batch.",
+      "cost": 300,
+      "requires": ["quest.first_ten_sales"],
+      "effect": {
+        "kind": "recipe_duration",
+        "machine": "machine.basic_cutter",
+        "recipe": "recipe.basic_portions",
+        "durationTicks": 80
+      }
+    },
+    {
+      "id": "upgrade.rod_speed_2",
+      "name": "Carbon rod",
+      "description": "Catch fish 25% faster.",
+      "cost": 75,
+      "requires": ["upgrade.bag_capacity_2"],
+      "effect": { "kind": "catch_speed", "speedPermille": 1250 }
+    },
+    {
+      "id": "upgrade.rod_speed_3",
+      "name": "Pro angler rod",
+      "description": "Catch fish 50% faster.",
+      "cost": 220,
+      "requires": ["upgrade.rod_speed_2"],
+      "effect": { "kind": "catch_speed", "speedPermille": 1500 }
+    }
+  ],
+  "quests": [
+    {
+      "id": "quest.first_ten_sales",
+      "name": "Make 10 sales",
+      "goal": { "stat": "stat.sales", "atLeast": 10 }
+    }
+  ],
+  "customers": [
+    {
+      "id": "customer.local_shopper",
+      "name": "Local shopper",
+      "basketMin": 1,
+      "basketMax": 3,
+      "patienceTicks": 900,
+      "spawnWeight": 100
+    },
+    {
+      "id": "customer.family_buyer",
+      "name": "Family buyer",
+      "basketMin": 3,
+      "basketMax": 5,
+      "patienceTicks": 700,
+      "spawnWeight": 30
+    }
+  ],
+  "tutorial": [
+    { "id": "tutorial.walk_to_pier", "text": "Walk to the end of the pier", "advanceOn": { "kind": "enter_zone", "zone": "zone.pier_end" } },
+    { "id": "tutorial.catch_three", "text": "Catch 3 fish", "advanceOn": { "kind": "stat", "stat": "stat.fish_caught", "atLeast": 3 } },
+    { "id": "tutorial.deliver_cutter", "text": "Bring the fish to the cutter", "advanceOn": { "kind": "stat", "stat": "stat.machine_inputs", "atLeast": 1 } },
+    { "id": "tutorial.collect_output", "text": "Collect portions from the cutter output", "advanceOn": { "kind": "stat", "stat": "stat.outputs_collected", "atLeast": 1 } },
+    { "id": "tutorial.stock_counter", "text": "Stock the counter", "advanceOn": { "kind": "stat", "stat": "stat.counter_stocked", "atLeast": 1 } },
+    { "id": "tutorial.serve_customer", "text": "Stand at the counter to serve a customer", "advanceOn": { "kind": "stat", "stat": "stat.sales", "atLeast": 1 } },
+    { "id": "tutorial.buy_upgrade", "text": "Open Upgrades and buy a bigger bag", "advanceOn": { "kind": "stat", "stat": "stat.upgrades_bought", "atLeast": 1 } }
+  ],
+  "harbors": [
+    {
+      "id": "harbor.sunrise_pier",
+      "name": "Sunrise Pier",
+      "playerSpawn": { "x": 0, "z": 0 },
+      "walkable": [
+        { "id": "area.land", "minX": -8000, "minZ": -8000, "maxX": 10000, "maxZ": 8000 },
+        { "id": "area.pier", "minX": -16000, "minZ": -1500, "maxX": -7900, "maxZ": 1500 }
+      ],
+      "obstacles": [
+        { "id": "footprint.cutter_1", "minX": 2000, "minZ": -5000, "maxX": 4000, "maxZ": -3000 },
+        { "id": "footprint.smoker_1", "minX": 7000, "minZ": -5000, "maxX": 8600, "maxZ": -3000 },
+        { "id": "footprint.counter_1", "minX": 1500, "minZ": 3500, "maxX": 4500, "maxZ": 4500 }
+      ],
+      "zones": [
+        { "id": "zone.pier_end", "kind": "fishing", "minX": -16000, "minZ": -1500, "maxX": -12500, "maxZ": 1500 },
+        { "id": "zone.cutter_in", "kind": "machine_input", "minX": 400, "minZ": -5000, "maxX": 2000, "maxZ": -3000 },
+        { "id": "zone.cutter_out", "kind": "machine_output", "minX": 4000, "minZ": -5000, "maxX": 5600, "maxZ": -3000 },
+        { "id": "zone.smoker_in", "kind": "machine_input", "minX": 5600, "minZ": -5000, "maxX": 7000, "maxZ": -3000 },
+        { "id": "zone.smoker_out", "kind": "machine_output", "minX": 8600, "minZ": -5000, "maxX": 10000, "maxZ": -3000 },
+        { "id": "zone.counter_1", "kind": "counter", "minX": 1500, "minZ": 2000, "maxX": 4500, "maxZ": 3500 }
+      ],
+      "fishingSpots": [
+        {
+          "zone": "zone.pier_end",
+          "species": [
+            "species.silver_sprat",
+            "species.harbor_herring",
+            "species.blue_mackerel",
+            "species.copper_mullet",
+            "species.amber_snapper",
+            "species.king_grouper"
+          ],
+          "stockMax": 30,
+          "regenTicks": 40
+        }
+      ],
+      "stations": [
+        {
+          "id": "station.cutter_1",
+          "machine": "machine.basic_cutter",
+          "inputZone": "zone.cutter_in",
+          "outputZone": "zone.cutter_out"
+        },
+        {
+          "id": "station.smoker_1",
+          "machine": "machine.basic_smoker",
+          "inputZone": "zone.smoker_in",
+          "outputZone": "zone.smoker_out"
+        }
+      ],
+      "counters": [
+        {
+          "id": "counter.portions_1",
+          "products": [
+            "product.basic_portion",
+            "product.fillet",
+            "product.premium_portion",
+            "product.smoked_fillet"
+          ],
+          "capacityUnits": 30,
+          "zone": "zone.counter_1",
+          "footprint": "footprint.counter_1",
+          "checkoutTicks": 20,
+          "maxQueue": 4,
+          "queueAnchor": { "x": 3000, "z": 5200 },
+          "queueStep": { "x": -900, "z": 0 }
+        }
+      ],
+      "customerSpawnTicks": 160,
+      "customerEntry": { "x": 9500, "z": 6500 },
+      "customerWalkMmPerTick": 100
+    }
+  ]
+}

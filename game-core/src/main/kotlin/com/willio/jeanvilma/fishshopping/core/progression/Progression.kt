@@ -1,0 +1,102 @@
+package com.willio.jeanvilma.fishshopping.core.progression
+
+import com.willio.jeanvilma.fishshopping.core.content.TutorialTrigger
+import com.willio.jeanvilma.fishshopping.core.content.UpgradeDef
+import com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect
+import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
+import com.willio.jeanvilma.fishshopping.core.sim.GameState
+import com.willio.jeanvilma.fishshopping.core.sim.Receipt
+import com.willio.jeanvilma.fishshopping.core.sim.Stats
+import com.willio.jeanvilma.fishshopping.core.sim.StepContext
+import com.willio.jeanvilma.fishshopping.core.content.ContentPack
+
+object UpgradeSystem {
+
+    sealed interface Availability {
+        data object Owned : Availability
+        data class Locked(val reason: String) : Availability
+        data class TooExpensive(val missing: Long) : Availability
+        data object Purchasable : Availability
+    }
+
+    fun availability(content: ContentPack, s: GameState, u: UpgradeDef): Availability {
+        if (u.id in s.ownedUpgrades) return Availability.Owned
+        val missing = u.requires.firstOrNull { it !in s.ownedUpgrades && it !in s.completedQuests }
+        if (missing != null) {
+            val name = content.upgradesById[missing]?.name ?: content.questsById[missing]?.name ?: missing
+            return Availability.Locked("Requires: $name")
+        }
+        if (s.coins < u.cost) return Availability.TooExpensive(u.cost - s.coins)
+        return Availability.Purchasable
+    }
+
+    /**
+     * Validates at commit and applies atomically. A retried request ID returns the
+     * original receipt instead of charging again (blueprint "App closes during purchase").
+     */
+    fun purchase(ctx: StepContext, upgradeId: String, requestId: String) {
+        val s = ctx.state
+        s.purchaseReceipts[requestId]?.let {
+            ctx.emit(GameEvent.UpgradePurchased(s.tick, upgradeId, it, replayed = true))
+            return
+        }
+        val u = ctx.content.upgradesById[upgradeId]
+        if (u == null) {
+            ctx.emit(GameEvent.PurchaseRejected(s.tick, upgradeId, requestId, "Unknown upgrade"))
+            return
+        }
+        when (val a = availability(ctx.content, s, u)) {
+            Availability.Owned -> ctx.emit(GameEvent.PurchaseRejected(s.tick, upgradeId, requestId, "Already owned"))
+            is Availability.Locked -> ctx.emit(GameEvent.PurchaseRejected(s.tick, upgradeId, requestId, a.reason))
+            is Availability.TooExpensive -> ctx.emit(GameEvent.PurchaseRejected(s.tick, upgradeId, requestId, "Need ${a.missing} more coins"))
+            Availability.Purchasable -> {
+                s.coins -= u.cost
+                s.ownedUpgrades += u.id
+                applyEffect(s, u.effect)
+                s.bumpStat(Stats.UPGRADES_BOUGHT)
+                val receipt = Receipt(s.newId("receipt"), "upgrade", -u.cost, s.tick, requestId)
+                s.purchaseReceipts[requestId] = receipt
+                s.record(receipt)
+                ctx.emit(GameEvent.UpgradePurchased(s.tick, u.id, receipt, replayed = false))
+                ctx.emit(GameEvent.CheckpointRequested(s.tick, "purchase"))
+            }
+        }
+    }
+
+    /** Effects are also re-applied on load from owned upgrades, so they must be idempotent. */
+    fun applyEffect(s: GameState, effect: UpgradeEffect) {
+        when (effect) {
+            is UpgradeEffect.CarryCapacity ->
+                s.player.bag.capacityUnits = maxOf(s.player.bag.capacityUnits, effect.capacityUnits)
+            is UpgradeEffect.RecipeDuration ->
+                s.machines.filter { it.machineId == effect.machine }.forEach { m ->
+                    val current = m.recipeDurations[effect.recipe]
+                    if (current == null || effect.durationTicks < current) m.recipeDurations[effect.recipe] = effect.durationTicks
+                }
+            is UpgradeEffect.CatchSpeed ->
+                s.player.catchSpeedPermille = maxOf(s.player.catchSpeedPermille, effect.speedPermille)
+        }
+    }
+}
+
+/** Quests and tutorial advance on state, never on animation timing. */
+object ProgressionSystem {
+    fun step(ctx: StepContext) {
+        val s = ctx.state
+        for (q in ctx.content.quests) {
+            if (q.id !in s.completedQuests && s.stat(q.goal.stat) >= q.goal.atLeast) {
+                s.completedQuests += q.id
+                ctx.emit(GameEvent.QuestCompleted(s.tick, q.id))
+            }
+        }
+        val step = ctx.content.tutorial.getOrNull(s.tutorialIndex) ?: return
+        val done = when (val t = step.advanceOn) {
+            is TutorialTrigger.EnterZone -> s.player.zoneId == t.zone
+            is TutorialTrigger.Stat -> s.stat(t.goal.stat) >= t.goal.atLeast
+        }
+        if (done) {
+            s.tutorialIndex++
+            ctx.emit(GameEvent.TutorialAdvanced(s.tick, s.tutorialIndex))
+        }
+    }
+}

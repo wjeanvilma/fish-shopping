@@ -1,0 +1,747 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fishshopping.local/schema/content-pack.schema.json",
+  "title": "Fish Shopping content pack",
+  "description": "Canonical game content shared by the Android (Kotlin) and web (TypeScript) clients. Structural rules live here; cross-reference rules (IDs exist, no unlock cycles, zones reachable) are enforced by each client's content validator.",
+  "type": "object",
+  "required": [
+    "contentVersion",
+    "ticksPerSecond",
+    "player",
+    "species",
+    "products",
+    "recipes",
+    "machines",
+    "upgrades",
+    "quests",
+    "customers",
+    "tutorial",
+    "harbors"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "contentVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "ticksPerSecond": {
+      "const": 20
+    },
+    "units": {
+      "type": "object"
+    },
+    "player": {
+      "type": "object",
+      "required": [
+        "startCoins",
+        "startCarryCapacityUnits",
+        "moveSpeedMmPerTick",
+        "transferIntervalTicks",
+        "startCatchSpeedPermille",
+        "timingWindowStartPermille",
+        "timingWindowEndPermille"
+      ],
+      "properties": {
+        "startCoins": {
+          "$ref": "#/$defs/coins"
+        },
+        "startCarryCapacityUnits": {
+          "$ref": "#/$defs/positiveInt"
+        },
+        "moveSpeedMmPerTick": {
+          "$ref": "#/$defs/positiveInt"
+        },
+        "transferIntervalTicks": {
+          "$ref": "#/$defs/positiveInt"
+        },
+        "startCatchSpeedPermille": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "1000 = normal catch duration; higher finishes casts faster."
+        },
+        "timingWindowStartPermille": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "Cast progress (0..1000) where the Reel timing window opens."
+        },
+        "timingWindowEndPermille": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "Cast progress (0..1000) where the Reel timing window closes (exclusive)."
+        }
+      }
+    },
+    "species": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "carryUnits",
+          "catchTicks",
+          "baseValue",
+          "rarityWeight"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id",
+            "pattern": "^species\\.[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "carryUnits": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "catchTicks": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "baseValue": {
+            "$ref": "#/$defs/coins"
+          },
+          "rarityWeight": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "asset": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rareUpgrade": {
+            "type": "object",
+            "required": [
+              "to",
+              "chancePermille"
+            ],
+            "properties": {
+              "to": {
+                "$ref": "#/$defs/id",
+                "pattern": "^species\\.[a-z0-9_]+$"
+              },
+              "chancePermille": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000,
+                "description": "Chance in 1/1000 that a successful catch upgrades to [to]."
+              }
+            }
+          }
+        }
+      }
+    },
+    "products": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "carryUnits",
+          "unitPrice"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id",
+            "pattern": "^product\\.[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "carryUnits": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "unitPrice": {
+            "$ref": "#/$defs/coins"
+          },
+          "asset": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "recipes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "machine",
+          "inputs",
+          "outputs",
+          "durationTicks"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id",
+            "pattern": "^recipe\\.[a-z0-9_]+$"
+          },
+          "machine": {
+            "$ref": "#/$defs/id"
+          },
+          "inputs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/itemQuantity"
+            }
+          },
+          "outputs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/itemQuantity"
+            }
+          },
+          "durationTicks": {
+            "$ref": "#/$defs/positiveInt"
+          }
+        }
+      }
+    },
+    "machines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "recipes",
+          "inputCapacityUnits",
+          "outputCapacityUnits"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id",
+            "pattern": "^machine\\.[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "recipes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/id"
+            }
+          },
+          "inputCapacityUnits": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "outputCapacityUnits": {
+            "$ref": "#/$defs/positiveInt"
+          }
+        }
+      }
+    },
+    "upgrades": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "cost",
+          "requires",
+          "effect"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id",
+            "pattern": "^upgrade\\.[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "cost": {
+            "$ref": "#/$defs/coins"
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/id"
+            }
+          },
+          "effect": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "capacityUnits"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "carry_capacity"
+                  },
+                  "capacityUnits": {
+                    "$ref": "#/$defs/positiveInt"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "machine",
+                  "recipe",
+                  "durationTicks"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "recipe_duration"
+                  },
+                  "machine": {
+                    "$ref": "#/$defs/id"
+                  },
+                  "recipe": {
+                    "$ref": "#/$defs/id"
+                  },
+                  "durationTicks": {
+                    "$ref": "#/$defs/positiveInt"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "speedPermille"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "catch_speed"
+                  },
+                  "speedPermille": {
+                    "$ref": "#/$defs/positiveInt",
+                    "description": "Catch speed multiplier in permille (1250 = 25% faster)."
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "quests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "goal"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id",
+            "pattern": "^quest\\.[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "goal": {
+            "$ref": "#/$defs/statGoal"
+          }
+        }
+      }
+    },
+    "customers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "basketMin",
+          "basketMax",
+          "patienceTicks",
+          "spawnWeight"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id",
+            "pattern": "^customer\\.[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "basketMin": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "basketMax": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "patienceTicks": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "spawnWeight": {
+            "$ref": "#/$defs/positiveInt"
+          }
+        }
+      }
+    },
+    "tutorial": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "text",
+          "advanceOn"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id",
+            "pattern": "^tutorial\\.[a-z0-9_]+$"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "advanceOn": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "zone"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "enter_zone"
+                  },
+                  "zone": {
+                    "$ref": "#/$defs/id"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "stat",
+                  "atLeast"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "stat"
+                  },
+                  "stat": {
+                    "$ref": "#/$defs/id"
+                  },
+                  "atLeast": {
+                    "$ref": "#/$defs/coins"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "harbors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "playerSpawn",
+          "walkable",
+          "obstacles",
+          "zones",
+          "fishingSpots",
+          "stations",
+          "counters",
+          "customerSpawnTicks",
+          "customerEntry",
+          "customerWalkMmPerTick"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id",
+            "pattern": "^harbor\\.[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "playerSpawn": {
+            "$ref": "#/$defs/point"
+          },
+          "walkable": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/rect"
+            }
+          },
+          "obstacles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/rect"
+            }
+          },
+          "zones": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/rect"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "fishing",
+                        "machine_input",
+                        "machine_output",
+                        "counter"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "fishingSpots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "zone",
+                "species",
+                "stockMax",
+                "regenTicks"
+              ],
+              "properties": {
+                "zone": {
+                  "$ref": "#/$defs/id"
+                },
+                "species": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/$defs/id"
+                  }
+                },
+                "stockMax": {
+                  "$ref": "#/$defs/positiveInt"
+                },
+                "regenTicks": {
+                  "$ref": "#/$defs/positiveInt"
+                }
+              }
+            }
+          },
+          "stations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "machine",
+                "inputZone",
+                "outputZone"
+              ],
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/id"
+                },
+                "machine": {
+                  "$ref": "#/$defs/id"
+                },
+                "inputZone": {
+                  "$ref": "#/$defs/id"
+                },
+                "outputZone": {
+                  "$ref": "#/$defs/id"
+                }
+              }
+            }
+          },
+          "counters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "products",
+                "capacityUnits",
+                "zone",
+                "checkoutTicks",
+                "maxQueue",
+                "queueAnchor",
+                "queueStep"
+              ],
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/id"
+                },
+                "products": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/$defs/id"
+                  },
+                  "description": "Products this counter accepts for stocking and sale (sorted order is used when filling baskets)."
+                },
+                "capacityUnits": {
+                  "$ref": "#/$defs/positiveInt"
+                },
+                "zone": {
+                  "$ref": "#/$defs/id"
+                },
+                "checkoutTicks": {
+                  "$ref": "#/$defs/positiveInt"
+                },
+                "maxQueue": {
+                  "$ref": "#/$defs/positiveInt"
+                },
+                "queueAnchor": {
+                  "$ref": "#/$defs/point",
+                  "description": "Ground position of queue slot 0 (customers stand here to be served)."
+                },
+                "queueStep": {
+                  "$ref": "#/$defs/point",
+                  "description": "Offset from one queue slot to the next."
+                },
+                "footprint": {
+                  "$ref": "#/$defs/id",
+                  "description": "Optional presentation hint: the obstacle whose top shows the stock."
+                }
+              }
+            }
+          },
+          "customerSpawnTicks": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "customerEntry": {
+            "$ref": "#/$defs/point"
+          },
+          "customerWalkMmPerTick": {
+            "$ref": "#/$defs/positiveInt"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z]+\\.[a-z0-9_]+$"
+    },
+    "positiveInt": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "coins": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "mm": {
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "itemQuantity": {
+      "type": "object",
+      "required": [
+        "item",
+        "quantity"
+      ],
+      "properties": {
+        "item": {
+          "$ref": "#/$defs/id"
+        },
+        "quantity": {
+          "$ref": "#/$defs/positiveInt"
+        }
+      }
+    },
+    "statGoal": {
+      "type": "object",
+      "required": [
+        "stat",
+        "atLeast"
+      ],
+      "properties": {
+        "stat": {
+          "$ref": "#/$defs/id"
+        },
+        "atLeast": {
+          "$ref": "#/$defs/coins"
+        }
+      }
+    },
+    "rect": {
+      "type": "object",
+      "required": [
+        "id",
+        "minX",
+        "minZ",
+        "maxX",
+        "maxZ"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "minX": {
+          "$ref": "#/$defs/mm"
+        },
+        "minZ": {
+          "$ref": "#/$defs/mm"
+        },
+        "maxX": {
+          "$ref": "#/$defs/mm"
+        },
+        "maxZ": {
+          "$ref": "#/$defs/mm"
+        }
+      }
+    },
+    "point": {
+      "type": "object",
+      "required": [
+        "x",
+        "z"
+      ],
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/mm"
+        },
+        "z": {
+          "$ref": "#/$defs/mm"
+        }
+      }
+    }
+  }
+}
