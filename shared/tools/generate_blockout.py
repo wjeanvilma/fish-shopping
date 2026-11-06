@@ -13,6 +13,7 @@ y up. Node names are a contract with the renderers:
     Out_<station>_<i>             machine output slots (portions)
     Stock_<counter>_<i>           counter stock slots (portions)
     Customer_0..N                 pooled customers (root moved by the client; maxQueue + 2 for leavers)
+    Fly_<i>_fish / Fly_<i>_portion    flying-transfer arcs (parked below pier when idle)
     Static nodes                  ground, pier, water, footprints, zone pads
 <station> / <counter> is the content ID without its prefix, e.g. cutter_1, portions_1.
 """
@@ -192,6 +193,12 @@ def build(content, harbor):
         bag_slots.append(node(f"Bag_{i}_fish", pos, [FISH_SIZE[2], FISH_SIZE[1], FISH_SIZE[0]], "fish", root=False))
         bag_slots.append(node(f"Bag_{i}_portion", pos, [PORTION_SIZE[2], PORTION_SIZE[1], PORTION_SIZE[0]], "portion", root=False))
     node("Player", [spawn["x"] / 1000, 0, spawn["z"] / 1000], children=player_children + bag_slots)
+
+    # Flying transfer pool (Phase 21): parked below the pier; presenters move them along arcs.
+    fly_pool = 12
+    for i in range(fly_pool):
+        node(f"Fly_{i}_fish", [0, -10, 0], FISH_SIZE, "fish")
+        node(f"Fly_{i}_portion", [0, -10, 0], PORTION_SIZE, "portion")
 
     js = json.dumps(gltf, separators=(",", ":")).encode()
     js += b" " * ((4 - len(js) % 4) % 4)

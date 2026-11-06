@@ -4,6 +4,7 @@ import com.willio.jeanvilma.fishshopping.core.content.ContentPack
 import com.willio.jeanvilma.fishshopping.core.content.HarborDef
 import com.willio.jeanvilma.fishshopping.core.content.ItemQuantity
 import com.willio.jeanvilma.fishshopping.core.inventory.Inventory
+import com.willio.jeanvilma.fishshopping.core.world.HarborWorldStash
 import java.util.TreeMap
 import java.util.TreeSet
 
@@ -28,6 +29,15 @@ object Stats {
     const val WORKER_ITEMS_MOVED = "stat.worker_items_moved"
     const val LEASES_EXPIRED = "stat.leases_expired"
     const val WAGES_PAID = "stat.wages_paid"
+    const val QUESTS_COMPLETED = "stat.quests_completed"
+    const val CONTRACTS_COMPLETED = "stat.contracts_completed"
+    const val CONTRACTS_FAILED = "stat.contracts_failed"
+    const val CONTRACT_REVENUE = "stat.contract_revenue"
+    const val CONTRACT_ITEMS_DELIVERED = "stat.contract_items_delivered"
+    const val HARBORS_TRAVELED = "stat.harbors_traveled"
+    const val MAINTENANCE_PAID = "stat.maintenance_paid"
+    const val ITEMS_SPOILED = "stat.items_spoiled"
+    const val PRESTIGE_COMPLETED = "stat.prestige_completed"
 }
 
 enum class WorkerTaskPhase {
@@ -188,13 +198,36 @@ data class Receipt(
     val reference: String,
 )
 
+/** Posted board offer waiting to be accepted. */
+data class ContractOffer(
+    val id: String,
+    val templateId: String,
+    val itemId: String,
+    val quantity: Int,
+    val durationTicks: Int,
+    val payout: Long,
+    val penalty: Long,
+)
+
+/** Accepted timed delivery job. */
+class ContractState(
+    val id: String,
+    val templateId: String,
+    val itemId: String,
+    val quantity: Int,
+    var delivered: Int,
+    var deadlineTick: Long,
+    val payout: Long,
+    val penalty: Long,
+)
+
 class GameState(
-    val harborId: String,
+    var harborId: String,
     val rng: Prng,
     val player: PlayerState,
-    val fishingSpots: List<FishingSpotState>,
-    val machines: List<MachineState>,
-    val counters: List<CounterState>,
+    var fishingSpots: List<FishingSpotState>,
+    var machines: List<MachineState>,
+    var counters: List<CounterState>,
 ) {
     var tick = 0L
     var coins = 0L
@@ -205,7 +238,11 @@ class GameState(
     val workers = mutableListOf<WorkerState>()
     val ownedUpgrades = TreeSet<String>()
     val completedQuests = TreeSet<String>()
+    val completedPrestige = TreeSet<String>()
+    val unlockedCosmetics = TreeSet<String>()
     val stats = TreeMap<String, Long>()
+    /** Parked harbor worlds keyed by harbor id (active harbor is live on this state). */
+    val harborStashes = TreeMap<String, HarborWorldStash>()
 
     /** Staff walk multiplier (1000 = content speeds). Rebuilt from owned upgrades on load. */
     var workerMoveSpeedPermille = 1000
@@ -217,6 +254,26 @@ class GameState(
     var workerWagePerWorkerPerHour = 0
     /** Progress toward the next wage payday (not persisted). */
     var workerWageAccrualTicks = 0
+
+    /** Subtracted from content maintenance rate (from upgrades; rebuilt on load). */
+    var maintenanceDiscountPerStation = 0
+    /** Multiplies bag fish spoil period (1000 = content default; rebuilt on load). */
+    var bagSpoilPeriodMultPermille = 1000
+    /** Permanent catch-speed floor from prestige (rebuilt on load). */
+    var prestigeCatchSpeedPermille = 1000
+    /** Permanent sale price multiplier from prestige (rebuilt on load). */
+    var prestigePriceBonusPermille = 1000
+    /** Progress toward next station upkeep (not persisted). */
+    var maintenanceAccrualTicks = 0
+    /** Progress toward next counter spoilage (not persisted). */
+    var counterSpoilAccrualTicks = 0
+    /** Progress toward next bag fish spoilage (not persisted). */
+    var bagSpoilAccrualTicks = 0
+
+    /** Tick when the contract board next refreshes (0 = needs immediate refresh when unlocked). */
+    var contractBoardRefreshAt = 0L
+    val contractOffers = mutableListOf<ContractOffer>()
+    val activeContracts = mutableListOf<ContractState>()
 
     /** Purchase receipts keyed by client request ID: a retried request returns the same receipt. */
     val purchaseReceipts = TreeMap<String, Receipt>()
@@ -287,6 +344,12 @@ sealed interface Command {
     data class SelectMachineRecipe(val stationId: String, val recipeId: String?) : Command
     /** Hire a content worker role; [requestId] makes retries idempotent. */
     data class HireWorker(val roleId: String, val requestId: String) : Command
+    /** Accept a posted contract offer; [requestId] makes retries idempotent. */
+    data class AcceptContract(val offerId: String, val requestId: String) : Command
+    /** Deliver matching items from the player bag toward an active contract. */
+    data class DeliverContract(val contractId: String, val requestId: String) : Command
+    /** Travel to another harbor; [requestId] makes retries idempotent. */
+    data class TravelToHarbor(val harborId: String, val requestId: String) : Command
 }
 
 /** Results of simulation. UI effects consume these but never change economic state. */
@@ -331,7 +394,78 @@ sealed interface GameEvent {
     data class HireRejected(override val tick: Long, val roleId: String, val requestId: String, val reason: String) : GameEvent
     data class LeaseExpired(override val tick: Long, val workerId: String, val itemId: String?, val sourceInvId: String?) : GameEvent
     data class WagesPaid(override val tick: Long, val workers: Int, val coins: Long) : GameEvent
-    data class QuestCompleted(override val tick: Long, val questId: String) : GameEvent
+    data class QuestCompleted(
+        override val tick: Long,
+        val questId: String,
+        val coinsRewarded: Long = 0,
+        val unlockUpgrades: List<String> = emptyList(),
+    ) : GameEvent
     data class TutorialAdvanced(override val tick: Long, val stepIndex: Int) : GameEvent
     data class CheckpointRequested(override val tick: Long, val reason: String) : GameEvent
+    data class ContractBoardRefreshed(override val tick: Long, val offerIds: List<String>) : GameEvent
+    data class ContractAccepted(
+        override val tick: Long,
+        val contractId: String,
+        val offerId: String,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class ContractDelivered(
+        override val tick: Long,
+        val contractId: String,
+        val count: Int,
+        val completed: Boolean,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class ContractCompleted(
+        override val tick: Long,
+        val contractId: String,
+        val templateId: String,
+        val payout: Long,
+    ) : GameEvent
+    data class ContractFailed(
+        override val tick: Long,
+        val contractId: String,
+        val templateId: String,
+        val penaltyPaid: Long,
+    ) : GameEvent
+    data class ContractRejected(
+        override val tick: Long,
+        val referenceId: String,
+        val requestId: String,
+        val reason: String,
+    ) : GameEvent
+    data class HarborTraveled(
+        override val tick: Long,
+        val fromHarborId: String,
+        val toHarborId: String,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class TravelRejected(
+        override val tick: Long,
+        val harborId: String,
+        val requestId: String,
+        val reason: String,
+    ) : GameEvent
+    data class MaintenancePaid(
+        override val tick: Long,
+        val stations: Int,
+        val coins: Long,
+    ) : GameEvent
+    data class ItemsSpoiled(
+        override val tick: Long,
+        /** "counter" or "bag" */
+        val location: String,
+        val items: List<ItemQuantity>,
+    ) : GameEvent
+    data class PrestigeUnlocked(
+        override val tick: Long,
+        val prestigeId: String,
+        val coinsRewarded: Long = 0,
+        val cosmetic: String? = null,
+        val catchSpeedPermille: Int = 0,
+        val priceBonusPermille: Int = 0,
+    ) : GameEvent
 }

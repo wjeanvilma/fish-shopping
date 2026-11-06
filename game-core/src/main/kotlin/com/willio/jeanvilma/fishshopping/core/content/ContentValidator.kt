@@ -35,7 +35,8 @@ object ContentValidator {
         // Unique IDs across every collection (IDs are global and namespaced by prefix).
         val allIds = p.species.map { it.id } + p.products.map { it.id } + p.recipes.map { it.id } +
             p.machines.map { it.id } + p.upgrades.map { it.id } + p.quests.map { it.id } +
-            p.workers.map { it.id } + p.customers.map { it.id } + p.tutorial.map { it.id } + p.harbors.map { it.id }
+                p.workers.map { it.id } + p.prestige.milestones.map { it.id } + p.contracts.templates.map { it.id } +
+                p.customers.map { it.id } + p.tutorial.map { it.id } + p.harbors.map { it.id }
         allIds.groupingBy { it }.eachCount().filter { it.value > 1 }.keys.forEach { errors += "Duplicate id '$it'" }
 
         for (w in p.workers) {
@@ -54,6 +55,39 @@ object ContentValidator {
         check(p.routing.supervisorDemandBoostPermille >= 1) { "routing.supervisorDemandBoostPermille must be >= 1" }
         check(p.offline.capHours >= 1) { "offline.capHours must be >= 1" }
         check(p.offline.summaryMinSeconds >= 0) { "offline.summaryMinSeconds must be >= 0" }
+        check(p.economy.maintenancePeriodTicks >= 1) { "economy.maintenancePeriodTicks must be >= 1" }
+        check(p.economy.maintenanceCoinsPerStation >= 0) { "economy.maintenanceCoinsPerStation must be >= 0" }
+        check(p.economy.counterSpoilPeriodTicks >= 1) { "economy.counterSpoilPeriodTicks must be >= 1" }
+        check(p.economy.counterSpoilUnits >= 0) { "economy.counterSpoilUnits must be >= 0" }
+        check(p.economy.bagFishSpoilPeriodTicks >= 1) { "economy.bagFishSpoilPeriodTicks must be >= 1" }
+        check(p.economy.bagFishSpoilUnits >= 0) { "economy.bagFishSpoilUnits must be >= 0" }
+        val economyRequirable = p.upgradesById.keys + p.questsById.keys
+        p.economy.requires.forEach { req ->
+            check(req in economyRequirable) { "economy: unknown requirement '$req'" }
+        }
+        check(p.prestige.ratingThresholds.size == 5) { "prestige.ratingThresholds must have exactly 5 entries" }
+        check(p.prestige.milestones.isNotEmpty()) { "prestige.milestones must not be empty" }
+        for (i in 1 until p.prestige.ratingThresholds.size) {
+            check(p.prestige.ratingThresholds[i] >= p.prestige.ratingThresholds[i - 1]) {
+                "prestige.ratingThresholds must be non-decreasing"
+            }
+        }
+        check(p.contracts.boardSlots >= 1) { "contracts.boardSlots must be >= 1" }
+        check(p.contracts.maxActive >= 1) { "contracts.maxActive must be >= 1" }
+        check(p.contracts.refreshPeriodTicks >= 1) { "contracts.refreshPeriodTicks must be >= 1" }
+        check(p.contracts.templates.isNotEmpty()) { "contracts.templates must not be empty" }
+        val contractRequirable = p.upgradesById.keys + p.questsById.keys
+        p.contracts.requires.forEach { req ->
+            check(req in contractRequirable) { "contracts: unknown requirement '$req'" }
+        }
+        for (t in p.contracts.templates) {
+            check(p.isKnownItem(t.item)) { "${t.id}: unknown item '${t.item}'" }
+            check(t.quantity >= 1) { "${t.id}: quantity must be >= 1" }
+            check(t.durationTicks >= 1) { "${t.id}: durationTicks must be >= 1" }
+            check(t.payout >= 0) { "${t.id}: payout must be >= 0" }
+            check(t.penalty >= 0) { "${t.id}: penalty must be >= 0" }
+            check(t.weight >= 1) { "${t.id}: weight must be >= 1" }
+        }
 
         for (sp in p.species) {
             sp.rareUpgrade?.let { ru ->
@@ -123,9 +157,49 @@ object ContentValidator {
                 is UpgradeEffect.WorkerWage -> check(e.coinsPerWorkerPerHour >= 1) {
                     "${u.id}: worker_wage must be >= 1"
                 }
+                is UpgradeEffect.MaintenanceDiscount -> check(e.coinsOffPerStation >= 1) {
+                    "${u.id}: maintenance_discount must be >= 1"
+                }
+                is UpgradeEffect.BagSpoilResist -> check(e.periodMultPermille > 1000) {
+                    "${u.id}: bag_spoil_resist must exceed 1000"
+                }
             }
         }
         findUpgradeCycle(p)?.let { errors += "Upgrade requirement cycle: ${it.joinToString(" -> ")}" }
+
+        for (q in p.quests) {
+            q.requires.forEach { req -> check(req in requirable) { "${q.id}: unknown requirement '$req'" } }
+            check(q.reward.coins >= 0) { "${q.id}: reward.coins must be >= 0" }
+            q.reward.unlockUpgrades.forEach { uid ->
+                check(uid in p.upgradesById) { "${q.id}: unknown reward upgrade '$uid'" }
+            }
+        }
+        findQuestCycle(p)?.let { errors += "Quest requirement cycle: ${it.joinToString(" -> ")}" }
+
+        val prestigeRequirable = requirable + p.prestigeMilestonesById.keys
+        p.prestige.requires.forEach { req ->
+            check(req in prestigeRequirable) { "prestige: unknown requirement '$req'" }
+        }
+        for (m in p.prestige.milestones) {
+            m.requires.forEach { req ->
+                check(req in prestigeRequirable) { "${m.id}: unknown requirement '$req'" }
+            }
+            check(m.reward.coins >= 0) { "${m.id}: reward.coins must be >= 0" }
+            if (m.reward.catchSpeedPermille > 0) {
+                check(m.reward.catchSpeedPermille >= 1000) {
+                    "${m.id}: catchSpeedPermille must be 0 or >= 1000"
+                }
+            }
+            if (m.reward.priceBonusPermille > 0) {
+                check(m.reward.priceBonusPermille >= 1000) {
+                    "${m.id}: priceBonusPermille must be 0 or >= 1000"
+                }
+            }
+            m.reward.cosmetic?.let { cos ->
+                check(cos.isNotBlank()) { "${m.id}: cosmetic must be non-empty when set" }
+            }
+        }
+        findPrestigeCycle(p)?.let { errors += "Prestige requirement cycle: ${it.joinToString(" -> ")}" }
 
         for (w in p.workers) {
             w.requires.forEach { req -> check(req in requirable) { "${w.id}: unknown requirement '$req'" } }
@@ -158,6 +232,11 @@ object ContentValidator {
 
         for (h in p.harbors) {
             val zoneIds = h.zonesById.keys
+            for (req in h.requires) {
+                check(req in p.upgradesById || req in p.questsById) {
+                    "${h.id}: unknown requirement '$req'"
+                }
+            }
             check(h.walkable.any { it.contains(h.playerSpawn.x, h.playerSpawn.z) }) { "${h.id}: spawn is not walkable" }
             check(h.obstacles.none { it.contains(h.playerSpawn.x, h.playerSpawn.z) }) { "${h.id}: spawn is inside an obstacle" }
             val fishingZoneIds = h.zones.filter { it.kind == ZoneKind.FISHING }.map { it.id }.toSet()
@@ -285,6 +364,50 @@ object ContentValidator {
             return null
         }
         for (u in p.upgrades) visit(u.id)?.let { return it }
+        return null
+    }
+
+    /** Depth-first search over quest -> required quest edges (upgrade requires ignored). */
+    private fun findQuestCycle(p: ContentPack): List<String>? {
+        val state = HashMap<String, Int>()
+        val stack = ArrayDeque<String>()
+        fun visit(id: String): List<String>? {
+            when (state[id]) {
+                1 -> return stack.dropWhile { it != id } + id
+                2 -> return null
+            }
+            state[id] = 1
+            stack.addLast(id)
+            for (req in p.questsById[id]?.requires.orEmpty()) {
+                if (req in p.questsById) visit(req)?.let { return it }
+            }
+            stack.removeLast()
+            state[id] = 2
+            return null
+        }
+        for (q in p.quests) visit(q.id)?.let { return it }
+        return null
+    }
+
+    /** Depth-first search over prestige -> required prestige edges. */
+    private fun findPrestigeCycle(p: ContentPack): List<String>? {
+        val state = HashMap<String, Int>()
+        val stack = ArrayDeque<String>()
+        fun visit(id: String): List<String>? {
+            when (state[id]) {
+                1 -> return stack.dropWhile { it != id } + id
+                2 -> return null
+            }
+            state[id] = 1
+            stack.addLast(id)
+            for (req in p.prestigeMilestonesById[id]?.requires.orEmpty()) {
+                if (req in p.prestigeMilestonesById) visit(req)?.let { return it }
+            }
+            stack.removeLast()
+            state[id] = 2
+            return null
+        }
+        for (m in p.prestige.milestones) visit(m.id)?.let { return it }
         return null
     }
 }

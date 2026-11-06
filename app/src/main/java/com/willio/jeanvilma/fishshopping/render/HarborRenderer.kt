@@ -24,9 +24,9 @@ import com.google.android.filament.utils.Utils
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import com.willio.jeanvilma.fishshopping.game.CameraRig
 import java.nio.ByteBuffer
-import kotlin.math.atan2
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.math.cos
-import kotlin.math.exp
+import kotlin.math.max
 import kotlin.math.sin
 
 /**
@@ -36,11 +36,11 @@ import kotlin.math.sin
  *
  * Must be created, used and destroyed on the main thread.
  *
- * Item stacks and walking customers are driven from SimView by [visibleStackSlots]
- * and [CustomerCrowd] (Presenters.kt), mirrored by the web renderer.
+ * Item stacks, character locomotion, flying transfers, and water tint/bob are driven
+ * from SimView / [FlyingTransferCue]s by the presenters in Presenters.kt, mirrored by
+ * the web renderer.
  *
- * TODO(blueprint): animated characters, water shader, flying transfer animation,
- * occlusion fade, quality presets, per-asset loading per harbor.
+ * TODO(blueprint): occlusion fade, quality presets, per-asset loading per harbor.
  */
 class HarborRenderer(private val context: Context, private val sceneAsset: String) {
 
@@ -49,7 +49,23 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
             Utils.init() // loads filament, gltfio and utils native libraries
         }
 
-        private const val SMOOTHING_PER_SECOND = 18.0
+        private val FLY_SLOT = Regex("""^Fly_(\d+)_(fish|portion)$""")
+        // Blockout TRS scales from generate_blockout.py
+        private const val PLAYER_BODY_SX = 0.6f
+        private const val PLAYER_BODY_SY = 1.6f
+        private const val PLAYER_BODY_SZ = 0.6f
+        private const val PLAYER_NOSE_SX = 0.25f
+        private const val PLAYER_NOSE_SY = 0.18f
+        private const val PLAYER_NOSE_SZ = 0.12f
+        private const val CUSTOMER_BODY_SX = 0.55f
+        private const val CUSTOMER_BODY_SY = 1.5f
+        private const val CUSTOMER_BODY_SZ = 0.55f
+        private const val WATER_SX = 80f
+        private const val WATER_SY = 0.1f
+        private const val WATER_SZ = 80f
+        private const val WATER_REST_X = -20.0
+        private const val WATER_REST_Y = -0.65
+        private const val WATER_REST_Z = 0.0
     }
 
     private val engine: Engine = Engine.create()
@@ -67,22 +83,27 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
     private val resourceLoader = ResourceLoader(engine)
     private var asset: FilamentAsset? = null
     private var playerEntity = 0
+    private var playerBodyEntity = 0
+    private var playerNoseEntity = 0
     private var customerRoots = IntArray(0)
     private var customerBodies = IntArray(0)
     private var crowd = CustomerCrowd(0)
+    private var playerSmooth = PlayerSmoother()
     /** Renderable entity of every pooled item slot, by node name. */
     private val stackSlots = HashMap<String, Int>()
+    private var flyFish = IntArray(0)
+    private var flyPortion = IntArray(0)
+    private var flying = FlyingTransfers(FLYING_TRANSFER_POOL)
+    private val pendingTransfers = ConcurrentLinkedQueue<FlyingTransferCue>()
+    private var waterEntity = 0
 
     private val uiHelper = UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK)
     private var displayHelper: DisplayHelper? = null
     private var swapChain: SwapChain? = null
     private var surfaceView: SurfaceView? = null
 
-    // Visual state, eased toward simulation positions (visuals interpolate; rules do not).
-    private var visX = Double.NaN
-    private var visZ = 0.0
-    private var visYaw = 0.0
     private var lastFrameNanos = 0L
+    private var elapsed = 0.0
 
     init {
         view.scene = scene
@@ -109,6 +130,11 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
         loadScene()
     }
 
+    /** Queue sim-authoritative transfer arcs (drained on the next frame). */
+    fun enqueueTransfers(cues: Collection<FlyingTransferCue>) {
+        pendingTransfers.addAll(cues)
+    }
+
     private fun loadScene() {
         val bytes = context.assets.open(sceneAsset).use { it.readBytes() }
         val buffer = ByteBuffer.allocateDirect(bytes.size).put(bytes).also { it.flip() }
@@ -119,19 +145,37 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
         asset = loaded
 
         playerEntity = loaded.getFirstEntityByName("Player")
+        playerBodyEntity = loaded.getFirstEntityByName("PlayerBody")
+        playerNoseEntity = loaded.getFirstEntityByName("PlayerNose")
+        waterEntity = loaded.getFirstEntityByName("Water")
         customerRoots = generateSequence(0) { it + 1 }
             .map { loaded.getFirstEntityByName("Customer_$it") }
             .takeWhile { it != 0 }
             .toList().toIntArray()
         customerBodies = IntArray(customerRoots.size) { loaded.getFirstEntityByName("CustomerBody_$it") }
         crowd = CustomerCrowd(customerRoots.size)
+        playerSmooth = PlayerSmoother()
 
         stackSlots.clear()
+        val fish = HashMap<Int, Int>()
+        val portion = HashMap<Int, Int>()
         for (e in loaded.entities) {
             val name = loaded.getName(e) ?: continue
             if (isStackSlotName(name)) stackSlots[name] = e
+            val m = FLY_SLOT.matchEntire(name) ?: continue
+            val idx = m.groupValues[1].toInt()
+            when (m.groupValues[2]) {
+                "fish" -> fish[idx] = e
+                "portion" -> portion[idx] = e
+            }
         }
+        val flyCount = max(FLYING_TRANSFER_POOL, max(fish.keys.maxOrNull() ?: -1, portion.keys.maxOrNull() ?: -1) + 1)
+        flyFish = IntArray(flyCount) { fish[it] ?: 0 }
+        flyPortion = IntArray(flyCount) { portion[it] ?: 0 }
+        flying = FlyingTransfers(flyCount)
         stackSlots.values.forEach { setVisible(it, false) }
+        flyFish.forEach { setVisible(it, false) }
+        flyPortion.forEach { setVisible(it, false) }
         customerBodies.forEach { setVisible(it, false) }
     }
 
@@ -176,41 +220,92 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
     private fun updateScene(frameTimeNanos: Long, sim: SimView) {
         val dt = if (lastFrameNanos == 0L) 0.0 else ((frameTimeNanos - lastFrameNanos) / 1e9).coerceIn(0.0, 0.25)
         lastFrameNanos = frameTimeNanos
+        elapsed += dt
 
-        val targetX = sim.player.xMm / 1000.0
-        val targetZ = sim.player.zMm / 1000.0
-        val targetYaw = atan2(sim.player.facingX.toDouble(), sim.player.facingZ.toDouble())
-        if (visX.isNaN()) {
-            visX = targetX; visZ = targetZ; visYaw = targetYaw
-        } else {
-            val k = 1.0 - exp(-SMOOTHING_PER_SECOND * dt)
-            visX += (targetX - visX) * k
-            visZ += (targetZ - visZ) * k
-            var dYaw = targetYaw - visYaw
-            while (dYaw > Math.PI) dYaw -= 2 * Math.PI
-            while (dYaw < -Math.PI) dYaw += 2 * Math.PI
-            visYaw += dYaw * k
-        }
-
+        val pose = playerSmooth.update(sim.player, dt)
+        val tm = engine.transformManager
         if (playerEntity != 0) {
-            val tm = engine.transformManager
-            tm.setTransform(tm.getInstance(playerEntity), yawTranslation(visYaw, visX, 0.0, visZ))
+            tm.setTransform(tm.getInstance(playerEntity), yawTranslation(pose.yaw, pose.x, 0.0, pose.z))
+        }
+        if (playerBodyEntity != 0) {
+            tm.setTransform(
+                tm.getInstance(playerBodyEntity),
+                localBody(
+                    PLAYER_BODY_REST_Y + pose.bobY, pose.swayRad,
+                    PLAYER_BODY_SX, PLAYER_BODY_SY, PLAYER_BODY_SZ,
+                ),
+            )
+        }
+        if (playerNoseEntity != 0) {
+            tm.setTransform(
+                tm.getInstance(playerNoseEntity),
+                localNose(
+                    PLAYER_NOSE_REST_Y + pose.bobY * 0.4, PLAYER_NOSE_REST_Z, -pose.swayRad * 0.5,
+                    PLAYER_NOSE_SX, PLAYER_NOSE_SY, PLAYER_NOSE_SZ,
+                ),
+            )
         }
 
         val shown = visibleStackSlots(sim)
         for ((name, entity) in stackSlots) setVisible(entity, name in shown)
 
-        val tm = engine.transformManager
         crowd.update(sim, dt).forEachIndexed { i, member ->
             setVisible(customerBodies[i], member != null)
             if (member != null) {
                 tm.setTransform(tm.getInstance(customerRoots[i]), yawTranslation(member.yaw, member.x, 0.0, member.z))
+                val body = customerBodies[i]
+                if (body != 0) {
+                    tm.setTransform(
+                        tm.getInstance(body),
+                        localBody(
+                            CUSTOMER_BODY_REST_Y + member.bobY, member.swayRad,
+                            CUSTOMER_BODY_SX, CUSTOMER_BODY_SY, CUSTOMER_BODY_SZ,
+                        ),
+                    )
+                }
+            }
+        }
+
+        while (true) {
+            val cue = pendingTransfers.poll() ?: break
+            flying.spawn(cue)
+        }
+        flying.update(dt).forEachIndexed { i, flyPose ->
+            setVisible(flyFish.getOrElse(i) { 0 }, false)
+            setVisible(flyPortion.getOrElse(i) { 0 }, false)
+            if (flyPose == null) return@forEachIndexed
+            val entity = if (flyPose.kind == "fish") flyFish.getOrElse(i) { 0 } else flyPortion.getOrElse(i) { 0 }
+            if (entity == 0) return@forEachIndexed
+            setVisible(entity, true)
+            tm.setTransform(tm.getInstance(entity), yawTranslation(0.0, flyPose.x, flyPose.y, flyPose.z))
+        }
+
+        if (waterEntity != 0) {
+            val waterY = WATER_REST_Y + sin(elapsed * 0.7) * 0.02
+            tm.setTransform(
+                tm.getInstance(waterEntity),
+                scaleTranslation(WATER_REST_X, waterY, WATER_REST_Z, WATER_SX, WATER_SY, WATER_SZ),
+            )
+            // Soft colour pulse on the ubershader baseColorFactor (presentation-only water pass).
+            val rm = engine.renderableManager
+            val ri = rm.getInstance(waterEntity)
+            if (ri != 0) {
+                val mi = rm.getMaterialInstanceAt(ri, 0)
+                val pulse = (0.5 + 0.5 * sin(elapsed * 1.1)).toFloat()
+                val r = 0.12f + 0.10f * pulse
+                val g = 0.40f + 0.15f * pulse
+                val b = 0.55f + 0.20f * pulse
+                try {
+                    mi.setParameter("baseColorFactor", r, g, b, 0.92f)
+                } catch (_: Throwable) {
+                    // Parameter name differs across Filament ubershader versions; bob still runs.
+                }
             }
         }
 
         camera.lookAt(
-            visX, CameraRig.HEIGHT_M, visZ - CameraRig.BACK_M,
-            visX, 0.0, visZ + CameraRig.LOOK_AHEAD_M,
+            pose.x, CameraRig.HEIGHT_M, pose.z - CameraRig.BACK_M,
+            pose.x, 0.0, pose.z + CameraRig.LOOK_AHEAD_M,
             0.0, 1.0, 0.0,
         )
     }
@@ -231,6 +326,40 @@ class HarborRenderer(private val context: Context, private val sceneAsset: Strin
             c, 0f, -s, 0f,
             0f, 1f, 0f, 0f,
             s, 0f, c, 0f,
+            x.toFloat(), y.toFloat(), z.toFloat(), 1f,
+        )
+    }
+
+    /** Local body: T(0,y,0) * Rz(sway) * S — preserves blockout scale. */
+    private fun localBody(y: Double, sway: Double, sx: Float, sy: Float, sz: Float): FloatArray {
+        val c = cos(sway).toFloat()
+        val s = sin(sway).toFloat()
+        return floatArrayOf(
+            c * sx, s * sx, 0f, 0f,
+            -s * sy, c * sy, 0f, 0f,
+            0f, 0f, sz, 0f,
+            0f, y.toFloat(), 0f, 1f,
+        )
+    }
+
+    /** Local nose: T(0,y,z) * Rz(sway) * S. */
+    private fun localNose(y: Double, z: Double, sway: Double, sx: Float, sy: Float, sz: Float): FloatArray {
+        val c = cos(sway).toFloat()
+        val s = sin(sway).toFloat()
+        return floatArrayOf(
+            c * sx, s * sx, 0f, 0f,
+            -s * sy, c * sy, 0f, 0f,
+            0f, 0f, sz, 0f,
+            0f, y.toFloat(), z.toFloat(), 1f,
+        )
+    }
+
+    /** Uniform-axes scale then translation (for Water slab). */
+    private fun scaleTranslation(x: Double, y: Double, z: Double, sx: Float, sy: Float, sz: Float): FloatArray {
+        return floatArrayOf(
+            sx, 0f, 0f, 0f,
+            0f, sy, 0f, 0f,
+            0f, 0f, sz, 0f,
             x.toFloat(), y.toFloat(), z.toFloat(), 1f,
         )
     }

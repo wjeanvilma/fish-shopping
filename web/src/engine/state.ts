@@ -23,6 +23,15 @@ export const Stats = {
   WORKER_ITEMS_MOVED: "stat.worker_items_moved",
   LEASES_EXPIRED: "stat.leases_expired",
   WAGES_PAID: "stat.wages_paid",
+  QUESTS_COMPLETED: "stat.quests_completed",
+  CONTRACTS_COMPLETED: "stat.contracts_completed",
+  CONTRACTS_FAILED: "stat.contracts_failed",
+  CONTRACT_REVENUE: "stat.contract_revenue",
+  CONTRACT_ITEMS_DELIVERED: "stat.contract_items_delivered",
+  HARBORS_TRAVELED: "stat.harbors_traveled",
+  MAINTENANCE_PAID: "stat.maintenance_paid",
+  ITEMS_SPOILED: "stat.items_spoiled",
+  PRESTIGE_COMPLETED: "stat.prestige_completed",
 } as const;
 
 export type WorkerTaskPhase = "NONE" | "WALK_TO_WORK" | "WORK" | "PICKUP" | "WALK_TO_DROP" | "DROP";
@@ -152,7 +161,50 @@ export interface Receipt {
   readonly reference: string;
 }
 
+/** Posted board offer waiting to be accepted. */
+export interface ContractOffer {
+  readonly id: string;
+  readonly templateId: string;
+  readonly itemId: string;
+  readonly quantity: number;
+  readonly durationTicks: number;
+  readonly payout: number;
+  readonly penalty: number;
+}
+
+/** Accepted timed delivery job. */
+export class ContractState {
+  delivered: number;
+  constructor(
+    readonly id: string,
+    readonly templateId: string,
+    readonly itemId: string,
+    readonly quantity: number,
+    delivered: number,
+    readonly deadlineTick: number,
+    readonly payout: number,
+    readonly penalty: number,
+  ) {
+    this.delivered = delivered;
+  }
+}
+
 export const LEDGER_LIMIT = 64;
+
+/** Per-harbor world parked when the player travels elsewhere. */
+export interface HarborWorldStash {
+  fishingSpots: FishingSpotState[];
+  machines: MachineState[];
+  counters: CounterState[];
+  customers: CustomerState[];
+  workers: WorkerState[];
+  customerSpawnProgress: number;
+  playerX: number;
+  playerZ: number;
+  playerFacingX: number;
+  playerFacingZ: number;
+  playerZoneId: string | null;
+}
 
 export class GameState {
   tick = 0;
@@ -164,9 +216,13 @@ export class GameState {
   readonly workers: WorkerState[] = [];
   readonly ownedUpgrades = new Set<string>();
   readonly completedQuests = new Set<string>();
+  readonly completedPrestige = new Set<string>();
+  readonly unlockedCosmetics = new Set<string>();
   readonly stats = new Map<string, number>();
   readonly purchaseReceipts = new Map<string, Receipt>();
   readonly ledger: Receipt[] = [];
+  /** Parked harbor worlds keyed by harbor id (active harbor is live on this state). */
+  readonly harborStashes = new Map<string, HarborWorldStash>();
   /** Rebuilt from owned upgrades on load (idempotent max). */
   workerMoveSpeedPermille = 1000;
   workerCatchSpeedPermille = 0;
@@ -175,13 +231,33 @@ export class GameState {
   /** Ticks since last hourly wage debit (not persisted). */
   workerWageAccrualTicks = 0;
 
+  /** Subtracted from content maintenance rate (from upgrades; rebuilt on load). */
+  maintenanceDiscountPerStation = 0;
+  /** Multiplies bag fish spoil period (1000 = content default; rebuilt on load). */
+  bagSpoilPeriodMultPermille = 1000;
+  /** Permanent catch-speed floor from prestige (rebuilt on load). */
+  prestigeCatchSpeedPermille = 1000;
+  /** Permanent sale price multiplier from prestige (rebuilt on load). */
+  prestigePriceBonusPermille = 1000;
+  /** Progress toward next station upkeep (not persisted). */
+  maintenanceAccrualTicks = 0;
+  /** Progress toward next counter spoilage (not persisted). */
+  counterSpoilAccrualTicks = 0;
+  /** Progress toward next bag fish spoilage (not persisted). */
+  bagSpoilAccrualTicks = 0;
+
+  /** Tick when the contract board next refreshes (0 = needs immediate refresh when unlocked). */
+  contractBoardRefreshAt = 0;
+  readonly contractOffers: ContractOffer[] = [];
+  readonly activeContracts: ContractState[] = [];
+
   constructor(
-    readonly harborId: string,
+    public harborId: string,
     readonly rng: Prng,
     readonly player: PlayerState,
-    readonly fishingSpots: FishingSpotState[],
-    readonly machines: MachineState[],
-    readonly counters: CounterState[],
+    public fishingSpots: FishingSpotState[],
+    public machines: MachineState[],
+    public counters: CounterState[],
   ) {}
 
   stat(key: string): number { return this.stats.get(key) ?? 0; }
@@ -225,7 +301,13 @@ export type Command =
   | { type: "set_machine_paused"; stationId: string; paused: boolean }
   | { type: "reel" }
   | { type: "select_machine_recipe"; stationId: string; recipeId: string | null }
-  | { type: "hire_worker"; roleId: string; requestId: string };
+  | { type: "hire_worker"; roleId: string; requestId: string }
+  /** Accept a posted contract offer; requestId makes retries idempotent. */
+  | { type: "accept_contract"; offerId: string; requestId: string }
+  /** Deliver matching items from the player bag toward an active contract. */
+  | { type: "deliver_contract"; contractId: string; requestId: string }
+  /** Travel to another harbor; requestId makes retries idempotent. */
+  | { type: "travel_to_harbor"; harborId: string; requestId: string };
 
 export type GameEvent =
   | { type: "zone_entered"; tick: number; zoneId: string | null }
@@ -245,6 +327,17 @@ export type GameEvent =
   | { type: "hire_rejected"; tick: number; roleId: string; requestId: string; reason: string }
   | { type: "wages_paid"; tick: number; workers: number; coins: number }
   | { type: "lease_expired"; tick: number; workerId: string; itemId: string | null; sourceInvId: string | null }
-  | { type: "quest_completed"; tick: number; questId: string }
+  | { type: "quest_completed"; tick: number; questId: string; coinsRewarded?: number; unlockUpgrades?: string[] }
   | { type: "tutorial_advanced"; tick: number; stepIndex: number }
-  | { type: "checkpoint_requested"; tick: number; reason: string };
+  | { type: "checkpoint_requested"; tick: number; reason: string }
+  | { type: "contract_board_refreshed"; tick: number; offerIds: string[] }
+  | { type: "contract_accepted"; tick: number; contractId: string; offerId: string; receipt: Receipt; replayed: boolean }
+  | { type: "contract_delivered"; tick: number; contractId: string; count: number; completed: boolean; receipt: Receipt; replayed: boolean }
+  | { type: "contract_completed"; tick: number; contractId: string; templateId: string; payout: number }
+  | { type: "contract_failed"; tick: number; contractId: string; templateId: string; penaltyPaid: number }
+  | { type: "contract_rejected"; tick: number; referenceId: string; requestId: string; reason: string }
+  | { type: "harbor_traveled"; tick: number; fromHarborId: string; toHarborId: string; receipt: Receipt; replayed: boolean }
+  | { type: "travel_rejected"; tick: number; harborId: string; requestId: string; reason: string }
+  | { type: "maintenance_paid"; tick: number; stations: number; coins: number }
+  | { type: "items_spoiled"; tick: number; location: "counter" | "bag"; items: ItemQuantity[] }
+  | { type: "prestige_unlocked"; tick: number; prestigeId: string; coinsRewarded: number; cosmetic: string | null; catchSpeedPermille: number; priceBonusPermille: number };

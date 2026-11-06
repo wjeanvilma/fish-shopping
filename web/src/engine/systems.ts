@@ -2,15 +2,17 @@
  * Per-tick systems. Each function mirrors the Kotlin object of the same name in game-core;
  * keep them line-for-line comparable so fixture mismatches are easy to trace.
  */
-import type { ContentPack, HarborDef, ItemQuantity, PointMm, RecipeDef, RushWindowDef, UpgradeDef, UpgradeEffect, WorkerDef } from "./content";
+import type { ContentPack, ContractTemplateDef, HarborDef, ItemQuantity, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, UpgradeDef, UpgradeEffect, WorkerDef } from "./content";
 import { counterAccepts, queueSlot, rectCenterX, rectCenterZ, rectContains } from "./content";
 import { INPUT_SCALE, SafeMath, TICKS_PER_SECOND, compareStrings, idiv } from "./foundations";
 import { Inventory, Transfers } from "./inventory";
-import { CounterState, CustomerState, GameState, MachineState, PlayerState, Receipt, Stats, WorkerState, type GameEvent } from "./state";
+import { ContractState, CounterState, CustomerState, FishingSpotState, GameState, MachineState, PlayerState, Receipt, Stats, WorkerState, type ContractOffer, type GameEvent, type HarborWorldStash } from "./state";
 
 export class StepContext {
   readonly events: GameEvent[] = [];
-  constructor(readonly content: ContentPack, readonly harbor: HarborDef, readonly state: GameState) {}
+  constructor(readonly content: ContentPack, readonly state: GameState) {}
+  /** Resolved each access so travel_to_harbor takes effect mid-tick. */
+  get harbor(): HarborDef { return this.content.harbor(this.state.harborId); }
   emit(e: GameEvent): void { this.events.push(e); }
 }
 
@@ -133,14 +135,14 @@ export const FishingSystem = {
       const pick = candidates[s.rng.pickWeighted(candidates.map((c) => c.rarityWeight))]!;
       p.fishingSpecies = pick.id;
       p.fishingProgress = 0;
-      p.fishingCatchTicks = FishingSystem.catchTicksFor(p.catchSpeedPermille, pick.catchTicks);
+      p.fishingCatchTicks = FishingSystem.catchTicksFor(FishingSystem.effectiveCatchSpeed(s), pick.catchTicks);
       p.reelAttemptedThisCast = false;
     }
 
     const species = ctx.content.speciesById.get(p.fishingSpecies)!;
     const duration = p.fishingCatchTicks > 0
       ? p.fishingCatchTicks
-      : FishingSystem.catchTicksFor(p.catchSpeedPermille, species.catchTicks);
+      : FishingSystem.catchTicksFor(FishingSystem.effectiveCatchSpeed(s), species.catchTicks);
     p.fishingCatchTicks = duration;
 
     let timingBonus = false;
@@ -168,6 +170,11 @@ export const FishingSystem = {
 
   isUnlocked(def: { requiresUpgrade?: string | null }, state: GameState): boolean {
     return !def.requiresUpgrade || state.ownedUpgrades.has(def.requiresUpgrade);
+  },
+
+  /** Player upgrades and prestige floors both apply (whichever is faster). */
+  effectiveCatchSpeed(state: GameState): number {
+    return Math.max(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille);
   },
 
   catchTicksFor(catchSpeedPermille: number, baseCatchTicks: number): number {
@@ -513,6 +520,7 @@ export const CustomerSystem = {
     const met = c.preferenceMet();
     let mult = type.priceMultPermille;
     if (!met) mult = idiv(mult * type.unmetPriceMultPermille, 1000);
+    mult = idiv(mult * s.prestigePriceBonusPermille, 1000);
     const amount = idiv(base * mult, 1000);
     const saleId = s.newId("sale");
     s.coins = SafeMath.creditCoins(s.coins, amount);
@@ -740,6 +748,10 @@ export const UpgradeSystem = {
       s.workerCatchSpeedPermille = Math.max(s.workerCatchSpeedPermille, effect.speedPermille);
     } else if (effect.kind === "worker_wage") {
       s.workerWagePerWorkerPerHour = Math.max(s.workerWagePerWorkerPerHour, effect.coinsPerWorkerPerHour);
+    } else if (effect.kind === "maintenance_discount") {
+      s.maintenanceDiscountPerStation = Math.max(s.maintenanceDiscountPerStation, effect.coinsOffPerStation);
+    } else if (effect.kind === "bag_spoil_resist") {
+      s.bagSpoilPeriodMultPermille = Math.max(s.bagSpoilPeriodMultPermille, effect.periodMultPermille);
     }
     // unlock_fishing_spot is gated by ownedUpgrades in FishingSystem
   },
@@ -749,10 +761,10 @@ export const ProgressionSystem = {
   step(ctx: StepContext): void {
     const s = ctx.state;
     for (const q of ctx.content.quests) {
-      if (!s.completedQuests.has(q.id) && s.stat(q.goal.stat) >= q.goal.atLeast) {
-        s.completedQuests.add(q.id);
-        ctx.emit({ type: "quest_completed", tick: s.tick, questId: q.id });
-      }
+      if (s.completedQuests.has(q.id)) continue;
+      if (!ProgressionSystem.requirementsMet(s, q)) continue;
+      if (s.stat(q.goal.stat) < q.goal.atLeast) continue;
+      completeQuest(ctx, q);
     }
     const step = ctx.content.tutorial[s.tutorialIndex];
     if (!step) return;
@@ -763,7 +775,561 @@ export const ProgressionSystem = {
       ctx.emit({ type: "tutorial_advanced", tick: s.tick, stepIndex: s.tutorialIndex });
     }
   },
+
+  requirementsMet(s: GameState, q: QuestDef): boolean {
+    return q.requires.every((r) => s.ownedUpgrades.has(r) || s.completedQuests.has(r));
+  },
+
+  missingRequirement(content: ContentPack, s: GameState, q: QuestDef): string | null {
+    const missing = q.requires.find((r) => !s.ownedUpgrades.has(r) && !s.completedQuests.has(r));
+    if (!missing) return null;
+    return content.upgradesById.get(missing)?.name ?? content.questsById.get(missing)?.name ?? missing;
+  },
 };
+
+function completeQuest(ctx: StepContext, q: QuestDef): void {
+  const s = ctx.state;
+  s.completedQuests.add(q.id);
+  s.bumpStat(Stats.QUESTS_COMPLETED);
+  const reward = q.reward;
+  if (reward.coins > 0) {
+    s.coins = SafeMath.creditCoins(s.coins, reward.coins);
+    const receipt: Receipt = { id: s.newId("quest"), type: "quest_reward", coinDelta: reward.coins, tick: s.tick, reference: q.id };
+    s.record(receipt);
+  }
+  for (const uid of reward.unlockUpgrades) {
+    const u = ctx.content.upgradesById.get(uid);
+    if (!u) continue;
+    s.ownedUpgrades.add(uid);
+    UpgradeSystem.applyEffect(s, u.effect);
+  }
+  ctx.emit({
+    type: "quest_completed", tick: s.tick, questId: q.id,
+    coinsRewarded: reward.coins, unlockUpgrades: [...reward.unlockUpgrades],
+  });
+  ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "quest" });
+}
+
+/**
+ * Prestige-lite (Phase 20): permanent milestone bonuses and cosmetics without wiping
+ * the save. Effects are rebuilt from completedPrestige on load.
+ */
+export const PrestigeSystem = {
+  boardUnlocked(content: ContentPack, s: GameState): boolean {
+    return content.prestige.requires.every((it) =>
+      s.ownedUpgrades.has(it) || s.completedQuests.has(it) || s.completedPrestige.has(it));
+  },
+
+  missingBoardRequirement(content: ContentPack, s: GameState): string | null {
+    const missing = content.prestige.requires.find((it) =>
+      !s.ownedUpgrades.has(it) && !s.completedQuests.has(it) && !s.completedPrestige.has(it));
+    if (missing === undefined) return null;
+    return content.upgradesById.get(missing)?.name
+      ?? content.questsById.get(missing)?.name
+      ?? content.prestigeMilestonesById.get(missing)?.name
+      ?? missing;
+  },
+
+  requirementsMet(s: GameState, m: PrestigeMilestoneDef): boolean {
+    return m.requires.every((it) => s.ownedUpgrades.has(it) || s.completedQuests.has(it) || s.completedPrestige.has(it));
+  },
+
+  missingRequirement(content: ContentPack, s: GameState, m: PrestigeMilestoneDef): string | null {
+    const missing = m.requires.find((it) =>
+      !s.ownedUpgrades.has(it) && !s.completedQuests.has(it) && !s.completedPrestige.has(it));
+    if (missing === undefined) return null;
+    return content.upgradesById.get(missing)?.name
+      ?? content.questsById.get(missing)?.name
+      ?? content.prestigeMilestonesById.get(missing)?.name
+      ?? missing;
+  },
+
+  /** Harbor rating stars 0..5 from lifetime revenue vs content thresholds. */
+  harborRating(content: ContentPack, s: GameState): number {
+    const revenue = s.stat(Stats.REVENUE);
+    let stars = 0;
+    for (const threshold of content.prestige.ratingThresholds) {
+      if (revenue >= threshold) stars++;
+      else break;
+    }
+    return Math.max(0, Math.min(5, stars));
+  },
+
+  step(ctx: StepContext): void {
+    if (!PrestigeSystem.boardUnlocked(ctx.content, ctx.state)) return;
+    for (const m of ctx.content.prestige.milestones) {
+      if (ctx.state.completedPrestige.has(m.id)) continue;
+      if (!PrestigeSystem.requirementsMet(ctx.state, m)) continue;
+      if (ctx.state.stat(m.goal.stat) < m.goal.atLeast) continue;
+      completePrestige(ctx, m);
+    }
+  },
+
+  applyReward(s: GameState, m: PrestigeMilestoneDef): void {
+    const r = m.reward;
+    if (r.catchSpeedPermille > 0) {
+      s.prestigeCatchSpeedPermille = Math.max(s.prestigeCatchSpeedPermille, r.catchSpeedPermille);
+    }
+    if (r.priceBonusPermille > 0) {
+      s.prestigePriceBonusPermille = Math.max(s.prestigePriceBonusPermille, r.priceBonusPermille);
+    }
+    if (r.cosmetic) s.unlockedCosmetics.add(r.cosmetic);
+  },
+};
+
+function completePrestige(ctx: StepContext, m: PrestigeMilestoneDef): void {
+  const s = ctx.state;
+  s.completedPrestige.add(m.id);
+  s.bumpStat(Stats.PRESTIGE_COMPLETED);
+  const reward = m.reward;
+  if (reward.coins > 0) {
+    s.coins = SafeMath.creditCoins(s.coins, reward.coins);
+    const receipt: Receipt = { id: s.newId("prestige"), type: "prestige_reward", coinDelta: reward.coins, tick: s.tick, reference: m.id };
+    s.record(receipt);
+  }
+  PrestigeSystem.applyReward(s, m);
+  ctx.emit({
+    type: "prestige_unlocked",
+    tick: s.tick,
+    prestigeId: m.id,
+    coinsRewarded: reward.coins,
+    cosmetic: reward.cosmetic ?? null,
+    catchSpeedPermille: reward.catchSpeedPermille,
+    priceBonusPermille: reward.priceBonusPermille,
+  });
+  ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "prestige" });
+}
+
+// ---------------------------------------------------------------- contracts/Contracts.kt
+
+/**
+ * Timed delivery contracts (Phase 17).
+ *
+ * Board posts weighted offers after contracts.requires are met; accepting moves
+ * an offer into active work. Deliver from the player bag; miss the deadline and pay
+ * a penalty (capped by current coins).
+ */
+export const ContractSystem = {
+  step(ctx: StepContext): void {
+    expireDeadlines(ctx);
+    maybeRefreshBoard(ctx);
+  },
+
+  boardUnlocked(content: ContentPack, s: GameState): boolean {
+    return content.contracts.requires.every((it) => s.ownedUpgrades.has(it) || s.completedQuests.has(it));
+  },
+
+  missingBoardRequirement(content: ContentPack, s: GameState): string | null {
+    const missing = content.contracts.requires.find((it) => !s.ownedUpgrades.has(it) && !s.completedQuests.has(it));
+    if (missing === undefined) return null;
+    return content.upgradesById.get(missing)?.name ?? content.questsById.get(missing)?.name ?? missing;
+  },
+
+  accept(ctx: StepContext, offerId: string, requestId: string): void {
+    const s = ctx.state;
+    const existing = s.purchaseReceipts.get(requestId);
+    if (existing) {
+      ctx.emit({ type: "contract_accepted", tick: s.tick, contractId: existing.reference, offerId, receipt: existing, replayed: true });
+      return;
+    }
+    const reject = (reason: string) => {
+      ctx.emit({ type: "contract_rejected", tick: s.tick, referenceId: offerId, requestId, reason });
+    };
+    if (!ContractSystem.boardUnlocked(ctx.content, s)) {
+      reject(`Requires: ${ContractSystem.missingBoardRequirement(ctx.content, s)}`);
+      return;
+    }
+    const offer = s.contractOffers.find((it) => it.id === offerId);
+    if (!offer) {
+      reject("Offer no longer available");
+      return;
+    }
+    if (s.activeContracts.length >= ctx.content.contracts.maxActive) {
+      reject(`Max ${ctx.content.contracts.maxActive} active contracts`);
+      return;
+    }
+    for (let i = s.contractOffers.length - 1; i >= 0; i--) {
+      if (s.contractOffers[i]!.id === offerId) s.contractOffers.splice(i, 1);
+    }
+    const contract = new ContractState(
+      s.newId("job"),
+      offer.templateId,
+      offer.itemId,
+      offer.quantity,
+      0,
+      s.tick + offer.durationTicks,
+      offer.payout,
+      offer.penalty,
+    );
+    s.activeContracts.push(contract);
+    const receipt: Receipt = { id: s.newId("contract"), type: "contract_accept", coinDelta: 0, tick: s.tick, reference: contract.id };
+    s.record(receipt);
+    s.purchaseReceipts.set(requestId, receipt);
+    ctx.emit({ type: "contract_accepted", tick: s.tick, contractId: contract.id, offerId, receipt, replayed: false });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "contract" });
+  },
+
+  deliver(ctx: StepContext, contractId: string, requestId: string): void {
+    const s = ctx.state;
+    const existing = s.purchaseReceipts.get(requestId);
+    if (existing) {
+      ctx.emit({
+        type: "contract_delivered", tick: s.tick, contractId, count: 0,
+        completed: existing.type === "contract_payout", receipt: existing, replayed: true,
+      });
+      return;
+    }
+    const reject = (reason: string) => {
+      ctx.emit({ type: "contract_rejected", tick: s.tick, referenceId: contractId, requestId, reason });
+    };
+    const idx = s.activeContracts.findIndex((it) => it.id === contractId);
+    if (idx < 0) {
+      reject("Unknown contract");
+      return;
+    }
+    const c = s.activeContracts[idx]!;
+    const need = c.quantity - c.delivered;
+    if (need <= 0) {
+      reject("Already complete");
+      return;
+    }
+    const have = s.player.bag.available(c.itemId);
+    if (have <= 0) {
+      reject(`Need ${ctx.content.itemName(c.itemId)} in your bag`);
+      return;
+    }
+    const take = Math.min(need, have);
+    s.player.bag.remove(c.itemId, take);
+    c.delivered += take;
+    s.bumpStat(Stats.CONTRACT_ITEMS_DELIVERED, take);
+    if (c.delivered >= c.quantity) {
+      s.activeContracts.splice(idx, 1);
+      s.coins = SafeMath.creditCoins(s.coins, c.payout);
+      s.bumpStat(Stats.CONTRACTS_COMPLETED);
+      s.bumpStat(Stats.CONTRACT_REVENUE, c.payout);
+      const receipt: Receipt = { id: s.newId("contract"), type: "contract_payout", coinDelta: c.payout, tick: s.tick, reference: c.id };
+      s.record(receipt);
+      s.purchaseReceipts.set(requestId, receipt);
+      ctx.emit({ type: "contract_delivered", tick: s.tick, contractId: c.id, count: take, completed: true, receipt, replayed: false });
+      ctx.emit({ type: "contract_completed", tick: s.tick, contractId: c.id, templateId: c.templateId, payout: c.payout });
+      ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "contract" });
+    } else {
+      const receipt: Receipt = { id: s.newId("contract"), type: "contract_deliver", coinDelta: 0, tick: s.tick, reference: `${contractId}:${take}` };
+      s.record(receipt);
+      s.purchaseReceipts.set(requestId, receipt);
+      ctx.emit({ type: "contract_delivered", tick: s.tick, contractId: c.id, count: take, completed: false, receipt, replayed: false });
+    }
+  },
+};
+
+function expireDeadlines(ctx: StepContext): void {
+  const s = ctx.state;
+  const expired = s.activeContracts.filter((c) => s.tick >= c.deadlineTick);
+  if (expired.length === 0) return;
+  const drop = new Set(expired);
+  for (let i = s.activeContracts.length - 1; i >= 0; i--) {
+    if (drop.has(s.activeContracts[i]!)) s.activeContracts.splice(i, 1);
+  }
+  for (const c of expired) {
+    const paid = Math.min(c.penalty, s.coins);
+    if (paid > 0) {
+      s.coins -= paid;
+      const receipt: Receipt = { id: s.newId("contract"), type: "contract_penalty", coinDelta: -paid, tick: s.tick, reference: c.id };
+      s.record(receipt);
+    }
+    s.bumpStat(Stats.CONTRACTS_FAILED);
+    ctx.emit({ type: "contract_failed", tick: s.tick, contractId: c.id, templateId: c.templateId, penaltyPaid: paid });
+  }
+  ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "contract" });
+}
+
+function maybeRefreshBoard(ctx: StepContext): void {
+  const s = ctx.state;
+  if (!ContractSystem.boardUnlocked(ctx.content, s)) {
+    s.contractOffers.length = 0;
+    s.contractBoardRefreshAt = 0;
+    return;
+  }
+  if (s.contractBoardRefreshAt === 0) {
+    refreshOffers(ctx);
+    return;
+  }
+  if (s.tick < s.contractBoardRefreshAt) return;
+  refreshOffers(ctx);
+}
+
+function refreshOffers(ctx: StepContext): void {
+  const s = ctx.state;
+  const def = ctx.content.contracts;
+  s.contractOffers.length = 0;
+  const pool = [...def.templates];
+  const slots = Math.min(def.boardSlots, pool.length);
+  for (let n = 0; n < slots; n++) {
+    if (pool.length === 0) continue;
+    const idx = s.rng.pickWeighted(pool.map((t) => t.weight));
+    const t = pool.splice(idx, 1)[0]!;
+    s.contractOffers.push(offerFrom(s, t));
+  }
+  s.contractBoardRefreshAt = s.tick + def.refreshPeriodTicks;
+  ctx.emit({ type: "contract_board_refreshed", tick: s.tick, offerIds: s.contractOffers.map((o) => o.id) });
+}
+
+// ---------------------------------------------------------------- economy/Economy.kt
+
+/**
+ * Soft economy sinks (Phase 19): station upkeep and counter/bag spoilage after
+ * economy.requires are met. Accrual is ephemeral (not persisted), like wages.
+ */
+export const EconomySystem = {
+  unlocked(content: ContentPack, s: GameState): boolean {
+    return content.economy.requires.every((it) => s.ownedUpgrades.has(it) || s.completedQuests.has(it));
+  },
+
+  missingRequirement(content: ContentPack, s: GameState): string | null {
+    const missing = content.economy.requires.find((it) => !s.ownedUpgrades.has(it) && !s.completedQuests.has(it));
+    if (missing === undefined) return null;
+    return content.upgradesById.get(missing)?.name ?? content.questsById.get(missing)?.name ?? missing;
+  },
+
+  maintenanceCoinsPerStation(content: ContentPack, s: GameState): number {
+    return Math.max(0, content.economy.maintenanceCoinsPerStation - s.maintenanceDiscountPerStation);
+  },
+
+  bagFishSpoilPeriodTicks(content: ContentPack, s: GameState): number {
+    const base = content.economy.bagFishSpoilPeriodTicks;
+    const scaled = idiv(SafeMath.multiply(base, s.bagSpoilPeriodMultPermille), 1000);
+    return Math.max(1, scaled);
+  },
+
+  step(ctx: StepContext): void {
+    if (!EconomySystem.unlocked(ctx.content, ctx.state)) return;
+    accrueMaintenance(ctx);
+    accrueCounterSpoil(ctx);
+    accrueBagFishSpoil(ctx);
+  },
+};
+
+function accrueMaintenance(ctx: StepContext): void {
+  const s = ctx.state;
+  const eco = ctx.content.economy;
+  const rate = EconomySystem.maintenanceCoinsPerStation(ctx.content, s);
+  if (rate <= 0 || eco.maintenancePeriodTicks <= 0) return;
+  s.maintenanceAccrualTicks++;
+  if (s.maintenanceAccrualTicks < eco.maintenancePeriodTicks) return;
+  s.maintenanceAccrualTicks = 0;
+  const stations = ctx.harbor.stations.length;
+  if (stations <= 0) return;
+  const cost = rate * stations;
+  const paid = Math.min(cost, s.coins);
+  if (paid <= 0) return;
+  s.coins -= paid;
+  s.bumpStat(Stats.MAINTENANCE_PAID, paid);
+  const receipt: Receipt = { id: s.newId("maint"), type: "maintenance", coinDelta: -paid, tick: s.tick, reference: `stations:${stations}` };
+  s.record(receipt);
+  ctx.emit({ type: "maintenance_paid", tick: s.tick, stations, coins: paid });
+}
+
+function accrueCounterSpoil(ctx: StepContext): void {
+  const s = ctx.state;
+  const eco = ctx.content.economy;
+  if (eco.counterSpoilUnits <= 0) return;
+  s.counterSpoilAccrualTicks++;
+  if (s.counterSpoilAccrualTicks < eco.counterSpoilPeriodTicks) return;
+  s.counterSpoilAccrualTicks = 0;
+  const lost: ItemQuantity[] = [];
+  let remaining = eco.counterSpoilUnits;
+  const counters = [...s.counters].sort((a, b) => compareStrings(a.counterId, b.counterId));
+  for (const counter of counters) {
+    if (remaining <= 0) break;
+    remaining = removeSpoilUnits(counter.stock, remaining, true, ctx.content, lost);
+  }
+  if (lost.length === 0) return;
+  const total = lost.reduce((sum, it) => sum + it.quantity, 0);
+  s.bumpStat(Stats.ITEMS_SPOILED, total);
+  ctx.emit({ type: "items_spoiled", tick: s.tick, location: "counter", items: [...lost] });
+}
+
+function accrueBagFishSpoil(ctx: StepContext): void {
+  const s = ctx.state;
+  const eco = ctx.content.economy;
+  if (eco.bagFishSpoilUnits <= 0) return;
+  s.bagSpoilAccrualTicks++;
+  const period = EconomySystem.bagFishSpoilPeriodTicks(ctx.content, s);
+  if (s.bagSpoilAccrualTicks < period) return;
+  s.bagSpoilAccrualTicks = 0;
+  const lost: ItemQuantity[] = [];
+  removeSpoilUnits(s.player.bag, eco.bagFishSpoilUnits, false, ctx.content, lost);
+  if (lost.length === 0) return;
+  const total = lost.reduce((sum, it) => sum + it.quantity, 0);
+  s.bumpStat(Stats.ITEMS_SPOILED, total);
+  ctx.emit({ type: "items_spoiled", tick: s.tick, location: "bag", items: [...lost] });
+}
+
+/**
+ * Removes up to [units] from [inv]. When [preferProducts] is true, only products;
+ * otherwise only species (raw fish). Deterministic sorted item-id order.
+ */
+function removeSpoilUnits(
+  inv: Inventory,
+  units: number,
+  preferProducts: boolean,
+  content: ContentPack,
+  into: ItemQuantity[],
+): number {
+  let left = units;
+  const ids = inv.contents()
+    .map(([id]) => id)
+    .filter((id) => (preferProducts ? content.productsById.has(id) : content.speciesById.has(id)))
+    .sort(compareStrings);
+  for (const id of ids) {
+    if (left <= 0) break;
+    const have = inv.available(id);
+    if (have <= 0) continue;
+    const take = Math.min(have, left);
+    inv.remove(id, take);
+    into.push({ item: id, quantity: take });
+    left -= take;
+  }
+  return left;
+}
+
+function offerFrom(s: GameState, t: ContractTemplateDef): ContractOffer {
+  return {
+    id: s.newId("offer"),
+    templateId: t.id,
+    itemId: t.item,
+    quantity: t.quantity,
+    durationTicks: t.durationTicks,
+    payout: t.payout,
+    penalty: t.penalty,
+  };
+}
+
+// ---------------------------------------------------------------- world/HarborTravel.kt
+
+/**
+ * Harbor map travel. Unlocks via HarborDef.requires; each visit stashes the
+ * left-behind layout so machines, stock, customers, and staff resume on return.
+ */
+export const HarborTravelSystem = {
+  unlocked(content: ContentPack, s: GameState, def: HarborDef): boolean {
+    return def.requires.every((it) => s.ownedUpgrades.has(it) || s.completedQuests.has(it));
+  },
+
+  missingRequirement(content: ContentPack, s: GameState, def: HarborDef): string | null {
+    const missing = def.requires.find((it) => !s.ownedUpgrades.has(it) && !s.completedQuests.has(it));
+    if (missing === undefined) return null;
+    return content.upgradesById.get(missing)?.name ?? content.questsById.get(missing)?.name ?? missing;
+  },
+
+  travel(ctx: StepContext, harborId: string, requestId: string): void {
+    const s = ctx.state;
+    const existing = s.purchaseReceipts.get(requestId);
+    if (existing) {
+      ctx.emit({
+        type: "harbor_traveled", tick: s.tick, fromHarborId: existing.reference, toHarborId: harborId,
+        receipt: existing, replayed: true,
+      });
+      return;
+    }
+    const reject = (reason: string) => {
+      ctx.emit({ type: "travel_rejected", tick: s.tick, harborId, requestId, reason });
+    };
+    if (!ctx.content.harborsById.has(harborId)) {
+      reject("Unknown harbor");
+      return;
+    }
+    if (harborId === s.harborId) {
+      reject("Already here");
+      return;
+    }
+    const target = ctx.content.harbor(harborId);
+    if (!HarborTravelSystem.unlocked(ctx.content, s, target)) {
+      reject(`Requires: ${HarborTravelSystem.missingRequirement(ctx.content, s, target)}`);
+      return;
+    }
+
+    const fromId = s.harborId;
+    s.harborStashes.set(fromId, HarborTravelSystem.capture(s));
+    const parked = s.harborStashes.get(harborId) ?? null;
+    if (parked) s.harborStashes.delete(harborId);
+    s.harborId = harborId;
+    if (parked) HarborTravelSystem.restore(s, parked);
+    else HarborTravelSystem.installFresh(ctx.content, s, target);
+    clearTransientPlayer(s);
+
+    const receipt: Receipt = { id: s.newId("travel"), type: "harbor_travel", coinDelta: 0, tick: s.tick, reference: harborId };
+    s.record(receipt);
+    s.purchaseReceipts.set(requestId, receipt);
+    s.bumpStat(Stats.HARBORS_TRAVELED);
+    ctx.emit({ type: "harbor_traveled", tick: s.tick, fromHarborId: fromId, toHarborId: harborId, receipt, replayed: false });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "travel" });
+  },
+
+  capture(s: GameState): HarborWorldStash {
+    return {
+      fishingSpots: s.fishingSpots,
+      machines: s.machines,
+      counters: s.counters,
+      customers: s.customers.slice(),
+      workers: s.workers.slice(),
+      customerSpawnProgress: s.customerSpawnProgress,
+      playerX: s.player.x,
+      playerZ: s.player.z,
+      playerFacingX: s.player.facingX,
+      playerFacingZ: s.player.facingZ,
+      playerZoneId: s.player.zoneId,
+    };
+  },
+
+  restore(s: GameState, stash: HarborWorldStash): void {
+    s.fishingSpots = stash.fishingSpots;
+    s.machines = stash.machines;
+    s.counters = stash.counters;
+    s.customers.length = 0;
+    s.customers.push(...stash.customers);
+    s.workers.length = 0;
+    s.workers.push(...stash.workers);
+    s.customerSpawnProgress = stash.customerSpawnProgress;
+    s.player.x = stash.playerX;
+    s.player.z = stash.playerZ;
+    s.player.facingX = stash.playerFacingX;
+    s.player.facingZ = stash.playerFacingZ;
+    s.player.zoneId = stash.playerZoneId;
+  },
+
+  installFresh(content: ContentPack, s: GameState, harbor: HarborDef): void {
+    const units = content.carryUnits;
+    s.fishingSpots = harbor.fishingSpots.map((f) => new FishingSpotState(f.zone, f.stockMax));
+    s.machines = harbor.stations.map((st) => {
+      const def = content.machinesById.get(st.machine)!;
+      return new MachineState(
+        st.id, st.machine,
+        new Inventory(`inv.${st.id}.input`, def.inputCapacityUnits, units),
+        new Inventory(`inv.${st.id}.output`, def.outputCapacityUnits, units),
+      );
+    });
+    s.counters = harbor.counters.map((c) => new CounterState(c.id, new Inventory(`inv.${c.id}`, c.capacityUnits, units)));
+    s.customers.length = 0;
+    s.workers.length = 0;
+    s.customerSpawnProgress = 0;
+    s.player.x = harbor.playerSpawn.x;
+    s.player.z = harbor.playerSpawn.z;
+    s.player.zoneId = null;
+  },
+};
+
+function clearTransientPlayer(s: GameState): void {
+  const p = s.player;
+  p.inputX = 0;
+  p.inputZ = 0;
+  p.transferCooldown = 0;
+  p.fishingSpecies = null;
+  p.fishingProgress = 0;
+  p.fishingCatchTicks = 0;
+  p.reelAttemptedThisCast = false;
+  p.reelRequested = false;
+}
 
 // ---------------------------------------------------------------- workers/Workers.kt
 

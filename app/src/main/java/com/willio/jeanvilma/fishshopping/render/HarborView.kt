@@ -18,11 +18,13 @@ import com.willio.jeanvilma.fishshopping.core.sim.SimView
 @Composable
 fun HarborView(
     viewProvider: () -> SimView?,
+    transferProvider: () -> List<FlyingTransferCue> = { emptyList() },
     modifier: Modifier = Modifier,
     sceneAsset: String = "models/sunrise_pier_blockout.glb",
 ) {
     val context = LocalContext.current
     val currentProvider = rememberUpdatedState(viewProvider)
+    val currentTransfers = rememberUpdatedState(transferProvider)
     val renderer = remember(sceneAsset) { HarborRenderer(context.applicationContext, sceneAsset) }
 
     AndroidView(
@@ -35,6 +37,7 @@ fun HarborView(
         val frameCallback = object : Choreographer.FrameCallback {
             override fun doFrame(frameTimeNanos: Long) {
                 choreographer.postFrameCallback(this)
+                renderer.enqueueTransfers(currentTransfers.value())
                 renderer.render(frameTimeNanos, currentProvider.value())
             }
         }

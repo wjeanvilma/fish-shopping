@@ -20,8 +20,11 @@ export const CHECKPOINT_INTERVAL_TICKS = 30 * TICKS_PER_SECOND;
  * 5: machines store preferredRecipeId for multi-recipe selection.
  * 6: customers store preferredProductId for product demand.
  * 7: workers list (hired staff + bags + task state).
+ * 8: contract board offers + active deliveries.
+ * 9: parked harbor worlds (harborStashes).
+ * 10: completedPrestige + unlockedCosmetics.
  */
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 10;
 
 /** Kotlin-style integer division (truncates toward zero). */
 export function idiv(a: number, b: number): number {

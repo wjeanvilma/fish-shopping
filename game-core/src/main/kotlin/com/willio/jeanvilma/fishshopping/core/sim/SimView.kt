@@ -4,8 +4,13 @@ import com.willio.jeanvilma.fishshopping.core.content.ZoneKind
 import com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
 import com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
 import com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
+import com.willio.jeanvilma.fishshopping.core.contracts.ContractSystem
+import com.willio.jeanvilma.fishshopping.core.economy.EconomySystem
+import com.willio.jeanvilma.fishshopping.core.progression.PrestigeSystem
+import com.willio.jeanvilma.fishshopping.core.progression.ProgressionSystem
 import com.willio.jeanvilma.fishshopping.core.progression.UpgradeSystem
 import com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem
+import com.willio.jeanvilma.fishshopping.core.world.HarborTravelSystem
 
 /**
  * Immutable presentation snapshot built on the simulation thread and handed to
@@ -14,7 +19,11 @@ import com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem
 data class SimView(
     val tick: Long,
     val coins: Long,
+    val harborId: String,
     val harborName: String,
+    /** GLB under models/ for the active harbor blockout. */
+    val blockoutAsset: String,
+    val harbors: List<HarborMapEntryView>,
     val player: PlayerView,
     val bag: List<ItemCount>,
     val bagUsedUnits: Int,
@@ -52,7 +61,34 @@ data class SimView(
     val workerWagePerWorkerPerHour: Int,
     val workers: List<WorkerView>,
     val staff: List<StaffHireView>,
+    val quests: List<QuestView>,
+    val contractsUnlocked: Boolean,
+    val contractsLockedReason: String?,
+    val contractOffers: List<ContractOfferView>,
+    val activeContracts: List<ActiveContractView>,
+    val contractRefreshTicksLeft: Int,
+    /** Soft sinks unlocked (maintenance + spoilage). */
+    val economyUnlocked: Boolean,
+    val economyLockedReason: String?,
+    /** Effective coins charged per station each maintenance cycle (0 if none/locked). */
+    val maintenanceCoinsPerStation: Int,
+    /** True while bag fish spoilage is active. */
+    val bagFishSpoilActive: Boolean,
+    val prestigeUnlocked: Boolean,
+    val prestigeLockedReason: String?,
+    /** Harbor rating stars 0..5 from lifetime revenue. */
+    val harborRating: Int,
+    val prestige: List<PrestigeView>,
+    val unlockedCosmetics: List<String>,
+    /**
+     * World anchors for inventory ids used by flying-transfer VFX
+     * ([GameEvent.ItemsTransferred] from/to). Presentation only.
+     */
+    val transferAnchors: List<TransferAnchorView>,
 )
+
+/** Inventory id → ground position for bag ↔ pad ↔ counter arcs. */
+data class TransferAnchorView(val inventoryId: String, val xMm: Int, val zMm: Int)
 
 /**
  * Presentation-only customer position: interpolated along the canonical walk, then the
@@ -137,6 +173,74 @@ data class StaffHireView(
     val hired: Int,
     val maxHired: Int,
     val purchasable: Boolean,
+    val reason: String?,
+)
+
+/** completed | active | locked */
+data class QuestView(
+    val id: String,
+    val name: String,
+    val description: String,
+    val status: String,
+    val progress: Long,
+    val goalAtLeast: Long,
+    val rewardCoins: Long,
+    val rewardUnlockNames: List<String>,
+    val reason: String?,
+)
+
+data class ContractOfferView(
+    val offerId: String,
+    val templateId: String,
+    val name: String,
+    val description: String,
+    val itemId: String,
+    val itemName: String,
+    val quantity: Int,
+    val durationTicks: Int,
+    val payout: Long,
+    val penalty: Long,
+    val acceptEnabled: Boolean,
+    val reason: String?,
+)
+
+data class ActiveContractView(
+    val contractId: String,
+    val templateId: String,
+    val name: String,
+    val itemId: String,
+    val itemName: String,
+    val delivered: Int,
+    val quantity: Int,
+    val ticksRemaining: Int,
+    val payout: Long,
+    val penalty: Long,
+    val bagAvailable: Int,
+    val deliverEnabled: Boolean,
+)
+
+data class HarborMapEntryView(
+    val harborId: String,
+    val name: String,
+    val blockoutAsset: String,
+    val current: Boolean,
+    val unlocked: Boolean,
+    val travelEnabled: Boolean,
+    val reason: String?,
+)
+
+/** completed | active | locked */
+data class PrestigeView(
+    val id: String,
+    val name: String,
+    val description: String,
+    val status: String,
+    val progress: Long,
+    val goalAtLeast: Long,
+    val rewardCoins: Long,
+    val cosmetic: String?,
+    val catchSpeedPermille: Int,
+    val priceBonusPermille: Int,
     val reason: String?,
 )
 
@@ -278,7 +382,26 @@ fun Simulation.view(): SimView {
     return SimView(
         tick = s.tick,
         coins = s.coins,
+        harborId = s.harborId,
         harborName = harbor.name,
+        blockoutAsset = harbor.blockoutAsset,
+        harbors = c.harbors.map { h ->
+            val unlocked = HarborTravelSystem.unlocked(c, s, h)
+            val current = h.id == s.harborId
+            HarborMapEntryView(
+                harborId = h.id,
+                name = h.name,
+                blockoutAsset = h.blockoutAsset,
+                current = current,
+                unlocked = unlocked,
+                travelEnabled = unlocked && !current,
+                reason = when {
+                    current -> "You are here"
+                    !unlocked -> HarborTravelSystem.missingRequirement(c, s, h)?.let { "Requires: $it" }
+                    else -> null
+                },
+            )
+        },
         player = PlayerView(p.x, p.z, p.facingX, p.facingZ, p.zoneId),
         bag = p.bag.contents().map { (id, n) -> ItemCount(id, c.itemName(id), n) },
         bagUsedUnits = p.bag.usedUnits(),
@@ -359,5 +482,119 @@ fun Simulation.view(): SimView {
                 },
             )
         },
+        quests = c.quests.map { q ->
+            val completed = q.id in s.completedQuests
+            val locked = !completed && !ProgressionSystem.requirementsMet(s, q)
+            val progress = s.stat(q.goal.stat).coerceAtMost(q.goal.atLeast)
+            QuestView(
+                id = q.id,
+                name = q.name,
+                description = q.description,
+                status = when {
+                    completed -> "completed"
+                    locked -> "locked"
+                    else -> "active"
+                },
+                progress = if (completed) q.goal.atLeast else progress,
+                goalAtLeast = q.goal.atLeast,
+                rewardCoins = q.reward.coins,
+                rewardUnlockNames = q.reward.unlockUpgrades.map { uid -> c.upgradesById[uid]?.name ?: uid },
+                reason = if (locked) ProgressionSystem.missingRequirement(c, s, q)?.let { "Requires: $it" } else null,
+            )
+        },
+        contractsUnlocked = ContractSystem.boardUnlocked(c, s),
+        contractsLockedReason = ContractSystem.missingBoardRequirement(c, s)?.let { "Requires: $it" },
+        contractOffers = s.contractOffers.map { o ->
+            val t = c.contractTemplatesById[o.templateId]
+            val maxed = s.activeContracts.size >= c.contracts.maxActive
+            ContractOfferView(
+                offerId = o.id,
+                templateId = o.templateId,
+                name = t?.name ?: o.templateId,
+                description = t?.description ?: "",
+                itemId = o.itemId,
+                itemName = c.itemName(o.itemId),
+                quantity = o.quantity,
+                durationTicks = o.durationTicks,
+                payout = o.payout,
+                penalty = o.penalty,
+                acceptEnabled = !maxed,
+                reason = if (maxed) "Max active contracts" else null,
+            )
+        },
+        activeContracts = s.activeContracts.map { job ->
+            val t = c.contractTemplatesById[job.templateId]
+            val bag = s.player.bag.available(job.itemId)
+            ActiveContractView(
+                contractId = job.id,
+                templateId = job.templateId,
+                name = t?.name ?: job.templateId,
+                itemId = job.itemId,
+                itemName = c.itemName(job.itemId),
+                delivered = job.delivered,
+                quantity = job.quantity,
+                ticksRemaining = (job.deadlineTick - s.tick).coerceAtLeast(0).toInt(),
+                payout = job.payout,
+                penalty = job.penalty,
+                bagAvailable = bag,
+                deliverEnabled = bag > 0 && job.delivered < job.quantity,
+            )
+        },
+        contractRefreshTicksLeft = if (s.contractBoardRefreshAt <= 0L) 0
+        else (s.contractBoardRefreshAt - s.tick).coerceAtLeast(0L).toInt(),
+        economyUnlocked = EconomySystem.unlocked(c, s),
+        economyLockedReason = EconomySystem.missingRequirement(c, s)?.let { "Requires: $it" },
+        maintenanceCoinsPerStation = if (EconomySystem.unlocked(c, s)) {
+            EconomySystem.maintenanceCoinsPerStation(c, s)
+        } else 0,
+        bagFishSpoilActive = EconomySystem.unlocked(c, s) && c.economy.bagFishSpoilUnits > 0,
+        prestigeUnlocked = PrestigeSystem.boardUnlocked(c, s),
+        prestigeLockedReason = PrestigeSystem.missingBoardRequirement(c, s)?.let { "Requires: $it" },
+        harborRating = PrestigeSystem.harborRating(c, s),
+        prestige = c.prestige.milestones.map { m ->
+            val completed = m.id in s.completedPrestige
+            val locked = !completed && !PrestigeSystem.requirementsMet(s, m)
+            val progress = s.stat(m.goal.stat).coerceAtMost(m.goal.atLeast)
+            PrestigeView(
+                id = m.id,
+                name = m.name,
+                description = m.description,
+                status = when {
+                    completed -> "completed"
+                    locked -> "locked"
+                    else -> "active"
+                },
+                progress = if (completed) m.goal.atLeast else progress,
+                goalAtLeast = m.goal.atLeast,
+                rewardCoins = m.reward.coins,
+                cosmetic = m.reward.cosmetic,
+                catchSpeedPermille = m.reward.catchSpeedPermille,
+                priceBonusPermille = m.reward.priceBonusPermille,
+                reason = if (locked) PrestigeSystem.missingRequirement(c, s, m)?.let { "Requires: $it" } else null,
+            )
+        },
+        unlockedCosmetics = s.unlockedCosmetics.toList(),
+        transferAnchors = buildTransferAnchors(),
     )
+}
+
+private fun Simulation.buildTransferAnchors(): List<TransferAnchorView> {
+    val s = state
+    val h = harbor
+    val out = ArrayList<TransferAnchorView>(4 + h.stations.size * 2 + h.counters.size + s.workers.size)
+    out += TransferAnchorView("inv.player_bag", s.player.x, s.player.z)
+    for (st in h.stations) {
+        val input = h.zonesById.getValue(st.inputZone).rect
+        val output = h.zonesById.getValue(st.outputZone).rect
+        out += TransferAnchorView("inv.${st.id}.input", input.centerX, input.centerZ)
+        out += TransferAnchorView("inv.${st.id}.output", output.centerX, output.centerZ)
+    }
+    for (c in h.counters) {
+        val z = h.zonesById.getValue(c.zone).rect
+        out += TransferAnchorView("inv.${c.id}", z.centerX, z.centerZ)
+    }
+    for (w in s.workers) {
+        out += TransferAnchorView("inv.${w.id}.bag", w.x, w.z)
+    }
+    return out
 }

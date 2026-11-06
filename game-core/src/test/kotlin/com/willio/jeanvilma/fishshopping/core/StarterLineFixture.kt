@@ -108,6 +108,21 @@ object StarterLineFixture {
                 put("roleId", c.roleId)
                 put("requestId", c.requestId)
             }
+            is Command.AcceptContract -> {
+                put("type", "accept_contract")
+                put("offerId", c.offerId)
+                put("requestId", c.requestId)
+            }
+            is Command.DeliverContract -> {
+                put("type", "deliver_contract")
+                put("contractId", c.contractId)
+                put("requestId", c.requestId)
+            }
+            is Command.TravelToHarbor -> {
+                put("type", "travel_to_harbor")
+                put("harborId", c.harborId)
+                put("requestId", c.requestId)
+            }
         }
     }
 
@@ -121,6 +136,9 @@ object StarterLineFixture {
             o["recipeId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
         )
         "hire_worker" -> Command.HireWorker(o["roleId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "accept_contract" -> Command.AcceptContract(o["offerId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "deliver_contract" -> Command.DeliverContract(o["contractId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "travel_to_harbor" -> Command.TravelToHarbor(o["harborId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         else -> error("unknown command ${o["type"]}")
     }
 

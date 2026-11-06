@@ -2,18 +2,24 @@ package com.willio.jeanvilma.fishshopping.core.sim
 
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
 import com.willio.jeanvilma.fishshopping.core.content.HarborDef
+import com.willio.jeanvilma.fishshopping.core.contracts.ContractSystem
 import com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
+import com.willio.jeanvilma.fishshopping.core.economy.EconomySystem
 import com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
 import com.willio.jeanvilma.fishshopping.core.inventory.InvariantChecker
 import com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
+import com.willio.jeanvilma.fishshopping.core.progression.PrestigeSystem
 import com.willio.jeanvilma.fishshopping.core.progression.ProgressionSystem
 import com.willio.jeanvilma.fishshopping.core.progression.UpgradeSystem
 import com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem
+import com.willio.jeanvilma.fishshopping.core.world.HarborTravelSystem
 import com.willio.jeanvilma.fishshopping.core.world.MovementSystem
 import com.willio.jeanvilma.fishshopping.core.world.TransferSystem
 
 /** Everything a system needs for one tick. */
-class StepContext(val content: ContentPack, val harbor: HarborDef, val state: GameState) {
+class StepContext(val content: ContentPack, val state: GameState) {
+    /** Resolved each access so TravelToHarbor takes effect mid-tick. */
+    val harbor: HarborDef get() = content.harborsById.getValue(state.harborId)
     val events = mutableListOf<GameEvent>()
     fun emit(e: GameEvent) {
         events += e
@@ -25,7 +31,7 @@ class StepContext(val content: ContentPack, val harbor: HarborDef, val state: Ga
  * from one serialized loop (blueprint "Concurrency").
  */
 class Simulation(val content: ContentPack, val state: GameState) {
-    val harbor: HarborDef = content.harborsById.getValue(state.harborId)
+    val harbor: HarborDef get() = content.harborsById.getValue(state.harborId)
 
     /**
      * Advances exactly one tick. The update order is part of the cross-platform
@@ -34,7 +40,7 @@ class Simulation(val content: ContentPack, val state: GameState) {
      */
     fun step(commands: List<Command> = emptyList()): List<GameEvent> {
         state.tick++
-        val ctx = StepContext(content, harbor, state)
+        val ctx = StepContext(content, state)
         commands.forEach { applyCommand(ctx, it) }
         MovementSystem.step(ctx)
         MovementSystem.updateZone(ctx)
@@ -44,6 +50,9 @@ class Simulation(val content: ContentPack, val state: GameState) {
         CustomerSystem.step(ctx)
         WorkerSystem.step(ctx)
         ProgressionSystem.step(ctx)
+        PrestigeSystem.step(ctx)
+        ContractSystem.step(ctx)
+        EconomySystem.step(ctx)
         if (state.tick % SimConstants.CHECKPOINT_INTERVAL_TICKS == 0L) {
             ctx.emit(GameEvent.CheckpointRequested(state.tick, "periodic"))
         }
@@ -71,6 +80,9 @@ class Simulation(val content: ContentPack, val state: GameState) {
                 m.preferredRecipeId = c.recipeId?.takeIf { it in allowed }
             }
             is Command.HireWorker -> WorkerSystem.hire(ctx, c.roleId, c.requestId)
+            is Command.AcceptContract -> ContractSystem.accept(ctx, c.offerId, c.requestId)
+            is Command.DeliverContract -> ContractSystem.deliver(ctx, c.contractId, c.requestId)
+            is Command.TravelToHarbor -> HarborTravelSystem.travel(ctx, c.harborId, c.requestId)
         }
     }
 }

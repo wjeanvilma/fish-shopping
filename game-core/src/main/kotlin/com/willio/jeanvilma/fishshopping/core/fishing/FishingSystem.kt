@@ -48,12 +48,12 @@ object FishingSystem {
             val pick = candidates[ctx.state.rng.pickWeighted(candidates.map { it.rarityWeight })]
             p.fishingSpecies = pick.id
             p.fishingProgress = 0
-            p.fishingCatchTicks = catchTicksFor(p.catchSpeedPermille, pick.catchTicks)
+            p.fishingCatchTicks = catchTicksFor(effectiveCatchSpeed(ctx.state), pick.catchTicks)
             p.reelAttemptedThisCast = false
         }
 
         val species = ctx.content.speciesById.getValue(p.fishingSpecies!!)
-        val duration = if (p.fishingCatchTicks > 0) p.fishingCatchTicks else catchTicksFor(p.catchSpeedPermille, species.catchTicks)
+        val duration = if (p.fishingCatchTicks > 0) p.fishingCatchTicks else catchTicksFor(effectiveCatchSpeed(ctx.state), species.catchTicks)
         p.fishingCatchTicks = duration
 
         var timingBonus = false
@@ -83,6 +83,10 @@ object FishingSystem {
 
     fun isUnlocked(def: FishingSpotDef, state: GameState): Boolean =
         def.requiresUpgrade == null || def.requiresUpgrade in state.ownedUpgrades
+
+    /** Player upgrades and prestige floors both apply (whichever is faster). */
+    fun effectiveCatchSpeed(state: GameState): Int =
+        maxOf(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille)
 
     fun catchTicksFor(catchSpeedPermille: Int, baseCatchTicks: Int): Int {
         require(catchSpeedPermille > 0)

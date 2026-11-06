@@ -30,6 +30,13 @@ class SnapshotStore(dir: File) {
         writeAtomically(latest, snapshot.toByteArray(Charsets.UTF_8))
     }
 
+    /** Wipe both slots (New Game). */
+    @Synchronized
+    fun clear() {
+        runCatching { latest.delete() }
+        runCatching { previous.delete() }
+    }
+
     private fun writeAtomically(file: AtomicFile, bytes: ByteArray) {
         val out = file.startWrite()
         try {

@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import sceneUrl from "../../../shared/assets/models/sunrise_pier_blockout.glb?url";
-import type { ContextCard, OfflineReport, SimView, StaffHireView, UpgradeView } from "../engine";
+import sunriseSceneUrl from "../../../shared/assets/models/sunrise_pier_blockout.glb?url";
+import moonSceneUrl from "../../../shared/assets/models/moon_cove_blockout.glb?url";
+import type { ActiveContractView, ContextCard, ContractOfferView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SimView, StaffHireView, StationView, UpgradeView } from "../engine";
+import type { GameSettings } from "../game/settingsStore";
 import { GameHost, type HostState } from "../game/GameHost";
 import { HarborScene, hasWebGL2 } from "../render/HarborScene";
 import { Joystick } from "./Joystick";
+
+const BLOCKOUT_URLS: Record<string, string> = {
+  "sunrise_pier_blockout.glb": sunriseSceneUrl,
+  "moon_cove_blockout.glb": moonSceneUrl,
+};
 
 /** The harbor is the home screen; panels open over it (blueprint "Navigation rules"). */
 export function App() {
@@ -22,9 +29,33 @@ export function App() {
   return (
     <div className="game">
       <World host={host} />
-      <Hud host={host} state={state} />
+      {state.status === "title" ? (
+        <TitleScreen host={host} hasSave={state.hasSave} />
+      ) : (
+        <Hud host={host} state={state} />
+      )}
       <MessageTicker host={host} />
       <RotateHint />
+    </div>
+  );
+}
+
+function TitleScreen({ host, hasSave }: { host: GameHost; hasSave: boolean }) {
+  const startNew = () => {
+    if (hasSave && !window.confirm("Start a new game? Your saved harbor will be erased.")) return;
+    void host.newGame();
+  };
+  return (
+    <div className="center">
+      <div className="panel center-card" role="dialog" aria-label="Fish Shopping">
+        <h2>Fish Shopping</h2>
+        <div className="title-actions">
+          {hasSave && (
+            <button className="button" onClick={() => void host.continueGame()}>Continue</button>
+          )}
+          <button className={hasSave ? "button ghost" : "button"} onClick={startNew}>New Game</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -38,24 +69,45 @@ function World({ host }: { host: GameHost }) {
     const scene = new HarborScene(canvas);
     let raf = 0;
     let disposed = false;
+    let loadGen = 0;
 
     const resize = () => scene.resize(canvas.clientWidth, canvas.clientHeight);
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
     resize();
 
+    const ensureScene = async (asset: string) => {
+      const url = BLOCKOUT_URLS[asset] ?? sunriseSceneUrl;
+      const gen = ++loadGen;
+      await scene.load(url);
+      return gen === loadGen;
+    };
+
     const loop = (now: number) => {
       host.frame(now);
-      scene.render(now, host.latestView);
+      const view = host.latestView;
+      if (view) {
+        const url = BLOCKOUT_URLS[view.blockoutAsset] ?? sunriseSceneUrl;
+        if (scene.loadedUrl !== url) {
+          void ensureScene(view.blockoutAsset);
+        }
+      }
+      scene.enqueueTransfers(host.drainFlyingTransfers());
+      scene.render(now, view, host.renderQuality());
       raf = requestAnimationFrame(loop);
     };
-    const onVisibility = () => (document.hidden ? host.pause() : host.resume());
+    const onVisibility = () => {
+      if (document.hidden) host.pause();
+      else if (host.getState().status === "ready") host.resume();
+    };
     const onPageHide = () => host.pause();
 
     void (async () => {
-      await Promise.all([host.start(), scene.load(sceneUrl)]);
+      await host.start();
       if (disposed) return;
-      host.resume();
+      const asset = host.latestView?.blockoutAsset ?? "sunrise_pier_blockout.glb";
+      await ensureScene(asset);
+      if (disposed) return;
       raf = requestAnimationFrame(loop);
     })();
     document.addEventListener("visibilitychange", onVisibility);
@@ -88,10 +140,17 @@ function isTextInput(t: EventTarget | null): boolean {
 function Hud({ host, state }: { host: GameHost; state: HostState }) {
   const upgradesOpen = state.status === "ready" && state.upgradesOpen;
   const staffOpen = state.status === "ready" && state.staffOpen;
+  const questsOpen = state.status === "ready" && state.questsOpen;
+  const contractsOpen = state.status === "ready" && state.contractsOpen;
+  const mapOpen = state.status === "ready" && state.mapOpen;
+  const pauseOpen = state.status === "ready" && state.pauseOpen;
+  const settingsOpen = state.status === "ready" && state.settingsOpen;
+  const bagOpen = state.status === "ready" && state.bagOpen;
+  const stationOpen = state.status === "ready" && state.stationOpen;
   const offlineReport = state.status === "ready" ? state.offlineReport : null;
   const [touch, setTouch] = useState(() => window.matchMedia?.("(pointer: coarse)").matches ?? false);
 
-  // Keyboard: WASD / arrows move, U opens upgrades, Escape closes the panel.
+  // Keyboard: WASD / arrows move, U/H/G/J/M panels, Escape closes the panel.
   useEffect(() => {
     const held = new Set<string>();
     const apply = () => {
@@ -103,12 +162,24 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       if (isTextInput(e.target)) return;
       if (e.code === "Escape") {
         if (offlineReport) host.dismissOfflineReport();
+        else if (pauseOpen) host.setPauseOpen(false);
+        else if (settingsOpen) host.setSettingsOpen(false);
+        else if (bagOpen) host.setBagOpen(false);
+        else if (stationOpen) host.setStationOpen(false);
         else if (upgradesOpen) host.setUpgradesOpen(false);
         else if (staffOpen) host.setStaffOpen(false);
+        else if (questsOpen) host.setQuestsOpen(false);
+        else if (contractsOpen) host.setContractsOpen(false);
+        else if (mapOpen) host.setMapOpen(false);
+        else host.setPauseOpen(true);
         return;
       }
+      if (e.code === "KeyP" && !e.repeat) { host.setPauseOpen(!pauseOpen); return; }
       if (e.code === "KeyU" && !e.repeat) { host.setUpgradesOpen(!upgradesOpen); return; }
       if (e.code === "KeyH" && !e.repeat) { host.setStaffOpen(!staffOpen); return; }
+      if (e.code === "KeyG" && !e.repeat) { host.setQuestsOpen(!questsOpen); return; }
+      if (e.code === "KeyJ" && !e.repeat) { host.setContractsOpen(!contractsOpen); return; }
+      if (e.code === "KeyM" && !e.repeat) { host.setMapOpen(!mapOpen); return; }
       if ((e.code === "Space" || e.code === "KeyF") && !e.repeat) { e.preventDefault(); host.reel(); return; }
       if (e.code === "KeyR" && !e.repeat) {
         const ready = host.getState();
@@ -132,7 +203,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", blur);
     };
-  }, [host, upgradesOpen, staffOpen, offlineReport]);
+  }, [host, upgradesOpen, staffOpen, questsOpen, contractsOpen, mapOpen, pauseOpen, settingsOpen, bagOpen, stationOpen, offlineReport]);
 
   useEffect(() => {
     const onTouch = () => setTouch(true);
@@ -142,11 +213,15 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
 
   if (state.status === "loading") return <CenterCard title="Loading harbor...">Preparing Sunrise Pier.</CenterCard>;
   if (state.status === "failed") return <CenterCard title="Something went wrong" danger>{state.message}</CenterCard>;
+  if (state.status !== "ready") return null;
 
   const v = state.view;
   return (
     <div className="hud">
-      <div className="pill top-left">{v.harborName}</div>
+      <div className="pill top-left">
+        {v.harborName}
+        {v.harborRating > 0 ? <span className="rating">{"★".repeat(v.harborRating)}</span> : null}
+      </div>
       <div className="pill coins top-center" aria-live="polite">{formatCoins(v.coins)} coins</div>
       {v.rush && (
         <div className="pill rush-banner" aria-live="polite">
@@ -156,7 +231,19 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       {v.supervisorOnDuty && (
         <div className="pill supervisor-banner" aria-live="polite">Supervisor on duty</div>
       )}
+      <button className="button pause-button" onClick={() => host.setPauseOpen(true)}>
+        Pause <kbd>P</kbd>
+      </button>
       <div className="top-actions">
+        <button className="button" onClick={() => host.setMapOpen(true)}>
+          Map <kbd>M</kbd>
+        </button>
+        <button className="button" onClick={() => host.setQuestsOpen(true)}>
+          Goals <kbd>G</kbd>
+        </button>
+        <button className="button" onClick={() => host.setContractsOpen(true)}>
+          Jobs <kbd>J</kbd>
+        </button>
         <button className="button" onClick={() => host.setStaffOpen(true)}>
           Staff <kbd>H</kbd>
         </button>
@@ -178,6 +265,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       {v.context && (
         <StationCard
           card={v.context}
+          onOpen={() => host.setStationOpen(true)}
           onCycleRecipe={v.context.stationId ? () => host.cycleStationRecipe(v.context!.stationId!) : undefined}
         />
       )}
@@ -189,7 +277,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           {v.fishingTimingWindow ? "Reel!" : "Reel"} <kbd>F</kbd>
         </button>
       )}
-      <CarryIndicator v={v} />
+      <CarryIndicator v={v} onOpen={() => host.setBagOpen(true)} />
       {upgradesOpen && (
         <UpgradePanel upgrades={v.upgrades} coins={v.coins} onBuy={(id) => host.purchase(id)} onClose={() => host.setUpgradesOpen(false)} />
       )}
@@ -198,9 +286,68 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           staff={v.staff}
           workersOnDuty={v.workers.length}
           wagePerWorkerPerHour={v.workerWagePerWorkerPerHour}
+          maintenanceCoinsPerStation={v.maintenanceCoinsPerStation}
+          economyUnlocked={v.economyUnlocked}
+          bagFishSpoilActive={v.bagFishSpoilActive}
           coins={v.coins}
           onHire={(id) => host.hire(id)}
           onClose={() => host.setStaffOpen(false)}
+        />
+      )}
+      {questsOpen && (
+        <QuestLogPanel
+          quests={v.quests}
+          prestigeUnlocked={v.prestigeUnlocked}
+          prestigeLockedReason={v.prestigeLockedReason}
+          harborRating={v.harborRating}
+          prestige={v.prestige}
+          unlockedCosmetics={v.unlockedCosmetics}
+          onClose={() => host.setQuestsOpen(false)}
+        />
+      )}
+      {contractsOpen && (
+        <ContractsPanel
+          unlocked={v.contractsUnlocked}
+          lockedReason={v.contractsLockedReason}
+          offers={v.contractOffers}
+          active={v.activeContracts}
+          refreshTicksLeft={v.contractRefreshTicksLeft}
+          onAccept={(id) => host.acceptContract(id)}
+          onDeliver={(id) => host.deliverContract(id)}
+          onClose={() => host.setContractsOpen(false)}
+        />
+      )}
+      {mapOpen && (
+        <HarborMapPanel
+          harbors={v.harbors}
+          onTravel={(id) => host.travelToHarbor(id)}
+          onClose={() => host.setMapOpen(false)}
+        />
+      )}
+      {pauseOpen && (
+        <PausePanel
+          onResume={() => host.setPauseOpen(false)}
+          onSettings={() => host.setSettingsOpen(true)}
+          onTitle={() => void host.returnToTitle()}
+        />
+      )}
+      {settingsOpen && state.status === "ready" && (
+        <SettingsPanel
+          settings={state.settings}
+          onChange={(partial) => host.updateSettings(partial)}
+          onClose={() => host.setSettingsOpen(false)}
+        />
+      )}
+      {bagOpen && (
+        <BagDetailPanel v={v} onClose={() => host.setBagOpen(false)} />
+      )}
+      {stationOpen && v.context && (
+        <StationDetailPanel
+          card={v.context}
+          stations={v.stations}
+          onCycleRecipe={v.context.stationId ? () => host.cycleStationRecipe(v.context!.stationId!) : undefined}
+          onSetPaused={(id, paused) => host.setMachinePaused(id, paused)}
+          onClose={() => host.setStationOpen(false)}
         />
       )}
       {offlineReport && (
@@ -210,9 +357,19 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
   );
 }
 
-function StationCard({ card, onCycleRecipe }: { card: ContextCard; onCycleRecipe?: () => void }) {
+function StationCard({ card, onOpen, onCycleRecipe }: { card: ContextCard; onOpen: () => void; onCycleRecipe?: () => void }) {
   return (
-    <div className="panel station-card">
+    <div
+      className="panel station-card"
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); }
+      }}
+      tabIndex={0}
+      role="group"
+      aria-label={card.title}
+    >
       <strong>{card.title}</strong>
       {card.lines.map((l) => <div key={l} className="num">{l}</div>)}
       {card.progress !== null && (
@@ -221,7 +378,7 @@ function StationCard({ card, onCycleRecipe }: { card: ContextCard; onCycleRecipe
         </div>
       )}
       {onCycleRecipe && card.recipeModeLabel && (
-        <button className="button" style={{ marginTop: 8, width: "100%" }} onClick={onCycleRecipe}>
+        <button className="button" style={{ marginTop: 8, width: "100%" }} onClick={(e) => { e.stopPropagation(); onCycleRecipe(); }}>
           Recipe: {card.recipeModeLabel} <kbd>R</kbd>
         </button>
       )}
@@ -229,11 +386,145 @@ function StationCard({ card, onCycleRecipe }: { card: ContextCard; onCycleRecipe
   );
 }
 
-function CarryIndicator({ v }: { v: SimView }) {
+function CarryIndicator({ v, onOpen }: { v: SimView; onOpen: () => void }) {
   return (
-    <div className="panel carry">
+    <button type="button" className="panel carry" onClick={onOpen} aria-label={`Bag ${v.bagUsedUnits} of ${v.bagCapacityUnits}`}>
       <strong className="num">Bag {v.bagUsedUnits}/{v.bagCapacityUnits}</strong>
       {v.bag.length === 0 ? <div className="muted">Empty</div> : v.bag.map((i) => <div key={i.itemId} className="num">{i.count} x {i.name}</div>)}
+    </button>
+  );
+}
+
+function PausePanel({ onResume, onSettings, onTitle }: {
+  onResume: () => void; onSettings: () => void; onTitle: () => void;
+}) {
+  const resumeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => resumeRef.current?.focus(), []);
+  return (
+    <div className="scrim" onClick={onResume}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Paused" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>Paused</h2>
+        </div>
+        <div className="title-actions">
+          <button ref={resumeRef} className="button" onClick={onResume}>Resume</button>
+          <button className="button" onClick={onSettings}>Settings</button>
+          <button className="button ghost" onClick={onTitle}>Title</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingsPanel({ settings, onChange, onClose }: {
+  settings: GameSettings;
+  onChange: (partial: Partial<GameSettings>) => void;
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Settings" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>Settings</h2>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        <ul className="upgrade-list">
+          <li>
+            <div className="grow">
+              <strong>Mute (coming soon)</strong>
+              <div className="small muted">Audio is not in the harbor yet.</div>
+            </div>
+            <button className="button" aria-pressed={settings.muted} onClick={() => onChange({ muted: !settings.muted })}>
+              {settings.muted ? "On" : "Off"}
+            </button>
+          </li>
+        </ul>
+        <div className="small" style={{ marginTop: 12 }}>Quality</div>
+        <div className="quality-row">
+          {(["low", "medium", "high"] as const).map((q) => (
+            <button
+              key={q}
+              className={settings.quality === q ? "button" : "button ghost"}
+              aria-pressed={settings.quality === q}
+              onClick={() => onChange({ quality: q })}
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BagDetailPanel({ v, onClose }: { v: SimView; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Bag" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>Bag</h2>
+          <span className="num">{v.bagUsedUnits}/{v.bagCapacityUnits}</span>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        {v.bagFishSpoilActive && <p className="small danger">Fish in your bag can spoil.</p>}
+        <ul className="upgrade-list">
+          {v.bag.length === 0 ? (
+            <li><div className="muted">Empty</div></li>
+          ) : v.bag.map((i) => (
+            <li key={i.itemId}>
+              <div className="grow"><strong>{i.name}</strong></div>
+              <span className="num">{i.count}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function StationDetailPanel({ card, stations, onCycleRecipe, onSetPaused, onClose }: {
+  card: ContextCard;
+  stations: StationView[];
+  onCycleRecipe?: () => void;
+  onSetPaused: (stationId: string, paused: boolean) => void;
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  const station = card.stationId ? stations.find((s) => s.stationId === card.stationId) : undefined;
+  const paused = station?.status === "PAUSED" || station?.statusText === "Paused";
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={card.title} onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>{card.title}</h2>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        {card.lines.map((l) => <div key={l} className="num">{l}</div>)}
+        {card.progress !== null && (
+          <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(card.progress * 100)}>
+            <div style={{ width: `${Math.min(100, Math.max(0, card.progress * 100))}%` }} />
+          </div>
+        )}
+        {(onCycleRecipe || card.stationId) && (
+          <div className="title-actions">
+            {onCycleRecipe && card.recipeModeLabel && (
+              <button className="button" onClick={onCycleRecipe}>
+                Recipe: {card.recipeModeLabel} <kbd>R</kbd>
+              </button>
+            )}
+            {card.stationId && (
+              <button className="button" onClick={() => onSetPaused(card.stationId!, !paused)}>
+                {paused ? "Resume machine" : "Pause machine"}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -311,8 +602,210 @@ function formatAwayDuration(elapsedMillis: number): string {
   return `Away ${s}s`;
 }
 
-function StaffPanel({ staff, workersOnDuty, wagePerWorkerPerHour, coins, onHire, onClose }: {
-  staff: StaffHireView[]; workersOnDuty: number; wagePerWorkerPerHour: number; coins: number; onHire: (roleId: string) => void; onClose: () => void;
+function HarborMapPanel({ harbors, onTravel, onClose }: {
+  harbors: HarborMapEntryView[];
+  onTravel: (harborId: string) => void;
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Harbor map" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>Harbor map</h2>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        <ul className="upgrade-list">
+          {harbors.map((h) => (
+            <li key={h.harborId}>
+              <div className="grow">
+                <strong>{h.name}</strong>
+                <div className={`small ${h.unlocked ? "muted" : "danger"}`}>
+                  {h.current ? "You are here" : h.unlocked ? "Ready to travel" : (h.reason ?? "Locked")}
+                </div>
+              </div>
+              <button className="button" disabled={!h.travelEnabled} onClick={() => onTravel(h.harborId)}>
+                {h.current ? "Here" : "Travel"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function prestigeRewardBits(p: PrestigeView): string[] {
+  return [
+    ...(p.rewardCoins > 0 ? [`${formatCoins(p.rewardCoins)} coins`] : []),
+    ...(p.catchSpeedPermille > 1000 ? [`+${Math.trunc((p.catchSpeedPermille - 1000) / 10)}% catch`] : []),
+    ...(p.priceBonusPermille > 1000 ? [`+${Math.trunc((p.priceBonusPermille - 1000) / 10)}% prices`] : []),
+    ...(p.cosmetic ? [`Unlock ${p.cosmetic}`] : []),
+  ];
+}
+
+function QuestLogPanel({
+  quests,
+  prestigeUnlocked,
+  prestigeLockedReason,
+  harborRating,
+  prestige,
+  unlockedCosmetics,
+  onClose,
+}: {
+  quests: QuestView[];
+  prestigeUnlocked: boolean;
+  prestigeLockedReason: string | null;
+  harborRating: number;
+  prestige: PrestigeView[];
+  unlockedCosmetics: string[];
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Goals" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>Goals</h2>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        <ul className="upgrade-list">
+          {quests.map((q) => {
+            const rewardBits = [
+              ...(q.rewardCoins > 0 ? [`${formatCoins(q.rewardCoins)} coins`] : []),
+              ...q.rewardUnlockNames.map((n) => `Unlock ${n}`),
+            ];
+            return (
+              <li key={q.id}>
+                <div className="grow">
+                  <strong>{q.name}</strong>
+                  <div className="small">{q.description}</div>
+                  {q.reason && <div className="small danger">{q.reason}</div>}
+                  {rewardBits.length > 0 && <div className="small reward">Reward: {rewardBits.join(" · ")}</div>}
+                  {q.status === "active" && (
+                    <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={q.goalAtLeast} aria-valuenow={q.progress}>
+                      <div style={{ width: `${Math.min(100, Math.max(0, (q.progress / q.goalAtLeast) * 100))}%` }} />
+                    </div>
+                  )}
+                </div>
+                <span className={q.status === "completed" ? "owned" : "num"}>
+                  {q.status === "completed" ? "Done" : q.status === "locked" ? "Locked" : `${q.progress}/${q.goalAtLeast}`}
+                </span>
+              </li>
+            );
+          })}
+          <li>
+            <div className="grow">
+              <strong>Prestige</strong>
+              {!prestigeUnlocked ? (
+                <div className="small danger">{prestigeLockedReason ?? "Locked"}</div>
+              ) : (
+                <>
+                  <div className="small reward">Harbor rating {"★".repeat(Math.max(0, Math.min(5, harborRating)))}</div>
+                  {unlockedCosmetics.length > 0 && (
+                    <div className="small muted">Banners: {unlockedCosmetics.join(", ")}</div>
+                  )}
+                </>
+              )}
+            </div>
+          </li>
+          {prestigeUnlocked && prestige.map((p) => {
+            const rewardBits = prestigeRewardBits(p);
+            return (
+              <li key={p.id}>
+                <div className="grow">
+                  <strong>{p.name}</strong>
+                  <div className="small">{p.description}</div>
+                  {p.reason && <div className="small danger">{p.reason}</div>}
+                  {rewardBits.length > 0 && <div className="small reward">Reward: {rewardBits.join(" · ")}</div>}
+                  {p.status === "active" && (
+                    <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={p.goalAtLeast} aria-valuenow={p.progress}>
+                      <div style={{ width: `${Math.min(100, Math.max(0, (p.progress / p.goalAtLeast) * 100))}%` }} />
+                    </div>
+                  )}
+                </div>
+                <span className={p.status === "completed" ? "owned" : "num"}>
+                  {p.status === "completed" ? "Done" : p.status === "locked" ? "Locked" : `${p.progress}/${p.goalAtLeast}`}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLeft, onAccept, onDeliver, onClose }: {
+  unlocked: boolean;
+  lockedReason: string | null;
+  offers: ContractOfferView[];
+  active: ActiveContractView[];
+  refreshTicksLeft: number;
+  onAccept: (offerId: string) => void;
+  onDeliver: (contractId: string) => void;
+  onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Jobs" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <div className="grow">
+            <h2>Jobs</h2>
+            {unlocked && refreshTicksLeft > 0 && (
+              <div className="small muted">Board refreshes in {formatRushSeconds(refreshTicksLeft)}s</div>
+            )}
+          </div>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        {!unlocked ? (
+          <p className="danger">{lockedReason ?? "Locked"}</p>
+        ) : (
+          <ul className="upgrade-list">
+            {active.length > 0 && (
+              <li><strong>Active</strong></li>
+            )}
+            {active.map((job) => (
+              <li key={job.contractId}>
+                <div className="grow">
+                  <strong>{job.name}</strong>
+                  <div className="small">{job.delivered}/{job.quantity} {job.itemName} · {formatRushSeconds(job.ticksRemaining)}s left</div>
+                  <div className="small reward">Pay {formatCoins(job.payout)} · fail −{formatCoins(job.penalty)}</div>
+                </div>
+                <button className="button" disabled={!job.deliverEnabled} onClick={() => onDeliver(job.contractId)}>Deliver</button>
+              </li>
+            ))}
+            <li><strong>Board</strong></li>
+            {offers.length === 0 && (
+              <li><div className="small">No offers right now</div></li>
+            )}
+            {offers.map((offer) => (
+              <li key={offer.offerId}>
+                <div className="grow">
+                  <strong>{offer.name}</strong>
+                  <div className="small">{offer.description}</div>
+                  <div className="small">{offer.quantity}× {offer.itemName} · {formatRushSeconds(offer.durationTicks)}s</div>
+                  <div className="small reward">+{formatCoins(offer.payout)} / −{formatCoins(offer.penalty)}</div>
+                  {offer.reason && <div className="small danger">{offer.reason}</div>}
+                </div>
+                <button className="button" disabled={!offer.acceptEnabled} onClick={() => onAccept(offer.offerId)}>Accept</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StaffPanel({ staff, workersOnDuty, wagePerWorkerPerHour, maintenanceCoinsPerStation, economyUnlocked, bagFishSpoilActive, coins, onHire, onClose }: {
+  staff: StaffHireView[]; workersOnDuty: number; wagePerWorkerPerHour: number;
+  maintenanceCoinsPerStation: number; economyUnlocked: boolean; bagFishSpoilActive: boolean;
+  coins: number; onHire: (roleId: string) => void; onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => closeRef.current?.focus(), []);
@@ -325,6 +818,8 @@ function StaffPanel({ staff, workersOnDuty, wagePerWorkerPerHour, coins, onHire,
             <div className="small muted">
               {workersOnDuty} on duty
               {wagePerWorkerPerHour > 0 ? ` · ${wagePerWorkerPerHour} coins/hr each` : ""}
+              {economyUnlocked && maintenanceCoinsPerStation > 0 ? ` · upkeep ${maintenanceCoinsPerStation}/station` : ""}
+              {bagFishSpoilActive ? " · bag fish spoil" : ""}
             </div>
           </div>
           <span className="num">{formatCoins(coins)} coins</span>

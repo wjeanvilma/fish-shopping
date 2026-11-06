@@ -107,6 +107,6 @@ describe("shared fixtures", () => {
     const s = decodeSnapshot(content, v1);
     expect(s.customers.length).toBeGreaterThan(0);
     expect(s.customers.every((c) => c.arrived && c.walkTicksTotal === 0)).toBe(true);
-    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":7,')).toBe(true);
+    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":10,')).toBe(true);
   });
 });

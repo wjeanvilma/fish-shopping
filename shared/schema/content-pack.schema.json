@@ -17,6 +17,9 @@
     "workers",
     "routing",
     "offline",
+    "economy",
+    "prestige",
+    "contracts",
     "customers",
     "tutorial",
     "harbors"
@@ -437,6 +440,38 @@
                     "description": "Coins charged per hired worker each simulated hour."
                   }
                 }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "coinsOffPerStation"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "maintenance_discount"
+                  },
+                  "coinsOffPerStation": {
+                    "$ref": "#/$defs/positiveInt",
+                    "description": "Subtracted from economy.maintenanceCoinsPerStation (floored at 0)."
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "periodMultPermille"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "bag_spoil_resist"
+                  },
+                  "periodMultPermille": {
+                    "$ref": "#/$defs/positiveInt",
+                    "description": "Multiplies bag fish spoilage period (2000 = half as fast)."
+                  }
+                }
               }
             ]
           }
@@ -450,7 +485,10 @@
         "required": [
           "id",
           "name",
-          "goal"
+          "description",
+          "requires",
+          "goal",
+          "reward"
         ],
         "properties": {
           "id": {
@@ -461,8 +499,39 @@
             "type": "string",
             "minLength": 1
           },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/id"
+            }
+          },
           "goal": {
             "$ref": "#/$defs/statGoal"
+          },
+          "reward": {
+            "type": "object",
+            "required": [
+              "coins",
+              "unlockUpgrades"
+            ],
+            "properties": {
+              "coins": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "unlockUpgrades": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/id",
+                  "pattern": "^upgrade\\.[a-z0-9_]+$"
+                }
+              }
+            },
+            "additionalProperties": false
           }
         }
       }
@@ -669,6 +738,248 @@
         }
       }
     },
+    "economy": {
+      "type": "object",
+      "required": [
+        "requires",
+        "maintenancePeriodTicks",
+        "maintenanceCoinsPerStation",
+        "counterSpoilPeriodTicks",
+        "counterSpoilUnits",
+        "bagFishSpoilPeriodTicks",
+        "bagFishSpoilUnits"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requires": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "description": "Quest or upgrade IDs that must be completed/owned before sinks apply."
+        },
+        "maintenancePeriodTicks": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Ticks between station upkeep charges."
+        },
+        "maintenanceCoinsPerStation": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Coins charged per harbor station each maintenance cycle."
+        },
+        "counterSpoilPeriodTicks": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Ticks between soft counter stock losses."
+        },
+        "counterSpoilUnits": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Max product units removed from counters each spoil cycle."
+        },
+        "bagFishSpoilPeriodTicks": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Ticks between soft raw-fish losses from the player bag."
+        },
+        "bagFishSpoilUnits": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Max species units removed from the player bag each spoil cycle."
+        }
+      }
+    },
+    "prestige": {
+      "type": "object",
+      "required": [
+        "requires",
+        "ratingThresholds",
+        "milestones"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requires": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "description": "Quest, upgrade, or prestige IDs that unlock the prestige board."
+        },
+        "ratingThresholds": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "Lifetime thresholds for harbor rating stars 1..5 (must be non-decreasing)."
+        },
+        "milestones": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "description",
+              "requires",
+              "goal",
+              "reward"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string"
+              },
+              "requires": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              },
+              "goal": {
+                "type": "object",
+                "required": [
+                  "stat",
+                  "atLeast"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "stat": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "atLeast": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              },
+              "reward": {
+                "type": "object",
+                "required": [
+                  "coins",
+                  "catchSpeedPermille",
+                  "priceBonusPermille"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "coins": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "catchSpeedPermille": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "0 = no catch bonus; otherwise permanent catch-speed floor (permille)."
+                  },
+                  "priceBonusPermille": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "0 = no price bonus; otherwise permanent sale price multiplier floor (permille)."
+                  },
+                  "cosmetic": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Optional cosmetic / banner flag unlocked on completion."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "required": [
+        "boardSlots",
+        "maxActive",
+        "refreshPeriodTicks",
+        "requires",
+        "templates"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "boardSlots": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxActive": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "refreshPeriodTicks": {
+          "$ref": "#/$defs/positiveInt"
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "templates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "description",
+              "item",
+              "quantity",
+              "durationTicks",
+              "payout",
+              "penalty",
+              "weight"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id",
+                "pattern": "^contract\\.[a-z0-9_]+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "item": {
+                "$ref": "#/$defs/id"
+              },
+              "quantity": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "durationTicks": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "payout": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "penalty": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "weight": {
+                "$ref": "#/$defs/positiveInt"
+              }
+            }
+          }
+        }
+      }
+    },
     "tutorial": {
       "type": "array",
       "items": {
@@ -757,6 +1068,13 @@
           "name": {
             "type": "string",
             "minLength": 1
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/id"
+            },
+            "description": "Quest or upgrade IDs that must be completed/owned before travel to this harbor."
           },
           "playerSpawn": {
             "$ref": "#/$defs/point"

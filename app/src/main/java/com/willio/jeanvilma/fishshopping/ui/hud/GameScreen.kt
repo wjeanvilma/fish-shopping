@@ -2,7 +2,9 @@ package com.willio.jeanvilma.fishshopping.ui.hud
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,11 +21,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,12 +53,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.willio.jeanvilma.fishshopping.core.sim.ContextCard
+import com.willio.jeanvilma.fishshopping.core.sim.MachineStatus
+import com.willio.jeanvilma.fishshopping.core.sim.ActiveContractView
+import com.willio.jeanvilma.fishshopping.core.sim.ContractOfferView
+import com.willio.jeanvilma.fishshopping.core.sim.HarborMapEntryView
 import com.willio.jeanvilma.fishshopping.core.sim.OfflineReport
+import com.willio.jeanvilma.fishshopping.core.sim.PrestigeView
+import com.willio.jeanvilma.fishshopping.core.sim.QuestView
 import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import com.willio.jeanvilma.fishshopping.core.sim.StaffHireView
+import com.willio.jeanvilma.fishshopping.core.sim.StationView
 import com.willio.jeanvilma.fishshopping.core.sim.UpgradeView
 import com.willio.jeanvilma.fishshopping.game.GameUiState
+import com.willio.jeanvilma.fishshopping.persistence.GameSettings
+import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 import com.willio.jeanvilma.fishshopping.game.GameViewModel
 import com.willio.jeanvilma.fishshopping.render.HarborView
 import com.willio.jeanvilma.fishshopping.ui.theme.Action
@@ -71,8 +85,17 @@ private val Tabular = TextStyle(fontFeatureSettings = "tnum")
 @Composable
 fun GameScreen(vm: GameViewModel) {
     val ui by vm.ui.collectAsState()
+    val sceneAsset = when (val s = ui) {
+        is GameUiState.Ready -> "models/${s.view.blockoutAsset}"
+        else -> vm.latestView?.let { "models/${it.blockoutAsset}" } ?: "models/sunrise_pier_blockout.glb"
+    }
     Box(Modifier.fillMaxSize().background(Color(0xFF9FD3EA))) {
-        HarborView(viewProvider = { vm.latestView }, modifier = Modifier.fillMaxSize())
+        HarborView(
+            viewProvider = { vm.latestView },
+            transferProvider = { vm.drainFlyingTransfers() },
+            modifier = Modifier.fillMaxSize(),
+            sceneAsset = sceneAsset,
+        )
         when (val s = ui) {
             GameUiState.Loading -> CenterCard {
                 CircularProgressIndicator(color = Action)
@@ -84,6 +107,7 @@ fun GameScreen(vm: GameViewModel) {
                 Spacer(Modifier.height(8.dp))
                 Text(s.message)
             }
+            is GameUiState.Title -> TitleScreen(s.hasSave, vm)
             is GameUiState.Ready -> Hud(s, vm)
         }
         MessageTicker(vm)
@@ -96,15 +120,24 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
     val focus = remember { FocusRequester() }
     val keys = remember { mutableStateListOf<Key>() }
 
-    BackHandler(enabled = state.upgradesOpen || state.staffOpen || state.offlineReport != null) {
+    BackHandler {
         when {
             state.offlineReport != null -> vm.dismissOfflineReport()
+            state.pauseOpen -> vm.setPauseOpen(false)
+            state.settingsOpen -> vm.setSettingsOpen(false)
+            state.bagOpen -> vm.setBagOpen(false)
+            state.stationOpen -> vm.setStationOpen(false)
             state.upgradesOpen -> vm.setUpgradesOpen(false)
-            else -> vm.setStaffOpen(false)
+            state.staffOpen -> vm.setStaffOpen(false)
+            state.questsOpen -> vm.setQuestsOpen(false)
+            state.contractsOpen -> vm.setContractsOpen(false)
+            state.mapOpen -> vm.setMapOpen(false)
+            else -> vm.setPauseOpen(true)
         }
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
+    Box(Modifier.fillMaxSize()) {
     Box(
         Modifier
             .fillMaxSize()
@@ -130,9 +163,19 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 true
             },
     ) {
-        // Top left: current harbor.
+        // Top left: current harbor + rating stars (prestige-lite).
         Pill(Modifier.align(Alignment.TopStart)) {
-            Text(v.harborName, fontWeight = FontWeight.SemiBold)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(v.harborName, fontWeight = FontWeight.SemiBold)
+                if (v.harborRating > 0) {
+                    Text(
+                        "★".repeat(v.harborRating),
+                        style = Tabular,
+                        color = Reward,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
         }
         // Top centre: coins.
         Pill(Modifier.align(Alignment.TopCenter), background = Reward) {
@@ -168,6 +211,18 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
             Modifier.align(Alignment.TopEnd),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            Button(onClick = { vm.setPauseOpen(true) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text("Pause")
+            }
+            Button(onClick = { vm.setMapOpen(true) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text("Map")
+            }
+            Button(onClick = { vm.setQuestsOpen(true) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text("Goals")
+            }
+            Button(onClick = { vm.setContractsOpen(true) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text("Jobs")
+            }
             Button(onClick = { vm.setStaffOpen(true) }, modifier = Modifier.heightIn(min = 48.dp)) {
                 Text("Staff")
             }
@@ -193,6 +248,7 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
         v.context?.let { card ->
             StationCard(
                 card,
+                onOpen = { vm.setStationOpen(true) },
                 onCycleRecipe = card.stationId?.let { id -> { vm.cycleStationRecipe(id) } },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
@@ -210,7 +266,7 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
             }
         }
         // Bottom right: carry indicator.
-        CarryIndicator(v, Modifier.align(Alignment.BottomEnd))
+        CarryIndicator(v, onOpen = { vm.setBagOpen(true) }, modifier = Modifier.align(Alignment.BottomEnd))
 
         if (state.upgradesOpen) {
             UpgradePanel(
@@ -226,11 +282,84 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 staff = v.staff,
                 workersOnDuty = v.workers.size,
                 wagePerWorkerPerHour = v.workerWagePerWorkerPerHour,
+                maintenanceCoinsPerStation = v.maintenanceCoinsPerStation,
+                economyUnlocked = v.economyUnlocked,
+                bagFishSpoilActive = v.bagFishSpoilActive,
                 coins = v.coins,
                 onHire = vm::hire,
                 onClose = { vm.setStaffOpen(false) },
                 modifier = Modifier.align(Alignment.Center),
             )
+        }
+        if (state.questsOpen) {
+            QuestLogPanel(
+                quests = v.quests,
+                prestigeUnlocked = v.prestigeUnlocked,
+                prestigeLockedReason = v.prestigeLockedReason,
+                harborRating = v.harborRating,
+                prestige = v.prestige,
+                unlockedCosmetics = v.unlockedCosmetics,
+                onClose = { vm.setQuestsOpen(false) },
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        if (state.contractsOpen) {
+            ContractsPanel(
+                unlocked = v.contractsUnlocked,
+                lockedReason = v.contractsLockedReason,
+                offers = v.contractOffers,
+                active = v.activeContracts,
+                refreshTicksLeft = v.contractRefreshTicksLeft,
+                onAccept = vm::acceptContract,
+                onDeliver = vm::deliverContract,
+                onClose = { vm.setContractsOpen(false) },
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        if (state.mapOpen) {
+            HarborMapPanel(
+                harbors = v.harbors,
+                onTravel = vm::travelToHarbor,
+                onClose = { vm.setMapOpen(false) },
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+    }
+        if (state.pauseOpen) {
+            OverlayScrim(onDismiss = { vm.setPauseOpen(false) }) {
+                PausePanel(
+                    onResume = { vm.setPauseOpen(false) },
+                    onSettings = { vm.setSettingsOpen(true) },
+                    onTitle = vm::returnToTitle,
+                )
+            }
+        }
+        if (state.settingsOpen) {
+            OverlayScrim(onDismiss = { vm.setSettingsOpen(false) }) {
+                SettingsPanel(
+                    settings = state.settings,
+                    onMuted = { vm.updateSettings(muted = it) },
+                    onQuality = { vm.updateSettings(quality = it) },
+                    onClose = { vm.setSettingsOpen(false) },
+                )
+            }
+        }
+        if (state.bagOpen) {
+            OverlayScrim(onDismiss = { vm.setBagOpen(false) }) {
+                BagDetailPanel(v, onClose = { vm.setBagOpen(false) })
+            }
+        }
+        val stationCard = v.context
+        if (state.stationOpen && stationCard != null) {
+            OverlayScrim(onDismiss = { vm.setStationOpen(false) }) {
+                StationDetailPanel(
+                    card = stationCard,
+                    stations = v.stations,
+                    onCycleRecipe = stationCard.stationId?.let { id -> { vm.cycleStationRecipe(id) } },
+                    onSetPaused = vm::setMachinePaused,
+                    onClose = { vm.setStationOpen(false) },
+                )
+            }
         }
         state.offlineReport?.let { report ->
             OfflineSummaryPanel(
@@ -247,8 +376,17 @@ private val MOVE_KEYS = setOf(
 )
 
 @Composable
-private fun StationCard(card: ContextCard, onCycleRecipe: (() -> Unit)?, modifier: Modifier) {
-    Surface(modifier.widthIn(min = 220.dp, max = 320.dp), shape = PanelShape, color = PanelSurface.copy(alpha = 0.95f)) {
+private fun StationCard(
+    card: ContextCard,
+    onOpen: () -> Unit,
+    onCycleRecipe: (() -> Unit)?,
+    modifier: Modifier,
+) {
+    Surface(
+        modifier.widthIn(min = 220.dp, max = 320.dp).clickable(onClick = onOpen),
+        shape = PanelShape,
+        color = PanelSurface.copy(alpha = 0.95f),
+    ) {
         Column(Modifier.padding(12.dp)) {
             Text(card.title, fontWeight = FontWeight.Bold)
             card.lines.forEach { Text(it, style = Tabular) }
@@ -267,12 +405,234 @@ private fun StationCard(card: ContextCard, onCycleRecipe: (() -> Unit)?, modifie
 }
 
 @Composable
-private fun CarryIndicator(v: SimView, modifier: Modifier) {
-    Surface(modifier.widthIn(min = 140.dp), shape = PanelShape, color = PanelSurface.copy(alpha = 0.92f)) {
+private fun CarryIndicator(v: SimView, onOpen: () -> Unit, modifier: Modifier) {
+    Surface(
+        modifier.widthIn(min = 140.dp).clickable(onClick = onOpen),
+        shape = PanelShape,
+        color = PanelSurface.copy(alpha = 0.92f),
+    ) {
         Column(Modifier.padding(12.dp)) {
             Text("Bag ${v.bagUsedUnits}/${v.bagCapacityUnits}", fontWeight = FontWeight.Bold, style = Tabular)
             if (v.bag.isEmpty()) Text("Empty", color = Ink.copy(alpha = 0.6f))
             v.bag.forEach { Text("${it.count} x ${it.name}", style = Tabular) }
+        }
+    }
+}
+
+@Composable
+private fun TitleScreen(hasSave: Boolean, vm: GameViewModel) {
+    var confirmNew by remember { mutableStateOf(false) }
+    CenterCard {
+        Column(Modifier.widthIn(min = 240.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Fish Shopping", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = vm::continueGame,
+                enabled = hasSave,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) { Text("Continue") }
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = { if (hasSave) confirmNew = true else vm.newGame() },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) { Text("New Game") }
+        }
+    }
+    if (confirmNew) {
+        AlertDialog(
+            onDismissRequest = { confirmNew = false },
+            title = { Text("New Game") },
+            text = { Text("Start a new game? Your saved harbor will be erased.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmNew = false
+                    vm.newGame()
+                }) { Text("New Game") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmNew = false }) { Text("Cancel") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun OverlayScrim(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.45f))
+                .clickable(interactionSource = interaction, indication = null, onClick = onDismiss),
+        )
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { content() }
+    }
+}
+
+@Composable
+private fun rememberSheetClicks(): Modifier {
+    val interaction = remember { MutableInteractionSource() }
+    return Modifier.clickable(interactionSource = interaction, indication = null, onClick = {})
+}
+
+@Composable
+private fun PausePanel(onResume: () -> Unit, onSettings: () -> Unit, onTitle: () -> Unit) {
+    Surface(
+        Modifier.widthIn(min = 280.dp).then(rememberSheetClicks()),
+        shape = PanelShape,
+        color = PanelSurface,
+        shadowElevation = 8.dp,
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Paused", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Button(onClick = onResume, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Resume") }
+            Button(onClick = onSettings, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Settings") }
+            OutlinedButton(onClick = onTitle, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Title") }
+        }
+    }
+}
+
+@Composable
+private fun SettingsPanel(
+    settings: GameSettings,
+    onMuted: (Boolean) -> Unit,
+    onQuality: (QualityPreset) -> Unit,
+    onClose: () -> Unit,
+) {
+    Surface(
+        Modifier.width(400.dp).then(rememberSheetClicks()),
+        shape = PanelShape,
+        color = PanelSurface,
+        shadowElevation = 8.dp,
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Settings", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Mute (coming soon)", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Audio is not in the harbor yet.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.7f),
+                    )
+                }
+                Switch(checked = settings.muted, onCheckedChange = onMuted)
+            }
+            Text("Quality")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                QualityPreset.entries.forEach { preset ->
+                    val label = when (preset) {
+                        QualityPreset.LOW -> "Low"
+                        QualityPreset.MEDIUM -> "Medium"
+                        QualityPreset.HIGH -> "High"
+                    }
+                    val selected = settings.quality == preset
+                    if (selected) {
+                        Button(
+                            onClick = { onQuality(preset) },
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        ) { Text(label) }
+                    } else {
+                        OutlinedButton(
+                            onClick = { onQuality(preset) },
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        ) { Text(label) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BagDetailPanel(v: SimView, onClose: () -> Unit) {
+    Surface(
+        Modifier.width(400.dp).heightIn(max = 360.dp).then(rememberSheetClicks()),
+        shape = PanelShape,
+        color = PanelSurface,
+        shadowElevation = 8.dp,
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Bag", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                Text("${v.bagUsedUnits}/${v.bagCapacityUnits}", style = Tabular)
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            if (v.bagFishSpoilActive) {
+                Text(
+                    "Fish in your bag can spoil.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Danger,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            if (v.bag.isEmpty()) {
+                Text("Empty", color = Ink.copy(alpha = 0.6f))
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(v.bag, key = { it.itemId }) { item ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(item.name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                            Text("${item.count}", style = Tabular)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StationDetailPanel(
+    card: ContextCard,
+    stations: List<StationView>,
+    onCycleRecipe: (() -> Unit)?,
+    onSetPaused: (String, Boolean) -> Unit,
+    onClose: () -> Unit,
+) {
+    val station = card.stationId?.let { id -> stations.firstOrNull { it.stationId == id } }
+    val paused = station?.status == MachineStatus.PAUSED || station?.statusText == "Paused"
+    Surface(
+        Modifier.width(400.dp).then(rememberSheetClicks()),
+        shape = PanelShape,
+        color = PanelSurface,
+        shadowElevation = 8.dp,
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(card.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            card.lines.forEach { Text(it, style = Tabular) }
+            card.progress?.let {
+                Spacer(Modifier.height(6.dp))
+                LinearProgressIndicator(
+                    progress = { it.coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Action,
+                )
+            }
+            if (onCycleRecipe != null || card.stationId != null) {
+                Spacer(Modifier.height(12.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (onCycleRecipe != null && card.recipeModeLabel != null) {
+                        Button(
+                            onClick = onCycleRecipe,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        ) { Text("Recipe: ${card.recipeModeLabel}") }
+                    }
+                    card.stationId?.let { id ->
+                        Button(
+                            onClick = { onSetPaused(id, !paused) },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        ) { Text(if (paused) "Resume machine" else "Pause machine") }
+                    }
+                }
+            }
         }
     }
 }
@@ -321,6 +681,9 @@ private fun StaffPanel(
     staff: List<StaffHireView>,
     workersOnDuty: Int,
     wagePerWorkerPerHour: Int,
+    maintenanceCoinsPerStation: Int,
+    economyUnlocked: Boolean,
+    bagFishSpoilActive: Boolean,
     coins: Long,
     onHire: (String) -> Unit,
     onClose: () -> Unit,
@@ -335,6 +698,10 @@ private fun StaffPanel(
                         buildString {
                             append("$workersOnDuty on duty")
                             if (wagePerWorkerPerHour > 0) append(" · $wagePerWorkerPerHour coins/hr each")
+                            if (economyUnlocked && maintenanceCoinsPerStation > 0) {
+                                append(" · upkeep $maintenanceCoinsPerStation/station")
+                            }
+                            if (bagFishSpoilActive) append(" · bag fish spoil")
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = Ink.copy(alpha = 0.7f),
@@ -364,6 +731,268 @@ private fun StaffPanel(
             }
         }
     }
+}
+
+@Composable
+private fun ContractsPanel(
+    unlocked: Boolean,
+    lockedReason: String?,
+    offers: List<ContractOfferView>,
+    active: List<ActiveContractView>,
+    refreshTicksLeft: Int,
+    onAccept: (String) -> Unit,
+    onDeliver: (String) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier,
+) {
+    Surface(modifier.width(460.dp).heightIn(max = 400.dp), shape = PanelShape, color = PanelSurface, shadowElevation = 8.dp) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Jobs", style = MaterialTheme.typography.titleLarge)
+                    if (unlocked && refreshTicksLeft > 0) {
+                        Text(
+                            "Board refreshes in ${formatRushSeconds(refreshTicksLeft)}s",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Ink.copy(alpha = 0.7f),
+                        )
+                    }
+                }
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            if (!unlocked) {
+                Text(lockedReason ?: "Locked", color = Danger)
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (active.isNotEmpty()) {
+                        item { Text("Active", fontWeight = FontWeight.SemiBold) }
+                        items(active, key = { it.contractId }) { job ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(job.name, fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        "${job.delivered}/${job.quantity} ${job.itemName} · ${formatRushSeconds(job.ticksRemaining)}s left",
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                    Text(
+                                        "Pay ${formatCoins(job.payout)} · fail −${formatCoins(job.penalty)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Reward,
+                                    )
+                                }
+                                Button(
+                                    onClick = { onDeliver(job.contractId) },
+                                    enabled = job.deliverEnabled,
+                                    modifier = Modifier.heightIn(min = 48.dp),
+                                ) { Text("Deliver") }
+                            }
+                        }
+                    }
+                    item { Text("Board", fontWeight = FontWeight.SemiBold) }
+                    if (offers.isEmpty()) {
+                        item { Text("No offers right now", style = MaterialTheme.typography.bodySmall) }
+                    }
+                    items(offers, key = { it.offerId }) { offer ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(offer.name, fontWeight = FontWeight.SemiBold)
+                                Text(offer.description, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    "${offer.quantity}× ${offer.itemName} · ${formatRushSeconds(offer.durationTicks)}s",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                Text(
+                                    "+${formatCoins(offer.payout)} / −${formatCoins(offer.penalty)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Reward,
+                                )
+                                offer.reason?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Danger) }
+                            }
+                            Button(
+                                onClick = { onAccept(offer.offerId) },
+                                enabled = offer.acceptEnabled,
+                                modifier = Modifier.heightIn(min = 48.dp),
+                            ) { Text("Accept") }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HarborMapPanel(
+    harbors: List<HarborMapEntryView>,
+    onTravel: (String) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier,
+) {
+    Surface(modifier.width(420.dp).heightIn(max = 360.dp), shape = PanelShape, color = PanelSurface, shadowElevation = 8.dp) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Harbor map", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(harbors, key = { it.harborId }) { h ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(h.name, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                when {
+                                    h.current -> "You are here"
+                                    h.unlocked -> "Ready to travel"
+                                    else -> h.reason ?: "Locked"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = when {
+                                    h.current -> Action
+                                    h.unlocked -> Ink.copy(alpha = 0.7f)
+                                    else -> Danger
+                                },
+                            )
+                        }
+                        Button(
+                            onClick = { onTravel(h.harborId) },
+                            enabled = h.travelEnabled,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        ) { Text(if (h.current) "Here" else "Travel") }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuestLogPanel(
+    quests: List<QuestView>,
+    prestigeUnlocked: Boolean,
+    prestigeLockedReason: String?,
+    harborRating: Int,
+    prestige: List<PrestigeView>,
+    unlockedCosmetics: List<String>,
+    onClose: () -> Unit,
+    modifier: Modifier,
+) {
+    Surface(modifier.width(440.dp).heightIn(max = 480.dp), shape = PanelShape, color = PanelSurface, shadowElevation = 8.dp) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Goals", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(quests, key = { it.id }) { q ->
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(q.name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                            Text(
+                                when (q.status) {
+                                    "completed" -> "Done"
+                                    "locked" -> "Locked"
+                                    else -> "${q.progress}/${q.goalAtLeast}"
+                                },
+                                style = Tabular,
+                                color = when (q.status) {
+                                    "completed" -> Action
+                                    "locked" -> Ink.copy(alpha = 0.5f)
+                                    else -> Ink
+                                },
+                            )
+                        }
+                        Text(q.description, style = MaterialTheme.typography.bodySmall)
+                        if (q.status == "active") {
+                            LinearProgressIndicator(
+                                progress = { (q.progress.toFloat() / q.goalAtLeast.toFloat()).coerceIn(0f, 1f) },
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                            )
+                        }
+                        q.reason?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Danger) }
+                        val rewardBits = buildList {
+                            if (q.rewardCoins > 0) add("${formatCoins(q.rewardCoins)} coins")
+                            addAll(q.rewardUnlockNames.map { "Unlock $it" })
+                        }
+                        if (rewardBits.isNotEmpty()) {
+                            Text(
+                                "Reward: ${rewardBits.joinToString(" · ")}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Reward,
+                            )
+                        }
+                    }
+                }
+                item {
+                    Text("Prestige", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    if (!prestigeUnlocked) {
+                        Text(
+                            prestigeLockedReason ?: "Locked",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Danger,
+                        )
+                    } else {
+                        Text(
+                            "Harbor rating ${"★".repeat(harborRating.coerceIn(0, 5))}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Reward,
+                        )
+                        if (unlockedCosmetics.isNotEmpty()) {
+                            Text(
+                                "Banners: ${unlockedCosmetics.joinToString(", ")}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Ink.copy(alpha = 0.7f),
+                            )
+                        }
+                    }
+                }
+                if (prestigeUnlocked) {
+                    items(prestige, key = { it.id }) { p ->
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(p.name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                Text(
+                                    when (p.status) {
+                                        "completed" -> "Done"
+                                        "locked" -> "Locked"
+                                        else -> "${p.progress}/${p.goalAtLeast}"
+                                    },
+                                    style = Tabular,
+                                    color = when (p.status) {
+                                        "completed" -> Action
+                                        "locked" -> Ink.copy(alpha = 0.5f)
+                                        else -> Ink
+                                    },
+                                )
+                            }
+                            Text(p.description, style = MaterialTheme.typography.bodySmall)
+                            if (p.status == "active") {
+                                LinearProgressIndicator(
+                                    progress = { (p.progress.toFloat() / p.goalAtLeast.toFloat()).coerceIn(0f, 1f) },
+                                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                )
+                            }
+                            p.reason?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Danger) }
+                            val rewardBits = prestigeRewardBits(p)
+                            if (rewardBits.isNotEmpty()) {
+                                Text(
+                                    "Reward: ${rewardBits.joinToString(" · ")}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Reward,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun prestigeRewardBits(p: PrestigeView): List<String> = buildList {
+    if (p.rewardCoins > 0) add("${formatCoins(p.rewardCoins)} coins")
+    if (p.catchSpeedPermille > 1000) add("+${(p.catchSpeedPermille - 1000) / 10}% catch")
+    if (p.priceBonusPermille > 1000) add("+${(p.priceBonusPermille - 1000) / 10}% prices")
+    p.cosmetic?.let { add("Unlock $it") }
 }
 
 @Composable

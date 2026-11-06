@@ -13,6 +13,8 @@ export interface SaveStore {
   readonly persistent: boolean;
   readCandidates(): Promise<[label: "latest" | "previous", text: string][]>;
   write(snapshot: string, rotate: boolean): Promise<void>;
+  /** Wipe both slots (New Game). */
+  clear(): Promise<void>;
 }
 
 class MemoryStore implements SaveStore {
@@ -28,6 +30,10 @@ class MemoryStore implements SaveStore {
   async write(snapshot: string, rotate: boolean) {
     if (rotate && this.latest) this.previous = this.latest;
     this.latest = snapshot;
+  }
+  async clear() {
+    this.latest = null;
+    this.previous = null;
   }
 }
 
@@ -65,6 +71,18 @@ class IndexedDbStore implements SaveStore {
       } else {
         store.put(snapshot, LATEST);
       }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+
+  clear(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(STORE, "readwrite");
+      const store = tx.objectStore(STORE);
+      store.delete(LATEST);
+      store.delete(PREVIOUS);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error);

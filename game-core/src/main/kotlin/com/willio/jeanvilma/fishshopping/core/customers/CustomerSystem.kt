@@ -155,6 +155,7 @@ object CustomerSystem {
         val met = c.preferenceMet()
         var mult = type.priceMultPermille.toLong()
         if (!met) mult = (mult * type.unmetPriceMultPermille.toLong()) / 1000L
+        mult = (mult * s.prestigePriceBonusPermille.toLong()) / 1000L
         val amount = (base * mult) / 1000L
         val saleId = s.newId("sale")
         s.coins = SafeMath.creditCoins(s.coins, amount)

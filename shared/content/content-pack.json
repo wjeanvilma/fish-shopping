@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/content-pack.schema.json",
-  "contentVersion": "0.17.0",
+  "contentVersion": "0.22.0",
   "ticksPerSecond": 20,
   "units": {
     "distance": "millimetres (integer); x/z ground plane, y is up",
@@ -26,7 +26,10 @@
       "baseValue": 2,
       "rarityWeight": 100,
       "asset": "models/fish_silver_sprat.glb",
-      "rareUpgrade": { "to": "species.golden_sprat", "chancePermille": 40 }
+      "rareUpgrade": {
+        "to": "species.golden_sprat",
+        "chancePermille": 40
+      }
     },
     {
       "id": "species.harbor_herring",
@@ -45,7 +48,10 @@
       "baseValue": 4,
       "rarityWeight": 40,
       "asset": "models/fish_blue_mackerel.glb",
-      "rareUpgrade": { "to": "species.gilt_mackerel", "chancePermille": 30 }
+      "rareUpgrade": {
+        "to": "species.gilt_mackerel",
+        "chancePermille": 30
+      }
     },
     {
       "id": "species.copper_mullet",
@@ -127,64 +133,154 @@
     {
       "id": "recipe.basic_portions",
       "machine": "machine.basic_cutter",
-      "inputs": [{ "item": "species.silver_sprat", "quantity": 1 }],
-      "outputs": [{ "item": "product.basic_portion", "quantity": 2 }],
+      "inputs": [
+        {
+          "item": "species.silver_sprat",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 2
+        }
+      ],
       "durationTicks": 100
     },
     {
       "id": "recipe.herring_portions",
       "machine": "machine.basic_cutter",
-      "inputs": [{ "item": "species.harbor_herring", "quantity": 1 }],
-      "outputs": [{ "item": "product.basic_portion", "quantity": 1 }],
+      "inputs": [
+        {
+          "item": "species.harbor_herring",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 1
+        }
+      ],
       "durationTicks": 70
     },
     {
       "id": "recipe.mackerel_fillets",
       "machine": "machine.basic_cutter",
-      "inputs": [{ "item": "species.blue_mackerel", "quantity": 1 }],
-      "outputs": [{ "item": "product.fillet", "quantity": 2 }],
+      "inputs": [
+        {
+          "item": "species.blue_mackerel",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
       "durationTicks": 120
     },
     {
       "id": "recipe.mullet_fillets",
       "machine": "machine.basic_cutter",
-      "inputs": [{ "item": "species.copper_mullet", "quantity": 1 }],
-      "outputs": [{ "item": "product.fillet", "quantity": 2 }],
+      "inputs": [
+        {
+          "item": "species.copper_mullet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
       "durationTicks": 110
     },
     {
       "id": "recipe.snapper_premium",
       "machine": "machine.basic_cutter",
-      "inputs": [{ "item": "species.amber_snapper", "quantity": 1 }],
-      "outputs": [{ "item": "product.premium_portion", "quantity": 2 }],
+      "inputs": [
+        {
+          "item": "species.amber_snapper",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 2
+        }
+      ],
       "durationTicks": 140
     },
     {
       "id": "recipe.grouper_premium",
       "machine": "machine.basic_cutter",
-      "inputs": [{ "item": "species.king_grouper", "quantity": 1 }],
-      "outputs": [{ "item": "product.premium_portion", "quantity": 3 }],
+      "inputs": [
+        {
+          "item": "species.king_grouper",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 3
+        }
+      ],
       "durationTicks": 180
     },
     {
       "id": "recipe.smoke_fillet",
       "machine": "machine.basic_smoker",
-      "inputs": [{ "item": "product.fillet", "quantity": 1 }],
-      "outputs": [{ "item": "product.smoked_fillet", "quantity": 1 }],
+      "inputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.smoked_fillet",
+          "quantity": 1
+        }
+      ],
       "durationTicks": 150
     },
     {
       "id": "recipe.golden_sprat_portions",
       "machine": "machine.basic_cutter",
-      "inputs": [{ "item": "species.golden_sprat", "quantity": 1 }],
-      "outputs": [{ "item": "product.fillet", "quantity": 2 }],
+      "inputs": [
+        {
+          "item": "species.golden_sprat",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
       "durationTicks": 90
     },
     {
       "id": "recipe.gilt_mackerel_premium",
       "machine": "machine.basic_cutter",
-      "inputs": [{ "item": "species.gilt_mackerel", "quantity": 1 }],
-      "outputs": [{ "item": "product.premium_portion", "quantity": 2 }],
+      "inputs": [
+        {
+          "item": "species.gilt_mackerel",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 2
+        }
+      ],
       "durationTicks": 110
     }
   ],
@@ -208,7 +304,9 @@
     {
       "id": "machine.basic_smoker",
       "name": "Basic smoker",
-      "recipes": ["recipe.smoke_fillet"],
+      "recipes": [
+        "recipe.smoke_fillet"
+      ],
       "inputCapacityUnits": 8,
       "outputCapacityUnits": 12
     }
@@ -220,22 +318,32 @@
       "description": "Carry 8 units instead of 5.",
       "cost": 40,
       "requires": [],
-      "effect": { "kind": "carry_capacity", "capacityUnits": 8 }
+      "effect": {
+        "kind": "carry_capacity",
+        "capacityUnits": 8
+      }
     },
     {
       "id": "upgrade.bag_capacity_3",
       "name": "Fish crate",
       "description": "Carry 12 units.",
       "cost": 150,
-      "requires": ["upgrade.bag_capacity_2"],
-      "effect": { "kind": "carry_capacity", "capacityUnits": 12 }
+      "requires": [
+        "upgrade.bag_capacity_2"
+      ],
+      "effect": {
+        "kind": "carry_capacity",
+        "capacityUnits": 12
+      }
     },
     {
       "id": "upgrade.cutter_speed_2",
       "name": "Sharper cutter",
       "description": "Basic portions take 4 s instead of 5 s. Applies from the next batch.",
       "cost": 300,
-      "requires": ["quest.first_ten_sales"],
+      "requires": [
+        "quest.first_ten_sales"
+      ],
       "effect": {
         "kind": "recipe_duration",
         "machine": "machine.basic_cutter",
@@ -248,7 +356,9 @@
       "name": "Fillet guide",
       "description": "Mackerel fillets take 5 s instead of 6 s. Applies from the next batch.",
       "cost": 280,
-      "requires": ["upgrade.cutter_speed_2"],
+      "requires": [
+        "upgrade.cutter_speed_2"
+      ],
       "effect": {
         "kind": "recipe_duration",
         "machine": "machine.basic_cutter",
@@ -261,7 +371,9 @@
       "name": "Herring jig",
       "description": "Herring portions take 2.5 s instead of 3.5 s. Applies from the next batch.",
       "cost": 160,
-      "requires": ["quest.first_ten_sales"],
+      "requires": [
+        "quest.first_ten_sales"
+      ],
       "effect": {
         "kind": "recipe_duration",
         "machine": "machine.basic_cutter",
@@ -274,7 +386,9 @@
       "name": "Hotter smoker",
       "description": "Smoked fillets take 6 s instead of 7.5 s. Applies from the next batch.",
       "cost": 350,
-      "requires": ["quest.first_ten_sales"],
+      "requires": [
+        "quest.first_ten_sales"
+      ],
       "effect": {
         "kind": "recipe_duration",
         "machine": "machine.basic_smoker",
@@ -287,71 +401,197 @@
       "name": "Carbon rod",
       "description": "Catch fish 25% faster.",
       "cost": 75,
-      "requires": ["upgrade.bag_capacity_2"],
-      "effect": { "kind": "catch_speed", "speedPermille": 1250 }
+      "requires": [
+        "upgrade.bag_capacity_2"
+      ],
+      "effect": {
+        "kind": "catch_speed",
+        "speedPermille": 1250
+      }
     },
     {
       "id": "upgrade.rod_speed_3",
       "name": "Pro angler rod",
       "description": "Catch fish 50% faster.",
       "cost": 220,
-      "requires": ["upgrade.rod_speed_2"],
-      "effect": { "kind": "catch_speed", "speedPermille": 1500 }
+      "requires": [
+        "upgrade.rod_speed_2"
+      ],
+      "effect": {
+        "kind": "catch_speed",
+        "speedPermille": 1500
+      }
     },
     {
       "id": "upgrade.tide_chart",
       "name": "Tide chart",
       "description": "Empty fishing spots restock 25% faster.",
       "cost": 90,
-      "requires": ["upgrade.bag_capacity_2"],
-      "effect": { "kind": "fish_regen", "speedPermille": 1250 }
+      "requires": [
+        "upgrade.bag_capacity_2"
+      ],
+      "effect": {
+        "kind": "fish_regen",
+        "speedPermille": 1250
+      }
     },
     {
       "id": "upgrade.side_pier",
       "name": "Side spur pier",
       "description": "Unlock a second fishing spot on the north spur.",
       "cost": 180,
-      "requires": ["upgrade.tide_chart"],
-      "effect": { "kind": "unlock_fishing_spot", "zone": "zone.pier_spur" }
+      "requires": [
+        "upgrade.tide_chart"
+      ],
+      "effect": {
+        "kind": "unlock_fishing_spot",
+        "zone": "zone.pier_spur"
+      }
     },
     {
       "id": "upgrade.staff_boots",
       "name": "Staff work boots",
       "description": "Hired staff walk 25% faster.",
       "cost": 200,
-      "requires": ["quest.first_ten_sales"],
-      "effect": { "kind": "worker_move_speed", "speedPermille": 1250 }
+      "requires": [
+        "quest.first_ten_sales"
+      ],
+      "effect": {
+        "kind": "worker_move_speed",
+        "speedPermille": 1250
+      }
     },
     {
       "id": "upgrade.staff_satchels",
       "name": "Staff satchels",
       "description": "Hired staff can carry at least 5 units.",
       "cost": 250,
-      "requires": ["upgrade.staff_boots"],
-      "effect": { "kind": "worker_carry", "capacityUnits": 5 }
+      "requires": [
+        "upgrade.staff_boots"
+      ],
+      "effect": {
+        "kind": "worker_carry",
+        "capacityUnits": 5
+      }
     },
     {
       "id": "upgrade.staff_tackle",
       "name": "Staff tackle",
       "description": "Fishers catch at full angler speed.",
       "cost": 180,
-      "requires": ["quest.first_ten_sales"],
-      "effect": { "kind": "worker_catch_speed", "speedPermille": 1000 }
+      "requires": [
+        "quest.first_ten_sales"
+      ],
+      "effect": {
+        "kind": "worker_catch_speed",
+        "speedPermille": 1000
+      }
     },
     {
       "id": "upgrade.shift_lead",
       "name": "Shift lead",
       "description": "Staff hustle harder, but wages cost 3 coins per worker each hour.",
       "cost": 150,
-      "requires": ["upgrade.staff_boots"],
-      "effect": { "kind": "worker_wage", "coinsPerWorkerPerHour": 3 }
+      "requires": [
+        "upgrade.staff_boots"
+      ],
+      "effect": {
+        "kind": "worker_wage",
+        "coinsPerWorkerPerHour": 3
+      }
+    },
+    {
+      "id": "upgrade.machine_oil",
+      "name": "Machine oil",
+      "description": "Station upkeep costs 1 fewer coin per machine each maintenance cycle.",
+      "cost": 120,
+      "requires": [
+        "quest.first_ten_sales"
+      ],
+      "effect": {
+        "kind": "maintenance_discount",
+        "coinsOffPerStation": 1
+      }
+    },
+    {
+      "id": "upgrade.ice_box",
+      "name": "Ice box",
+      "description": "Caught fish in your bag spoil half as fast.",
+      "cost": 100,
+      "requires": [
+        "quest.first_ten_sales"
+      ],
+      "effect": {
+        "kind": "bag_spoil_resist",
+        "periodMultPermille": 2000
+      }
     }
   ],
   "quests": [
     {
       "id": "quest.first_ten_sales",
       "name": "Make 10 sales",
-      "goal": { "stat": "stat.sales", "atLeast": 10 }
+      "description": "Serve ten paying customers at the counter.",
+      "requires": [],
+      "goal": {
+        "stat": "stat.sales",
+        "atLeast": 10
+      },
+      "reward": {
+        "coins": 50,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.fill_the_hold",
+      "name": "Fill the hold",
+      "description": "Catch 25 fish from the pier.",
+      "requires": [
+        "quest.first_ten_sales"
+      ],
+      "goal": {
+        "stat": "stat.fish_caught",
+        "atLeast": 25
+      },
+      "reward": {
+        "coins": 40,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.first_hire",
+      "name": "First hire",
+      "description": "Hire your first staff member.",
+      "requires": [
+        "quest.first_ten_sales"
+      ],
+      "goal": {
+        "stat": "stat.workers_hired",
+        "atLeast": 1
+      },
+      "reward": {
+        "coins": 80,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.busy_harbor",
+      "name": "Busy harbor",
+      "description": "Earn 250 coins in total sales revenue.",
+      "requires": [
+        "quest.fill_the_hold",
+        "quest.first_hire"
+      ],
+      "goal": {
+        "stat": "stat.revenue",
+        "atLeast": 250
+      },
+      "reward": {
+        "coins": 120,
+        "unlockUpgrades": [
+          "upgrade.tide_chart"
+        ]
+      }
     }
   ],
   "workers": [
@@ -366,7 +606,9 @@
       "catchSpeedPermille": 800,
       "transferIntervalTicks": 4,
       "leaseTicks": 600,
-      "requires": ["quest.first_ten_sales"]
+      "requires": [
+        "quest.first_ten_sales"
+      ]
     },
     {
       "id": "worker.porter",
@@ -379,7 +621,9 @@
       "catchSpeedPermille": 1000,
       "transferIntervalTicks": 4,
       "leaseTicks": 600,
-      "requires": ["quest.first_ten_sales"]
+      "requires": [
+        "quest.first_ten_sales"
+      ]
     },
     {
       "id": "worker.operator",
@@ -392,7 +636,9 @@
       "catchSpeedPermille": 1000,
       "transferIntervalTicks": 4,
       "leaseTicks": 600,
-      "requires": ["quest.first_ten_sales"]
+      "requires": [
+        "quest.first_ten_sales"
+      ]
     },
     {
       "id": "worker.cashier",
@@ -405,7 +651,9 @@
       "catchSpeedPermille": 1000,
       "transferIntervalTicks": 4,
       "leaseTicks": 600,
-      "requires": ["quest.first_ten_sales"]
+      "requires": [
+        "quest.first_ten_sales"
+      ]
     },
     {
       "id": "worker.supervisor",
@@ -418,7 +666,10 @@
       "catchSpeedPermille": 1000,
       "transferIntervalTicks": 4,
       "leaseTicks": 600,
-      "requires": ["quest.first_ten_sales", "upgrade.staff_boots"]
+      "requires": [
+        "quest.first_ten_sales",
+        "upgrade.staff_boots"
+      ]
     }
   ],
   "routing": {
@@ -431,6 +682,150 @@
     "capHours": 4,
     "summaryMinSeconds": 5
   },
+  "economy": {
+    "requires": [
+      "quest.first_ten_sales"
+    ],
+    "maintenancePeriodTicks": 2400,
+    "maintenanceCoinsPerStation": 2,
+    "counterSpoilPeriodTicks": 1800,
+    "counterSpoilUnits": 1,
+    "bagFishSpoilPeriodTicks": 2400,
+    "bagFishSpoilUnits": 1
+  },
+  "prestige": {
+    "requires": [
+      "quest.busy_harbor"
+    ],
+    "ratingThresholds": [
+      0,
+      250,
+      750,
+      1500,
+      3000
+    ],
+    "milestones": [
+      {
+        "id": "prestige.rising_tide",
+        "name": "Rising Tide",
+        "description": "Earn 1,000 coins in lifetime sales revenue.",
+        "requires": [
+          "quest.busy_harbor"
+        ],
+        "goal": {
+          "stat": "stat.revenue",
+          "atLeast": 1000
+        },
+        "reward": {
+          "coins": 100,
+          "catchSpeedPermille": 1050,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.rising_tide"
+        }
+      },
+      {
+        "id": "prestige.harbor_star",
+        "name": "Harbor Star",
+        "description": "Complete 100 sales at the counter.",
+        "requires": [
+          "prestige.rising_tide"
+        ],
+        "goal": {
+          "stat": "stat.sales",
+          "atLeast": 100
+        },
+        "reward": {
+          "coins": 200,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 1050,
+          "cosmetic": "banner.harbor_star"
+        }
+      },
+      {
+        "id": "prestige.twin_harbors",
+        "name": "Twin Harbors",
+        "description": "Travel between harbors twice.",
+        "requires": [
+          "quest.busy_harbor"
+        ],
+        "goal": {
+          "stat": "stat.harbors_traveled",
+          "atLeast": 2
+        },
+        "reward": {
+          "coins": 150,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.twin_harbors"
+        }
+      }
+    ]
+  },
+  "contracts": {
+    "boardSlots": 3,
+    "maxActive": 2,
+    "refreshPeriodTicks": 2400,
+    "requires": [
+      "quest.first_ten_sales"
+    ],
+    "templates": [
+      {
+        "id": "contract.sprat_crate",
+        "name": "Sprat crate",
+        "description": "Deliver fresh silver sprat for the morning market.",
+        "item": "species.silver_sprat",
+        "quantity": 5,
+        "durationTicks": 1800,
+        "payout": 45,
+        "penalty": 12,
+        "weight": 40
+      },
+      {
+        "id": "contract.portion_order",
+        "name": "Portion order",
+        "description": "Stock basic portions for a lunch cart.",
+        "item": "product.basic_portion",
+        "quantity": 4,
+        "durationTicks": 2000,
+        "payout": 55,
+        "penalty": 15,
+        "weight": 35
+      },
+      {
+        "id": "contract.fillet_rush",
+        "name": "Fillet rush",
+        "description": "A cafe needs fillets before the dinner rush.",
+        "item": "product.fillet",
+        "quantity": 2,
+        "durationTicks": 1400,
+        "payout": 70,
+        "penalty": 20,
+        "weight": 25
+      },
+      {
+        "id": "contract.smoked_specialty",
+        "name": "Smoked specialty",
+        "description": "Deliver smoked fillets to a boutique buyer.",
+        "item": "product.smoked_fillet",
+        "quantity": 2,
+        "durationTicks": 2200,
+        "payout": 95,
+        "penalty": 25,
+        "weight": 18
+      },
+      {
+        "id": "contract.herring_haul",
+        "name": "Herring haul",
+        "description": "Harbor herring for a bulk kitchen order.",
+        "item": "species.harbor_herring",
+        "quantity": 4,
+        "durationTicks": 1600,
+        "payout": 50,
+        "penalty": 14,
+        "weight": 30
+      }
+    ]
+  },
   "customers": [
     {
       "id": "customer.local_shopper",
@@ -442,8 +837,14 @@
       "spawnWeight": 100,
       "priceMultPermille": 1000,
       "preferredProducts": [
-        { "item": "product.basic_portion", "weight": 80 },
-        { "item": "product.fillet", "weight": 20 }
+        {
+          "item": "product.basic_portion",
+          "weight": 80
+        },
+        {
+          "item": "product.fillet",
+          "weight": 20
+        }
       ],
       "unmetPriceMultPermille": 750,
       "unmetPatienceDrainPermille": 2000
@@ -458,9 +859,18 @@
       "spawnWeight": 28,
       "priceMultPermille": 1000,
       "preferredProducts": [
-        { "item": "product.basic_portion", "weight": 55 },
-        { "item": "product.fillet", "weight": 30 },
-        { "item": "product.smoked_fillet", "weight": 15 }
+        {
+          "item": "product.basic_portion",
+          "weight": 55
+        },
+        {
+          "item": "product.fillet",
+          "weight": 30
+        },
+        {
+          "item": "product.smoked_fillet",
+          "weight": 15
+        }
       ],
       "unmetPriceMultPermille": 750,
       "unmetPatienceDrainPermille": 2000
@@ -475,8 +885,14 @@
       "spawnWeight": 14,
       "priceMultPermille": 1500,
       "preferredProducts": [
-        { "item": "product.premium_portion", "weight": 70 },
-        { "item": "product.smoked_fillet", "weight": 30 }
+        {
+          "item": "product.premium_portion",
+          "weight": 70
+        },
+        {
+          "item": "product.smoked_fillet",
+          "weight": 30
+        }
       ],
       "unmetPriceMultPermille": 600,
       "unmetPatienceDrainPermille": 2500
@@ -491,46 +907,198 @@
       "spawnWeight": 10,
       "priceMultPermille": 1000,
       "preferredProducts": [
-        { "item": "product.fillet", "weight": 50 },
-        { "item": "product.smoked_fillet", "weight": 30 },
-        { "item": "product.premium_portion", "weight": 20 }
+        {
+          "item": "product.fillet",
+          "weight": 50
+        },
+        {
+          "item": "product.smoked_fillet",
+          "weight": 30
+        },
+        {
+          "item": "product.premium_portion",
+          "weight": 20
+        }
       ],
       "unmetPriceMultPermille": 700,
       "unmetPatienceDrainPermille": 2500
     }
   ],
   "tutorial": [
-    { "id": "tutorial.walk_to_pier", "text": "Walk to the end of the pier", "advanceOn": { "kind": "enter_zone", "zone": "zone.pier_end" } },
-    { "id": "tutorial.catch_three", "text": "Catch 3 fish", "advanceOn": { "kind": "stat", "stat": "stat.fish_caught", "atLeast": 3 } },
-    { "id": "tutorial.deliver_cutter", "text": "Bring the fish to the cutter", "advanceOn": { "kind": "stat", "stat": "stat.machine_inputs", "atLeast": 1 } },
-    { "id": "tutorial.collect_output", "text": "Collect portions from the cutter output", "advanceOn": { "kind": "stat", "stat": "stat.outputs_collected", "atLeast": 1 } },
-    { "id": "tutorial.stock_counter", "text": "Stock the counter", "advanceOn": { "kind": "stat", "stat": "stat.counter_stocked", "atLeast": 1 } },
-    { "id": "tutorial.serve_customer", "text": "Stand at the counter to serve a customer", "advanceOn": { "kind": "stat", "stat": "stat.sales", "atLeast": 1 } },
-    { "id": "tutorial.buy_upgrade", "text": "Open Upgrades and buy a bigger bag", "advanceOn": { "kind": "stat", "stat": "stat.upgrades_bought", "atLeast": 1 } }
+    {
+      "id": "tutorial.walk_to_pier",
+      "text": "Walk to the end of the pier",
+      "advanceOn": {
+        "kind": "enter_zone",
+        "zone": "zone.pier_end"
+      }
+    },
+    {
+      "id": "tutorial.catch_three",
+      "text": "Catch 3 fish",
+      "advanceOn": {
+        "kind": "stat",
+        "stat": "stat.fish_caught",
+        "atLeast": 3
+      }
+    },
+    {
+      "id": "tutorial.deliver_cutter",
+      "text": "Bring the fish to the cutter",
+      "advanceOn": {
+        "kind": "stat",
+        "stat": "stat.machine_inputs",
+        "atLeast": 1
+      }
+    },
+    {
+      "id": "tutorial.collect_output",
+      "text": "Collect portions from the cutter output",
+      "advanceOn": {
+        "kind": "stat",
+        "stat": "stat.outputs_collected",
+        "atLeast": 1
+      }
+    },
+    {
+      "id": "tutorial.stock_counter",
+      "text": "Stock the counter",
+      "advanceOn": {
+        "kind": "stat",
+        "stat": "stat.counter_stocked",
+        "atLeast": 1
+      }
+    },
+    {
+      "id": "tutorial.serve_customer",
+      "text": "Stand at the counter to serve a customer",
+      "advanceOn": {
+        "kind": "stat",
+        "stat": "stat.sales",
+        "atLeast": 1
+      }
+    },
+    {
+      "id": "tutorial.buy_upgrade",
+      "text": "Open Upgrades and buy a bigger bag",
+      "advanceOn": {
+        "kind": "stat",
+        "stat": "stat.upgrades_bought",
+        "atLeast": 1
+      }
+    }
   ],
   "harbors": [
     {
       "id": "harbor.sunrise_pier",
       "name": "Sunrise Pier",
-      "playerSpawn": { "x": 0, "z": 0 },
+      "playerSpawn": {
+        "x": 0,
+        "z": 0
+      },
       "walkable": [
-        { "id": "area.land", "minX": -8000, "minZ": -8000, "maxX": 10000, "maxZ": 8000 },
-        { "id": "area.pier", "minX": -16000, "minZ": -1500, "maxX": -7900, "maxZ": 1500 },
-        { "id": "area.pier_spur", "minX": -14500, "minZ": 1500, "maxX": -11000, "maxZ": 4500 }
+        {
+          "id": "area.land",
+          "minX": -8000,
+          "minZ": -8000,
+          "maxX": 10000,
+          "maxZ": 8000
+        },
+        {
+          "id": "area.pier",
+          "minX": -16000,
+          "minZ": -1500,
+          "maxX": -7900,
+          "maxZ": 1500
+        },
+        {
+          "id": "area.pier_spur",
+          "minX": -14500,
+          "minZ": 1500,
+          "maxX": -11000,
+          "maxZ": 4500
+        }
       ],
       "obstacles": [
-        { "id": "footprint.cutter_1", "minX": 2000, "minZ": -5000, "maxX": 4000, "maxZ": -3000 },
-        { "id": "footprint.smoker_1", "minX": 7000, "minZ": -5000, "maxX": 8600, "maxZ": -3000 },
-        { "id": "footprint.counter_1", "minX": 1500, "minZ": 3500, "maxX": 4500, "maxZ": 4500 }
+        {
+          "id": "footprint.cutter_1",
+          "minX": 2000,
+          "minZ": -5000,
+          "maxX": 4000,
+          "maxZ": -3000
+        },
+        {
+          "id": "footprint.smoker_1",
+          "minX": 7000,
+          "minZ": -5000,
+          "maxX": 8600,
+          "maxZ": -3000
+        },
+        {
+          "id": "footprint.counter_1",
+          "minX": 1500,
+          "minZ": 3500,
+          "maxX": 4500,
+          "maxZ": 4500
+        }
       ],
       "zones": [
-        { "id": "zone.pier_end", "kind": "fishing", "minX": -16000, "minZ": -1500, "maxX": -12500, "maxZ": 1500 },
-        { "id": "zone.pier_spur", "kind": "fishing", "minX": -14500, "minZ": 1500, "maxX": -11000, "maxZ": 4500 },
-        { "id": "zone.cutter_in", "kind": "machine_input", "minX": 400, "minZ": -5000, "maxX": 2000, "maxZ": -3000 },
-        { "id": "zone.cutter_out", "kind": "machine_output", "minX": 4000, "minZ": -5000, "maxX": 5600, "maxZ": -3000 },
-        { "id": "zone.smoker_in", "kind": "machine_input", "minX": 5600, "minZ": -5000, "maxX": 7000, "maxZ": -3000 },
-        { "id": "zone.smoker_out", "kind": "machine_output", "minX": 8600, "minZ": -5000, "maxX": 10000, "maxZ": -3000 },
-        { "id": "zone.counter_1", "kind": "counter", "minX": 1500, "minZ": 2000, "maxX": 4500, "maxZ": 3500 }
+        {
+          "id": "zone.pier_end",
+          "kind": "fishing",
+          "minX": -16000,
+          "minZ": -1500,
+          "maxX": -12500,
+          "maxZ": 1500
+        },
+        {
+          "id": "zone.pier_spur",
+          "kind": "fishing",
+          "minX": -14500,
+          "minZ": 1500,
+          "maxX": -11000,
+          "maxZ": 4500
+        },
+        {
+          "id": "zone.cutter_in",
+          "kind": "machine_input",
+          "minX": 400,
+          "minZ": -5000,
+          "maxX": 2000,
+          "maxZ": -3000
+        },
+        {
+          "id": "zone.cutter_out",
+          "kind": "machine_output",
+          "minX": 4000,
+          "minZ": -5000,
+          "maxX": 5600,
+          "maxZ": -3000
+        },
+        {
+          "id": "zone.smoker_in",
+          "kind": "machine_input",
+          "minX": 5600,
+          "minZ": -5000,
+          "maxX": 7000,
+          "maxZ": -3000
+        },
+        {
+          "id": "zone.smoker_out",
+          "kind": "machine_output",
+          "minX": 8600,
+          "minZ": -5000,
+          "maxX": 10000,
+          "maxZ": -3000
+        },
+        {
+          "id": "zone.counter_1",
+          "kind": "counter",
+          "minX": 1500,
+          "minZ": 2000,
+          "maxX": 4500,
+          "maxZ": 3500
+        }
       ],
       "fishingSpots": [
         {
@@ -545,7 +1113,13 @@
           ],
           "stockMax": 18,
           "regenTicks": 40,
-          "regenCurvePermille": [2000, 1500, 1000, 850, 700]
+          "regenCurvePermille": [
+            2000,
+            1500,
+            1000,
+            850,
+            700
+          ]
         },
         {
           "zone": "zone.pier_spur",
@@ -556,7 +1130,13 @@
           ],
           "stockMax": 10,
           "regenTicks": 50,
-          "regenCurvePermille": [1800, 1400, 1100, 900, 750],
+          "regenCurvePermille": [
+            1800,
+            1400,
+            1100,
+            900,
+            750
+          ],
           "requiresUpgrade": "upgrade.side_pier"
         }
       ],
@@ -588,17 +1168,35 @@
           "footprint": "footprint.counter_1",
           "checkoutTicks": 20,
           "maxQueue": 4,
-          "queueAnchor": { "x": 3000, "z": 5200 },
-          "queueStep": { "x": -900, "z": 0 }
+          "queueAnchor": {
+            "x": 3000,
+            "z": 5200
+          },
+          "queueStep": {
+            "x": -900,
+            "z": 0
+          }
         }
       ],
       "customerSpawnTicks": 160,
-      "customerEntry": { "x": 9500, "z": 6500 },
+      "customerEntry": {
+        "x": 9500,
+        "z": 6500
+      },
       "customerWalkMmPerTick": 100,
       "customerPathWaypoints": [
-        { "x": 7500, "z": 7000 },
-        { "x": 4500, "z": 7000 },
-        { "x": 3500, "z": 5800 }
+        {
+          "x": 7500,
+          "z": 7000
+        },
+        {
+          "x": 4500,
+          "z": 7000
+        },
+        {
+          "x": 3500,
+          "z": 5800
+        }
       ],
       "rushes": [
         {
@@ -619,6 +1217,239 @@
           "spawnSpeedPermille": 2000,
           "queueBonus": 1
         }
+      ],
+      "requires": []
+    },
+    {
+      "id": "harbor.moon_cove",
+      "name": "Moon Cove",
+      "playerSpawn": {
+        "x": 0,
+        "z": 0
+      },
+      "walkable": [
+        {
+          "id": "area.cove_land",
+          "minX": -10000,
+          "minZ": -8000,
+          "maxX": 8000,
+          "maxZ": 8000
+        },
+        {
+          "id": "area.cove_pier",
+          "minX": 7900,
+          "minZ": -1500,
+          "maxX": 16000,
+          "maxZ": 1500
+        },
+        {
+          "id": "area.cove_shelf",
+          "minX": 11000,
+          "minZ": 1500,
+          "maxX": 14500,
+          "maxZ": 4500
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "footprint.cove_cutter",
+          "minX": -4000,
+          "minZ": -5000,
+          "maxX": -2000,
+          "maxZ": -3000
+        },
+        {
+          "id": "footprint.cove_smoker",
+          "minX": -8600,
+          "minZ": -5000,
+          "maxX": -7000,
+          "maxZ": -3000
+        },
+        {
+          "id": "footprint.cove_counter",
+          "minX": -4500,
+          "minZ": 3500,
+          "maxX": -1500,
+          "maxZ": 4500
+        }
+      ],
+      "zones": [
+        {
+          "id": "zone.cove_end",
+          "kind": "fishing",
+          "minX": 12500,
+          "minZ": -1500,
+          "maxX": 16000,
+          "maxZ": 1500
+        },
+        {
+          "id": "zone.cove_shelf",
+          "kind": "fishing",
+          "minX": 11000,
+          "minZ": 1500,
+          "maxX": 14500,
+          "maxZ": 4500
+        },
+        {
+          "id": "zone.cove_cutter_in",
+          "kind": "machine_input",
+          "minX": -2000,
+          "minZ": -5000,
+          "maxX": -400,
+          "maxZ": -3000
+        },
+        {
+          "id": "zone.cove_cutter_out",
+          "kind": "machine_output",
+          "minX": -5600,
+          "minZ": -5000,
+          "maxX": -4000,
+          "maxZ": -3000
+        },
+        {
+          "id": "zone.cove_smoker_in",
+          "kind": "machine_input",
+          "minX": -7000,
+          "minZ": -5000,
+          "maxX": -5600,
+          "maxZ": -3000
+        },
+        {
+          "id": "zone.cove_smoker_out",
+          "kind": "machine_output",
+          "minX": -10000,
+          "minZ": -5000,
+          "maxX": -8600,
+          "maxZ": -3000
+        },
+        {
+          "id": "zone.cove_counter",
+          "kind": "counter",
+          "minX": -4500,
+          "minZ": 2000,
+          "maxX": -1500,
+          "maxZ": 3500
+        }
+      ],
+      "fishingSpots": [
+        {
+          "zone": "zone.cove_end",
+          "species": [
+            "species.harbor_herring",
+            "species.blue_mackerel",
+            "species.copper_mullet",
+            "species.amber_snapper",
+            "species.king_grouper",
+            "species.silver_sprat"
+          ],
+          "stockMax": 20,
+          "regenTicks": 40,
+          "regenCurvePermille": [
+            2000,
+            1500,
+            1000,
+            850,
+            700
+          ]
+        },
+        {
+          "zone": "zone.cove_shelf",
+          "species": [
+            "species.silver_sprat",
+            "species.harbor_herring",
+            "species.blue_mackerel"
+          ],
+          "stockMax": 10,
+          "regenTicks": 50,
+          "regenCurvePermille": [
+            1800,
+            1400,
+            1100,
+            900,
+            750
+          ]
+        }
+      ],
+      "stations": [
+        {
+          "id": "station.cove_cutter",
+          "machine": "machine.basic_cutter",
+          "inputZone": "zone.cove_cutter_in",
+          "outputZone": "zone.cove_cutter_out"
+        },
+        {
+          "id": "station.cove_smoker",
+          "machine": "machine.basic_smoker",
+          "inputZone": "zone.cove_smoker_in",
+          "outputZone": "zone.cove_smoker_out"
+        }
+      ],
+      "counters": [
+        {
+          "id": "counter.cove_1",
+          "products": [
+            "product.basic_portion",
+            "product.fillet",
+            "product.premium_portion",
+            "product.smoked_fillet"
+          ],
+          "capacityUnits": 30,
+          "zone": "zone.cove_counter",
+          "footprint": "footprint.cove_counter",
+          "checkoutTicks": 20,
+          "maxQueue": 4,
+          "queueAnchor": {
+            "x": -3000,
+            "z": 5200
+          },
+          "queueStep": {
+            "x": 900,
+            "z": 0
+          }
+        }
+      ],
+      "customerSpawnTicks": 140,
+      "customerEntry": {
+        "x": -9500,
+        "z": 6500
+      },
+      "customerWalkMmPerTick": 100,
+      "customerPathWaypoints": [
+        {
+          "x": -7500,
+          "z": 7000
+        },
+        {
+          "x": -4500,
+          "z": 7000
+        },
+        {
+          "x": -3500,
+          "z": 5800
+        }
+      ],
+      "rushes": [
+        {
+          "id": "rush.cove_midday",
+          "name": "Midday rush",
+          "periodTicks": 2400,
+          "startTick": 600,
+          "durationTicks": 400,
+          "spawnSpeedPermille": 2500,
+          "queueBonus": 2
+        },
+        {
+          "id": "rush.cove_dusk",
+          "name": "Dusk rush",
+          "periodTicks": 2400,
+          "startTick": 1600,
+          "durationTicks": 300,
+          "spawnSpeedPermille": 2000,
+          "queueBonus": 1
+        }
+      ],
+      "requires": [
+        "quest.busy_harbor"
       ]
     }
   ]

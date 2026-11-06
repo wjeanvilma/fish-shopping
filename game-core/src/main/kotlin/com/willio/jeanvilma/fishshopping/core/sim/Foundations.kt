@@ -28,8 +28,9 @@ object SimConstants {
      * 5: machines store preferredRecipeId for multi-recipe selection.
      * 6: customers store preferredProductId for product demand.
      * 7: workers list (hired staff + bags + task state).
+     * 8: contract board offers + active timed deliveries.
      */
-    const val SCHEMA_VERSION = 7
+    const val SCHEMA_VERSION = 10
 }
 
 /** Integer arithmetic that refuses to leave the shared safe range. */

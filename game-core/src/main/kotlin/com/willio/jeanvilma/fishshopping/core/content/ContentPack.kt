@@ -20,6 +20,12 @@ data class ContentPack(
     val routing: RoutingDef,
     /** Offline catch-up policy (Phase 14). */
     val offline: OfflineDef,
+    /** Soft coin/stock sinks after early progression (Phase 19). */
+    val economy: EconomyDef,
+    /** End-of-run prestige milestones (Phase 20); additive, never wipes the save. */
+    val prestige: PrestigeDef,
+    /** Timed delivery contracts board (Phase 17). */
+    val contracts: ContractsDef,
     val customers: List<CustomerDef>,
     val tutorial: List<TutorialStepDef>,
     val harbors: List<HarborDef>,
@@ -31,6 +37,8 @@ data class ContentPack(
     val upgradesById = upgrades.associateBy { it.id }
     val questsById = quests.associateBy { it.id }
     val workersById = workers.associateBy { it.id }
+    val prestigeMilestonesById = prestige.milestones.associateBy { it.id }
+    val contractTemplatesById = contracts.templates.associateBy { it.id }
     val customersById = customers.associateBy { it.id }
     val harborsById = harbors.associateBy { it.id }
 
@@ -117,6 +125,10 @@ sealed interface UpgradeEffect {
     data class WorkerCatchSpeed(val speedPermille: Int) : UpgradeEffect
     /** Coins charged per hired worker each simulated hour. */
     data class WorkerWage(val coinsPerWorkerPerHour: Int) : UpgradeEffect
+    /** Subtracted from economy.maintenanceCoinsPerStation (floored at 0). */
+    data class MaintenanceDiscount(val coinsOffPerStation: Int) : UpgradeEffect
+    /** Multiplies bag fish spoilage period (2000 = half as fast). */
+    data class BagSpoilResist(val periodMultPermille: Int) : UpgradeEffect
 }
 
 data class UpgradeDef(
@@ -131,7 +143,21 @@ data class UpgradeDef(
 
 data class StatGoal(val stat: String, val atLeast: Long)
 
-data class QuestDef(val id: String, val name: String, val goal: StatGoal)
+data class QuestReward(
+    val coins: Long,
+    /** Upgrade IDs granted on completion (idempotent with owned upgrades). */
+    val unlockUpgrades: List<String>,
+)
+
+data class QuestDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    /** Quest or upgrade IDs that must be completed / owned first. */
+    val requires: List<String>,
+    val goal: StatGoal,
+    val reward: QuestReward,
+)
 
 enum class WorkerRoleKind(val wire: String) {
     FISHER("fisher"),
@@ -174,6 +200,66 @@ data class OfflineDef(
     val capHours: Int,
     /** Absences shorter than this do not show the summary screen. */
     val summaryMinSeconds: Int,
+)
+
+/** Soft economy pressure: station upkeep + counter/bag spoilage (Phase 19). */
+data class EconomyDef(
+    val requires: List<String>,
+    val maintenancePeriodTicks: Int,
+    val maintenanceCoinsPerStation: Int,
+    val counterSpoilPeriodTicks: Int,
+    val counterSpoilUnits: Int,
+    val bagFishSpoilPeriodTicks: Int,
+    val bagFishSpoilUnits: Int,
+)
+
+data class PrestigeRewardDef(
+    val coins: Long,
+    /** 0 = none; otherwise permanent catch-speed floor in permille. */
+    val catchSpeedPermille: Int,
+    /** 0 = none; otherwise permanent sale price multiplier floor in permille. */
+    val priceBonusPermille: Int,
+    /** Optional cosmetic / banner id stored on the save. */
+    val cosmetic: String? = null,
+)
+
+data class PrestigeMilestoneDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val requires: List<String>,
+    val goal: StatGoal,
+    val reward: PrestigeRewardDef,
+)
+
+/** Prestige-lite board: permanent bonuses without wiping the run (Phase 20). */
+data class PrestigeDef(
+    val requires: List<String>,
+    /** Revenue thresholds for harbor rating stars 1..5 (non-decreasing). */
+    val ratingThresholds: List<Long>,
+    val milestones: List<PrestigeMilestoneDef>,
+)
+
+data class ContractTemplateDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val item: String,
+    val quantity: Int,
+    val durationTicks: Int,
+    val payout: Long,
+    val penalty: Long,
+    val weight: Int,
+)
+
+/** Harbor contract board: rotating offers with timed deliveries. */
+data class ContractsDef(
+    val boardSlots: Int,
+    val maxActive: Int,
+    val refreshPeriodTicks: Int,
+    /** Quest / upgrade IDs required before the board posts offers. */
+    val requires: List<String>,
+    val templates: List<ContractTemplateDef>,
 )
 
 enum class CustomerKind(val wire: String) {
@@ -283,6 +369,8 @@ data class RushWindowDef(
 data class HarborDef(
     val id: String,
     val name: String,
+    /** Quest / upgrade IDs required before the player may travel here. */
+    val requires: List<String> = emptyList(),
     val playerSpawn: PointMm,
     val walkable: List<RectMm>,
     val obstacles: List<RectMm>,
@@ -303,4 +391,6 @@ data class HarborDef(
 ) {
     val zonesById = zones.associateBy { it.id }
     val rushesById = rushes.associateBy { it.id }
+    /** GLB filename under models/, matching generate_blockout.py. */
+    val blockoutAsset: String get() = "${id.substringAfter('.')}_blockout.glb"
 }

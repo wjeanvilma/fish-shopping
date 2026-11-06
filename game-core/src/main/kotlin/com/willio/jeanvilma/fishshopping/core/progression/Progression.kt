@@ -1,14 +1,16 @@
 package com.willio.jeanvilma.fishshopping.core.progression
 
+import com.willio.jeanvilma.fishshopping.core.content.ContentPack
+import com.willio.jeanvilma.fishshopping.core.content.QuestDef
 import com.willio.jeanvilma.fishshopping.core.content.TutorialTrigger
 import com.willio.jeanvilma.fishshopping.core.content.UpgradeDef
 import com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
 import com.willio.jeanvilma.fishshopping.core.sim.GameState
 import com.willio.jeanvilma.fishshopping.core.sim.Receipt
+import com.willio.jeanvilma.fishshopping.core.sim.SafeMath
 import com.willio.jeanvilma.fishshopping.core.sim.Stats
 import com.willio.jeanvilma.fishshopping.core.sim.StepContext
-import com.willio.jeanvilma.fishshopping.core.content.ContentPack
 
 object UpgradeSystem {
 
@@ -90,6 +92,10 @@ object UpgradeSystem {
                 s.workerCatchSpeedPermille = maxOf(s.workerCatchSpeedPermille, effect.speedPermille)
             is UpgradeEffect.WorkerWage ->
                 s.workerWagePerWorkerPerHour = maxOf(s.workerWagePerWorkerPerHour, effect.coinsPerWorkerPerHour)
+            is UpgradeEffect.MaintenanceDiscount ->
+                s.maintenanceDiscountPerStation = maxOf(s.maintenanceDiscountPerStation, effect.coinsOffPerStation)
+            is UpgradeEffect.BagSpoilResist ->
+                s.bagSpoilPeriodMultPermille = maxOf(s.bagSpoilPeriodMultPermille, effect.periodMultPermille)
         }
     }
 }
@@ -99,10 +105,10 @@ object ProgressionSystem {
     fun step(ctx: StepContext) {
         val s = ctx.state
         for (q in ctx.content.quests) {
-            if (q.id !in s.completedQuests && s.stat(q.goal.stat) >= q.goal.atLeast) {
-                s.completedQuests += q.id
-                ctx.emit(GameEvent.QuestCompleted(s.tick, q.id))
-            }
+            if (q.id in s.completedQuests) continue
+            if (!requirementsMet(s, q)) continue
+            if (s.stat(q.goal.stat) < q.goal.atLeast) continue
+            completeQuest(ctx, q)
         }
         val step = ctx.content.tutorial.getOrNull(s.tutorialIndex) ?: return
         val done = when (val t = step.advanceOn) {
@@ -113,5 +119,32 @@ object ProgressionSystem {
             s.tutorialIndex++
             ctx.emit(GameEvent.TutorialAdvanced(s.tick, s.tutorialIndex))
         }
+    }
+
+    fun requirementsMet(s: GameState, q: QuestDef): Boolean =
+        q.requires.all { it in s.ownedUpgrades || it in s.completedQuests }
+
+    fun missingRequirement(content: ContentPack, s: GameState, q: QuestDef): String? {
+        val missing = q.requires.firstOrNull { it !in s.ownedUpgrades && it !in s.completedQuests } ?: return null
+        return content.upgradesById[missing]?.name ?: content.questsById[missing]?.name ?: missing
+    }
+
+    private fun completeQuest(ctx: StepContext, q: QuestDef) {
+        val s = ctx.state
+        s.completedQuests += q.id
+        s.bumpStat(Stats.QUESTS_COMPLETED)
+        val reward = q.reward
+        if (reward.coins > 0) {
+            s.coins = SafeMath.creditCoins(s.coins, reward.coins)
+            val receipt = Receipt(s.newId("quest"), "quest_reward", reward.coins, s.tick, q.id)
+            s.record(receipt)
+        }
+        for (uid in reward.unlockUpgrades) {
+            val u = ctx.content.upgradesById[uid] ?: continue
+            s.ownedUpgrades += uid
+            UpgradeSystem.applyEffect(s, u.effect)
+        }
+        ctx.emit(GameEvent.QuestCompleted(s.tick, q.id, reward.coins, reward.unlockUpgrades))
+        ctx.emit(GameEvent.CheckpointRequested(s.tick, "quest"))
     }
 }

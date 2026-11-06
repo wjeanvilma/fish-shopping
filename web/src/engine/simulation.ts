@@ -3,25 +3,25 @@ import type { ContentPack, HarborDef } from "./content";
 import { CHECKPOINT_INTERVAL_TICKS, INPUT_SCALE } from "./foundations";
 import type { Command, GameEvent, GameState } from "./state";
 import {
-  CustomerSystem, FishingSystem, MovementSystem, ProductionSystem, ProgressionSystem,
+  ContractSystem, CustomerSystem, EconomySystem, FishingSystem, HarborTravelSystem, MovementSystem, PrestigeSystem, ProductionSystem, ProgressionSystem,
   StepContext, TransferSystem, UpgradeSystem, WorkerSystem, invariantProblems,
 } from "./systems";
 
 export class Simulation {
-  readonly harbor: HarborDef;
-
-  constructor(readonly content: ContentPack, readonly state: GameState) {
-    this.harbor = content.harbor(state.harborId);
+  get harbor(): HarborDef {
+    return this.content.harbor(this.state.harborId);
   }
+
+  constructor(readonly content: ContentPack, readonly state: GameState) {}
 
   /**
    * One tick. Update order is part of the contract: commands; movement; arrivals;
-   * fishing and transfers; production; customers and payment; workers; quests; checkpoints.
+   * fishing and transfers; production; customers and payment; workers; quests; prestige; contracts; economy; checkpoints.
    */
   step(commands: readonly Command[] = []): GameEvent[] {
     const s = this.state;
     s.tick++;
-    const ctx = new StepContext(this.content, this.harbor, s);
+    const ctx = new StepContext(this.content, s);
     for (const c of commands) this.applyCommand(ctx, c);
     MovementSystem.step(ctx);
     MovementSystem.updateZone(ctx);
@@ -31,6 +31,9 @@ export class Simulation {
     CustomerSystem.step(ctx);
     WorkerSystem.step(ctx);
     ProgressionSystem.step(ctx);
+    PrestigeSystem.step(ctx);
+    ContractSystem.step(ctx);
+    EconomySystem.step(ctx);
     if (s.tick % CHECKPOINT_INTERVAL_TICKS === 0) ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "periodic" });
     return ctx.events;
   }
@@ -73,6 +76,15 @@ export class Simulation {
       }
       case "hire_worker":
         WorkerSystem.hire(ctx, c.roleId, c.requestId);
+        break;
+      case "accept_contract":
+        ContractSystem.accept(ctx, c.offerId, c.requestId);
+        break;
+      case "deliver_contract":
+        ContractSystem.deliver(ctx, c.contractId, c.requestId);
+        break;
+      case "travel_to_harbor":
+        HarborTravelSystem.travel(ctx, c.harborId, c.requestId);
         break;
     }
   }

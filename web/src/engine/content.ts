@@ -35,10 +35,22 @@ export type UpgradeEffect =
   | { kind: "worker_move_speed"; speedPermille: number }
   | { kind: "worker_carry"; capacityUnits: number }
   | { kind: "worker_catch_speed"; speedPermille: number }
-  | { kind: "worker_wage"; coinsPerWorkerPerHour: number };
+  | { kind: "worker_wage"; coinsPerWorkerPerHour: number }
+  /** Subtracted from economy.maintenanceCoinsPerStation (floored at 0). */
+  | { kind: "maintenance_discount"; coinsOffPerStation: number }
+  /** Multiplies bag fish spoilage period (2000 = half as fast). */
+  | { kind: "bag_spoil_resist"; periodMultPermille: number };
 export interface UpgradeDef { id: string; name: string; description: string; cost: number; requires: string[]; effect: UpgradeEffect }
 export interface StatGoal { stat: string; atLeast: number }
-export interface QuestDef { id: string; name: string; goal: StatGoal }
+export interface QuestReward { coins: number; unlockUpgrades: string[] }
+export interface QuestDef {
+  id: string;
+  name: string;
+  description: string;
+  requires: string[];
+  goal: StatGoal;
+  reward: QuestReward;
+}
 export type WorkerRoleKind = "fisher" | "porter" | "operator" | "cashier" | "supervisor";
 export interface WorkerDef {
   id: string;
@@ -68,6 +80,66 @@ export interface OfflineDef {
   capHours: number;
   /** Absences shorter than this do not show the summary screen. */
   summaryMinSeconds: number;
+}
+
+/** Soft economy pressure: station upkeep + counter/bag spoilage (Phase 19). */
+export interface EconomyDef {
+  requires: string[];
+  maintenancePeriodTicks: number;
+  maintenanceCoinsPerStation: number;
+  counterSpoilPeriodTicks: number;
+  counterSpoilUnits: number;
+  bagFishSpoilPeriodTicks: number;
+  bagFishSpoilUnits: number;
+}
+
+export interface PrestigeRewardDef {
+  coins: number;
+  /** 0 = none; otherwise permanent catch-speed floor in permille. */
+  catchSpeedPermille: number;
+  /** 0 = none; otherwise permanent sale price multiplier floor in permille. */
+  priceBonusPermille: number;
+  /** Optional cosmetic / banner id stored on the save. */
+  cosmetic?: string | null;
+}
+
+export interface PrestigeMilestoneDef {
+  id: string;
+  name: string;
+  description: string;
+  requires: string[];
+  goal: StatGoal;
+  reward: PrestigeRewardDef;
+}
+
+/** Prestige-lite board: permanent bonuses without wiping the run (Phase 20). */
+export interface PrestigeDef {
+  requires: string[];
+  /** Revenue thresholds for harbor rating stars 1..5 (non-decreasing). */
+  ratingThresholds: number[];
+  milestones: PrestigeMilestoneDef[];
+}
+
+export interface ContractTemplateDef {
+  id: string;
+  name: string;
+  description: string;
+  item: string;
+  quantity: number;
+  durationTicks: number;
+  payout: number;
+  penalty: number;
+  weight: number;
+}
+
+/** Harbor contract board: rotating offers with timed deliveries. */
+export interface ContractsDef {
+  boardSlots: number;
+  maxActive: number;
+  refreshPeriodTicks: number;
+  /** Quest / upgrade IDs required before the board posts offers. */
+  requires: string[];
+  templates: ContractTemplateDef[];
 }
 export type CustomerKind = "standard" | "premium" | "bulk";
 export interface ProductWeight { item: string; weight: number }
@@ -123,6 +195,8 @@ export interface RushWindowDef {
 export interface HarborDef {
   id: string;
   name: string;
+  /** Quest / upgrade IDs required before the player may travel here. */
+  requires: string[];
   playerSpawn: PointMm;
   walkable: RectMm[];
   obstacles: RectMm[];
@@ -136,6 +210,8 @@ export interface HarborDef {
   /** Intermediate approach points (entry → waypoints → queue). Empty = straight line. */
   customerPathWaypoints: PointMm[];
   rushes: RushWindowDef[];
+  /** GLB filename under models/, matching generate_blockout.py. */
+  blockoutAsset: string;
 }
 
 export interface RawContentPack {
@@ -151,6 +227,11 @@ export interface RawContentPack {
   workers: WorkerDef[];
   routing: RoutingDef;
   offline: OfflineDef;
+  /** Soft coin/stock sinks after early progression (Phase 19). */
+  economy: EconomyDef;
+  /** End-of-run prestige milestones (Phase 20); additive, never wipes the save. */
+  prestige: PrestigeDef;
+  contracts: ContractsDef;
   customers: CustomerDef[];
   tutorial: TutorialStepDef[];
   harbors: HarborDef[];
@@ -173,10 +254,18 @@ export class ContentPack {
   readonly upgradesById: Map<string, UpgradeDef>;
   readonly questsById: Map<string, QuestDef>;
   readonly workersById: Map<string, WorkerDef>;
+  readonly prestigeMilestonesById: Map<string, PrestigeMilestoneDef>;
+  readonly contractTemplatesById: Map<string, ContractTemplateDef>;
   readonly customersById: Map<string, CustomerDef>;
   readonly harborsById: Map<string, HarborDef>;
 
   constructor(readonly raw: RawContentPack) {
+    for (const h of raw.harbors) {
+      h.requires = h.requires ?? [];
+      h.customerPathWaypoints = h.customerPathWaypoints ?? [];
+      h.rushes = h.rushes ?? [];
+      h.blockoutAsset = `${h.id.includes(".") ? h.id.slice(h.id.indexOf(".") + 1) : h.id}_blockout.glb`;
+    }
     this.speciesById = byId(raw.species);
     this.productsById = byId(raw.products);
     this.recipesById = byId(raw.recipes);
@@ -184,6 +273,8 @@ export class ContentPack {
     this.upgradesById = byId(raw.upgrades);
     this.questsById = byId(raw.quests);
     this.workersById = byId(raw.workers);
+    this.prestigeMilestonesById = byId(raw.prestige.milestones);
+    this.contractTemplatesById = byId(raw.contracts.templates);
     this.customersById = byId(raw.customers);
     this.harborsById = byId(raw.harbors);
   }
@@ -197,6 +288,10 @@ export class ContentPack {
   get workers() { return this.raw.workers; }
   get routing() { return this.raw.routing; }
   get offline() { return this.raw.offline; }
+  get economy() { return this.raw.economy; }
+  get prestige() { return this.raw.prestige; }
+  get contracts() { return this.raw.contracts; }
+  get harbors() { return this.raw.harbors; }
 
   carryUnits = (itemId: string): number => {
     const u = this.speciesById.get(itemId)?.carryUnits ?? this.productsById.get(itemId)?.carryUnits;
@@ -253,7 +348,7 @@ export function validateContent(p: ContentPack): string[] {
     "player.startFishRegenPermille must be >= 1000");
 
   const allIds = [...r.species, ...r.products, ...r.recipes, ...r.machines, ...r.upgrades, ...r.quests,
-    ...r.workers, ...r.customers, ...r.tutorial, ...r.harbors].map((x) => x.id);
+    ...r.workers, ...r.prestige.milestones, ...r.contracts.templates, ...r.customers, ...r.tutorial, ...r.harbors].map((x) => x.id);
   duplicates(allIds).forEach((id) => errors.push(`Duplicate id '${id}'`));
 
   for (const w of r.workers) {
@@ -272,6 +367,38 @@ export function validateContent(p: ContentPack): string[] {
   check(r.routing.supervisorDemandBoostPermille >= 1, () => "routing.supervisorDemandBoostPermille must be >= 1");
   check(r.offline.capHours >= 1, () => "offline.capHours must be >= 1");
   check(r.offline.summaryMinSeconds >= 0, () => "offline.summaryMinSeconds must be >= 0");
+  check(r.economy.maintenancePeriodTicks >= 1, () => "economy.maintenancePeriodTicks must be >= 1");
+  check(r.economy.maintenanceCoinsPerStation >= 0, () => "economy.maintenanceCoinsPerStation must be >= 0");
+  check(r.economy.counterSpoilPeriodTicks >= 1, () => "economy.counterSpoilPeriodTicks must be >= 1");
+  check(r.economy.counterSpoilUnits >= 0, () => "economy.counterSpoilUnits must be >= 0");
+  check(r.economy.bagFishSpoilPeriodTicks >= 1, () => "economy.bagFishSpoilPeriodTicks must be >= 1");
+  check(r.economy.bagFishSpoilUnits >= 0, () => "economy.bagFishSpoilUnits must be >= 0");
+  const economyRequirable = new Set([...p.upgradesById.keys(), ...p.questsById.keys()]);
+  for (const req of r.economy.requires) {
+    check(economyRequirable.has(req), () => `economy: unknown requirement '${req}'`);
+  }
+  check(r.prestige.ratingThresholds.length === 5, () => "prestige.ratingThresholds must have exactly 5 entries");
+  check(r.prestige.milestones.length > 0, () => "prestige.milestones must not be empty");
+  for (let i = 1; i < r.prestige.ratingThresholds.length; i++) {
+    check(r.prestige.ratingThresholds[i]! >= r.prestige.ratingThresholds[i - 1]!, () =>
+      "prestige.ratingThresholds must be non-decreasing");
+  }
+  check(r.contracts.boardSlots >= 1, () => "contracts.boardSlots must be >= 1");
+  check(r.contracts.maxActive >= 1, () => "contracts.maxActive must be >= 1");
+  check(r.contracts.refreshPeriodTicks >= 1, () => "contracts.refreshPeriodTicks must be >= 1");
+  check(r.contracts.templates.length > 0, () => "contracts.templates must not be empty");
+  const contractRequirable = new Set([...p.upgradesById.keys(), ...p.questsById.keys()]);
+  for (const req of r.contracts.requires) {
+    check(contractRequirable.has(req), () => `contracts: unknown requirement '${req}'`);
+  }
+  for (const t of r.contracts.templates) {
+    check(p.isKnownItem(t.item), () => `${t.id}: unknown item '${t.item}'`);
+    check(t.quantity >= 1, () => `${t.id}: quantity must be >= 1`);
+    check(t.durationTicks >= 1, () => `${t.id}: durationTicks must be >= 1`);
+    check(t.payout >= 0, () => `${t.id}: payout must be >= 0`);
+    check(t.penalty >= 0, () => `${t.id}: penalty must be >= 0`);
+    check(t.weight >= 1, () => `${t.id}: weight must be >= 1`);
+  }
 
   const unitsOrZero = (item: string) => p.speciesById.get(item)?.carryUnits ?? p.productsById.get(item)?.carryUnits ?? 0;
 
@@ -334,12 +461,53 @@ export function validateContent(p: ContentPack): string[] {
       check(e.speedPermille >= 1000, () => `${u.id}: worker_catch_speed must be >= 1000`);
     } else if (e.kind === "worker_wage") {
       check(e.coinsPerWorkerPerHour >= 1, () => `${u.id}: worker_wage must be >= 1`);
+    } else if (e.kind === "maintenance_discount") {
+      check(e.coinsOffPerStation >= 1, () => `${u.id}: maintenance_discount must be >= 1`);
+    } else if (e.kind === "bag_spoil_resist") {
+      check(e.periodMultPermille > 1000, () => `${u.id}: bag_spoil_resist must exceed 1000`);
     }
   }
   const cycle = findUpgradeCycle(p);
   if (cycle) errors.push(`Upgrade requirement cycle: ${cycle.join(" -> ")}`);
 
   const requirable = new Set([...p.upgradesById.keys(), ...p.questsById.keys()]);
+  for (const q of r.quests) {
+    for (const req of q.requires) {
+      check(requirable.has(req), () => `${q.id}: unknown requirement '${req}'`);
+    }
+    check(q.reward.coins >= 0, () => `${q.id}: reward.coins must be >= 0`);
+    for (const uid of q.reward.unlockUpgrades) {
+      check(p.upgradesById.has(uid), () => `${q.id}: unknown reward upgrade '${uid}'`);
+    }
+  }
+  const questCycle = findQuestCycle(p);
+  if (questCycle) errors.push(`Quest requirement cycle: ${questCycle.join(" -> ")}`);
+
+  const prestigeRequirable = new Set([...requirable, ...p.prestigeMilestonesById.keys()]);
+  for (const req of r.prestige.requires) {
+    check(prestigeRequirable.has(req), () => `prestige: unknown requirement '${req}'`);
+  }
+  for (const m of r.prestige.milestones) {
+    for (const req of m.requires) {
+      check(prestigeRequirable.has(req), () => `${m.id}: unknown requirement '${req}'`);
+    }
+    check(m.reward.coins >= 0, () => `${m.id}: reward.coins must be >= 0`);
+    if (m.reward.catchSpeedPermille > 0) {
+      check(m.reward.catchSpeedPermille >= 1000, () =>
+        `${m.id}: catchSpeedPermille must be 0 or >= 1000`);
+    }
+    if (m.reward.priceBonusPermille > 0) {
+      check(m.reward.priceBonusPermille >= 1000, () =>
+        `${m.id}: priceBonusPermille must be 0 or >= 1000`);
+    }
+    const cos = m.reward.cosmetic;
+    if (cos != null) {
+      check(cos.trim().length > 0, () => `${m.id}: cosmetic must be non-empty when set`);
+    }
+  }
+  const prestigeCycle = findPrestigeCycle(p);
+  if (prestigeCycle) errors.push(`Prestige requirement cycle: ${prestigeCycle.join(" -> ")}`);
+
   for (const w of r.workers) {
     for (const req of w.requires) {
       check(requirable.has(req), () => `${w.id}: unknown requirement '${req}'`);
@@ -373,6 +541,9 @@ export function validateContent(p: ContentPack): string[] {
   for (const h of r.harbors) {
     const zones = new Map(h.zones.map((z) => [z.id, z]));
     const open = (x: number, z: number) => h.walkable.some((w) => rectContains(w, x, z)) && !h.obstacles.some((o) => rectContains(o, x, z));
+    for (const req of h.requires) {
+      check(p.upgradesById.has(req) || p.questsById.has(req), () => `${h.id}: unknown requirement '${req}'`);
+    }
     check(h.walkable.some((w) => rectContains(w, h.playerSpawn.x, h.playerSpawn.z)), () => `${h.id}: spawn is not walkable`);
     check(!h.obstacles.some((o) => rectContains(o, h.playerSpawn.x, h.playerSpawn.z)), () => `${h.id}: spawn is inside an obstacle`);
     const fishingZoneIds = new Set(h.zones.filter((z) => z.kind === "fishing").map((z) => z.id));
@@ -496,6 +667,59 @@ function findUpgradeCycle(p: ContentPack): string[] | null {
   };
   for (const u of p.raw.upgrades) {
     const c = visit(u.id);
+    if (c) return c;
+  }
+  return null;
+}
+
+function findQuestCycle(p: ContentPack): string[] | null {
+  const state = new Map<string, 1 | 2>();
+  const stack: string[] = [];
+  const visit = (id: string): string[] | null => {
+    const s = state.get(id);
+    if (s === 1) return [...stack.slice(stack.indexOf(id)), id];
+    if (s === 2) return null;
+    state.set(id, 1);
+    stack.push(id);
+    for (const req of p.questsById.get(id)?.requires ?? []) {
+      if (p.questsById.has(req)) {
+        const c = visit(req);
+        if (c) return c;
+      }
+    }
+    stack.pop();
+    state.set(id, 2);
+    return null;
+  };
+  for (const q of p.raw.quests) {
+    const c = visit(q.id);
+    if (c) return c;
+  }
+  return null;
+}
+
+/** Depth-first search over prestige -> required prestige edges. */
+function findPrestigeCycle(p: ContentPack): string[] | null {
+  const state = new Map<string, 1 | 2>();
+  const stack: string[] = [];
+  const visit = (id: string): string[] | null => {
+    const s = state.get(id);
+    if (s === 1) return [...stack.slice(stack.indexOf(id)), id];
+    if (s === 2) return null;
+    state.set(id, 1);
+    stack.push(id);
+    for (const req of p.prestigeMilestonesById.get(id)?.requires ?? []) {
+      if (p.prestigeMilestonesById.has(req)) {
+        const c = visit(req);
+        if (c) return c;
+      }
+    }
+    stack.pop();
+    state.set(id, 2);
+    return null;
+  };
+  for (const m of p.raw.prestige.milestones) {
+    const c = visit(m.id);
     if (c) return c;
   }
   return null;

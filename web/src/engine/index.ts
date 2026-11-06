@@ -7,4 +7,4 @@ export * from "./simulation";
 export * from "./view";
 export * from "./snapshot";
 export * from "./offline";
-export { UpgradeSystem, ProductionSystem, FishingSystem, CustomerSystem, WorkerSystem, isOpen, PLAYER_RADIUS_MM } from "./systems";
+export { UpgradeSystem, ProductionSystem, FishingSystem, CustomerSystem, WorkerSystem, ProgressionSystem, PrestigeSystem, ContractSystem, HarborTravelSystem, EconomySystem, isOpen, PLAYER_RADIUS_MM } from "./systems";

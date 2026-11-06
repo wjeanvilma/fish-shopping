@@ -59,12 +59,15 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
 .muted { opacity: 0.6; }
 .small { font-size: 13px; }
 .danger { color: var(--danger); }
+.reward { color: var(--reward); }
+.rating { margin-left: 8px; color: var(--reward); letter-spacing: 0.05em; }
 .eyebrow { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--action); font-weight: 700; }
 
 .top-left { top: max(var(--gap), env(safe-area-inset-top)); left: max(var(--gap), env(safe-area-inset-left)); }
 .top-center { top: max(var(--gap), env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); }
 .top-right { top: max(var(--gap), env(safe-area-inset-top)); right: max(var(--gap), env(safe-area-inset-right)); }
 .top-actions { top: max(var(--gap), env(safe-area-inset-top)); right: max(var(--gap), env(safe-area-inset-right)); display: flex; gap: 8px; }
+.pause-button { top: calc(max(var(--gap), env(safe-area-inset-top)) + 48px); left: max(var(--gap), env(safe-area-inset-left)); }
 .objective { left: max(var(--gap), env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); max-width: 220px; }
 .joystick, .keys-hint { left: max(var(--gap), env(safe-area-inset-left)); bottom: max(var(--gap), env(safe-area-inset-bottom)); }
 .keys-hint { font-size: 14px; }
@@ -75,6 +78,13 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
 }
 .reel.hot { background: var(--reward); color: var(--ink); }
 .carry { right: max(var(--gap), env(safe-area-inset-right)); bottom: max(var(--gap), env(safe-area-inset-bottom)); min-width: 140px; }
+button.carry { font: inherit; color: inherit; text-align: left; cursor: pointer; border: 0; }
+.station-card { cursor: pointer; }
+.title-actions { display: grid; gap: 10px; margin-top: 12px; }
+.title-actions .button { width: 100%; }
+.quality-row { display: flex; gap: 8px; margin-top: 8px; }
+.quality-row .button { flex: 1; text-transform: capitalize; }
+.quality-row .button.ghost { background: var(--surface-muted); color: var(--ink); }
 
 kbd { display: inline-block; min-width: 1.6em; padding: 1px 5px; margin: 0 2px; border-radius: 6px; border: 1px solid rgb(21 52 73 / 0.3); background: var(--surface); font: 600 12px/1.4 ui-monospace, monospace; text-align: center; }
 .button kbd { background: transparent; border-color: rgb(255 255 255 / 0.5); color: inherit; }

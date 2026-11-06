@@ -207,7 +207,7 @@ describe("simulation", () => {
     sim.run(5);
     const saved = encodeSnapshot(content, sim.state);
     expect(() => decodeSnapshot(content, saved.replace('"tick":5', '"tick":6'))).toThrow(/Checksum/);
-    expect(() => decodeSnapshot(content, saved.replace('"schemaVersion":7', '"schemaVersion":99'))).toThrow(NewerSaveError);
+    expect(() => decodeSnapshot(content, saved.replace('"schemaVersion":10', '"schemaVersion":99'))).toThrow(NewerSaveError);
     expect(() => decodeSnapshot(content, "{")).toThrow(SnapshotError);
   });
 
@@ -395,7 +395,7 @@ describe("simulation", () => {
     const sim = newSim();
     const h = sim.harbor;
     expect(h.customerPathWaypoints.length).toBeGreaterThan(0);
-    expect(content.contentVersion).toBe("0.17.0");
+    expect(content.contentVersion).toBe("0.22.0");
     const slot = { x: h.counters[0]!.queueAnchor.x, z: h.counters[0]!.queueAnchor.z };
     const path = CustomerSystem.approachPath(h, slot);
     const routed = CustomerSystem.pathWalkTicks(path, h.customerWalkMmPerTick);
@@ -619,7 +619,7 @@ describe("simulation", () => {
 
   it("hire fisher and porter is idempotent and shows staff", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("0.17.0");
+    expect(content.contentVersion).toBe("0.22.0");
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.fisher")).toBe(true);
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.operator")).toBe(true);
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.cashier")).toBe(true);
@@ -823,5 +823,307 @@ describe("simulation", () => {
     expect(events.some((e) => e.type === "wages_paid" && e.workers === 1 && e.coins === 3)).toBe(true);
     expect(sim.state.coins).toBe(coinsBefore - 3);
     expect(sim.state.stat("stat.wages_paid")).toBe(3);
+  });
+
+  it("quest chain locks rewards and shows log", () => {
+    const sim = newSim();
+    const log = buildView(sim).quests;
+    expect(log).toHaveLength(4);
+    expect(log.find((q) => q.id === "quest.first_ten_sales")!.status).toBe("active");
+    expect(log.filter((q) => q.id !== "quest.first_ten_sales").every((q) => q.status === "locked")).toBe(true);
+
+    sim.state.bumpStat("stat.sales", 10);
+    const coinsBefore = sim.state.coins;
+    const events = checkedStep(sim);
+    const done = events.filter((e) => e.type === "quest_completed");
+    expect(done).toHaveLength(1);
+    expect(done[0]).toMatchObject({ questId: "quest.first_ten_sales", coinsRewarded: 50 });
+    expect(sim.state.coins).toBe(coinsBefore + 50);
+    expect(sim.state.stat("stat.quests_completed")).toBe(1);
+    expect(sim.state.completedQuests.has("quest.first_ten_sales")).toBe(true);
+
+    const after = buildView(sim).quests;
+    expect(after.find((q) => q.id === "quest.first_ten_sales")!.status).toBe("completed");
+    expect(after.find((q) => q.id === "quest.fill_the_hold")!.status).toBe("active");
+    expect(after.find((q) => q.id === "quest.first_hire")!.status).toBe("active");
+    expect(after.find((q) => q.id === "quest.busy_harbor")!.status).toBe("locked");
+
+    sim.state.bumpStat("stat.fish_caught", 25);
+    sim.state.bumpStat("stat.workers_hired", 1);
+    checkedStep(sim);
+    expect(sim.state.completedQuests.has("quest.fill_the_hold")).toBe(true);
+    expect(sim.state.completedQuests.has("quest.first_hire")).toBe(true);
+
+    sim.state.bumpStat("stat.revenue", 250);
+    const finale = checkedStep(sim).filter((e) => e.type === "quest_completed");
+    expect(finale).toHaveLength(1);
+    expect(finale[0]).toMatchObject({ questId: "quest.busy_harbor", unlockUpgrades: ["upgrade.tide_chart"] });
+    expect(sim.state.ownedUpgrades.has("upgrade.tide_chart")).toBe(true);
+    expect(sim.state.player.fishRegenPermille).toBe(1250);
+    expect(buildView(sim).quests.find((q) => q.id === "quest.busy_harbor")!.status).toBe("completed");
+  });
+
+  it("contracts stay locked until first ten sales, then pay out or penalize", () => {
+    const sim = newSim();
+    const locked = buildView(sim);
+    expect(locked.contractsUnlocked).toBe(false);
+    expect(locked.contractsLockedReason).toBe("Requires: Make 10 sales");
+    expect(locked.contractOffers).toEqual([]);
+    expect(sim.state.contractOffers).toEqual([]);
+    checkedStep(sim);
+    expect(sim.state.contractOffers).toEqual([]);
+    expect(buildView(sim).contractsUnlocked).toBe(false);
+
+    sim.state.completedQuests.add("quest.first_ten_sales");
+    const opened = checkedStep(sim);
+    expect(opened.some((e) => e.type === "contract_board_refreshed")).toBe(true);
+    expect(buildView(sim).contractsUnlocked).toBe(true);
+    expect(buildView(sim).contractsLockedReason).toBeNull();
+    expect(sim.state.contractOffers).toHaveLength(content.contracts.boardSlots);
+    expect(buildView(sim).contractRefreshTicksLeft).toBe(content.contracts.refreshPeriodTicks);
+    expect(buildView(sim).contractOffers.every((o) => o.acceptEnabled)).toBe(true);
+
+    const offer = sim.state.contractOffers[0]!;
+    const accepted = checkedStep(sim, [{ type: "accept_contract", offerId: offer.id, requestId: "acc-1" }]);
+    expect(accepted.some((e) => e.type === "contract_accepted" && !e.replayed)).toBe(true);
+    expect(sim.state.contractOffers.some((o) => o.id === offer.id)).toBe(false);
+    expect(sim.state.activeContracts).toHaveLength(1);
+    const job = sim.state.activeContracts[0]!;
+    expect(job.templateId).toBe(offer.templateId);
+    expect(job.itemId).toBe(offer.itemId);
+    expect(job.deadlineTick).toBe(sim.state.tick + offer.durationTicks);
+    const replay = checkedStep(sim, [{ type: "accept_contract", offerId: offer.id, requestId: "acc-1" }]);
+    expect(replay.find((e) => e.type === "contract_accepted")).toMatchObject({ replayed: true, contractId: job.id });
+    expect(sim.state.activeContracts).toHaveLength(1);
+
+    sim.state.player.bag.capacityUnits = 100;
+    sim.state.player.bag.add(job.itemId, job.quantity);
+    const coinsBefore = sim.state.coins;
+    const delivered = checkedStep(sim, [{ type: "deliver_contract", contractId: job.id, requestId: "del-1" }]);
+    expect(delivered.find((e) => e.type === "contract_completed")).toMatchObject({
+      contractId: job.id, templateId: job.templateId, payout: job.payout,
+    });
+    expect(sim.state.coins).toBe(coinsBefore + job.payout);
+    expect(sim.state.activeContracts).toHaveLength(0);
+    expect(sim.state.player.bag.quantity(job.itemId)).toBe(0);
+    expect(sim.state.stat("stat.contracts_completed")).toBe(1);
+    expect(sim.state.stat("stat.contract_revenue")).toBe(job.payout);
+    expect(sim.state.stat("stat.contract_items_delivered")).toBe(job.quantity);
+    const deliverReplay = checkedStep(sim, [{ type: "deliver_contract", contractId: job.id, requestId: "del-1" }]);
+    expect(deliverReplay.find((e) => e.type === "contract_delivered")).toMatchObject({ replayed: true, completed: true });
+    expect(sim.state.coins).toBe(coinsBefore + job.payout);
+
+    const offer2 = sim.state.contractOffers[0]!;
+    checkedStep(sim, [{ type: "accept_contract", offerId: offer2.id, requestId: "acc-fail" }]);
+    const job2 = sim.state.activeContracts[0]!;
+    expect(job2.penalty).toBeGreaterThan(0);
+    sim.state.coins = 100;
+    sim.state.tick = job2.deadlineTick - 1;
+    const failed = checkedStep(sim);
+    expect(failed.find((e) => e.type === "contract_failed")).toMatchObject({
+      contractId: job2.id, templateId: job2.templateId, penaltyPaid: job2.penalty,
+    });
+    expect(sim.state.coins).toBe(100 - job2.penalty);
+    expect(sim.state.activeContracts).toHaveLength(0);
+    expect(sim.state.stat("stat.contracts_failed")).toBe(1);
+  });
+
+  it("moon cove unlocks after busy harbor and travel stashes world", () => {
+    const sim = newSim();
+    const map = buildView(sim).harbors;
+    expect(map).toHaveLength(2);
+    expect(map[0]).toMatchObject({ harborId: HARBOR, current: true, unlocked: true, travelEnabled: false });
+    expect(map[1]).toMatchObject({
+      harborId: "harbor.moon_cove", unlocked: false, reason: "Requires: Busy harbor",
+      blockoutAsset: "moon_cove_blockout.glb",
+    });
+
+    const rejected = checkedStep(sim, [{ type: "travel_to_harbor", harborId: "harbor.moon_cove", requestId: "go-1" }]);
+    expect(rejected.some((e) => e.type === "travel_rejected" && e.reason.includes("Busy harbor"))).toBe(true);
+    expect(sim.state.harborId).toBe(HARBOR);
+
+    sim.state.completedQuests.add("quest.busy_harbor");
+    expect(buildView(sim).harbors.find((h) => h.harborId === "harbor.moon_cove")!.travelEnabled).toBe(true);
+
+    const spot = sim.state.fishingSpots.find((f) => f.zoneId === "zone.pier_end")!;
+    spot.stock = 3;
+    sim.state.coins = 777;
+    sim.state.player.bag.capacityUnits = 20;
+    sim.state.player.bag.add(SPRAT, 2);
+
+    const traveled = checkedStep(sim, [{ type: "travel_to_harbor", harborId: "harbor.moon_cove", requestId: "go-2" }]);
+    expect(traveled.some((e) => e.type === "harbor_traveled" && !e.replayed && e.toHarborId === "harbor.moon_cove")).toBe(true);
+    expect(sim.state.harborId).toBe("harbor.moon_cove");
+    expect(buildView(sim).harborName).toBe("Moon Cove");
+    expect(buildView(sim).blockoutAsset).toBe("moon_cove_blockout.glb");
+    expect(sim.state.coins).toBe(777);
+    expect(sim.state.player.bag.quantity(SPRAT)).toBe(2);
+    expect(sim.state.player.x).toBe(sim.harbor.playerSpawn.x);
+    expect(sim.state.player.z).toBe(sim.harbor.playerSpawn.z);
+    expect(sim.state.fishingSpots.some((f) => f.zoneId === "zone.cove_end")).toBe(true);
+    expect(sim.state.harborStashes.has(HARBOR)).toBe(true);
+    expect(sim.state.harborStashes.get(HARBOR)!.fishingSpots.find((f) => f.zoneId === "zone.pier_end")!.stock).toBe(3);
+    expect(sim.state.stat("stat.harbors_traveled")).toBe(1);
+
+    const replay = checkedStep(sim, [{ type: "travel_to_harbor", harborId: "harbor.moon_cove", requestId: "go-2" }]);
+    expect(replay.find((e) => e.type === "harbor_traveled")).toMatchObject({ replayed: true });
+    expect(sim.state.stat("stat.harbors_traveled")).toBe(1);
+
+    const back = checkedStep(sim, [{ type: "travel_to_harbor", harborId: HARBOR, requestId: "go-back" }]);
+    expect(back.some((e) => e.type === "harbor_traveled" && e.toHarborId === HARBOR)).toBe(true);
+    expect(sim.state.harborId).toBe(HARBOR);
+    expect(sim.state.fishingSpots.find((f) => f.zoneId === "zone.pier_end")!.stock).toBe(3);
+    expect(sim.state.player.bag.quantity(SPRAT)).toBe(2);
+    expect(sim.state.harborStashes.has("harbor.moon_cove")).toBe(true);
+    expect(sim.state.stat("stat.harbors_traveled")).toBe(2);
+
+    const saved = encodeSnapshot(content, sim.state);
+    expect(saved.startsWith('{"schemaVersion":10,')).toBe(true);
+    const restored = decodeSnapshot(content, saved);
+    expect(restored.harborId).toBe(HARBOR);
+    expect(restored.harborStashes.has("harbor.moon_cove")).toBe(true);
+    expect(restored.fishingSpots.find((f) => f.zoneId === "zone.pier_end")!.stock).toBe(3);
+  });
+
+  it("economy sinks unlock after first ten sales and charge or spoil", () => {
+    const sim = newSim();
+    const locked = buildView(sim);
+    expect(locked.economyUnlocked).toBe(false);
+    expect(locked.economyLockedReason).toBe("Requires: Make 10 sales");
+    expect(locked.maintenanceCoinsPerStation).toBe(0);
+    expect(locked.bagFishSpoilActive).toBe(false);
+
+    for (let i = 0; i < content.economy.maintenancePeriodTicks; i++) checkedStep(sim);
+    expect(sim.state.stat("stat.maintenance_paid")).toBe(0);
+    expect(sim.state.stat("stat.items_spoiled")).toBe(0);
+
+    sim.state.completedQuests.add("quest.first_ten_sales");
+    const unlocked = buildView(sim);
+    expect(unlocked.economyUnlocked).toBe(true);
+    expect(unlocked.economyLockedReason).toBeNull();
+    expect(unlocked.maintenanceCoinsPerStation).toBe(2);
+    expect(unlocked.bagFishSpoilActive).toBe(true);
+
+    sim.state.coins = 50;
+    sim.state.maintenanceAccrualTicks = content.economy.maintenancePeriodTicks - 1;
+    const maint = checkedStep(sim);
+    const stations = sim.harbor.stations.length;
+    expect(maint.some((e) => e.type === "maintenance_paid" && e.stations === stations && e.coins === 2 * stations)).toBe(true);
+    expect(sim.state.coins).toBe(50 - 2 * stations);
+    expect(sim.state.stat("stat.maintenance_paid")).toBe(2 * stations);
+
+    sim.state.coins = 200;
+    checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.machine_oil", requestId: "oil-1" }]);
+    expect(sim.state.maintenanceDiscountPerStation).toBe(1);
+    expect(buildView(sim).maintenanceCoinsPerStation).toBe(1);
+    sim.state.maintenanceAccrualTicks = content.economy.maintenancePeriodTicks - 1;
+    const cheaper = checkedStep(sim);
+    expect(cheaper.some((e) => e.type === "maintenance_paid" && e.coins === 1 * stations)).toBe(true);
+
+    const counter = sim.state.counters[0]!;
+    sim.state.customers.length = 0;
+    counter.stock.restore({}, {});
+    counter.stock.add(PORTION, 3);
+    sim.state.counterSpoilAccrualTicks = content.economy.counterSpoilPeriodTicks - 1;
+    const spoiled = checkedStep(sim);
+    const spoilEvt = spoiled.find((e) => e.type === "items_spoiled" && e.location === "counter")!;
+    expect(spoilEvt).toMatchObject({ items: [{ item: PORTION, quantity: 1 }] });
+    expect(counter.stock.quantity(PORTION)).toBe(2);
+    expect(sim.state.stat("stat.items_spoiled")).toBe(1);
+
+    sim.state.customers.length = 0;
+    sim.state.player.bag.capacityUnits = 10;
+    sim.state.player.bag.add(SPRAT, 2);
+    sim.state.bagSpoilAccrualTicks = content.economy.bagFishSpoilPeriodTicks - 1;
+    const bagSpoil = checkedStep(sim);
+    expect(bagSpoil.some((e) => e.type === "items_spoiled" && e.location === "bag")).toBe(true);
+    expect(sim.state.player.bag.quantity(SPRAT)).toBe(1);
+    sim.state.coins = 200;
+    checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.ice_box", requestId: "ice-1" }]);
+    expect(sim.state.bagSpoilPeriodMultPermille).toBe(2000);
+    sim.state.bagSpoilAccrualTicks = 0;
+    for (let i = 0; i < content.economy.bagFishSpoilPeriodTicks; i++) checkedStep(sim);
+    expect(sim.state.player.bag.quantity(SPRAT)).toBe(1);
+    sim.state.bagSpoilAccrualTicks = content.economy.bagFishSpoilPeriodTicks * 2 - 1;
+    checkedStep(sim);
+    expect(sim.state.player.bag.quantity(SPRAT)).toBe(0);
+  });
+
+  it("prestige stays locked until busy harbor, then grants bonuses and cosmetics", () => {
+    const sim = newSim();
+    expect(content.contentVersion).toBe("0.22.0");
+    const locked = buildView(sim);
+    expect(locked.prestigeUnlocked).toBe(false);
+    expect(locked.prestigeLockedReason).toBe("Requires: Busy harbor");
+    expect(locked.harborRating).toBe(1);
+    expect(locked.prestige).toHaveLength(3);
+    expect(locked.prestige.every((p) => p.status === "locked")).toBe(true);
+
+    sim.state.bumpStat("stat.revenue", 1000);
+    checkedStep(sim);
+    expect(sim.state.completedPrestige.size).toBe(0);
+    expect(sim.state.prestigeCatchSpeedPermille).toBe(1000);
+    expect(sim.state.prestigePriceBonusPermille).toBe(1000);
+
+    sim.state.completedQuests.add("quest.busy_harbor");
+    const board = buildView(sim);
+    expect(board.prestigeUnlocked).toBe(true);
+    expect(board.prestigeLockedReason).toBeNull();
+    expect(board.prestige).toHaveLength(3);
+    expect(board.prestige.find((p) => p.id === "prestige.rising_tide")!.status).toBe("active");
+    expect(board.prestige.find((p) => p.id === "prestige.harbor_star")!.status).toBe("locked");
+    expect(board.prestige.find((p) => p.id === "prestige.twin_harbors")!.status).toBe("active");
+    expect(board.harborRating).toBe(3);
+
+    const coinsBefore = sim.state.coins;
+    const rising = checkedStep(sim).filter((e) => e.type === "prestige_unlocked");
+    expect(rising).toHaveLength(1);
+    expect(rising[0]).toMatchObject({
+      prestigeId: "prestige.rising_tide",
+      coinsRewarded: 100,
+      cosmetic: "banner.rising_tide",
+      catchSpeedPermille: 1050,
+    });
+    expect(sim.state.coins).toBe(coinsBefore + 100);
+    expect(sim.state.prestigeCatchSpeedPermille).toBe(1050);
+    expect(sim.state.unlockedCosmetics.has("banner.rising_tide")).toBe(true);
+    expect(sim.state.stat("stat.prestige_completed")).toBe(1);
+    expect(buildView(sim).prestige.find((p) => p.id === "prestige.rising_tide")!.status).toBe("completed");
+    expect(buildView(sim).prestige.find((p) => p.id === "prestige.harbor_star")!.status).toBe("active");
+
+    sim.state.bumpStat("stat.sales", 100);
+    const star = checkedStep(sim).filter((e) => e.type === "prestige_unlocked");
+    expect(star).toHaveLength(1);
+    expect(star[0]).toMatchObject({ prestigeId: "prestige.harbor_star" });
+    expect(sim.state.prestigePriceBonusPermille).toBe(1050);
+    expect(sim.state.unlockedCosmetics.has("banner.harbor_star")).toBe(true);
+
+    sim.state.bumpStat("stat.harbors_traveled", 2);
+    const twin = checkedStep(sim).filter((e) => e.type === "prestige_unlocked");
+    expect(twin).toHaveLength(1);
+    expect(twin[0]).toMatchObject({ prestigeId: "prestige.twin_harbors" });
+    expect(sim.state.unlockedCosmetics.has("banner.twin_harbors")).toBe(true);
+    expect(sim.state.stat("stat.prestige_completed")).toBe(3);
+    expect(buildView(sim).unlockedCosmetics).toEqual([
+      "banner.harbor_star",
+      "banner.rising_tide",
+      "banner.twin_harbors",
+    ]);
+
+    const saved = encodeSnapshot(content, sim.state);
+    expect(saved.startsWith('{"schemaVersion":10,')).toBe(true);
+    const restored = decodeSnapshot(content, saved);
+    expect([...restored.completedPrestige].sort()).toEqual([
+      "prestige.harbor_star",
+      "prestige.rising_tide",
+      "prestige.twin_harbors",
+    ]);
+    expect(restored.prestigeCatchSpeedPermille).toBe(1050);
+    expect(restored.prestigePriceBonusPermille).toBe(1050);
+    expect([...restored.unlockedCosmetics].sort()).toEqual([
+      "banner.harbor_star",
+      "banner.rising_tide",
+      "banner.twin_harbors",
+    ]);
   });
 });

@@ -12,11 +12,39 @@ import {
 } from "../engine";
 import { CameraRig } from "./cameraRig";
 import { openSaveStore, type SaveStore } from "./saveStore";
+import { loadSettings, saveSettings, type GameSettings, type QualityPreset } from "./settingsStore";
+import { resolveFlyingTransfer, type FlyingTransferCue } from "../render/presenters";
 
 export type HostState =
   | { status: "loading" }
-  | { status: "ready"; view: SimView; upgradesOpen: boolean; staffOpen: boolean; offlineReport: OfflineReport | null }
+  | { status: "title"; hasSave: boolean }
+  | {
+      status: "ready";
+      view: SimView;
+      upgradesOpen: boolean;
+      staffOpen: boolean;
+      questsOpen: boolean;
+      contractsOpen: boolean;
+      mapOpen: boolean;
+      pauseOpen: boolean;
+      settingsOpen: boolean;
+      bagOpen: boolean;
+      stationOpen: boolean;
+      offlineReport: OfflineReport | null;
+      settings: GameSettings;
+    }
   | { status: "failed"; message: string };
+
+type PanelId =
+  | "upgrades"
+  | "staff"
+  | "quests"
+  | "contracts"
+  | "map"
+  | "pause"
+  | "settings"
+  | "bag"
+  | "station";
 
 const START_HARBOR = "harbor.sunrise_pier";
 const HUD_PUBLISH_INTERVAL_MS = 100;
@@ -27,13 +55,23 @@ export class GameHost {
   private readonly messageListeners = new Set<(m: string) => void>();
   private readonly commands: Command[] = [];
   private readonly clock = new FixedStepClock();
+  private content: ContentPack | null = null;
   private sim: Simulation | null = null;
   private store: SaveStore | null = null;
+  private settings: GameSettings = loadSettings();
   private allowSaving = true;
   private rotateOnNextSave = true;
   private upgradesOpen = false;
   private staffOpen = false;
+  private questsOpen = false;
+  private contractsOpen = false;
+  private mapOpen = false;
+  private pauseOpen = false;
+  private settingsOpen = false;
+  private bagOpen = false;
+  private stationOpen = false;
   private running = false;
+  private booting = false;
   private lastMove = { x: 0, z: 0 };
   private lastHudPublishMs = 0;
   private saveChain: Promise<void> = Promise.resolve();
@@ -43,7 +81,18 @@ export class GameHost {
   /** Latest snapshot for the renderer (updated every tick). */
   latestView: SimView | null = null;
 
+  /** Presentation-only flying transfer cues (drained each frame by the scene). */
+  private pendingFlying: FlyingTransferCue[] = [];
+
   private starting: Promise<void> | null = null;
+
+  /** Drain queued transfer arcs for the harbor scene. */
+  drainFlyingTransfers(): FlyingTransferCue[] {
+    if (this.pendingFlying.length === 0) return [];
+    const out = this.pendingFlying;
+    this.pendingFlying = [];
+    return out;
+  }
 
   /** Idempotent: React StrictMode mounts effects twice in development. */
   start(): Promise<void> {
@@ -53,20 +102,94 @@ export class GameHost {
 
   private async doStart(): Promise<void> {
     try {
-      const content = loadContent(contentJson);
+      this.content = loadContent(contentJson);
       this.store = await openSaveStore();
-      const restored = await this.restoreOrCreate(content);
-      this.sim = new Simulation(content, restored.state);
-      this.lastCheckpointEpochMs = restored.savedAtEpochMs;
-      this.applyPendingOffline(Date.now());
-      if (this.pendingOfflineReport !== null || restored.savedAtEpochMs !== null) this.save();
-      this.latestView = buildView(this.sim);
+      this.settings = loadSettings();
+      const candidates = await this.store.readCandidates();
       if (!this.store.persistent) this.say("Saving is unavailable in this browser window");
-      this.publish(true);
+      this.publishTitle(candidates.length > 0);
     } catch (e) {
       this.allowSaving = !(e instanceof NewerSaveError);
       this.setState({ status: "failed", message: e instanceof Error ? e.message : String(e) });
     }
+  }
+
+  /** Continue from the newest usable save, or a fresh harbor if every slot is unusable. */
+  async continueGame(): Promise<void> {
+    if (this.booting || this.state.status !== "title" || !this.content || !this.store) return;
+    this.booting = true;
+    try {
+      const restored = await this.restoreOrCreate(this.content);
+      this.bootSim(restored.state, restored.savedAtEpochMs);
+    } catch (e) {
+      this.allowSaving = !(e instanceof NewerSaveError);
+      this.setState({ status: "failed", message: e instanceof Error ? e.message : String(e) });
+    } finally {
+      this.booting = false;
+    }
+  }
+
+  /** Wipe slots and start a new harbor. Title screen confirms before calling this. */
+  async newGame(): Promise<void> {
+    if (this.booting || this.state.status !== "title" || !this.content || !this.store) return;
+    this.booting = true;
+    try {
+      await this.store.clear();
+      this.rotateOnNextSave = true;
+      const state = GameState.newGame(this.content, START_HARBOR, (Math.random() * 2 ** 32) | 0);
+      this.bootSim(state, null);
+    } catch (e) {
+      this.setState({ status: "failed", message: e instanceof Error ? e.message : String(e) });
+    } finally {
+      this.booting = false;
+    }
+  }
+
+  /** Checkpoint and leave the harbor. The simulation stays in memory until the next boot. */
+  async returnToTitle(): Promise<void> {
+    this.running = false;
+    this.enqueueMove(0, 0);
+    if (this.sim && this.commands.length > 0) this.step(this.sim);
+    this.save();
+    this.clearPanels();
+    this.pendingOfflineReport = null;
+    this.commands.length = 0;
+    this.pendingFlying = [];
+    this.lastMove = { x: 0, z: 0 };
+    try {
+      await this.saveChain;
+    } catch {
+      // save() already logged the failure
+    }
+    let hasSave = false;
+    if (this.store) {
+      try {
+        hasSave = (await this.store.readCandidates()).length > 0;
+      } catch {
+        hasSave = this.allowSaving;
+      }
+    }
+    this.publishTitle(hasSave);
+  }
+
+  private bootSim(state: GameState, savedAtEpochMs: number | null): void {
+    this.commands.length = 0;
+    this.lastMove = { x: 0, z: 0 };
+    this.pendingFlying = [];
+    this.pendingOfflineReport = null;
+    this.clearPanels();
+    this.sim = new Simulation(this.content!, state);
+    this.lastCheckpointEpochMs = savedAtEpochMs;
+    this.applyPendingOffline(Date.now());
+    if (this.pendingOfflineReport !== null || savedAtEpochMs !== null) this.save();
+    this.latestView = buildView(this.sim);
+    if (this.store && !this.store.persistent) this.say("Saving is unavailable in this browser window");
+    this.publish(true);
+    this.resume();
+  }
+
+  private publishTitle(hasSave: boolean): void {
+    this.setState({ status: "title", hasSave });
   }
 
   private async restoreOrCreate(content: ContentPack): Promise<{ state: GameState; savedAtEpochMs: number | null }> {
@@ -89,6 +212,7 @@ export class GameHost {
   // ---- loop -------------------------------------------------------------------------
 
   resume(): void {
+    if (this.state.status !== "ready" || !this.sim) return;
     this.applyPendingOffline(Date.now());
     this.publish(true);
     this.running = true;
@@ -135,8 +259,12 @@ export class GameHost {
   private step(sim: Simulation): void {
     const batch = this.commands.splice(0);
     let transaction = false;
+    const transferred: { from: string; to: string; itemId: string }[] = [];
     for (const e of sim.step(batch)) {
       switch (e.type) {
+        case "items_transferred":
+          transferred.push({ from: e.from, to: e.to, itemId: e.itemId });
+          break;
         case "sale_committed": {
           const tip = e.preferenceMet === false ? " (substituted)"
             : (e.priceMultPermille ?? 1000) > 1000 ? " Premium tip!" : "";
@@ -175,12 +303,68 @@ export class GameHost {
           this.say(`Paid ${e.coins} coins in wages`);
           transaction = true;
           break;
-        case "quest_completed": this.say(`Goal complete: ${sim.content.questsById.get(e.questId)?.name}`); break;
+        case "quest_completed": {
+          const name = sim.content.questsById.get(e.questId)?.name ?? e.questId;
+          const tip = e.coinsRewarded && e.coinsRewarded > 0
+            ? `Goal complete: ${name} (+${e.coinsRewarded})`
+            : `Goal complete: ${name}`;
+          this.say(tip);
+          transaction = true;
+          break;
+        }
+        case "prestige_unlocked": {
+          const name = sim.content.prestigeMilestonesById.get(e.prestigeId)?.name ?? e.prestigeId;
+          const tip = e.coinsRewarded > 0
+            ? `Prestige: ${name} (+${e.coinsRewarded})`
+            : `Prestige: ${name}`;
+          this.say(tip);
+          transaction = true;
+          break;
+        }
+        case "contract_accepted":
+          if (!e.replayed) { this.say("Contract accepted"); transaction = true; }
+          break;
+        case "contract_completed":
+          this.say(`Contract complete +${e.payout}`);
+          transaction = true;
+          break;
+        case "contract_failed":
+          this.say(e.penaltyPaid > 0 ? `Contract failed −${e.penaltyPaid}` : "Contract failed");
+          transaction = true;
+          break;
+        case "contract_rejected": this.say(e.reason); transaction = true; break;
+        case "harbor_traveled":
+          if (!e.replayed) {
+            const name = sim.content.harborsById.get(e.toHarborId)?.name ?? e.toHarborId;
+            this.say(`Traveled to ${name}`);
+            this.mapOpen = false;
+            this.pendingFlying = [];
+            transaction = true;
+          }
+          break;
+        case "travel_rejected": this.say(e.reason); transaction = true; break;
+        case "maintenance_paid":
+          this.say(`Upkeep −${e.coins} coins`);
+          transaction = true;
+          break;
+        case "items_spoiled": {
+          const n = e.items.reduce((sum, it) => sum + it.quantity, 0);
+          this.say(`Spoiled ${n} ${e.location === "bag" ? "in bag" : "on counter"}`);
+          transaction = true;
+          break;
+        }
         case "checkpoint_requested": this.save(); break;
         default: break;
       }
     }
     this.latestView = buildView(sim);
+    const view = this.latestView;
+    if (view) {
+      for (const t of transferred) {
+        const cue = resolveFlyingTransfer(view, t.from, t.to, t.itemId);
+        if (cue) this.pendingFlying.push(cue);
+      }
+    }
     if (transaction) this.publish(true);
   }
 
@@ -203,25 +387,80 @@ export class GameHost {
   }
 
   private get panelOpen(): boolean {
-    return this.upgradesOpen || this.staffOpen || this.pendingOfflineReport !== null;
+    return this.upgradesOpen || this.staffOpen || this.questsOpen || this.contractsOpen || this.mapOpen
+      || this.pauseOpen || this.settingsOpen || this.bagOpen || this.stationOpen
+      || this.pendingOfflineReport !== null;
   }
 
-  setUpgradesOpen(open: boolean): void {
-    this.upgradesOpen = open;
+  private clearPanels(): void {
+    this.upgradesOpen = false;
+    this.staffOpen = false;
+    this.questsOpen = false;
+    this.contractsOpen = false;
+    this.mapOpen = false;
+    this.pauseOpen = false;
+    this.settingsOpen = false;
+    this.bagOpen = false;
+    this.stationOpen = false;
+  }
+
+  /** Opening one panel closes the others. Closing only clears that panel. */
+  private setPanelOpen(which: PanelId, open: boolean): void {
     if (open) {
-      this.staffOpen = false;
+      this.upgradesOpen = which === "upgrades";
+      this.staffOpen = which === "staff";
+      this.questsOpen = which === "quests";
+      this.contractsOpen = which === "contracts";
+      this.mapOpen = which === "map";
+      this.pauseOpen = which === "pause";
+      this.settingsOpen = which === "settings";
+      this.bagOpen = which === "bag";
+      this.stationOpen = which === "station";
       this.enqueueMove(0, 0);
+    } else {
+      switch (which) {
+        case "upgrades": this.upgradesOpen = false; break;
+        case "staff": this.staffOpen = false; break;
+        case "quests": this.questsOpen = false; break;
+        case "contracts": this.contractsOpen = false; break;
+        case "map": this.mapOpen = false; break;
+        case "pause": this.pauseOpen = false; break;
+        case "settings": this.settingsOpen = false; break;
+        case "bag": this.bagOpen = false; break;
+        case "station": this.stationOpen = false; break;
+      }
     }
     this.publish(true);
   }
 
-  setStaffOpen(open: boolean): void {
-    this.staffOpen = open;
-    if (open) {
-      this.upgradesOpen = false;
-      this.enqueueMove(0, 0);
-    }
+  setUpgradesOpen(open: boolean): void { this.setPanelOpen("upgrades", open); }
+  setStaffOpen(open: boolean): void { this.setPanelOpen("staff", open); }
+  setQuestsOpen(open: boolean): void { this.setPanelOpen("quests", open); }
+  setContractsOpen(open: boolean): void { this.setPanelOpen("contracts", open); }
+  setMapOpen(open: boolean): void { this.setPanelOpen("map", open); }
+  setPauseOpen(open: boolean): void { this.setPanelOpen("pause", open); }
+  setSettingsOpen(open: boolean): void { this.setPanelOpen("settings", open); }
+  setBagOpen(open: boolean): void { this.setPanelOpen("bag", open); }
+  setStationOpen(open: boolean): void { this.setPanelOpen("station", open); }
+
+  /** Presentation settings (mute, quality). Not part of the parity save. */
+  updateSettings(partial: Partial<GameSettings>): void {
+    this.settings = { ...this.settings, ...partial };
+    saveSettings(this.settings);
     this.publish(true);
+  }
+
+  /** Quality preset for the renderer, including while the title screen is up. */
+  renderQuality(): QualityPreset {
+    return this.settings.quality;
+  }
+
+  setMachinePaused(stationId: string, paused: boolean): void {
+    this.commands.push({ type: "set_machine_paused", stationId, paused });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
   }
 
   purchase(upgradeId: string): void {
@@ -241,6 +480,30 @@ export class GameHost {
     }
   }
 
+  acceptContract(offerId: string): void {
+    this.commands.push({ type: "accept_contract", offerId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  deliverContract(contractId: string): void {
+    this.commands.push({ type: "deliver_contract", contractId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  travelToHarbor(harborId: string): void {
+    this.commands.push({ type: "travel_to_harbor", harborId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
   reel(): void {
     if (this.panelOpen) return;
     this.commands.push({ type: "reel" });
@@ -248,7 +511,8 @@ export class GameHost {
 
   /** Cycle Auto → each recipe → Auto for a station (no tick advance). */
   cycleStationRecipe(stationId: string): void {
-    if (this.panelOpen || !this.sim) return;
+    if (!this.sim || this.pendingOfflineReport) return;
+    if (this.panelOpen && !this.stationOpen) return;
     const m = this.sim.state.machines.find((mm) => mm.stationId === stationId);
     if (!m) return;
     ProductionSystem.cyclePreferredRecipe(this.sim.content, m);
@@ -301,7 +565,15 @@ export class GameHost {
       view: this.latestView,
       upgradesOpen: this.upgradesOpen,
       staffOpen: this.staffOpen,
+      questsOpen: this.questsOpen,
+      contractsOpen: this.contractsOpen,
+      mapOpen: this.mapOpen,
+      pauseOpen: this.pauseOpen,
+      settingsOpen: this.settingsOpen,
+      bagOpen: this.bagOpen,
+      stationOpen: this.stationOpen,
       offlineReport: this.pendingOfflineReport,
+      settings: this.settings,
     });
   }
 

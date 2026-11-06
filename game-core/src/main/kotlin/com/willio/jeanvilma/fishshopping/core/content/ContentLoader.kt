@@ -87,7 +87,21 @@ object ContentLoader {
                 effect = upgradeEffect(u["effect"]),
             )
         },
-        quests = r["quests"].list { q -> QuestDef(q["id"].string(), q["name"].string(), statGoal(q["goal"])) },
+        quests = r["quests"].list { q ->
+            QuestDef(
+                id = q["id"].string(),
+                name = q["name"].string(),
+                description = q["description"].string(),
+                requires = q["requires"].list { it.string() },
+                goal = statGoal(q["goal"]),
+                reward = q["reward"].let { rw ->
+                    QuestReward(
+                        coins = rw["coins"].long(min = 0),
+                        unlockUpgrades = rw["unlockUpgrades"].list { it.string() },
+                    )
+                },
+            )
+        },
         workers = r["workers"].list { w ->
             WorkerDef(
                 id = w["id"].string(),
@@ -116,6 +130,61 @@ object ContentLoader {
             OfflineDef(
                 capHours = o["capHours"].int(min = 1),
                 summaryMinSeconds = o["summaryMinSeconds"].int(min = 0),
+            )
+        },
+        economy = r["economy"].let { e ->
+            EconomyDef(
+                requires = e["requires"].list { it.string() },
+                maintenancePeriodTicks = e["maintenancePeriodTicks"].int(min = 1),
+                maintenanceCoinsPerStation = e["maintenanceCoinsPerStation"].int(min = 0),
+                counterSpoilPeriodTicks = e["counterSpoilPeriodTicks"].int(min = 1),
+                counterSpoilUnits = e["counterSpoilUnits"].int(min = 0),
+                bagFishSpoilPeriodTicks = e["bagFishSpoilPeriodTicks"].int(min = 1),
+                bagFishSpoilUnits = e["bagFishSpoilUnits"].int(min = 0),
+            )
+        },
+        prestige = r["prestige"].let { p ->
+            PrestigeDef(
+                requires = p["requires"].list { it.string() },
+                ratingThresholds = p["ratingThresholds"].list { it.long(min = 0) },
+                milestones = p["milestones"].list { m ->
+                    PrestigeMilestoneDef(
+                        id = m["id"].string(),
+                        name = m["name"].string(),
+                        description = m["description"].string(),
+                        requires = m["requires"].list { it.string() },
+                        goal = statGoal(m["goal"]),
+                        reward = m["reward"].let { rw ->
+                            PrestigeRewardDef(
+                                coins = rw["coins"].long(min = 0),
+                                catchSpeedPermille = rw["catchSpeedPermille"].int(min = 0),
+                                priceBonusPermille = rw["priceBonusPermille"].int(min = 0),
+                                cosmetic = rw.optional("cosmetic")?.string(),
+                            )
+                        },
+                    )
+                },
+            )
+        },
+        contracts = r["contracts"].let { c ->
+            ContractsDef(
+                boardSlots = c["boardSlots"].int(min = 1),
+                maxActive = c["maxActive"].int(min = 1),
+                refreshPeriodTicks = c["refreshPeriodTicks"].int(min = 1),
+                requires = c["requires"].list { it.string() },
+                templates = c["templates"].list { t ->
+                    ContractTemplateDef(
+                        id = t["id"].string(),
+                        name = t["name"].string(),
+                        description = t["description"].string(),
+                        item = t["item"].string(),
+                        quantity = t["quantity"].int(min = 1),
+                        durationTicks = t["durationTicks"].int(min = 1),
+                        payout = t["payout"].long(min = 0),
+                        penalty = t["penalty"].long(min = 0),
+                        weight = t["weight"].int(min = 1),
+                    )
+                },
             )
         },
         customers = r["customers"].list { c ->
@@ -161,6 +230,8 @@ object ContentLoader {
         "worker_carry" -> UpgradeEffect.WorkerCarry(n["capacityUnits"].int(min = 1))
         "worker_catch_speed" -> UpgradeEffect.WorkerCatchSpeed(n["speedPermille"].int(min = 1))
         "worker_wage" -> UpgradeEffect.WorkerWage(n["coinsPerWorkerPerHour"].int(min = 1))
+        "maintenance_discount" -> UpgradeEffect.MaintenanceDiscount(n["coinsOffPerStation"].int(min = 1))
+        "bag_spoil_resist" -> UpgradeEffect.BagSpoilResist(n["periodMultPermille"].int(min = 1))
         else -> n.fail("unknown upgrade effect kind '$kind'")
     }
 
@@ -170,6 +241,7 @@ object ContentLoader {
 
     private fun harbor(h: Node) = HarborDef(
         id = h["id"].string(), name = h["name"].string(),
+        requires = h.optional("requires")?.list { it.string() } ?: emptyList(),
         playerSpawn = point(h["playerSpawn"]),
         walkable = h["walkable"].list(::rect),
         obstacles = h["obstacles"].list(::rect),

@@ -1,8 +1,9 @@
 /** Immutable presentation snapshot for the HUD and renderer. Mirrors game-core sim/SimView.kt. */
-import { queueSlot } from "./content";
+import { queueSlot, rectCenterX, rectCenterZ } from "./content";
+import { compareStrings } from "./foundations";
 import type { MachineStatus } from "./state";
 import type { Simulation } from "./simulation";
-import { CustomerSystem, FishingSystem, ProductionSystem, UpgradeSystem, WorkerSystem } from "./systems";
+import { ContractSystem, CustomerSystem, EconomySystem, FishingSystem, HarborTravelSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, UpgradeSystem, WorkerSystem } from "./systems";
 
 export interface ItemCount { itemId: string; name: string; count: number }
 export interface ContextCard {
@@ -53,10 +54,82 @@ export interface StaffHireView {
   reason: string | null;
 }
 
+/** completed | active | locked */
+export interface PrestigeView {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  progress: number;
+  goalAtLeast: number;
+  rewardCoins: number;
+  cosmetic: string | null;
+  catchSpeedPermille: number;
+  priceBonusPermille: number;
+  reason: string | null;
+}
+
+/** completed | active | locked */
+export interface QuestView {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  progress: number;
+  goalAtLeast: number;
+  rewardCoins: number;
+  rewardUnlockNames: string[];
+  reason: string | null;
+}
+
+export interface ContractOfferView {
+  offerId: string;
+  templateId: string;
+  name: string;
+  description: string;
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  durationTicks: number;
+  payout: number;
+  penalty: number;
+  acceptEnabled: boolean;
+  reason: string | null;
+}
+
+export interface ActiveContractView {
+  contractId: string;
+  templateId: string;
+  name: string;
+  itemId: string;
+  itemName: string;
+  delivered: number;
+  quantity: number;
+  ticksRemaining: number;
+  payout: number;
+  penalty: number;
+  bagAvailable: number;
+  deliverEnabled: boolean;
+}
+
+export interface HarborMapEntryView {
+  harborId: string;
+  name: string;
+  blockoutAsset: string;
+  current: boolean;
+  unlocked: boolean;
+  travelEnabled: boolean;
+  reason: string | null;
+}
+
 export interface SimView {
   tick: number;
   coins: number;
+  harborId: string;
   harborName: string;
+  /** GLB under models/ for the active harbor blockout. */
+  blockoutAsset: string;
+  harbors: HarborMapEntryView[];
   player: { xMm: number; zMm: number; facingX: number; facingZ: number; zoneId: string | null };
   bag: ItemCount[];
   bagUsedUnits: number;
@@ -83,7 +156,34 @@ export interface SimView {
   workerWagePerWorkerPerHour: number;
   workers: WorkerView[];
   staff: StaffHireView[];
+  quests: QuestView[];
+  contractsUnlocked: boolean;
+  contractsLockedReason: string | null;
+  contractOffers: ContractOfferView[];
+  activeContracts: ActiveContractView[];
+  contractRefreshTicksLeft: number;
+  /** Soft sinks unlocked (maintenance + spoilage). */
+  economyUnlocked: boolean;
+  economyLockedReason: string | null;
+  /** Effective coins charged per station each maintenance cycle (0 if none/locked). */
+  maintenanceCoinsPerStation: number;
+  /** True while bag fish spoilage is active. */
+  bagFishSpoilActive: boolean;
+  prestigeUnlocked: boolean;
+  prestigeLockedReason: string | null;
+  /** Harbor rating stars 0..5 from lifetime revenue. */
+  harborRating: number;
+  prestige: PrestigeView[];
+  unlockedCosmetics: string[];
+  /**
+   * World anchors for inventory ids used by flying-transfer VFX
+   * (items_transferred from/to). Presentation only.
+   */
+  transferAnchors: TransferAnchorView[];
 }
+
+/** Inventory id → ground position for bag ↔ pad ↔ counter arcs. */
+export interface TransferAnchorView { inventoryId: string; xMm: number; zMm: number }
 
 export function buildView(sim: Simulation): SimView {
   const s = sim.state;
@@ -184,7 +284,29 @@ export function buildView(sim: Simulation): SimView {
   return {
     tick: s.tick,
     coins: s.coins,
+    harborId: s.harborId,
     harborName: h.name,
+    blockoutAsset: h.blockoutAsset,
+    harbors: c.harbors.map((harbor) => {
+      const unlocked = HarborTravelSystem.unlocked(c, s, harbor);
+      const current = harbor.id === s.harborId;
+      return {
+        harborId: harbor.id,
+        name: harbor.name,
+        blockoutAsset: harbor.blockoutAsset,
+        current,
+        unlocked,
+        travelEnabled: unlocked && !current,
+        reason: current
+          ? "You are here"
+          : !unlocked
+            ? (() => {
+              const miss = HarborTravelSystem.missingRequirement(c, s, harbor);
+              return miss ? `Requires: ${miss}` : null;
+            })()
+            : null,
+      };
+    }),
     player: { xMm: p.x, zMm: p.z, facingX: p.facingX, facingZ: p.facingZ, zoneId: p.zoneId },
     bag: p.bag.contents().map(([id, n]) => ({ itemId: id, name: c.itemName(id), count: n })),
     bagUsedUnits: p.bag.usedUnits(),
@@ -278,5 +400,132 @@ export function buildView(sim: Simulation): SimView {
           : null,
       };
     }),
+    quests: c.quests.map((q) => {
+      const completed = s.completedQuests.has(q.id);
+      const locked = !completed && !ProgressionSystem.requirementsMet(s, q);
+      const progress = Math.min(s.stat(q.goal.stat), q.goal.atLeast);
+      const missing = locked ? ProgressionSystem.missingRequirement(c, s, q) : null;
+      return {
+        id: q.id,
+        name: q.name,
+        description: q.description,
+        status: completed ? "completed" : locked ? "locked" : "active",
+        progress: completed ? q.goal.atLeast : progress,
+        goalAtLeast: q.goal.atLeast,
+        rewardCoins: q.reward.coins,
+        rewardUnlockNames: q.reward.unlockUpgrades.map((uid) => c.upgradesById.get(uid)?.name ?? uid),
+        reason: missing ? `Requires: ${missing}` : null,
+      };
+    }),
+    contractsUnlocked: ContractSystem.boardUnlocked(c, s),
+    contractsLockedReason: (() => {
+      const missing = ContractSystem.missingBoardRequirement(c, s);
+      return missing ? `Requires: ${missing}` : null;
+    })(),
+    contractOffers: s.contractOffers.map((o) => {
+      const t = c.contractTemplatesById.get(o.templateId);
+      const maxed = s.activeContracts.length >= c.contracts.maxActive;
+      return {
+        offerId: o.id,
+        templateId: o.templateId,
+        name: t?.name ?? o.templateId,
+        description: t?.description ?? "",
+        itemId: o.itemId,
+        itemName: c.itemName(o.itemId),
+        quantity: o.quantity,
+        durationTicks: o.durationTicks,
+        payout: o.payout,
+        penalty: o.penalty,
+        acceptEnabled: !maxed,
+        reason: maxed ? "Max active contracts" : null,
+      };
+    }),
+    activeContracts: s.activeContracts.map((job) => {
+      const t = c.contractTemplatesById.get(job.templateId);
+      const bag = s.player.bag.available(job.itemId);
+      return {
+        contractId: job.id,
+        templateId: job.templateId,
+        name: t?.name ?? job.templateId,
+        itemId: job.itemId,
+        itemName: c.itemName(job.itemId),
+        delivered: job.delivered,
+        quantity: job.quantity,
+        ticksRemaining: Math.max(0, job.deadlineTick - s.tick),
+        payout: job.payout,
+        penalty: job.penalty,
+        bagAvailable: bag,
+        deliverEnabled: bag > 0 && job.delivered < job.quantity,
+      };
+    }),
+    contractRefreshTicksLeft: s.contractBoardRefreshAt <= 0 ? 0 : Math.max(0, s.contractBoardRefreshAt - s.tick),
+    economyUnlocked: EconomySystem.unlocked(c, s),
+    economyLockedReason: (() => {
+      const missing = EconomySystem.missingRequirement(c, s);
+      return missing ? `Requires: ${missing}` : null;
+    })(),
+    maintenanceCoinsPerStation: EconomySystem.unlocked(c, s) ? EconomySystem.maintenanceCoinsPerStation(c, s) : 0,
+    bagFishSpoilActive: EconomySystem.unlocked(c, s) && c.economy.bagFishSpoilUnits > 0,
+    prestigeUnlocked: PrestigeSystem.boardUnlocked(c, s),
+    prestigeLockedReason: (() => {
+      const missing = PrestigeSystem.missingBoardRequirement(c, s);
+      return missing ? `Requires: ${missing}` : null;
+    })(),
+    harborRating: PrestigeSystem.harborRating(c, s),
+    prestige: c.prestige.milestones.map((m) => {
+      const completed = s.completedPrestige.has(m.id);
+      const locked = !completed && !PrestigeSystem.requirementsMet(s, m);
+      const progress = Math.min(s.stat(m.goal.stat), m.goal.atLeast);
+      const missing = locked ? PrestigeSystem.missingRequirement(c, s, m) : null;
+      return {
+        id: m.id,
+        name: m.name,
+        description: m.description,
+        status: completed ? "completed" : locked ? "locked" : "active",
+        progress: completed ? m.goal.atLeast : progress,
+        goalAtLeast: m.goal.atLeast,
+        rewardCoins: m.reward.coins,
+        cosmetic: m.reward.cosmetic ?? null,
+        catchSpeedPermille: m.reward.catchSpeedPermille,
+        priceBonusPermille: m.reward.priceBonusPermille,
+        reason: missing ? `Requires: ${missing}` : null,
+      };
+    }),
+    unlockedCosmetics: [...s.unlockedCosmetics].sort(compareStrings),
+    transferAnchors: buildTransferAnchors(sim),
   };
+}
+
+function buildTransferAnchors(sim: Simulation): TransferAnchorView[] {
+  const s = sim.state;
+  const h = sim.harbor;
+  const out: TransferAnchorView[] = [
+    { inventoryId: "inv.player_bag", xMm: s.player.x, zMm: s.player.z },
+  ];
+  for (const st of h.stations) {
+    const input = h.zones.find((z) => z.id === st.inputZone)!;
+    const output = h.zones.find((z) => z.id === st.outputZone)!;
+    out.push({
+      inventoryId: `inv.${st.id}.input`,
+      xMm: rectCenterX(input),
+      zMm: rectCenterZ(input),
+    });
+    out.push({
+      inventoryId: `inv.${st.id}.output`,
+      xMm: rectCenterX(output),
+      zMm: rectCenterZ(output),
+    });
+  }
+  for (const c of h.counters) {
+    const z = h.zones.find((zone) => zone.id === c.zone)!;
+    out.push({
+      inventoryId: `inv.${c.id}`,
+      xMm: rectCenterX(z),
+      zMm: rectCenterZ(z),
+    });
+  }
+  for (const w of s.workers) {
+    out.push({ inventoryId: `inv.${w.id}.bag`, xMm: w.x, zMm: w.z });
+  }
+  return out;
 }
