@@ -338,6 +338,12 @@ export class GameHost {
           this.say(`${e.name}!`);
           transaction = true;
           break;
+        case "machine_idle_alert": {
+          const name = sim.content.machinesById.get(e.machineId)?.name ?? e.stationId;
+          this.say(`${name}: ${e.reason}`);
+          transaction = true;
+          break;
+        }
         case "upgrade_purchased":
           if (!e.replayed) { this.say(`Bought ${sim.content.upgradesById.get(e.upgradeId)?.name ?? e.upgradeId}`); transaction = true; }
           break;
@@ -345,6 +351,16 @@ export class GameHost {
         case "worker_hired":
           if (!e.replayed) { this.say(`Hired ${sim.content.workersById.get(e.roleId)?.name ?? e.roleId}`); transaction = true; }
           break;
+        case "worker_leveled_up": {
+          const name = sim.content.workersById.get(e.roleId)?.name ?? e.roleId;
+          this.say(`${name} reached level ${e.level}`);
+          break;
+        }
+        case "worker_shift_changed": {
+          const name = sim.content.workersById.get(e.roleId)?.name ?? e.roleId;
+          this.say(e.onShift ? `${name} on shift` : `${name} off shift`);
+          break;
+        }
         case "hire_rejected": this.say(e.reason); transaction = true; break;
         case "wages_paid":
           this.say(`Paid ${e.coins} coins in wages`);
@@ -580,8 +596,72 @@ export class GameHost {
     }
   }
 
+  purchaseDecor(decorId: string): void {
+    this.commands.push({ type: "purchase_decor", decorId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  repairMachine(stationId: string): void {
+    this.commands.push({ type: "repair_machine", stationId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  takeLoan(): void {
+    this.commands.push({ type: "take_loan", requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  repayLoan(): void {
+    this.commands.push({ type: "repay_loan", requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  setCoinGoal(amount: number): void {
+    this.commands.push({ type: "set_coin_goal", amount });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
   hire(roleId: string): void {
     this.commands.push({ type: "hire_worker", roleId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  setWorkerShift(workerId: string, onShift: boolean): void {
+    this.commands.push({ type: "set_worker_shift", workerId, onShift });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  assignWorkerGear(workerId: string, upgradeId: string): void {
+    this.commands.push({ type: "assign_worker_gear", workerId, upgradeId });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  unequipWorkerGear(workerId: string, slotId: string): void {
+    this.commands.push({ type: "unequip_worker_gear", workerId, slotId });
     if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
       this.step(this.sim);
       this.publish(true);

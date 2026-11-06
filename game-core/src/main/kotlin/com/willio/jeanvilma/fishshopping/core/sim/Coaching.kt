@@ -52,9 +52,27 @@ object Coaching {
             return "Bag full — deliver fish to a station pad"
         }
         val waiting = state.customers.count { it.arrived }
-        val stocked = state.counters.sumOf { it.stock.usedUnits() }
+        val unlockedCounters = state.counters.filter { ct ->
+            val def = content.harborsById[state.harborId]?.counters?.firstOrNull { it.id == ct.counterId }
+            def != null && com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem.isUnlocked(def, state)
+        }
+        val stocked = unlockedCounters.sumOf { it.stock.usedUnits() }
         if (waiting > 0 && stocked == 0) {
             return "Customers are waiting — stock the counter with portions"
+        }
+        val hasCrates =
+            state.machines.any { m ->
+                m.output.quantity("product.ice_packed_crate") > 0 || m.output.quantity("product.fillet_crate") > 0
+            } ||
+                bag.quantity("product.ice_packed_crate") > 0 ||
+                bag.quantity("product.fillet_crate") > 0
+        val harborCounters = content.harborsById[state.harborId]?.counters.orEmpty()
+        val wholesaleLocked = harborCounters.any {
+            it.kind.wire == "wholesale" &&
+                !com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem.isUnlocked(it, state)
+        }
+        if (hasCrates && wholesaleLocked) {
+            return "Crates need the Wholesale pad — buy it in Upgrades"
         }
         val hasOutput = state.machines.any { it.output.usedUnits() > 0 }
         if (hasOutput && bag.usedUnits() == 0) {

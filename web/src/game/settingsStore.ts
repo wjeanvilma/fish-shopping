@@ -17,6 +17,8 @@ export interface GameSettings {
   tapToMove: boolean;
   /** Opt-in cloud save sync. Local play works with this off. */
   cloudSyncEnabled: boolean;
+  /** Phase 27 in-dev HUD strip for abandon / wage / catch-share rates. */
+  showBalanceStrip: boolean;
   /** Anonymous / Firebase account id used as the cloud document key. */
   cloudAccountId: string | null;
 }
@@ -29,6 +31,7 @@ const DEFAULTS: GameSettings = {
   joystickScale: 1,
   tapToMove: false,
   cloudSyncEnabled: false,
+  showBalanceStrip: false,
   cloudAccountId: null,
 };
 
@@ -53,6 +56,7 @@ export function loadSettings(): GameSettings {
       joystickScale: parseScale(parsed.joystickScale),
       tapToMove: typeof parsed.tapToMove === "boolean" ? parsed.tapToMove : DEFAULTS.tapToMove,
       cloudSyncEnabled: typeof parsed.cloudSyncEnabled === "boolean" ? parsed.cloudSyncEnabled : DEFAULTS.cloudSyncEnabled,
+      showBalanceStrip: typeof parsed.showBalanceStrip === "boolean" ? parsed.showBalanceStrip : DEFAULTS.showBalanceStrip,
       cloudAccountId: typeof parsed.cloudAccountId === "string" && parsed.cloudAccountId.length > 0
         ? parsed.cloudAccountId
         : null,

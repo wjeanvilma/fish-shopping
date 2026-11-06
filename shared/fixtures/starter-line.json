@@ -1,7 +1,7 @@
 {
     "name": "starter-line",
     "description": "Five minutes of the Sunrise Pier loop: fish, cut, stock, serve, hire, contract, grill, bag upgrades.",
-    "contentVersion": "0.36.0",
+    "contentVersion": "0.50.0",
     "harborId": "harbor.sunrise_pier",
     "seed": 20261105,
     "ticks": 6000,
@@ -2349,8 +2349,8 @@
     ],
     "expect": {
         "tick": 6000,
-        "coins": 189,
-        "rngState": 1765156821,
+        "coins": 192,
+        "rngState": 1197262348,
         "playerX": 1200,
         "playerZ": -4000,
         "bag": {
@@ -2363,9 +2363,10 @@
         },
         "activeBatchRemaining": -1,
         "counterStock": {
-            "product.basic_portion": 12
+            "product.basic_portion": 8,
+            "product.premium_portion": 2
         },
-        "customers": 5,
+        "customers": 4,
         "fishingStock": {
             "zone.pier_end": 18,
             "zone.pier_spur": 10
@@ -2390,24 +2391,25 @@
             "stat.contract_revenue": 40,
             "stat.contract_standing_streak.contract.portion_order": 1,
             "stat.contracts_completed": 1,
-            "stat.counter_stocked": 34,
-            "stat.fish_caught": 30,
+            "stat.counter_stocked": 32,
+            "stat.fish_caught": 29,
             "stat.items_sold": 21,
             "stat.items_spoiled": 1,
             "stat.lost_customers": 24,
-            "stat.machine_inputs": 30,
-            "stat.maintenance_paid": 6,
-            "stat.outputs_collected": 42,
+            "stat.machine_inputs": 29,
+            "stat.maintenance_paid": 3,
+            "stat.outputs_collected": 40,
             "stat.quests_completed": 6,
             "stat.rare_catches": 1,
             "stat.revenue": 155,
             "stat.sales": 11,
             "stat.tourist_sales": 2,
-            "stat.trophy_records": 20,
+            "stat.trophy_records": 19,
             "stat.trophy_species": 9,
             "stat.unmet_preference_sales": 7,
             "stat.upgrades_bought": 2,
-            "stat.worker_items_moved": 26,
+            "stat.worker_items_moved": 22,
+            "stat.worker_xp": 22,
             "stat.workers_hired": 1
         }
     }

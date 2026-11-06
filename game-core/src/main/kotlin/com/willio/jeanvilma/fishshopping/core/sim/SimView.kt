@@ -22,6 +22,9 @@ data class SimView(
     val coins: Long,
     val harborId: String,
     val harborName: String,
+    /** Phase 22 active harbor specialty name. */
+    val harborSpecializationName: String? = null,
+    val harborSpecializationDescription: String? = null,
     /** GLB under models/ for the active harbor blockout. */
     val blockoutAsset: String,
     val harbors: List<HarborMapEntryView>,
@@ -71,12 +74,28 @@ data class SimView(
     val upgrades: List<UpgradeView>,
     /** Non-null while a harbor rush window is active. */
     val rush: RushBannerView?,
+    /** Non-null while a Phase 24 seasonal event window is active. */
+    val seasonalEvent: SeasonalEventBannerView? = null,
+    /** Phase 26 pier bank + coin goals for the Goals panel. */
+    val bank: BankView,
+    /** Phase 27 derived balance rates for the in-dev strip / Settings preview. */
+    val telemetryRates: TelemetryRatesView,
     /** True while a hired supervisor is posted (boosts haul demand scoring). */
     val supervisorOnDuty: Boolean,
     /** Coins charged per hired worker each simulated hour (0 = unpaid). */
     val workerWagePerWorkerPerHour: Int,
+    /** Free standard-wage on-shift slots right now (Phase 17). */
+    val freeOnShiftSlots: Int,
+    /** Hired workers currently marked on shift. */
+    val onShiftCount: Int,
+    /** On-shift workers beyond [freeOnShiftSlots] (pay overtime). */
+    val overtimeOnShiftCount: Int,
     val workers: List<WorkerView>,
     val staff: List<StaffHireView>,
+    /** Owned assignable staff gear (boots/satchel/tackle) — Phase 19. */
+    val staffGear: List<StaffGearView>,
+    /** Active machine/worker bottlenecks for the Staff panel (Phase 20). */
+    val automationIssues: List<AutomationIssueView>,
     val quests: List<QuestView>,
     val contractsUnlocked: Boolean,
     val contractsLockedReason: String?,
@@ -102,6 +121,10 @@ data class SimView(
     val reputationLabel: String,
     val prestige: List<PrestigeView>,
     val unlockedCosmetics: List<String>,
+    /** Phase 23 shop decor offers for the Goals panel. */
+    val decorOffers: List<DecorOfferView>,
+    /** Summed patience bonus from owned decor. */
+    val decorPatienceBonusTicks: Int,
     /** Museum personal bests (sorted by species id). */
     val trophies: List<TrophyEntryView>,
     /** Curated gallery progress for the Goals panel. */
@@ -170,6 +193,11 @@ data class StationView(
     val statusText: String,
     val preferredRecipeId: String?,
     val nextRecipeId: String?,
+    /** Phase 25: machine is broken or still slowed. */
+    val needsRepair: Boolean = false,
+    val repairCost: Long = 0,
+    val slowed: Boolean = false,
+    val slowTicksRemaining: Int = 0,
 )
 data class CounterView(val counterId: String, val stock: Int, val capacityUnits: Int, val queue: Int)
 
@@ -189,7 +217,53 @@ data class RushBannerView(
     val ticksRemaining: Int,
 )
 
+data class SeasonalEventBannerView(
+    val eventId: String,
+    val name: String,
+    val description: String,
+    val ticksRemaining: Int,
+    val banner: String? = null,
+)
+
+/** Phase 26 Goals-panel bank / coin-goal presentation. */
+data class BankView(
+    val unlocked: Boolean,
+    val lockedReason: String?,
+    val loanPrincipal: Long,
+    val repayAmount: Long,
+    val termTicks: Int,
+    val loanOwed: Long,
+    val loanDueTicksLeft: Int,
+    val loanOverdue: Boolean,
+    val canTakeLoan: Boolean,
+    val canRepayLoan: Boolean,
+    val coinGoal: Long,
+    val coinGoalCelebrated: Boolean,
+    val goalPresets: List<Long>,
+)
+
+/** Phase 27 compact telemetry rates for HUD / Settings. */
+data class TelemetryRatesView(
+    val abandonPermille: Long,
+    val wageRatioPermille: Long,
+    val topSpecies: List<SpeciesCatchShareView>,
+)
+
+data class SpeciesCatchShareView(
+    val speciesId: String,
+    val name: String,
+    val sharePermille: Long,
+    val catches: Long,
+)
+
 data class PathPointView(val xMm: Int, val zMm: Int)
+
+data class WorkerEquipmentView(
+    val slotId: String,
+    val slotName: String,
+    val upgradeId: String,
+    val upgradeName: String,
+)
 
 data class WorkerView(
     val id: String,
@@ -201,6 +275,23 @@ data class WorkerView(
     val bagUsedUnits: Int,
     val bagCapacityUnits: Int,
     val phase: String,
+    val level: Int,
+    val xp: Int,
+    val xpToNext: Int?,
+    val traitNames: List<String>,
+    val onShift: Boolean,
+    val equipment: List<WorkerEquipmentView>,
+    /** Why this worker is stuck idle, if any (Phase 20). */
+    val blockedReason: String?,
+)
+
+/** Station or worker bottleneck shown in the Staff panel (Phase 20). */
+data class AutomationIssueView(
+    val id: String,
+    /** machine | worker */
+    val kind: String,
+    val label: String,
+    val reason: String,
 )
 
 data class StaffHireView(
@@ -212,6 +303,16 @@ data class StaffHireView(
     val maxHired: Int,
     val purchasable: Boolean,
     val reason: String?,
+)
+
+/** Owned staff-gear upgrade and whether it is currently equipped (Phase 19). */
+data class StaffGearView(
+    val upgradeId: String,
+    val name: String,
+    val slotId: String,
+    val slotName: String,
+    val equippedOnWorkerId: String?,
+    val equippedOnRoleName: String?,
 )
 
 /** completed | active | locked */
@@ -273,6 +374,22 @@ data class HarborMapEntryView(
     val unlocked: Boolean,
     val travelEnabled: Boolean,
     val reason: String?,
+    /** Phase 22 specialty name, or null when content omits specialization. */
+    val specializationName: String? = null,
+    val specializationDescription: String? = null,
+)
+
+/** Phase 23 shop decor offer row. */
+data class DecorOfferView(
+    val id: String,
+    val name: String,
+    val description: String,
+    val cost: Long,
+    val patienceBonusTicks: Int,
+    val requiresCosmetic: String?,
+    val status: String,
+    val reason: String?,
+    val canAfford: Boolean,
 )
 
 /** completed | active | locked */
@@ -341,17 +458,32 @@ fun Simulation.view(): SimView {
         val stDef = harbor.stations.first { it.id == m.stationId }
         val unlocked = ProductionSystem.isUnlocked(stDef, s)
         val lockName = stDef.requiresUpgrade?.let { c.upgradesById[it]?.name ?: it } ?: "an upgrade"
-        val status = if (unlocked) m.status else MachineStatus.LOCKED
+        val status = when {
+            !unlocked -> MachineStatus.LOCKED
+            m.broken -> MachineStatus.NEEDS_REPAIR
+            else -> m.status
+        }
         val batch = m.activeBatch
-        val progress = if (unlocked) batch?.let { 1f - it.remainingTicks.toFloat() / it.durationTicks } else null
+        val progress = if (unlocked && !m.broken) batch?.let { 1f - it.remainingTicks.toFloat() / it.durationTicks } else null
+        val slowed = unlocked && EconomySystem.isSlowed(m, s.tick)
+        val needsRepair = unlocked && EconomySystem.needsRepair(m, s.tick)
+        val statusText = when {
+            !unlocked -> "Locked — buy $lockName"
+            m.broken -> "Needs repair"
+            slowed -> "Running slow"
+            else -> ProductionSystem.statusText(m, c)
+        }
         StationView(
             m.stationId, status, m.input.usedUnits(), m.output.usedUnits(), progress,
-            statusText = if (unlocked) ProductionSystem.statusText(m, c)
-            else "Locked — buy $lockName",
+            statusText = statusText,
             preferredRecipeId = m.preferredRecipeId,
-            nextRecipeId = if (unlocked) {
+            nextRecipeId = if (unlocked && !m.broken) {
                 ProductionSystem.nextStartable(c, m)?.id ?: m.activeBatch?.recipeId
             } else null,
+            needsRepair = needsRepair,
+            repairCost = if (needsRepair) EconomySystem.repairCost(c) else 0,
+            slowed = slowed,
+            slowTicksRemaining = if (slowed) (m.slowUntilTick - s.tick).toInt().coerceAtLeast(0) else 0,
         )
     }
 
@@ -425,44 +557,55 @@ fun Simulation.view(): SimView {
         ZoneKind.COUNTER -> {
             val def = harbor.counters.first { it.zone == zone.id }
             val counter = s.counters.first { it.counterId == def.id }
-            val queued = s.customers.filter { it.counterId == def.id }
-            val front = queued.firstOrNull { it.arrived }
-            val label = def.products.joinToString(" / ") { c.productsById.getValue(it).name }
-            val demandMult = CustomerSystem.demandPriceMultPermille(c, s, harbor, def, counter)
-            val lines = mutableListOf(
-                "Stock: ${counter.stock.usedUnits()}/${def.capacityUnits}",
-                "Queue: ${queued.size}",
-            )
-            if (demandMult != 1000) {
-                val pct = ((demandMult - 1000) * 100) / 1000
-                lines += if (pct >= 0) "Demand prices +$pct%" else "Demand prices $pct%"
-            }
-            if (front != null) {
-                val type = c.customersById[front.typeId]
-                val who = type?.name ?: front.typeId
-                val kindNote = when (type?.kind?.wire) {
-                    "premium" -> " · tips well"
-                    "bulk" -> " · bulk order"
-                    "tourist" -> " · tourist tip"
-                    "wholesaler" -> " · wholesale order"
-                    "critic" -> " · picky critic"
-                    "night_regular" -> " · night regular"
-                    else -> ""
+            val unlocked = CustomerSystem.isUnlocked(def, s)
+            val padLabel = if (def.kind.wire == "wholesale") "Wholesale" else "Counter"
+            if (!unlocked) {
+                val lockName = def.requiresUpgrade?.let { c.upgradesById[it]?.name ?: it } ?: "an upgrade"
+                ContextCard(
+                    "$padLabel locked",
+                    listOf("Buy $lockName to open this B2B pad"),
+                    null,
+                )
+            } else {
+                val queued = s.customers.filter { it.counterId == def.id }
+                val front = queued.firstOrNull { it.arrived }
+                val label = def.products.joinToString(" / ") { c.productsById.getValue(it).name }
+                val demandMult = CustomerSystem.demandPriceMultPermille(c, s, harbor, def, counter)
+                val lines = mutableListOf(
+                    "Stock: ${counter.stock.usedUnits()}/${def.capacityUnits}",
+                    "Queue: ${queued.size}",
+                )
+                if (demandMult != 1000) {
+                    val pct = ((demandMult - 1000) * 100) / 1000
+                    lines += if (pct >= 0) "Demand prices +$pct%" else "Demand prices $pct%"
                 }
-                val wantLabel = front.preferredProductId?.let { c.itemName(it) } ?: "anything"
-                val subNote = when {
-                    front.preferredProductId == null -> ""
-                    front.reserved == 0 -> ""
-                    front.preferenceMet() -> ""
-                    else -> " · substituting"
+                if (front != null) {
+                    val type = c.customersById[front.typeId]
+                    val who = type?.name ?: front.typeId
+                    val kindNote = when (type?.kind?.wire) {
+                        "premium" -> " · tips well"
+                        "bulk" -> " · bulk order"
+                        "tourist" -> " · tourist tip"
+                        "wholesaler" -> " · wholesale order"
+                        "critic" -> " · picky critic"
+                        "night_regular" -> " · night regular"
+                        else -> ""
+                    }
+                    val wantLabel = front.preferredProductId?.let { c.itemName(it) } ?: "anything"
+                    val subNote = when {
+                        front.preferredProductId == null -> ""
+                        front.reserved == 0 -> ""
+                        front.preferenceMet() -> ""
+                        else -> " · substituting"
+                    }
+                    lines += "Front: $who wants ${front.wants} $wantLabel$kindNote$subNote"
                 }
-                lines += "Front: $who wants ${front.wants} $wantLabel$kindNote$subNote"
+                ContextCard(
+                    if (def.kind.wire == "wholesale") "Wholesale · $label" else "$label counter",
+                    lines,
+                    if (counter.checkoutProgress > 0) counter.checkoutProgress.toFloat() / def.checkoutTicks else null,
+                )
             }
-            ContextCard(
-                "$label counter",
-                lines,
-                if (counter.checkoutProgress > 0) counter.checkoutProgress.toFloat() / def.checkoutTicks else null,
-            )
         }
         ZoneKind.KIOSK -> {
             val preferred = p.preferredBaitId?.let { c.baitById[it]?.name } ?: "Auto"
@@ -512,6 +655,8 @@ fun Simulation.view(): SimView {
         coins = s.coins,
         harborId = s.harborId,
         harborName = harbor.name,
+        harborSpecializationName = harbor.specialization?.name,
+        harborSpecializationDescription = harbor.specialization?.description,
         blockoutAsset = harbor.blockoutAsset,
         harbors = c.harbors.map { h ->
             val unlocked = HarborTravelSystem.unlocked(c, s, h)
@@ -528,6 +673,8 @@ fun Simulation.view(): SimView {
                     !unlocked -> HarborTravelSystem.missingRequirement(c, s, h)?.let { "Requires: $it" }
                     else -> null
                 },
+                specializationName = h.specialization?.name,
+                specializationDescription = h.specialization?.description,
             )
         },
         player = PlayerView(p.x, p.z, p.facingX, p.facingZ, p.zoneId),
@@ -602,13 +749,82 @@ fun Simulation.view(): SimView {
         rush = CustomerSystem.activeRush(harbor, s.tick)?.let { r ->
             RushBannerView(r.id, r.name, CustomerSystem.ticksRemaining(r, s.tick))
         },
+        seasonalEvent = com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem.active(c, s.tick)?.let { e ->
+            SeasonalEventBannerView(
+                eventId = e.id,
+                name = e.name,
+                description = e.description,
+                ticksRemaining = com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem.ticksRemaining(e, s.tick),
+                banner = e.banner,
+            )
+        },
+        bank = run {
+            val BS = com.willio.jeanvilma.fishshopping.core.economy.BankSystem
+            val unlocked = BS.unlocked(c, s)
+            val hasLoan = BS.hasLoan(s)
+            BankView(
+                unlocked = unlocked,
+                lockedReason = BS.missingRequirement(c, s)?.let { "Requires: $it" },
+                loanPrincipal = c.bank.loanPrincipal,
+                repayAmount = BS.repayAmount(c),
+                termTicks = c.bank.termTicks,
+                loanOwed = s.loanOwed,
+                loanDueTicksLeft = BS.ticksRemaining(s),
+                loanOverdue = BS.overdue(s),
+                canTakeLoan = unlocked && !hasLoan,
+                canRepayLoan = hasLoan && s.coins > 0L,
+                coinGoal = s.coinGoal,
+                coinGoalCelebrated = s.coinGoalCelebrated,
+                goalPresets = c.bank.goalPresets,
+            )
+        },
+        telemetryRates = run {
+            val shares = Telemetry.speciesCatchSharePermille(s)
+            val top = shares.entries
+                .sortedWith(compareByDescending<Map.Entry<String, Long>> { it.value }.thenBy { it.key })
+                .take(3)
+                .map { (id, share) ->
+                    SpeciesCatchShareView(
+                        speciesId = id,
+                        name = c.itemName(id),
+                        sharePermille = share,
+                        catches = s.speciesCatches[id] ?: 0L,
+                    )
+                }
+            TelemetryRatesView(
+                abandonPermille = Telemetry.abandonPermille(s),
+                wageRatioPermille = Telemetry.wageRatioPermille(s),
+                topSpecies = top,
+            )
+        },
         supervisorOnDuty = WorkerSystem.supervisorOnDuty(c, s),
         workerWagePerWorkerPerHour = s.workerWagePerWorkerPerHour,
+        freeOnShiftSlots = WorkerSystem.freeOnShiftSlots(c, s),
+        onShiftCount = s.workers.count { it.onShift },
+        overtimeOnShiftCount = (s.workers.count { it.onShift } - WorkerSystem.freeOnShiftSlots(c, s)).coerceAtLeast(0),
         workers = s.workers.map { w ->
             val def = c.workersById[w.roleId]
+            val prog = c.staffProgression
+            val xpToNext = if (w.level >= prog.maxLevel) null
+            else prog.xpThresholds.getOrNull(w.level)?.let { (it - w.xp).coerceAtLeast(0) }
             WorkerView(
                 w.id, w.roleId, def?.name ?: w.roleId, def?.role?.wire ?: "fisher",
                 w.x, w.z, w.bag.usedUnits(), w.bag.capacityUnits, w.phase.name,
+                level = w.level,
+                xp = w.xp,
+                xpToNext = xpToNext,
+                traitNames = w.traits.map { tid -> c.workerTraitsById[tid]?.name ?: tid },
+                onShift = w.onShift,
+                equipment = prog.loadouts.slots.mapNotNull { slot ->
+                    val uid = w.equipment[slot.id] ?: return@mapNotNull null
+                    WorkerEquipmentView(
+                        slotId = slot.id,
+                        slotName = slot.name,
+                        upgradeId = uid,
+                        upgradeName = c.upgradesById[uid]?.name ?: uid,
+                    )
+                },
+                blockedReason = WorkerSystem.blockedReason(c, s, harbor, w),
             )
         },
         staff = c.workers.map { def ->
@@ -624,6 +840,41 @@ fun Simulation.view(): SimView {
                     else -> null
                 },
             )
+        },
+        staffGear = c.staffProgression.loadouts.slots.flatMap { slot ->
+            slot.upgradeIds.mapNotNull { uid ->
+                if (uid !in s.ownedUpgrades) return@mapNotNull null
+                val wearer = s.workers.firstOrNull { it.equipment[slot.id] == uid }
+                StaffGearView(
+                    upgradeId = uid,
+                    name = c.upgradesById[uid]?.name ?: uid,
+                    slotId = slot.id,
+                    slotName = slot.name,
+                    equippedOnWorkerId = wearer?.id,
+                    equippedOnRoleName = wearer?.let { c.workersById[it.roleId]?.name ?: it.roleId },
+                )
+            }
+        },
+        automationIssues = buildList {
+            for (st in stationViews) {
+                val reason = when {
+                    st.needsRepair && st.status == MachineStatus.NEEDS_REPAIR -> "Needs repair"
+                    st.needsRepair && st.slowed -> "Running slow"
+                    st.status == MachineStatus.OUTPUT_FULL -> "Output full"
+                    st.status == MachineStatus.WAITING_FOR_INPUT -> "No input"
+                    else -> null
+                } ?: continue
+                val name = harbor.stations.firstOrNull { it.id == st.stationId }?.let { pad ->
+                    c.machinesById[pad.machine]?.name ?: st.stationId
+                } ?: st.stationId
+                add(AutomationIssueView(st.stationId, "machine", name, reason))
+            }
+            for (w in s.workers) {
+                val reason = WorkerSystem.blockedReason(c, s, harbor, w) ?: continue
+                if (reason == "Off shift") continue
+                val def = c.workersById[w.roleId]
+                add(AutomationIssueView(w.id, "worker", def?.name ?: w.roleId, reason))
+            }
         },
         quests = c.quests.map { q ->
             val completed = q.id in s.completedQuests
@@ -694,7 +945,7 @@ fun Simulation.view(): SimView {
         economyUnlocked = EconomySystem.unlocked(c, s),
         economyLockedReason = EconomySystem.missingRequirement(c, s)?.let { "Requires: $it" },
         maintenanceCoinsPerStation = if (EconomySystem.unlocked(c, s)) {
-            EconomySystem.maintenanceCoinsPerStation(c, s)
+            EconomySystem.maintenanceCoinsPerStation(c, s, harbor)
         } else 0,
         bagFishSpoilActive = EconomySystem.unlocked(c, s) && c.economy.bagFishSpoilUnits > 0,
         prestigeUnlocked = PrestigeSystem.boardUnlocked(c, s),
@@ -726,6 +977,31 @@ fun Simulation.view(): SimView {
             )
         },
         unlockedCosmetics = s.unlockedCosmetics.toList(),
+        decorOffers = c.decor.items.map { d ->
+            val owned = d.id in s.ownedDecor
+            val miss = com.willio.jeanvilma.fishshopping.core.world.DecorSystem.missingRequirement(c, s, d)
+            DecorOfferView(
+                id = d.id,
+                name = d.name,
+                description = d.description,
+                cost = d.cost,
+                patienceBonusTicks = d.patienceBonusTicks,
+                requiresCosmetic = d.requiresCosmetic,
+                status = when {
+                    owned -> "owned"
+                    miss != null -> "locked"
+                    else -> "available"
+                },
+                reason = when {
+                    owned -> null
+                    miss != null -> "Requires: $miss"
+                    s.coins < d.cost -> "Need ${d.cost - s.coins} more coins"
+                    else -> null
+                },
+                canAfford = !owned && miss == null && s.coins >= d.cost,
+            )
+        },
+        decorPatienceBonusTicks = com.willio.jeanvilma.fishshopping.core.world.DecorSystem.patienceBonusTicks(c, s),
         trophies = s.trophies.entries.map { (id, rec) ->
             TrophyEntryView(
                 speciesId = id,

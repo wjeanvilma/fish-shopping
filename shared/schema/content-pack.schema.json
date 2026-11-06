@@ -16,7 +16,9 @@
     "upgrades",
     "quests",
     "workers",
+    "staffProgression",
     "routing",
+    "automationAlerts",
     "offline",
     "economy",
     "ecology",
@@ -26,7 +28,10 @@
     "contracts",
     "customers",
     "tutorial",
-    "harbors"
+    "harbors",
+    "decor",
+    "seasonalEvents",
+    "bank"
   ],
   "properties": {
     "$schema": {
@@ -559,6 +564,25 @@
                 "type": "object",
                 "required": [
                   "kind",
+                  "pad"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "unlock_counter"
+                  },
+                  "pad": {
+                    "type": "string",
+                    "enum": [
+                      "wholesale"
+                    ],
+                    "description": "Counter pad kind unlocked when this upgrade is owned; matching counters must list this upgrade as requiresUpgrade."
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
                   "speedPermille"
                 ],
                 "properties": {
@@ -859,7 +883,10 @@
               "porter",
               "operator",
               "cashier",
-              "supervisor"
+              "supervisor",
+              "ice_runner",
+              "smoker_specialist",
+              "greeter"
             ]
           },
           "hireCost": {
@@ -895,6 +922,201 @@
         }
       }
     },
+    "staffProgression": {
+      "type": "object",
+      "description": "Per-worker XP, levels, and hire-time trait rolls (Phase 16).",
+      "required": [
+        "maxLevel",
+        "xpThresholds",
+        "moveSpeedPermillePerLevel",
+        "catchSpeedPermillePerLevel",
+        "carryBonusEveryLevels",
+        "xpFishCaught",
+        "xpItemMoved",
+        "xpSaleAssisted",
+        "traitsOnHire",
+        "shifts",
+        "roleBuffs",
+        "loadouts",
+        "traits"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "maxLevel": {
+          "$ref": "#/$defs/positiveInt",
+          "maximum": 10
+        },
+        "xpThresholds": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "Cumulative XP required for levels 1..N (index 0 must be 0)."
+        },
+        "moveSpeedPermillePerLevel": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Added move-speed permille per level above 1."
+        },
+        "catchSpeedPermillePerLevel": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Added catch-speed permille per level above 1."
+        },
+        "carryBonusEveryLevels": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "+1 bag capacity every N levels (levels above 1)."
+        },
+        "xpFishCaught": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "xpItemMoved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "xpSaleAssisted": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "XP granted to an on-duty cashier when a sale completes at their pad."
+        },
+        "traitsOnHire": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "shifts": {
+          "type": "object",
+          "description": "On-shift slots vs overtime wages; supervisor expands free slots (Phase 17).",
+          "required": [
+            "baseOnShiftSlots",
+            "overtimeWagePermille",
+            "supervisorExtraSlots"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "baseOnShiftSlots": {
+              "$ref": "#/$defs/positiveInt",
+              "description": "Workers that can be on shift at the standard wage rate."
+            },
+            "overtimeWagePermille": {
+              "$ref": "#/$defs/positiveInt",
+              "description": "Wage multiplier for on-shift workers beyond free slots (1500 = 1.5x)."
+            },
+            "supervisorExtraSlots": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Added free on-shift slots while a supervisor is posted on shift."
+            }
+          }
+        },
+        "roleBuffs": {
+          "type": "object",
+          "description": "Passive buffs for Phase 18 specialized hireable roles.",
+          "required": [
+            "greeterPatienceDrainMultPermille",
+            "smokerSpecialistProcessSpeedPermille",
+            "iceRunnerFragileSpoilTierMin",
+            "iceRunnerSpoilScoreBonus"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "greeterPatienceDrainMultPermille": {
+              "$ref": "#/$defs/positiveInt",
+              "description": "Multiplies customer patience drain while a greeter is posted (700 = 30% slower drain)."
+            },
+            "smokerSpecialistProcessSpeedPermille": {
+              "$ref": "#/$defs/positiveInt",
+              "description": "Smoker batch speed while a smoker specialist is posted (1250 = 25% faster)."
+            },
+            "iceRunnerFragileSpoilTierMin": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3,
+              "description": "Ice runners prioritize hauling products at or above this spoil tier."
+            },
+            "iceRunnerSpoilScoreBonus": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Added haul score for ice_packed_crate or fragile spoil-tier items."
+            }
+          }
+        },
+        "loadouts": {
+          "type": "object",
+          "description": "Assignable staff gear slots (Phase 19). Owned worker_* upgrades equip to one worker each.",
+          "required": ["slots"],
+          "additionalProperties": false,
+          "properties": {
+            "slots": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["id", "name", "upgradeIds"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": { "type": "string", "minLength": 1 },
+                  "name": { "type": "string", "minLength": 1 },
+                  "upgradeIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": { "type": "string", "minLength": 1 },
+                    "description": "Upgrade IDs that fill this slot (must use worker_move_speed / worker_carry / worker_catch_speed)."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "traits": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "description",
+              "weight"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id",
+                "pattern": "^trait\\.[a-z0-9_]+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "weight": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "moveSpeedPermille": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "catchSpeedPermille": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "carryBonus": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "transferIntervalMultPermille": {
+                "$ref": "#/$defs/positiveInt",
+                "description": "Multiplies transfer interval (1000 = unchanged; lower = faster)."
+              }
+            }
+          }
+        }
+      }
+    },
     "routing": {
       "type": "object",
       "required": [
@@ -923,6 +1145,25 @@
         "supervisorDemandBoostPermille": {
           "$ref": "#/$defs/positiveInt",
           "description": "Multiplies demandWeight while a supervisor is on duty (1000 = unchanged)."
+        }
+      }
+    },
+    "automationAlerts": {
+      "type": "object",
+      "description": "Staff automation goals and rush idle ticker alerts (Phase 20).",
+      "required": [
+        "machineIdleTicksDuringRush",
+        "alertCooldownTicks"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "machineIdleTicksDuringRush": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Ticks a station may stay WAITING_FOR_INPUT or OUTPUT_FULL during a rush before a ticker alert."
+        },
+        "alertCooldownTicks": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Minimum ticks between idle alerts for the same station."
         }
       }
     },
@@ -1058,6 +1299,33 @@
             "minimum": 1
           },
           "description": "Phase 12 scarcity sale multipliers for counter fill bands 0–20% … 80–100% (1000 = unchanged)."
+        },
+        "wear": {
+          "type": "object",
+          "description": "Phase 25 machine wear / disaster checks after a late-game gate.",
+          "required": [
+            "requires",
+            "checkPeriodTicks",
+            "chancePermille",
+            "breakChancePermille",
+            "slowDurationTicks",
+            "slowProcessMultPermille",
+            "repairCoins"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "requires": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/id" },
+              "description": "Quest/upgrade IDs before wear events can fire."
+            },
+            "checkPeriodTicks": { "$ref": "#/$defs/positiveInt" },
+            "chancePermille": { "type": "integer", "minimum": 0, "maximum": 1000 },
+            "breakChancePermille": { "type": "integer", "minimum": 0, "maximum": 1000 },
+            "slowDurationTicks": { "$ref": "#/$defs/positiveInt" },
+            "slowProcessMultPermille": { "type": "integer", "minimum": 1000 },
+            "repairCoins": { "type": "integer", "minimum": 0 }
+          }
         }
       }
     },
@@ -1407,6 +1675,10 @@
               "failCooldownTicks": {
                 "$ref": "#/$defs/positiveInt",
                 "description": "Standing: ticks the template stays off the board after a failed run."
+              },
+              "requiresSeasonalEvent": {
+                "$ref": "#/$defs/id",
+                "description": "Phase 24: only post this template while the named seasonal event is active."
               }
             }
           }
@@ -1468,6 +1740,112 @@
                 }
               }
             ]
+          }
+        }
+      }
+    },
+    "bank": {
+      "type": "object",
+      "description": "Phase 26 short-term loans (interest sink) and coin-goal presets.",
+      "required": [
+        "requires",
+        "loanPrincipal",
+        "repayPermille",
+        "termTicks",
+        "collectionPeriodTicks",
+        "goalPresets"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requires": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "description": "Quest/upgrade IDs before the bank is available."
+        },
+        "loanPrincipal": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Coins granted when taking a loan."
+        },
+        "repayPermille": {
+          "type": "integer",
+          "minimum": 1000,
+          "description": "Total repayment as principal * repayPermille / 1000."
+        },
+        "termTicks": { "$ref": "#/$defs/positiveInt" },
+        "collectionPeriodTicks": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "While overdue, seize owed coins this often."
+        },
+        "goalPresets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "Coin-goal targets offered in the Goals panel."
+        }
+      }
+    },
+    "seasonalEvents": {
+      "type": "object",
+      "description": "Phase 24 time-boxed overlays driven by the sim clock (no live server).",
+      "required": ["events"],
+      "properties": {
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "description", "periodTicks", "startTick", "durationTicks"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id", "pattern": "^event\\.[a-z0-9_]+$" },
+              "name": { "type": "string", "minLength": 1 },
+              "description": { "type": "string", "minLength": 1 },
+              "periodTicks": { "$ref": "#/$defs/positiveInt" },
+              "startTick": { "type": "integer", "minimum": 0 },
+              "durationTicks": { "$ref": "#/$defs/positiveInt" },
+              "banner": {
+                "type": ["string", "null"],
+                "description": "Cosmetic / banner id unlocked when the event first becomes active."
+              },
+              "speciesWeightMultPermille": {
+                "type": "object",
+                "additionalProperties": { "type": "integer", "minimum": 1 },
+                "description": "Catch-weight multipliers for listed species while the event is active."
+              }
+            }
+          }
+        }
+      }
+    },
+    "decor": {
+      "type": "object",
+      "description": "Phase 23 shop decor / placable cosmetics. Owned pieces add a tiny customer patience buff.",
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "description", "cost", "patienceBonusTicks"],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id",
+                "pattern": "^decor\\.[a-z0-9_]+$"
+              },
+              "name": { "type": "string", "minLength": 1 },
+              "description": { "type": "string", "minLength": 1 },
+              "cost": { "$ref": "#/$defs/coins" },
+              "requiresCosmetic": {
+                "type": ["string", "null"],
+                "description": "Optional prestige banner / cosmetic id that must already be unlocked."
+              },
+              "patienceBonusTicks": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Added to newly spawned customer patience while this decor is owned."
+              }
+            }
           }
         }
       }
@@ -1650,6 +2028,14 @@
                 "id": {
                   "$ref": "#/$defs/id"
                 },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "retail",
+                    "wholesale"
+                  ],
+                  "description": "Sell channel. Wholesale pads take crate-sized B2B products; cashiers route by demand."
+                },
                 "products": {
                   "type": "array",
                   "minItems": 1,
@@ -1681,6 +2067,10 @@
                 "footprint": {
                   "$ref": "#/$defs/id",
                   "description": "Optional presentation hint: the obstacle whose top shows the stock."
+                },
+                "requiresUpgrade": {
+                  "$ref": "#/$defs/id",
+                  "description": "Optional upgrade that must be owned before this counter accepts stock, spawns, or cashier coverage."
                 }
               }
             }
@@ -1751,6 +2141,48 @@
                   "type": "integer",
                   "minimum": 1,
                   "description": "Phase 12 sale price multiplier while this rush is active (1000 = unchanged)."
+                }
+              }
+            }
+          },
+          "specialization": {
+            "type": "object",
+            "description": "Phase 22 per-harbor passive applied while the player is at this harbor.",
+            "required": [
+              "id",
+              "name",
+              "description"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id",
+                "pattern": "^spec\\.[a-z0-9_]+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "maintenanceDiscountPerStation": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Subtracted from economy.maintenanceCoinsPerStation (with upgrade discounts) while at this harbor."
+              },
+              "rareChanceBonusPermille": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000,
+                "description": "Added to rare-upgrade rolls while fishing at this harbor."
+              },
+              "kindSpawnMultPermille": {
+                "type": "object",
+                "description": "Customer-kind spawn multipliers while at this harbor (keys = customer kind wires).",
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }

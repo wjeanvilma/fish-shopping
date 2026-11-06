@@ -39,14 +39,17 @@ class HarborWorldStash(
 object HarborTravelSystem {
 
     fun unlocked(content: ContentPack, s: GameState, def: HarborDef): Boolean =
-        def.requires.all { it in s.ownedUpgrades || it in s.completedQuests }
+        def.requires.all {
+            it in s.ownedUpgrades || it in s.completedQuests || it in s.completedPrestige
+        }
 
     fun missingRequirement(content: ContentPack, s: GameState, def: HarborDef): String? {
         val missing = def.requires.firstOrNull {
-            it !in s.ownedUpgrades && it !in s.completedQuests
+            it !in s.ownedUpgrades && it !in s.completedQuests && it !in s.completedPrestige
         } ?: return null
         return content.upgradesById[missing]?.name
             ?: content.questsById[missing]?.name
+            ?: content.prestigeMilestonesById[missing]?.name
             ?: missing
     }
 

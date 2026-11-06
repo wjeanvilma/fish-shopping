@@ -40,9 +40,9 @@ object BaitSystem {
         return ((base.toLong() * bait.rareSpeciesWeightMultPermille) / 1000L).toInt().coerceAtLeast(1)
     }
 
-    fun rareChancePermille(baseChance: Int, bait: BaitDef?): Int {
-        if (bait == null) return baseChance
-        return (baseChance + bait.rareChanceBonusPermille).coerceIn(0, 1000)
+    fun rareChancePermille(baseChance: Int, bait: BaitDef?, harborBonusPermille: Int = 0): Int {
+        val baitBonus = bait?.rareChanceBonusPermille ?: 0
+        return (baseChance + baitBonus + harborBonusPermille).coerceIn(0, 1000)
     }
 
     fun select(s: GameState, content: ContentPack, baitId: String?) {

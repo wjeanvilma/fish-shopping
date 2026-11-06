@@ -35,8 +35,11 @@ object Stats {
     const val WORKERS_HIRED = "stat.workers_hired"
     const val WORKER_FISH_CAUGHT = "stat.worker_fish_caught"
     const val WORKER_ITEMS_MOVED = "stat.worker_items_moved"
+    const val WORKER_XP = "stat.worker_xp"
+    const val WORKER_LEVEL_UPS = "stat.worker_level_ups"
     const val LEASES_EXPIRED = "stat.leases_expired"
     const val WAGES_PAID = "stat.wages_paid"
+    const val OVERTIME_WAGES = "stat.overtime_wages"
     const val QUESTS_COMPLETED = "stat.quests_completed"
     const val CONTRACTS_COMPLETED = "stat.contracts_completed"
     const val CONTRACTS_FAILED = "stat.contracts_failed"
@@ -49,6 +52,16 @@ object Stats {
     const val TROPHY_SPECIES = "stat.trophy_species"
     const val TROPHY_RECORDS = "stat.trophy_records"
     const val TROPHY_SETS_COMPLETE = "stat.trophy_sets_complete"
+    const val DECOR_BOUGHT = "stat.decor_bought"
+    const val MACHINES_BROKEN = "stat.machines_broken"
+    const val MACHINES_SLOWED = "stat.machines_slowed"
+    const val MACHINES_REPAIRED = "stat.machines_repaired"
+    const val REPAIR_SPENT = "stat.repair_spent"
+    const val LOANS_TAKEN = "stat.loans_taken"
+    const val LOAN_INTEREST_ACCRUED = "stat.loan_interest_accrued"
+    const val LOAN_REPAID = "stat.loan_repaid"
+    const val LOAN_COLLECTED = "stat.loan_collected"
+    const val COIN_GOALS_REACHED = "stat.coin_goals_reached"
 
     /** Stable ordered list for telemetry exports (zeros included). */
     val ALL: List<String> = listOf(
@@ -56,10 +69,13 @@ object Stats {
         SALES, ITEMS_SOLD, REVENUE, LOST_CUSTOMERS, UPGRADES_BOUGHT,
         TIMING_BONUSES, PERFECT_REELS, GOOD_REELS, BAIT_BOUGHT, BAIT_USED, RARE_CATCHES,
         PREMIUM_SALES, BULK_SALES, TOURIST_SALES, WHOLESALER_SALES, CRITIC_SALES, NIGHT_SALES, UNMET_PREFERENCE_SALES,
-        WORKERS_HIRED, WORKER_FISH_CAUGHT, WORKER_ITEMS_MOVED, LEASES_EXPIRED, WAGES_PAID,
+        WORKERS_HIRED, WORKER_FISH_CAUGHT, WORKER_ITEMS_MOVED, WORKER_XP, WORKER_LEVEL_UPS,
+        LEASES_EXPIRED, WAGES_PAID, OVERTIME_WAGES,
         QUESTS_COMPLETED, CONTRACTS_COMPLETED, CONTRACTS_FAILED, CONTRACT_REVENUE,
         CONTRACT_ITEMS_DELIVERED, HARBORS_TRAVELED, MAINTENANCE_PAID, ITEMS_SPOILED,
-        PRESTIGE_COMPLETED, TROPHY_SPECIES, TROPHY_RECORDS, TROPHY_SETS_COMPLETE,
+        PRESTIGE_COMPLETED, TROPHY_SPECIES, TROPHY_RECORDS, TROPHY_SETS_COMPLETE, DECOR_BOUGHT,
+        MACHINES_BROKEN, MACHINES_SLOWED, MACHINES_REPAIRED, REPAIR_SPENT,
+        LOANS_TAKEN, LOAN_INTEREST_ACCRUED, LOAN_REPAID, LOAN_COLLECTED, COIN_GOALS_REACHED,
     )
 }
 
@@ -108,6 +124,16 @@ class WorkerState(
     var fishingSpecies: String? = null
     var fishingProgress = 0
     var fishingCatchTicks = 0
+    /** Lifetime XP toward staff levels (Phase 16). */
+    var xp = 0
+    /** Derived from XP; starts at 1. */
+    var level = 1
+    /** Hire-time trait IDs from content staffProgression.traits. */
+    val traits = mutableListOf<String>()
+    /** When false the worker is hired but off shift (no AI, no wage) — Phase 17. */
+    var onShift = true
+    /** Equipped staff gear: loadout slot id → upgrade id (Phase 19). */
+    val equipment = linkedMapOf<String, String>()
 
     val busyWalking get() = walkTicksLeft > 0
 }
@@ -170,7 +196,7 @@ class FishingSpotState(val zoneId: String, var stock: Int) {
     var regenProgress = 0
 }
 
-enum class MachineStatus { WAITING_FOR_INPUT, PROCESSING, OUTPUT_FULL, PAUSED, LOCKED }
+enum class MachineStatus { WAITING_FOR_INPUT, PROCESSING, OUTPUT_FULL, PAUSED, LOCKED, NEEDS_REPAIR }
 
 /**
  * In-progress batch. Inputs were removed from the machine at batch start and are
@@ -201,6 +227,17 @@ class MachineState(
 
     /** Recipe duration overrides from upgrades; applied to the next batch. */
     val recipeDurations = TreeMap<String, Int>()
+    /**
+     * Ephemeral (not snapshotted): consecutive idle ticks while WAITING_FOR_INPUT / OUTPUT_FULL
+     * during a rush — Phase 20 automation alerts.
+     */
+    var idleTicks = 0
+    /** Ephemeral: tick when the last idle alert fired for this station (0 = never). */
+    var lastIdleAlertTick = 0L
+    /** Phase 25: hard break — no new batches until repaired. */
+    var broken = false
+    /** Phase 25: process duration mult applies while tick < this (0 = none). */
+    var slowUntilTick = 0L
 }
 
 class CounterState(val counterId: String, val stock: Inventory) {
@@ -300,8 +337,12 @@ class GameState(
     val completedQuests = TreeSet<String>()
     val completedPrestige = TreeSet<String>()
     val unlockedCosmetics = TreeSet<String>()
+    /** Phase 23 owned shop decor (placable cosmetics). */
+    val ownedDecor = TreeSet<String>()
     /** Best catch per species id (museum / trophy board). */
     val trophies = TreeMap<String, TrophyRecord>()
+    /** Phase 27 lifetime catches per species id (telemetry v2). */
+    val speciesCatches = TreeMap<String, Long>()
     val stats = TreeMap<String, Long>()
     /** Parked harbor worlds keyed by harbor id (active harbor is live on this state). */
     val harborStashes = TreeMap<String, HarborWorldStash>()
@@ -333,6 +374,19 @@ class GameState(
     var counterSpoilAccrualTicks = 0
     /** Progress toward next bag fish spoilage (not persisted). */
     var bagSpoilAccrualTicks = 0
+    /** Progress toward next machine wear check (not persisted). */
+    var wearAccrualTicks = 0
+    /** Progress toward next overdue loan collection (not persisted). */
+    var loanCollectionAccrualTicks = 0
+
+    /** Phase 26 outstanding loan repayment (0 = none). */
+    var loanOwed = 0L
+    /** Tick when the outstanding loan becomes overdue (0 when no loan). */
+    var loanDueTick = 0L
+    /** Phase 26 player coin goal (0 = none). */
+    var coinGoal = 0L
+    /** True after [coinGoal] has been celebrated for the current target. */
+    var coinGoalCelebrated = false
 
     /** Tick when the contract board next refreshes (0 = needs immediate refresh when unlocked). */
     var contractBoardRefreshAt = 0L
@@ -348,6 +402,12 @@ class GameState(
     fun stat(key: String) = stats[key] ?: 0L
     fun bumpStat(key: String, by: Long = 1) {
         stats[key] = SafeMath.add(stat(key), by)
+    }
+
+    /** Record a landed catch for telemetry species shares (Phase 27). */
+    fun recordSpeciesCatch(speciesId: String, by: Long = 1) {
+        if (by <= 0L) return
+        speciesCatches[speciesId] = SafeMath.add(speciesCatches[speciesId] ?: 0L, by)
     }
 
     fun newId(prefix: String): String = "$prefix.${nextSerial++}"
@@ -412,6 +472,12 @@ sealed interface Command {
     data class SelectMachineRecipe(val stationId: String, val recipeId: String?) : Command
     /** Hire a content worker role; [requestId] makes retries idempotent. */
     data class HireWorker(val roleId: String, val requestId: String) : Command
+    /** Put a hired worker on or off shift (Phase 17). */
+    data class SetWorkerShift(val workerId: String, val onShift: Boolean) : Command
+    /** Equip an owned staff-gear upgrade onto a worker (Phase 19). */
+    data class AssignWorkerGear(val workerId: String, val upgradeId: String) : Command
+    /** Remove gear from a worker loadout slot (Phase 19). */
+    data class UnequipWorkerGear(val workerId: String, val slotId: String) : Command
     /** Accept a posted contract offer; [requestId] makes retries idempotent. */
     data class AcceptContract(val offerId: String, val requestId: String) : Command
     /** Deliver matching items from the player bag toward an active contract. */
@@ -422,6 +488,16 @@ sealed interface Command {
     data class BuyBait(val baitId: String, val requestId: String) : Command
     /** Set preferred bait for future casts, or null to clear (auto). */
     data class SelectBait(val baitId: String?) : Command
+    /** Buy shop decor; [requestId] makes retries idempotent (Phase 23). */
+    data class PurchaseDecor(val decorId: String, val requestId: String) : Command
+    /** Pay to clear machine wear (Phase 25); [requestId] makes retries idempotent. */
+    data class RepairMachine(val stationId: String, val requestId: String) : Command
+    /** Take the content bank loan (Phase 26); [requestId] makes retries idempotent. */
+    data class TakeLoan(val requestId: String) : Command
+    /** Repay as much outstanding loan as coins allow (Phase 26). */
+    data class RepayLoan(val requestId: String) : Command
+    /** Set or clear a coin goal from bank presets (0 clears). */
+    data class SetCoinGoal(val amount: Long) : Command
 }
 
 /** Results of simulation. UI effects consume these but never change economic state. */
@@ -457,6 +533,16 @@ sealed interface GameEvent {
     data class CustomerLeft(override val tick: Long, val customerId: String, val paid: Boolean) : GameEvent
     data class RushStarted(override val tick: Long, val rushId: String, val name: String) : GameEvent
     data class RushEnded(override val tick: Long, val rushId: String, val name: String) : GameEvent
+    /** Phase 24 seasonal overlay became active on the sim clock. */
+    data class SeasonalEventStarted(override val tick: Long, val eventId: String, val name: String) : GameEvent
+    data class SeasonalEventEnded(override val tick: Long, val eventId: String, val name: String) : GameEvent
+    /** Station stayed WAITING_FOR_INPUT / OUTPUT_FULL too long during a rush (Phase 20). */
+    data class MachineIdleAlert(
+        override val tick: Long,
+        val stationId: String,
+        val machineId: String,
+        val reason: String,
+    ) : GameEvent
     data class SaleCommitted(
         override val tick: Long,
         val saleId: String,
@@ -474,7 +560,67 @@ sealed interface GameEvent {
     }
     data class UpgradePurchased(override val tick: Long, val upgradeId: String, val receipt: Receipt, val replayed: Boolean) : GameEvent
     data class PurchaseRejected(override val tick: Long, val upgradeId: String, val requestId: String, val reason: String) : GameEvent
+    data class DecorPurchased(override val tick: Long, val decorId: String, val receipt: Receipt, val replayed: Boolean) : GameEvent
+    data class DecorPurchaseRejected(override val tick: Long, val decorId: String, val requestId: String, val reason: String) : GameEvent
+    data class MachineBroke(override val tick: Long, val stationId: String, val machineId: String) : GameEvent
+    data class MachineSlowed(override val tick: Long, val stationId: String, val machineId: String, val untilTick: Long) : GameEvent
+    data class MachineRepaired(
+        override val tick: Long,
+        val stationId: String,
+        val machineId: String,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class MachineRepairRejected(
+        override val tick: Long,
+        val stationId: String,
+        val requestId: String,
+        val reason: String,
+    ) : GameEvent
+    data class LoanTaken(
+        override val tick: Long,
+        val principal: Long,
+        val owed: Long,
+        val dueTick: Long,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class LoanRepaid(
+        override val tick: Long,
+        val paid: Long,
+        val remaining: Long,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class LoanCollected(override val tick: Long, val seized: Long, val remaining: Long) : GameEvent
+    data class LoanRejected(override val tick: Long, val requestId: String, val reason: String) : GameEvent
+    data class CoinGoalSet(override val tick: Long, val amount: Long) : GameEvent
+    data class CoinGoalReached(override val tick: Long, val amount: Long, val coins: Long) : GameEvent
     data class WorkerHired(override val tick: Long, val roleId: String, val receipt: Receipt, val replayed: Boolean) : GameEvent
+    data class WorkerLeveledUp(
+        override val tick: Long,
+        val workerId: String,
+        val roleId: String,
+        val level: Int,
+    ) : GameEvent
+    data class WorkerShiftChanged(
+        override val tick: Long,
+        val workerId: String,
+        val roleId: String,
+        val onShift: Boolean,
+    ) : GameEvent
+    data class WorkerGearAssigned(
+        override val tick: Long,
+        val workerId: String,
+        val upgradeId: String,
+        val slotId: String,
+    ) : GameEvent
+    data class WorkerGearUnequipped(
+        override val tick: Long,
+        val workerId: String,
+        val upgradeId: String,
+        val slotId: String,
+    ) : GameEvent
     data class HireRejected(override val tick: Long, val roleId: String, val requestId: String, val reason: String) : GameEvent
     data class LeaseExpired(override val tick: Long, val workerId: String, val itemId: String?, val sourceInvId: String?) : GameEvent
     data class WagesPaid(override val tick: Long, val workers: Int, val coins: Long) : GameEvent

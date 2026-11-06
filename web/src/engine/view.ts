@@ -4,7 +4,8 @@ import { queueSlot, rectCenterX, rectCenterZ } from "./content";
 import { compareStrings } from "./foundations";
 import type { MachineStatus } from "./state";
 import type { Simulation } from "./simulation";
-import { BaitSystem, ContractSystem, CustomerSystem, EconomySystem, FishingSystem, HarborTravelSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, ReputationSystem, UpgradeSystem, WorkerSystem } from "./systems";
+import { abandonPermille, topSpeciesCatchShare, wageRatioPermille } from "./telemetry";
+import { BaitSystem, BankSystem, ContractSystem, CustomerSystem, DecorSystem, EconomySystem, FishingSystem, HarborTravelSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, ReputationSystem, SeasonalEventSystem, UpgradeSystem, WorkerSystem } from "./systems";
 
 export interface ItemCount { itemId: string; name: string; count: number }
 export interface ContextCard {
@@ -23,6 +24,11 @@ export interface StationView {
   statusText: string;
   preferredRecipeId: string | null;
   nextRecipeId: string | null;
+  /** Phase 25: machine is broken or still slowed. */
+  needsRepair: boolean;
+  repairCost: number;
+  slowed: boolean;
+  slowTicksRemaining: number;
 }
 export interface CounterView { counterId: string; stock: number; capacityUnits: number; queue: number }
 export interface BaitOfferView {
@@ -44,6 +50,41 @@ export interface CustomerView {
 }
 export interface UpgradeView { id: string; name: string; description: string; cost: number; owned: boolean; purchasable: boolean; reason: string | null }
 export interface RushBannerView { rushId: string; name: string; ticksRemaining: number }
+export interface SeasonalEventBannerView {
+  eventId: string;
+  name: string;
+  description: string;
+  ticksRemaining: number;
+  banner: string | null;
+}
+/** Phase 26 Goals-panel bank / coin-goal presentation. */
+export interface BankView {
+  unlocked: boolean;
+  lockedReason: string | null;
+  loanPrincipal: number;
+  repayAmount: number;
+  termTicks: number;
+  loanOwed: number;
+  loanDueTicksLeft: number;
+  loanOverdue: boolean;
+  canTakeLoan: boolean;
+  canRepayLoan: boolean;
+  coinGoal: number;
+  coinGoalCelebrated: boolean;
+  goalPresets: number[];
+}
+/** Phase 27 compact telemetry rates for HUD / Settings. */
+export interface TelemetryRatesView {
+  abandonPermille: number;
+  wageRatioPermille: number;
+  topSpecies: Array<{ speciesId: string; name: string; sharePermille: number; catches: number }>;
+}
+export interface WorkerEquipmentView {
+  slotId: string;
+  slotName: string;
+  upgradeId: string;
+  upgradeName: string;
+}
 export interface WorkerView {
   id: string;
   roleId: string;
@@ -54,6 +95,14 @@ export interface WorkerView {
   bagUsedUnits: number;
   bagCapacityUnits: number;
   phase: string;
+  level: number;
+  xp: number;
+  xpToNext: number | null;
+  traitNames: string[];
+  onShift: boolean;
+  equipment: WorkerEquipmentView[];
+  /** Why this worker is stuck idle, if any (Phase 20). */
+  blockedReason: string | null;
 }
 export interface StaffHireView {
   roleId: string;
@@ -64,6 +113,36 @@ export interface StaffHireView {
   maxHired: number;
   purchasable: boolean;
   reason: string | null;
+}
+/** Owned staff-gear upgrade and whether it is currently equipped (Phase 19). */
+export interface StaffGearView {
+  upgradeId: string;
+  name: string;
+  slotId: string;
+  slotName: string;
+  equippedOnWorkerId: string | null;
+  equippedOnRoleName: string | null;
+}
+/** Station or worker bottleneck shown in the Staff panel (Phase 20). */
+export interface AutomationIssueView {
+  id: string;
+  /** machine | worker */
+  kind: string;
+  label: string;
+  reason: string;
+}
+
+/** Phase 23 shop decor offer row. */
+export interface DecorOfferView {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  patienceBonusTicks: number;
+  requiresCosmetic: string | null;
+  status: string;
+  reason: string | null;
+  canAfford: boolean;
 }
 
 /** completed | active | locked */
@@ -155,6 +234,9 @@ export interface HarborMapEntryView {
   unlocked: boolean;
   travelEnabled: boolean;
   reason: string | null;
+  /** Phase 22 specialty name. */
+  specializationName: string | null;
+  specializationDescription: string | null;
 }
 
 export interface SimView {
@@ -162,6 +244,9 @@ export interface SimView {
   coins: number;
   harborId: string;
   harborName: string;
+  /** Phase 22 active harbor specialty. */
+  harborSpecializationName: string | null;
+  harborSpecializationDescription: string | null;
   /** GLB under models/ for the active harbor blockout. */
   blockoutAsset: string;
   harbors: HarborMapEntryView[];
@@ -194,12 +279,25 @@ export interface SimView {
   objective: ObjectiveView | null;
   upgrades: UpgradeView[];
   rush: RushBannerView | null;
+  /** Non-null while a Phase 24 seasonal event window is active. */
+  seasonalEvent: SeasonalEventBannerView | null;
+  /** Phase 26 pier bank + coin goals for the Goals panel. */
+  bank: BankView;
+  /** Phase 27 derived balance rates for the in-dev strip / Settings preview. */
+  telemetryRates: TelemetryRatesView;
   /** True while a hired supervisor is posted (boosts haul demand scoring). */
   supervisorOnDuty: boolean;
   /** Coins charged per hired worker each simulated hour (0 = unpaid). */
   workerWagePerWorkerPerHour: number;
+  freeOnShiftSlots: number;
+  onShiftCount: number;
+  overtimeOnShiftCount: number;
   workers: WorkerView[];
   staff: StaffHireView[];
+  /** Owned assignable staff gear (boots/satchel/tackle) — Phase 19. */
+  staffGear: StaffGearView[];
+  /** Active machine/worker bottlenecks for the Staff panel (Phase 20). */
+  automationIssues: AutomationIssueView[];
   quests: QuestView[];
   contractsUnlocked: boolean;
   contractsLockedReason: string | null;
@@ -225,6 +323,10 @@ export interface SimView {
   reputationLabel: string;
   prestige: PrestigeView[];
   unlockedCosmetics: string[];
+  /** Phase 23 shop decor offers for the Goals panel. */
+  decorOffers: DecorOfferView[];
+  /** Summed patience bonus from owned decor. */
+  decorPatienceBonusTicks: number;
   /** Museum personal bests (sorted by species id). */
   trophies: TrophyEntryView[];
   /** Curated gallery progress for the Goals panel. */
@@ -252,20 +354,33 @@ export function buildView(sim: Simulation): SimView {
     const lockName = stDef.requiresUpgrade
       ? (c.upgradesById.get(stDef.requiresUpgrade)?.name ?? stDef.requiresUpgrade)
       : "an upgrade";
-    const status = unlocked ? m.status : "LOCKED" as const;
+    const slowed = unlocked && EconomySystem.isSlowed(m, s.tick);
+    const needsRepair = unlocked && EconomySystem.needsRepair(m, s.tick);
+    const status: MachineStatus = !unlocked ? "LOCKED" : m.broken ? "NEEDS_REPAIR" : m.status;
+    const statusText = !unlocked
+      ? `Locked — buy ${lockName}`
+      : m.broken
+        ? "Needs repair"
+        : slowed
+          ? "Running slow"
+          : ProductionSystem.statusText(m, c);
     return {
       stationId: m.stationId,
       status,
       inputCount: m.input.usedUnits(),
       outputCount: m.output.usedUnits(),
-      progress: unlocked && m.activeBatch ? 1 - m.activeBatch.remainingTicks / m.activeBatch.durationTicks : null,
-      statusText: unlocked
-        ? ProductionSystem.statusText(m, c)
-        : `Locked — buy ${lockName}`,
+      progress: unlocked && !m.broken && m.activeBatch
+        ? 1 - m.activeBatch.remainingTicks / m.activeBatch.durationTicks
+        : null,
+      statusText,
       preferredRecipeId: m.preferredRecipeId,
-      nextRecipeId: unlocked
+      nextRecipeId: unlocked && !m.broken
         ? (ProductionSystem.nextStartable(c, m)?.id ?? m.activeBatch?.recipeId ?? null)
         : null,
+      needsRepair,
+      repairCost: needsRepair ? EconomySystem.repairCost(c) : 0,
+      slowed,
+      slowTicksRemaining: slowed ? Math.max(0, m.slowUntilTick - s.tick) : 0,
     };
   });
 
@@ -330,37 +445,50 @@ export function buildView(sim: Simulation): SimView {
   } else if (zone?.kind === "counter") {
     const def = h.counters.find((d) => d.zone === zone.id)!;
     const counter = s.counters.find((ct) => ct.counterId === def.id)!;
-    const queued = s.customers.filter((x) => x.counterId === def.id);
-    const front = queued.find((x) => x.arrived);
-    const label = def.products.map((pid) => c.productsById.get(pid)!.name).join(" / ");
-    const demandMult = CustomerSystem.demandPriceMultPermille(c, s, h, def, counter);
-    const lines = [
-      `Stock: ${counter.stock.usedUnits()}/${def.capacityUnits}`,
-      `Queue: ${queued.length}`,
-    ];
-    if (demandMult !== 1000) {
-      const pct = Math.trunc(((demandMult - 1000) * 100) / 1000);
-      lines.push(pct >= 0 ? `Demand prices +${pct}%` : `Demand prices ${pct}%`);
+    const unlocked = CustomerSystem.isUnlocked(def, s);
+    const padLabel = (def.kind ?? "retail") === "wholesale" ? "Wholesale" : "Counter";
+    if (!unlocked) {
+      const lockName = def.requiresUpgrade
+        ? (c.upgradesById.get(def.requiresUpgrade)?.name ?? def.requiresUpgrade)
+        : "an upgrade";
+      context = {
+        title: `${padLabel} locked`,
+        lines: [`Buy ${lockName} to open this B2B pad`],
+        progress: null,
+      };
+    } else {
+      const queued = s.customers.filter((x) => x.counterId === def.id);
+      const front = queued.find((x) => x.arrived);
+      const label = def.products.map((pid) => c.productsById.get(pid)!.name).join(" / ");
+      const demandMult = CustomerSystem.demandPriceMultPermille(c, s, h, def, counter);
+      const lines = [
+        `Stock: ${counter.stock.usedUnits()}/${def.capacityUnits}`,
+        `Queue: ${queued.length}`,
+      ];
+      if (demandMult !== 1000) {
+        const pct = Math.trunc(((demandMult - 1000) * 100) / 1000);
+        lines.push(pct >= 0 ? `Demand prices +${pct}%` : `Demand prices ${pct}%`);
+      }
+      if (front) {
+        const type = c.customersById.get(front.typeId);
+        const who = type?.name ?? front.typeId;
+        const kindNote = type?.kind === "premium" ? " · tips well"
+          : type?.kind === "bulk" ? " · bulk order"
+            : type?.kind === "tourist" ? " · tourist tip"
+              : type?.kind === "wholesaler" ? " · wholesale order"
+                : type?.kind === "critic" ? " · picky critic"
+                  : type?.kind === "night_regular" ? " · night regular" : "";
+        const wantLabel = front.preferredProductId ? c.itemName(front.preferredProductId) : "anything";
+        const subNote = front.preferredProductId && front.reserved > 0 && !front.preferenceMet()
+          ? " · substituting" : "";
+        lines.push(`Front: ${who} wants ${front.wants} ${wantLabel}${kindNote}${subNote}`);
+      }
+      context = {
+        title: (def.kind ?? "retail") === "wholesale" ? `Wholesale · ${label}` : `${label} counter`,
+        lines,
+        progress: counter.checkoutProgress > 0 ? counter.checkoutProgress / def.checkoutTicks : null,
+      };
     }
-    if (front) {
-      const type = c.customersById.get(front.typeId);
-      const who = type?.name ?? front.typeId;
-      const kindNote = type?.kind === "premium" ? " · tips well"
-        : type?.kind === "bulk" ? " · bulk order"
-          : type?.kind === "tourist" ? " · tourist tip"
-            : type?.kind === "wholesaler" ? " · wholesale order"
-              : type?.kind === "critic" ? " · picky critic"
-                : type?.kind === "night_regular" ? " · night regular" : "";
-      const wantLabel = front.preferredProductId ? c.itemName(front.preferredProductId) : "anything";
-      const subNote = front.preferredProductId && front.reserved > 0 && !front.preferenceMet()
-        ? " · substituting" : "";
-      lines.push(`Front: ${who} wants ${front.wants} ${wantLabel}${kindNote}${subNote}`);
-    }
-    context = {
-      title: `${label} counter`,
-      lines,
-      progress: counter.checkoutProgress > 0 ? counter.checkoutProgress / def.checkoutTicks : null,
-    };
   } else if (zone?.kind === "kiosk") {
     const preferred = p.preferredBaitId ? (c.baitById.get(p.preferredBaitId)?.name ?? p.preferredBaitId) : "Auto";
     context = {
@@ -403,6 +531,8 @@ export function buildView(sim: Simulation): SimView {
     coins: s.coins,
     harborId: s.harborId,
     harborName: h.name,
+    harborSpecializationName: h.specialization?.name ?? null,
+    harborSpecializationDescription: h.specialization?.description ?? null,
     blockoutAsset: h.blockoutAsset,
     harbors: c.harbors.map((harbor) => {
       const unlocked = HarborTravelSystem.unlocked(c, s, harbor);
@@ -422,6 +552,8 @@ export function buildView(sim: Simulation): SimView {
               return miss ? `Requires: ${miss}` : null;
             })()
             : null,
+        specializationName: harbor.specialization?.name ?? null,
+        specializationDescription: harbor.specialization?.description ?? null,
       };
     }),
     player: { xMm: p.x, zMm: p.z, facingX: p.facingX, facingZ: p.facingZ, zoneId: p.zoneId },
@@ -508,13 +640,83 @@ export function buildView(sim: Simulation): SimView {
       const r = CustomerSystem.activeRush(h, s.tick);
       return r ? { rushId: r.id, name: r.name, ticksRemaining: CustomerSystem.ticksRemaining(r, s.tick) } : null;
     })(),
+    seasonalEvent: (() => {
+      const e = SeasonalEventSystem.active(c, s.tick);
+      return e
+        ? {
+          eventId: e.id,
+          name: e.name,
+          description: e.description,
+          ticksRemaining: SeasonalEventSystem.ticksRemaining(e, s.tick),
+          banner: e.banner ?? null,
+        }
+        : null;
+    })(),
+    bank: (() => {
+      const unlocked = BankSystem.unlocked(c, s);
+      const hasLoan = BankSystem.hasLoan(s);
+      return {
+        unlocked,
+        lockedReason: (() => {
+          const miss = BankSystem.missingRequirement(c, s);
+          return miss ? `Requires: ${miss}` : null;
+        })(),
+        loanPrincipal: c.bank.loanPrincipal,
+        repayAmount: BankSystem.repayAmount(c),
+        termTicks: c.bank.termTicks,
+        loanOwed: s.loanOwed,
+        loanDueTicksLeft: BankSystem.ticksRemaining(s),
+        loanOverdue: BankSystem.overdue(s),
+        canTakeLoan: unlocked && !hasLoan,
+        canRepayLoan: hasLoan && s.coins > 0,
+        coinGoal: s.coinGoal,
+        coinGoalCelebrated: s.coinGoalCelebrated,
+        goalPresets: [...c.bank.goalPresets],
+      };
+    })(),
+    telemetryRates: {
+      abandonPermille: abandonPermille(s),
+      wageRatioPermille: wageRatioPermille(s),
+      topSpecies: topSpeciesCatchShare(s, 3).map((row) => ({
+        speciesId: row.speciesId,
+        name: c.itemName(row.speciesId),
+        sharePermille: row.sharePermille,
+        catches: row.catches,
+      })),
+    },
     supervisorOnDuty: WorkerSystem.supervisorOnDuty(c, s),
     workerWagePerWorkerPerHour: s.workerWagePerWorkerPerHour,
+    freeOnShiftSlots: WorkerSystem.freeOnShiftSlots(c, s),
+    onShiftCount: s.workers.filter((w) => w.onShift).length,
+    overtimeOnShiftCount: Math.max(
+      0,
+      s.workers.filter((w) => w.onShift).length - WorkerSystem.freeOnShiftSlots(c, s),
+    ),
     workers: s.workers.map((w) => {
       const def = c.workersById.get(w.roleId);
+      const prog = c.staffProgression;
+      const xpToNext = w.level >= prog.maxLevel
+        ? null
+        : Math.max((prog.xpThresholds[w.level] ?? w.xp) - w.xp, 0);
       return {
         id: w.id, roleId: w.roleId, roleName: def?.name ?? w.roleId, roleKind: def?.role ?? "fisher",
         xMm: w.x, zMm: w.z, bagUsedUnits: w.bag.usedUnits(), bagCapacityUnits: w.bag.capacityUnits, phase: w.phase,
+        level: w.level,
+        xp: w.xp,
+        xpToNext,
+        traitNames: w.traits.map((tid) => c.workerTraitsById.get(tid)?.name ?? tid),
+        onShift: w.onShift,
+        equipment: prog.loadouts.slots.flatMap((slot) => {
+          const uid = w.equipment[slot.id];
+          if (!uid) return [];
+          return [{
+            slotId: slot.id,
+            slotName: slot.name,
+            upgradeId: uid,
+            upgradeName: c.upgradesById.get(uid)?.name ?? uid,
+          }];
+        }),
+        blockedReason: WorkerSystem.blockedReason(c, s, h, w),
       };
     }),
     staff: c.workers.map((def) => {
@@ -529,6 +731,49 @@ export function buildView(sim: Simulation): SimView {
           : null,
       };
     }),
+    staffGear: c.staffProgression.loadouts.slots.flatMap((slot) =>
+      slot.upgradeIds.flatMap((uid) => {
+        if (!s.ownedUpgrades.has(uid)) return [];
+        const wearer = s.workers.find((w) => w.equipment[slot.id] === uid);
+        return [{
+          upgradeId: uid,
+          name: c.upgradesById.get(uid)?.name ?? uid,
+          slotId: slot.id,
+          slotName: slot.name,
+          equippedOnWorkerId: wearer?.id ?? null,
+          equippedOnRoleName: wearer
+            ? (c.workersById.get(wearer.roleId)?.name ?? wearer.roleId)
+            : null,
+        }];
+      }),
+    ),
+    automationIssues: (() => {
+      const issues: AutomationIssueView[] = [];
+      for (const st of stations) {
+        const reason = st.needsRepair && st.status === "NEEDS_REPAIR"
+          ? "Needs repair"
+          : st.needsRepair && st.slowed
+            ? "Running slow"
+            : st.status === "OUTPUT_FULL"
+              ? "Output full"
+              : st.status === "WAITING_FOR_INPUT"
+                ? "No input"
+                : null;
+        if (!reason) continue;
+        const pad = h.stations.find((x) => x.id === st.stationId);
+        const name = pad
+          ? (c.machinesById.get(pad.machine)?.name ?? st.stationId)
+          : st.stationId;
+        issues.push({ id: st.stationId, kind: "machine", label: name, reason });
+      }
+      for (const w of s.workers) {
+        const reason = WorkerSystem.blockedReason(c, s, h, w);
+        if (!reason || reason === "Off shift") continue;
+        const def = c.workersById.get(w.roleId);
+        issues.push({ id: w.id, kind: "worker", label: def?.name ?? w.roleId, reason });
+      }
+      return issues;
+    })(),
     quests: c.quests.map((q) => {
       const completed = s.completedQuests.has(q.id);
       const locked = !completed && !ProgressionSystem.requirementsMet(s, q);
@@ -599,7 +844,7 @@ export function buildView(sim: Simulation): SimView {
       const missing = EconomySystem.missingRequirement(c, s);
       return missing ? `Requires: ${missing}` : null;
     })(),
-    maintenanceCoinsPerStation: EconomySystem.unlocked(c, s) ? EconomySystem.maintenanceCoinsPerStation(c, s) : 0,
+    maintenanceCoinsPerStation: EconomySystem.unlocked(c, s) ? EconomySystem.maintenanceCoinsPerStation(c, s, h) : 0,
     bagFishSpoilActive: EconomySystem.unlocked(c, s) && c.economy.bagFishSpoilUnits > 0,
     prestigeUnlocked: PrestigeSystem.boardUnlocked(c, s),
     prestigeLockedReason: (() => {
@@ -630,6 +875,28 @@ export function buildView(sim: Simulation): SimView {
       };
     }),
     unlockedCosmetics: [...s.unlockedCosmetics].sort(compareStrings),
+    decorOffers: c.decor.items.map((d) => {
+      const owned = s.ownedDecor.has(d.id);
+      const miss = DecorSystem.missingRequirement(c, s, d);
+      return {
+        id: d.id,
+        name: d.name,
+        description: d.description,
+        cost: d.cost,
+        patienceBonusTicks: d.patienceBonusTicks,
+        requiresCosmetic: d.requiresCosmetic ?? null,
+        status: owned ? "owned" : miss ? "locked" : "available",
+        reason: owned
+          ? null
+          : miss
+            ? `Requires: ${miss}`
+            : s.coins < d.cost
+              ? `Need ${d.cost - s.coins} more coins`
+              : null,
+        canAfford: !owned && !miss && s.coins >= d.cost,
+      };
+    }),
+    decorPatienceBonusTicks: DecorSystem.patienceBonusTicks(c, s),
     trophies: [...s.trophies.entries()]
       .sort(([a], [b]) => compareStrings(a, b))
       .map(([id, rec]) => ({

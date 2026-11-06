@@ -4,7 +4,7 @@
  */
 import type { ContentPack, UpgradeEffect } from "./content";
 
-export const BALANCE_SCHEMA = "fish.balance.v1";
+export const BALANCE_SCHEMA = "fish.balance.v2";
 
 function effectJson(e: UpgradeEffect): Record<string, unknown> {
   switch (e.kind) {
@@ -23,6 +23,7 @@ function effectJson(e: UpgradeEffect): Record<string, unknown> {
     case "fish_regen": return { kind: e.kind, speedPermille: e.speedPermille };
     case "unlock_fishing_spot": return { kind: e.kind, zone: e.zone };
     case "unlock_machine": return { kind: e.kind, machine: e.machine };
+    case "unlock_counter": return { kind: e.kind, pad: e.pad };
     case "worker_move_speed": return { kind: e.kind, speedPermille: e.speedPermille };
     case "worker_carry": return { kind: e.kind, capacityUnits: e.capacityUnits };
     case "worker_catch_speed": return { kind: e.kind, speedPermille: e.speedPermille };
@@ -43,6 +44,12 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
     schema: BALANCE_SCHEMA,
     contentVersion: raw.contentVersion,
     ticksPerSecond: raw.ticksPerSecond,
+    /** Formulas for fish.telemetry.v2 derived rates (runtime; not content knobs). */
+    derivedRateFormulas: {
+      abandonPermille: "lost_customers * 1000 / (sales + lost_customers)",
+      wageRatioPermille: "wages_paid * 1000 / revenue",
+      speciesCatchSharePermille: "speciesCatches[id] * 1000 / fish_caught",
+    },
     player: {
       startCoins: p.startCoins,
       startCarryCapacityUnits: p.startCarryCapacityUnits,
@@ -70,6 +77,14 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
       bagFishSpoilPeriodTicks: e.bagFishSpoilPeriodTicks,
       bagFishSpoilUnits: e.bagFishSpoilUnits,
       scarcityPriceCurvePermille: e.scarcityPriceCurvePermille,
+      wear: {
+        checkPeriodTicks: e.wear.checkPeriodTicks,
+        chancePermille: e.wear.chancePermille,
+        breakChancePermille: e.wear.breakChancePermille,
+        slowDurationTicks: e.wear.slowDurationTicks,
+        slowProcessMultPermille: e.wear.slowProcessMultPermille,
+        repairCoins: e.wear.repairCoins,
+      },
     },
     ecology: {
       dayLengthTicks: raw.ecology.dayLengthTicks,
@@ -86,6 +101,10 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
       distanceWeight: r.distanceWeight,
       demandWeight: r.demandWeight,
       supervisorDemandBoostPermille: r.supervisorDemandBoostPermille,
+    },
+    automationAlerts: {
+      machineIdleTicksDuringRush: raw.automationAlerts.machineIdleTicksDuringRush,
+      alertCooldownTicks: raw.automationAlerts.alertCooldownTicks,
     },
     species: raw.species.map((s) => ({
       id: s.id,
@@ -128,6 +147,35 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
       unmetPatienceDrainPermille: c.unmetPatienceDrainPermille,
       dayPartSpawnMultPermille: c.dayPartSpawnMultPermille ?? {},
     })),
+    decor: {
+      items: raw.decor.items.map((d) => ({
+        id: d.id,
+        name: d.name,
+        cost: d.cost,
+        patienceBonusTicks: d.patienceBonusTicks,
+        requiresCosmetic: d.requiresCosmetic ?? null,
+      })),
+    },
+    seasonalEvents: {
+      events: raw.seasonalEvents.events.map((e) => ({
+        id: e.id,
+        name: e.name,
+        periodTicks: e.periodTicks,
+        startTick: e.startTick,
+        durationTicks: e.durationTicks,
+        banner: e.banner ?? null,
+        speciesWeightMultPermille: { ...(e.speciesWeightMultPermille ?? {}) },
+      })),
+    },
+    bank: {
+      loanPrincipal: raw.bank.loanPrincipal,
+      repayPermille: raw.bank.repayPermille,
+      repayAmount: Math.trunc((raw.bank.loanPrincipal * raw.bank.repayPermille) / 1000),
+      termTicks: raw.bank.termTicks,
+      collectionPeriodTicks: raw.bank.collectionPeriodTicks,
+      goalPresets: [...raw.bank.goalPresets],
+      requires: [...raw.bank.requires],
+    },
     harborRushes: raw.harbors.flatMap((h) =>
       (h.rushes ?? []).map((ru) => ({
         harborId: h.id,
@@ -144,6 +192,15 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
       id: h.id,
       customerSpawnTicks: h.customerSpawnTicks,
       customerWalkMmPerTick: h.customerWalkMmPerTick,
+      specialization: h.specialization
+        ? {
+          id: h.specialization.id,
+          name: h.specialization.name,
+          maintenanceDiscountPerStation: h.specialization.maintenanceDiscountPerStation ?? 0,
+          rareChanceBonusPermille: h.specialization.rareChanceBonusPermille ?? 0,
+          kindSpawnMultPermille: { ...(h.specialization.kindSpawnMultPermille ?? {}) },
+        }
+        : null,
       fishingSpots: h.fishingSpots.map((s) => ({
         zone: s.zone,
         stockMax: s.stockMax,
@@ -158,6 +215,47 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
         maxQueue: c.maxQueue,
       })),
     })),
+    staffProgression: (() => {
+      const sp = raw.staffProgression;
+      return {
+        maxLevel: sp.maxLevel,
+        xpThresholds: [...sp.xpThresholds],
+        moveSpeedPermillePerLevel: sp.moveSpeedPermillePerLevel,
+        catchSpeedPermillePerLevel: sp.catchSpeedPermillePerLevel,
+        carryBonusEveryLevels: sp.carryBonusEveryLevels,
+        xpFishCaught: sp.xpFishCaught,
+        xpItemMoved: sp.xpItemMoved,
+        xpSaleAssisted: sp.xpSaleAssisted,
+        traitsOnHire: sp.traitsOnHire,
+        shifts: {
+          baseOnShiftSlots: sp.shifts.baseOnShiftSlots,
+          overtimeWagePermille: sp.shifts.overtimeWagePermille,
+          supervisorExtraSlots: sp.shifts.supervisorExtraSlots,
+        },
+        roleBuffs: {
+          greeterPatienceDrainMultPermille: sp.roleBuffs.greeterPatienceDrainMultPermille,
+          smokerSpecialistProcessSpeedPermille: sp.roleBuffs.smokerSpecialistProcessSpeedPermille,
+          iceRunnerFragileSpoilTierMin: sp.roleBuffs.iceRunnerFragileSpoilTierMin,
+          iceRunnerSpoilScoreBonus: sp.roleBuffs.iceRunnerSpoilScoreBonus,
+        },
+        loadouts: {
+          slots: sp.loadouts.slots.map((slot) => ({
+            id: slot.id,
+            name: slot.name,
+            upgradeIds: [...slot.upgradeIds],
+          })),
+        },
+        traits: sp.traits.map((t) => ({
+          id: t.id,
+          name: t.name,
+          weight: t.weight,
+          moveSpeedPermille: t.moveSpeedPermille ?? 1000,
+          catchSpeedPermille: t.catchSpeedPermille ?? 1000,
+          carryBonus: t.carryBonus ?? 0,
+          transferIntervalMultPermille: t.transferIntervalMultPermille ?? 1000,
+        })),
+      };
+    })(),
     workers: raw.workers.map((w) => ({
       id: w.id,
       role: w.role,

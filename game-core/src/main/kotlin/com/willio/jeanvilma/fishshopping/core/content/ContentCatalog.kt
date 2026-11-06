@@ -19,6 +19,9 @@ object ContentCatalog {
         appendLine("  customers=${pack.customers.size}")
         appendLine("  contracts=${pack.contracts.templates.size}")
         appendLine("  harbors=${pack.harbors.size}")
+        appendLine("  decor=${pack.decor.items.size}")
+        appendLine("  seasonalEvents=${pack.seasonalEvents.events.size}")
+        appendLine("  bankGoals=${pack.bank.goalPresets.size}")
         append("  tutorial=${pack.tutorial.size}")
     }
 

@@ -1,8 +1,10 @@
 package com.willio.jeanvilma.fishshopping.core.workers
 
+import com.willio.jeanvilma.fishshopping.core.content.CounterDef
 import com.willio.jeanvilma.fishshopping.core.content.PointMm
 import com.willio.jeanvilma.fishshopping.core.content.WorkerDef
 import com.willio.jeanvilma.fishshopping.core.content.WorkerRoleKind
+import com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
 import com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
 import com.willio.jeanvilma.fishshopping.core.inventory.Inventory
 import com.willio.jeanvilma.fishshopping.core.inventory.Transfers
@@ -40,6 +42,9 @@ import kotlin.math.min
  * when the counter is starving for that SKU.
  *
  * Phase 15: worker upgrades (move/carry/catch/wage) and hire gates via WorkerDef.requires.
+ * Phase 16: per-worker XP/levels + hire-time trait rolls from staffProgression.
+ * Phase 17: on-shift toggles, overtime wages, supervisor expands free shift slots.
+ * Phase 18: ice_runner, smoker_specialist, greeter hireable roles + buffs.
  */
 object WorkerSystem {
 
@@ -49,17 +54,21 @@ object WorkerSystem {
         WorkerRoleKind.OPERATOR,
         WorkerRoleKind.CASHIER,
         WorkerRoleKind.SUPERVISOR,
+        WorkerRoleKind.ICE_RUNNER,
+        WorkerRoleKind.SMOKER_SPECIALIST,
+        WorkerRoleKind.GREETER,
     )
 
     fun step(ctx: StepContext) {
         accrueWages(ctx)
         for (w in ctx.state.workers) {
+            if (!w.onShift) continue
             advanceWalk(w)
             if (w.transferCooldown > 0) w.transferCooldown--
         }
         expireLeases(ctx)
         for (w in ctx.state.workers.sortedBy { it.id }) {
-            if (w.busyWalking) continue
+            if (!w.onShift || w.busyWalking) continue
             val def = ctx.content.workersById[w.roleId] ?: continue
             when (def.role) {
                 WorkerRoleKind.FISHER -> stepFisher(ctx, w, def)
@@ -67,18 +76,168 @@ object WorkerSystem {
                 WorkerRoleKind.OPERATOR -> stepOperator(ctx, w, def)
                 WorkerRoleKind.CASHIER -> stepCashier(ctx, w, def)
                 WorkerRoleKind.SUPERVISOR -> stepSupervisor(ctx, w, def)
+                WorkerRoleKind.ICE_RUNNER -> stepIceRunner(ctx, w, def)
+                WorkerRoleKind.SMOKER_SPECIALIST -> stepSmokerSpecialist(ctx, w, def)
+                WorkerRoleKind.GREETER -> stepGreeter(ctx, w, def)
             }
         }
     }
 
-    /** True when a supervisor has arrived at their post (not walking). */
+    /** True when a supervisor has arrived at their post (on shift, not walking). */
     fun supervisorOnDuty(content: com.willio.jeanvilma.fishshopping.core.content.ContentPack, s: GameState): Boolean =
         s.workers.any { w ->
             val role = content.workersById[w.roleId]?.role
             role == WorkerRoleKind.SUPERVISOR &&
+                w.onShift &&
                 !w.busyWalking &&
                 w.phase == WorkerTaskPhase.WORK
         }
+
+    /** True when a greeter is posted at the entry (slows patience drain). */
+    fun greeterOnDuty(content: com.willio.jeanvilma.fishshopping.core.content.ContentPack, s: GameState): Boolean =
+        s.workers.any { w ->
+            val role = content.workersById[w.roleId]?.role
+            role == WorkerRoleKind.GREETER &&
+                w.onShift &&
+                !w.busyWalking &&
+                w.phase == WorkerTaskPhase.WORK
+        }
+
+    /** True when a smoker specialist is posted at a smoker station. */
+    fun smokerSpecialistOnDuty(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+        harbor: com.willio.jeanvilma.fishshopping.core.content.HarborDef,
+    ): Boolean =
+        s.workers.any { w ->
+            val role = content.workersById[w.roleId]?.role
+            if (role != WorkerRoleKind.SMOKER_SPECIALIST || !w.onShift || w.busyWalking) return@any false
+            if (w.phase != WorkerTaskPhase.WORK) return@any false
+            val zoneId = w.taskZoneId ?: return@any false
+            harbor.stations.any { st ->
+                st.machine.contains("smoker") && (st.inputZone == zoneId || st.outputZone == zoneId)
+            }
+        }
+
+    /** Free standard-wage on-shift slots (base + supervisor bonus when posted). */
+    fun freeOnShiftSlots(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+    ): Int {
+        val shifts = content.staffProgression.shifts
+        var slots = shifts.baseOnShiftSlots
+        if (supervisorOnDuty(content, s)) slots += shifts.supervisorExtraSlots
+        return slots
+    }
+
+    fun setShift(ctx: StepContext, workerId: String, onShift: Boolean) {
+        val w = ctx.state.workers.firstOrNull { it.id == workerId } ?: return
+        if (w.onShift == onShift) return
+        w.onShift = onShift
+        if (!onShift) {
+            abortHaul(ctx, w)
+            w.walkTicksLeft = 0
+            w.walkTicksTotal = 0
+        }
+        ctx.emit(GameEvent.WorkerShiftChanged(ctx.state.tick, w.id, w.roleId, onShift))
+    }
+
+    /** Slot id for an assignable staff-gear upgrade, or null if not a loadout piece. */
+    fun loadoutSlotFor(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        upgradeId: String,
+    ): String? =
+        content.staffProgression.loadouts.slots.firstOrNull { upgradeId in it.upgradeIds }?.id
+
+    fun assignableUpgradeIds(content: com.willio.jeanvilma.fishshopping.core.content.ContentPack): Set<String> =
+        content.staffProgression.loadouts.slots.flatMap { it.upgradeIds }.toSet()
+
+    /** Equip [upgradeId] onto [workerId]; moves it off any other worker first. */
+    fun assignGear(ctx: StepContext, workerId: String, upgradeId: String) {
+        val s = ctx.state
+        val w = s.workers.firstOrNull { it.id == workerId } ?: return
+        if (upgradeId !in s.ownedUpgrades) return
+        val slotId = loadoutSlotFor(ctx.content, upgradeId) ?: return
+        if (w.equipment[slotId] == upgradeId) return
+        for (other in s.workers) {
+            var changed = false
+            val stealKeys = other.equipment.filterValues { it == upgradeId }.keys.toList()
+            for (key in stealKeys) {
+                other.equipment.remove(key)
+                changed = true
+            }
+            if (other.id == w.id) {
+                val prev = other.equipment[slotId]
+                if (prev != null && prev != upgradeId) {
+                    other.equipment.remove(slotId)
+                    changed = true
+                }
+            }
+            if (changed && other.id != w.id) refreshCarry(ctx.content, s, other)
+        }
+        w.equipment[slotId] = upgradeId
+        refreshCarry(ctx.content, s, w)
+        ctx.emit(GameEvent.WorkerGearAssigned(s.tick, w.id, upgradeId, slotId))
+    }
+
+    fun unequipGear(ctx: StepContext, workerId: String, slotId: String) {
+        val s = ctx.state
+        val w = s.workers.firstOrNull { it.id == workerId } ?: return
+        val upgradeId = w.equipment.remove(slotId) ?: return
+        refreshCarry(ctx.content, s, w)
+        ctx.emit(GameEvent.WorkerGearUnequipped(s.tick, w.id, upgradeId, slotId))
+    }
+
+    /**
+     * Legacy saves applied staff boots/satchel/tackle as global floors. Phase 19 moves those
+     * into per-worker equipment — auto-equip owned gear onto the first workers that can take it.
+     */
+    fun migrateLegacyGlobalGear(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+    ) {
+        val assignable = assignableUpgradeIds(content)
+        for (upgradeId in content.upgrades.map { it.id }.filter { it in assignable && it in s.ownedUpgrades }) {
+            if (s.workers.any { upgradeId in it.equipment.values }) continue
+            val slotId = loadoutSlotFor(content, upgradeId) ?: continue
+            val target = s.workers.firstOrNull { slotId !in it.equipment } ?: continue
+            target.equipment[slotId] = upgradeId
+        }
+        s.workerMoveSpeedPermille = 1000
+        s.workerCatchSpeedPermille = 0
+        s.workerCarryCapacityFloor = 0
+    }
+
+    private fun refreshCarry(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+        w: WorkerState,
+    ) {
+        val def = content.workersById[w.roleId] ?: return
+        w.bag.capacityUnits = carryCapacity(content, s, def, w)
+    }
+
+    /** movePermille, catchFloor, carryFloor from equipped staff gear. */
+    fun gearBonuses(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        w: WorkerState,
+    ): Triple<Int, Int, Int> {
+        var move = 1000L
+        var catchFloor = 0
+        var carryFloor = 0
+        for (upgradeId in w.equipment.values) {
+            when (val effect = content.upgradesById[upgradeId]?.effect) {
+                is com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.WorkerMoveSpeed ->
+                    move = (move * effect.speedPermille.toLong()) / 1000L
+                is com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.WorkerCatchSpeed ->
+                    catchFloor = max(catchFloor, effect.speedPermille)
+                is com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.WorkerCarry ->
+                    carryFloor = max(carryFloor, effect.capacityUnits)
+                else -> Unit
+            }
+        }
+        return Triple(move.toInt().coerceAtLeast(1), catchFloor, carryFloor)
+    }
 
     fun hire(ctx: StepContext, roleId: String, requestId: String) {
         val s = ctx.state
@@ -116,14 +275,165 @@ object WorkerSystem {
             roleId = def.id,
             x = spawn.x,
             z = spawn.z,
-            bag = Inventory("inv.$id.bag", carryCapacity(s, def), ctx.content::carryUnits),
+            bag = Inventory("inv.$id.bag", def.carryCapacityUnits, ctx.content::carryUnits),
         )
+        rollTraits(ctx, w)
+        w.bag.capacityUnits = carryCapacity(ctx.content, s, def, w)
         s.workers += w
         s.bumpStat(Stats.WORKERS_HIRED)
         val receipt = Receipt(s.newId("hire"), "hire", -def.hireCost, s.tick, w.id)
         s.record(receipt)
         s.purchaseReceipts[requestId] = receipt
         ctx.emit(GameEvent.WorkerHired(s.tick, roleId, receipt, replayed = false))
+    }
+
+    /** Deterministic weighted trait picks without replacement. */
+    fun rollTraits(ctx: StepContext, w: WorkerState) {
+        val prog = ctx.content.staffProgression
+        val pool = prog.traits.toMutableList()
+        repeat(prog.traitsOnHire.coerceAtMost(pool.size)) {
+            if (pool.isEmpty()) return
+            val pick = pool[ctx.state.rng.pickWeighted(pool.map { it.weight })]
+            w.traits += pick.id
+            pool.removeAll { it.id == pick.id }
+        }
+    }
+
+    fun levelForXp(content: com.willio.jeanvilma.fishshopping.core.content.ContentPack, xp: Int): Int {
+        val thresholds = content.staffProgression.xpThresholds
+        var level = 1
+        for (i in 1 until thresholds.size) {
+            if (xp >= thresholds[i]) level = i + 1 else break
+        }
+        return level.coerceIn(1, content.staffProgression.maxLevel)
+    }
+
+    fun grantXp(ctx: StepContext, w: WorkerState, amount: Int) {
+        if (amount <= 0) return
+        w.xp += amount
+        ctx.state.bumpStat(Stats.WORKER_XP, amount.toLong())
+        val next = levelForXp(ctx.content, w.xp)
+        if (next <= w.level) return
+        w.level = next
+        val def = ctx.content.workersById[w.roleId] ?: return
+        w.bag.capacityUnits = carryCapacity(ctx.content, ctx.state, def, w)
+        ctx.state.bumpStat(Stats.WORKER_LEVEL_UPS)
+        ctx.emit(GameEvent.WorkerLeveledUp(ctx.state.tick, w.id, w.roleId, w.level))
+    }
+
+    private fun traitBonus(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        w: WorkerState,
+    ): Triple<Int, Int, Int> {
+        // moveMult, catchMult, carryBonus (permille, permille, units)
+        var move = 1000L
+        var catch = 1000L
+        var carry = 0
+        for (tid in w.traits) {
+            val t = content.workerTraitsById[tid] ?: continue
+            move = (move * t.moveSpeedPermille.toLong()) / 1000L
+            catch = (catch * t.catchSpeedPermille.toLong()) / 1000L
+            carry += t.carryBonus
+        }
+        return Triple(move.toInt().coerceAtLeast(1), catch.toInt().coerceAtLeast(1), carry)
+    }
+
+    private fun transferIntervalMult(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        w: WorkerState,
+    ): Int {
+        var mult = 1000L
+        for (tid in w.traits) {
+            val t = content.workerTraitsById[tid] ?: continue
+            mult = (mult * t.transferIntervalMultPermille.toLong()) / 1000L
+        }
+        return mult.toInt().coerceAtLeast(1)
+    }
+
+    /**
+     * Why an on-shift worker is stuck idle (Phase 20). Null while walking, casting, or actively tasked.
+     */
+    fun blockedReason(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+        harbor: com.willio.jeanvilma.fishshopping.core.content.HarborDef,
+        w: WorkerState,
+    ): String? {
+        if (!w.onShift) return "Off shift"
+        if (w.busyWalking) return null
+        val def = content.workersById[w.roleId] ?: return null
+        if (w.phase != WorkerTaskPhase.NONE && w.phase != WorkerTaskPhase.WORK) return null
+        if (w.phase == WorkerTaskPhase.WORK && def.role != WorkerRoleKind.FISHER) return null
+        if (def.role == WorkerRoleKind.FISHER && w.fishingSpecies != null) return null
+        return when (def.role) {
+            WorkerRoleKind.FISHER -> fisherBlocked(content, s, harbor, w)
+            WorkerRoleKind.PORTER, WorkerRoleKind.ICE_RUNNER ->
+                haulBlocked(content, s, harbor, counterHaul = true)
+            WorkerRoleKind.OPERATOR, WorkerRoleKind.SMOKER_SPECIALIST ->
+                haulBlocked(content, s, harbor, counterHaul = false)
+            WorkerRoleKind.CASHIER, WorkerRoleKind.GREETER, WorkerRoleKind.SUPERVISOR -> null
+        }
+    }
+
+    private fun fisherBlocked(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+        harbor: com.willio.jeanvilma.fishshopping.core.content.HarborDef,
+        w: WorkerState,
+    ): String? {
+        if (!w.bag.isEmpty()) {
+            val canDrop = s.machines.any { m ->
+                val st = harbor.stations.firstOrNull { it.id == m.stationId } ?: return@any false
+                ProductionSystem.isUnlocked(st, s) && !m.paused &&
+                    w.bag.contents().any { (item, qty) -> qty > 0 && m.input.roomFor(item) >= 1 }
+            }
+            if (!canDrop) return "No path"
+        }
+        val unlocked = harbor.fishingSpots.filter { FishingSystem.isUnlocked(it, s) }
+        if (unlocked.isEmpty()) return "No fishing spots"
+        val stocked = unlocked.any { spot ->
+            (s.fishingSpots.firstOrNull { it.zoneId == spot.zone }?.stock ?: 0) > 0
+        }
+        if (!stocked) return "Spots empty"
+        if (w.bag.freeUnits() == 0) return "No path"
+        return null
+    }
+
+    private fun haulBlocked(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+        harbor: com.willio.jeanvilma.fishshopping.core.content.HarborDef,
+        counterHaul: Boolean,
+    ): String? {
+        val unlocked = s.machines.filter { m ->
+            val st = harbor.stations.firstOrNull { it.id == m.stationId } ?: return@filter false
+            ProductionSystem.isUnlocked(st, s) && !m.paused
+        }
+        if (unlocked.any { it.status == MachineStatus.OUTPUT_FULL }) return "Output full"
+        val hasOutput = unlocked.any { !it.output.isEmpty() }
+        if (counterHaul) {
+            val counterRoom = s.counters.any { c ->
+                unlocked.any { m ->
+                    m.output.contents().any { (item, qty) -> qty > 0 && c.stock.roomFor(item) >= 1 }
+                }
+            }
+            if (hasOutput && !counterRoom) return "No path"
+            if (!hasOutput && unlocked.any { it.status == MachineStatus.WAITING_FOR_INPUT }) return "No input"
+            return null
+        }
+        // Operator / smoker specialist: machine→machine
+        if (hasOutput) {
+            val canFeed = unlocked.any { src ->
+                src.output.contents().any { (item, qty) ->
+                    qty > 0 && unlocked.any { dest ->
+                        dest.stationId != src.stationId && dest.input.roomFor(item) >= 1
+                    }
+                }
+            }
+            if (!canFeed) return "No path"
+        }
+        if (!hasOutput && unlocked.any { it.status == MachineStatus.WAITING_FOR_INPUT }) return "No input"
+        return null
     }
 
     fun availability(content: com.willio.jeanvilma.fishshopping.core.content.ContentPack, s: GameState, def: WorkerDef): WorkerHireAvailability {
@@ -146,14 +456,71 @@ object WorkerSystem {
         return content.upgradesById[missing]?.name ?: content.questsById[missing]?.name ?: missing
     }
 
+    fun moveSpeed(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+        def: WorkerDef,
+        w: WorkerState,
+    ): Int {
+        val prog = content.staffProgression
+        val levelMult = 1000L + prog.moveSpeedPermillePerLevel.toLong() * (w.level - 1).coerceAtLeast(0)
+        val (traitMove, _, _) = traitBonus(content, w)
+        val (gearMove, _, _) = gearBonuses(content, w)
+        var speed = def.moveSpeedMmPerTick.toLong()
+        speed = (speed * gearMove.toLong()) / 1000L
+        speed = (speed * levelMult) / 1000L
+        speed = (speed * traitMove.toLong()) / 1000L
+        return max(1, speed.toInt())
+    }
+
+    /** Legacy helper for callers that only have global floors (no per-worker traits). */
     fun moveSpeed(s: GameState, def: WorkerDef): Int =
         max(1, ((def.moveSpeedMmPerTick.toLong() * s.workerMoveSpeedPermille) / 1000L).toInt())
+
+    fun catchSpeed(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+        def: WorkerDef,
+        w: WorkerState,
+    ): Int {
+        val prog = content.staffProgression
+        val levelMult = 1000L + prog.catchSpeedPermillePerLevel.toLong() * (w.level - 1).coerceAtLeast(0)
+        val (_, traitCatch, _) = traitBonus(content, w)
+        val (_, gearCatch, _) = gearBonuses(content, w)
+        var speed = max(def.catchSpeedPermille, gearCatch).toLong()
+        speed = (speed * levelMult) / 1000L
+        speed = (speed * traitCatch.toLong()) / 1000L
+        return max(1, speed.toInt())
+    }
 
     fun catchSpeed(s: GameState, def: WorkerDef): Int =
         max(def.catchSpeedPermille, s.workerCatchSpeedPermille)
 
+    fun carryCapacity(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+        def: WorkerDef,
+        w: WorkerState,
+    ): Int {
+        val prog = content.staffProgression
+        val levelBonus = if (prog.carryBonusEveryLevels <= 0) 0
+        else (w.level - 1).coerceAtLeast(0) / prog.carryBonusEveryLevels
+        val (_, _, traitCarry) = traitBonus(content, w)
+        val (_, _, gearCarry) = gearBonuses(content, w)
+        return max(def.carryCapacityUnits, gearCarry) + levelBonus + traitCarry
+    }
+
     fun carryCapacity(s: GameState, def: WorkerDef): Int =
         max(def.carryCapacityUnits, s.workerCarryCapacityFloor)
+
+    fun transferInterval(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        def: WorkerDef,
+        w: WorkerState,
+    ): Int {
+        val mult = transferIntervalMult(content, w)
+        return max(1, ((def.transferIntervalTicks.toLong() * mult) / 1000L).toInt())
+    }
 
     sealed interface WorkerHireAvailability {
         data object Purchasable : WorkerHireAvailability
@@ -184,7 +551,7 @@ object WorkerSystem {
     private fun assignFisher(ctx: StepContext, w: WorkerState, def: WorkerDef) {
         if (!w.bag.isEmpty()) {
             val dest = findMachineInputForBag(ctx, w) ?: return
-            startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.state, def))
+            startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.content, ctx.state, def, w))
             w.phase = WorkerTaskPhase.WALK_TO_DROP
             w.taskDestInvId = dest.first.input.id
             w.taskZoneId = dest.third
@@ -193,7 +560,7 @@ object WorkerSystem {
         }
         val spot = findFishableSpot(ctx, w) ?: return
         val zone = ctx.harbor.zonesById.getValue(spot.zoneId)
-        startWalk(w, zone.rect.centerX, zone.rect.centerZ, moveSpeed(ctx.state, def))
+        startWalk(w, zone.rect.centerX, zone.rect.centerZ, moveSpeed(ctx.content, ctx.state, def, w))
         w.phase = WorkerTaskPhase.WALK_TO_WORK
         w.taskZoneId = spot.zoneId
         w.taskId = ctx.state.newId("task")
@@ -209,7 +576,7 @@ object WorkerSystem {
             if (!w.bag.isEmpty()) {
                 val dest = findMachineInputForBag(ctx, w)
                 if (dest != null) {
-                    startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.state, def))
+                    startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.content, ctx.state, def, w))
                     w.phase = WorkerTaskPhase.WALK_TO_DROP
                     w.taskDestInvId = dest.first.input.id
                     w.taskZoneId = dest.third
@@ -227,10 +594,19 @@ object WorkerSystem {
                 clearTask(w)
                 return
             }
-            val pick = candidates[ctx.state.rng.pickWeighted(candidates.map { it.rarityWeight })]
+            val pick = candidates[ctx.state.rng.pickWeighted(
+                candidates.map {
+                    com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem.scaledWeight(
+                        it.rarityWeight,
+                        ctx.content,
+                        ctx.state.tick,
+                        it.id,
+                    )
+                },
+            )]
             w.fishingSpecies = pick.id
             w.fishingProgress = 0
-            w.fishingCatchTicks = FishingSystem.catchTicksFor(catchSpeed(ctx.state, def), pick.catchTicks)
+            w.fishingCatchTicks = FishingSystem.catchTicksFor(catchSpeed(ctx.content, ctx.state, def, w), pick.catchTicks)
         }
 
         val species = ctx.content.speciesById.getValue(w.fishingSpecies!!)
@@ -243,6 +619,8 @@ object WorkerSystem {
             spot.stock--
             ctx.state.bumpStat(Stats.FISH_CAUGHT)
             ctx.state.bumpStat(Stats.WORKER_FISH_CAUGHT)
+            ctx.state.recordSpeciesCatch(species.id)
+            grantXp(ctx, w, ctx.content.staffProgression.xpFishCaught)
             val (size, value, personalBest) = com.willio.jeanvilma.fishshopping.core.fishing.TrophySystem.record(ctx, species.id)
             ctx.emit(
                 GameEvent.FishCaught(
@@ -257,7 +635,7 @@ object WorkerSystem {
         if (w.bag.freeUnits() == 0 || spot.stock <= 0) {
             val dest = findMachineInputForBag(ctx, w)
             if (dest != null) {
-                startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.state, def))
+                startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.content, ctx.state, def, w))
                 w.phase = WorkerTaskPhase.WALK_TO_DROP
                 w.taskDestInvId = dest.first.input.id
                 w.taskZoneId = dest.third
@@ -277,8 +655,9 @@ object WorkerSystem {
         if (moved != null) {
             ctx.state.bumpStat(Stats.MACHINE_INPUTS)
             ctx.state.bumpStat(Stats.WORKER_ITEMS_MOVED)
+            grantXp(ctx, w, ctx.content.staffProgression.xpItemMoved)
             ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, w.bag.id, machine.input.id, moved, 1))
-            w.transferCooldown = def.transferIntervalTicks - 1
+            w.transferCooldown = transferInterval(ctx.content, def, w) - 1
         }
         if (w.bag.isEmpty() || moved == null) clearTask(w)
     }
@@ -304,7 +683,7 @@ object WorkerSystem {
         // Finish delivering anything already in the bag.
         if (!w.bag.isEmpty()) {
             val dest = findCounterDrop(ctx, w) ?: return
-            startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.state, def))
+            startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.content, ctx.state, def, w))
             w.phase = WorkerTaskPhase.WALK_TO_DROP
             w.taskDestInvId = dest.first.stock.id
             w.taskZoneId = dest.third
@@ -321,7 +700,7 @@ object WorkerSystem {
         w.taskQuantity = 1
         w.leaseExpiresAt = ctx.state.tick + def.leaseTicks
         w.taskZoneId = haul.sourceZoneId
-        startWalk(w, haul.sourceX, haul.sourceZ, moveSpeed(ctx.state, def))
+        startWalk(w, haul.sourceX, haul.sourceZ, moveSpeed(ctx.content, ctx.state, def, w))
     }
 
     private fun pickupHaul(ctx: StepContext, w: WorkerState, def: WorkerDef) {
@@ -335,7 +714,7 @@ object WorkerSystem {
         }
         source.takeReserved(itemId, 1)
         w.bag.add(itemId, 1)
-        w.transferCooldown = def.transferIntervalTicks - 1
+        w.transferCooldown = transferInterval(ctx.content, def, w) - 1
         ctx.state.bumpStat(Stats.OUTPUTS_COLLECTED)
         ctx.state.bumpStat(Stats.WORKER_ITEMS_MOVED)
         ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, source.id, w.bag.id, itemId, 1))
@@ -348,7 +727,7 @@ object WorkerSystem {
             w.leaseExpiresAt = 0
             return
         }
-        startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.state, def))
+        startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.content, ctx.state, def, w))
         w.phase = WorkerTaskPhase.WALK_TO_DROP
         w.taskDestInvId = dest.first.stock.id
         w.taskZoneId = dest.third
@@ -364,8 +743,9 @@ object WorkerSystem {
         if (moved != null) {
             ctx.state.bumpStat(Stats.COUNTER_STOCKED)
             ctx.state.bumpStat(Stats.WORKER_ITEMS_MOVED)
+            grantXp(ctx, w, ctx.content.staffProgression.xpItemMoved)
             ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, w.bag.id, counter.stock.id, moved, 1))
-            w.transferCooldown = def.transferIntervalTicks - 1
+            w.transferCooldown = transferInterval(ctx.content, def, w) - 1
         }
         if (w.bag.isEmpty() || moved == null) clearTask(w)
     }
@@ -390,7 +770,7 @@ object WorkerSystem {
     private fun assignOperator(ctx: StepContext, w: WorkerState, def: WorkerDef) {
         if (!w.bag.isEmpty()) {
             val dest = findMachineInputForBag(ctx, w) ?: return
-            startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.state, def))
+            startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.content, ctx.state, def, w))
             w.phase = WorkerTaskPhase.WALK_TO_DROP
             w.taskDestInvId = dest.first.input.id
             w.taskZoneId = dest.third
@@ -407,7 +787,7 @@ object WorkerSystem {
         w.taskQuantity = 1
         w.leaseExpiresAt = ctx.state.tick + def.leaseTicks
         w.taskZoneId = haul.sourceZoneId
-        startWalk(w, haul.sourceX, haul.sourceZ, moveSpeed(ctx.state, def))
+        startWalk(w, haul.sourceX, haul.sourceZ, moveSpeed(ctx.content, ctx.state, def, w))
     }
 
     private fun pickupMachineHaul(ctx: StepContext, w: WorkerState, def: WorkerDef) {
@@ -421,7 +801,7 @@ object WorkerSystem {
         }
         source.takeReserved(itemId, 1)
         w.bag.add(itemId, 1)
-        w.transferCooldown = def.transferIntervalTicks - 1
+        w.transferCooldown = transferInterval(ctx.content, def, w) - 1
         ctx.state.bumpStat(Stats.OUTPUTS_COLLECTED)
         ctx.state.bumpStat(Stats.WORKER_ITEMS_MOVED)
         ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, source.id, w.bag.id, itemId, 1))
@@ -433,7 +813,7 @@ object WorkerSystem {
             w.leaseExpiresAt = 0
             return
         }
-        startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.state, def))
+        startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.content, ctx.state, def, w))
         w.phase = WorkerTaskPhase.WALK_TO_DROP
         w.taskDestInvId = dest.first.input.id
         w.taskZoneId = dest.third
@@ -448,19 +828,73 @@ object WorkerSystem {
             WorkerTaskPhase.WALK_TO_WORK -> {
                 w.phase = WorkerTaskPhase.WORK
             }
-            WorkerTaskPhase.WORK -> Unit // stay on duty at the counter
+            WorkerTaskPhase.WORK -> {
+                // Re-route when another unlocked pad scores meaningfully higher (Phase 15).
+                val best = bestCashierPost(ctx, w) ?: return
+                if (best.zone != w.taskZoneId) {
+                    val zone = ctx.harbor.zonesById.getValue(best.zone)
+                    startWalk(w, zone.rect.centerX, zone.rect.centerZ, moveSpeed(ctx.content, ctx.state, def, w))
+                    w.phase = WorkerTaskPhase.WALK_TO_WORK
+                    w.taskZoneId = best.zone
+                    w.taskId = ctx.state.newId("task")
+                }
+            }
             else -> clearTask(w)
         }
     }
 
     private fun assignCashier(ctx: StepContext, w: WorkerState, def: WorkerDef) {
-        val counter = ctx.state.counters.sortedBy { it.counterId }.firstOrNull() ?: return
-        val cdef = ctx.harbor.counters.first { it.id == counter.counterId }
+        val cdef = bestCashierPost(ctx, w) ?: return
         val zone = ctx.harbor.zonesById.getValue(cdef.zone)
-        startWalk(w, zone.rect.centerX, zone.rect.centerZ, moveSpeed(ctx.state, def))
+        startWalk(w, zone.rect.centerX, zone.rect.centerZ, moveSpeed(ctx.content, ctx.state, def, w))
         w.phase = WorkerTaskPhase.WALK_TO_WORK
         w.taskZoneId = cdef.zone
         w.taskId = ctx.state.newId("task")
+    }
+
+    /**
+     * Score unlocked counters with content [RoutingDef] weights and pick the best
+     * uncovered post (Phase 15 multi-pad cashiers).
+     */
+    private fun bestCashierPost(ctx: StepContext, w: WorkerState): CounterDef? {
+        val covered = ctx.state.workers
+            .filter { other ->
+                other.id != w.id &&
+                    ctx.content.workersById[other.roleId]?.role == WorkerRoleKind.CASHIER &&
+                    (other.phase == WorkerTaskPhase.WORK || other.phase == WorkerTaskPhase.WALK_TO_WORK)
+            }
+            .mapNotNull { it.taskZoneId }
+            .toSet()
+        var best: CounterDef? = null
+        var bestScore = Long.MIN_VALUE
+        for (cdef in ctx.harbor.counters.sortedBy { it.id }) {
+            if (!CustomerSystem.isUnlocked(cdef, ctx.state)) continue
+            val counter = ctx.state.counters.first { it.counterId == cdef.id }
+            val zone = ctx.harbor.zonesById.getValue(cdef.zone)
+            val waiting = ctx.state.customers.count { it.counterId == cdef.id && it.arrived }
+            val urgency = waiting * 25 + if (counter.stock.usedUnits() == 0) 0 else 10
+            val distTicks = walkTicks(w.x, w.z, zone.rect.centerX, zone.rect.centerZ, 160)
+            val distance = (200 - distTicks).coerceAtLeast(0)
+            val demand = waiting * 20 + if (counter.stock.usedUnits() == 0) 40 else 0
+            var score = scorePost(ctx, urgency, distance, demand)
+            if (cdef.zone in covered) score -= 10_000L
+            if (best == null || score > bestScore || (score == bestScore && cdef.id < best.id)) {
+                best = cdef
+                bestScore = score
+            }
+        }
+        return best
+    }
+
+    private fun scorePost(ctx: StepContext, urgency: Int, distance: Int, demand: Int): Long {
+        val routing = ctx.content.routing
+        var demW = routing.demandWeight.toLong()
+        if (supervisorOnDuty(ctx.content, ctx.state)) {
+            demW = demW * routing.supervisorDemandBoostPermille / 1000L
+        }
+        return routing.urgencyWeight.toLong() * urgency +
+            routing.distanceWeight.toLong() * distance +
+            demW * demand
     }
 
     // ---------------------------------------------------------------- supervisor
@@ -477,13 +911,120 @@ object WorkerSystem {
     }
 
     private fun assignSupervisor(ctx: StepContext, w: WorkerState, def: WorkerDef) {
-        // Post near the counter so demand overrides favour selling.
-        val counter = ctx.state.counters.sortedBy { it.counterId }.firstOrNull() ?: return
-        val cdef = ctx.harbor.counters.first { it.id == counter.counterId }
+        // Post near the busiest unlocked counter so demand overrides favour selling.
+        val cdef = bestCashierPost(ctx, w) ?: return
         val zone = ctx.harbor.zonesById.getValue(cdef.zone)
-        startWalk(w, zone.rect.centerX, zone.rect.centerZ, moveSpeed(ctx.state, def))
+        startWalk(w, zone.rect.centerX, zone.rect.centerZ, moveSpeed(ctx.content, ctx.state, def, w))
         w.phase = WorkerTaskPhase.WALK_TO_WORK
         w.taskZoneId = cdef.zone
+        w.taskId = ctx.state.newId("task")
+    }
+
+    // ---------------------------------------------------------------- ice runner (fragile / ice stock → counter)
+
+    private fun stepIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef) {
+        when (w.phase) {
+            WorkerTaskPhase.NONE -> assignIceRunner(ctx, w, def)
+            WorkerTaskPhase.WALK_TO_WORK -> w.phase = WorkerTaskPhase.PICKUP
+            WorkerTaskPhase.PICKUP -> pickupHaul(ctx, w, def)
+            WorkerTaskPhase.WALK_TO_DROP -> w.phase = WorkerTaskPhase.DROP
+            WorkerTaskPhase.DROP -> dropHaul(ctx, w, def)
+            else -> clearTask(w)
+        }
+    }
+
+    private fun assignIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef) {
+        if (!w.bag.isEmpty()) {
+            val dest = findCounterDrop(ctx, w) ?: return
+            startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.content, ctx.state, def, w))
+            w.phase = WorkerTaskPhase.WALK_TO_DROP
+            w.taskDestInvId = dest.first.stock.id
+            w.taskZoneId = dest.third
+            w.taskId = ctx.state.newId("task")
+            return
+        }
+        val haul = findIceHaul(ctx, w) ?: return
+        if (!haul.source.reserve(haul.itemId, 1)) return
+        w.taskId = ctx.state.newId("task")
+        w.phase = WorkerTaskPhase.WALK_TO_WORK
+        w.taskSourceInvId = haul.source.id
+        w.taskDestInvId = haul.dest.id
+        w.taskItemId = haul.itemId
+        w.taskQuantity = 1
+        w.leaseExpiresAt = ctx.state.tick + def.leaseTicks
+        w.taskZoneId = haul.sourceZoneId
+        startWalk(w, haul.sourceX, haul.sourceZ, moveSpeed(ctx.content, ctx.state, def, w))
+    }
+
+    // ---------------------------------------------------------------- smoker specialist (smoker I/O + process buff)
+
+    private fun stepSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef) {
+        when (w.phase) {
+            WorkerTaskPhase.NONE -> assignSmokerSpecialist(ctx, w, def)
+            WorkerTaskPhase.WALK_TO_WORK -> {
+                // Arrived at smoker post or haul source.
+                if (w.taskSourceInvId != null) w.phase = WorkerTaskPhase.PICKUP
+                else w.phase = WorkerTaskPhase.WORK
+            }
+            WorkerTaskPhase.PICKUP -> pickupMachineHaul(ctx, w, def)
+            WorkerTaskPhase.WALK_TO_DROP -> w.phase = WorkerTaskPhase.DROP
+            WorkerTaskPhase.DROP -> dropToMachine(ctx, w, def)
+            WorkerTaskPhase.WORK -> Unit // posted at smoker: speeds batches via smokerSpecialistOnDuty
+            else -> clearTask(w)
+        }
+    }
+
+    private fun assignSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef) {
+        if (!w.bag.isEmpty()) {
+            val dest = findSmokerInputDrop(ctx, w) ?: findMachineInputForBag(ctx, w) ?: return
+            startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.content, ctx.state, def, w))
+            w.phase = WorkerTaskPhase.WALK_TO_DROP
+            w.taskDestInvId = dest.first.input.id
+            w.taskZoneId = dest.third
+            w.taskId = ctx.state.newId("task")
+            return
+        }
+        val haul = findSmokerHaul(ctx, w)
+        if (haul != null) {
+            if (!haul.source.reserve(haul.itemId, 1)) return
+            w.taskId = ctx.state.newId("task")
+            w.phase = WorkerTaskPhase.WALK_TO_WORK
+            w.taskSourceInvId = haul.source.id
+            w.taskDestInvId = haul.dest.id
+            w.taskItemId = haul.itemId
+            w.taskQuantity = 1
+            w.leaseExpiresAt = ctx.state.tick + def.leaseTicks
+            w.taskZoneId = haul.sourceZoneId
+            startWalk(w, haul.sourceX, haul.sourceZ, moveSpeed(ctx.content, ctx.state, def, w))
+            return
+        }
+        // Idle: post at smoker input to grant process-speed buff.
+        val post = smokerPost(ctx) ?: return
+        startWalk(w, post.second.x, post.second.z, moveSpeed(ctx.content, ctx.state, def, w))
+        w.phase = WorkerTaskPhase.WALK_TO_WORK
+        w.taskZoneId = post.third
+        w.taskId = ctx.state.newId("task")
+        w.taskSourceInvId = null
+        w.taskDestInvId = null
+        w.taskItemId = null
+    }
+
+    // ---------------------------------------------------------------- greeter (entry post → patience buff)
+
+    private fun stepGreeter(ctx: StepContext, w: WorkerState, def: WorkerDef) {
+        when (w.phase) {
+            WorkerTaskPhase.NONE -> assignGreeter(ctx, w, def)
+            WorkerTaskPhase.WALK_TO_WORK -> w.phase = WorkerTaskPhase.WORK
+            WorkerTaskPhase.WORK -> Unit
+            else -> clearTask(w)
+        }
+    }
+
+    private fun assignGreeter(ctx: StepContext, w: WorkerState, def: WorkerDef) {
+        val entry = ctx.harbor.customerEntry
+        startWalk(w, entry.x, entry.z, moveSpeed(ctx.content, ctx.state, def, w))
+        w.phase = WorkerTaskPhase.WALK_TO_WORK
+        w.taskZoneId = "greeter.entry"
         w.taskId = ctx.state.newId("task")
     }
 
@@ -492,17 +1033,25 @@ object WorkerSystem {
     private fun accrueWages(ctx: StepContext) {
         val s = ctx.state
         val rate = s.workerWagePerWorkerPerHour
-        if (rate <= 0 || s.workers.isEmpty()) return
+        val onShift = s.workers.filter { it.onShift }
+        if (rate <= 0 || onShift.isEmpty()) return
         s.workerWageAccrualTicks++
         val hourTicks = 3600 * SimConstants.TICKS_PER_SECOND
         if (s.workerWageAccrualTicks < hourTicks) return
         s.workerWageAccrualTicks = 0
-        val n = s.workers.size
-        val cost = rate.toLong() * n
+        val n = onShift.size
+        val free = freeOnShiftSlots(ctx.content, s)
+        val standardN = min(n, free)
+        val overtimeN = max(0, n - free)
+        val standard = rate.toLong() * standardN
+        val overtime = (rate.toLong() * overtimeN * ctx.content.staffProgression.shifts.overtimeWagePermille) / 1000L
+        val cost = standard + overtime
         val paid = min(cost, s.coins)
         if (paid <= 0L) return
         s.coins -= paid
         s.bumpStat(Stats.WAGES_PAID, paid)
+        val overtimePaid = min(overtime, paid)
+        if (overtimePaid > 0L) s.bumpStat(Stats.OVERTIME_WAGES, overtimePaid)
         val receipt = Receipt(s.newId("wage"), "wage", -paid, s.tick, "workers:$n")
         s.record(receipt)
         ctx.emit(GameEvent.WagesPaid(s.tick, n, paid))
@@ -542,34 +1091,84 @@ object WorkerSystem {
     )
 
     private fun findHaul(ctx: StepContext, w: WorkerState): HaulOffer? {
-        val counter = ctx.state.counters.firstOrNull() ?: return null
-        val cdef = ctx.harbor.counters.first { it.id == counter.counterId }
         val supervisor = supervisorOnDuty(ctx.content, ctx.state)
         var best: HaulOffer? = null
-        for (m in ctx.state.machines.sortedBy { it.stationId }) {
-            val station = ctx.harbor.stations.first { it.id == m.stationId }
-            if (!ProductionSystem.isUnlocked(station, ctx.state)) continue
-            val zone = ctx.harbor.zonesById.getValue(station.outputZone)
-            for ((itemId, _) in m.output.contents()) {
-                if (!cdef.accepts(itemId)) continue
-                if (m.output.available(itemId) < 1) continue
-                if (w.bag.roomFor(itemId) < 1) continue
-                if (!destHasRoom(ctx, counter.stock, itemId, w.id)) continue
-                if (!porterMayHaul(ctx, itemId, supervisor)) continue
-                val demand = counterDemand(ctx, counter, itemId)
-                val score = scoreHaul(
-                    ctx, w, m.output, zone.rect.centerX, zone.rect.centerZ,
-                    urgencyBonus = if (m.status == MachineStatus.OUTPUT_FULL) 50 else 0,
-                    demand = demand,
-                )
-                val offer = HaulOffer(
-                    m.output, counter.stock, itemId,
-                    zone.rect.centerX, zone.rect.centerZ, station.outputZone, score,
-                )
-                if (best == null || betterHaul(offer, best)) best = offer
+        for (counter in ctx.state.counters.sortedBy { it.counterId }) {
+            val cdef = ctx.harbor.counters.first { it.id == counter.counterId }
+            if (!CustomerSystem.isUnlocked(cdef, ctx.state)) continue
+            for (m in ctx.state.machines.sortedBy { it.stationId }) {
+                val station = ctx.harbor.stations.first { it.id == m.stationId }
+                if (!ProductionSystem.isUnlocked(station, ctx.state)) continue
+                val zone = ctx.harbor.zonesById.getValue(station.outputZone)
+                for ((itemId, _) in m.output.contents()) {
+                    if (!cdef.accepts(itemId)) continue
+                    if (m.output.available(itemId) < 1) continue
+                    if (w.bag.roomFor(itemId) < 1) continue
+                    if (!destHasRoom(ctx, counter.stock, itemId, w.id)) continue
+                    if (!porterMayHaul(ctx, itemId, supervisor)) continue
+                    val demand = counterDemand(ctx, counter, itemId)
+                    val score = scoreHaul(
+                        ctx, w, m.output, zone.rect.centerX, zone.rect.centerZ,
+                        urgencyBonus = if (m.status == MachineStatus.OUTPUT_FULL) 50 else 0,
+                        demand = demand,
+                    )
+                    val offer = HaulOffer(
+                        m.output, counter.stock, itemId,
+                        zone.rect.centerX, zone.rect.centerZ, station.outputZone, score,
+                    )
+                    if (best == null || betterHaul(offer, best)) best = offer
+                }
             }
         }
         return best
+    }
+
+    /** Porter-like haul with score bonus for ice crates / fragile spoil tiers. */
+    private fun findIceHaul(ctx: StepContext, w: WorkerState): HaulOffer? {
+        val supervisor = supervisorOnDuty(ctx.content, ctx.state)
+        val buffs = ctx.content.staffProgression.roleBuffs
+        var best: HaulOffer? = null
+        for (counter in ctx.state.counters.sortedBy { it.counterId }) {
+            val cdef = ctx.harbor.counters.first { it.id == counter.counterId }
+            if (!CustomerSystem.isUnlocked(cdef, ctx.state)) continue
+            for (m in ctx.state.machines.sortedBy { it.stationId }) {
+                val station = ctx.harbor.stations.first { it.id == m.stationId }
+                if (!ProductionSystem.isUnlocked(station, ctx.state)) continue
+                val zone = ctx.harbor.zonesById.getValue(station.outputZone)
+                for ((itemId, _) in m.output.contents()) {
+                    if (!cdef.accepts(itemId)) continue
+                    if (m.output.available(itemId) < 1) continue
+                    if (w.bag.roomFor(itemId) < 1) continue
+                    if (!destHasRoom(ctx, counter.stock, itemId, w.id)) continue
+                    if (!porterMayHaul(ctx, itemId, supervisor)) continue
+                    val demand = counterDemand(ctx, counter, itemId)
+                    var score = scoreHaul(
+                        ctx, w, m.output, zone.rect.centerX, zone.rect.centerZ,
+                        urgencyBonus = if (m.status == MachineStatus.OUTPUT_FULL) 50 else 0,
+                        demand = demand,
+                    )
+                    score += icePreferBonus(ctx, itemId, buffs).toLong()
+                    val offer = HaulOffer(
+                        m.output, counter.stock, itemId,
+                        zone.rect.centerX, zone.rect.centerZ, station.outputZone, score,
+                    )
+                    if (best == null || betterHaul(offer, best)) best = offer
+                }
+            }
+        }
+        return best
+    }
+
+    private fun icePreferBonus(
+        ctx: StepContext,
+        itemId: String,
+        buffs: com.willio.jeanvilma.fishshopping.core.content.StaffRoleBuffsDef,
+    ): Int {
+        if (itemId == "product.ice_packed_crate") return buffs.iceRunnerSpoilScoreBonus
+        val tier = ctx.content.productsById[itemId]?.spoilTier
+            ?: ctx.content.speciesById[itemId]?.spoilTier
+            ?: return 0
+        return if (tier >= buffs.iceRunnerFragileSpoilTierMin) buffs.iceRunnerSpoilScoreBonus else 0
     }
 
     /** Intermediate haul: machine output → another machine's input (e.g. fillet → smoker). */
@@ -706,6 +1305,8 @@ object WorkerSystem {
     private fun counterDemandForItem(ctx: StepContext, itemId: String): Int {
         var best = 0
         for (c in ctx.state.counters) {
+            val def = ctx.harbor.counters.first { it.id == c.counterId }
+            if (!CustomerSystem.isUnlocked(def, ctx.state)) continue
             best = maxOf(best, counterDemand(ctx, c, itemId))
         }
         return best
@@ -742,15 +1343,84 @@ object WorkerSystem {
         return null
     }
 
-    private fun findCounterDrop(ctx: StepContext, w: WorkerState): Triple<CounterState, PointMm, String>? {
-        for (c in ctx.state.counters.sortedBy { it.counterId }) {
-            val def = ctx.harbor.counters.first { it.id == c.counterId }
-            val has = w.bag.contents().keys.any { def.accepts(it) && destHasRoom(ctx, c.stock, it, w.id) }
+    private fun findSmokerInputDrop(ctx: StepContext, w: WorkerState): Triple<MachineState, PointMm, String>? {
+        for (m in ctx.state.machines.sortedBy { it.stationId }) {
+            val station = ctx.harbor.stations.first { it.id == m.stationId }
+            if (!station.machine.contains("smoker")) continue
+            if (!ProductionSystem.isUnlocked(station, ctx.state)) continue
+            val accepted = acceptedInputs(ctx, m.machineId)
+            val has = w.bag.contents().keys.any { it in accepted && destHasRoom(ctx, m.input, it, w.id) }
             if (!has) continue
-            val zone = ctx.harbor.zonesById.getValue(def.zone)
-            return Triple(c, PointMm(zone.rect.centerX, zone.rect.centerZ), def.zone)
+            val zone = ctx.harbor.zonesById.getValue(station.inputZone)
+            return Triple(m, PointMm(zone.rect.centerX, zone.rect.centerZ), station.inputZone)
         }
         return null
+    }
+
+    private fun findSmokerHaul(ctx: StepContext, w: WorkerState): HaulOffer? {
+        var best: HaulOffer? = null
+        for (src in ctx.state.machines.sortedBy { it.stationId }) {
+            val srcStation = ctx.harbor.stations.first { it.id == src.stationId }
+            if (!ProductionSystem.isUnlocked(srcStation, ctx.state)) continue
+            val zone = ctx.harbor.zonesById.getValue(srcStation.outputZone)
+            for ((itemId, _) in src.output.contents()) {
+                if (src.output.available(itemId) < 1) continue
+                if (w.bag.roomFor(itemId) < 1) continue
+                for (dst in ctx.state.machines.sortedBy { it.stationId }) {
+                    if (dst.stationId == src.stationId) continue
+                    val dstStation = ctx.harbor.stations.first { it.id == dst.stationId }
+                    if (!ProductionSystem.isUnlocked(dstStation, ctx.state)) continue
+                    val involvesSmoker = srcStation.machine.contains("smoker") ||
+                        dstStation.machine.contains("smoker")
+                    if (!involvesSmoker) continue
+                    val accepted = acceptedInputs(ctx, dst.machineId)
+                    if (itemId !in accepted) continue
+                    if (!destHasRoom(ctx, dst.input, itemId, w.id)) continue
+                    val demand = machineDemand(dst)
+                    val score = scoreHaul(
+                        ctx, w, src.output, zone.rect.centerX, zone.rect.centerZ,
+                        urgencyBonus = if (src.status == MachineStatus.OUTPUT_FULL) 50 else 0,
+                        demand = demand,
+                    ) + 60L // prefer smoker-related hauls over idle posting
+                    val offer = HaulOffer(
+                        src.output, dst.input, itemId,
+                        zone.rect.centerX, zone.rect.centerZ, srcStation.outputZone, score,
+                    )
+                    if (best == null || betterHaul(offer, best)) best = offer
+                }
+            }
+        }
+        return best
+    }
+
+    private fun smokerPost(ctx: StepContext): Triple<MachineState, PointMm, String>? {
+        for (m in ctx.state.machines.sortedBy { it.stationId }) {
+            val station = ctx.harbor.stations.first { it.id == m.stationId }
+            if (!station.machine.contains("smoker")) continue
+            if (!ProductionSystem.isUnlocked(station, ctx.state)) continue
+            val zone = ctx.harbor.zonesById.getValue(station.inputZone)
+            return Triple(m, PointMm(zone.rect.centerX, zone.rect.centerZ), station.inputZone)
+        }
+        return null
+    }
+
+    private fun findCounterDrop(ctx: StepContext, w: WorkerState): Triple<CounterState, PointMm, String>? {
+        var best: Triple<CounterState, PointMm, String>? = null
+        var bestScore = Long.MIN_VALUE
+        for (c in ctx.state.counters.sortedBy { it.counterId }) {
+            val def = ctx.harbor.counters.first { it.id == c.counterId }
+            if (!CustomerSystem.isUnlocked(def, ctx.state)) continue
+            val item = w.bag.contents().keys
+                .filter { def.accepts(it) && destHasRoom(ctx, c.stock, it, w.id) }
+                .minOrNull() ?: continue
+            val zone = ctx.harbor.zonesById.getValue(def.zone)
+            val demand = counterDemand(ctx, c, item).toLong()
+            if (best == null || demand > bestScore || (demand == bestScore && c.counterId < best.first.counterId)) {
+                best = Triple(c, PointMm(zone.rect.centerX, zone.rect.centerZ), def.zone)
+                bestScore = demand
+            }
+        }
+        return best
     }
 
     private fun findInventory(ctx: StepContext, id: String): Inventory? {

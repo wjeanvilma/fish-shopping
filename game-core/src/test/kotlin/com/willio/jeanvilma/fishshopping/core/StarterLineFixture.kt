@@ -44,7 +44,7 @@ object StarterLineFixture {
         val s = sim.state
         val bag = s.player.bag
         val machine = s.machines.first { it.stationId == "station.cutter_1" }
-        val counter = s.counters.single()
+        val counter = s.counters.first { it.counterId == "counter.portions_1" }
         var requestSerial = 0
         val portion = "product.basic_portion"
         val fillet = "product.fillet"
@@ -218,6 +218,21 @@ object StarterLineFixture {
                 put("roleId", c.roleId)
                 put("requestId", c.requestId)
             }
+            is Command.SetWorkerShift -> {
+                put("type", "set_worker_shift")
+                put("workerId", c.workerId)
+                put("onShift", c.onShift)
+            }
+            is Command.AssignWorkerGear -> {
+                put("type", "assign_worker_gear")
+                put("workerId", c.workerId)
+                put("upgradeId", c.upgradeId)
+            }
+            is Command.UnequipWorkerGear -> {
+                put("type", "unequip_worker_gear")
+                put("workerId", c.workerId)
+                put("slotId", c.slotId)
+            }
             is Command.AcceptContract -> {
                 put("type", "accept_contract")
                 put("offerId", c.offerId)
@@ -242,6 +257,28 @@ object StarterLineFixture {
                 put("type", "select_bait")
                 put("baitId", c.baitId)
             }
+            is Command.PurchaseDecor -> {
+                put("type", "purchase_decor")
+                put("decorId", c.decorId)
+                put("requestId", c.requestId)
+            }
+            is Command.RepairMachine -> {
+                put("type", "repair_machine")
+                put("stationId", c.stationId)
+                put("requestId", c.requestId)
+            }
+            is Command.TakeLoan -> {
+                put("type", "take_loan")
+                put("requestId", c.requestId)
+            }
+            is Command.RepayLoan -> {
+                put("type", "repay_loan")
+                put("requestId", c.requestId)
+            }
+            is Command.SetCoinGoal -> {
+                put("type", "set_coin_goal")
+                put("amount", c.amount)
+            }
         }
     }
 
@@ -255,6 +292,18 @@ object StarterLineFixture {
             o["recipeId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
         )
         "hire_worker" -> Command.HireWorker(o["roleId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "set_worker_shift" -> Command.SetWorkerShift(
+            o["workerId"]!!.jsonPrimitive.content,
+            o["onShift"]!!.jsonPrimitive.content == "true",
+        )
+        "assign_worker_gear" -> Command.AssignWorkerGear(
+            o["workerId"]!!.jsonPrimitive.content,
+            o["upgradeId"]!!.jsonPrimitive.content,
+        )
+        "unequip_worker_gear" -> Command.UnequipWorkerGear(
+            o["workerId"]!!.jsonPrimitive.content,
+            o["slotId"]!!.jsonPrimitive.content,
+        )
         "accept_contract" -> Command.AcceptContract(o["offerId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "deliver_contract" -> Command.DeliverContract(o["contractId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "travel_to_harbor" -> Command.TravelToHarbor(o["harborId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
@@ -262,6 +311,11 @@ object StarterLineFixture {
         "select_bait" -> Command.SelectBait(
             o["baitId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
         )
+        "purchase_decor" -> Command.PurchaseDecor(o["decorId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "repair_machine" -> Command.RepairMachine(o["stationId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "take_loan" -> Command.TakeLoan(o["requestId"]!!.jsonPrimitive.content)
+        "repay_loan" -> Command.RepayLoan(o["requestId"]!!.jsonPrimitive.content)
+        "set_coin_goal" -> Command.SetCoinGoal(o["amount"]!!.jsonPrimitive.long)
         else -> error("unknown command ${o["type"]}")
     }
 
@@ -278,7 +332,7 @@ object StarterLineFixture {
         put("machineInput", JsonObject(cutter.input.contents().mapValues { JsonPrimitive(it.value) }))
         put("machineOutput", JsonObject(cutter.output.contents().mapValues { JsonPrimitive(it.value) }))
         put("activeBatchRemaining", cutter.activeBatch?.remainingTicks ?: -1)
-        put("counterStock", JsonObject(s.counters.single().stock.contents().mapValues { JsonPrimitive(it.value) }))
+        put("counterStock", JsonObject(s.counters.first { it.counterId == "counter.portions_1" }.stock.contents().mapValues { JsonPrimitive(it.value) }))
         put("customers", s.customers.size)
         put(
             "fishingStock",

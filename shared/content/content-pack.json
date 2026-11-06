@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/content-pack.schema.json",
-  "contentVersion": "0.36.0",
+  "contentVersion": "0.50.0",
   "ticksPerSecond": 20,
   "units": {
     "distance": "millimetres (integer); x/z ground plane, y is up",
@@ -366,6 +366,14 @@
       "carryUnits": 2,
       "unitPrice": 48,
       "asset": "models/product_ice_packed_crate.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "product.fillet_crate",
+      "name": "Fillet crate",
+      "carryUnits": 3,
+      "unitPrice": 80,
+      "asset": "models/product_fillet_crate.glb",
       "spoilTier": 1
     },
     {
@@ -960,6 +968,23 @@
       "durationTicks": 140
     },
     {
+      "id": "recipe.fillet_crate",
+      "machine": "machine.basic_smoker",
+      "inputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 4
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet_crate",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 180
+    },
+    {
       "id": "recipe.grill_mullet",
       "machine": "machine.harbor_grill",
       "inputs": [
@@ -1107,7 +1132,8 @@
       "recipes": [
         "recipe.smoke_fillet",
         "recipe.ice_pack_catch",
-        "recipe.ice_pack_diced"
+        "recipe.ice_pack_diced",
+        "recipe.fillet_crate"
       ],
       "inputCapacityUnits": 8,
       "outputCapacityUnits": 12
@@ -1313,7 +1339,7 @@
     {
       "id": "upgrade.staff_boots",
       "name": "Staff work boots",
-      "description": "Hired staff walk 25% faster.",
+      "description": "Equip on one worker from the Staff panel: that worker walks 25% faster.",
       "cost": 200,
       "requires": [
         "quest.first_ten_sales"
@@ -1326,7 +1352,7 @@
     {
       "id": "upgrade.staff_satchels",
       "name": "Staff satchels",
-      "description": "Hired staff can carry at least 5 units.",
+      "description": "Equip on one worker from the Staff panel: that worker can carry at least 5 units.",
       "cost": 250,
       "requires": [
         "upgrade.staff_boots"
@@ -1339,7 +1365,7 @@
     {
       "id": "upgrade.staff_tackle",
       "name": "Staff tackle",
-      "description": "Fishers catch at full angler speed.",
+      "description": "Equip on one worker from the Staff panel: that fisher catches at full angler speed.",
       "cost": 180,
       "requires": [
         "quest.first_ten_sales"
@@ -1412,6 +1438,19 @@
       "effect": {
         "kind": "unlock_machine",
         "machine": "machine.harbor_grill"
+      }
+    },
+    {
+      "id": "upgrade.wholesale_pad",
+      "name": "Wholesale pad",
+      "description": "Open a B2B counter for crate sales. Cashiers route to the busiest unlocked pad.",
+      "cost": 180,
+      "requires": [
+        "quest.first_ten_sales"
+      ],
+      "effect": {
+        "kind": "unlock_counter",
+        "pad": "wholesale"
       }
     }
   ],
@@ -1499,7 +1538,7 @@
     {
       "id": "quest.specialty_kitchen",
       "name": "Specialty kitchen",
-      "description": "Collect 12 finished products from station pads — smoke, grill, or cut specialty stock.",
+      "description": "Collect 12 finished products from station pads \u2014 smoke, grill, or cut specialty stock.",
       "requires": [
         "quest.fill_the_hold"
       ],
@@ -1547,6 +1586,22 @@
       },
       "reward": {
         "coins": 100,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.obsidian_landing",
+      "name": "Obsidian landing",
+      "description": "Open the third harbor route and land at Obsidian Jetty.",
+      "requires": [
+        "quest.moon_crossing"
+      ],
+      "goal": {
+        "stat": "stat.harbors_traveled",
+        "atLeast": 3
+      },
+      "reward": {
+        "coins": 150,
         "unlockUpgrades": []
       }
     }
@@ -1602,7 +1657,7 @@
       "name": "Cashier",
       "role": "cashier",
       "hireCost": 140,
-      "maxHired": 1,
+      "maxHired": 2,
       "carryCapacityUnits": 1,
       "moveSpeedMmPerTick": 160,
       "catchSpeedPermille": 1000,
@@ -1627,8 +1682,137 @@
         "quest.first_ten_sales",
         "upgrade.staff_boots"
       ]
+    },
+    {
+      "id": "worker.ice_runner",
+      "name": "Ice runner",
+      "role": "ice_runner",
+      "hireCost": 160,
+      "maxHired": 2,
+      "carryCapacityUnits": 4,
+      "moveSpeedMmPerTick": 210,
+      "catchSpeedPermille": 1000,
+      "transferIntervalTicks": 3,
+      "leaseTicks": 600,
+      "requires": [
+        "quest.first_ten_sales",
+        "upgrade.staff_boots"
+      ]
+    },
+    {
+      "id": "worker.smoker_specialist",
+      "name": "Smoker specialist",
+      "role": "smoker_specialist",
+      "hireCost": 180,
+      "maxHired": 1,
+      "carryCapacityUnits": 4,
+      "moveSpeedMmPerTick": 170,
+      "catchSpeedPermille": 1000,
+      "transferIntervalTicks": 4,
+      "leaseTicks": 600,
+      "requires": [
+        "quest.specialty_kitchen"
+      ]
+    },
+    {
+      "id": "worker.greeter",
+      "name": "Greeter",
+      "role": "greeter",
+      "hireCost": 130,
+      "maxHired": 1,
+      "carryCapacityUnits": 1,
+      "moveSpeedMmPerTick": 150,
+      "catchSpeedPermille": 1000,
+      "transferIntervalTicks": 4,
+      "leaseTicks": 600,
+      "requires": [
+        "quest.first_hire"
+      ]
     }
   ],
+  "staffProgression": {
+    "maxLevel": 5,
+    "xpThresholds": [
+      0,
+      40,
+      100,
+      180,
+      280
+    ],
+    "moveSpeedPermillePerLevel": 40,
+    "catchSpeedPermillePerLevel": 50,
+    "carryBonusEveryLevels": 2,
+    "xpFishCaught": 4,
+    "xpItemMoved": 2,
+    "xpSaleAssisted": 3,
+    "traitsOnHire": 1,
+    "shifts": {
+      "baseOnShiftSlots": 2,
+      "overtimeWagePermille": 1500,
+      "supervisorExtraSlots": 2
+    },
+    "roleBuffs": {
+      "greeterPatienceDrainMultPermille": 700,
+      "smokerSpecialistProcessSpeedPermille": 1250,
+      "iceRunnerFragileSpoilTierMin": 3,
+      "iceRunnerSpoilScoreBonus": 80
+    },
+    "traits": [
+      {
+        "id": "trait.fast_feet",
+        "name": "Fast feet",
+        "description": "Walks 15% faster",
+        "weight": 40,
+        "moveSpeedPermille": 1150
+      },
+      {
+        "id": "trait.careful_hands",
+        "name": "Careful hands",
+        "description": "+1 carry capacity",
+        "weight": 35,
+        "carryBonus": 1
+      },
+      {
+        "id": "trait.keen_eye",
+        "name": "Keen eye",
+        "description": "Catches 20% faster",
+        "weight": 25,
+        "catchSpeedPermille": 1200
+      },
+      {
+        "id": "trait.steady_pace",
+        "name": "Steady pace",
+        "description": "Transfers a bit faster",
+        "weight": 30,
+        "transferIntervalMultPermille": 800
+      }
+    ],
+    "loadouts": {
+      "slots": [
+        {
+          "id": "boots",
+          "name": "Boots",
+          "upgradeIds": [
+            "upgrade.staff_boots"
+          ]
+        },
+        {
+          "id": "satchel",
+          "name": "Satchel",
+          "upgradeIds": [
+            "upgrade.staff_satchels"
+          ]
+        },
+        {
+          "id": "tackle",
+          "name": "Tackle",
+          "upgradeIds": [
+            "upgrade.staff_tackle"
+          ]
+        }
+      ]
+    }
+  },
   "routing": {
     "urgencyWeight": 2,
     "distanceWeight": 1,
@@ -1688,7 +1872,18 @@
       1050,
       1000,
       1000
-    ]
+    ],
+    "wear": {
+      "requires": [
+        "quest.busy_harbor"
+      ],
+      "checkPeriodTicks": 900,
+      "chancePermille": 100,
+      "breakChancePermille": 280,
+      "slowDurationTicks": 1200,
+      "slowProcessMultPermille": 1600,
+      "repairCoins": 40
+    }
   },
   "trophies": {
     "sizeMinPermille": 700,
@@ -1723,6 +1918,18 @@
           "species.ghost_lanternfish"
         ],
         "completeStat": "stat.trophy_set_moon_cove"
+      },
+      {
+        "id": "gallery.obsidian_jetty",
+        "name": "Obsidian Jetty gallery",
+        "description": "Mount the four Obsidian Jetty specialty fish.",
+        "species": [
+          "species.reef_perch",
+          "species.tide_bass",
+          "species.sail_needlefish",
+          "species.lava_eel"
+        ],
+        "completeStat": "stat.trophy_set_obsidian_jetty"
       },
       {
         "id": "gallery.rare_gallery",
@@ -1819,6 +2026,24 @@
         }
       },
       {
+        "id": "prestige.triple_harbors",
+        "name": "Triple Harbors",
+        "description": "Travel the three-harbor circuit.",
+        "requires": [
+          "prestige.twin_harbors"
+        ],
+        "goal": {
+          "stat": "stat.harbors_traveled",
+          "atLeast": 3
+        },
+        "reward": {
+          "coins": 200,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.triple_harbors"
+        }
+      },
+      {
         "id": "prestige.sunrise_curator",
         "name": "Sunrise Curator",
         "description": "Fill the Sunrise Pier trophy gallery.",
@@ -1852,6 +2077,24 @@
           "catchSpeedPermille": 0,
           "priceBonusPermille": 0,
           "cosmetic": "banner.moon_museum"
+        }
+      },
+      {
+        "id": "prestige.obsidian_curator",
+        "name": "Obsidian Curator",
+        "description": "Fill the Obsidian Jetty trophy gallery.",
+        "requires": [
+          "prestige.triple_harbors"
+        ],
+        "goal": {
+          "stat": "stat.trophy_set_obsidian_jetty",
+          "atLeast": 1
+        },
+        "reward": {
+          "coins": 225,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.obsidian_museum"
         }
       },
       {
@@ -1893,6 +2136,18 @@
         "payout": 45,
         "penalty": 12,
         "weight": 40
+      },
+      {
+        "id": "contract.silver_tide_crate",
+        "name": "Festival sprat crate",
+        "description": "Silver Tide buyers want a heavy sprat delivery \u2014 only during the festival.",
+        "item": "species.silver_sprat",
+        "quantity": 8,
+        "durationTicks": 1600,
+        "payout": 90,
+        "penalty": 20,
+        "weight": 220,
+        "requiresSeasonalEvent": "event.silver_tide"
       },
       {
         "id": "contract.portion_order",
@@ -1971,6 +2226,18 @@
         "weight": 20
       },
       {
+        "id": "contract.moonlit_flounder",
+        "name": "Moonlit flounder run",
+        "description": "Lantern-market inns pay a premium for flounder during Moonlit Market.",
+        "item": "species.moon_flounder",
+        "quantity": 4,
+        "durationTicks": 1500,
+        "payout": 110,
+        "penalty": 28,
+        "weight": 200,
+        "requiresSeasonalEvent": "event.moonlit_market"
+      },
+      {
         "id": "contract.skewer_platter",
         "name": "Skewer platter",
         "description": "A pier cafe wants harbor skewers for the lunch rush.",
@@ -2002,6 +2269,17 @@
         "payout": 120,
         "penalty": 30,
         "weight": 14
+      },
+      {
+        "id": "contract.fillet_crate_run",
+        "name": "Fillet crate run",
+        "description": "A restaurant kitchen wants sealed fillet crates for weekend prep.",
+        "item": "product.fillet_crate",
+        "quantity": 2,
+        "durationTicks": 2200,
+        "payout": 175,
+        "penalty": 40,
+        "weight": 12
       },
       {
         "id": "contract.grill_platter",
@@ -2134,7 +2412,7 @@
           "weight": 15
         },
         {
-          "item": "product.ice_packed_crate",
+          "item": "product.fillet_crate",
           "weight": 15
         }
       ],
@@ -2181,27 +2459,19 @@
       "id": "customer.wholesaler",
       "name": "Wholesaler",
       "kind": "wholesaler",
-      "basketMin": 8,
-      "basketMax": 14,
+      "basketMin": 2,
+      "basketMax": 4,
       "patienceTicks": 420,
       "spawnWeight": 8,
       "priceMultPermille": 1000,
       "preferredProducts": [
         {
           "item": "product.ice_packed_crate",
+          "weight": 55
+        },
+        {
+          "item": "product.fillet_crate",
           "weight": 45
-        },
-        {
-          "item": "product.fillet",
-          "weight": 25
-        },
-        {
-          "item": "product.diced_fish",
-          "weight": 15
-        },
-        {
-          "item": "product.soup_stock",
-          "weight": 15
         }
       ],
       "unmetPriceMultPermille": 650,
@@ -2289,7 +2559,7 @@
   "tutorial": [
     {
       "id": "tutorial.walk_to_pier",
-      "text": "Walk to the pier end — cast where the water meets the boards",
+      "text": "Walk to the pier end \u2014 cast where the water meets the boards",
       "advanceOn": {
         "kind": "enter_zone",
         "zone": "zone.pier_end"
@@ -2430,6 +2700,13 @@
           "maxZ": 4500
         },
         {
+          "id": "footprint.wholesale_1",
+          "minX": 5500,
+          "minZ": 3500,
+          "maxX": 8500,
+          "maxZ": 4500
+        },
+        {
           "id": "footprint.grill_1",
           "minX": 11400,
           "minZ": -5000,
@@ -2492,6 +2769,14 @@
           "minX": 1500,
           "minZ": 2000,
           "maxX": 4500,
+          "maxZ": 3500
+        },
+        {
+          "id": "zone.wholesale_1",
+          "kind": "counter",
+          "minX": 5500,
+          "minZ": 2000,
+          "maxX": 8500,
           "maxZ": 3500
         },
         {
@@ -2601,6 +2886,7 @@
       "counters": [
         {
           "id": "counter.portions_1",
+          "kind": "retail",
           "products": [
             "product.basic_portion",
             "product.fillet",
@@ -2609,7 +2895,6 @@
             "product.diced_fish",
             "product.skewer",
             "product.soup_stock",
-            "product.ice_packed_crate",
             "product.grilled_fillet",
             "product.grilled_skewer"
           ],
@@ -2626,6 +2911,28 @@
             "x": -900,
             "z": 0
           }
+        },
+        {
+          "id": "counter.wholesale_1",
+          "kind": "wholesale",
+          "products": [
+            "product.ice_packed_crate",
+            "product.fillet_crate"
+          ],
+          "capacityUnits": 24,
+          "zone": "zone.wholesale_1",
+          "footprint": "footprint.wholesale_1",
+          "checkoutTicks": 28,
+          "maxQueue": 3,
+          "queueAnchor": {
+            "x": 7000,
+            "z": 5200
+          },
+          "queueStep": {
+            "x": -900,
+            "z": 0
+          },
+          "requiresUpgrade": "upgrade.wholesale_pad"
         }
       ],
       "customerSpawnTicks": 160,
@@ -2670,7 +2977,15 @@
           "priceMultPermille": 1100
         }
       ],
-      "requires": []
+      "requires": [],
+      "specialization": {
+        "id": "spec.efficient_docks",
+        "name": "Efficient docks",
+        "description": "Well-kept berths cut station upkeep while you work this pier.",
+        "maintenanceDiscountPerStation": 1,
+        "rareChanceBonusPermille": 0,
+        "kindSpawnMultPermille": {}
+      }
     },
     {
       "id": "harbor.moon_cove",
@@ -2722,6 +3037,13 @@
           "minX": -4500,
           "minZ": 3500,
           "maxX": -1500,
+          "maxZ": 4500
+        },
+        {
+          "id": "footprint.cove_wholesale",
+          "minX": -8500,
+          "minZ": 3500,
+          "maxX": -5500,
           "maxZ": 4500
         },
         {
@@ -2787,6 +3109,14 @@
           "minX": -4500,
           "minZ": 2000,
           "maxX": -1500,
+          "maxZ": 3500
+        },
+        {
+          "id": "zone.cove_wholesale",
+          "kind": "counter",
+          "minX": -8500,
+          "minZ": 2000,
+          "maxX": -5500,
           "maxZ": 3500
         },
         {
@@ -2894,6 +3224,7 @@
       "counters": [
         {
           "id": "counter.cove_1",
+          "kind": "retail",
           "products": [
             "product.basic_portion",
             "product.fillet",
@@ -2902,7 +3233,6 @@
             "product.diced_fish",
             "product.skewer",
             "product.soup_stock",
-            "product.ice_packed_crate",
             "product.grilled_fillet",
             "product.grilled_skewer"
           ],
@@ -2919,6 +3249,28 @@
             "x": 900,
             "z": 0
           }
+        },
+        {
+          "id": "counter.cove_wholesale",
+          "kind": "wholesale",
+          "products": [
+            "product.ice_packed_crate",
+            "product.fillet_crate"
+          ],
+          "capacityUnits": 24,
+          "zone": "zone.cove_wholesale",
+          "footprint": "footprint.cove_wholesale",
+          "checkoutTicks": 28,
+          "maxQueue": 3,
+          "queueAnchor": {
+            "x": -7000,
+            "z": 5200
+          },
+          "queueStep": {
+            "x": 900,
+            "z": 0
+          },
+          "requiresUpgrade": "upgrade.wholesale_pad"
         }
       ],
       "customerSpawnTicks": 140,
@@ -2965,7 +3317,357 @@
       ],
       "requires": [
         "quest.busy_harbor"
-      ]
+      ],
+      "specialization": {
+        "id": "spec.rare_waters",
+        "name": "Rare waters",
+        "description": "Deep cove currents raise the chance of rare upgrades on the line.",
+        "maintenanceDiscountPerStation": 0,
+        "rareChanceBonusPermille": 80,
+        "kindSpawnMultPermille": {}
+      }
+    },
+    {
+      "id": "harbor.obsidian_jetty",
+      "name": "Obsidian Jetty",
+      "playerSpawn": {
+        "x": 0,
+        "z": 0
+      },
+      "walkable": [
+        {
+          "id": "area.jetty_land",
+          "minX": -8000,
+          "minZ": -14500,
+          "maxX": 8000,
+          "maxZ": 8000
+        },
+        {
+          "id": "area.jetty_pier",
+          "minX": -1500,
+          "minZ": 7900,
+          "maxX": 1500,
+          "maxZ": 16000
+        },
+        {
+          "id": "area.jetty_ledge",
+          "minX": 1500,
+          "minZ": 11000,
+          "maxX": 4500,
+          "maxZ": 14500
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "footprint.jetty_cutter",
+          "minX": -5000,
+          "minZ": -4000,
+          "maxX": -3000,
+          "maxZ": -2000
+        },
+        {
+          "id": "footprint.jetty_smoker",
+          "minX": -5000,
+          "minZ": -8600,
+          "maxX": -3000,
+          "maxZ": -7000
+        },
+        {
+          "id": "footprint.jetty_counter",
+          "minX": 3500,
+          "minZ": -4500,
+          "maxX": 4500,
+          "maxZ": -1500
+        },
+        {
+          "id": "footprint.jetty_wholesale",
+          "minX": 3500,
+          "minZ": -8500,
+          "maxX": 4500,
+          "maxZ": -5500
+        },
+        {
+          "id": "footprint.jetty_grill",
+          "minX": -5000,
+          "minZ": -13000,
+          "maxX": -3000,
+          "maxZ": -11400
+        }
+      ],
+      "zones": [
+        {
+          "id": "zone.jetty_end",
+          "kind": "fishing",
+          "minX": -1500,
+          "minZ": 12500,
+          "maxX": 1500,
+          "maxZ": 16000
+        },
+        {
+          "id": "zone.jetty_ledge",
+          "kind": "fishing",
+          "minX": 1500,
+          "minZ": 11000,
+          "maxX": 4500,
+          "maxZ": 14500
+        },
+        {
+          "id": "zone.jetty_cutter_in",
+          "kind": "machine_input",
+          "minX": -3000,
+          "minZ": -4000,
+          "maxX": -1400,
+          "maxZ": -2000
+        },
+        {
+          "id": "zone.jetty_cutter_out",
+          "kind": "machine_output",
+          "minX": -6600,
+          "minZ": -4000,
+          "maxX": -5000,
+          "maxZ": -2000
+        },
+        {
+          "id": "zone.jetty_smoker_in",
+          "kind": "machine_input",
+          "minX": -3000,
+          "minZ": -8600,
+          "maxX": -1400,
+          "maxZ": -7000
+        },
+        {
+          "id": "zone.jetty_smoker_out",
+          "kind": "machine_output",
+          "minX": -6600,
+          "minZ": -8600,
+          "maxX": -5000,
+          "maxZ": -7000
+        },
+        {
+          "id": "zone.jetty_counter",
+          "kind": "counter",
+          "minX": 2000,
+          "minZ": -4500,
+          "maxX": 3500,
+          "maxZ": -1500
+        },
+        {
+          "id": "zone.jetty_wholesale",
+          "kind": "counter",
+          "minX": 2000,
+          "minZ": -8500,
+          "maxX": 3500,
+          "maxZ": -5500
+        },
+        {
+          "id": "zone.jetty_grill_in",
+          "kind": "machine_input",
+          "minX": -3000,
+          "minZ": -13000,
+          "maxX": -1400,
+          "maxZ": -11400
+        },
+        {
+          "id": "zone.jetty_grill_out",
+          "kind": "machine_output",
+          "minX": -6600,
+          "minZ": -13000,
+          "maxX": -5000,
+          "maxZ": -11400
+        },
+        {
+          "id": "zone.jetty_bait_kiosk",
+          "kind": "kiosk",
+          "minX": -2800,
+          "minZ": 6200,
+          "maxX": -1200,
+          "maxZ": 7800
+        }
+      ],
+      "fishingSpots": [
+        {
+          "zone": "zone.jetty_end",
+          "species": [
+            "species.reef_perch",
+            "species.tide_bass",
+            "species.sail_needlefish",
+            "species.lava_eel",
+            "species.amber_snapper",
+            "species.copper_mullet",
+            "species.king_grouper",
+            "species.dawn_anchovy",
+            "species.silver_sprat"
+          ],
+          "stockMax": 18,
+          "regenTicks": 42,
+          "regenCurvePermille": [
+            2000,
+            1500,
+            1100,
+            850,
+            700
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1150,
+            "day": 1000,
+            "dusk": 950,
+            "night": 1050
+          }
+        },
+        {
+          "zone": "zone.jetty_ledge",
+          "species": [
+            "species.reef_perch",
+            "species.sail_needlefish",
+            "species.ghost_lanternfish",
+            "species.ink_squid",
+            "species.tide_bass"
+          ],
+          "stockMax": 9,
+          "regenTicks": 58,
+          "regenCurvePermille": [
+            2200,
+            1650,
+            1150,
+            900,
+            720
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1100,
+            "day": 1050,
+            "dusk": 1000,
+            "night": 900
+          }
+        }
+      ],
+      "stations": [
+        {
+          "id": "station.jetty_cutter",
+          "machine": "machine.basic_cutter",
+          "inputZone": "zone.jetty_cutter_in",
+          "outputZone": "zone.jetty_cutter_out"
+        },
+        {
+          "id": "station.jetty_smoker",
+          "machine": "machine.basic_smoker",
+          "inputZone": "zone.jetty_smoker_in",
+          "outputZone": "zone.jetty_smoker_out"
+        },
+        {
+          "id": "station.jetty_grill",
+          "machine": "machine.harbor_grill",
+          "inputZone": "zone.jetty_grill_in",
+          "outputZone": "zone.jetty_grill_out",
+          "requiresUpgrade": "upgrade.harbor_grill"
+        }
+      ],
+      "counters": [
+        {
+          "id": "counter.jetty_1",
+          "kind": "retail",
+          "products": [
+            "product.basic_portion",
+            "product.fillet",
+            "product.premium_portion",
+            "product.smoked_fillet",
+            "product.diced_fish",
+            "product.skewer",
+            "product.soup_stock",
+            "product.grilled_fillet",
+            "product.grilled_skewer"
+          ],
+          "capacityUnits": 30,
+          "zone": "zone.jetty_counter",
+          "footprint": "footprint.jetty_counter",
+          "checkoutTicks": 20,
+          "maxQueue": 4,
+          "queueAnchor": {
+            "x": 5200,
+            "z": -3000
+          },
+          "queueStep": {
+            "x": 0,
+            "z": 900
+          }
+        },
+        {
+          "id": "counter.jetty_wholesale",
+          "kind": "wholesale",
+          "products": [
+            "product.ice_packed_crate",
+            "product.fillet_crate"
+          ],
+          "capacityUnits": 24,
+          "zone": "zone.jetty_wholesale",
+          "footprint": "footprint.jetty_wholesale",
+          "checkoutTicks": 28,
+          "maxQueue": 3,
+          "queueAnchor": {
+            "x": 5200,
+            "z": -7000
+          },
+          "queueStep": {
+            "x": 0,
+            "z": 900
+          },
+          "requiresUpgrade": "upgrade.wholesale_pad"
+        }
+      ],
+      "customerSpawnTicks": 135,
+      "customerEntry": {
+        "x": 6500,
+        "z": -9500
+      },
+      "customerWalkMmPerTick": 100,
+      "customerPathWaypoints": [
+        {
+          "x": 7000,
+          "z": -7500
+        },
+        {
+          "x": 7000,
+          "z": -4500
+        },
+        {
+          "x": 5800,
+          "z": -3500
+        }
+      ],
+      "rushes": [
+        {
+          "id": "rush.jetty_dawn",
+          "name": "Dawn market",
+          "periodTicks": 2400,
+          "startTick": 200,
+          "durationTicks": 350,
+          "spawnSpeedPermille": 2300,
+          "queueBonus": 2,
+          "priceMultPermille": 1120
+        },
+        {
+          "id": "rush.jetty_midnight",
+          "name": "Midnight crush",
+          "periodTicks": 2400,
+          "startTick": 2000,
+          "durationTicks": 280,
+          "spawnSpeedPermille": 2200,
+          "queueBonus": 2,
+          "priceMultPermille": 1180
+        }
+      ],
+      "requires": [
+        "prestige.twin_harbors"
+      ],
+      "specialization": {
+        "id": "spec.tourist_strip",
+        "name": "Tourist strip",
+        "description": "Sightseers flock the jetty \u2014 tourist customers spawn more often.",
+        "maintenanceDiscountPerStation": 0,
+        "rareChanceBonusPermille": 0,
+        "kindSpawnMultPermille": {
+          "tourist": 1300
+        }
+      }
     }
   ],
   "bait": [
@@ -3066,5 +3768,99 @@
     "unmetPreferencePenaltyPermille": 50,
     "coachingLostRatioPermille": 250,
     "coachingPraiseScorePermille": 850
+  },
+  "automationAlerts": {
+    "machineIdleTicksDuringRush": 60,
+    "alertCooldownTicks": 200
+  },
+  "decor": {
+    "items": [
+      {
+        "id": "decor.lantern_string",
+        "name": "Lantern string",
+        "description": "Warm pier lights that keep customers a moment longer.",
+        "cost": 80,
+        "requiresCosmetic": null,
+        "patienceBonusTicks": 20
+      },
+      {
+        "id": "decor.flower_boxes",
+        "name": "Flower boxes",
+        "description": "Bright planter boxes along the queue.",
+        "cost": 120,
+        "requiresCosmetic": null,
+        "patienceBonusTicks": 25
+      },
+      {
+        "id": "decor.rising_tide_pennant",
+        "name": "Rising Tide pennant",
+        "description": "Hang your Rising Tide banner by the counter.",
+        "cost": 50,
+        "requiresCosmetic": "banner.rising_tide",
+        "patienceBonusTicks": 30
+      },
+      {
+        "id": "decor.harbor_star_bunting",
+        "name": "Harbor Star bunting",
+        "description": "Prestige bunting that dresses the shop for tipsy tourists.",
+        "cost": 60,
+        "requiresCosmetic": "banner.harbor_star",
+        "patienceBonusTicks": 35
+      },
+      {
+        "id": "decor.twin_harbors_flag",
+        "name": "Twin Harbors flag",
+        "description": "Fly the twin-harbor colors over the pier.",
+        "cost": 75,
+        "requiresCosmetic": "banner.twin_harbors",
+        "patienceBonusTicks": 40
+      }
+    ]
+  },
+  "seasonalEvents": {
+    "events": [
+      {
+        "id": "event.silver_tide",
+        "name": "Silver Tide Festival",
+        "description": "Sprats run thick \u2014 festival buyers post special crates.",
+        "periodTicks": 12000,
+        "startTick": 6200,
+        "durationTicks": 2000,
+        "banner": "banner.silver_tide",
+        "speciesWeightMultPermille": {
+          "species.silver_sprat": 2200,
+          "species.harbor_herring": 1600
+        }
+      },
+      {
+        "id": "event.moonlit_market",
+        "name": "Moonlit Market",
+        "description": "Night cove specialties swell under lantern light.",
+        "periodTicks": 12000,
+        "startTick": 9000,
+        "durationTicks": 1800,
+        "banner": "banner.moonlit_market",
+        "speciesWeightMultPermille": {
+          "species.moon_flounder": 2000,
+          "species.ghost_lanternfish": 1800,
+          "species.ink_squid": 1500
+        }
+      }
+    ]
+  },
+  "bank": {
+    "requires": [
+      "quest.first_ten_sales"
+    ],
+    "loanPrincipal": 80,
+    "repayPermille": 1250,
+    "termTicks": 4800,
+    "collectionPeriodTicks": 100,
+    "goalPresets": [
+      150,
+      300,
+      600,
+      1200
+    ]
   }
 }

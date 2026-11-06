@@ -45,6 +45,18 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+.seasonal-banner {
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 52px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, #1a6b6b 82%, var(--surface));
+  color: #f4fffe;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.rush-banner ~ .seasonal-banner {
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 96px);
+}
 .supervisor-banner {
   top: calc(max(var(--gap), env(safe-area-inset-top)) + 52px);
   left: 50%;
@@ -52,8 +64,38 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-.rush-banner ~ .supervisor-banner {
+.rush-banner ~ .supervisor-banner,
+.seasonal-banner ~ .supervisor-banner {
   top: calc(max(var(--gap), env(safe-area-inset-top)) + 96px);
+}
+.rush-banner ~ .seasonal-banner ~ .supervisor-banner {
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 140px);
+}
+.balance-strip {
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 52px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2a3a4a;
+  color: #e8f0f8;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  max-width: min(92vw, 520px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rush-banner ~ .balance-strip,
+.seasonal-banner ~ .balance-strip,
+.supervisor-banner ~ .balance-strip {
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 96px);
+}
+.rush-banner ~ .seasonal-banner ~ .balance-strip,
+.rush-banner ~ .supervisor-banner ~ .balance-strip,
+.seasonal-banner ~ .supervisor-banner ~ .balance-strip {
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 140px);
+}
+.rush-banner ~ .seasonal-banner ~ .supervisor-banner ~ .balance-strip {
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 184px);
 }
 .num { font-variant-numeric: tabular-nums; }
 .muted { opacity: 0.6; }
@@ -68,11 +110,18 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
 .title-tagline { margin: 0; color: var(--muted, #6b7c86); font-size: 14px; }
 .title-funnel-hint { margin: 14px 0 0; color: var(--muted, #6b7c86); font-size: 13px; }
 
-.top-left { top: max(var(--gap), env(safe-area-inset-top)); left: max(var(--gap), env(safe-area-inset-left)); }
+.top-left { top: max(var(--gap), env(safe-area-inset-top)); left: max(var(--gap), env(safe-area-inset-left)); max-width: min(42vw, 360px); }
 .top-center { top: max(var(--gap), env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); }
 .top-right { top: max(var(--gap), env(safe-area-inset-top)); right: max(var(--gap), env(safe-area-inset-right)); }
-.top-actions { top: max(var(--gap), env(safe-area-inset-top)); right: max(var(--gap), env(safe-area-inset-right)); display: flex; gap: 8px; }
-.pause-button { top: calc(max(var(--gap), env(safe-area-inset-top)) + 48px); left: max(var(--gap), env(safe-area-inset-left)); }
+.top-actions {
+  top: max(var(--gap), env(safe-area-inset-top));
+  right: max(var(--gap), env(safe-area-inset-right));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  max-width: min(52vw, 420px);
+}
 .objective { left: max(var(--gap), env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); max-width: 220px; }
 .joystick-pad, .keys-hint {
   bottom: max(var(--gap), env(safe-area-inset-bottom));
@@ -129,7 +178,7 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 5px; margin: 0 2px; 
 .stick-knob { width: 38%; height: 38%; border-radius: 50%; background: rgb(255 255 255 / 0.9); border: 4px solid var(--ink); pointer-events: none; }
 
 .scrim { position: absolute; inset: 0; background: rgb(21 52 73 / 0.25); display: grid; place-items: center; }
-.sheet { position: relative; width: min(440px, calc(100vw - 32px)); max-height: min(360px, calc(100vh - 32px)); overflow: auto; background: var(--surface); padding: 16px; }
+.sheet { position: relative; width: min(440px, calc(100vw - 32px)); max-height: min(70vh, calc(100vh - 32px)); overflow: auto; background: var(--surface); padding: 16px; }
 .sheet-header { display: flex; align-items: center; gap: 12px; }
 .sheet-header > h2 { margin: 0; flex: 1; font-size: 20px; }
 .sheet-header .grow h2 { margin: 0; font-size: 20px; }
@@ -144,9 +193,75 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 5px; margin: 0 2px; 
 .center-card { max-width: 420px; text-align: center; padding: 24px; }
 .center-card h2 { margin-top: 0; }
 
-.rotate-hint { display: none; }
-@media (orientation: portrait) and (pointer: coarse) {
-  .rotate-hint { display: block; position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); text-align: center; z-index: 10; }
+/* Phase 28: portrait play — same actions, reflowed chrome (no landscape lock). */
+@media (orientation: portrait) {
+  .top-left {
+    max-width: min(46vw, 200px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+  .top-left .spec,
+  .top-left .day-part {
+    display: none;
+  }
+  .top-center {
+    font-size: 14px;
+    padding: 8px 14px;
+  }
+  .top-actions {
+    max-width: min(50vw, 220px);
+    gap: 6px;
+  }
+  .top-actions .button {
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .top-actions kbd { display: none; }
+  .objective {
+    top: auto;
+    bottom: calc(max(var(--gap), env(safe-area-inset-bottom)) + min(42vh, 260px));
+    left: max(var(--gap), env(safe-area-inset-left));
+    right: max(var(--gap), env(safe-area-inset-right));
+    transform: none;
+    max-width: none;
+    width: auto;
+  }
+  .joystick-pad, .keys-hint {
+    width: min(56vw, 280px);
+    height: min(36vh, 280px);
+  }
+  .station-card {
+    max-width: min(92vw, 320px);
+    bottom: calc(max(var(--gap), env(safe-area-inset-bottom)) + 8px);
+  }
+  .reel {
+    bottom: calc(max(var(--gap), env(safe-area-inset-bottom)) + min(36vh, 220px));
+  }
+  .carry {
+    min-width: 120px;
+    font-size: 13px;
+  }
+  .sheet {
+    width: min(440px, calc(100vw - 20px));
+    max-height: min(78vh, calc(100vh - 20px));
+  }
+  .settings-sheet { max-height: min(78vh, calc(100vh - 20px)); }
+  .rush-banner,
+  .seasonal-banner,
+  .supervisor-banner,
+  .balance-strip {
+    max-width: min(94vw, 360px);
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+  .toast {
+    max-width: min(92vw, 360px);
+    text-align: center;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

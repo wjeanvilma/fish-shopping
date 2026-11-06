@@ -26,9 +26,18 @@ const val HARBOR = "harbor.sunrise_pier"
 fun newSim(seed: Int = 1234, content: ContentPack = Shared.content) =
     Simulation(content, GameState.newGame(content, HARBOR, seed))
 
+/** Primary (unlocked retail) counter for tests that predate multi-pad harbors. */
+fun Simulation.primaryCounter() =
+    state.counters.first { ct ->
+        harbor.counters.first { it.id == ct.counterId }.requiresUpgrade == null
+    }
+
+fun GameState.primaryCounterStock(harborId: String = HARBOR) =
+    counters.first { it.counterId == Shared.content.harborsById.getValue(harborId).counters.first { c -> c.requiresUpgrade == null }.id }
+
 /** Pad counter fill into a scarcity band that pays 1000 (isolates other price mults). */
 fun Simulation.padNeutralScarcity(itemId: String = "product.basic_portion") {
-    val counter = state.counters.single()
+    val counter = primaryCounter()
     val def = harbor.counters.first { it.id == counter.counterId }
     val CS = com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
     while (CS.scarcityPriceMultPermille(content, def, counter) != 1000) {

@@ -3,7 +3,7 @@ import type { ContentPack, HarborDef } from "./content";
 import { CHECKPOINT_INTERVAL_TICKS, INPUT_SCALE } from "./foundations";
 import type { Command, GameEvent, GameState } from "./state";
 import {
-  BaitSystem, ContractSystem, CustomerSystem, EconomySystem, FishingSystem, HarborTravelSystem, MovementSystem, PrestigeSystem, ProductionSystem, ProgressionSystem,
+  AutomationSystem, BaitSystem, BankSystem, ContractSystem, CustomerSystem, DecorSystem, EconomySystem, FishingSystem, HarborTravelSystem, MovementSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, SeasonalEventSystem,
   StepContext, TransferSystem, UpgradeSystem, WorkerSystem, invariantProblems,
 } from "./systems";
 
@@ -30,10 +30,13 @@ export class Simulation {
     ProductionSystem.step(ctx);
     CustomerSystem.step(ctx);
     WorkerSystem.step(ctx);
+    AutomationSystem.step(ctx);
     ProgressionSystem.step(ctx);
     PrestigeSystem.step(ctx);
+    SeasonalEventSystem.step(ctx);
     ContractSystem.step(ctx);
     EconomySystem.step(ctx);
+    BankSystem.step(ctx);
     if (s.tick % CHECKPOINT_INTERVAL_TICKS === 0) ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "periodic" });
     return ctx.events;
   }
@@ -59,6 +62,21 @@ export class Simulation {
       case "purchase_upgrade":
         UpgradeSystem.purchase(ctx, c.upgradeId, c.requestId);
         break;
+      case "purchase_decor":
+        DecorSystem.purchase(ctx, c.decorId, c.requestId);
+        break;
+      case "repair_machine":
+        EconomySystem.repair(ctx, c.stationId, c.requestId);
+        break;
+      case "take_loan":
+        BankSystem.takeLoan(ctx, c.requestId);
+        break;
+      case "repay_loan":
+        BankSystem.repayLoan(ctx, c.requestId);
+        break;
+      case "set_coin_goal":
+        BankSystem.setCoinGoal(ctx, c.amount);
+        break;
       case "set_machine_paused": {
         const m = this.state.machines.find((mm) => mm.stationId === c.stationId);
         if (m) m.paused = c.paused;
@@ -76,6 +94,15 @@ export class Simulation {
       }
       case "hire_worker":
         WorkerSystem.hire(ctx, c.roleId, c.requestId);
+        break;
+      case "set_worker_shift":
+        WorkerSystem.setShift(ctx, c.workerId, c.onShift);
+        break;
+      case "assign_worker_gear":
+        WorkerSystem.assignGear(ctx, c.workerId, c.upgradeId);
+        break;
+      case "unequip_worker_gear":
+        WorkerSystem.unequipGear(ctx, c.workerId, c.slotId);
         break;
       case "accept_contract":
         ContractSystem.accept(ctx, c.offerId, c.requestId);

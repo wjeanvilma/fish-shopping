@@ -18,8 +18,12 @@ data class ContentPack(
     val upgrades: List<UpgradeDef>,
     val quests: List<QuestDef>,
     val workers: List<WorkerDef>,
+    /** Per-worker XP, levels, and hire-time traits (Phase 16). */
+    val staffProgression: StaffProgressionDef,
     /** Task scoring weights for worker haul routing (Phase 13). */
     val routing: RoutingDef,
+    /** Staff automation blocked reasons + rush idle ticker alerts (Phase 20). */
+    val automationAlerts: AutomationAlertsDef,
     /** Offline catch-up policy (Phase 14). */
     val offline: OfflineDef,
     /** Soft coin/stock sinks after early progression (Phase 19). */
@@ -36,6 +40,12 @@ data class ContentPack(
     val contracts: ContractsDef,
     val customers: List<CustomerDef>,
     val tutorial: List<TutorialStepDef>,
+    /** Phase 23 shop decor / placable cosmetics. */
+    val decor: DecorCatalog,
+    /** Phase 24 time-boxed overlays driven by the sim clock. */
+    val seasonalEvents: SeasonalEventsCatalog,
+    /** Phase 26 short-term loans and coin-goal presets. */
+    val bank: BankDef,
     val harbors: List<HarborDef>,
 ) {
     val speciesById = species.associateBy { it.id }
@@ -46,10 +56,13 @@ data class ContentPack(
     val upgradesById = upgrades.associateBy { it.id }
     val questsById = quests.associateBy { it.id }
     val workersById = workers.associateBy { it.id }
+    val workerTraitsById = staffProgression.traits.associateBy { it.id }
     val prestigeMilestonesById = prestige.milestones.associateBy { it.id }
     val trophySetsById = trophies.sets.associateBy { it.id }
     val contractTemplatesById = contracts.templates.associateBy { it.id }
     val customersById = customers.associateBy { it.id }
+    val decorById = decor.items.associateBy { it.id }
+    val seasonalEventsById = seasonalEvents.events.associateBy { it.id }
     val harborsById = harbors.associateBy { it.id }
 
     /** Carry units for any item (species, product, or bait). Throws on unknown IDs. */
@@ -169,6 +182,11 @@ sealed interface UpgradeEffect {
     data class UnlockFishingSpot(val zone: String) : UpgradeEffect
     /** Ownership unlocks stations whose machine is [machine]; apply is a no-op. */
     data class UnlockMachine(val machine: String) : UpgradeEffect
+    /**
+     * Ownership unlocks counters whose [CounterDef.kind] matches [pad]
+     * (and list this upgrade as requiresUpgrade); apply is a no-op.
+     */
+    data class UnlockCounter(val pad: String) : UpgradeEffect
     /** Staff walk-speed multiplier in permille (1250 = 25% faster). */
     data class WorkerMoveSpeed(val speedPermille: Int) : UpgradeEffect
     /** Minimum bag capacity for hired staff. */
@@ -218,7 +236,13 @@ enum class WorkerRoleKind(val wire: String) {
     PORTER("porter"),
     OPERATOR("operator"),
     CASHIER("cashier"),
-    SUPERVISOR("supervisor");
+    SUPERVISOR("supervisor"),
+    /** Fast porter that prioritizes fragile / ice-packed stock (Phase 18). */
+    ICE_RUNNER("ice_runner"),
+    /** Machine hauler focused on the smoker + process-speed buff (Phase 18). */
+    SMOKER_SPECIALIST("smoker_specialist"),
+    /** Posts at the entry and slows customer patience drain (Phase 18). */
+    GREETER("greeter");
 
     companion object {
         fun fromWire(s: String) = entries.firstOrNull { it.wire == s }
@@ -240,6 +264,76 @@ data class WorkerDef(
     val requires: List<String> = emptyList(),
 )
 
+/** Hire-time trait that modifies a single worker's capabilities. */
+data class WorkerTraitDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val weight: Int,
+    val moveSpeedPermille: Int = 1000,
+    val catchSpeedPermille: Int = 1000,
+    val carryBonus: Int = 0,
+    /** Multiplies transfer interval (1000 = unchanged; lower = faster). */
+    val transferIntervalMultPermille: Int = 1000,
+)
+
+/** Hire-slot vs on-shift scheduling + overtime wages (Phase 17). */
+data class StaffShiftsDef(
+    /** Workers that can be on shift at the standard wage rate. */
+    val baseOnShiftSlots: Int,
+    /** Wage multiplier for on-shift workers beyond free slots (1500 = 1.5x). */
+    val overtimeWagePermille: Int,
+    /** Added free on-shift slots while a supervisor is posted on shift. */
+    val supervisorExtraSlots: Int,
+)
+
+/** Passive buffs for Phase 18 specialized hireable roles. */
+data class StaffRoleBuffsDef(
+    /** Multiplies customer patience drain while a greeter is posted (700 = 30% slower). */
+    val greeterPatienceDrainMultPermille: Int,
+    /** Smoker batch speed while a smoker specialist is posted (1250 = 25% faster). */
+    val smokerSpecialistProcessSpeedPermille: Int,
+    /** Ice runners prioritize hauling products at or above this spoil tier. */
+    val iceRunnerFragileSpoilTierMin: Int,
+    /** Added haul score for ice_packed_crate or fragile spoil-tier items. */
+    val iceRunnerSpoilScoreBonus: Int,
+)
+
+/** One equippable staff-gear slot (boots / satchel / tackle). */
+data class StaffLoadoutSlotDef(
+    val id: String,
+    val name: String,
+    /** Upgrade IDs that fill this slot (mutually exclusive across workers). */
+    val upgradeIds: List<String>,
+)
+
+/** Assignable staff gear inventory (Phase 19). */
+data class StaffLoadoutsDef(
+    val slots: List<StaffLoadoutSlotDef>,
+)
+
+/** Shared XP curve + trait table for hired staff (Phase 16). */
+data class StaffProgressionDef(
+    val maxLevel: Int,
+    /** Cumulative XP for levels 1..N; index 0 must be 0. */
+    val xpThresholds: List<Int>,
+    val moveSpeedPermillePerLevel: Int,
+    val catchSpeedPermillePerLevel: Int,
+    /** +1 carry capacity every N levels above 1. */
+    val carryBonusEveryLevels: Int,
+    val xpFishCaught: Int,
+    val xpItemMoved: Int,
+    val xpSaleAssisted: Int,
+    val traitsOnHire: Int,
+    /** Shift slots / overtime (Phase 17). */
+    val shifts: StaffShiftsDef,
+    /** Specialized role passives (Phase 18). */
+    val roleBuffs: StaffRoleBuffsDef,
+    /** Equip slots for owned staff gear upgrades (Phase 19). */
+    val loadouts: StaffLoadoutsDef,
+    val traits: List<WorkerTraitDef>,
+)
+
 /** Weights for scoring worker haul candidates (urgency / distance / demand). */
 data class RoutingDef(
     val urgencyWeight: Int,
@@ -247,6 +341,14 @@ data class RoutingDef(
     val demandWeight: Int,
     /** Multiplies [demandWeight] while a supervisor is on duty (1000 = unchanged). */
     val supervisorDemandBoostPermille: Int,
+)
+
+/** Rush idle ticker thresholds for automated stations (Phase 20). */
+data class AutomationAlertsDef(
+    /** Ticks a station may stay idle during rush before alerting. */
+    val machineIdleTicksDuringRush: Int,
+    /** Minimum ticks between idle alerts for the same station. */
+    val alertCooldownTicks: Int,
 )
 
 /** Offline catch-up: how long absence is simulated when loading / resuming. */
@@ -270,6 +372,21 @@ data class EconomyDef(
      * Low stock (early bands) should tip above 1000; full shelves sit near 1000.
      */
     val scarcityPriceCurvePermille: List<Int> = listOf(1150, 1100, 1050, 1000, 1000),
+    /** Phase 25 machine wear / disasters (repair spend). */
+    val wear: MachineWearDef,
+)
+
+/** Phase 25 machine wear rolls and repair costs. */
+data class MachineWearDef(
+    val requires: List<String>,
+    val checkPeriodTicks: Int,
+    val chancePermille: Int,
+    /** When a wear roll hits, chance it breaks hard instead of slowing. */
+    val breakChancePermille: Int,
+    val slowDurationTicks: Int,
+    /** Process duration multiplier while slowed (1000 = unchanged; >1000 = slower). */
+    val slowProcessMultPermille: Int,
+    val repairCoins: Long,
 )
 
 /** One curated museum set of species trophies. */
@@ -370,6 +487,8 @@ data class ContractTemplateDef(
     val maxStreak: Int = 1,
     /** After a standing fail, template stays off the board until this many ticks pass. */
     val failCooldownTicks: Int = 1,
+    /** Phase 24: only post while the named seasonal event is active. */
+    val requiresSeasonalEvent: String? = null,
 ) {
     val isStanding: Boolean get() = kind == ContractKind.STANDING
 }
@@ -493,6 +612,16 @@ data class StationDef(
     val requiresUpgrade: String? = null,
 )
 
+enum class CounterKind(val wire: String) {
+    RETAIL("retail"),
+    WHOLESALE("wholesale");
+
+    companion object {
+        fun fromWire(s: String) = entries.firstOrNull { it.wire == s }
+            ?: error("Unknown counter kind '$s'")
+    }
+}
+
 data class CounterDef(
     val id: String,
     /** Products this counter accepts for stocking and sale (content order). */
@@ -504,6 +633,10 @@ data class CounterDef(
     /** Ground position of queue slot 0; slot i is queueAnchor + i * queueStep. */
     val queueAnchor: PointMm,
     val queueStep: PointMm,
+    /** Retail vs wholesale B2B pad (Phase 15). */
+    val kind: CounterKind = CounterKind.RETAIL,
+    /** Optional upgrade gate before this counter accepts stock/spawns/cashiers. */
+    val requiresUpgrade: String? = null,
 ) {
     val acceptedProducts: Set<String> = products.toSet()
     fun accepts(itemId: String) = itemId in acceptedProducts
@@ -530,6 +663,70 @@ data class RushWindowDef(
     val endTick: Int get() = startTick + durationTicks
 }
 
+/** Phase 26 pier bank: one short-term loan at a time + coin-goal presets. */
+data class BankDef(
+    val requires: List<String>,
+    val loanPrincipal: Long,
+    /** Total repayment = principal * repayPermille / 1000. */
+    val repayPermille: Int,
+    val termTicks: Int,
+    /** While overdue, seize owed coins this often. */
+    val collectionPeriodTicks: Int,
+    val goalPresets: List<Long>,
+) {
+    fun repayAmount(): Long =
+        (loanPrincipal * repayPermille.toLong()) / 1000L
+}
+
+/** Phase 24 seasonal event catalog (sim-clock overlays). */
+data class SeasonalEventsCatalog(
+    val events: List<SeasonalEventDef>,
+)
+
+data class SeasonalEventDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val periodTicks: Int,
+    val startTick: Int,
+    val durationTicks: Int,
+    /** Cosmetic / banner id unlocked when the event first becomes active. */
+    val banner: String? = null,
+    /** Catch-weight multipliers while active (1000 = unchanged). */
+    val speciesWeightMultPermille: Map<String, Int> = emptyMap(),
+) {
+    val endTick: Int get() = startTick + durationTicks
+}
+
+/** Phase 23 shop decor catalog. */
+data class DecorCatalog(
+    val items: List<DecorDef>,
+)
+
+data class DecorDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val cost: Long,
+    /** Prestige cosmetic / banner id that must already be unlocked, if any. */
+    val requiresCosmetic: String? = null,
+    /** Added to newly spawned customer patience while owned. */
+    val patienceBonusTicks: Int = 0,
+)
+
+/** Phase 22 per-harbor passive applied while the player is at this harbor. */
+data class HarborSpecializationDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    /** Subtracted from economy.maintenanceCoinsPerStation (with upgrade discounts). */
+    val maintenanceDiscountPerStation: Int = 0,
+    /** Added to rare-upgrade rolls while fishing here. */
+    val rareChanceBonusPermille: Int = 0,
+    /** Customer-kind spawn multipliers (keys = [CustomerKind.wire]). */
+    val kindSpawnMultPermille: Map<String, Int> = emptyMap(),
+)
+
 data class HarborDef(
     val id: String,
     val name: String,
@@ -552,6 +749,8 @@ data class HarborDef(
      */
     val customerPathWaypoints: List<PointMm> = emptyList(),
     val rushes: List<RushWindowDef> = emptyList(),
+    /** Phase 22 passive while present at this harbor. */
+    val specialization: HarborSpecializationDef? = null,
 ) {
     val zonesById = zones.associateBy { it.id }
     val rushesById = rushes.associateBy { it.id }

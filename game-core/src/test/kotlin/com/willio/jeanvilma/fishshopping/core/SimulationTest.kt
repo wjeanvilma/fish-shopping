@@ -9,6 +9,7 @@ import com.willio.jeanvilma.fishshopping.core.sim.MachineStatus
 import com.willio.jeanvilma.fishshopping.core.sim.OfflinePolicy
 import com.willio.jeanvilma.fishshopping.core.sim.Simulation
 import com.willio.jeanvilma.fishshopping.core.sim.Stats
+import com.willio.jeanvilma.fishshopping.core.sim.Telemetry
 import com.willio.jeanvilma.fishshopping.core.sim.WorkerTaskPhase
 import com.willio.jeanvilma.fishshopping.core.sim.applyOffline
 import com.willio.jeanvilma.fishshopping.core.sim.view
@@ -86,7 +87,7 @@ class SimulationTest {
     @Test
     fun speciesRosterIsHarborGatedWithRareUpgradeChains() {
         val c = Shared.content
-        assertEquals("0.36.0", c.contentVersion)
+        assertEquals("0.50.0", c.contentVersion)
         assertEquals(24, c.species.size)
         val sunrise = c.harborsById.getValue("harbor.sunrise_pier").fishingSpots.flatMap { it.species }
         val moon = c.harborsById.getValue("harbor.moon_cove").fishingSpots.flatMap { it.species }
@@ -218,7 +219,7 @@ class SimulationTest {
             assertTrue(e.message!!.contains("Checksum"))
         }
         try {
-            SnapshotCodec.decode(sim.content, saved.replace("\"schemaVersion\":12", "\"schemaVersion\":99"))
+            SnapshotCodec.decode(sim.content, saved.replace("\"schemaVersion\":19", "\"schemaVersion\":99"))
             fail("newer schema should be refused")
         } catch (e: SnapshotException) {
             assertTrue(e.message!!.contains("newer"))
@@ -268,7 +269,7 @@ class SimulationTest {
     @Test
     fun customerAbandonmentReturnsStockAndRecordsNoRevenue() {
         val sim = newSim()
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         counter.stock.add(portion, 2)
         // Player never stands at the counter, so nobody is served.
         val events = (1..2000).flatMap { sim.checkedStep() }
@@ -283,7 +284,7 @@ class SimulationTest {
     fun premiumVisitorPaysTipMultiplier() {
         val sim = newSim()
         val pilot = Autopilot(sim)
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         counter.stock.add(portion, 1)
         sim.padNeutralScarcity()
         val type = sim.content.customersById.getValue("customer.premium_visitor")
@@ -308,7 +309,7 @@ class SimulationTest {
         val type = sim.content.customersById.getValue("customer.restaurant_buyer")
         assertEquals(com.willio.jeanvilma.fishshopping.core.content.CustomerKind.BULK, type.kind)
         assertTrue(type.basketMin >= 6)
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         counter.stock.add(portion, 10)
         sim.state.customers += com.willio.jeanvilma.fishshopping.core.sim.CustomerState(
             "customer.test_bulk", type.id, counter.counterId, wants = 8, patienceLeft = 9_999, walkTicksTotal = 0,
@@ -345,15 +346,15 @@ class SimulationTest {
         val FS = com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
         val nightType = sim.content.customersById.getValue("customer.night_regular")
         sim.state.tick = 0
-        val dawnW = CS.effectiveSpawnWeight(sim.content, sim.state, nightType)
+        val dawnW = CS.effectiveSpawnWeight(sim.content, sim.state, sim.harbor, nightType)
         val dayLen = sim.content.ecology.dayLengthTicks.toLong()
         sim.state.tick = (dayLen * 850L) / 1000L
         assertEquals("night", FS.dayPartAt(sim.content, sim.state.tick).id)
-        val nightW = CS.effectiveSpawnWeight(sim.content, sim.state, nightType)
+        val nightW = CS.effectiveSpawnWeight(sim.content, sim.state, sim.harbor, nightType)
         assertTrue("dawn=$dawnW night=$nightW", nightW > dawnW)
 
         val critic = sim.content.customersById.getValue("customer.food_critic")
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         counter.stock.add("product.grilled_fillet", 1)
         sim.state.customers += com.willio.jeanvilma.fishshopping.core.sim.CustomerState(
             "customer.test_critic", critic.id, counter.counterId, wants = 1, patienceLeft = 9_999, walkTicksTotal = 0,
@@ -369,7 +370,7 @@ class SimulationTest {
     fun touristAndWholesalerKindsShowInCounterContext() {
         val sim = newSim()
         val pilot = Autopilot(sim)
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         counter.stock.add(portion, 20)
         val tourist = sim.content.customersById.getValue("customer.harbor_tourist")
         sim.state.customers += com.willio.jeanvilma.fishshopping.core.sim.CustomerState(
@@ -380,13 +381,19 @@ class SimulationTest {
         assertTrue(sim.view().context!!.lines.any { it.contains("tourist tip") })
         sim.state.customers.clear()
         counter.stock.restore(emptyMap(), emptyMap())
-        counter.stock.add(portion, 20)
+        counter.checkoutProgress = 0
+        sim.state.ownedUpgrades += "upgrade.wholesale_pad"
+        val wholesale = sim.state.counters.first { it.counterId == "counter.wholesale_1" }
+        wholesale.stock.add("product.ice_packed_crate", 4)
         val wholesaler = sim.content.customersById.getValue("customer.wholesaler")
         sim.state.customers += com.willio.jeanvilma.fishshopping.core.sim.CustomerState(
-            "customer.test_wholesale", wholesaler.id, counter.counterId, wants = 8, patienceLeft = 9_999, walkTicksTotal = 0,
+            "customer.test_wholesale", wholesaler.id, wholesale.counterId, wants = 2, patienceLeft = 9_999, walkTicksTotal = 0,
+            preferredProductId = "product.ice_packed_crate",
         )
+        pilot.walkTo(7000, 2750)
         pilot.tick(Command.Move(0, 0))
-        assertTrue(sim.view().context!!.lines.any { it.contains("wholesale order") })
+        assertTrue(sim.view().context!!.title.contains("Wholesale", ignoreCase = true) ||
+            sim.view().context!!.lines.any { it.contains("wholesale order") })
         val events = (1..80).flatMap { pilot.tick(Command.Move(0, 0)) }
         assertTrue(events.any { it is GameEvent.SaleCommitted })
         assertEquals(1L, sim.state.stat(Stats.WHOLESALER_SALES))
@@ -396,7 +403,7 @@ class SimulationTest {
     fun preferredProductIsReservedFirstAndPaysFullPrice() {
         val sim = newSim()
         val pilot = Autopilot(sim)
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         val fillet = "product.fillet"
         counter.stock.add(portion, 2)
         counter.stock.add(fillet, 1)
@@ -427,7 +434,7 @@ class SimulationTest {
     fun unmetPreferenceLowersPayAndShowsSubstituting() {
         val sim = newSim()
         val pilot = Autopilot(sim)
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         counter.stock.add(portion, 1)
         sim.padNeutralScarcity()
         val type = sim.content.customersById.getValue("customer.premium_visitor")
@@ -455,7 +462,7 @@ class SimulationTest {
     @Test
     fun reputationScoreBiasesSpawnMixAndShowsInTheView() {
         val c = Shared.content
-        assertEquals("0.36.0", c.contentVersion)
+        assertEquals("0.50.0", c.contentVersion)
         assertTrue(c.reputation.minSample >= 1)
         assertEquals(c.reputation.scoreBandThresholdsPermille.size + 1, c.reputation.kindSpawnMultPermille.size)
 
@@ -468,8 +475,8 @@ class SimulationTest {
 
         val premium = c.customersById.getValue("customer.premium_visitor")
         val bulk = c.customersById.getValue("customer.restaurant_buyer")
-        val neutralPremium = CS.effectiveSpawnWeight(c, sim.state, premium)
-        val neutralBulk = CS.effectiveSpawnWeight(c, sim.state, bulk)
+        val neutralPremium = CS.effectiveSpawnWeight(c, sim.state, sim.harbor, premium)
+        val neutralBulk = CS.effectiveSpawnWeight(c, sim.state, sim.harbor, bulk)
 
         sim.state.bumpStat(Stats.SALES, 2)
         sim.state.bumpStat(Stats.LOST_CUSTOMERS, 10)
@@ -477,8 +484,8 @@ class SimulationTest {
         assertTrue(RS.scorePermille(c, sim.state) < 400)
         assertEquals(0, RS.band(c, sim.state))
         assertEquals("Poor", sim.view().reputationLabel)
-        val poorPremium = CS.effectiveSpawnWeight(c, sim.state, premium)
-        val poorBulk = CS.effectiveSpawnWeight(c, sim.state, bulk)
+        val poorPremium = CS.effectiveSpawnWeight(c, sim.state, sim.harbor, premium)
+        val poorBulk = CS.effectiveSpawnWeight(c, sim.state, sim.harbor, bulk)
         assertTrue(poorPremium < neutralPremium)
         assertTrue(poorBulk > neutralBulk)
 
@@ -486,13 +493,13 @@ class SimulationTest {
         sim.state.stats[Stats.LOST_CUSTOMERS] = 1
         assertTrue(RS.scorePermille(c, sim.state) >= 850)
         assertEquals("Excellent", RS.bandLabel(c, sim.state))
-        assertTrue(CS.effectiveSpawnWeight(c, sim.state, premium) > poorPremium)
+        assertTrue(CS.effectiveSpawnWeight(c, sim.state, sim.harbor, premium) > poorPremium)
     }
 
     @Test
     fun dynamicPricingStacksScarcityRushAndRatingIntoSaleMult() {
         val c = Shared.content
-        assertEquals("0.36.0", c.contentVersion)
+        assertEquals("0.50.0", c.contentVersion)
         assertEquals(5, c.economy.scarcityPriceCurvePermille.size)
         assertEquals(6, c.prestige.ratingPriceMultPermille.size)
         val lunch = c.harborsById.getValue(HARBOR).rushes.first { it.id == "rush.lunch" }
@@ -501,7 +508,7 @@ class SimulationTest {
         val sim = newSim()
         val pilot = Autopilot(sim)
         val CS = com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         val def = sim.harbor.counters.first { it.id == counter.counterId }
         counter.stock.add(portion, 1)
         assertEquals(1150, CS.scarcityPriceMultPermille(sim.content, def, counter))
@@ -545,7 +552,7 @@ class SimulationTest {
     @Test
     fun unmetPreferenceDrainsPatienceFasterWhilePreferredIsOut() {
         val sim = newSim()
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         val type = sim.content.customersById.getValue("customer.local_shopper")
         sim.state.customers += com.willio.jeanvilma.fishshopping.core.sim.CustomerState(
             "customer.test_pref_drain", type.id, counter.counterId, wants = 1, patienceLeft = 100, walkTicksTotal = 0,
@@ -598,7 +605,7 @@ class SimulationTest {
         assertTrue(arrivals.isNotEmpty())
 
         // Queue capacity expands during rush.
-        val counter = harbor.counters.single()
+        val counter = harbor.counters.first { it.requiresUpgrade == null }
         assertEquals(
             counter.maxQueue + lunch.queueBonus,
             com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem.effectiveMaxQueue(counter, lunch),
@@ -622,34 +629,34 @@ class SimulationTest {
     fun servingAtCounterCommitsEachSaleOnce() {
         val sim = newSim()
         val pilot = Autopilot(sim)
-        sim.state.counters.single().stock.add(portion, 10)
+        sim.primaryCounter().stock.add(portion, 10)
         pilot.walkTo(3000, 2750)
         val events = (1..1200).flatMap { pilot.tick(Command.Move(0, 0)) }
         val sales = events.filterIsInstance<GameEvent.SaleCommitted>()
         assertTrue(sales.isNotEmpty())
         assertEquals(sales.size, sales.map { it.saleId }.toSet().size)
         assertEquals(sales.sumOf { it.coins }, sim.state.coins)
-        assertEquals(sales.sumOf { it.quantity }, 10 - sim.state.counters.single().stock.quantity(portion))
+        assertEquals(sales.sumOf { it.quantity }, 10 - sim.primaryCounter().stock.quantity(portion))
     }
 
     @Test
     fun customersWalkInBeforeTheyCanBeServed() {
         val sim = newSim()
         val pilot = Autopilot(sim)
-        sim.state.counters.single().stock.add(portion, 10)
+        sim.primaryCounter().stock.add(portion, 10)
         pilot.walkTo(3000, 2750) // stand at the counter the whole time
         val events = (1..400).flatMap { pilot.tick(Command.Move(0, 0)) }
         val arrived = events.filterIsInstance<GameEvent.CustomerArrived>().first()
         val walk = sim.content.harborsById.getValue(HARBOR).let { h ->
             val path = com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem.approachPath(
-                h, h.counters.single().queueSlot(0),
+                h, h.counters.first { it.requiresUpgrade == null }.queueSlot(0),
             )
             com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem.pathWalkTicks(
                 path, h.customerWalkMmPerTick,
             )
         }
         val firstSale = events.filterIsInstance<GameEvent.SaleCommitted>().first()
-        val checkout = sim.content.harborsById.getValue(HARBOR).counters.single().checkoutTicks
+        val checkout = sim.content.harborsById.getValue(HARBOR).counters.first { it.requiresUpgrade == null }.checkoutTicks
         // Walk to slot 0, then the checkout timer: never earlier.
         assertEquals(arrived.tick + walk + checkout - 1, firstSale.tick)
     }
@@ -659,7 +666,7 @@ class SimulationTest {
         val sim = newSim()
         val h = sim.harbor
         assertTrue(h.customerPathWaypoints.isNotEmpty())
-        val slot = h.counters.single().queueSlot(0)
+        val slot = h.counters.first { it.requiresUpgrade == null }.queueSlot(0)
         val path = com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem.approachPath(h, slot)
         val routed = com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem.pathWalkTicks(
             path, h.customerWalkMmPerTick,
@@ -669,7 +676,7 @@ class SimulationTest {
         )
         assertTrue("routed walk should be longer than a straight cut", routed > straight)
 
-        sim.state.counters.single().stock.add(portion, 1)
+        sim.primaryCounter().stock.add(portion, 1)
         sim.run(h.customerSpawnTicks) // spawn on this tick
         val c = sim.state.customers.single()
         assertEquals(routed, c.walkTicksTotal)
@@ -689,20 +696,20 @@ class SimulationTest {
     @Test
     fun walkingCustomersDoNotLosePatienceOrReserveStock() {
         val sim = newSim()
-        sim.state.counters.single().stock.add(portion, 5)
+        sim.primaryCounter().stock.add(portion, 5)
         sim.run(160) // first spawn on tick 160
         val c = sim.state.customers.single()
         assertTrue(c.walkTicksLeft > 0)
         val patience = c.patienceLeft
         sim.run(c.walkTicksLeft - 1)
         assertEquals(patience, c.patienceLeft)
-        assertEquals(0, sim.state.counters.single().stock.reservedQuantity(portion))
+        assertEquals(0, sim.primaryCounter().stock.reservedQuantity(portion))
         sim.run(2)
         assertTrue(c.arrived)
-        assertTrue(sim.state.counters.single().stock.reservedQuantity(portion) > 0)
+        assertTrue(sim.primaryCounter().stock.reservedQuantity(portion) > 0)
         val v = sim.view().customers.single()
         assertTrue(v.arrived)
-        assertEquals(sim.harbor.counters.single().queueAnchor.x.toFloat(), v.xMm)
+        assertEquals(sim.harbor.counters.first { it.requiresUpgrade == null }.queueAnchor.x.toFloat(), v.xMm)
     }
 
     @Test
@@ -713,7 +720,7 @@ class SimulationTest {
         assertTrue(s.customers.isNotEmpty())
         assertTrue(s.customers.all { it.arrived && it.walkTicksTotal == 0 })
         val reencoded = SnapshotCodec.encode(Shared.content, s)
-        assertTrue(reencoded.startsWith("{\"schemaVersion\":12,"))
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
         val sim = Simulation(Shared.content, SnapshotCodec.decode(Shared.content, reencoded))
         repeat(200) { sim.checkedStep() }
     }
@@ -722,7 +729,7 @@ class SimulationTest {
     fun productLadderProducesFilletAndPremiumAndSellsMixedStock() {
         val sim = newSim()
         val m = cutter(sim)
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         val fillet = "product.fillet"
         val premium = "product.premium_portion"
         // Mid-tier and rare fish become distinct products on the cutter.
@@ -765,7 +772,7 @@ class SimulationTest {
     @Test
     fun harborGrillUnlocksAsSecondProductionLine() {
         val c = Shared.content
-        assertEquals("0.36.0", c.contentVersion)
+        assertEquals("0.50.0", c.contentVersion)
         assertTrue(c.machinesById.containsKey("machine.harbor_grill"))
         val effect = c.upgradesById.getValue("upgrade.harbor_grill").effect
         assertTrue(effect is com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine)
@@ -773,7 +780,7 @@ class SimulationTest {
             "machine.harbor_grill",
             (effect as com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine).machine,
         )
-        for (harborId in listOf("harbor.sunrise_pier", "harbor.moon_cove")) {
+        for (harborId in listOf("harbor.sunrise_pier", "harbor.moon_cove", "harbor.obsidian_jetty")) {
             val grill = c.harborsById.getValue(harborId).stations.first { it.machine == "machine.harbor_grill" }
             assertEquals("upgrade.harbor_grill", grill.requiresUpgrade)
         }
@@ -804,17 +811,22 @@ class SimulationTest {
     @Test
     fun productRecipeTreeSupportsMultiInputAndIntermediateCrafts() {
         val c = Shared.content
-        assertEquals("0.36.0", c.contentVersion)
+        assertEquals("0.50.0", c.contentVersion)
         val productIds = c.products.map { it.id }.toSet()
         assertTrue(productIds.containsAll(listOf(
-            "product.diced_fish", "product.skewer", "product.soup_stock", "product.ice_packed_crate",
+            "product.diced_fish", "product.skewer", "product.soup_stock",
+            "product.ice_packed_crate", "product.fillet_crate",
         )))
         c.harbors.forEach { harbor ->
-            harbor.counters.forEach { counter ->
-                assertTrue(counter.products.containsAll(listOf(
-                    "product.skewer", "product.soup_stock", "product.ice_packed_crate", "product.diced_fish",
-                )))
-            }
+            val retail = harbor.counters.first { it.requiresUpgrade == null }
+            assertTrue(retail.products.containsAll(listOf(
+                "product.skewer", "product.soup_stock", "product.diced_fish",
+            )))
+            val wholesale = harbor.counters.first { it.kind.wire == "wholesale" }
+            assertTrue(wholesale.products.containsAll(listOf(
+                "product.ice_packed_crate", "product.fillet_crate",
+            )))
+            assertEquals("upgrade.wholesale_pad", wholesale.requiresUpgrade)
         }
 
         val sim = newSim()
@@ -1061,7 +1073,7 @@ class SimulationTest {
         assertTrue(sim.view().trophySets.first { it.id == "gallery.moon_cove" }.completed)
 
         val saved = SnapshotCodec.encode(sim.content, sim.state)
-        assertTrue(saved.startsWith("{\"schemaVersion\":12,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
         val restored = SnapshotCodec.decode(sim.content, saved)
         assertEquals(sim.state.trophies.size, restored.trophies.size)
         assertEquals(1L, restored.stat("stat.trophy_set_moon_cove"))
@@ -1240,11 +1252,14 @@ class SimulationTest {
     @Test
     fun hireFisherAndPorterIsIdempotentAndShowsStaffPanel() {
         val sim = newSim()
-        assertEquals("0.36.0", Shared.content.contentVersion)
+        assertEquals("0.50.0", Shared.content.contentVersion)
         assertTrue(sim.view().staff.any { it.roleId == "worker.fisher" })
         assertTrue(sim.view().staff.any { it.roleId == "worker.operator" })
         assertTrue(sim.view().staff.any { it.roleId == "worker.cashier" })
         assertTrue(sim.view().staff.any { it.roleId == "worker.supervisor" })
+        assertTrue(sim.view().staff.any { it.roleId == "worker.ice_runner" })
+        assertTrue(sim.view().staff.any { it.roleId == "worker.smoker_specialist" })
+        assertTrue(sim.view().staff.any { it.roleId == "worker.greeter" })
         assertTrue(sim.view().staff.filter { it.roleId != "worker.supervisor" }
             .all { it.reason?.startsWith("Requires:") == true })
         unlockStaffHiring(sim)
@@ -1262,10 +1277,212 @@ class SimulationTest {
         assertEquals(2, sim.state.workers.size)
         assertTrue(sim.view().workers.any { it.roleKind == "fisher" })
         assertTrue(sim.view().workers.any { it.roleKind == "porter" })
+        assertTrue(sim.state.workers.all { it.level == 1 && it.xp == 0 && it.traits.isNotEmpty() && it.onShift })
+        assertTrue(sim.view().workers.all { it.traitNames.isNotEmpty() && it.level == 1 && it.onShift })
         assertTrue(sim.view().staff.none { it.reason == "Coming soon" })
         assertTrue(sim.view().staff.filter { it.roleId == "worker.operator" || it.roleId == "worker.cashier" }
             .all { it.purchasable || it.reason?.startsWith("Need") == true })
         assertTrue(sim.view().staff.first { it.roleId == "worker.supervisor" }.reason!!.startsWith("Requires:"))
+        assertTrue(sim.view().staff.first { it.roleId == "worker.ice_runner" }.reason!!.startsWith("Requires:"))
+        // First hire completes quest.first_hire, which unlocks the greeter.
+        assertTrue(sim.view().staff.first { it.roleId == "worker.greeter" }.purchasable)
+        assertTrue(sim.view().staff.first { it.roleId == "worker.smoker_specialist" }.reason!!.startsWith("Requires:"))
+    }
+
+    @Test
+    fun specializedRolesHireAndApplyBuffs() {
+        val sim = newSim()
+        assertEquals("0.50.0", Shared.content.contentVersion)
+        unlockStaffHiring(sim)
+        sim.state.completedQuests += "quest.first_hire"
+        sim.state.completedQuests += "quest.specialty_kitchen"
+        sim.state.ownedUpgrades += "upgrade.staff_boots"
+        sim.state.ownedUpgrades += "upgrade.harbor_grill"
+        sim.state.coins = 800
+        sim.checkedStep(listOf(Command.HireWorker("worker.ice_runner", "hire-ice")))
+        sim.checkedStep(listOf(Command.HireWorker("worker.greeter", "hire-greet")))
+        sim.checkedStep(listOf(Command.HireWorker("worker.smoker_specialist", "hire-smoke")))
+        assertEquals(3, sim.state.workers.size)
+        assertTrue(sim.view().workers.any { it.roleKind == "ice_runner" })
+        assertTrue(sim.view().workers.any { it.roleKind == "greeter" })
+        assertTrue(sim.view().workers.any { it.roleKind == "smoker_specialist" })
+        // Greeter walks to entry then posts; smoker specialist posts at smoker.
+        repeat(2_000) { sim.checkedStep() }
+        assertTrue(com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem.greeterOnDuty(sim.content, sim.state))
+        assertTrue(
+            com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem
+                .smokerSpecialistOnDuty(sim.content, sim.state, sim.harbor),
+        )
+        val type = sim.content.customers.first()
+        val counter = sim.primaryCounter()
+        val cdef = sim.harbor.counters.first { it.id == counter.counterId }
+        val customer = CustomerState(
+            "cust.test", type.id, counter.counterId, wants = 2, patienceLeft = 100, walkTicksTotal = 0,
+            preferredProductId = cdef.products.first(),
+        )
+        customer.walkTicksLeft = 0
+        sim.state.customers += customer
+        val before = customer.patienceLeft
+        sim.checkedStep()
+        val drained = before - customer.patienceLeft
+        assertTrue("greeter should slow patience drain", drained <= 1)
+        val smoker = smoker(sim)
+        val recipe = sim.content.recipesById.getValue(
+            sim.content.machinesById.getValue(smoker.machineId).recipes.first(),
+        )
+        val base = com.willio.jeanvilma.fishshopping.core.production.ProductionSystem.durationFor(smoker, recipe)
+        val boosted = com.willio.jeanvilma.fishshopping.core.production.ProductionSystem.durationFor(
+            com.willio.jeanvilma.fishshopping.core.sim.StepContext(sim.content, sim.state),
+            smoker,
+            recipe,
+        )
+        assertTrue(boosted < base)
+    }
+
+    @Test
+    fun workerGainsXpLevelsAndPersistsTraits() {
+        val sim = newSim()
+        assertEquals("0.50.0", Shared.content.contentVersion)
+        unlockStaffHiring(sim)
+        sim.state.coins = 200
+        sim.checkedStep(listOf(Command.HireWorker("worker.fisher", "hf-xp")))
+        val fisher = sim.state.workers.single()
+        val traits = fisher.traits.toList()
+        assertTrue(traits.isNotEmpty())
+        assertTrue(traits.all { it in Shared.content.workerTraitsById })
+        val events = (1..8_000).flatMap { sim.checkedStep() }
+        assertTrue(events.filterIsInstance<GameEvent.FishCaught>().isNotEmpty())
+        assertTrue(sim.state.stat(Stats.WORKER_XP) > 0)
+        assertTrue(fisher.xp > 0)
+        if (fisher.level > 1) {
+            assertTrue(events.filterIsInstance<GameEvent.WorkerLeveledUp>().isNotEmpty())
+            assertTrue(sim.state.stat(Stats.WORKER_LEVEL_UPS) > 0)
+        }
+        val view = sim.view().workers.single()
+        assertEquals(fisher.level, view.level)
+        assertEquals(fisher.xp, view.xp)
+        assertEquals(traits.map { Shared.content.workerTraitsById.getValue(it).name }, view.traitNames)
+        val saved = SnapshotCodec.encode(sim.content, sim.state)
+        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        val loaded = SnapshotCodec.decode(sim.content, saved)
+        val w = loaded.workers.single()
+        assertEquals(fisher.xp, w.xp)
+        assertEquals(fisher.level, w.level)
+        assertEquals(traits, w.traits)
+    }
+
+    @Test
+    fun schemaTwelveSaveMigratesWorkerProgressionDefaults() {
+        val v12 = Shared.text("fixtures/legacy/snapshot-v12-starter-line-t2500.json").trimEnd()
+        val s = SnapshotCodec.decode(Shared.content, v12)
+        assertEquals(2500L, s.tick)
+        assertTrue(s.workers.all { it.xp == 0 && it.level == 1 && it.traits.isEmpty() && it.onShift })
+        val reencoded = SnapshotCodec.encode(Shared.content, s)
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+        val again = SnapshotCodec.decode(Shared.content, reencoded)
+        assertTrue(again.workers.all { it.xp == 0 && it.level == 1 && it.onShift })
+    }
+
+    @Test
+    fun schemaThirteenSaveMigratesOnShiftDefault() {
+        val v13 = Shared.text("fixtures/legacy/snapshot-v13-starter-line-t2500.json").trimEnd()
+        val s = SnapshotCodec.decode(Shared.content, v13)
+        assertEquals(2500L, s.tick)
+        assertTrue(s.workers.all { it.onShift })
+        val reencoded = SnapshotCodec.encode(Shared.content, s)
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+    }
+
+    @Test
+    fun schemaFourteenSaveMigratesEquipmentDefaults() {
+        val v14 = Shared.text("fixtures/legacy/snapshot-v14-starter-line-t2500.json").trimEnd()
+        val s = SnapshotCodec.decode(Shared.content, v14)
+        assertEquals(2500L, s.tick)
+        assertTrue(s.workers.all { it.onShift })
+        // No staff gear owned in the frozen starter-line mid-save — equipment stays empty.
+        assertTrue(s.workers.all { it.equipment.isEmpty() })
+        val reencoded = SnapshotCodec.encode(Shared.content, s)
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+    }
+
+    @Test
+    fun schemaSixteenSaveMigratesWearDefaults() {
+        val v16 = Shared.text("fixtures/legacy/snapshot-v16-starter-line-t2500.json").trimEnd()
+        val s = SnapshotCodec.decode(Shared.content, v16)
+        assertEquals(2500L, s.tick)
+        assertTrue(s.machines.all { !it.broken && it.slowUntilTick == 0L })
+        val reencoded = SnapshotCodec.encode(Shared.content, s)
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(reencoded.contains("\"broken\":false"))
+        assertTrue(reencoded.contains("\"slowUntilTick\":0"))
+    }
+
+    @Test
+    fun schemaSeventeenSaveMigratesBankDefaults() {
+        val v17 = Shared.text("fixtures/legacy/snapshot-v17-starter-line-t2500.json").trimEnd()
+        val s = SnapshotCodec.decode(Shared.content, v17)
+        assertEquals(2500L, s.tick)
+        assertEquals(0L, s.loanOwed)
+        assertEquals(0L, s.loanDueTick)
+        assertEquals(0L, s.coinGoal)
+        assertFalse(s.coinGoalCelebrated)
+        val reencoded = SnapshotCodec.encode(Shared.content, s)
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(reencoded.contains("\"loanOwed\":0"))
+        assertTrue(reencoded.contains("\"coinGoal\":0"))
+    }
+
+    @Test
+    fun schemaEighteenSaveMigratesSpeciesCatchDefaults() {
+        val v18 = Shared.text("fixtures/legacy/snapshot-v18-starter-line-t2500.json").trimEnd()
+        val s = SnapshotCodec.decode(Shared.content, v18)
+        assertEquals(2500L, s.tick)
+        assertTrue(s.speciesCatches.isEmpty())
+        s.recordSpeciesCatch("species.silver_sprat", 4)
+        val reencoded = SnapshotCodec.encode(Shared.content, s)
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(reencoded.contains("\"species.silver_sprat\":4"))
+        val restored = SnapshotCodec.decode(Shared.content, reencoded)
+        assertEquals(4L, restored.speciesCatches["species.silver_sprat"])
+        val served = restored.stat(Stats.SALES)
+        val lost = restored.stat(Stats.LOST_CUSTOMERS)
+        assertEquals((lost * 1000L) / (served + lost), Telemetry.abandonPermille(restored))
+    }
+
+    @Test
+    fun workerShiftToggleAndOvertimeWages() {
+        val sim = newSim()
+        assertEquals("0.50.0", Shared.content.contentVersion)
+        unlockStaffHiring(sim)
+        sim.state.coins = 500
+        sim.state.workerWagePerWorkerPerHour = 10
+        sim.checkedStep(listOf(Command.HireWorker("worker.fisher", "hf1")))
+        sim.checkedStep(listOf(Command.HireWorker("worker.porter", "hp1")))
+        sim.checkedStep(listOf(Command.HireWorker("worker.operator", "ho1")))
+        assertEquals(3, sim.state.workers.count { it.onShift })
+        assertEquals(2, sim.view().freeOnShiftSlots)
+        assertEquals(1, sim.view().overtimeOnShiftCount)
+        val off = sim.state.workers.first { it.roleId == "worker.operator" }
+        val events = sim.checkedStep(listOf(Command.SetWorkerShift(off.id, false)))
+        assertTrue(events.filterIsInstance<GameEvent.WorkerShiftChanged>().any { !it.onShift })
+        assertFalse(off.onShift)
+        assertEquals(2, sim.view().onShiftCount)
+        assertEquals(0, sim.view().overtimeOnShiftCount)
+        // Force an hourly wage tick.
+        sim.state.workerWageAccrualTicks = 3600 * 20 - 1
+        val wageEvents = sim.checkedStep()
+        assertTrue(wageEvents.filterIsInstance<GameEvent.WagesPaid>().isNotEmpty())
+        assertEquals(0L, sim.state.stat(Stats.OVERTIME_WAGES))
+        // Put third back on shift → overtime next hour.
+        sim.checkedStep(listOf(Command.SetWorkerShift(off.id, true)))
+        sim.state.workerWageAccrualTicks = 3600 * 20 - 1
+        sim.state.coins = 500
+        sim.checkedStep()
+        assertTrue(sim.state.stat(Stats.OVERTIME_WAGES) > 0)
+        val saved = SnapshotCodec.encode(sim.content, sim.state)
+        assertTrue(saved.contains("\"onShift\":false") || saved.contains("\"onShift\":true"))
+        val loaded = SnapshotCodec.decode(sim.content, saved)
+        assertEquals(sim.state.workers.map { it.onShift }, loaded.workers.map { it.onShift })
     }
 
     @Test
@@ -1292,9 +1509,9 @@ class SimulationTest {
         cutter(sim).output.add(portion, 3)
         val events = (1..4_000).flatMap { sim.checkedStep() }
         assertTrue(events.filterIsInstance<GameEvent.ItemsTransferred>().any {
-            it.to == sim.state.counters.single().stock.id
+            it.to == sim.primaryCounter().stock.id
         })
-        assertTrue(sim.state.counters.single().stock.quantity(portion) > 0)
+        assertTrue(sim.primaryCounter().stock.quantity(portion) > 0)
         assertTrue(sim.state.stat(Stats.WORKER_ITEMS_MOVED) > 0)
     }
 
@@ -1337,7 +1554,7 @@ class SimulationTest {
         assertTrue("cashier should reach the counter", onDuty)
         assertTrue(sim.state.player.zoneId != "zone.counter_1")
 
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         counter.stock.add(portion, 2)
         val type = sim.content.customers.first()
         sim.state.customers += CustomerState(
@@ -1363,7 +1580,7 @@ class SimulationTest {
         (1..4_000).forEach { sim.checkedStep() }
         // Porter must not stock raw fillet; operator routes it through the smoker
         // (which may already have finished and been collected as smoked fillet).
-        assertEquals(0, sim.state.counters.single().stock.quantity(fillet))
+        assertEquals(0, sim.primaryCounter().stock.quantity(fillet))
         assertEquals(0, cutter(sim).output.available(fillet))
         assertTrue(sim.state.stat(Stats.WORKER_ITEMS_MOVED) > 0)
     }
@@ -1385,7 +1602,7 @@ class SimulationTest {
         assertTrue(onDuty)
         sim.checkedStep(listOf(Command.HireWorker("worker.porter", "hp")))
         val fillet = "product.fillet"
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         // Empty counter + waiting customer preferring fillet → demand override.
         val type = sim.content.customers.first()
         sim.state.customers += CustomerState(
@@ -1460,7 +1677,7 @@ class SimulationTest {
             Command.HireWorker("worker.porter", "hp1"),
             Command.HireWorker("worker.porter", "hp2"),
         ))
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         // Leave room for exactly one portion unit at the counter.
         val room = counter.stock.roomFor(portion)
         if (room > 1) {
@@ -1483,13 +1700,21 @@ class SimulationTest {
         sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.staff_satchels", "us")))
         sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.staff_tackle", "ut")))
         sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.shift_lead", "uw")))
-        assertEquals(1250, sim.state.workerMoveSpeedPermille)
-        assertEquals(5, sim.state.workerCarryCapacityFloor)
-        assertEquals(1000, sim.state.workerCatchSpeedPermille)
+        // Phase 19: staff gear is pool-only until assigned; wages still apply globally.
+        assertEquals(1000, sim.state.workerMoveSpeedPermille)
+        assertEquals(0, sim.state.workerCarryCapacityFloor)
+        assertEquals(0, sim.state.workerCatchSpeedPermille)
         assertEquals(3, sim.state.workerWagePerWorkerPerHour)
         assertEquals(3, sim.view().workerWagePerWorkerPerHour)
+        assertEquals(3, sim.view().staffGear.size)
+        assertTrue(sim.view().staffGear.all { it.equippedOnWorkerId == null })
         sim.checkedStep(listOf(Command.HireWorker("worker.porter", "hp-wage")))
-        assertEquals(5, sim.state.workers.single().bag.capacityUnits)
+        val porter = sim.state.workers.single()
+        assertEquals(porter.bag.capacityUnits, Shared.content.workersById.getValue("worker.porter").carryCapacityUnits)
+        sim.checkedStep(listOf(Command.AssignWorkerGear(porter.id, "upgrade.staff_satchels")))
+        assertEquals(5, porter.bag.capacityUnits)
+        assertEquals("upgrade.staff_satchels", porter.equipment["satchel"])
+        assertTrue(sim.view().staffGear.first { it.upgradeId == "upgrade.staff_satchels" }.equippedOnWorkerId == porter.id)
         sim.state.workerWageAccrualTicks = 3600 * 20 - 1
         val coinsBefore = sim.state.coins
         val events = sim.checkedStep()
@@ -1499,10 +1724,79 @@ class SimulationTest {
     }
 
     @Test
+    fun staffGearAssignUnequipAndPersists() {
+        val sim = newSim()
+        assertEquals("0.50.0", Shared.content.contentVersion)
+        unlockStaffHiring(sim)
+        sim.state.coins = 10_000
+        sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.staff_boots", "ub")))
+        sim.checkedStep(listOf(Command.HireWorker("worker.fisher", "hf-gear")))
+        sim.checkedStep(listOf(Command.HireWorker("worker.porter", "hp-gear")))
+        val fisher = sim.state.workers.first { it.roleId == "worker.fisher" }
+        val porter = sim.state.workers.first { it.roleId == "worker.porter" }
+        val baseFisherSpeed = com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem.moveSpeed(
+            sim.content, sim.state, sim.content.workersById.getValue(fisher.roleId), fisher,
+        )
+        val assigned = sim.checkedStep(listOf(Command.AssignWorkerGear(fisher.id, "upgrade.staff_boots")))
+        assertTrue(assigned.filterIsInstance<GameEvent.WorkerGearAssigned>().any {
+            it.workerId == fisher.id && it.upgradeId == "upgrade.staff_boots" && it.slotId == "boots"
+        })
+        val boosted = com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem.moveSpeed(
+            sim.content, sim.state, sim.content.workersById.getValue(fisher.roleId), fisher,
+        )
+        assertTrue(boosted > baseFisherSpeed)
+        // Reassign to porter (moves the single pair of boots).
+        sim.checkedStep(listOf(Command.AssignWorkerGear(porter.id, "upgrade.staff_boots")))
+        assertTrue("boots" !in fisher.equipment)
+        assertEquals("upgrade.staff_boots", porter.equipment["boots"])
+        sim.checkedStep(listOf(Command.UnequipWorkerGear(porter.id, "boots")))
+        assertTrue(porter.equipment.isEmpty())
+        assertTrue(sim.view().staffGear.single().equippedOnWorkerId == null)
+        // Re-equip and persist through snapshot.
+        sim.checkedStep(listOf(Command.AssignWorkerGear(fisher.id, "upgrade.staff_boots")))
+        val saved = SnapshotCodec.encode(sim.content, sim.state)
+        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        val loaded = SnapshotCodec.decode(sim.content, saved)
+        assertEquals("upgrade.staff_boots", loaded.workers.first { it.id == fisher.id }.equipment["boots"])
+    }
+
+    @Test
+    fun automationIssuesAndRushIdleAlert() {
+        val sim = newSim()
+        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals(60, Shared.content.automationAlerts.machineIdleTicksDuringRush)
+        // Force OUTPUT_FULL: ready inputs exist but output cannot fit the batch.
+        val cutter = cutter(sim)
+        cutter.output.add(portion, 19)
+        cutter.input.add(sprat, 3)
+        sim.checkedStep()
+        assertEquals(MachineStatus.OUTPUT_FULL, cutter.status)
+        assertTrue(sim.view().automationIssues.any { it.kind == "machine" && it.reason == "Output full" })
+
+        val lunch = sim.harbor.rushesById.getValue("rush.lunch")
+        sim.state.tick = lunch.startTick.toLong() - 1
+        cutter.idleTicks = 0
+        cutter.lastIdleAlertTick = 0
+        // Enter rush, then idle through the threshold.
+        sim.checkedStep()
+        val threshold = Shared.content.automationAlerts.machineIdleTicksDuringRush
+        val events = (1..threshold).flatMap { sim.checkedStep() }
+        assertTrue(
+            events.filterIsInstance<GameEvent.MachineIdleAlert>().any {
+                it.stationId == cutter.stationId && it.reason == "Output full"
+            },
+        )
+        // Cooldown suppresses immediate re-fire.
+        cutter.idleTicks = threshold
+        val quiet = sim.checkedStep()
+        assertTrue(quiet.filterIsInstance<GameEvent.MachineIdleAlert>().isEmpty())
+    }
+
+    @Test
     fun questChainLocksRewardsAndShowsLog() {
         val sim = newSim()
         val log = sim.view().quests
-        assertEquals(8, log.size)
+        assertEquals(9, log.size)
         assertEquals("active", log.first { it.id == "quest.first_cast" }.status)
         assertTrue(log.filter { it.id != "quest.first_cast" }.all { it.status == "locked" })
 
@@ -1562,6 +1856,7 @@ class SimulationTest {
         assertEquals("quest.moon_crossing", crossing.questId)
         assertEquals(100L, crossing.coinsRewarded)
         assertEquals("completed", sim.view().quests.first { it.id == "quest.moon_crossing" }.status)
+        assertEquals("active", sim.view().quests.first { it.id == "quest.obsidian_landing" }.status)
     }
 
     @Test
@@ -1628,7 +1923,7 @@ class SimulationTest {
     @Test
     fun standingOrdersRefreshEscalateAndCoolDownAfterFail() {
         val c = Shared.content
-        assertEquals("0.36.0", c.contentVersion)
+        assertEquals("0.50.0", c.contentVersion)
         val standing = c.contractTemplatesById.getValue("contract.portion_order")
         assertTrue(standing.isStanding)
         assertTrue(standing.payoutEscalatePermille >= 1000)
@@ -1689,7 +1984,7 @@ class SimulationTest {
     fun moonCoveUnlocksAfterBusyHarborAndTravelStashesWorld() {
         val sim = newSim()
         val map = sim.view().harbors
-        assertEquals(2, map.size)
+        assertEquals(3, map.size)
         assertEquals("harbor.sunrise_pier", map[0].harborId)
         assertTrue(map[0].current)
         assertTrue(map[0].unlocked)
@@ -1698,6 +1993,10 @@ class SimulationTest {
         assertFalse(map[1].unlocked)
         assertEquals("Requires: Busy harbor", map[1].reason)
         assertEquals("moon_cove_blockout.glb", map[1].blockoutAsset)
+        assertEquals("harbor.obsidian_jetty", map[2].harborId)
+        assertFalse(map[2].unlocked)
+        assertEquals("Requires: Twin Harbors", map[2].reason)
+        assertEquals("obsidian_jetty_blockout.glb", map[2].blockoutAsset)
 
         val rejected = sim.checkedStep(listOf(Command.TravelToHarbor("harbor.moon_cove", "go-1")))
         assertTrue(rejected.filterIsInstance<GameEvent.TravelRejected>().any {
@@ -1743,11 +2042,231 @@ class SimulationTest {
         assertEquals(2L, sim.state.stat(Stats.HARBORS_TRAVELED))
 
         val saved = SnapshotCodec.encode(sim.content, sim.state)
-        assertTrue(saved.startsWith("{\"schemaVersion\":12,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
         val restored = SnapshotCodec.decode(sim.content, saved)
         assertEquals(HARBOR, restored.harborId)
         assertTrue(restored.harborStashes.containsKey("harbor.moon_cove"))
         assertEquals(3, restored.fishingSpots.first { it.zoneId == "zone.pier_end" }.stock)
+    }
+
+    @Test
+    fun obsidianJettyUnlocksAfterTwinHarborsPrestigeAndCompletesLandingQuest() {
+        val jettyDef = Shared.content.harborsById.getValue("harbor.obsidian_jetty")
+        assertEquals(listOf("rush.jetty_dawn", "rush.jetty_midnight"), jettyDef.rushes.map { it.id })
+
+        val sim = newSim()
+        fun jetty() = sim.view().harbors.first { it.harborId == "harbor.obsidian_jetty" }
+        assertFalse(jetty().unlocked)
+        assertEquals("Requires: Twin Harbors", jetty().reason)
+
+        sim.state.completedQuests += "quest.busy_harbor"
+        sim.state.completedQuests += "quest.moon_crossing"
+        assertFalse(jetty().unlocked)
+
+        val rejected = sim.checkedStep(listOf(Command.TravelToHarbor("harbor.obsidian_jetty", "jet-1")))
+        assertTrue(rejected.filterIsInstance<GameEvent.TravelRejected>().any { it.reason.contains("Twin Harbors") })
+
+        sim.state.completedPrestige += "prestige.twin_harbors"
+        assertTrue(jetty().travelEnabled)
+
+        val traveled = sim.checkedStep(listOf(Command.TravelToHarbor("harbor.obsidian_jetty", "jet-2")))
+        assertTrue(traveled.filterIsInstance<GameEvent.HarborTraveled>().any {
+            !it.replayed && it.toHarborId == "harbor.obsidian_jetty"
+        })
+        assertEquals("harbor.obsidian_jetty", sim.state.harborId)
+        assertEquals("Obsidian Jetty", sim.view().harborName)
+        assertEquals("obsidian_jetty_blockout.glb", sim.view().blockoutAsset)
+        assertTrue(sim.state.fishingSpots.any { it.zoneId == "zone.jetty_end" })
+        assertEquals(1L, sim.state.stat(Stats.HARBORS_TRAVELED))
+
+        sim.state.bumpStat(Stats.HARBORS_TRAVELED, 2)
+        val after = sim.checkedStep()
+        assertTrue(after.filterIsInstance<GameEvent.QuestCompleted>().any { it.questId == "quest.obsidian_landing" })
+        assertTrue(after.filterIsInstance<GameEvent.PrestigeUnlocked>().any { it.prestigeId == "prestige.triple_harbors" })
+        assertTrue("quest.obsidian_landing" in sim.state.completedQuests)
+        assertTrue("prestige.triple_harbors" in sim.state.completedPrestige)
+        assertTrue("banner.triple_harbors" in sim.state.unlockedCosmetics)
+    }
+
+    @Test
+    fun shopDecorBuysWithCoinsOrBannersAndBuffsCustomerPatience() {
+        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals(5, Shared.content.decor.items.size)
+        val lantern = Shared.content.decorById.getValue("decor.lantern_string")
+        val pennant = Shared.content.decorById.getValue("decor.rising_tide_pennant")
+        assertEquals(20, lantern.patienceBonusTicks)
+        assertEquals("banner.rising_tide", pennant.requiresCosmetic)
+
+        val sim = newSim()
+        assertEquals(5, sim.view().decorOffers.size)
+        assertEquals(0, sim.view().decorPatienceBonusTicks)
+        val locked = sim.checkedStep(listOf(Command.PurchaseDecor(pennant.id, "decor-pennant")))
+        assertTrue(locked.filterIsInstance<GameEvent.DecorPurchaseRejected>().any { it.reason.contains("Rising Tide") })
+
+        sim.state.coins = 200
+        val bought = sim.checkedStep(listOf(Command.PurchaseDecor(lantern.id, "decor-lantern")))
+        assertTrue(bought.filterIsInstance<GameEvent.DecorPurchased>().any { !it.replayed })
+        assertTrue(lantern.id in sim.state.ownedDecor)
+        assertEquals(200L - lantern.cost, sim.state.coins)
+        assertEquals(20, sim.view().decorPatienceBonusTicks)
+        assertEquals(1L, sim.state.stat(Stats.DECOR_BOUGHT))
+
+        sim.state.unlockedCosmetics += "banner.rising_tide"
+        sim.state.coins = 100
+        sim.checkedStep(listOf(Command.PurchaseDecor(pennant.id, "decor-pennant-2")))
+        assertTrue(pennant.id in sim.state.ownedDecor)
+        assertEquals(50, sim.view().decorPatienceBonusTicks)
+
+        val beforeSpawn = sim.state.customers.size
+        sim.state.customerSpawnProgress = sim.harbor.customerSpawnTicks - 1
+        sim.checkedStep()
+        assertTrue(sim.state.customers.size > beforeSpawn)
+        val spawned = sim.state.customers.last()
+        val type = Shared.content.customersById.getValue(spawned.typeId)
+        assertEquals(type.patienceTicks + 50, spawned.patienceLeft)
+
+        val saved = SnapshotCodec.encode(sim.content, sim.state)
+        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        val restored = SnapshotCodec.decode(sim.content, saved)
+        assertEquals(setOf(lantern.id, pennant.id), restored.ownedDecor)
+    }
+
+    @Test
+    fun machineWearBreaksAndRepairsWithCoins() {
+        assertEquals("0.50.0", Shared.content.contentVersion)
+        val wear = Shared.content.economy.wear
+        assertEquals(listOf("quest.busy_harbor"), wear.requires)
+        assertEquals(40L, wear.repairCoins)
+        assertTrue(wear.slowProcessMultPermille > 1000)
+
+        val sim = newSim()
+        assertFalse(com.willio.jeanvilma.fishshopping.core.economy.EconomySystem.wearUnlocked(sim.content, sim.state))
+        sim.state.completedQuests += "quest.busy_harbor"
+        assertTrue(com.willio.jeanvilma.fishshopping.core.economy.EconomySystem.wearUnlocked(sim.content, sim.state))
+
+        val cutter = sim.state.machines.first { it.stationId == "station.cutter_1" }
+        cutter.broken = true
+        sim.checkedStep()
+        assertEquals(MachineStatus.NEEDS_REPAIR, cutter.status)
+        val view = sim.view().stations.first { it.stationId == cutter.stationId }
+        assertTrue(view.needsRepair)
+        assertEquals(40L, view.repairCost)
+        assertEquals("Needs repair", view.statusText)
+
+        sim.state.coins = 10
+        val poor = sim.checkedStep(listOf(Command.RepairMachine(cutter.stationId, "fix-poor")))
+        assertTrue(poor.filterIsInstance<GameEvent.MachineRepairRejected>().any { it.reason.contains("more coins") })
+        assertTrue(cutter.broken)
+
+        sim.state.coins = 100
+        val fixed = sim.checkedStep(listOf(Command.RepairMachine(cutter.stationId, "fix-1")))
+        assertTrue(fixed.filterIsInstance<GameEvent.MachineRepaired>().any { !it.replayed })
+        assertFalse(cutter.broken)
+        assertEquals(0L, cutter.slowUntilTick)
+        assertEquals(60L, sim.state.coins)
+        assertEquals(1L, sim.state.stat(Stats.MACHINES_REPAIRED))
+        assertEquals(40L, sim.state.stat(Stats.REPAIR_SPENT))
+
+        cutter.slowUntilTick = sim.state.tick + 500
+        assertTrue(com.willio.jeanvilma.fishshopping.core.economy.EconomySystem.isSlowed(cutter, sim.state.tick))
+        val slowView = sim.view().stations.first { it.stationId == cutter.stationId }
+        assertTrue(slowView.slowed)
+        assertEquals("Running slow", slowView.statusText)
+
+        val saved = SnapshotCodec.encode(sim.content, sim.state)
+        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(saved.contains("\"slowUntilTick\":"))
+        val restored = SnapshotCodec.decode(sim.content, saved)
+        val restoredCutter = restored.machines.first { it.stationId == "station.cutter_1" }
+        assertEquals(cutter.slowUntilTick, restoredCutter.slowUntilTick)
+        assertFalse(restoredCutter.broken)
+    }
+
+    @Test
+    fun seasonalEventsBoostWeightsGateContractsAndUnlockBanners() {
+        assertEquals("0.50.0", Shared.content.contentVersion)
+        val SE = com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem
+        val silver = Shared.content.seasonalEventsById.getValue("event.silver_tide")
+        assertEquals(2, Shared.content.seasonalEvents.events.size)
+        assertEquals("banner.silver_tide", silver.banner)
+        assertEquals(2200, silver.speciesWeightMultPermille.getValue("species.silver_sprat"))
+        assertNotNull(Shared.content.contractTemplatesById["contract.silver_tide_crate"])
+        assertEquals(
+            "event.silver_tide",
+            Shared.content.contractTemplatesById.getValue("contract.silver_tide_crate").requiresSeasonalEvent,
+        )
+
+        assertNull(SE.active(Shared.content, 6199))
+        assertEquals(silver.id, SE.active(Shared.content, 6200)!!.id)
+        assertEquals(2000, SE.ticksRemaining(silver, 6200))
+        assertEquals(2200, SE.scaledWeight(1000, Shared.content, 6200, "species.silver_sprat"))
+        assertEquals(1000, SE.scaledWeight(1000, Shared.content, 6200, "species.copper_mullet"))
+
+        val sim = newSim()
+        // Jump near the festival window without replaying the whole starter line.
+        sim.state.tick = 6199L
+        assertNull(sim.view().seasonalEvent)
+        val started = sim.checkedStep()
+        assertTrue(started.filterIsInstance<GameEvent.SeasonalEventStarted>().any { it.eventId == silver.id })
+        assertTrue("banner.silver_tide" in sim.state.unlockedCosmetics)
+        val banner = sim.view().seasonalEvent!!
+        assertEquals(silver.id, banner.eventId)
+        assertEquals(silver.name, banner.name)
+        assertTrue(banner.ticksRemaining > 0)
+
+        sim.state.completedQuests.addAll(Shared.content.contracts.requires)
+        val gated = Shared.content.contracts.templates.filter { it.requiresSeasonalEvent == silver.id }
+        assertEquals(listOf("contract.silver_tide_crate"), gated.map { it.id })
+        var sawEventOffer = false
+        repeat(40) {
+            if (sawEventOffer) return@repeat
+            sim.state.contractBoardRefreshAt = sim.state.tick
+            sim.checkedStep()
+            sawEventOffer = sim.state.contractOffers.any { o ->
+                Shared.content.contractTemplatesById.getValue(o.templateId).requiresSeasonalEvent == silver.id
+            }
+        }
+        assertTrue(sawEventOffer)
+
+        sim.state.tick = 8199L
+        val ended = sim.checkedStep()
+        assertTrue(ended.filterIsInstance<GameEvent.SeasonalEventEnded>().any { it.eventId == silver.id })
+        assertNull(SE.active(Shared.content, sim.state.tick))
+        assertNull(sim.view().seasonalEvent)
+        assertTrue("banner.silver_tide" in sim.state.unlockedCosmetics)
+    }
+
+    @Test
+    fun harborSpecializationsApplyMaintenanceRareChanceAndTouristDemand() {
+        assertEquals("0.50.0", Shared.content.contentVersion)
+        val sunrise = Shared.content.harborsById.getValue("harbor.sunrise_pier").specialization!!
+        val moon = Shared.content.harborsById.getValue("harbor.moon_cove").specialization!!
+        val jetty = Shared.content.harborsById.getValue("harbor.obsidian_jetty").specialization!!
+        assertEquals("spec.efficient_docks", sunrise.id)
+        assertEquals(1, sunrise.maintenanceDiscountPerStation)
+        assertEquals("spec.rare_waters", moon.id)
+        assertEquals(80, moon.rareChanceBonusPermille)
+        assertEquals("spec.tourist_strip", jetty.id)
+        assertEquals(1300, jetty.kindSpawnMultPermille.getValue("tourist"))
+
+        val sim = newSim()
+        assertEquals("Efficient docks", sim.view().harborSpecializationName)
+        assertEquals("Efficient docks", sim.view().harbors[0].specializationName)
+        assertEquals(sunrise.description, sim.view().harbors[0].specializationDescription)
+
+        val BS = com.willio.jeanvilma.fishshopping.core.fishing.BaitSystem
+        assertEquals(100, BS.rareChancePermille(100, null))
+        assertEquals(180, BS.rareChancePermille(100, null, moon.rareChanceBonusPermille))
+
+        val CS = com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
+        val tourist = Shared.content.customersById.getValue("customer.harbor_tourist")
+        val atSunrise = CS.effectiveSpawnWeight(sim.content, sim.state, sim.harbor, tourist)
+        sim.state.completedPrestige += "prestige.twin_harbors"
+        sim.checkedStep(listOf(Command.TravelToHarbor("harbor.obsidian_jetty", "spec-jet")))
+        assertEquals("harbor.obsidian_jetty", sim.state.harborId)
+        assertEquals("Tourist strip", sim.view().harborSpecializationName)
+        val atJetty = CS.effectiveSpawnWeight(sim.content, sim.state, sim.harbor, tourist)
+        assertEquals((atSunrise.toLong() * 1300L / 1000L).toInt(), atJetty)
     }
 
     @Test
@@ -1768,7 +2287,8 @@ class SimulationTest {
         val unlocked = sim.view()
         assertTrue(unlocked.economyUnlocked)
         assertNull(unlocked.economyLockedReason)
-        assertEquals(2, unlocked.maintenanceCoinsPerStation)
+        // Sunrise Pier specialization (Efficient docks) cuts 1 from the base rate of 2.
+        assertEquals(1, unlocked.maintenanceCoinsPerStation)
         assertTrue(unlocked.bagFishSpoilActive)
 
         sim.state.coins = 50
@@ -1780,22 +2300,22 @@ class SimulationTest {
         }
         assertEquals(2, stations)
         assertTrue(maint.filterIsInstance<GameEvent.MaintenancePaid>().any {
-            it.stations == stations && it.coins == 2L * stations
+            it.stations == stations && it.coins == 1L * stations
         })
-        assertEquals(50L - 2L * stations, sim.state.coins)
-        assertEquals(2L * stations, sim.state.stat(Stats.MAINTENANCE_PAID))
+        assertEquals(50L - 1L * stations, sim.state.coins)
+        assertEquals(1L * stations, sim.state.stat(Stats.MAINTENANCE_PAID))
 
-        // Machine oil lowers the per-station rate.
+        // Machine oil + harbor specialty zeros the per-station rate.
         sim.state.coins = 200
         sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.machine_oil", "oil-1")))
         assertEquals(1, sim.state.maintenanceDiscountPerStation)
-        assertEquals(1, sim.view().maintenanceCoinsPerStation)
+        assertEquals(0, sim.view().maintenanceCoinsPerStation)
         sim.state.maintenanceAccrualTicks = sim.content.economy.maintenancePeriodTicks - 1
         val cheaper = sim.checkedStep()
-        assertTrue(cheaper.filterIsInstance<GameEvent.MaintenancePaid>().any { it.coins == 1L * stations })
+        assertTrue(cheaper.filterIsInstance<GameEvent.MaintenancePaid>().isEmpty())
 
         // Counter spoilage removes one product unit deterministically.
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         sim.state.customers.clear()
         counter.stock.restore(emptyMap(), emptyMap())
         counter.stock.add("product.basic_portion", 3)
@@ -1828,14 +2348,14 @@ class SimulationTest {
     @Test
     fun spoilTiersPreferFragileCounterStockAndSeparateCaseIce() {
         val c = Shared.content
-        assertEquals("0.36.0", c.contentVersion)
+        assertEquals("0.50.0", c.contentVersion)
         assertEquals(3, c.productsById.getValue("product.basic_portion").spoilTier)
         assertEquals(1, c.productsById.getValue("product.smoked_fillet").spoilTier)
         assertEquals(3, c.speciesById.getValue("species.silver_sprat").spoilTier)
 
         val sim = newSim()
         sim.state.completedQuests += "quest.first_ten_sales"
-        val counter = sim.state.counters.single()
+        val counter = sim.primaryCounter()
         sim.state.customers.clear()
         counter.stock.restore(emptyMap(), emptyMap())
         counter.stock.add("product.smoked_fillet", 2)
@@ -1864,12 +2384,12 @@ class SimulationTest {
     @Test
     fun prestigeStaysLockedUntilBusyHarborThenGrantsBonusesAndCosmetics() {
         val sim = newSim()
-        assertEquals("0.36.0", Shared.content.contentVersion)
+        assertEquals("0.50.0", Shared.content.contentVersion)
         val locked = sim.view()
         assertFalse(locked.prestigeUnlocked)
         assertEquals("Requires: Busy harbor", locked.prestigeLockedReason)
         assertEquals(1, locked.harborRating) // revenue 0 meets the first threshold
-        assertEquals(6, locked.prestige.size)
+        assertEquals(8, locked.prestige.size)
         assertTrue(locked.prestige.all { it.status == "locked" })
         // Board is locked: milestones should not complete even if goals are met.
         sim.state.bumpStat(Stats.REVENUE, 1000)
@@ -1882,10 +2402,11 @@ class SimulationTest {
         val board = sim.view()
         assertTrue(board.prestigeUnlocked)
         assertNull(board.prestigeLockedReason)
-        assertEquals(6, board.prestige.size)
+        assertEquals(8, board.prestige.size)
         assertEquals("active", board.prestige.first { it.id == "prestige.rising_tide" }.status)
         assertEquals("locked", board.prestige.first { it.id == "prestige.harbor_star" }.status)
         assertEquals("active", board.prestige.first { it.id == "prestige.twin_harbors" }.status)
+        assertEquals("locked", board.prestige.first { it.id == "prestige.triple_harbors" }.status)
         assertEquals(3, board.harborRating) // 1000 revenue → thresholds 0,250,750
 
         val coinsBefore = sim.state.coins
@@ -1916,7 +2437,7 @@ class SimulationTest {
 
         // Snapshot round-trip rebuilds permanent floors from completedPrestige.
         val saved = SnapshotCodec.encode(sim.content, sim.state)
-        assertTrue(saved.startsWith("{\"schemaVersion\":12,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
         val restored = SnapshotCodec.decode(sim.content, saved)
         assertEquals(setOf("prestige.rising_tide", "prestige.harbor_star", "prestige.twin_harbors"), restored.completedPrestige)
         assertEquals(1050, restored.prestigeCatchSpeedPermille)
@@ -1925,5 +2446,147 @@ class SimulationTest {
             setOf("banner.rising_tide", "banner.harbor_star", "banner.twin_harbors"),
             restored.unlockedCosmetics,
         )
+    }
+
+    @Test
+    fun wholesalePadUnlocksB2BCounterAndCashiersRouteByDemand() {
+        val sim = newSim()
+        val CS = com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
+        val wholesaleDef = sim.harbor.counters.first { it.kind.wire == "wholesale" }
+        assertEquals("upgrade.wholesale_pad", wholesaleDef.requiresUpgrade)
+        assertFalse(CS.isUnlocked(wholesaleDef, sim.state))
+        val pilot = Autopilot(sim)
+        sim.state.player.bag.add("product.ice_packed_crate", 1)
+        pilot.walkTo(7000, 2750)
+        assertEquals(wholesaleDef.zone, sim.state.player.zoneId)
+        assertEquals(1, sim.state.player.bag.quantity("product.ice_packed_crate"))
+
+        sim.state.completedQuests += "quest.first_ten_sales"
+        sim.state.coins = 400
+        val bought = sim.checkedStep(
+            listOf(Command.PurchaseUpgrade("upgrade.wholesale_pad", "ws-1")),
+        )
+        assertTrue(bought.any { it is GameEvent.UpgradePurchased })
+        assertTrue(CS.isUnlocked(wholesaleDef, sim.state))
+
+        val wholesale = sim.state.counters.first { it.counterId == wholesaleDef.id }
+        // Unlock tick may already stock one crate from the bag while standing on the pad.
+        if (sim.state.player.bag.quantity("product.ice_packed_crate") > 0) {
+            (1..20).forEach { pilot.tick(Command.Move(0, 0)) }
+        }
+        assertEquals(0, sim.state.player.bag.quantity("product.ice_packed_crate"))
+        assertTrue(wholesale.stock.quantity("product.ice_packed_crate") >= 1)
+
+        val open = sim.harbor.counters.filter { CS.isUnlocked(it, sim.state) }
+        val wholesaler = sim.content.customersById.getValue("customer.wholesaler")
+        val pick = CS.pickCounter(open, wholesaler, "product.ice_packed_crate", sim.state)
+        assertEquals(wholesaleDef.id, pick!!.id)
+
+        unlockStaffHiring(sim)
+        sim.state.coins = 400
+        sim.checkedStep(listOf(Command.HireWorker("worker.cashier", "hc-ws")))
+        wholesale.stock.add("product.ice_packed_crate", 3)
+        sim.state.customers += CustomerState(
+            "customer.ws_queue", wholesaler.id, wholesale.counterId, wants = 2, patienceLeft = 9_999, walkTicksTotal = 0,
+            preferredProductId = "product.ice_packed_crate",
+        )
+        var routed = false
+        repeat(4_000) {
+            sim.checkedStep()
+            val cashier = sim.state.workers.single { it.roleId == "worker.cashier" }
+            if (cashier.taskZoneId == wholesaleDef.zone &&
+                (cashier.phase == WorkerTaskPhase.WORK || cashier.phase == WorkerTaskPhase.WALK_TO_WORK)
+            ) {
+                routed = true
+                return@repeat
+            }
+        }
+        assertTrue("cashier should route to the busy wholesale pad", routed)
+    }
+
+    @Test
+    fun bankLoanRepayCollectAndCoinGoals() {
+        assertEquals("0.50.0", Shared.content.contentVersion)
+        val bank = Shared.content.bank
+        assertEquals(listOf("quest.first_ten_sales"), bank.requires)
+        assertEquals(80L, bank.loanPrincipal)
+        assertEquals(100L, bank.repayAmount())
+        assertEquals(listOf(150L, 300L, 600L, 1200L), bank.goalPresets)
+
+        val sim = newSim()
+        val BS = com.willio.jeanvilma.fishshopping.core.economy.BankSystem
+        assertFalse(BS.unlocked(sim.content, sim.state))
+        assertEquals("Requires: Make 10 sales", sim.view().bank.lockedReason)
+
+        val locked = sim.checkedStep(listOf(Command.TakeLoan("loan-locked")))
+        assertTrue(locked.filterIsInstance<GameEvent.LoanRejected>().any { it.reason.contains("Requires") })
+
+        sim.state.completedQuests += "quest.first_ten_sales"
+        assertTrue(BS.unlocked(sim.content, sim.state))
+        val coinsBefore = sim.state.coins
+        val taken = sim.checkedStep(listOf(Command.TakeLoan("loan-1")))
+        assertTrue(taken.filterIsInstance<GameEvent.LoanTaken>().any { !it.replayed })
+        assertEquals(coinsBefore + bank.loanPrincipal, sim.state.coins)
+        assertEquals(bank.repayAmount(), sim.state.loanOwed)
+        assertEquals(sim.state.tick + bank.termTicks, sim.state.loanDueTick)
+        assertEquals(1L, sim.state.stat(Stats.LOANS_TAKEN))
+        assertEquals(20L, sim.state.stat(Stats.LOAN_INTEREST_ACCRUED))
+
+        val view = sim.view().bank
+        assertTrue(view.unlocked)
+        assertTrue(view.canRepayLoan)
+        assertFalse(view.canTakeLoan)
+        assertEquals(bank.repayAmount(), view.loanOwed)
+
+        val again = sim.checkedStep(listOf(Command.TakeLoan("loan-again")))
+        assertTrue(again.filterIsInstance<GameEvent.LoanRejected>().any { it.reason.contains("already") })
+
+        sim.state.coins = 40
+        val partial = sim.checkedStep(listOf(Command.RepayLoan("repay-1")))
+        assertTrue(partial.filterIsInstance<GameEvent.LoanRepaid>().any { !it.replayed })
+        assertEquals(0L, sim.state.coins)
+        assertEquals(60L, sim.state.loanOwed)
+        assertEquals(40L, sim.state.stat(Stats.LOAN_REPAID))
+
+        sim.state.coins = 200
+        sim.checkedStep(listOf(Command.RepayLoan("repay-2")))
+        assertEquals(0L, sim.state.loanOwed)
+        assertEquals(0L, sim.state.loanDueTick)
+        assertEquals(140L, sim.state.coins)
+        assertEquals(100L, sim.state.stat(Stats.LOAN_REPAID))
+
+        sim.checkedStep(listOf(Command.TakeLoan("loan-2")))
+        sim.state.loanDueTick = sim.state.tick
+        sim.state.coins = 50
+        sim.state.loanCollectionAccrualTicks = bank.collectionPeriodTicks - 1
+        val collected = sim.checkedStep()
+        assertTrue(collected.filterIsInstance<GameEvent.LoanCollected>().isNotEmpty())
+        assertEquals(0L, sim.state.coins)
+        assertEquals(50L, sim.state.loanOwed)
+        assertEquals(50L, sim.state.stat(Stats.LOAN_COLLECTED))
+
+        sim.checkedStep(listOf(Command.SetCoinGoal(300)))
+        assertEquals(300L, sim.state.coinGoal)
+        assertFalse(sim.state.coinGoalCelebrated)
+        assertEquals(300L, sim.view().bank.coinGoal)
+
+        sim.state.coins = 300
+        val reached = sim.checkedStep()
+        assertTrue(reached.filterIsInstance<GameEvent.CoinGoalReached>().any { it.amount == 300L })
+        assertTrue(sim.state.coinGoalCelebrated)
+        assertEquals(1L, sim.state.stat(Stats.COIN_GOALS_REACHED))
+
+        sim.checkedStep(listOf(Command.SetCoinGoal(0)))
+        assertEquals(0L, sim.state.coinGoal)
+        assertFalse(sim.state.coinGoalCelebrated)
+
+        val saved = SnapshotCodec.encode(sim.content, sim.state)
+        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(saved.contains("\"loanOwed\":"))
+        assertTrue(saved.contains("\"coinGoal\":"))
+        val restored = SnapshotCodec.decode(sim.content, saved)
+        assertEquals(sim.state.loanOwed, restored.loanOwed)
+        assertEquals(sim.state.loanDueTick, restored.loanDueTick)
+        assertEquals(0L, restored.coinGoal)
     }
 }

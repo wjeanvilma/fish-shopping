@@ -21,12 +21,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FishShopping">
-        <!-- Landscape gameplay (blueprint default). Large screens may still resize on Android 16+. -->
+        <!-- Phase 28: portrait + landscape (HUD reflows; same actions). -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:screenOrientation="sensorLandscape"
+            android:screenOrientation="fullSensor"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:theme="@style/Theme.FishShopping"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

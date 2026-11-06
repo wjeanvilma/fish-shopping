@@ -23,8 +23,17 @@ export const CHECKPOINT_INTERVAL_TICKS = 30 * TICKS_PER_SECOND;
  * 8: contract board offers + active deliveries.
  * 9: parked harbor worlds (harborStashes).
  * 10: completedPrestige + unlockedCosmetics.
+ * 11: player preferredBaitId + activeBaitId.
+ * 12: trophies map (museum personal bests).
+ * 13: worker xp / level / traits (Phase 16).
+ * 14: worker onShift scheduling (Phase 17).
+ * 15: worker equipment loadouts (Phase 19).
+ * 16: ownedDecor (Phase 23 shop cosmetics).
+ * 17: machine broken + slowUntilTick (Phase 25 wear).
+ * 18: loanOwed / loanDueTick / coinGoal / coinGoalCelebrated (Phase 26 bank).
+ * 19: speciesCatches map (Phase 27 telemetry v2).
  */
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 19;
 
 /** Kotlin-style integer division (truncates toward zero). */
 export function idiv(a: number, b: number): number {

@@ -109,6 +109,19 @@ object SnapshotCodec {
             put("completedQuests", JsonArray(s.completedQuests.map { JsonPrimitive(it) }))
             put("completedPrestige", JsonArray(s.completedPrestige.map { JsonPrimitive(it) }))
             put("unlockedCosmetics", JsonArray(s.unlockedCosmetics.map { JsonPrimitive(it) }))
+            put("ownedDecor", JsonArray(s.ownedDecor.map { JsonPrimitive(it) }))
+            put("loanOwed", s.loanOwed)
+            put("loanDueTick", s.loanDueTick)
+            put("coinGoal", s.coinGoal)
+            put("coinGoalCelebrated", s.coinGoalCelebrated)
+            put(
+                "speciesCatches",
+                buildJsonObject {
+                    for ((speciesId, count) in s.speciesCatches) {
+                        if (count > 0L) put(speciesId, count)
+                    }
+                },
+            )
             put(
                 "trophies",
                 buildJsonObject {
@@ -180,6 +193,13 @@ object SnapshotCodec {
      *  - v9 -> v10: completedPrestige + unlockedCosmetics.
      *  - v10 -> v11: player preferredBaitId + activeBaitId.
      *  - v11 -> v12: trophies map (museum personal bests).
+     *  - v12 -> v13: worker xp / level / traits (Phase 16).
+     *  - v13 -> v14: worker onShift (Phase 17).
+     *  - v14 -> v15: worker equipment loadouts (Phase 19).
+     *  - v15 -> v16: ownedDecor (Phase 23 shop cosmetics).
+     *  - v16 -> v17: machine broken + slowUntilTick (Phase 25 wear).
+     *  - v17 -> v18: loanOwed / loanDueTick / coinGoal / coinGoalCelebrated (Phase 26 bank).
+     *  - v18 -> v19: speciesCatches map (Phase 27 telemetry v2).
      */
     private fun readState(content: ContentPack, n: Node, version: Int): GameState {
         val harborId = n["harborId"].string()
@@ -227,6 +247,10 @@ object SnapshotCodec {
                 val pref = mn.optional("preferredRecipeId")?.string()
                 val allowed = content.machinesById[m.machineId]?.recipes.orEmpty()
                 m.preferredRecipeId = pref?.takeIf { it in allowed }
+            }
+            if (version >= 17) {
+                m.broken = mn.optional("broken")?.bool() ?: false
+                m.slowUntilTick = mn.optional("slowUntilTick")?.long(min = 0) ?: 0L
             }
             readInv(mn["input"], m.input)
             readInv(mn["output"], m.output)
@@ -297,6 +321,18 @@ object SnapshotCodec {
                 w.fishingSpecies = wn.optional("fishingSpecies")?.string()?.takeIf { it in content.speciesById }
                 w.fishingProgress = wn["fishingProgress"].int(min = 0)
                 w.fishingCatchTicks = wn["fishingCatchTicks"].int(min = 0)
+                if (version >= 13) {
+                    w.xp = wn["xp"].int(min = 0)
+                    w.level = wn["level"].int(min = 1).coerceIn(1, content.staffProgression.maxLevel)
+                    wn["traits"].list { it.string() }
+                        .filter { it in content.workerTraitsById }
+                        .forEach { w.traits += it }
+                } else {
+                    w.xp = 0
+                    w.level = 1
+                }
+                w.onShift = if (version >= 14) wn["onShift"].bool() else true
+                if (version >= 15) readWorkerEquipment(content, wn, w)
                 s.workers += w
             }
         }
@@ -340,16 +376,45 @@ object SnapshotCodec {
                 .filter { it in content.prestigeMilestonesById }
                 .forEach { s.completedPrestige += it }
             n["unlockedCosmetics"].list { it.string() }.forEach { s.unlockedCosmetics += it }
-            if (version >= 12) {
-                (n.optional("trophies")?.el as? JsonObject)?.forEach { (speciesId, v) ->
-                    if (speciesId !in content.speciesById) return@forEach
-                    val rec = Node(v, "$.state.trophies.$speciesId")
-                    s.trophies[speciesId] = com.willio.jeanvilma.fishshopping.core.sim.TrophyRecord(
-                        sizePermille = rec["sizePermille"].int(min = 1),
-                        valueCoins = rec["valueCoins"].long(min = 0),
-                        tick = rec["tick"].long(min = 0),
-                    )
-                }
+        }
+        if (version >= 16) {
+            n["ownedDecor"].list { it.string() }
+                .filter { it in content.decorById }
+                .forEach { s.ownedDecor += it }
+        }
+        if (version >= 18) {
+            s.loanOwed = n.optional("loanOwed")?.long(min = 0) ?: 0L
+            s.loanDueTick = n.optional("loanDueTick")?.long(min = 0) ?: 0L
+            s.coinGoal = n.optional("coinGoal")?.long(min = 0) ?: 0L
+            s.coinGoalCelebrated = n.optional("coinGoalCelebrated")?.bool() ?: false
+            if (s.loanOwed <= 0L) {
+                s.loanOwed = 0
+                s.loanDueTick = 0
+            }
+            if (s.coinGoal <= 0L) {
+                s.coinGoal = 0
+                s.coinGoalCelebrated = false
+            } else if (s.coinGoal !in content.bank.goalPresets) {
+                s.coinGoal = 0
+                s.coinGoalCelebrated = false
+            }
+        }
+        if (version >= 19) {
+            (n.optional("speciesCatches")?.el as? JsonObject)?.forEach { (speciesId, v) ->
+                if (speciesId !in content.speciesById) return@forEach
+                val count = Node(v, "$.state.speciesCatches.$speciesId").long(min = 0)
+                if (count > 0L) s.speciesCatches[speciesId] = count
+            }
+        }
+        if (version >= 12) {
+            (n.optional("trophies")?.el as? JsonObject)?.forEach { (speciesId, v) ->
+                if (speciesId !in content.speciesById) return@forEach
+                val rec = Node(v, "$.state.trophies.$speciesId")
+                s.trophies[speciesId] = com.willio.jeanvilma.fishshopping.core.sim.TrophyRecord(
+                    sizePermille = rec["sizePermille"].int(min = 1),
+                    valueCoins = rec["valueCoins"].long(min = 0),
+                    tick = rec["tick"].long(min = 0),
+                )
             }
         }
         (n["stats"].el as? JsonObject)?.forEach { (k, v) -> s.stats[k] = Node(v, "$.state.stats.$k").long() }
@@ -372,7 +437,84 @@ object SnapshotCodec {
         s.completedPrestige.forEach { id ->
             PrestigeSystem.applyReward(s, content.prestigeMilestonesById.getValue(id))
         }
+        pruneWorkerEquipment(content, s)
+        for (stash in s.harborStashes.values) pruneWorkerEquipmentList(content, s, stash.workers)
+        if (version < 15) {
+            com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem.migrateLegacyGlobalGear(content, s)
+            for (stash in s.harborStashes.values) autoEquipOwnedGear(content, s, stash.workers)
+        }
+        for (w in s.workers) {
+            val def = content.workersById[w.roleId] ?: continue
+            w.level = com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem.levelForXp(content, w.xp)
+                .coerceIn(1, content.staffProgression.maxLevel)
+            w.bag.capacityUnits = com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem
+                .carryCapacity(content, s, def, w)
+        }
+        for (stash in s.harborStashes.values) {
+            for (w in stash.workers) {
+                val def = content.workersById[w.roleId] ?: continue
+                w.level = com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem.levelForXp(content, w.xp)
+                    .coerceIn(1, content.staffProgression.maxLevel)
+                w.bag.capacityUnits = com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem
+                    .carryCapacity(content, s, def, w)
+            }
+        }
         return s
+    }
+
+    private fun readWorkerEquipment(
+        content: ContentPack,
+        wn: Node,
+        w: WorkerState,
+    ) {
+        (wn.optional("equipment")?.el as? JsonObject)?.forEach { (slotId, el) ->
+            val upgradeId = Node(el, "$.workers.equipment.$slotId").string()
+            val slot = content.staffProgression.loadouts.slots.firstOrNull { it.id == slotId } ?: return@forEach
+            if (upgradeId in slot.upgradeIds) w.equipment[slotId] = upgradeId
+        }
+    }
+
+    private fun pruneWorkerEquipment(content: ContentPack, s: GameState) {
+        pruneWorkerEquipmentList(content, s, s.workers)
+    }
+
+    private fun pruneWorkerEquipmentList(
+        content: ContentPack,
+        s: GameState,
+        workers: List<WorkerState>,
+    ) {
+        val seen = mutableSetOf<String>()
+        for (w in workers) {
+            val drop = mutableListOf<String>()
+            for ((slotId, upgradeId) in w.equipment) {
+                val slot = content.staffProgression.loadouts.slots.firstOrNull { it.id == slotId }
+                if (slot == null || upgradeId !in slot.upgradeIds || upgradeId !in s.ownedUpgrades || !seen.add(upgradeId)) {
+                    drop += slotId
+                }
+            }
+            drop.forEach { w.equipment.remove(it) }
+        }
+    }
+
+    /** Assign owned gear that is not already equipped onto [workers] (used for harbor stashes). */
+    private fun autoEquipOwnedGear(
+        content: ContentPack,
+        s: GameState,
+        workers: List<WorkerState>,
+    ) {
+        val equipped = (
+            s.workers.flatMap { it.equipment.values } +
+                s.harborStashes.values.flatMap { st -> st.workers.flatMap { it.equipment.values } }
+            ).toMutableSet()
+        val assignable = com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem.assignableUpgradeIds(content)
+        for (upgradeId in content.upgrades.map { it.id }.filter { it in assignable && it in s.ownedUpgrades }) {
+            if (upgradeId in equipped) continue
+            val slotId = com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem.loadoutSlotFor(content, upgradeId)
+                ?: continue
+            val target = workers.firstOrNull { slotId !in it.equipment } ?: continue
+            target.equipment[slotId] = upgradeId
+            equipped += upgradeId
+        }
     }
 
     private fun encodeFishingSpots(spots: List<FishingSpotState>) = buildJsonArray {
@@ -388,6 +530,8 @@ object SnapshotCodec {
                 put("paused", m.paused)
                 put("status", m.status.name)
                 put("preferredRecipeId", m.preferredRecipeId)
+                put("broken", m.broken)
+                put("slowUntilTick", m.slowUntilTick)
                 put("input", inv(m.input))
                 put("output", inv(m.output))
                 put("activeBatch", m.activeBatch?.let { b ->
@@ -442,6 +586,14 @@ object SnapshotCodec {
                 put("fishingSpecies", w.fishingSpecies)
                 put("fishingProgress", w.fishingProgress)
                 put("fishingCatchTicks", w.fishingCatchTicks)
+                put("xp", w.xp)
+                put("level", w.level)
+                put("traits", JsonArray(w.traits.map { JsonPrimitive(it) }))
+                put("onShift", w.onShift)
+                put(
+                    "equipment",
+                    JsonObject(w.equipment.toSortedMap().mapValues { JsonPrimitive(it.value) }),
+                )
             })
         }
     }
@@ -485,6 +637,10 @@ object SnapshotCodec {
                 val pref = mn.optional("preferredRecipeId")?.string()
                 val allowed = content.machinesById[m.machineId]?.recipes.orEmpty()
                 m.preferredRecipeId = pref?.takeIf { it in allowed }
+            }
+            if (version >= 17) {
+                m.broken = mn.optional("broken")?.bool() ?: false
+                m.slowUntilTick = mn.optional("slowUntilTick")?.long(min = 0) ?: 0L
             }
             readInv(mn["input"], m.input)
             readInv(mn["output"], m.output)
@@ -547,6 +703,15 @@ object SnapshotCodec {
             w.fishingSpecies = wn.optional("fishingSpecies")?.string()?.takeIf { it in content.speciesById }
             w.fishingProgress = wn["fishingProgress"].int(min = 0)
             w.fishingCatchTicks = wn["fishingCatchTicks"].int(min = 0)
+            if (version >= 13) {
+                w.xp = wn["xp"].int(min = 0)
+                w.level = wn["level"].int(min = 1).coerceIn(1, content.staffProgression.maxLevel)
+                wn["traits"].list { it.string() }
+                    .filter { it in content.workerTraitsById }
+                    .forEach { w.traits += it }
+            }
+            w.onShift = if (version >= 14) wn["onShift"].bool() else true
+            if (version >= 15) readWorkerEquipment(content, wn, w)
             workers += w
         }
         return HarborWorldStash(

@@ -2,7 +2,8 @@
  * Per-tick systems. Each function mirrors the Kotlin object of the same name in game-core;
  * keep them line-for-line comparable so fixture mismatches are easy to trace.
  */
-import type { BaitDef, ContentPack, ContractTemplateDef, CounterDef, DayPartDef, FishingSpotDef, HarborDef, ItemQuantity, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, SpeciesDef, UpgradeDef, UpgradeEffect, WorkerDef } from "./content";
+import type { BaitDef, ContentPack, ContractTemplateDef, CounterDef, DayPartDef, DecorDef, FishingSpotDef, HarborDef, ItemQuantity, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, SeasonalEventDef, SpeciesDef, UpgradeDef, UpgradeEffect, WorkerDef } from "./content";
+import { bankRepayAmount } from "./content";
 import type { TimingTier, TrophyRecord } from "./state";
 import { counterAccepts, queueSlot, rectCenterX, rectCenterZ, rectContains } from "./content";
 import { INPUT_SCALE, SafeMath, TICKS_PER_SECOND, compareStrings, idiv } from "./foundations";
@@ -98,6 +99,7 @@ export const TransferSystem = {
       case "counter": {
         const counter = s.counters.find((c) => ctx.harbor.counters.find((d) => d.id === c.counterId)!.zone === zone.id)!;
         const def = ctx.harbor.counters.find((d) => d.id === counter.counterId)!;
+        if (!CustomerSystem.isUnlocked(def, s)) break;
         transferred(p.bag, counter.stock, Transfers.moveFirstAccepted(p.bag, counter.stock, (it) => def.products.includes(it)), Stats.COUNTER_STOCKED);
         break;
       }
@@ -138,7 +140,9 @@ export const FishingSystem = {
       if (candidates.length === 0) { p.reelRequested = false; return; }
       const bait = BaitSystem.resolveForCast(ctx.content, s);
       p.activeBaitId = bait?.id ?? null;
-      const weights = candidates.map((sp) => BaitSystem.effectiveWeight(sp, bait));
+      const weights = candidates.map((sp) =>
+        SeasonalEventSystem.scaledWeight(BaitSystem.effectiveWeight(sp, bait), ctx.content, s.tick, sp.id),
+      );
       const pick = candidates[s.rng.pickWeighted(weights)]!;
       p.fishingSpecies = pick.id;
       p.fishingProgress = 0;
@@ -282,7 +286,8 @@ export const FishingSystem = {
     let rare = false;
     const ru = rolled.rareUpgrade;
     if (ru) {
-      const chance = BaitSystem.rareChancePermille(ru.chancePermille, bait);
+      const harborBonus = ctx.harbor.specialization?.rareChanceBonusPermille ?? 0;
+      const chance = BaitSystem.rareChancePermille(ru.chancePermille, bait, harborBonus);
       if (s.rng.nextBelow(1000) < chance) {
         finalId = ru.to;
         rare = true;
@@ -293,6 +298,7 @@ export const FishingSystem = {
       p.bag.add(finalSpecies.id, 1);
       spot.stock--;
       s.bumpStat(Stats.FISH_CAUGHT);
+      s.recordSpeciesCatch(finalSpecies.id);
       if (rare) s.bumpStat(Stats.RARE_CATCHES);
       if (bait) {
         p.bag.remove(bait.id, 1);
@@ -373,9 +379,9 @@ export const BaitSystem = {
     return Math.max(1, idiv(species.rarityWeight * bait.rareSpeciesWeightMultPermille, 1000));
   },
 
-  rareChancePermille(baseChance: number, bait?: BaitDef): number {
-    if (!bait) return baseChance;
-    return Math.max(0, Math.min(1000, baseChance + bait.rareChanceBonusPermille));
+  rareChancePermille(baseChance: number, bait?: BaitDef, harborBonusPermille = 0): number {
+    const baitBonus = bait?.rareChanceBonusPermille ?? 0;
+    return Math.max(0, Math.min(1000, baseChance + baitBonus + harborBonusPermille));
   },
 
   select(s: GameState, content: ContentPack, baitId: string | null): void {
@@ -534,6 +540,20 @@ export const ProductionSystem = {
     return m.recipeDurations.get(recipe.id) ?? recipe.durationTicks;
   },
 
+  durationForCtx(ctx: StepContext, m: MachineState, recipe: RecipeDef): number {
+    let duration = ProductionSystem.durationFor(m, recipe);
+    if (m.machineId.includes("smoker") &&
+      WorkerSystem.smokerSpecialistOnDuty(ctx.content, ctx.state, ctx.harbor)) {
+      const mult = ctx.content.staffProgression.roleBuffs.smokerSpecialistProcessSpeedPermille;
+      duration = Math.max(1, Math.trunc((duration * 1000) / mult));
+    }
+    if (EconomySystem.isSlowed(m, ctx.state.tick)) {
+      const slow = ctx.content.economy.wear.slowProcessMultPermille;
+      duration = Math.max(1, Math.trunc((duration * slow) / 1000));
+    }
+    return duration;
+  },
+
   recipeLabel(recipeId: string): string {
     return recipeId.replace(/^recipe\./, "").split("_")
       .map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
@@ -589,6 +609,10 @@ export const ProductionSystem = {
       m.status = "PAUSED";
       return;
     }
+    if (m.broken) {
+      m.status = "NEEDS_REPAIR";
+      return;
+    }
     if (m.preferredRecipeId) {
       const allowed = ctx.content.machinesById.get(m.machineId)!.recipes;
       if (!allowed.includes(m.preferredRecipeId)) m.preferredRecipeId = null;
@@ -617,7 +641,7 @@ export const ProductionSystem = {
       return;
     }
     startable.inputs.forEach((iq) => m.input.remove(iq.item, iq.quantity));
-    const duration = ProductionSystem.durationFor(m, startable);
+    const duration = ProductionSystem.durationForCtx(ctx, m, startable);
     const next = { id: s.newId("batch"), recipeId: startable.id, durationTicks: duration, remainingTicks: duration, consumed: startable.inputs.map((i) => ({ ...i })) };
     m.activeBatch = next;
     m.status = "PROCESSING";
@@ -634,6 +658,7 @@ export const ProductionSystem = {
       case "OUTPUT_FULL": return ProductionSystem.outputFullText(m, content);
       case "PAUSED": return "Paused";
       case "LOCKED": return lockedReason ?? "Locked — buy an upgrade";
+      case "NEEDS_REPAIR": return "Needs repair";
     }
   },
 
@@ -702,7 +727,7 @@ export const CustomerSystem = {
       const counter = s.counters.find((ct) => ct.counterId === c.counterId)!;
       const def = ctx.harbor.counters.find((d) => d.id === c.counterId)!;
       const type = ctx.content.customersById.get(c.typeId)!;
-      c.patienceLeft -= CustomerSystem.patienceDrain(c, counter, def, type.unmetPatienceDrainPermille);
+      c.patienceLeft -= CustomerSystem.patienceDrain(ctx, c, counter, def, type.unmetPatienceDrainPermille);
       if (c.patienceLeft <= 0) leaving.push(c);
     }
     for (const c of leaving) {
@@ -748,17 +773,25 @@ export const CustomerSystem = {
   },
 
   patienceDrain(
+    ctx: StepContext,
     c: CustomerState,
     counter: CounterState,
     def: { products: string[] },
     unmetDrainPermille: number,
   ): number {
     const pref = c.preferredProductId;
-    if (!pref) return 1;
-    if (c.wants - c.reserved <= 0) return 1;
-    const prefAvailable = def.products.includes(pref) ? counter.stock.available(pref) : 0;
-    if (prefAvailable > 0) return 1;
-    return Math.max(1, idiv(unmetDrainPermille, 1000));
+    let drain: number;
+    if (!pref || c.wants - c.reserved <= 0) {
+      drain = 1;
+    } else {
+      const prefAvailable = def.products.includes(pref) ? counter.stock.available(pref) : 0;
+      drain = prefAvailable > 0 ? 1 : Math.max(1, idiv(unmetDrainPermille, 1000));
+    }
+    if (WorkerSystem.greeterOnDuty(ctx.content, ctx.state)) {
+      const mult = ctx.content.staffProgression.roleBuffs.greeterPatienceDrainMultPermille;
+      drain = Math.max(1, Math.trunc((drain * mult) / 1000));
+    }
+    return drain;
   },
 
   releaseAll(c: CustomerState, counter: CounterState): void {
@@ -799,6 +832,16 @@ export const CustomerSystem = {
     s.record({ id: saleId, type: "sale", coinDelta: amount, tick: s.tick, reference: c.id });
     for (const [itemId, qty] of c.reservedItems) counter.stock.takeReserved(itemId, qty);
     c.clearReservations();
+    // Phase 16: on-duty cashier at this pad earns XP for the assist.
+    const counterZone = ctx.harbor.counters.find((ct) => ct.id === counter.counterId)!.zone;
+    const cashier = s.workers.find((w) => {
+      const role = ctx.content.workersById.get(w.roleId)?.role;
+      return role === "cashier" &&
+        !w.busyWalking &&
+        w.phase === "WORK" &&
+        w.taskZoneId === counterZone;
+    });
+    if (cashier) WorkerSystem.grantXp(ctx, cashier, ctx.content.staffProgression.xpSaleAssisted);
     ctx.emit({
       type: "sale_committed", tick: s.tick, saleId, customerId: c.id, items, coins: amount,
       customerTypeId: type.id, priceMultPermille: mult, preferenceMet: met,
@@ -868,32 +911,72 @@ export const CustomerSystem = {
     return { x: last.x, z: last.z };
   },
 
+  isUnlocked(def: { requiresUpgrade?: string | null }, state: GameState): boolean {
+    return !def.requiresUpgrade || state.ownedUpgrades.has(def.requiresUpgrade);
+  },
+
   spawn(ctx: StepContext): void {
     const s = ctx.state;
     const interval = CustomerSystem.spawnIntervalTicks(ctx.harbor, s.tick);
     if (++s.customerSpawnProgress < interval) return;
     s.customerSpawnProgress = 0;
     const rush = CustomerSystem.activeRush(ctx.harbor, s.tick);
-    const counterDef = ctx.harbor.counters.find((d) =>
+    const open = ctx.harbor.counters.filter((d) =>
+      CustomerSystem.isUnlocked(d, s) &&
       s.customers.filter((c) => c.counterId === d.id).length < CustomerSystem.effectiveMaxQueue(d, rush));
-    if (!counterDef) return;
+    if (open.length === 0) return;
     const types = ctx.content.customers;
-    const type = types[s.rng.pickWeighted(types.map((t) => CustomerSystem.effectiveSpawnWeight(ctx.content, s, t)))]!;
+    const type = types[s.rng.pickWeighted(types.map((t) => CustomerSystem.effectiveSpawnWeight(ctx.content, s, ctx.harbor, t)))]!;
     const wants = s.rng.nextInRange(type.basketMin, type.basketMax);
-    let preferred: string | null = null;
+    let preferredRoll: string | null = null;
     if (type.preferredProducts.length > 0) {
       const pick = type.preferredProducts[s.rng.pickWeighted(type.preferredProducts.map((p) => p.weight))]!;
-      preferred = counterDef.products.includes(pick.item) ? pick.item : null;
+      preferredRoll = pick.item;
     }
+    const counterDef = CustomerSystem.pickCounter(open, type, preferredRoll, s);
+    if (!counterDef) return;
+    const preferred = preferredRoll && counterDef.products.includes(preferredRoll) ? preferredRoll : null;
     const slot = queueSlot(counterDef, s.customers.filter((x) => x.counterId === counterDef.id).length);
     const path = CustomerSystem.approachPath(ctx.harbor, slot);
+    const patience = type.patienceTicks + DecorSystem.patienceBonusTicks(ctx.content, s);
     const c = new CustomerState(
-      s.newId("customer"), type.id, counterDef.id, wants, type.patienceTicks,
+      s.newId("customer"), type.id, counterDef.id, wants, patience,
       CustomerSystem.pathWalkTicks(path, ctx.harbor.customerWalkMmPerTick),
       preferred,
     );
     s.customers.push(c);
     ctx.emit({ type: "customer_arrived", tick: s.tick, customerId: c.id, counterId: counterDef.id });
+  },
+
+  /**
+   * Choose an open unlocked counter: wholesalers prefer wholesale pads;
+   * others prefer a pad that can sell their preferred SKU; then least queue.
+   */
+  pickCounter(
+    open: CounterDef[],
+    type: { kind: string },
+    preferred: string | null,
+    state: GameState,
+  ): CounterDef | undefined {
+    if (open.length === 0) return undefined;
+    const matching = preferred ? open.filter((d) => d.products.includes(preferred)) : [];
+    const wholesale = open.filter((d) => (d.kind ?? "retail") === "wholesale");
+    let pool: CounterDef[];
+    if (type.kind === "wholesaler" && matching.some((d) => (d.kind ?? "retail") === "wholesale")) {
+      pool = matching.filter((d) => (d.kind ?? "retail") === "wholesale");
+    } else if (type.kind === "wholesaler" && wholesale.length > 0) {
+      pool = wholesale;
+    } else if (matching.length > 0) {
+      pool = matching;
+    } else {
+      pool = open;
+    }
+    return [...pool].sort((a, b) => {
+      const qa = state.customers.filter((c) => c.counterId === a.id).length;
+      const qb = state.customers.filter((c) => c.counterId === b.id).length;
+      if (qa !== qb) return qa - qb;
+      return compareStrings(a.id, b.id);
+    })[0];
   },
 
   /** True when a cashier is on duty at [counterZoneId] (arrived, not walking). */
@@ -907,14 +990,24 @@ export const CustomerSystem = {
     });
   },
 
-  /** Base spawn weight scaled by day-part (Phase 11) and reputation kind bias (Phase 13). */
-  effectiveSpawnWeight(content: ContentPack, state: GameState, type: { kind: string; spawnWeight: number; dayPartSpawnMultPermille?: Record<string, number> }): number {
+  /**
+   * Base spawn weight scaled by day-part (Phase 11), reputation kind bias (Phase 13),
+   * and harbor specialization kind multipliers (Phase 22).
+   */
+  effectiveSpawnWeight(
+    content: ContentPack,
+    state: GameState,
+    harbor: HarborDef,
+    type: { kind: string; spawnWeight: number; dayPartSpawnMultPermille?: Record<string, number> },
+  ): number {
     const part = FishingSystem.dayPartAt(content, state.tick);
     const dayMult = type.dayPartSpawnMultPermille?.[part.id] ?? 1000;
     const repMult = ReputationSystem.kindSpawnMultPermille(content, state, type.kind);
+    const harborMult = harbor.specialization?.kindSpawnMultPermille?.[type.kind] ?? 1000;
     let weight = type.spawnWeight;
     weight = idiv(weight * dayMult, 1000);
     weight = idiv(weight * repMult, 1000);
+    weight = idiv(weight * harborMult, 1000);
     return Math.max(1, weight);
   },
 
@@ -1089,14 +1182,11 @@ export const UpgradeSystem = {
     } else if (effect.kind === "fish_regen") {
       s.player.fishRegenPermille = Math.max(s.player.fishRegenPermille, effect.speedPermille);
     } else if (effect.kind === "worker_move_speed") {
-      s.workerMoveSpeedPermille = Math.max(s.workerMoveSpeedPermille, effect.speedPermille);
+      // Phase 19: staff gear is assigned per-worker via loadouts — purchasing only unlocks the pool.
     } else if (effect.kind === "worker_carry") {
-      s.workerCarryCapacityFloor = Math.max(s.workerCarryCapacityFloor, effect.capacityUnits);
-      for (const w of s.workers) {
-        w.bag.capacityUnits = Math.max(w.bag.capacityUnits, s.workerCarryCapacityFloor);
-      }
+      // Phase 19 loadout gear — no global floor.
     } else if (effect.kind === "worker_catch_speed") {
-      s.workerCatchSpeedPermille = Math.max(s.workerCatchSpeedPermille, effect.speedPermille);
+      // Phase 19 loadout gear — no global floor.
     } else if (effect.kind === "worker_wage") {
       s.workerWagePerWorkerPerHour = Math.max(s.workerWagePerWorkerPerHour, effect.coinsPerWorkerPerHour);
     } else if (effect.kind === "maintenance_discount") {
@@ -1106,7 +1196,7 @@ export const UpgradeSystem = {
     } else if (effect.kind === "counter_spoil_resist") {
       s.counterSpoilPeriodMultPermille = Math.max(s.counterSpoilPeriodMultPermille, effect.periodMultPermille);
     }
-    // unlock_fishing_spot / unlock_machine / grant_bait are purchase-gated or ownership-gated
+    // unlock_fishing_spot / unlock_machine / unlock_counter / grant_bait are ownership-gated
   },
 };
 
@@ -1220,6 +1310,96 @@ export const ReputationSystem = {
     if (table.length === 0) return 1000;
     const row = table[Math.min(table.length - 1, Math.max(0, ReputationSystem.band(content, state)))]!;
     return row[kind] ?? 1000;
+  },
+};
+
+/**
+ * Phase 24 content-driven seasonal overlays. Windows repeat on the sim clock
+ * (no live server). Active events boost catch weights, unlock banner cosmetics,
+ * and gate event-only contract templates.
+ */
+export const SeasonalEventSystem = {
+  active(content: ContentPack, tick: number): SeasonalEventDef | null {
+    if (tick <= 0) return null;
+    for (const e of content.seasonalEvents.events) {
+      const phase = tick % e.periodTicks;
+      const end = e.startTick + e.durationTicks;
+      if (phase >= e.startTick && phase < end) return e;
+    }
+    return null;
+  },
+
+  ticksRemaining(event: SeasonalEventDef, tick: number): number {
+    const phase = tick % event.periodTicks;
+    return Math.max(0, event.startTick + event.durationTicks - phase);
+  },
+
+  speciesWeightMultPermille(content: ContentPack, tick: number, speciesId: string): number {
+    return SeasonalEventSystem.active(content, tick)?.speciesWeightMultPermille?.[speciesId] ?? 1000;
+  },
+
+  scaledWeight(base: number, content: ContentPack, tick: number, speciesId: string): number {
+    const mult = SeasonalEventSystem.speciesWeightMultPermille(content, tick, speciesId);
+    return Math.max(1, Math.trunc((base * mult) / 1000));
+  },
+
+  step(ctx: StepContext): void {
+    const s = ctx.state;
+    const cur = SeasonalEventSystem.active(ctx.content, s.tick);
+    const prev = s.tick <= 1 ? null : SeasonalEventSystem.active(ctx.content, s.tick - 1);
+    if (prev?.id === cur?.id) return;
+    if (prev) ctx.emit({ type: "seasonal_event_ended", tick: s.tick, eventId: prev.id, name: prev.name });
+    if (cur) {
+      if (cur.banner) s.unlockedCosmetics.add(cur.banner);
+      ctx.emit({ type: "seasonal_event_started", tick: s.tick, eventId: cur.id, name: cur.name });
+    }
+    if (s.contractBoardRefreshAt > 0) s.contractBoardRefreshAt = s.tick;
+  },
+};
+
+/**
+ * Phase 23 shop decor: buy-once placable cosmetics that add a tiny customer
+ * patience buff. Banner-gated pieces reuse prestige cosmetic IDs.
+ */
+export const DecorSystem = {
+  patienceBonusTicks(content: ContentPack, s: GameState): number {
+    let sum = 0;
+    for (const d of content.decor.items) {
+      if (s.ownedDecor.has(d.id)) sum += d.patienceBonusTicks;
+    }
+    return sum;
+  },
+
+  missingRequirement(content: ContentPack, s: GameState, def: DecorDef): string | null {
+    const cos = def.requiresCosmetic;
+    if (!cos || s.unlockedCosmetics.has(cos)) return null;
+    return content.prestige.milestones.find((m) => m.reward.cosmetic === cos)?.name ?? cos;
+  },
+
+  purchase(ctx: StepContext, decorId: string, requestId: string): void {
+    const s = ctx.state;
+    const prior = s.purchaseReceipts.get(requestId);
+    if (prior) {
+      ctx.emit({ type: "decor_purchased", tick: s.tick, decorId, receipt: prior, replayed: true });
+      return;
+    }
+    const reject = (reason: string) => {
+      ctx.emit({ type: "decor_purchase_rejected", tick: s.tick, decorId, requestId, reason });
+    };
+    const def = ctx.content.decorById.get(decorId);
+    if (!def) return reject("Unknown decor");
+    if (s.ownedDecor.has(def.id)) return reject("Already owned");
+    const miss = DecorSystem.missingRequirement(ctx.content, s, def);
+    if (miss) return reject(`Requires: ${miss}`);
+    if (s.coins < def.cost) return reject(`Need ${def.cost - s.coins} more coins`);
+    s.coins -= def.cost;
+    s.ownedDecor.add(def.id);
+    s.bumpStat(Stats.DECOR_BOUGHT);
+    const receipt: Receipt = { id: s.newId("receipt"), type: "decor", coinDelta: -def.cost, tick: s.tick, reference: requestId };
+    s.purchaseReceipts.set(requestId, receipt);
+    s.record(receipt);
+    ctx.emit({ type: "decor_purchased", tick: s.tick, decorId: def.id, receipt, replayed: false });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "purchase" });
   },
 };
 
@@ -1526,7 +1706,7 @@ function refreshOffers(ctx: StepContext): void {
   const def = ctx.content.contracts;
   s.contractOffers.length = 0;
   const activeTemplates = new Set(s.activeContracts.map((c) => c.templateId));
-  const pool = def.templates.filter((t) => !activeTemplates.has(t.id) && templateEligibleForBoard(s, t));
+  const pool = def.templates.filter((t) => !activeTemplates.has(t.id) && templateEligibleForBoard(ctx.content, s, t));
   const slots = Math.min(def.boardSlots, pool.length);
   for (let n = 0; n < slots; n++) {
     if (pool.length === 0) continue;
@@ -1538,7 +1718,11 @@ function refreshOffers(ctx: StepContext): void {
   ctx.emit({ type: "contract_board_refreshed", tick: s.tick, offerIds: s.contractOffers.map((o) => o.id) });
 }
 
-function templateEligibleForBoard(s: GameState, t: ContractTemplateDef): boolean {
+function templateEligibleForBoard(content: ContentPack, s: GameState, t: ContractTemplateDef): boolean {
+  if (t.requiresSeasonalEvent) {
+    const active = SeasonalEventSystem.active(content, s.tick);
+    if (active?.id !== t.requiresSeasonalEvent) return false;
+  }
   if (!ContractSystem.isStanding(t)) return true;
   return s.tick >= ContractSystem.standingCooldownUntil(s, t.id);
 }
@@ -1560,7 +1744,8 @@ function offerFrom(s: GameState, t: ContractTemplateDef): ContractOffer {
 
 /**
  * Soft economy sinks (Phase 19): station upkeep and counter/bag spoilage after
- * economy.requires are met. Accrual is ephemeral (not persisted), like wages.
+ * economy.requires are met. Phase 25 adds gated machine wear with coin repairs.
+ * Accrual is ephemeral (not persisted), like wages.
  */
 export const EconomySystem = {
   unlocked(content: ContentPack, s: GameState): boolean {
@@ -1573,8 +1758,22 @@ export const EconomySystem = {
     return content.upgradesById.get(missing)?.name ?? content.questsById.get(missing)?.name ?? missing;
   },
 
-  maintenanceCoinsPerStation(content: ContentPack, s: GameState): number {
-    return Math.max(0, content.economy.maintenanceCoinsPerStation - s.maintenanceDiscountPerStation);
+  wearUnlocked(content: ContentPack, s: GameState): boolean {
+    return content.economy.wear.requires.every((it) => s.ownedUpgrades.has(it) || s.completedQuests.has(it));
+  },
+
+  wearMissingRequirement(content: ContentPack, s: GameState): string | null {
+    const missing = content.economy.wear.requires.find((it) => !s.ownedUpgrades.has(it) && !s.completedQuests.has(it));
+    if (missing === undefined) return null;
+    return content.upgradesById.get(missing)?.name ?? content.questsById.get(missing)?.name ?? missing;
+  },
+
+  maintenanceCoinsPerStation(content: ContentPack, s: GameState, harbor: HarborDef): number {
+    const harborDisc = harbor.specialization?.maintenanceDiscountPerStation ?? 0;
+    return Math.max(
+      0,
+      content.economy.maintenanceCoinsPerStation - s.maintenanceDiscountPerStation - harborDisc,
+    );
   },
 
   bagFishSpoilPeriodTicks(content: ContentPack, s: GameState): number {
@@ -1595,18 +1794,59 @@ export const EconomySystem = {
       ?? 2;
   },
 
+  isSlowed(m: MachineState, tick: number): boolean {
+    return !m.broken && m.slowUntilTick > tick;
+  },
+
+  repairCost(content: ContentPack): number {
+    return content.economy.wear.repairCoins;
+  },
+
+  needsRepair(m: MachineState, tick: number): boolean {
+    return m.broken || EconomySystem.isSlowed(m, tick);
+  },
+
   step(ctx: StepContext): void {
     if (!EconomySystem.unlocked(ctx.content, ctx.state)) return;
     accrueMaintenance(ctx);
     accrueCounterSpoil(ctx);
     accrueBagFishSpoil(ctx);
+    accrueWear(ctx);
+  },
+
+  repair(ctx: StepContext, stationId: string, requestId: string): void {
+    const s = ctx.state;
+    const prior = s.purchaseReceipts.get(requestId);
+    if (prior) {
+      const machineId = s.machines.find((m) => m.stationId === stationId)?.machineId ?? "";
+      ctx.emit({ type: "machine_repaired", tick: s.tick, stationId, machineId, receipt: prior, replayed: true });
+      return;
+    }
+    const reject = (reason: string) => {
+      ctx.emit({ type: "machine_repair_rejected", tick: s.tick, stationId, requestId, reason });
+    };
+    const m = s.machines.find((x) => x.stationId === stationId);
+    if (!m) return reject("Unknown station");
+    if (!EconomySystem.needsRepair(m, s.tick)) return reject("Nothing to repair");
+    const cost = EconomySystem.repairCost(ctx.content);
+    if (s.coins < cost) return reject(`Need ${cost - s.coins} more coins`);
+    s.coins -= cost;
+    m.broken = false;
+    m.slowUntilTick = 0;
+    s.bumpStat(Stats.MACHINES_REPAIRED);
+    if (cost > 0) s.bumpStat(Stats.REPAIR_SPENT, cost);
+    const receipt: Receipt = { id: s.newId("receipt"), type: "repair", coinDelta: -cost, tick: s.tick, reference: requestId };
+    s.purchaseReceipts.set(requestId, receipt);
+    s.record(receipt);
+    ctx.emit({ type: "machine_repaired", tick: s.tick, stationId: m.stationId, machineId: m.machineId, receipt, replayed: false });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "purchase" });
   },
 };
 
 function accrueMaintenance(ctx: StepContext): void {
   const s = ctx.state;
   const eco = ctx.content.economy;
-  const rate = EconomySystem.maintenanceCoinsPerStation(ctx.content, s);
+  const rate = EconomySystem.maintenanceCoinsPerStation(ctx.content, s, ctx.harbor);
   if (rate <= 0 || eco.maintenancePeriodTicks <= 0) return;
   s.maintenanceAccrualTicks++;
   if (s.maintenanceAccrualTicks < eco.maintenancePeriodTicks) return;
@@ -1660,6 +1900,229 @@ function accrueBagFishSpoil(ctx: StepContext): void {
   ctx.emit({ type: "items_spoiled", tick: s.tick, location: "bag", items: [...lost] });
 }
 
+function accrueWear(ctx: StepContext): void {
+  if (!EconomySystem.wearUnlocked(ctx.content, ctx.state)) return;
+  const s = ctx.state;
+  const wear = ctx.content.economy.wear;
+  if (wear.chancePermille <= 0) return;
+  s.wearAccrualTicks++;
+  if (s.wearAccrualTicks < wear.checkPeriodTicks) return;
+  s.wearAccrualTicks = 0;
+  const candidates = s.machines
+    .filter((m) => {
+      const st = ctx.harbor.stations.find((x) => x.id === m.stationId);
+      if (!st) return false;
+      return ProductionSystem.isUnlocked(st, s) && !m.broken && !EconomySystem.isSlowed(m, s.tick);
+    })
+    .sort((a, b) => compareStrings(a.stationId, b.stationId));
+  if (candidates.length === 0) return;
+  for (const m of candidates) {
+    if (s.rng.nextBelow(1000) >= wear.chancePermille) continue;
+    if (s.rng.nextBelow(1000) < wear.breakChancePermille) {
+      m.broken = true;
+      m.slowUntilTick = 0;
+      s.bumpStat(Stats.MACHINES_BROKEN);
+      ctx.emit({ type: "machine_broke", tick: s.tick, stationId: m.stationId, machineId: m.machineId });
+    } else {
+      m.slowUntilTick = s.tick + wear.slowDurationTicks;
+      s.bumpStat(Stats.MACHINES_SLOWED);
+      ctx.emit({
+        type: "machine_slowed",
+        tick: s.tick,
+        stationId: m.stationId,
+        machineId: m.machineId,
+        untilTick: m.slowUntilTick,
+      });
+    }
+  }
+}
+
+/**
+ * Phase 26 pier bank: one short-term loan (interest baked into repay amount) and
+ * player-set coin goals. Overdue loans auto-collect on a content period.
+ */
+export const BankSystem = {
+  unlocked(content: ContentPack, s: GameState): boolean {
+    return content.bank.requires.every((it) => s.ownedUpgrades.has(it) || s.completedQuests.has(it));
+  },
+
+  missingRequirement(content: ContentPack, s: GameState): string | null {
+    const missing = content.bank.requires.find((it) => !s.ownedUpgrades.has(it) && !s.completedQuests.has(it));
+    if (missing === undefined) return null;
+    return content.upgradesById.get(missing)?.name
+      ?? content.questsById.get(missing)?.name
+      ?? missing;
+  },
+
+  hasLoan(s: GameState): boolean {
+    return s.loanOwed > 0;
+  },
+
+  overdue(s: GameState): boolean {
+    return BankSystem.hasLoan(s) && s.tick >= s.loanDueTick;
+  },
+
+  ticksRemaining(s: GameState): number {
+    if (!BankSystem.hasLoan(s)) return 0;
+    return Math.max(0, Math.trunc(s.loanDueTick - s.tick));
+  },
+
+  repayAmount(content: ContentPack): number {
+    return bankRepayAmount(content.bank);
+  },
+
+  step(ctx: StepContext): void {
+    BankSystem.checkCoinGoal(ctx);
+    BankSystem.collectOverdue(ctx);
+  },
+
+  takeLoan(ctx: StepContext, requestId: string): void {
+    const s = ctx.state;
+    const prior = s.purchaseReceipts.get(requestId);
+    if (prior) {
+      ctx.emit({
+        type: "loan_taken",
+        tick: s.tick,
+        principal: prior.coinDelta,
+        owed: s.loanOwed,
+        dueTick: s.loanDueTick,
+        receipt: prior,
+        replayed: true,
+      });
+      return;
+    }
+    const reject = (reason: string) => {
+      ctx.emit({ type: "loan_rejected", tick: s.tick, requestId, reason });
+    };
+    if (!BankSystem.unlocked(ctx.content, s)) {
+      reject(`Requires: ${BankSystem.missingRequirement(ctx.content, s)}`);
+      return;
+    }
+    if (BankSystem.hasLoan(s)) {
+      reject("Loan already outstanding");
+      return;
+    }
+    const principal = ctx.content.bank.loanPrincipal;
+    const owed = BankSystem.repayAmount(ctx.content);
+    s.coins = SafeMath.add(s.coins, principal);
+    s.loanOwed = owed;
+    s.loanDueTick = s.tick + ctx.content.bank.termTicks;
+    s.loanCollectionAccrualTicks = 0;
+    s.bumpStat(Stats.LOANS_TAKEN);
+    const interest = owed - principal;
+    if (interest > 0) s.bumpStat(Stats.LOAN_INTEREST_ACCRUED, interest);
+    const receipt: Receipt = { id: s.newId("receipt"), type: "loan", coinDelta: principal, tick: s.tick, reference: requestId };
+    s.purchaseReceipts.set(requestId, receipt);
+    s.record(receipt);
+    ctx.emit({
+      type: "loan_taken",
+      tick: s.tick,
+      principal,
+      owed,
+      dueTick: s.loanDueTick,
+      receipt,
+      replayed: false,
+    });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "purchase" });
+  },
+
+  repayLoan(ctx: StepContext, requestId: string): void {
+    const s = ctx.state;
+    const prior = s.purchaseReceipts.get(requestId);
+    if (prior) {
+      ctx.emit({
+        type: "loan_repaid",
+        tick: s.tick,
+        paid: -prior.coinDelta,
+        remaining: s.loanOwed,
+        receipt: prior,
+        replayed: true,
+      });
+      return;
+    }
+    const reject = (reason: string) => {
+      ctx.emit({ type: "loan_rejected", tick: s.tick, requestId, reason });
+    };
+    if (!BankSystem.hasLoan(s)) {
+      reject("No loan to repay");
+      return;
+    }
+    if (s.coins <= 0) {
+      reject("Need coins to repay");
+      return;
+    }
+    const paid = Math.min(s.loanOwed, s.coins);
+    s.coins -= paid;
+    s.loanOwed -= paid;
+    if (s.loanOwed <= 0) {
+      s.loanOwed = 0;
+      s.loanDueTick = 0;
+      s.loanCollectionAccrualTicks = 0;
+    }
+    s.bumpStat(Stats.LOAN_REPAID, paid);
+    const receipt: Receipt = { id: s.newId("receipt"), type: "loan_repay", coinDelta: -paid, tick: s.tick, reference: requestId };
+    s.purchaseReceipts.set(requestId, receipt);
+    s.record(receipt);
+    ctx.emit({
+      type: "loan_repaid",
+      tick: s.tick,
+      paid,
+      remaining: s.loanOwed,
+      receipt,
+      replayed: false,
+    });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "purchase" });
+  },
+
+  setCoinGoal(ctx: StepContext, amount: number): void {
+    const s = ctx.state;
+    if (amount < 0) return;
+    if (amount !== 0 && !ctx.content.bank.goalPresets.includes(amount)) return;
+    const target = amount;
+    s.coinGoal = target;
+    const alreadyMet = target > 0 && s.coins >= target;
+    s.coinGoalCelebrated = alreadyMet;
+    ctx.emit({ type: "coin_goal_set", tick: s.tick, amount: target });
+    if (alreadyMet) {
+      s.bumpStat(Stats.COIN_GOALS_REACHED);
+      ctx.emit({ type: "coin_goal_reached", tick: s.tick, amount: target, coins: s.coins });
+    }
+  },
+
+  checkCoinGoal(ctx: StepContext): void {
+    const s = ctx.state;
+    if (s.coinGoal <= 0 || s.coinGoalCelebrated) return;
+    if (s.coins < s.coinGoal) return;
+    s.coinGoalCelebrated = true;
+    s.bumpStat(Stats.COIN_GOALS_REACHED);
+    ctx.emit({ type: "coin_goal_reached", tick: s.tick, amount: s.coinGoal, coins: s.coins });
+  },
+
+  collectOverdue(ctx: StepContext): void {
+    const s = ctx.state;
+    if (!BankSystem.overdue(s)) {
+      s.loanCollectionAccrualTicks = 0;
+      return;
+    }
+    const period = ctx.content.bank.collectionPeriodTicks;
+    s.loanCollectionAccrualTicks++;
+    if (s.loanCollectionAccrualTicks < period) return;
+    s.loanCollectionAccrualTicks = 0;
+    if (s.coins <= 0 || s.loanOwed <= 0) return;
+    const seized = Math.min(s.loanOwed, s.coins);
+    s.coins -= seized;
+    s.loanOwed -= seized;
+    s.bumpStat(Stats.LOAN_COLLECTED, seized);
+    if (s.loanOwed <= 0) {
+      s.loanOwed = 0;
+      s.loanDueTick = 0;
+    }
+    const receipt: Receipt = { id: s.newId("receipt"), type: "loan_collect", coinDelta: -seized, tick: s.tick, reference: "overdue" };
+    s.record(receipt);
+    ctx.emit({ type: "loan_collected", tick: s.tick, seized, remaining: s.loanOwed });
+  },
+};
+
 /**
  * Removes up to [units] from [inv]. When [preferProducts] is true, only products;
  * otherwise only species (raw fish). Higher spoil tiers first, then sorted ids.
@@ -1700,13 +2163,20 @@ function removeSpoilUnits(
  */
 export const HarborTravelSystem = {
   unlocked(content: ContentPack, s: GameState, def: HarborDef): boolean {
-    return def.requires.every((it) => s.ownedUpgrades.has(it) || s.completedQuests.has(it));
+    return def.requires.every(
+      (it) => s.ownedUpgrades.has(it) || s.completedQuests.has(it) || s.completedPrestige.has(it),
+    );
   },
 
   missingRequirement(content: ContentPack, s: GameState, def: HarborDef): string | null {
-    const missing = def.requires.find((it) => !s.ownedUpgrades.has(it) && !s.completedQuests.has(it));
+    const missing = def.requires.find(
+      (it) => !s.ownedUpgrades.has(it) && !s.completedQuests.has(it) && !s.completedPrestige.has(it),
+    );
     if (missing === undefined) return null;
-    return content.upgradesById.get(missing)?.name ?? content.questsById.get(missing)?.name ?? missing;
+    return content.upgradesById.get(missing)?.name
+      ?? content.questsById.get(missing)?.name
+      ?? content.prestigeMilestonesById.get(missing)?.name
+      ?? missing;
   },
 
   travel(ctx: StepContext, harborId: string, requestId: string): void {
@@ -1826,19 +2296,23 @@ export type WorkerHireAvailability =
   | { kind: "too_expensive"; missing: number }
   | { kind: "locked"; reason: string };
 
-const HIREABLE_ROLES = new Set(["fisher", "porter", "operator", "cashier", "supervisor"]);
+const HIREABLE_ROLES = new Set([
+  "fisher", "porter", "operator", "cashier", "supervisor",
+  "ice_runner", "smoker_specialist", "greeter",
+]);
 
 export const WorkerSystem = {
   step(ctx: StepContext): void {
     accrueWages(ctx);
     for (const w of ctx.state.workers) {
+      if (!w.onShift) continue;
       advanceWalk(w);
       if (w.transferCooldown > 0) w.transferCooldown--;
     }
     expireLeases(ctx);
     const ordered = [...ctx.state.workers].sort((a, b) => compareStrings(a.id, b.id));
     for (const w of ordered) {
-      if (w.busyWalking) continue;
+      if (!w.onShift || w.busyWalking) continue;
       const def = ctx.content.workersById.get(w.roleId);
       if (!def) continue;
       if (def.role === "fisher") stepFisher(ctx, w, def);
@@ -1846,15 +2320,139 @@ export const WorkerSystem = {
       else if (def.role === "operator") stepOperator(ctx, w, def);
       else if (def.role === "cashier") stepCashier(ctx, w, def);
       else if (def.role === "supervisor") stepSupervisor(ctx, w, def);
+      else if (def.role === "ice_runner") stepIceRunner(ctx, w, def);
+      else if (def.role === "smoker_specialist") stepSmokerSpecialist(ctx, w, def);
+      else if (def.role === "greeter") stepGreeter(ctx, w, def);
     }
   },
 
-  /** True when a supervisor has arrived at their post (not walking). */
+  /** True when a supervisor has arrived at their post (on shift, not walking). */
   supervisorOnDuty(content: ContentPack, s: GameState): boolean {
     return s.workers.some((w) => {
       const role = content.workersById.get(w.roleId)?.role;
-      return role === "supervisor" && !w.busyWalking && w.phase === "WORK";
+      return role === "supervisor" && w.onShift && !w.busyWalking && w.phase === "WORK";
     });
+  },
+
+  greeterOnDuty(content: ContentPack, s: GameState): boolean {
+    return s.workers.some((w) => {
+      const role = content.workersById.get(w.roleId)?.role;
+      return role === "greeter" && w.onShift && !w.busyWalking && w.phase === "WORK";
+    });
+  },
+
+  smokerSpecialistOnDuty(content: ContentPack, s: GameState, harbor: HarborDef): boolean {
+    return s.workers.some((w) => {
+      const role = content.workersById.get(w.roleId)?.role;
+      if (role !== "smoker_specialist" || !w.onShift || w.busyWalking || w.phase !== "WORK") return false;
+      const zoneId = w.taskZoneId;
+      if (!zoneId) return false;
+      return harbor.stations.some((st) =>
+        st.machine.includes("smoker") && (st.inputZone === zoneId || st.outputZone === zoneId));
+    });
+  },
+
+  /** Free standard-wage on-shift slots (base + supervisor bonus when posted). */
+  freeOnShiftSlots(content: ContentPack, s: GameState): number {
+    const shifts = content.staffProgression.shifts;
+    let slots = shifts.baseOnShiftSlots;
+    if (WorkerSystem.supervisorOnDuty(content, s)) slots += shifts.supervisorExtraSlots;
+    return slots;
+  },
+
+  setShift(ctx: StepContext, workerId: string, onShift: boolean): void {
+    const w = ctx.state.workers.find((x) => x.id === workerId);
+    if (!w || w.onShift === onShift) return;
+    w.onShift = onShift;
+    if (!onShift) {
+      abortHaul(ctx, w);
+      w.walkTicksLeft = 0;
+      w.walkTicksTotal = 0;
+    }
+    ctx.emit({ type: "worker_shift_changed", tick: ctx.state.tick, workerId: w.id, roleId: w.roleId, onShift });
+  },
+
+  /** Slot id for an assignable staff-gear upgrade, or null if not a loadout piece. */
+  loadoutSlotFor(content: ContentPack, upgradeId: string): string | null {
+    return content.staffProgression.loadouts.slots.find((s) => s.upgradeIds.includes(upgradeId))?.id ?? null;
+  },
+
+  assignableUpgradeIds(content: ContentPack): Set<string> {
+    return new Set(content.staffProgression.loadouts.slots.flatMap((s) => s.upgradeIds));
+  },
+
+  /** Equip upgradeId onto workerId; moves it off any other worker first. */
+  assignGear(ctx: StepContext, workerId: string, upgradeId: string): void {
+    const s = ctx.state;
+    const w = s.workers.find((x) => x.id === workerId);
+    if (!w || !s.ownedUpgrades.has(upgradeId)) return;
+    const slotId = WorkerSystem.loadoutSlotFor(ctx.content, upgradeId);
+    if (!slotId) return;
+    if (w.equipment[slotId] === upgradeId) return;
+    for (const other of s.workers) {
+      let changed = false;
+      for (const [key, uid] of Object.entries(other.equipment)) {
+        if (uid === upgradeId) {
+          delete other.equipment[key];
+          changed = true;
+        }
+      }
+      if (other.id === w.id) {
+        const prev = other.equipment[slotId];
+        if (prev && prev !== upgradeId) {
+          delete other.equipment[slotId];
+          changed = true;
+        }
+      }
+      if (changed && other.id !== w.id) refreshWorkerCarry(ctx.content, s, other);
+    }
+    w.equipment[slotId] = upgradeId;
+    refreshWorkerCarry(ctx.content, s, w);
+    ctx.emit({ type: "worker_gear_assigned", tick: s.tick, workerId: w.id, upgradeId, slotId });
+  },
+
+  unequipGear(ctx: StepContext, workerId: string, slotId: string): void {
+    const s = ctx.state;
+    const w = s.workers.find((x) => x.id === workerId);
+    if (!w) return;
+    const upgradeId = w.equipment[slotId];
+    if (!upgradeId) return;
+    delete w.equipment[slotId];
+    refreshWorkerCarry(ctx.content, s, w);
+    ctx.emit({ type: "worker_gear_unequipped", tick: s.tick, workerId: w.id, upgradeId, slotId });
+  },
+
+  /**
+   * Legacy saves applied staff boots/satchel/tackle as global floors. Phase 19 moves those
+   * into per-worker equipment — auto-equip owned gear onto the first workers that can take it.
+   */
+  migrateLegacyGlobalGear(content: ContentPack, s: GameState): void {
+    const assignable = WorkerSystem.assignableUpgradeIds(content);
+    for (const upgradeId of content.upgrades.map((u) => u.id).filter((id) => assignable.has(id) && s.ownedUpgrades.has(id))) {
+      if (s.workers.some((w) => Object.values(w.equipment).includes(upgradeId))) continue;
+      const slotId = WorkerSystem.loadoutSlotFor(content, upgradeId);
+      if (!slotId) continue;
+      const target = s.workers.find((w) => !(slotId in w.equipment));
+      if (!target) continue;
+      target.equipment[slotId] = upgradeId;
+    }
+    s.workerMoveSpeedPermille = 1000;
+    s.workerCatchSpeedPermille = 0;
+    s.workerCarryCapacityFloor = 0;
+  },
+
+  gearBonuses(content: ContentPack, w: WorkerState): [number, number, number] {
+    let move = 1000;
+    let catchFloor = 0;
+    let carryFloor = 0;
+    for (const upgradeId of Object.values(w.equipment)) {
+      const effect = content.upgradesById.get(upgradeId)?.effect;
+      if (!effect) continue;
+      if (effect.kind === "worker_move_speed") move = Math.trunc((move * effect.speedPermille) / 1000);
+      else if (effect.kind === "worker_catch_speed") catchFloor = Math.max(catchFloor, effect.speedPermille);
+      else if (effect.kind === "worker_carry") carryFloor = Math.max(carryFloor, effect.capacityUnits);
+    }
+    return [Math.max(1, move), catchFloor, carryFloor];
   },
 
   hire(ctx: StepContext, roleId: string, requestId: string): void {
@@ -1878,14 +2476,72 @@ export const WorkerSystem = {
     const id = s.newId("worker");
     const w = new WorkerState(
       id, def.id, spawn.x, spawn.z,
-      new Inventory(`inv.${id}.bag`, WorkerSystem.carryCapacity(s, def), ctx.content.carryUnits),
+      new Inventory(`inv.${id}.bag`, def.carryCapacityUnits, ctx.content.carryUnits),
     );
+    WorkerSystem.rollTraits(ctx, w);
+    w.bag.capacityUnits = WorkerSystem.carryCapacity(ctx.content, s, def, w);
     s.workers.push(w);
     s.bumpStat(Stats.WORKERS_HIRED);
     const receipt: Receipt = { id: s.newId("hire"), type: "hire", coinDelta: -def.hireCost, tick: s.tick, reference: w.id };
     s.record(receipt);
     s.purchaseReceipts.set(requestId, receipt);
     ctx.emit({ type: "worker_hired", tick: s.tick, roleId, receipt, replayed: false });
+  },
+
+  /** Deterministic weighted trait picks without replacement. */
+  rollTraits(ctx: StepContext, w: WorkerState): void {
+    const prog = ctx.content.staffProgression;
+    const pool = [...prog.traits];
+    const n = Math.min(prog.traitsOnHire, pool.length);
+    for (let i = 0; i < n; i++) {
+      if (pool.length === 0) return;
+      const pick = pool[ctx.state.rng.pickWeighted(pool.map((t) => t.weight))]!;
+      w.traits.push(pick.id);
+      for (let j = pool.length - 1; j >= 0; j--) {
+        if (pool[j]!.id === pick.id) pool.splice(j, 1);
+      }
+    }
+  },
+
+  levelForXp(content: ContentPack, xp: number): number {
+    const thresholds = content.staffProgression.xpThresholds;
+    let level = 1;
+    for (let i = 1; i < thresholds.length; i++) {
+      if (xp >= thresholds[i]!) level = i + 1;
+      else break;
+    }
+    return Math.min(Math.max(level, 1), content.staffProgression.maxLevel);
+  },
+
+  grantXp(ctx: StepContext, w: WorkerState, amount: number): void {
+    if (amount <= 0) return;
+    w.xp += amount;
+    ctx.state.bumpStat(Stats.WORKER_XP, amount);
+    const next = WorkerSystem.levelForXp(ctx.content, w.xp);
+    if (next <= w.level) return;
+    w.level = next;
+    const def = ctx.content.workersById.get(w.roleId);
+    if (!def) return;
+    w.bag.capacityUnits = WorkerSystem.carryCapacity(ctx.content, ctx.state, def, w);
+    ctx.state.bumpStat(Stats.WORKER_LEVEL_UPS);
+    ctx.emit({ type: "worker_leveled_up", tick: ctx.state.tick, workerId: w.id, roleId: w.roleId, level: w.level });
+  },
+
+  /**
+   * Why an on-shift worker is stuck idle (Phase 20). Null while walking, casting, or actively tasked.
+   */
+  blockedReason(content: ContentPack, s: GameState, harbor: HarborDef, w: WorkerState): string | null {
+    if (!w.onShift) return "Off shift";
+    if (w.busyWalking) return null;
+    const def = content.workersById.get(w.roleId);
+    if (!def) return null;
+    if (w.phase !== "NONE" && w.phase !== "WORK") return null;
+    if (w.phase === "WORK" && def.role !== "fisher") return null;
+    if (def.role === "fisher" && w.fishingSpecies !== null) return null;
+    if (def.role === "fisher") return fisherBlocked(content, s, harbor, w);
+    if (def.role === "porter" || def.role === "ice_runner") return haulBlocked(content, s, harbor, true);
+    if (def.role === "operator" || def.role === "smoker_specialist") return haulBlocked(content, s, harbor, false);
+    return null;
   },
 
   availability(content: ContentPack, s: GameState, def: WorkerDef): WorkerHireAvailability {
@@ -1898,16 +2554,42 @@ export const WorkerSystem = {
     return { kind: "purchasable" };
   },
 
-  moveSpeed(s: GameState, def: WorkerDef): number {
-    return Math.max(1, Math.trunc((def.moveSpeedMmPerTick * s.workerMoveSpeedPermille) / 1000));
+  moveSpeed(content: ContentPack, s: GameState, def: WorkerDef, w: WorkerState): number {
+    const prog = content.staffProgression;
+    const levelMult = 1000 + prog.moveSpeedPermillePerLevel * Math.max(w.level - 1, 0);
+    const [traitMove] = traitBonus(content, w);
+    const [gearMove] = WorkerSystem.gearBonuses(content, w);
+    let speed = def.moveSpeedMmPerTick;
+    speed = Math.trunc((speed * gearMove) / 1000);
+    speed = Math.trunc((speed * levelMult) / 1000);
+    speed = Math.trunc((speed * traitMove) / 1000);
+    return Math.max(1, speed);
   },
 
-  catchSpeed(s: GameState, def: WorkerDef): number {
-    return Math.max(def.catchSpeedPermille, s.workerCatchSpeedPermille);
+  catchSpeed(content: ContentPack, s: GameState, def: WorkerDef, w: WorkerState): number {
+    const prog = content.staffProgression;
+    const levelMult = 1000 + prog.catchSpeedPermillePerLevel * Math.max(w.level - 1, 0);
+    const [, traitCatch] = traitBonus(content, w);
+    const [, gearCatch] = WorkerSystem.gearBonuses(content, w);
+    let speed = Math.max(def.catchSpeedPermille, gearCatch);
+    speed = Math.trunc((speed * levelMult) / 1000);
+    speed = Math.trunc((speed * traitCatch) / 1000);
+    return Math.max(1, speed);
   },
 
-  carryCapacity(s: GameState, def: WorkerDef): number {
-    return Math.max(def.carryCapacityUnits, s.workerCarryCapacityFloor);
+  carryCapacity(content: ContentPack, s: GameState, def: WorkerDef, w: WorkerState): number {
+    const prog = content.staffProgression;
+    const levelBonus = prog.carryBonusEveryLevels <= 0
+      ? 0
+      : Math.trunc(Math.max(w.level - 1, 0) / prog.carryBonusEveryLevels);
+    const [, , traitCarry] = traitBonus(content, w);
+    const [, , gearCarry] = WorkerSystem.gearBonuses(content, w);
+    return Math.max(def.carryCapacityUnits, gearCarry) + levelBonus + traitCarry;
+  },
+
+  transferInterval(content: ContentPack, def: WorkerDef, w: WorkerState): number {
+    const mult = transferIntervalMult(content, w);
+    return Math.max(1, Math.trunc((def.transferIntervalTicks * mult) / 1000));
   },
 
   walkTicks(fromX: number, fromZ: number, toX: number, toZ: number, mmPerTick: number): number {
@@ -1916,6 +2598,114 @@ export const WorkerSystem = {
     const dist = SafeMath.isqrt(dx * dx + dz * dz);
     if (dist === 0) return 0;
     return idiv(dist + mmPerTick - 1, mmPerTick);
+  },
+};
+
+function traitBonus(content: ContentPack, w: WorkerState): [number, number, number] {
+  let move = 1000;
+  let catchSp = 1000;
+  let carry = 0;
+  for (const tid of w.traits) {
+    const t = content.workerTraitsById.get(tid);
+    if (!t) continue;
+    move = Math.trunc((move * (t.moveSpeedPermille ?? 1000)) / 1000);
+    catchSp = Math.trunc((catchSp * (t.catchSpeedPermille ?? 1000)) / 1000);
+    carry += t.carryBonus ?? 0;
+  }
+  return [Math.max(1, move), Math.max(1, catchSp), carry];
+}
+
+function transferIntervalMult(content: ContentPack, w: WorkerState): number {
+  let mult = 1000;
+  for (const tid of w.traits) {
+    const t = content.workerTraitsById.get(tid);
+    if (!t) continue;
+    mult = Math.trunc((mult * (t.transferIntervalMultPermille ?? 1000)) / 1000);
+  }
+  return Math.max(1, mult);
+}
+
+function refreshWorkerCarry(content: ContentPack, s: GameState, w: WorkerState): void {
+  const def = content.workersById.get(w.roleId);
+  if (!def) return;
+  w.bag.capacityUnits = WorkerSystem.carryCapacity(content, s, def, w);
+}
+
+function fisherBlocked(content: ContentPack, s: GameState, harbor: HarborDef, w: WorkerState): string | null {
+  if (!w.bag.isEmpty()) {
+    const canDrop = s.machines.some((m) => {
+      const st = harbor.stations.find((x) => x.id === m.stationId);
+      if (!st || !ProductionSystem.isUnlocked(st, s) || m.paused) return false;
+      return [...w.bag.contents()].some(([item, qty]) => qty > 0 && m.input.roomFor(item) >= 1);
+    });
+    if (!canDrop) return "No path";
+  }
+  const unlocked = harbor.fishingSpots.filter((sp) => FishingSystem.isUnlocked(sp, s));
+  if (unlocked.length === 0) return "No fishing spots";
+  const stocked = unlocked.some((spot) => (s.fishingSpots.find((f) => f.zoneId === spot.zone)?.stock ?? 0) > 0);
+  if (!stocked) return "Spots empty";
+  if (w.bag.freeUnits() === 0) return "No path";
+  return null;
+}
+
+function haulBlocked(content: ContentPack, s: GameState, harbor: HarborDef, counterHaul: boolean): string | null {
+  const unlocked = s.machines.filter((m) => {
+    const st = harbor.stations.find((x) => x.id === m.stationId);
+    return !!st && ProductionSystem.isUnlocked(st, s) && !m.paused;
+  });
+  if (unlocked.some((m) => m.status === "OUTPUT_FULL")) return "Output full";
+  const hasOutput = unlocked.some((m) => !m.output.isEmpty());
+  if (counterHaul) {
+    const counterRoom = s.counters.some((c) =>
+      unlocked.some((m) => [...m.output.contents()].some(([item, qty]) => qty > 0 && c.stock.roomFor(item) >= 1)),
+    );
+    if (hasOutput && !counterRoom) return "No path";
+    if (!hasOutput && unlocked.some((m) => m.status === "WAITING_FOR_INPUT")) return "No input";
+    return null;
+  }
+  if (hasOutput) {
+    const canFeed = unlocked.some((src) =>
+      [...src.output.contents()].some(([item, qty]) =>
+        qty > 0 && unlocked.some((dest) => dest.stationId !== src.stationId && dest.input.roomFor(item) >= 1),
+      ),
+    );
+    if (!canFeed) return "No path";
+  }
+  if (!hasOutput && unlocked.some((m) => m.status === "WAITING_FOR_INPUT")) return "No input";
+  return null;
+}
+
+/** Phase 20: rush idle ticker alerts for stations stuck waiting for input / output full. */
+export const AutomationSystem = {
+  step(ctx: StepContext): void {
+    const rush = CustomerSystem.activeRush(ctx.harbor, ctx.state.tick);
+    const alerts = ctx.content.automationAlerts;
+    for (const m of ctx.state.machines) {
+      const stDef = ctx.harbor.stations.find((x) => x.id === m.stationId);
+      if (!stDef || !ProductionSystem.isUnlocked(stDef, ctx.state)) {
+        m.idleTicks = 0;
+        continue;
+      }
+      const idle = !m.paused && (m.status === "WAITING_FOR_INPUT" || m.status === "OUTPUT_FULL");
+      if (!rush || !idle) {
+        m.idleTicks = 0;
+        continue;
+      }
+      m.idleTicks++;
+      if (m.idleTicks < alerts.machineIdleTicksDuringRush) continue;
+      const since = ctx.state.tick - m.lastIdleAlertTick;
+      if (m.lastIdleAlertTick > 0 && since < alerts.alertCooldownTicks) continue;
+      m.lastIdleAlertTick = ctx.state.tick;
+      m.idleTicks = 0;
+      const reason = m.status === "OUTPUT_FULL" ? "Output full" : "No input";
+      ctx.emit({
+        type: "machine_idle_alert",
+        tick: ctx.state.tick,
+        stationId: m.stationId,
+        machineId: m.machineId,
+        reason,
+      });
+    }
   },
 };
 
@@ -1928,17 +2718,27 @@ function missingRequirement(content: ContentPack, s: GameState, def: WorkerDef):
 function accrueWages(ctx: StepContext): void {
   const s = ctx.state;
   const rate = s.workerWagePerWorkerPerHour;
-  if (rate <= 0 || s.workers.length === 0) return;
+  const onShift = s.workers.filter((w) => w.onShift);
+  if (rate <= 0 || onShift.length === 0) return;
   s.workerWageAccrualTicks++;
   const hourTicks = 3600 * TICKS_PER_SECOND;
   if (s.workerWageAccrualTicks < hourTicks) return;
   s.workerWageAccrualTicks = 0;
-  const n = s.workers.length;
-  const cost = rate * n;
+  const n = onShift.length;
+  const free = WorkerSystem.freeOnShiftSlots(ctx.content, s);
+  const standardN = Math.min(n, free);
+  const overtimeN = Math.max(0, n - free);
+  const standard = rate * standardN;
+  const overtime = Math.trunc(
+    (rate * overtimeN * ctx.content.staffProgression.shifts.overtimeWagePermille) / 1000,
+  );
+  const cost = standard + overtime;
   const paid = Math.min(cost, s.coins);
   if (paid <= 0) return;
   s.coins -= paid;
   s.bumpStat(Stats.WAGES_PAID, paid);
+  const overtimePaid = Math.min(overtime, paid);
+  if (overtimePaid > 0) s.bumpStat(Stats.OVERTIME_WAGES, overtimePaid);
   const receipt: Receipt = { id: s.newId("wage"), type: "wage", coinDelta: -paid, tick: s.tick, reference: `workers:${n}` };
   s.record(receipt);
   ctx.emit({ type: "wages_paid", tick: s.tick, workers: n, coins: paid });
@@ -1972,7 +2772,7 @@ function assignFisher(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
   if (!w.bag.isEmpty()) {
     const dest = findMachineInputForBag(ctx, w);
     if (!dest) return;
-    startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.state, def));
+    startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
     w.phase = "WALK_TO_DROP";
     w.taskDestInvId = dest.machine.input.id;
     w.taskZoneId = dest.zoneId;
@@ -1982,7 +2782,7 @@ function assignFisher(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
   const spot = findFishableSpot(ctx, w);
   if (!spot) return;
   const zone = zonePoint(ctx.harbor, spot.zoneId);
-  startWalk(w, zone.x, zone.z, WorkerSystem.moveSpeed(ctx.state, def));
+  startWalk(w, zone.x, zone.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
   w.phase = "WALK_TO_WORK";
   w.taskZoneId = spot.zoneId;
   w.taskId = ctx.state.newId("task");
@@ -1999,7 +2799,7 @@ function fish(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
     if (!w.bag.isEmpty()) {
       const dest = findMachineInputForBag(ctx, w);
       if (dest) {
-        startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.state, def));
+        startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
         w.phase = "WALK_TO_DROP";
         w.taskDestInvId = dest.machine.input.id;
         w.taskZoneId = dest.zoneId;
@@ -2017,10 +2817,12 @@ function fish(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
       clearTask(w);
       return;
     }
-    const pick = candidates[ctx.state.rng.pickWeighted(candidates.map((c) => c.rarityWeight))]!;
+    const pick = candidates[ctx.state.rng.pickWeighted(
+      candidates.map((c) => SeasonalEventSystem.scaledWeight(c.rarityWeight, ctx.content, ctx.state.tick, c.id)),
+    )]!;
     w.fishingSpecies = pick.id;
     w.fishingProgress = 0;
-    w.fishingCatchTicks = FishingSystem.catchTicksFor(WorkerSystem.catchSpeed(ctx.state, def), pick.catchTicks);
+    w.fishingCatchTicks = FishingSystem.catchTicksFor(WorkerSystem.catchSpeed(ctx.content, ctx.state, def, w), pick.catchTicks);
   }
 
   const species = ctx.content.speciesById.get(w.fishingSpecies!)!;
@@ -2033,6 +2835,8 @@ function fish(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
     spot.stock--;
     ctx.state.bumpStat(Stats.FISH_CAUGHT);
     ctx.state.bumpStat(Stats.WORKER_FISH_CAUGHT);
+    ctx.state.recordSpeciesCatch(species.id);
+    WorkerSystem.grantXp(ctx, w, ctx.content.staffProgression.xpFishCaught);
     const { sizePermille, valueCoins, personalBest } = TrophySystem.record(ctx, species.id);
     ctx.emit({
       type: "fish_caught", tick: ctx.state.tick, speciesId: species.id, zoneId,
@@ -2044,7 +2848,7 @@ function fish(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
   if (w.bag.freeUnits() === 0 || spot.stock <= 0) {
     const dest = findMachineInputForBag(ctx, w);
     if (dest) {
-      startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.state, def));
+      startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
       w.phase = "WALK_TO_DROP";
       w.taskDestInvId = dest.machine.input.id;
       w.taskZoneId = dest.zoneId;
@@ -2065,8 +2869,9 @@ function dropToMachine(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
   if (moved !== null) {
     ctx.state.bumpStat(Stats.MACHINE_INPUTS);
     ctx.state.bumpStat(Stats.WORKER_ITEMS_MOVED);
+    WorkerSystem.grantXp(ctx, w, ctx.content.staffProgression.xpItemMoved);
     ctx.emit({ type: "items_transferred", tick: ctx.state.tick, from: w.bag.id, to: machine.input.id, itemId: moved, count: 1 });
-    w.transferCooldown = def.transferIntervalTicks - 1;
+    w.transferCooldown = WorkerSystem.transferInterval(ctx.content, def, w) - 1;
   }
   if (w.bag.isEmpty() || moved === null) clearTask(w);
 }
@@ -2098,7 +2903,7 @@ function assignPorter(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
   if (!w.bag.isEmpty()) {
     const dest = findCounterDrop(ctx, w);
     if (!dest) return;
-    startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.state, def));
+    startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
     w.phase = "WALK_TO_DROP";
     w.taskDestInvId = dest.counter.stock.id;
     w.taskZoneId = dest.zoneId;
@@ -2116,7 +2921,7 @@ function assignPorter(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
   w.taskQuantity = 1;
   w.leaseExpiresAt = ctx.state.tick + def.leaseTicks;
   w.taskZoneId = haul.sourceZoneId;
-  startWalk(w, haul.sourceX, haul.sourceZ, WorkerSystem.moveSpeed(ctx.state, def));
+  startWalk(w, haul.sourceX, haul.sourceZ, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
 }
 
 function pickupHaul(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
@@ -2131,7 +2936,7 @@ function pickupHaul(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
   }
   source.takeReserved(itemId, 1);
   w.bag.add(itemId, 1);
-  w.transferCooldown = def.transferIntervalTicks - 1;
+  w.transferCooldown = WorkerSystem.transferInterval(ctx.content, def, w) - 1;
   ctx.state.bumpStat(Stats.OUTPUTS_COLLECTED);
   ctx.state.bumpStat(Stats.WORKER_ITEMS_MOVED);
   ctx.emit({ type: "items_transferred", tick: ctx.state.tick, from: source.id, to: w.bag.id, itemId, count: 1 });
@@ -2143,7 +2948,7 @@ function pickupHaul(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
     w.leaseExpiresAt = 0;
     return;
   }
-  startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.state, def));
+  startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
   w.phase = "WALK_TO_DROP";
   w.taskDestInvId = dest.counter.stock.id;
   w.taskZoneId = dest.zoneId;
@@ -2161,8 +2966,9 @@ function dropHaul(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
   if (moved !== null) {
     ctx.state.bumpStat(Stats.COUNTER_STOCKED);
     ctx.state.bumpStat(Stats.WORKER_ITEMS_MOVED);
+    WorkerSystem.grantXp(ctx, w, ctx.content.staffProgression.xpItemMoved);
     ctx.emit({ type: "items_transferred", tick: ctx.state.tick, from: w.bag.id, to: counter.stock.id, itemId: moved, count: 1 });
-    w.transferCooldown = def.transferIntervalTicks - 1;
+    w.transferCooldown = WorkerSystem.transferInterval(ctx.content, def, w) - 1;
   }
   if (w.bag.isEmpty() || moved === null) clearTask(w);
 }
@@ -2194,7 +3000,7 @@ function assignOperator(ctx: StepContext, w: WorkerState, def: WorkerDef): void 
   if (!w.bag.isEmpty()) {
     const dest = findMachineInputForBag(ctx, w);
     if (!dest) return;
-    startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.state, def));
+    startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
     w.phase = "WALK_TO_DROP";
     w.taskDestInvId = dest.machine.input.id;
     w.taskZoneId = dest.zoneId;
@@ -2212,7 +3018,7 @@ function assignOperator(ctx: StepContext, w: WorkerState, def: WorkerDef): void 
   w.taskQuantity = 1;
   w.leaseExpiresAt = ctx.state.tick + def.leaseTicks;
   w.taskZoneId = haul.sourceZoneId;
-  startWalk(w, haul.sourceX, haul.sourceZ, WorkerSystem.moveSpeed(ctx.state, def));
+  startWalk(w, haul.sourceX, haul.sourceZ, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
 }
 
 function pickupMachineHaul(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
@@ -2227,7 +3033,7 @@ function pickupMachineHaul(ctx: StepContext, w: WorkerState, def: WorkerDef): vo
   }
   source.takeReserved(itemId, 1);
   w.bag.add(itemId, 1);
-  w.transferCooldown = def.transferIntervalTicks - 1;
+  w.transferCooldown = WorkerSystem.transferInterval(ctx.content, def, w) - 1;
   ctx.state.bumpStat(Stats.OUTPUTS_COLLECTED);
   ctx.state.bumpStat(Stats.WORKER_ITEMS_MOVED);
   ctx.emit({ type: "items_transferred", tick: ctx.state.tick, from: source.id, to: w.bag.id, itemId, count: 1 });
@@ -2239,7 +3045,7 @@ function pickupMachineHaul(ctx: StepContext, w: WorkerState, def: WorkerDef): vo
     w.leaseExpiresAt = 0;
     return;
   }
-  startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.state, def));
+  startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
   w.phase = "WALK_TO_DROP";
   w.taskDestInvId = dest.machine.input.id;
   w.taskZoneId = dest.zoneId;
@@ -2254,8 +3060,18 @@ function stepCashier(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
     case "WALK_TO_WORK":
       w.phase = "WORK";
       break;
-    case "WORK":
-      break; // stay on duty at the counter
+    case "WORK": {
+      // Re-route when another unlocked pad scores meaningfully higher (Phase 15).
+      const best = bestCashierPost(ctx, w);
+      if (best && best.zone !== w.taskZoneId) {
+        const zone = zonePoint(ctx.harbor, best.zone);
+        startWalk(w, zone.x, zone.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+        w.phase = "WALK_TO_WORK";
+        w.taskZoneId = best.zone;
+        w.taskId = ctx.state.newId("task");
+      }
+      break;
+    }
     default:
       clearTask(w);
       break;
@@ -2263,15 +3079,54 @@ function stepCashier(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
 }
 
 function assignCashier(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
-  const counters = [...ctx.state.counters].sort((a, b) => compareStrings(a.counterId, b.counterId));
-  const counter = counters[0];
-  if (!counter) return;
-  const cdef = ctx.harbor.counters.find((c) => c.id === counter.counterId)!;
+  const cdef = bestCashierPost(ctx, w);
+  if (!cdef) return;
   const zone = zonePoint(ctx.harbor, cdef.zone);
-  startWalk(w, zone.x, zone.z, WorkerSystem.moveSpeed(ctx.state, def));
+  startWalk(w, zone.x, zone.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
   w.phase = "WALK_TO_WORK";
   w.taskZoneId = cdef.zone;
   w.taskId = ctx.state.newId("task");
+}
+
+/** Score unlocked counters with routing weights; prefer uncovered busy pads (Phase 15). */
+function bestCashierPost(ctx: StepContext, w: WorkerState): CounterDef | undefined {
+  const covered = new Set(
+    ctx.state.workers
+      .filter((other) =>
+        other.id !== w.id &&
+        ctx.content.workersById.get(other.roleId)?.role === "cashier" &&
+        (other.phase === "WORK" || other.phase === "WALK_TO_WORK"))
+      .map((other) => other.taskZoneId)
+      .filter((z): z is string => z !== null),
+  );
+  let best: CounterDef | undefined;
+  let bestScore = Number.NEGATIVE_INFINITY;
+  for (const cdef of [...ctx.harbor.counters].sort((a, b) => compareStrings(a.id, b.id))) {
+    if (!CustomerSystem.isUnlocked(cdef, ctx.state)) continue;
+    const counter = ctx.state.counters.find((c) => c.counterId === cdef.id)!;
+    const zone = zonePoint(ctx.harbor, cdef.zone);
+    const waiting = ctx.state.customers.filter((c) => c.counterId === cdef.id && c.arrived).length;
+    const urgency = waiting * 25 + (counter.stock.usedUnits() === 0 ? 0 : 10);
+    const distTicks = WorkerSystem.walkTicks(w.x, w.z, zone.x, zone.z, 160);
+    const distance = Math.max(0, 200 - distTicks);
+    const demand = waiting * 20 + (counter.stock.usedUnits() === 0 ? 40 : 0);
+    let score = scorePost(ctx, urgency, distance, demand);
+    if (covered.has(cdef.zone)) score -= 10_000;
+    if (!best || score > bestScore || (score === bestScore && compareStrings(cdef.id, best.id) < 0)) {
+      best = cdef;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+function scorePost(ctx: StepContext, urgency: number, distance: number, demand: number): number {
+  const routing = ctx.content.routing;
+  let demW = routing.demandWeight;
+  if (WorkerSystem.supervisorOnDuty(ctx.content, ctx.state)) {
+    demW = Math.trunc((demW * routing.supervisorDemandBoostPermille) / 1000);
+  }
+  return routing.urgencyWeight * urgency + routing.distanceWeight * distance + demW * demand;
 }
 
 function stepSupervisor(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
@@ -2291,14 +3146,133 @@ function stepSupervisor(ctx: StepContext, w: WorkerState, def: WorkerDef): void 
 }
 
 function assignSupervisor(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
-  const counters = [...ctx.state.counters].sort((a, b) => compareStrings(a.counterId, b.counterId));
-  const counter = counters[0];
-  if (!counter) return;
-  const cdef = ctx.harbor.counters.find((c) => c.id === counter.counterId)!;
+  const cdef = bestCashierPost(ctx, w);
+  if (!cdef) return;
   const zone = zonePoint(ctx.harbor, cdef.zone);
-  startWalk(w, zone.x, zone.z, WorkerSystem.moveSpeed(ctx.state, def));
+  startWalk(w, zone.x, zone.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
   w.phase = "WALK_TO_WORK";
   w.taskZoneId = cdef.zone;
+  w.taskId = ctx.state.newId("task");
+}
+
+function stepIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
+  switch (w.phase) {
+    case "NONE": assignIceRunner(ctx, w, def); break;
+    case "WALK_TO_WORK": w.phase = "PICKUP"; break;
+    case "PICKUP": pickupHaul(ctx, w, def); break;
+    case "WALK_TO_DROP": w.phase = "DROP"; break;
+    case "DROP": dropHaul(ctx, w, def); break;
+    default: clearTask(w); break;
+  }
+}
+
+function assignIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
+  if (!w.bag.isEmpty()) {
+    const dest = findCounterDrop(ctx, w);
+    if (!dest) return;
+    startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+    w.phase = "WALK_TO_DROP";
+    w.taskDestInvId = dest.counter.stock.id;
+    w.taskZoneId = dest.zoneId;
+    w.taskId = ctx.state.newId("task");
+    return;
+  }
+  const haul = findIceHaul(ctx, w);
+  if (!haul) return;
+  if (!haul.source.reserve(haul.itemId, 1)) return;
+  w.taskId = ctx.state.newId("task");
+  w.phase = "WALK_TO_WORK";
+  w.taskSourceInvId = haul.source.id;
+  w.taskDestInvId = haul.dest.id;
+  w.taskItemId = haul.itemId;
+  w.taskQuantity = 1;
+  w.leaseExpiresAt = ctx.state.tick + def.leaseTicks;
+  w.taskZoneId = haul.sourceZoneId;
+  startWalk(w, haul.sourceX, haul.sourceZ, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+}
+
+function stepSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
+  switch (w.phase) {
+    case "NONE":
+      assignSmokerSpecialist(ctx, w, def);
+      break;
+    case "WALK_TO_WORK":
+      w.phase = w.taskSourceInvId !== null ? "PICKUP" : "WORK";
+      break;
+    case "PICKUP":
+      pickupMachineHaul(ctx, w, def);
+      break;
+    case "WALK_TO_DROP":
+      w.phase = "DROP";
+      break;
+    case "DROP":
+      dropToMachine(ctx, w, def);
+      break;
+    case "WORK":
+      break;
+    default:
+      clearTask(w);
+      break;
+  }
+}
+
+function assignSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
+  if (!w.bag.isEmpty()) {
+    const dest = findSmokerInputDrop(ctx, w) ?? findMachineInputForBag(ctx, w);
+    if (!dest) return;
+    startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+    w.phase = "WALK_TO_DROP";
+    w.taskDestInvId = dest.machine.input.id;
+    w.taskZoneId = dest.zoneId;
+    w.taskId = ctx.state.newId("task");
+    return;
+  }
+  const haul = findSmokerHaul(ctx, w);
+  if (haul) {
+    if (!haul.source.reserve(haul.itemId, 1)) return;
+    w.taskId = ctx.state.newId("task");
+    w.phase = "WALK_TO_WORK";
+    w.taskSourceInvId = haul.source.id;
+    w.taskDestInvId = haul.dest.id;
+    w.taskItemId = haul.itemId;
+    w.taskQuantity = 1;
+    w.leaseExpiresAt = ctx.state.tick + def.leaseTicks;
+    w.taskZoneId = haul.sourceZoneId;
+    startWalk(w, haul.sourceX, haul.sourceZ, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+    return;
+  }
+  const post = smokerPost(ctx);
+  if (!post) return;
+  startWalk(w, post.x, post.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+  w.phase = "WALK_TO_WORK";
+  w.taskZoneId = post.zoneId;
+  w.taskId = ctx.state.newId("task");
+  w.taskSourceInvId = null;
+  w.taskDestInvId = null;
+  w.taskItemId = null;
+}
+
+function stepGreeter(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
+  switch (w.phase) {
+    case "NONE":
+      assignGreeter(ctx, w, def);
+      break;
+    case "WALK_TO_WORK":
+      w.phase = "WORK";
+      break;
+    case "WORK":
+      break;
+    default:
+      clearTask(w);
+      break;
+  }
+}
+
+function assignGreeter(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
+  const entry = ctx.harbor.customerEntry;
+  startWalk(w, entry.x, entry.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+  w.phase = "WALK_TO_WORK";
+  w.taskZoneId = "greeter.entry";
   w.taskId = ctx.state.newId("task");
 }
 
@@ -2332,31 +3306,77 @@ interface HaulOffer {
 }
 
 function findHaul(ctx: StepContext, w: WorkerState): HaulOffer | null {
-  const counter = ctx.state.counters[0];
-  if (!counter) return null;
-  const cdef = ctx.harbor.counters.find((c) => c.id === counter.counterId)!;
   const supervisor = WorkerSystem.supervisorOnDuty(ctx.content, ctx.state);
   let best: HaulOffer | null = null;
-  for (const m of machinesByStation(ctx)) {
-    const station = ctx.harbor.stations.find((s) => s.id === m.stationId)!;
-    if (!ProductionSystem.isUnlocked(station, ctx.state)) continue;
-    const zone = zonePoint(ctx.harbor, station.outputZone);
-    for (const [itemId] of m.output.contents()) {
-      if (!counterAccepts(cdef, itemId)) continue;
-      if (m.output.available(itemId) < 1) continue;
-      if (w.bag.roomFor(itemId) < 1) continue;
-      if (!destHasRoom(ctx, counter.stock, itemId, w.id)) continue;
-      if (!porterMayHaul(ctx, itemId, supervisor)) continue;
-      const demand = counterDemand(ctx, counter, itemId);
-      const score = scoreHaul(ctx, w, m.output, zone.x, zone.z, m.status === "OUTPUT_FULL" ? 50 : 0, demand);
-      const offer: HaulOffer = {
-        source: m.output, dest: counter.stock, itemId,
-        sourceX: zone.x, sourceZ: zone.z, sourceZoneId: station.outputZone, score,
-      };
-      if (!best || betterHaul(offer, best)) best = offer;
+  const counters = [...ctx.state.counters].sort((a, b) => compareStrings(a.counterId, b.counterId));
+  for (const counter of counters) {
+    const cdef = ctx.harbor.counters.find((c) => c.id === counter.counterId)!;
+    if (!CustomerSystem.isUnlocked(cdef, ctx.state)) continue;
+    for (const m of machinesByStation(ctx)) {
+      const station = ctx.harbor.stations.find((s) => s.id === m.stationId)!;
+      if (!ProductionSystem.isUnlocked(station, ctx.state)) continue;
+      const zone = zonePoint(ctx.harbor, station.outputZone);
+      for (const [itemId] of m.output.contents()) {
+        if (!counterAccepts(cdef, itemId)) continue;
+        if (m.output.available(itemId) < 1) continue;
+        if (w.bag.roomFor(itemId) < 1) continue;
+        if (!destHasRoom(ctx, counter.stock, itemId, w.id)) continue;
+        if (!porterMayHaul(ctx, itemId, supervisor)) continue;
+        const demand = counterDemand(ctx, counter, itemId);
+        const score = scoreHaul(ctx, w, m.output, zone.x, zone.z, m.status === "OUTPUT_FULL" ? 50 : 0, demand);
+        const offer: HaulOffer = {
+          source: m.output, dest: counter.stock, itemId,
+          sourceX: zone.x, sourceZ: zone.z, sourceZoneId: station.outputZone, score,
+        };
+        if (!best || betterHaul(offer, best)) best = offer;
+      }
     }
   }
   return best;
+}
+
+function findIceHaul(ctx: StepContext, w: WorkerState): HaulOffer | null {
+  const supervisor = WorkerSystem.supervisorOnDuty(ctx.content, ctx.state);
+  const buffs = ctx.content.staffProgression.roleBuffs;
+  let best: HaulOffer | null = null;
+  const counters = [...ctx.state.counters].sort((a, b) => compareStrings(a.counterId, b.counterId));
+  for (const counter of counters) {
+    const cdef = ctx.harbor.counters.find((c) => c.id === counter.counterId)!;
+    if (!CustomerSystem.isUnlocked(cdef, ctx.state)) continue;
+    for (const m of machinesByStation(ctx)) {
+      const station = ctx.harbor.stations.find((s) => s.id === m.stationId)!;
+      if (!ProductionSystem.isUnlocked(station, ctx.state)) continue;
+      const zone = zonePoint(ctx.harbor, station.outputZone);
+      for (const [itemId] of m.output.contents()) {
+        if (!counterAccepts(cdef, itemId)) continue;
+        if (m.output.available(itemId) < 1) continue;
+        if (w.bag.roomFor(itemId) < 1) continue;
+        if (!destHasRoom(ctx, counter.stock, itemId, w.id)) continue;
+        if (!porterMayHaul(ctx, itemId, supervisor)) continue;
+        const demand = counterDemand(ctx, counter, itemId);
+        let score = scoreHaul(ctx, w, m.output, zone.x, zone.z, m.status === "OUTPUT_FULL" ? 50 : 0, demand);
+        score += icePreferBonus(ctx, itemId, buffs);
+        const offer: HaulOffer = {
+          source: m.output, dest: counter.stock, itemId,
+          sourceX: zone.x, sourceZ: zone.z, sourceZoneId: station.outputZone, score,
+        };
+        if (!best || betterHaul(offer, best)) best = offer;
+      }
+    }
+  }
+  return best;
+}
+
+function icePreferBonus(
+  ctx: StepContext,
+  itemId: string,
+  buffs: { iceRunnerFragileSpoilTierMin: number; iceRunnerSpoilScoreBonus: number },
+): number {
+  if (itemId === "product.ice_packed_crate") return buffs.iceRunnerSpoilScoreBonus;
+  const tier = ctx.content.productsById.get(itemId)?.spoilTier
+    ?? ctx.content.speciesById.get(itemId)?.spoilTier;
+  if (tier === undefined) return 0;
+  return tier >= buffs.iceRunnerFragileSpoilTierMin ? buffs.iceRunnerSpoilScoreBonus : 0;
 }
 
 /** Intermediate haul: machine output → another machine's input (e.g. fillet → smoker). */
@@ -2487,7 +3507,11 @@ function counterDemand(ctx: StepContext, counter: CounterState, itemId: string):
 
 function counterDemandForItem(ctx: StepContext, itemId: string): number {
   let best = 0;
-  for (const c of ctx.state.counters) best = Math.max(best, counterDemand(ctx, c, itemId));
+  for (const c of ctx.state.counters) {
+    const def = ctx.harbor.counters.find((d) => d.id === c.counterId)!;
+    if (!CustomerSystem.isUnlocked(def, ctx.state)) continue;
+    best = Math.max(best, counterDemand(ctx, c, itemId));
+  }
   return best;
 }
 
@@ -2522,16 +3546,82 @@ function findMachineInputForBag(ctx: StepContext, w: WorkerState): MachineDrop |
   return null;
 }
 
-function findCounterDrop(ctx: StepContext, w: WorkerState): CounterDrop | null {
-  const counters = [...ctx.state.counters].sort((a, b) => compareStrings(a.counterId, b.counterId));
-  for (const c of counters) {
-    const def = ctx.harbor.counters.find((d) => d.id === c.counterId)!;
-    const has = w.bag.contents().some(([item]) => counterAccepts(def, item) && destHasRoom(ctx, c.stock, item, w.id));
+function findSmokerInputDrop(ctx: StepContext, w: WorkerState): MachineDrop | null {
+  for (const m of machinesByStation(ctx)) {
+    const station = ctx.harbor.stations.find((s) => s.id === m.stationId)!;
+    if (!station.machine.includes("smoker")) continue;
+    if (!ProductionSystem.isUnlocked(station, ctx.state)) continue;
+    const accepted = acceptedInputs(ctx, m.machineId);
+    const has = w.bag.contents().some(([item]) => accepted.has(item) && destHasRoom(ctx, m.input, item, w.id));
     if (!has) continue;
-    const zone = zonePoint(ctx.harbor, def.zone);
-    return { counter: c, x: zone.x, z: zone.z, zoneId: def.zone };
+    const zone = zonePoint(ctx.harbor, station.inputZone);
+    return { machine: m, x: zone.x, z: zone.z, zoneId: station.inputZone };
   }
   return null;
+}
+
+function findSmokerHaul(ctx: StepContext, w: WorkerState): HaulOffer | null {
+  let best: HaulOffer | null = null;
+  for (const src of machinesByStation(ctx)) {
+    const srcStation = ctx.harbor.stations.find((s) => s.id === src.stationId)!;
+    if (!ProductionSystem.isUnlocked(srcStation, ctx.state)) continue;
+    const zone = zonePoint(ctx.harbor, srcStation.outputZone);
+    for (const [itemId] of src.output.contents()) {
+      if (src.output.available(itemId) < 1) continue;
+      if (w.bag.roomFor(itemId) < 1) continue;
+      for (const dst of machinesByStation(ctx)) {
+        if (dst.stationId === src.stationId) continue;
+        const dstStation = ctx.harbor.stations.find((s) => s.id === dst.stationId)!;
+        if (!ProductionSystem.isUnlocked(dstStation, ctx.state)) continue;
+        const involvesSmoker = srcStation.machine.includes("smoker") || dstStation.machine.includes("smoker");
+        if (!involvesSmoker) continue;
+        const accepted = acceptedInputs(ctx, dst.machineId);
+        if (!accepted.has(itemId)) continue;
+        if (!destHasRoom(ctx, dst.input, itemId, w.id)) continue;
+        const demand = machineDemand(dst);
+        const score = scoreHaul(ctx, w, src.output, zone.x, zone.z, src.status === "OUTPUT_FULL" ? 50 : 0, demand) + 60;
+        const offer: HaulOffer = {
+          source: src.output, dest: dst.input, itemId,
+          sourceX: zone.x, sourceZ: zone.z, sourceZoneId: srcStation.outputZone, score,
+        };
+        if (!best || betterHaul(offer, best)) best = offer;
+      }
+    }
+  }
+  return best;
+}
+
+function smokerPost(ctx: StepContext): MachineDrop | null {
+  for (const m of machinesByStation(ctx)) {
+    const station = ctx.harbor.stations.find((s) => s.id === m.stationId)!;
+    if (!station.machine.includes("smoker")) continue;
+    if (!ProductionSystem.isUnlocked(station, ctx.state)) continue;
+    const zone = zonePoint(ctx.harbor, station.inputZone);
+    return { machine: m, x: zone.x, z: zone.z, zoneId: station.inputZone };
+  }
+  return null;
+}
+
+function findCounterDrop(ctx: StepContext, w: WorkerState): CounterDrop | null {
+  const counters = [...ctx.state.counters].sort((a, b) => compareStrings(a.counterId, b.counterId));
+  let best: CounterDrop | null = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+  for (const c of counters) {
+    const def = ctx.harbor.counters.find((d) => d.id === c.counterId)!;
+    if (!CustomerSystem.isUnlocked(def, ctx.state)) continue;
+    const item = w.bag.contents()
+      .map(([id]) => id)
+      .filter((id) => counterAccepts(def, id) && destHasRoom(ctx, c.stock, id, w.id))
+      .sort(compareStrings)[0];
+    if (!item) continue;
+    const zone = zonePoint(ctx.harbor, def.zone);
+    const demand = counterDemand(ctx, c, item);
+    if (!best || demand > bestScore || (demand === bestScore && compareStrings(c.counterId, best.counter.counterId) < 0)) {
+      best = { counter: c, x: zone.x, z: zone.z, zoneId: def.zone };
+      bestScore = demand;
+    }
+  }
+  return best;
 }
 
 function findInventory(ctx: StepContext, id: string): Inventory | null {

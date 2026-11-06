@@ -12,4 +12,4 @@ export * from "./cloudSync";
 export * from "./telemetry";
 export * from "./balanceExport";
 export * from "./offline";
-export { UpgradeSystem, ProductionSystem, FishingSystem, BaitSystem, TrophySystem, CustomerSystem, ReputationSystem, WorkerSystem, ProgressionSystem, PrestigeSystem, ContractSystem, HarborTravelSystem, EconomySystem, isOpen, PLAYER_RADIUS_MM } from "./systems";
+export { UpgradeSystem, ProductionSystem, FishingSystem, BaitSystem, TrophySystem, CustomerSystem, ReputationSystem, WorkerSystem, AutomationSystem, ProgressionSystem, PrestigeSystem, DecorSystem, SeasonalEventSystem, ContractSystem, HarborTravelSystem, EconomySystem, BankSystem, StepContext, isOpen, PLAYER_RADIUS_MM } from "./systems";

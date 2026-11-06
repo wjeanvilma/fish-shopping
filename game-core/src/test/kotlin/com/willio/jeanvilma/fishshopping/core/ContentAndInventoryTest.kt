@@ -19,11 +19,11 @@ class ContentAndInventoryTest {
         assertEquals(5L, c.productsById.getValue("product.basic_portion").unitPrice)
         assertEquals(12L, c.productsById.getValue("product.fillet").unitPrice)
         assertEquals(20L, c.productsById.getValue("product.premium_portion").unitPrice)
-        assertEquals(2, c.harbors.size)
+        assertEquals(3, c.harbors.size)
         assertEquals(listOf("quest.first_ten_sales"), c.economy.requires)
         assertEquals(2, c.economy.maintenanceCoinsPerStation)
         assertEquals(listOf("quest.busy_harbor"), c.prestige.requires)
-        assertEquals(8, c.quests.size)
+        assertEquals(9, c.quests.size)
         assertEquals(
             listOf(
                 "quest.first_cast",
@@ -34,6 +34,7 @@ class ContentAndInventoryTest {
                 "quest.specialty_kitchen",
                 "quest.busy_harbor",
                 "quest.moon_crossing",
+                "quest.obsidian_landing",
             ),
             c.quests.map { it.id },
         )
@@ -44,15 +45,27 @@ class ContentAndInventoryTest {
         assertEquals("tutorial.first_contract", c.tutorial[7].id)
         assertEquals("tutorial.hire_staff", c.tutorial[8].id)
         assertEquals("tutorial.grill_line", c.tutorial[9].id)
-        assertEquals(6, c.prestige.milestones.size)
+        assertEquals(8, c.prestige.milestones.size)
         assertEquals(listOf(0L, 250L, 750L, 1500L, 3000L), c.prestige.ratingThresholds)
-        assertEquals(10, c.harborsById.getValue("harbor.sunrise_pier").counters.single().products.size)
+        val pierCounters = c.harborsById.getValue("harbor.sunrise_pier").counters
+        assertEquals(2, pierCounters.size)
+        assertEquals(9, pierCounters.first { it.requiresUpgrade == null }.products.size)
+        assertEquals(2, pierCounters.first { it.kind.wire == "wholesale" }.products.size)
         assertEquals(3, c.harborsById.getValue("harbor.sunrise_pier").stations.size)
         assertEquals(emptyList<String>(), c.harborsById.getValue("harbor.sunrise_pier").requires)
         val cove = c.harborsById.getValue("harbor.moon_cove")
         assertEquals(listOf("quest.busy_harbor"), cove.requires)
         assertEquals("moon_cove_blockout.glb", cove.blockoutAsset)
         assertEquals(3, cove.stations.size)
+        val jetty = c.harborsById.getValue("harbor.obsidian_jetty")
+        assertEquals(listOf("prestige.twin_harbors"), jetty.requires)
+        assertEquals("obsidian_jetty_blockout.glb", jetty.blockoutAsset)
+        assertEquals(3, jetty.stations.size)
+        assertEquals(2, jetty.rushes.size)
+        assertEquals("spec.efficient_docks", c.harborsById.getValue("harbor.sunrise_pier").specialization!!.id)
+        assertEquals(1, c.harborsById.getValue("harbor.sunrise_pier").specialization!!.maintenanceDiscountPerStation)
+        assertEquals(80, c.harborsById.getValue("harbor.moon_cove").specialization!!.rareChanceBonusPermille)
+        assertEquals(1300, jetty.specialization!!.kindSpawnMultPermille.getValue("tourist"))
         assertTrue(c.machinesById.containsKey("machine.basic_smoker"))
         assertEquals(18L, c.productsById.getValue("product.smoked_fillet").unitPrice)
         assertEquals(100, c.recipesById.getValue("recipe.basic_portions").durationTicks)

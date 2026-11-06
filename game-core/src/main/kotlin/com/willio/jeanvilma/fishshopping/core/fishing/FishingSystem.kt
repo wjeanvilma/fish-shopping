@@ -56,7 +56,14 @@ object FishingSystem {
             }
             val bait = BaitSystem.resolveForCast(ctx.content, ctx.state)
             p.activeBaitId = bait?.id
-            val weights = candidates.map { BaitSystem.effectiveWeight(it, bait) }
+            val weights = candidates.map {
+                com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem.scaledWeight(
+                    BaitSystem.effectiveWeight(it, bait),
+                    ctx.content,
+                    ctx.state.tick,
+                    it.id,
+                )
+            }
             val pick = candidates[ctx.state.rng.pickWeighted(weights)]
             p.fishingSpecies = pick.id
             p.fishingProgress = 0
@@ -209,7 +216,8 @@ object FishingSystem {
         var finalId = rolledSpeciesId
         var rare = false
         rolled.rareUpgrade?.let { ru ->
-            val chance = BaitSystem.rareChancePermille(ru.chancePermille, activeBait)
+            val harborBonus = ctx.harbor.specialization?.rareChanceBonusPermille ?: 0
+            val chance = BaitSystem.rareChancePermille(ru.chancePermille, activeBait, harborBonus)
             if (s.rng.nextBelow(1000) < chance) {
                 finalId = ru.to
                 rare = true
@@ -221,6 +229,7 @@ object FishingSystem {
             p.bag.add(finalSpecies.id, 1)
             spot.stock--
             s.bumpStat(Stats.FISH_CAUGHT)
+            s.recordSpeciesCatch(finalSpecies.id)
             if (rare) s.bumpStat(Stats.RARE_CATCHES)
             if (activeBait != null) {
                 p.bag.remove(activeBait.id, 1)

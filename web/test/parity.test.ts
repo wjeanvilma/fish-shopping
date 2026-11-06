@@ -107,6 +107,69 @@ describe("shared fixtures", () => {
     const s = decodeSnapshot(content, v1);
     expect(s.customers.length).toBeGreaterThan(0);
     expect(s.customers.every((c) => c.arrived && c.walkTicksTotal === 0)).toBe(true);
-    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":12,')).toBe(true);
+    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":19,')).toBe(true);
+  });
+
+  it("migrates the legacy schema-12 save with worker progression defaults", () => {
+    const v12 = shared("fixtures/legacy/snapshot-v12-starter-line-t2500.json").trimEnd();
+    const s = decodeSnapshot(content, v12);
+    expect(s.tick).toBe(2500);
+    expect(s.workers.every((w) => w.xp === 0 && w.level === 1 && w.traits.length === 0 && w.onShift)).toBe(true);
+    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":19,')).toBe(true);
+  });
+
+  it("migrates the legacy schema-13 save with onShift default", () => {
+    const v13 = shared("fixtures/legacy/snapshot-v13-starter-line-t2500.json").trimEnd();
+    const s = decodeSnapshot(content, v13);
+    expect(s.tick).toBe(2500);
+    expect(s.workers.every((w) => w.onShift)).toBe(true);
+    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":19,')).toBe(true);
+  });
+
+  it("migrates the legacy schema-14 save with empty equipment", () => {
+    const v14 = shared("fixtures/legacy/snapshot-v14-starter-line-t2500.json").trimEnd();
+    const s = decodeSnapshot(content, v14);
+    expect(s.tick).toBe(2500);
+    expect(s.workers.every((w) => w.onShift)).toBe(true);
+    expect(s.workers.every((w) => Object.keys(w.equipment).length === 0)).toBe(true);
+    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":19,')).toBe(true);
+  });
+
+  it("migrates the legacy schema-16 save with wear defaults", () => {
+    const v16 = shared("fixtures/legacy/snapshot-v16-starter-line-t2500.json").trimEnd();
+    const s = decodeSnapshot(content, v16);
+    expect(s.tick).toBe(2500);
+    expect(s.machines.every((m) => !m.broken && m.slowUntilTick === 0)).toBe(true);
+    const encoded = encodeSnapshot(content, s);
+    expect(encoded.startsWith('{"schemaVersion":19,')).toBe(true);
+    expect(encoded).toContain('"broken":false');
+    expect(encoded).toContain('"slowUntilTick":0');
+  });
+
+  it("migrates the legacy schema-17 save with bank defaults", () => {
+    const v17 = shared("fixtures/legacy/snapshot-v17-starter-line-t2500.json").trimEnd();
+    const s = decodeSnapshot(content, v17);
+    expect(s.tick).toBe(2500);
+    expect(s.loanOwed).toBe(0);
+    expect(s.loanDueTick).toBe(0);
+    expect(s.coinGoal).toBe(0);
+    expect(s.coinGoalCelebrated).toBe(false);
+    const encoded = encodeSnapshot(content, s);
+    expect(encoded.startsWith('{"schemaVersion":19,')).toBe(true);
+    expect(encoded).toContain('"loanOwed":0');
+    expect(encoded).toContain('"coinGoal":0');
+  });
+
+  it("migrates the legacy schema-18 save with empty species catches", () => {
+    const v18 = shared("fixtures/legacy/snapshot-v18-starter-line-t2500.json").trimEnd();
+    const s = decodeSnapshot(content, v18);
+    expect(s.tick).toBe(2500);
+    expect(s.speciesCatches.size).toBe(0);
+    s.recordSpeciesCatch("species.silver_sprat", 4);
+    const encoded = encodeSnapshot(content, s);
+    expect(encoded.startsWith('{"schemaVersion":19,')).toBe(true);
+    expect(encoded).toContain('"species.silver_sprat":4');
+    const restored = decodeSnapshot(content, encoded);
+    expect(restored.speciesCatches.get("species.silver_sprat")).toBe(4);
   });
 });

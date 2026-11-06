@@ -14,12 +14,20 @@ import kotlinx.serialization.json.put
  * way to retune; this export never invents new knobs in code.
  */
 object BalanceExport {
-    const val SCHEMA = "fish.balance.v1"
+    const val SCHEMA = "fish.balance.v2"
 
     fun build(content: ContentPack): JsonObject = buildJsonObject {
         put("schema", SCHEMA)
         put("contentVersion", content.contentVersion)
         put("ticksPerSecond", content.ticksPerSecond)
+        put(
+            "derivedRateFormulas",
+            buildJsonObject {
+                put("abandonPermille", "lost_customers * 1000 / (sales + lost_customers)")
+                put("wageRatioPermille", "wages_paid * 1000 / revenue")
+                put("speciesCatchSharePermille", "speciesCatches[id] * 1000 / fish_caught")
+            },
+        )
         put(
             "player",
             buildJsonObject {
@@ -52,6 +60,17 @@ object BalanceExport {
                 put("requires", JsonArray(e.requires.map { JsonPrimitive(it) }))
                 put("maintenancePeriodTicks", e.maintenancePeriodTicks)
                 put("maintenanceCoinsPerStation", e.maintenanceCoinsPerStation)
+                put(
+                    "wear",
+                    buildJsonObject {
+                        put("checkPeriodTicks", e.wear.checkPeriodTicks)
+                        put("chancePermille", e.wear.chancePermille)
+                        put("breakChancePermille", e.wear.breakChancePermille)
+                        put("slowDurationTicks", e.wear.slowDurationTicks)
+                        put("slowProcessMultPermille", e.wear.slowProcessMultPermille)
+                        put("repairCoins", e.wear.repairCoins)
+                    },
+                )
                 put("counterSpoilPeriodTicks", e.counterSpoilPeriodTicks)
                 put("counterSpoilUnits", e.counterSpoilUnits)
                 put("bagFishSpoilPeriodTicks", e.bagFishSpoilPeriodTicks)
@@ -86,6 +105,81 @@ object BalanceExport {
             },
         )
         put(
+            "staffProgression",
+            buildJsonObject {
+                val sp = content.staffProgression
+                put("maxLevel", sp.maxLevel)
+                put("xpThresholds", JsonArray(sp.xpThresholds.map { JsonPrimitive(it) }))
+                put("moveSpeedPermillePerLevel", sp.moveSpeedPermillePerLevel)
+                put("catchSpeedPermillePerLevel", sp.catchSpeedPermillePerLevel)
+                put("carryBonusEveryLevels", sp.carryBonusEveryLevels)
+                put("xpFishCaught", sp.xpFishCaught)
+                put("xpItemMoved", sp.xpItemMoved)
+                put("xpSaleAssisted", sp.xpSaleAssisted)
+                put("traitsOnHire", sp.traitsOnHire)
+                put(
+                    "shifts",
+                    buildJsonObject {
+                        put("baseOnShiftSlots", sp.shifts.baseOnShiftSlots)
+                        put("overtimeWagePermille", sp.shifts.overtimeWagePermille)
+                        put("supervisorExtraSlots", sp.shifts.supervisorExtraSlots)
+                    },
+                )
+                put(
+                    "roleBuffs",
+                    buildJsonObject {
+                        put("greeterPatienceDrainMultPermille", sp.roleBuffs.greeterPatienceDrainMultPermille)
+                        put(
+                            "smokerSpecialistProcessSpeedPermille",
+                            sp.roleBuffs.smokerSpecialistProcessSpeedPermille,
+                        )
+                        put("iceRunnerFragileSpoilTierMin", sp.roleBuffs.iceRunnerFragileSpoilTierMin)
+                        put("iceRunnerSpoilScoreBonus", sp.roleBuffs.iceRunnerSpoilScoreBonus)
+                    },
+                )
+                put(
+                    "loadouts",
+                    buildJsonObject {
+                        put(
+                            "slots",
+                            buildJsonArray {
+                                for (slot in sp.loadouts.slots) {
+                                    add(
+                                        buildJsonObject {
+                                            put("id", slot.id)
+                                            put("name", slot.name)
+                                            put(
+                                                "upgradeIds",
+                                                buildJsonArray { slot.upgradeIds.forEach { add(JsonPrimitive(it)) } },
+                                            )
+                                        },
+                                    )
+                                }
+                            },
+                        )
+                    },
+                )
+                put(
+                    "traits",
+                    buildJsonArray {
+                        for (t in sp.traits) {
+                            add(
+                                buildJsonObject {
+                                    put("id", t.id)
+                                    put("name", t.name)
+                                    put("weight", t.weight)
+                                    put("moveSpeedPermille", t.moveSpeedPermille)
+                                    put("catchSpeedPermille", t.catchSpeedPermille)
+                                    put("carryBonus", t.carryBonus)
+                                    put("transferIntervalMultPermille", t.transferIntervalMultPermille)
+                                },
+                            )
+                        }
+                    },
+                )
+            },
+        )
+        put(
             "routing",
             buildJsonObject {
                 val r = content.routing
@@ -93,6 +187,77 @@ object BalanceExport {
                 put("distanceWeight", r.distanceWeight)
                 put("demandWeight", r.demandWeight)
                 put("supervisorDemandBoostPermille", r.supervisorDemandBoostPermille)
+            },
+        )
+        put(
+            "automationAlerts",
+            buildJsonObject {
+                val a = content.automationAlerts
+                put("machineIdleTicksDuringRush", a.machineIdleTicksDuringRush)
+                put("alertCooldownTicks", a.alertCooldownTicks)
+            },
+        )
+        put(
+            "decor",
+            buildJsonObject {
+                put(
+                    "items",
+                    buildJsonArray {
+                        for (d in content.decor.items) {
+                            add(
+                                buildJsonObject {
+                                    put("id", d.id)
+                                    put("name", d.name)
+                                    put("cost", d.cost)
+                                    put("patienceBonusTicks", d.patienceBonusTicks)
+                                    d.requiresCosmetic?.let { put("requiresCosmetic", it) }
+                                },
+                            )
+                        }
+                    },
+                )
+            },
+        )
+        put(
+            "seasonalEvents",
+            buildJsonObject {
+                put(
+                    "events",
+                    buildJsonArray {
+                        for (e in content.seasonalEvents.events) {
+                            add(
+                                buildJsonObject {
+                                    put("id", e.id)
+                                    put("name", e.name)
+                                    put("periodTicks", e.periodTicks)
+                                    put("startTick", e.startTick)
+                                    put("durationTicks", e.durationTicks)
+                                    e.banner?.let { put("banner", it) }
+                                    put(
+                                        "speciesWeightMultPermille",
+                                        buildJsonObject {
+                                            for ((sp, mult) in e.speciesWeightMultPermille.toSortedMap()) {
+                                                put(sp, mult)
+                                            }
+                                        },
+                                    )
+                                },
+                            )
+                        }
+                    },
+                )
+            },
+        )
+        put(
+            "bank",
+            buildJsonObject {
+                put("loanPrincipal", content.bank.loanPrincipal)
+                put("repayPermille", content.bank.repayPermille)
+                put("repayAmount", content.bank.repayAmount())
+                put("termTicks", content.bank.termTicks)
+                put("collectionPeriodTicks", content.bank.collectionPeriodTicks)
+                put("goalPresets", JsonArray(content.bank.goalPresets.map { JsonPrimitive(it) }))
+                put("requires", JsonArray(content.bank.requires.map { JsonPrimitive(it) }))
             },
         )
         put(
@@ -246,6 +411,23 @@ object BalanceExport {
                             put("id", h.id)
                             put("customerSpawnTicks", h.customerSpawnTicks)
                             put("customerWalkMmPerTick", h.customerWalkMmPerTick)
+                            h.specialization?.let { sp ->
+                                put(
+                                    "specialization",
+                                    buildJsonObject {
+                                        put("id", sp.id)
+                                        put("name", sp.name)
+                                        put("maintenanceDiscountPerStation", sp.maintenanceDiscountPerStation)
+                                        put("rareChanceBonusPermille", sp.rareChanceBonusPermille)
+                                        put(
+                                            "kindSpawnMultPermille",
+                                            buildJsonObject {
+                                                for ((k, v) in sp.kindSpawnMultPermille) put(k, v)
+                                            },
+                                        )
+                                    },
+                                )
+                            }
                             put(
                                 "fishingSpots",
                                 buildJsonArray {
@@ -467,6 +649,9 @@ object BalanceExport {
         }
         is UpgradeEffect.UnlockMachine -> buildJsonObject {
             put("kind", "unlock_machine"); put("machine", e.machine)
+        }
+        is UpgradeEffect.UnlockCounter -> buildJsonObject {
+            put("kind", "unlock_counter"); put("pad", e.pad)
         }
         is UpgradeEffect.WorkerMoveSpeed -> buildJsonObject {
             put("kind", "worker_move_speed"); put("speedPermille", e.speedPermille)

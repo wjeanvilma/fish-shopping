@@ -148,7 +148,7 @@ def build(content, harbor):
 
     # Customer pool, parked at the entry; clients move and show them.
     entry = harbor["customerEntry"]
-    pool = max(c["maxQueue"] for c in harbor["counters"]) + 2
+    pool = sum(c["maxQueue"] for c in harbor["counters"]) + 2
     for i in range(pool):
         cb = node(f"CustomerBody_{i}", [0, 0.75, 0], [0.55, 1.5, 0.55], "customer", root=False)
         node(f"Customer_{i}", [entry["x"] / 1000, 0, entry["z"] / 1000], children=[cb])

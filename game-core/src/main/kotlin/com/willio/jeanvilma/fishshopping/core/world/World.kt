@@ -2,6 +2,7 @@ package com.willio.jeanvilma.fishshopping.core.world
 
 import com.willio.jeanvilma.fishshopping.core.content.HarborDef
 import com.willio.jeanvilma.fishshopping.core.content.ZoneKind
+import com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
 import com.willio.jeanvilma.fishshopping.core.inventory.Transfers
 import com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
@@ -104,7 +105,8 @@ object TransferSystem {
             ZoneKind.COUNTER -> {
                 val counter = ctx.state.counters.first { c -> ctx.harbor.counters.first { it.id == c.counterId }.zone == zone.id }
                 val def = ctx.harbor.counters.first { it.id == counter.counterId }
-                Transfers.moveFirstAccepted(p.bag, counter.stock) { def.accepts(it) }
+                if (!CustomerSystem.isUnlocked(def, ctx.state)) false
+                else Transfers.moveFirstAccepted(p.bag, counter.stock) { def.accepts(it) }
                     ?.also { item ->
                         ctx.state.bumpStat(Stats.COUNTER_STOCKED)
                         ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, p.bag.id, counter.stock.id, item, 1))

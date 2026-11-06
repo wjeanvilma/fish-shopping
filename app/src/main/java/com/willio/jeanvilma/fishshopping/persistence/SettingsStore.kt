@@ -21,6 +21,8 @@ data class GameSettings(
     val tapToMove: Boolean = false,
     /** Opt-in cloud save sync. Local play works with this off. */
     val cloudSyncEnabled: Boolean = false,
+    /** Phase 27 in-dev HUD strip for abandon / wage / catch-share rates. */
+    val showBalanceStrip: Boolean = false,
     /** Anonymous / Firebase account id used as the cloud document key. */
     val cloudAccountId: String? = null,
 ) {
@@ -50,6 +52,7 @@ class SettingsStore(context: Context) {
         joystickScale = GameSettings.clampScale(prefs.getFloat(KEY_JOYSTICK_SCALE, 1f)),
         tapToMove = prefs.getBoolean(KEY_TAP_TO_MOVE, false),
         cloudSyncEnabled = prefs.getBoolean(KEY_CLOUD_SYNC, false),
+        showBalanceStrip = prefs.getBoolean(KEY_BALANCE_STRIP, false),
         cloudAccountId = prefs.getString(KEY_CLOUD_ACCOUNT, null),
     )
 
@@ -74,6 +77,7 @@ class SettingsStore(context: Context) {
             .putFloat(KEY_JOYSTICK_SCALE, GameSettings.clampScale(settings.joystickScale))
             .putBoolean(KEY_TAP_TO_MOVE, settings.tapToMove)
             .putBoolean(KEY_CLOUD_SYNC, settings.cloudSyncEnabled)
+            .putBoolean(KEY_BALANCE_STRIP, settings.showBalanceStrip)
             .apply {
                 val id = settings.cloudAccountId
                 if (id.isNullOrBlank()) remove(KEY_CLOUD_ACCOUNT) else putString(KEY_CLOUD_ACCOUNT, id)
@@ -89,6 +93,7 @@ class SettingsStore(context: Context) {
         const val KEY_JOYSTICK_SCALE = "joystick_scale"
         const val KEY_TAP_TO_MOVE = "tap_to_move"
         const val KEY_CLOUD_SYNC = "cloud_sync_enabled"
+        const val KEY_BALANCE_STRIP = "show_balance_strip"
         const val KEY_CLOUD_ACCOUNT = "cloud_account_id"
     }
 }

@@ -32,6 +32,23 @@ object ProductionSystem {
 
     fun durationFor(m: MachineState, recipe: RecipeDef): Int = m.recipeDurations[recipe.id] ?: recipe.durationTicks
 
+    fun durationFor(ctx: StepContext, m: MachineState, recipe: RecipeDef): Int {
+        var duration = durationFor(m, recipe).toLong()
+        if (m.machineId.contains("smoker") &&
+            com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem.smokerSpecialistOnDuty(
+                ctx.content, ctx.state, ctx.harbor,
+            )
+        ) {
+            val mult = ctx.content.staffProgression.roleBuffs.smokerSpecialistProcessSpeedPermille
+            duration = (duration * 1000L) / mult.toLong()
+        }
+        if (com.willio.jeanvilma.fishshopping.core.economy.EconomySystem.isSlowed(m, ctx.state.tick)) {
+            val slow = ctx.content.economy.wear.slowProcessMultPermille
+            duration = (duration * slow.toLong()) / 1000L
+        }
+        return duration.toInt().coerceAtLeast(1)
+    }
+
     /** Human-readable recipe label from a content id (`recipe.basic_portions` → `Basic portions`). */
     fun recipeLabel(recipeId: String): String =
         recipeId.removePrefix("recipe.")
@@ -92,6 +109,10 @@ object ProductionSystem {
             m.status = MachineStatus.PAUSED
             return
         }
+        if (m.broken) {
+            m.status = MachineStatus.NEEDS_REPAIR
+            return
+        }
         // Drop a preferred recipe that no longer belongs to this machine (content change).
         m.preferredRecipeId?.let { pref ->
             if (pref !in ctx.content.machinesById.getValue(m.machineId).recipes) m.preferredRecipeId = null
@@ -120,7 +141,7 @@ object ProductionSystem {
             return
         }
         startable.inputs.forEach { m.input.remove(it.item, it.quantity) }
-        val duration = durationFor(m, startable)
+        val duration = durationFor(ctx, m, startable)
         val batch = Batch(ctx.state.newId("batch"), startable.id, duration, duration, startable.inputs)
         m.activeBatch = batch
         m.status = MachineStatus.PROCESSING
@@ -140,6 +161,7 @@ object ProductionSystem {
         MachineStatus.OUTPUT_FULL -> outputFullText(m, content)
         MachineStatus.PAUSED -> "Paused"
         MachineStatus.LOCKED -> lockedReason ?: "Locked — buy an upgrade"
+        MachineStatus.NEEDS_REPAIR -> "Needs repair"
     }
 
     private fun waitingText(m: MachineState, content: ContentPack): String {

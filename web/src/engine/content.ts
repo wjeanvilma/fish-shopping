@@ -66,6 +66,8 @@ export type UpgradeEffect =
   | { kind: "fish_regen"; speedPermille: number }
   | { kind: "unlock_fishing_spot"; zone: string }
   | { kind: "unlock_machine"; machine: string }
+  /** Ownership unlocks counters whose kind matches pad (Phase 15). */
+  | { kind: "unlock_counter"; pad: "wholesale" }
   | { kind: "worker_move_speed"; speedPermille: number }
   | { kind: "worker_carry"; capacityUnits: number }
   | { kind: "worker_catch_speed"; speedPermille: number }
@@ -87,7 +89,9 @@ export interface QuestDef {
   goal: StatGoal;
   reward: QuestReward;
 }
-export type WorkerRoleKind = "fisher" | "porter" | "operator" | "cashier" | "supervisor";
+export type WorkerRoleKind =
+  | "fisher" | "porter" | "operator" | "cashier" | "supervisor"
+  | "ice_runner" | "smoker_specialist" | "greeter";
 export interface WorkerDef {
   id: string;
   name: string;
@@ -102,6 +106,72 @@ export interface WorkerDef {
   requires: string[];
 }
 
+/** Hire-time trait that modifies a single worker's capabilities (Phase 16). */
+export interface WorkerTraitDef {
+  id: string;
+  name: string;
+  description: string;
+  weight: number;
+  moveSpeedPermille?: number;
+  catchSpeedPermille?: number;
+  carryBonus?: number;
+  /** Multiplies transfer interval (1000 = unchanged; lower = faster). */
+  transferIntervalMultPermille?: number;
+}
+
+/** Hire-slot vs on-shift scheduling + overtime wages (Phase 17). */
+export interface StaffShiftsDef {
+  /** Workers that can be on shift at the standard wage rate. */
+  baseOnShiftSlots: number;
+  /** Wage multiplier for on-shift workers beyond free slots (1500 = 1.5x). */
+  overtimeWagePermille: number;
+  /** Added free on-shift slots while a supervisor is posted on shift. */
+  supervisorExtraSlots: number;
+}
+
+/** Passive buffs for Phase 18 specialized hireable roles. */
+export interface StaffRoleBuffsDef {
+  greeterPatienceDrainMultPermille: number;
+  smokerSpecialistProcessSpeedPermille: number;
+  iceRunnerFragileSpoilTierMin: number;
+  iceRunnerSpoilScoreBonus: number;
+}
+
+/** One equippable staff-gear slot (boots / satchel / tackle). */
+export interface StaffLoadoutSlotDef {
+  id: string;
+  name: string;
+  /** Upgrade IDs that fill this slot (mutually exclusive across workers). */
+  upgradeIds: string[];
+}
+
+/** Assignable staff gear inventory (Phase 19). */
+export interface StaffLoadoutsDef {
+  slots: StaffLoadoutSlotDef[];
+}
+
+/** Shared XP curve + trait table for hired staff (Phase 16). */
+export interface StaffProgressionDef {
+  maxLevel: number;
+  /** Cumulative XP for levels 1..N; index 0 must be 0. */
+  xpThresholds: number[];
+  moveSpeedPermillePerLevel: number;
+  catchSpeedPermillePerLevel: number;
+  /** +1 bag capacity every N levels above 1. */
+  carryBonusEveryLevels: number;
+  xpFishCaught: number;
+  xpItemMoved: number;
+  xpSaleAssisted: number;
+  traitsOnHire: number;
+  /** Shift slots / overtime (Phase 17). */
+  shifts: StaffShiftsDef;
+  /** Specialized role passives (Phase 18). */
+  roleBuffs: StaffRoleBuffsDef;
+  /** Equip slots for owned staff gear upgrades (Phase 19). */
+  loadouts: StaffLoadoutsDef;
+  traits: WorkerTraitDef[];
+}
+
 /** Weights for scoring worker haul candidates (urgency / distance / demand). */
 export interface RoutingDef {
   urgencyWeight: number;
@@ -109,6 +179,14 @@ export interface RoutingDef {
   demandWeight: number;
   /** Multiplies demandWeight while a supervisor is on duty (1000 = unchanged). */
   supervisorDemandBoostPermille: number;
+}
+
+/** Rush idle ticker thresholds for automated stations (Phase 20). */
+export interface AutomationAlertsDef {
+  /** Ticks a station may stay idle during rush before alerting. */
+  machineIdleTicksDuringRush: number;
+  /** Minimum ticks between idle alerts for the same station. */
+  alertCooldownTicks: number;
 }
 
 /** Offline catch-up: how long absence is simulated when loading / resuming. */
@@ -132,6 +210,35 @@ export interface EconomyDef {
    * Low stock (early bands) tips above 1000; full shelves sit near 1000.
    */
   scarcityPriceCurvePermille: number[];
+  /** Phase 25 machine wear / disasters (repair spend). */
+  wear: MachineWearDef;
+}
+
+/** Phase 25 machine wear rolls and repair costs. */
+export interface MachineWearDef {
+  requires: string[];
+  checkPeriodTicks: number;
+  chancePermille: number;
+  breakChancePermille: number;
+  slowDurationTicks: number;
+  slowProcessMultPermille: number;
+  repairCoins: number;
+}
+
+/** Phase 26 pier bank: one short-term loan at a time + coin-goal presets. */
+export interface BankDef {
+  requires: string[];
+  loanPrincipal: number;
+  /** Total repayment = principal * repayPermille / 1000. */
+  repayPermille: number;
+  termTicks: number;
+  /** While overdue, seize owed coins this often. */
+  collectionPeriodTicks: number;
+  goalPresets: number[];
+}
+
+export function bankRepayAmount(bank: BankDef): number {
+  return Math.trunc((bank.loanPrincipal * bank.repayPermille) / 1000);
 }
 
 /** One curated museum set of species trophies. */
@@ -218,6 +325,8 @@ export interface ContractTemplateDef {
   maxStreak?: number;
   /** After a standing fail, template stays off the board for this many ticks. */
   failCooldownTicks?: number;
+  /** Phase 24: only post while the named seasonal event is active. */
+  requiresSeasonalEvent?: string | null;
 }
 
 /** Harbor contract board: rotating offers with timed deliveries. */
@@ -290,6 +399,7 @@ export interface StationDef {
   requiresUpgrade?: string | null;
 }
 export interface PointMm { x: number; z: number }
+export type CounterKind = "retail" | "wholesale";
 export interface CounterDef {
   id: string;
   /** Products this counter accepts for stocking and sale (content order). */
@@ -297,6 +407,10 @@ export interface CounterDef {
   capacityUnits: number; zone: string; checkoutTicks: number; maxQueue: number;
   /** Queue slot i is queueAnchor + i * queueStep. */
   queueAnchor: PointMm; queueStep: PointMm;
+  /** Retail vs wholesale B2B pad (Phase 15). */
+  kind?: CounterKind;
+  /** Optional upgrade gate before this counter accepts stock/spawns/cashiers. */
+  requiresUpgrade?: string | null;
 }
 export const counterAccepts = (c: CounterDef, itemId: string): boolean => c.products.includes(itemId);
 export const queueSlot = (c: CounterDef, i: number): PointMm =>
@@ -313,6 +427,19 @@ export interface RushWindowDef {
   /** Phase 12 sale price multiplier while active (1000 = unchanged). */
   priceMultPermille: number;
 }
+/** Phase 22 per-harbor passive applied while the player is at this harbor. */
+export interface HarborSpecializationDef {
+  id: string;
+  name: string;
+  description: string;
+  /** Subtracted from economy.maintenanceCoinsPerStation (with upgrade discounts). */
+  maintenanceDiscountPerStation?: number;
+  /** Added to rare-upgrade rolls while fishing here. */
+  rareChanceBonusPermille?: number;
+  /** Customer-kind spawn multipliers (keys = customer kind wires). */
+  kindSpawnMultPermille?: Record<string, number>;
+}
+
 export interface HarborDef {
   id: string;
   name: string;
@@ -331,6 +458,8 @@ export interface HarborDef {
   /** Intermediate approach points (entry → waypoints → queue). Empty = straight line. */
   customerPathWaypoints: PointMm[];
   rushes: RushWindowDef[];
+  /** Phase 22 passive while present at this harbor. */
+  specialization?: HarborSpecializationDef | null;
   /** GLB filename under models/, matching generate_blockout.py. */
   blockoutAsset: string;
 }
@@ -347,7 +476,9 @@ export interface RawContentPack {
   upgrades: UpgradeDef[];
   quests: QuestDef[];
   workers: WorkerDef[];
+  staffProgression: StaffProgressionDef;
   routing: RoutingDef;
+  automationAlerts: AutomationAlertsDef;
   offline: OfflineDef;
   /** Soft coin/stock sinks after early progression (Phase 19). */
   economy: EconomyDef;
@@ -362,7 +493,45 @@ export interface RawContentPack {
   contracts: ContractsDef;
   customers: CustomerDef[];
   tutorial: TutorialStepDef[];
+  /** Phase 23 shop decor / placable cosmetics. */
+  decor: DecorCatalog;
+  /** Phase 24 time-boxed overlays driven by the sim clock. */
+  seasonalEvents: SeasonalEventsCatalog;
+  /** Phase 26 short-term loans + coin-goal presets. */
+  bank: BankDef;
   harbors: HarborDef[];
+}
+
+export interface DecorCatalog {
+  items: DecorDef[];
+}
+
+export interface DecorDef {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  /** Prestige cosmetic / banner id that must already be unlocked, if any. */
+  requiresCosmetic?: string | null;
+  /** Added to newly spawned customer patience while owned. */
+  patienceBonusTicks: number;
+}
+
+export interface SeasonalEventsCatalog {
+  events: SeasonalEventDef[];
+}
+
+export interface SeasonalEventDef {
+  id: string;
+  name: string;
+  description: string;
+  periodTicks: number;
+  startTick: number;
+  durationTicks: number;
+  /** Cosmetic / banner id unlocked when the event first becomes active. */
+  banner?: string | null;
+  /** Catch-weight multipliers while active (1000 = unchanged). */
+  speciesWeightMultPermille?: Record<string, number>;
 }
 
 /** Min inclusive, max exclusive (same as RectMm.contains in Kotlin). */
@@ -383,10 +552,13 @@ export class ContentPack {
   readonly upgradesById: Map<string, UpgradeDef>;
   readonly questsById: Map<string, QuestDef>;
   readonly workersById: Map<string, WorkerDef>;
+  readonly workerTraitsById: Map<string, WorkerTraitDef>;
   readonly prestigeMilestonesById: Map<string, PrestigeMilestoneDef>;
   readonly trophySetsById: Map<string, TrophySetDef>;
   readonly contractTemplatesById: Map<string, ContractTemplateDef>;
   readonly customersById: Map<string, CustomerDef>;
+  readonly decorById: Map<string, DecorDef>;
+  readonly seasonalEventsById: Map<string, SeasonalEventDef>;
   readonly harborsById: Map<string, HarborDef>;
 
   constructor(readonly raw: RawContentPack) {
@@ -397,6 +569,15 @@ export class ContentPack {
       t.maxStreak = t.maxStreak ?? 1;
       t.failCooldownTicks = t.failCooldownTicks ?? 1;
     }
+    for (const e of raw.seasonalEvents.events) {
+      e.speciesWeightMultPermille = e.speciesWeightMultPermille ?? {};
+    }
+    for (const t of raw.staffProgression.traits) {
+      t.moveSpeedPermille = t.moveSpeedPermille ?? 1000;
+      t.catchSpeedPermille = t.catchSpeedPermille ?? 1000;
+      t.carryBonus = t.carryBonus ?? 0;
+      t.transferIntervalMultPermille = t.transferIntervalMultPermille ?? 1000;
+    }
     for (const h of raw.harbors) {
       h.requires = h.requires ?? [];
       h.customerPathWaypoints = h.customerPathWaypoints ?? [];
@@ -404,6 +585,11 @@ export class ContentPack {
         ...rush,
         priceMultPermille: rush.priceMultPermille ?? 1000,
       }));
+      if (h.specialization) {
+        h.specialization.maintenanceDiscountPerStation = h.specialization.maintenanceDiscountPerStation ?? 0;
+        h.specialization.rareChanceBonusPermille = h.specialization.rareChanceBonusPermille ?? 0;
+        h.specialization.kindSpawnMultPermille = h.specialization.kindSpawnMultPermille ?? {};
+      }
       h.blockoutAsset = `${h.id.includes(".") ? h.id.slice(h.id.indexOf(".") + 1) : h.id}_blockout.glb`;
     }
     this.speciesById = byId(raw.species);
@@ -414,10 +600,17 @@ export class ContentPack {
     this.upgradesById = byId(raw.upgrades);
     this.questsById = byId(raw.quests);
     this.workersById = byId(raw.workers);
+    this.workerTraitsById = byId(raw.staffProgression.traits);
     this.prestigeMilestonesById = byId(raw.prestige.milestones);
     this.trophySetsById = byId(raw.trophies.sets);
     this.contractTemplatesById = byId(raw.contracts.templates);
     this.customersById = byId(raw.customers);
+    for (const d of raw.decor.items) {
+      d.requiresCosmetic = d.requiresCosmetic ?? null;
+      d.patienceBonusTicks = d.patienceBonusTicks ?? 0;
+    }
+    this.decorById = byId(raw.decor.items);
+    this.seasonalEventsById = byId(raw.seasonalEvents.events);
     this.harborsById = byId(raw.harbors);
   }
 
@@ -428,7 +621,9 @@ export class ContentPack {
   get upgrades() { return this.raw.upgrades; }
   get quests() { return this.raw.quests; }
   get workers() { return this.raw.workers; }
+  get staffProgression() { return this.raw.staffProgression; }
   get routing() { return this.raw.routing; }
+  get automationAlerts() { return this.raw.automationAlerts; }
   get offline() { return this.raw.offline; }
   get economy() { return this.raw.economy; }
   get ecology() { return this.raw.ecology; }
@@ -437,6 +632,9 @@ export class ContentPack {
   get prestige() { return this.raw.prestige; }
   get reputation() { return this.raw.reputation; }
   get contracts() { return this.raw.contracts; }
+  get decor() { return this.raw.decor; }
+  get seasonalEvents() { return this.raw.seasonalEvents; }
+  get bank() { return this.raw.bank; }
   get harbors() { return this.raw.harbors; }
 
   carryUnits = (itemId: string): number => {
@@ -508,7 +706,9 @@ export function validateContent(p: ContentPack): string[] {
     "player.startFishRegenPermille must be >= 1000");
 
   const allIds = [...r.species, ...r.products, ...r.recipes, ...r.machines, ...r.upgrades, ...r.quests,
-    ...r.bait, ...r.workers, ...r.trophies.sets, ...r.prestige.milestones, ...r.contracts.templates, ...r.customers, ...r.tutorial, ...r.harbors].map((x) => x.id);
+    ...r.bait, ...r.workers, ...r.staffProgression.traits, ...r.trophies.sets, ...r.prestige.milestones,
+    ...r.contracts.templates, ...r.customers, ...r.tutorial, ...r.decor.items,
+    ...r.seasonalEvents.events, ...r.harbors].map((x) => x.id);
   duplicates(allIds).forEach((id) => errors.push(`Duplicate id '${id}'`));
 
   check(r.bait.length > 0, () => "bait must not be empty");
@@ -538,10 +738,72 @@ export function validateContent(p: ContentPack): string[] {
   check(r.workers.some((w) => w.role === "operator"), () => "content needs at least one operator worker");
   check(r.workers.some((w) => w.role === "cashier"), () => "content needs at least one cashier worker");
   check(r.workers.some((w) => w.role === "supervisor"), () => "content needs at least one supervisor worker");
+  check(r.workers.some((w) => w.role === "ice_runner"), () => "content needs at least one ice_runner worker");
+  check(r.workers.some((w) => w.role === "smoker_specialist"), () =>
+    "content needs at least one smoker_specialist worker");
+  check(r.workers.some((w) => w.role === "greeter"), () => "content needs at least one greeter worker");
+  const sp = r.staffProgression;
+  check(sp.maxLevel >= 1, () => "staffProgression.maxLevel must be >= 1");
+  check(sp.xpThresholds.length === sp.maxLevel, () =>
+    `staffProgression.xpThresholds must have maxLevel (${sp.maxLevel}) entries`);
+  check(sp.xpThresholds[0] === 0, () => "staffProgression.xpThresholds[0] must be 0");
+  for (let i = 1; i < sp.xpThresholds.length; i++) {
+    check(sp.xpThresholds[i]! > sp.xpThresholds[i - 1]!, () =>
+      "staffProgression.xpThresholds must be strictly increasing");
+  }
+  check(sp.traits.length > 0, () => "staffProgression.traits must not be empty");
+  check(sp.traitsOnHire <= sp.traits.length, () =>
+    "staffProgression.traitsOnHire must be <= traits.size");
+  check(sp.shifts.baseOnShiftSlots >= 1, () =>
+    "staffProgression.shifts.baseOnShiftSlots must be >= 1");
+  check(sp.shifts.overtimeWagePermille >= 1, () =>
+    "staffProgression.shifts.overtimeWagePermille must be >= 1");
+  check(sp.shifts.supervisorExtraSlots >= 0, () =>
+    "staffProgression.shifts.supervisorExtraSlots must be >= 0");
+  check(sp.roleBuffs.greeterPatienceDrainMultPermille >= 1, () =>
+    "staffProgression.roleBuffs.greeterPatienceDrainMultPermille must be >= 1");
+  check(sp.roleBuffs.smokerSpecialistProcessSpeedPermille >= 1, () =>
+    "staffProgression.roleBuffs.smokerSpecialistProcessSpeedPermille must be >= 1");
+  check(sp.roleBuffs.iceRunnerFragileSpoilTierMin >= 1 && sp.roleBuffs.iceRunnerFragileSpoilTierMin <= 3, () =>
+    "staffProgression.roleBuffs.iceRunnerFragileSpoilTierMin must be 1..3");
+  check(sp.roleBuffs.iceRunnerSpoilScoreBonus >= 0, () =>
+    "staffProgression.roleBuffs.iceRunnerSpoilScoreBonus must be >= 0");
+  check(sp.loadouts.slots.length > 0, () => "staffProgression.loadouts.slots must not be empty");
+  const seenSlotIds = new Set<string>();
+  const seenGearUpgrades = new Set<string>();
+  for (const slot of sp.loadouts.slots) {
+    check(!!slot.id, () => "loadout slot id must not be blank");
+    check(!seenSlotIds.has(slot.id), () => `duplicate loadout slot ${slot.id}`);
+    seenSlotIds.add(slot.id);
+    check(slot.upgradeIds.length > 0, () => `loadout slot ${slot.id}: upgradeIds must not be empty`);
+    for (const uid of slot.upgradeIds) {
+      check(!seenGearUpgrades.has(uid), () => `upgrade ${uid} listed in multiple loadout slots`);
+      seenGearUpgrades.add(uid);
+      const u = r.upgrades.find((x) => x.id === uid);
+      check(!!u, () => `loadout slot ${slot.id}: unknown upgrade ${uid}`);
+      const kind = u!.effect.kind;
+      check(
+        kind === "worker_move_speed" || kind === "worker_carry" || kind === "worker_catch_speed",
+        () => `loadout upgrade ${uid} must use worker_move_speed / worker_carry / worker_catch_speed`,
+      );
+    }
+  }
+  for (const t of sp.traits) {
+    check(t.weight >= 1, () => `${t.id}: weight must be >= 1`);
+    check((t.moveSpeedPermille ?? 1000) >= 1, () => `${t.id}: moveSpeedPermille must be >= 1`);
+    check((t.catchSpeedPermille ?? 1000) >= 1, () => `${t.id}: catchSpeedPermille must be >= 1`);
+    check((t.carryBonus ?? 0) >= 0, () => `${t.id}: carryBonus must be >= 0`);
+    check((t.transferIntervalMultPermille ?? 1000) >= 1, () =>
+      `${t.id}: transferIntervalMultPermille must be >= 1`);
+  }
   check(r.routing.urgencyWeight >= 0, () => "routing.urgencyWeight must be >= 0");
   check(r.routing.distanceWeight >= 0, () => "routing.distanceWeight must be >= 0");
   check(r.routing.demandWeight >= 0, () => "routing.demandWeight must be >= 0");
   check(r.routing.supervisorDemandBoostPermille >= 1, () => "routing.supervisorDemandBoostPermille must be >= 1");
+  check(r.automationAlerts.machineIdleTicksDuringRush >= 1, () =>
+    "automationAlerts.machineIdleTicksDuringRush must be >= 1");
+  check(r.automationAlerts.alertCooldownTicks >= 1, () =>
+    "automationAlerts.alertCooldownTicks must be >= 1");
   check(r.offline.capHours >= 1, () => "offline.capHours must be >= 1");
   check(r.offline.summaryMinSeconds >= 0, () => "offline.summaryMinSeconds must be >= 0");
   check(r.economy.maintenancePeriodTicks >= 1, () => "economy.maintenancePeriodTicks must be >= 1");
@@ -559,6 +821,19 @@ export function validateContent(p: ContentPack): string[] {
   const economyRequirable = new Set([...p.upgradesById.keys(), ...p.questsById.keys()]);
   for (const req of r.economy.requires) {
     check(economyRequirable.has(req), () => `economy: unknown requirement '${req}'`);
+  }
+  const wear = r.economy.wear;
+  check(wear.checkPeriodTicks >= 1, () => "economy.wear.checkPeriodTicks must be >= 1");
+  check(wear.chancePermille >= 0 && wear.chancePermille <= 1000, () =>
+    "economy.wear.chancePermille must be 0..1000");
+  check(wear.breakChancePermille >= 0 && wear.breakChancePermille <= 1000, () =>
+    "economy.wear.breakChancePermille must be 0..1000");
+  check(wear.slowDurationTicks >= 1, () => "economy.wear.slowDurationTicks must be >= 1");
+  check(wear.slowProcessMultPermille >= 1000, () =>
+    "economy.wear.slowProcessMultPermille must be >= 1000");
+  check(wear.repairCoins >= 0, () => "economy.wear.repairCoins must be >= 0");
+  for (const req of wear.requires) {
+    check(economyRequirable.has(req), () => `economy.wear: unknown requirement '${req}'`);
   }
   check(!!r.ecology, () => "ecology is required");
   check(r.ecology.dayLengthTicks >= 1, () => "ecology.dayLengthTicks must be >= 1");
@@ -665,6 +940,11 @@ export function validateContent(p: ContentPack): string[] {
       check(payoutEsc >= 1000, () => `${t.id}: standing payoutEscalatePermille must be >= 1000`);
       check(penaltyEsc >= 1000, () => `${t.id}: standing penaltyEscalatePermille must be >= 1000`);
     }
+    const seasonalReq = t.requiresSeasonalEvent;
+    if (seasonalReq != null) {
+      check(p.seasonalEventsById.has(seasonalReq), () =>
+        `${t.id}: unknown requiresSeasonalEvent '${seasonalReq}'`);
+    }
   }
 
   const unitsOrZero = (item: string) =>
@@ -752,6 +1032,17 @@ export function validateContent(p: ContentPack): string[] {
         check(st.requiresUpgrade === u.id, () =>
           `${u.id}: station '${st.id}' must list this upgrade as requiresUpgrade`);
       }
+    } else if (e.kind === "unlock_counter") {
+      const counters = r.harbors.flatMap((h) => h.counters).filter((c) => (c.kind ?? "retail") === e.pad);
+      check(counters.length > 0, () => `${u.id}: unlock_counter has no '${e.pad}' counters`);
+      for (const c of counters) {
+        check(c.requiresUpgrade === u.id, () =>
+          `${u.id}: counter '${c.id}' must list this upgrade as requiresUpgrade`);
+      }
+      for (const h of r.harbors) {
+        check(h.counters.some((c) => (c.kind ?? "retail") === e.pad), () =>
+          `${u.id}: harbor '${h.id}' needs a '${e.pad}' counter`);
+      }
     } else if (e.kind === "worker_move_speed") {
       check(e.speedPermille > 1000, () => `${u.id}: worker_move_speed must exceed 1000 (base speed)`);
     } else if (e.kind === "worker_carry") {
@@ -810,6 +1101,66 @@ export function validateContent(p: ContentPack): string[] {
   const prestigeCycle = findPrestigeCycle(p);
   if (prestigeCycle) errors.push(`Prestige requirement cycle: ${prestigeCycle.join(" -> ")}`);
 
+  check(r.decor.items.length > 0, () => "decor.items must not be empty");
+  const prestigeCosmetics = new Set(
+    r.prestige.milestones.map((m) => m.reward.cosmetic).filter((x): x is string => !!x),
+  );
+  for (const d of r.decor.items) {
+    check(d.id.startsWith("decor."), () => `${d.id}: decor id must start with 'decor.'`);
+    check(d.name.trim().length > 0, () => `${d.id}: name must not be blank`);
+    check(d.description.trim().length > 0, () => `${d.id}: description must not be blank`);
+    check(d.cost >= 0, () => `${d.id}: cost must be >= 0`);
+    check((d.patienceBonusTicks ?? 0) >= 0, () => `${d.id}: patienceBonusTicks must be >= 0`);
+    const cos = d.requiresCosmetic;
+    if (cos != null) {
+      check(cos.trim().length > 0, () => `${d.id}: requiresCosmetic must be non-empty when set`);
+      check(prestigeCosmetics.has(cos), () =>
+        `${d.id}: requiresCosmetic '${cos}' is not granted by any prestige milestone`);
+    }
+  }
+
+  const bank = r.bank;
+  check(bank.loanPrincipal >= 1, () => "bank.loanPrincipal must be >= 1");
+  check(bank.repayPermille >= 1000, () => "bank.repayPermille must be >= 1000");
+  check(bank.termTicks >= 1, () => "bank.termTicks must be >= 1");
+  check(bank.collectionPeriodTicks >= 1, () => "bank.collectionPeriodTicks must be >= 1");
+  check(bank.goalPresets.length > 0, () => "bank.goalPresets must not be empty");
+  check(new Set(bank.goalPresets).size === bank.goalPresets.length, () =>
+    "bank.goalPresets must be unique");
+  for (const goal of bank.goalPresets) {
+    check(goal >= 1, () => "bank.goalPresets entries must be >= 1");
+  }
+  for (const req of bank.requires) {
+    check(economyRequirable.has(req), () => `bank: unknown requirement '${req}'`);
+  }
+
+  check(r.seasonalEvents.events.length > 0, () => "seasonalEvents.events must not be empty");
+  const seasonalWindows: Array<{ period: number; start: number; end: number }> = [];
+  for (const e of r.seasonalEvents.events) {
+    check(e.id.startsWith("event."), () => `${e.id}: seasonal event id must start with 'event.'`);
+    check(e.name.trim().length > 0, () => `${e.id}: name must not be blank`);
+    check(e.description.trim().length > 0, () => `${e.id}: description must not be blank`);
+    check(e.periodTicks >= 1, () => `${e.id}: periodTicks must be >= 1`);
+    check(e.startTick >= 0, () => `${e.id}: startTick must be >= 0`);
+    check(e.durationTicks >= 1, () => `${e.id}: durationTicks must be >= 1`);
+    check(e.startTick + e.durationTicks <= e.periodTicks, () =>
+      `${e.id}: window must fit inside periodTicks (no wrap)`);
+    if (e.banner != null) {
+      check(e.banner.trim().length > 0, () => `${e.id}: banner must be non-empty when set`);
+    }
+    const end = e.startTick + e.durationTicks;
+    for (const [sp, mult] of Object.entries(e.speciesWeightMultPermille ?? {})) {
+      check(p.speciesById.has(sp), () => `${e.id}: unknown species '${sp}'`);
+      check(mult >= 1, () => `${e.id}: speciesWeightMultPermille.${sp} must be >= 1`);
+    }
+    for (const other of seasonalWindows) {
+      if (other.period !== e.periodTicks) continue;
+      check(end <= other.start || other.end <= e.startTick, () =>
+        `${e.id}: overlaps another seasonal event window inside the period`);
+    }
+    seasonalWindows.push({ period: e.periodTicks, start: e.startTick, end });
+  }
+
   for (const w of r.workers) {
     for (const req of w.requires) {
       check(requirable.has(req), () => `${w.id}: unknown requirement '${req}'`);
@@ -827,8 +1178,11 @@ export function validateContent(p: ContentPack): string[] {
       check(c.priceMultPermille > 1000, () =>
         `${c.id}: ${c.kind} customers must tip (priceMultPermille > 1000)`);
     }
-    if (c.kind === "bulk" || c.kind === "wholesaler") {
-      check(c.basketMin >= 5, () => `${c.id}: ${c.kind} customers need basketMin >= 5`);
+    if (c.kind === "bulk") {
+      check(c.basketMin >= 5, () => `${c.id}: bulk customers need basketMin >= 5`);
+    }
+    if (c.kind === "wholesaler") {
+      check(c.basketMin >= 2, () => `${c.id}: wholesaler customers need basketMin >= 2`);
     }
     if (c.kind === "critic") {
       check(c.preferredProducts.length > 0, () => `${c.id}: critic customers need preferred products`);
@@ -856,11 +1210,36 @@ export function validateContent(p: ContentPack): string[] {
     }
   }
 
+  const specializationIds = new Set<string>();
+  const customerKindWires = new Set([
+    "standard", "premium", "bulk", "tourist", "wholesaler", "critic", "night_regular",
+  ]);
   for (const h of r.harbors) {
     const zones = new Map(h.zones.map((z) => [z.id, z]));
     const open = (x: number, z: number) => h.walkable.some((w) => rectContains(w, x, z)) && !h.obstacles.some((o) => rectContains(o, x, z));
     for (const req of h.requires) {
-      check(p.upgradesById.has(req) || p.questsById.has(req), () => `${h.id}: unknown requirement '${req}'`);
+      check(
+        p.upgradesById.has(req) || p.questsById.has(req) || p.prestigeMilestonesById.has(req),
+        () => `${h.id}: unknown requirement '${req}'`,
+      );
+    }
+    const sp = h.specialization;
+    check(!!sp, () => `${h.id}: specialization is required`);
+    if (sp) {
+      check(sp.id.startsWith("spec."), () => `${h.id}: specialization.id must start with 'spec.'`);
+      check(sp.name.trim().length > 0, () => `${h.id}: specialization.name must not be blank`);
+      check(sp.description.trim().length > 0, () => `${h.id}: specialization.description must not be blank`);
+      check((sp.maintenanceDiscountPerStation ?? 0) >= 0, () =>
+        `${h.id}: specialization.maintenanceDiscountPerStation must be >= 0`);
+      const rareBonus = sp.rareChanceBonusPermille ?? 0;
+      check(rareBonus >= 0 && rareBonus <= 1000, () =>
+        `${h.id}: specialization.rareChanceBonusPermille must be 0..1000`);
+      for (const [kind, mult] of Object.entries(sp.kindSpawnMultPermille ?? {})) {
+        check(customerKindWires.has(kind), () => `${h.id}: specialization.kindSpawnMultPermille unknown kind '${kind}'`);
+        check(mult >= 1, () => `${h.id}: specialization.kindSpawnMultPermille.${kind} must be >= 1`);
+      }
+      check(!specializationIds.has(sp.id), () => `${h.id}: duplicate specialization '${sp.id}'`);
+      specializationIds.add(sp.id);
     }
     check(h.walkable.some((w) => rectContains(w, h.playerSpawn.x, h.playerSpawn.z)), () => `${h.id}: spawn is not walkable`);
     check(!h.obstacles.some((o) => rectContains(o, h.playerSpawn.x, h.playerSpawn.z)), () => `${h.id}: spawn is inside an obstacle`);
@@ -942,6 +1321,9 @@ export function validateContent(p: ContentPack): string[] {
       c.products.forEach((pid) => check(p.productsById.has(pid), () => `${c.id}: unknown product '${pid}'`));
       check(new Set(c.products).size === c.products.length, () => `${c.id}: duplicate products`);
       check(zones.get(c.zone)?.kind === "counter", () => `${c.id}: bad counter zone`);
+      if (c.requiresUpgrade) {
+        check(p.upgradesById.has(c.requiresUpgrade), () => `${c.id}: requiresUpgrade unknown '${c.requiresUpgrade}'`);
+      }
       for (let i = 0; i < c.maxQueue + rushQueueBonus; i++) {
         const slot = queueSlot(c, i);
         check(open(slot.x, slot.z), () => `${c.id}: queue slot ${i} is not on open walkable ground`);

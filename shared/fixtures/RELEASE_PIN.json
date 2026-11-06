@@ -1,13 +1,20 @@
 {
-  "label": "Phase 14 standing orders fixture freeze",
-  "contentVersion": "0.36.0",
-  "schemaVersion": 12,
+  "label": "Phase 28 portrait HUD fixture freeze",
+  "contentVersion": "0.50.0",
+  "schemaVersion": 19,
   "ticksPerSecond": 20,
   "fixtures": [
     "prng-vectors.json",
     "starter-line.json",
     "snapshot-starter-line-t2500.json",
-    "legacy/snapshot-v1-starter-line-t2500.json"
+    "legacy/snapshot-v1-starter-line-t2500.json",
+    "legacy/snapshot-v12-starter-line-t2500.json",
+    "legacy/snapshot-v13-starter-line-t2500.json",
+    "legacy/snapshot-v14-starter-line-t2500.json",
+    "legacy/snapshot-v15-starter-line-t2500.json",
+    "legacy/snapshot-v16-starter-line-t2500.json",
+    "legacy/snapshot-v17-starter-line-t2500.json",
+    "legacy/snapshot-v18-starter-line-t2500.json"
   ],
   "notes": "Do not re-record fixtures unless rules intentionally change; then bump this pin with -PrecordFixtures=true and port web parity."
 }

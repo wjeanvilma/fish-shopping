@@ -4,7 +4,7 @@
  */
 import type { ContentPack } from "./content";
 import { Stats, type GameState } from "./state";
-import { EconomySystem, ProgressionSystem, ReputationSystem } from "./systems";
+import { CustomerSystem, EconomySystem, ProgressionSystem, ReputationSystem } from "./systems";
 
 export interface ObjectiveView {
   /** Short label: NEXT / GOAL / TIP */
@@ -49,9 +49,23 @@ export function emptyStateTip(content: ContentPack, state: GameState): string | 
     return "Bag full — deliver fish to a station pad";
   }
   const waiting = state.customers.filter((c) => c.arrived).length;
-  const stocked = state.counters.reduce((n, c) => n + c.stock.usedUnits(), 0);
+  const harbor = content.harborsById.get(state.harborId);
+  const unlockedCounters = state.counters.filter((ct) => {
+    const def = harbor?.counters.find((d) => d.id === ct.counterId);
+    return def != null && CustomerSystem.isUnlocked(def, state);
+  });
+  const stocked = unlockedCounters.reduce((n, c) => n + c.stock.usedUnits(), 0);
   if (waiting > 0 && stocked === 0) {
     return "Customers are waiting — stock the counter with portions";
+  }
+  const hasCrates = state.machines.some((m) =>
+    m.output.quantity("product.ice_packed_crate") > 0 || m.output.quantity("product.fillet_crate") > 0,
+  ) || bag.quantity("product.ice_packed_crate") > 0 || bag.quantity("product.fillet_crate") > 0;
+  const wholesaleLocked = harbor?.counters.some((d) =>
+    (d.kind ?? "retail") === "wholesale" && !CustomerSystem.isUnlocked(d, state),
+  ) === true;
+  if (hasCrates && wholesaleLocked) {
+    return "Crates need the Wholesale pad — buy it in Upgrades";
   }
   const hasOutput = state.machines.some((m) => m.output.usedUnits() > 0);
   if (hasOutput && bag.usedUnits() === 0) {

@@ -50,9 +50,12 @@ object ContentValidator {
         // Unique IDs across every collection (IDs are global and namespaced by prefix).
         val allIds = p.species.map { it.id } + p.products.map { it.id } + p.bait.map { it.id } + p.recipes.map { it.id } +
             p.machines.map { it.id } + p.upgrades.map { it.id } + p.quests.map { it.id } +
-                p.workers.map { it.id } + p.trophies.sets.map { it.id } + p.prestige.milestones.map { it.id } +
+                p.workers.map { it.id } + p.staffProgression.traits.map { it.id } +
+                p.trophies.sets.map { it.id } + p.prestige.milestones.map { it.id } +
                 p.contracts.templates.map { it.id } +
-                p.customers.map { it.id } + p.tutorial.map { it.id } + p.harbors.map { it.id }
+                p.customers.map { it.id } + p.tutorial.map { it.id } + p.decor.items.map { it.id } +
+                p.seasonalEvents.events.map { it.id } +
+                p.harbors.map { it.id }
         allIds.groupingBy { it }.eachCount().filter { it.value > 1 }.keys.forEach { errors += "Duplicate id '$it'" }
 
         for (w in p.workers) {
@@ -65,10 +68,81 @@ object ContentValidator {
         check(p.workers.any { it.role == WorkerRoleKind.OPERATOR }) { "content needs at least one operator worker" }
         check(p.workers.any { it.role == WorkerRoleKind.CASHIER }) { "content needs at least one cashier worker" }
         check(p.workers.any { it.role == WorkerRoleKind.SUPERVISOR }) { "content needs at least one supervisor worker" }
+        check(p.workers.any { it.role == WorkerRoleKind.ICE_RUNNER }) { "content needs at least one ice_runner worker" }
+        check(p.workers.any { it.role == WorkerRoleKind.SMOKER_SPECIALIST }) {
+            "content needs at least one smoker_specialist worker"
+        }
+        check(p.workers.any { it.role == WorkerRoleKind.GREETER }) { "content needs at least one greeter worker" }
+        val sp = p.staffProgression
+        check(sp.maxLevel >= 1) { "staffProgression.maxLevel must be >= 1" }
+        check(sp.xpThresholds.size == sp.maxLevel) {
+            "staffProgression.xpThresholds must have maxLevel (${sp.maxLevel}) entries"
+        }
+        check(sp.xpThresholds.first() == 0) { "staffProgression.xpThresholds[0] must be 0" }
+        for (i in 1 until sp.xpThresholds.size) {
+            check(sp.xpThresholds[i] > sp.xpThresholds[i - 1]) {
+                "staffProgression.xpThresholds must be strictly increasing"
+            }
+        }
+        check(sp.traits.isNotEmpty()) { "staffProgression.traits must not be empty" }
+        check(sp.traitsOnHire <= sp.traits.size) {
+            "staffProgression.traitsOnHire must be <= traits.size"
+        }
+        check(sp.shifts.baseOnShiftSlots >= 1) { "staffProgression.shifts.baseOnShiftSlots must be >= 1" }
+        check(sp.shifts.overtimeWagePermille >= 1) {
+            "staffProgression.shifts.overtimeWagePermille must be >= 1"
+        }
+        check(sp.shifts.supervisorExtraSlots >= 0) {
+            "staffProgression.shifts.supervisorExtraSlots must be >= 0"
+        }
+        check(sp.roleBuffs.greeterPatienceDrainMultPermille >= 1) {
+            "staffProgression.roleBuffs.greeterPatienceDrainMultPermille must be >= 1"
+        }
+        check(sp.roleBuffs.smokerSpecialistProcessSpeedPermille >= 1) {
+            "staffProgression.roleBuffs.smokerSpecialistProcessSpeedPermille must be >= 1"
+        }
+        check(sp.roleBuffs.iceRunnerFragileSpoilTierMin in 1..3) {
+            "staffProgression.roleBuffs.iceRunnerFragileSpoilTierMin must be 1..3"
+        }
+        check(sp.roleBuffs.iceRunnerSpoilScoreBonus >= 0) {
+            "staffProgression.roleBuffs.iceRunnerSpoilScoreBonus must be >= 0"
+        }
+        check(sp.loadouts.slots.isNotEmpty()) { "staffProgression.loadouts.slots must not be empty" }
+        val seenSlotIds = mutableSetOf<String>()
+        val seenGearUpgrades = mutableSetOf<String>()
+        for (slot in sp.loadouts.slots) {
+            check(slot.id.isNotBlank()) { "loadout slot id must not be blank" }
+            check(seenSlotIds.add(slot.id)) { "duplicate loadout slot ${slot.id}" }
+            check(slot.upgradeIds.isNotEmpty()) { "loadout slot ${slot.id}: upgradeIds must not be empty" }
+            for (uid in slot.upgradeIds) {
+                check(seenGearUpgrades.add(uid)) { "upgrade $uid listed in multiple loadout slots" }
+                val u = p.upgradesById[uid] ?: error("loadout slot ${slot.id}: unknown upgrade $uid")
+                check(
+                    u.effect is UpgradeEffect.WorkerMoveSpeed ||
+                        u.effect is UpgradeEffect.WorkerCarry ||
+                        u.effect is UpgradeEffect.WorkerCatchSpeed,
+                ) { "loadout upgrade $uid must use worker_move_speed / worker_carry / worker_catch_speed" }
+            }
+        }
+        sp.traits.forEach { t ->
+            check(t.weight >= 1) { "${t.id}: weight must be >= 1" }
+            check(t.moveSpeedPermille >= 1) { "${t.id}: moveSpeedPermille must be >= 1" }
+            check(t.catchSpeedPermille >= 1) { "${t.id}: catchSpeedPermille must be >= 1" }
+            check(t.carryBonus >= 0) { "${t.id}: carryBonus must be >= 0" }
+            check(t.transferIntervalMultPermille >= 1) {
+                "${t.id}: transferIntervalMultPermille must be >= 1"
+            }
+        }
         check(p.routing.urgencyWeight >= 0) { "routing.urgencyWeight must be >= 0" }
         check(p.routing.distanceWeight >= 0) { "routing.distanceWeight must be >= 0" }
         check(p.routing.demandWeight >= 0) { "routing.demandWeight must be >= 0" }
         check(p.routing.supervisorDemandBoostPermille >= 1) { "routing.supervisorDemandBoostPermille must be >= 1" }
+        check(p.automationAlerts.machineIdleTicksDuringRush >= 1) {
+            "automationAlerts.machineIdleTicksDuringRush must be >= 1"
+        }
+        check(p.automationAlerts.alertCooldownTicks >= 1) {
+            "automationAlerts.alertCooldownTicks must be >= 1"
+        }
         check(p.offline.capHours >= 1) { "offline.capHours must be >= 1" }
         check(p.offline.summaryMinSeconds >= 0) { "offline.summaryMinSeconds must be >= 0" }
         check(p.economy.maintenancePeriodTicks >= 1) { "economy.maintenancePeriodTicks must be >= 1" }
@@ -86,6 +160,33 @@ object ContentValidator {
         val economyRequirable = p.upgradesById.keys + p.questsById.keys
         p.economy.requires.forEach { req ->
             check(req in economyRequirable) { "economy: unknown requirement '$req'" }
+        }
+        val wear = p.economy.wear
+        check(wear.checkPeriodTicks >= 1) { "economy.wear.checkPeriodTicks must be >= 1" }
+        check(wear.chancePermille in 0..1000) { "economy.wear.chancePermille must be 0..1000" }
+        check(wear.breakChancePermille in 0..1000) { "economy.wear.breakChancePermille must be 0..1000" }
+        check(wear.slowDurationTicks >= 1) { "economy.wear.slowDurationTicks must be >= 1" }
+        check(wear.slowProcessMultPermille >= 1000) {
+            "economy.wear.slowProcessMultPermille must be >= 1000"
+        }
+        check(wear.repairCoins >= 0) { "economy.wear.repairCoins must be >= 0" }
+        wear.requires.forEach { req ->
+            check(req in economyRequirable) { "economy.wear: unknown requirement '$req'" }
+        }
+        val bank = p.bank
+        check(bank.loanPrincipal >= 1) { "bank.loanPrincipal must be >= 1" }
+        check(bank.repayPermille >= 1000) { "bank.repayPermille must be >= 1000" }
+        check(bank.termTicks >= 1) { "bank.termTicks must be >= 1" }
+        check(bank.collectionPeriodTicks >= 1) { "bank.collectionPeriodTicks must be >= 1" }
+        check(bank.goalPresets.isNotEmpty()) { "bank.goalPresets must not be empty" }
+        check(bank.goalPresets.distinct().size == bank.goalPresets.size) {
+            "bank.goalPresets must be unique"
+        }
+        for (goal in bank.goalPresets) {
+            check(goal >= 1) { "bank.goalPresets entries must be >= 1" }
+        }
+        bank.requires.forEach { req ->
+            check(req in economyRequirable) { "bank: unknown requirement '$req'" }
         }
         check(p.ecology.dayLengthTicks >= 1) { "ecology.dayLengthTicks must be >= 1" }
         check(p.ecology.parts.size >= 2) { "ecology.parts needs at least 2 day parts" }
@@ -197,6 +298,11 @@ object ContentValidator {
                 }
             }
             check(t.weight >= 1) { "${t.id}: weight must be >= 1" }
+            t.requiresSeasonalEvent?.let { eventId ->
+                check(eventId in p.seasonalEventsById) {
+                    "${t.id}: unknown requiresSeasonalEvent '$eventId'"
+                }
+            }
         }
 
         for (sp in p.species) {
@@ -298,6 +404,21 @@ object ContentValidator {
                         }
                     }
                 }
+                is UpgradeEffect.UnlockCounter -> {
+                    val kind = CounterKind.fromWire(e.pad)
+                    val counters = p.harbors.flatMap { it.counters }.filter { it.kind == kind }
+                    check(counters.isNotEmpty()) { "${u.id}: unlock_counter has no '${e.pad}' counters" }
+                    counters.forEach { c ->
+                        check(c.requiresUpgrade == u.id) {
+                            "${u.id}: counter '${c.id}' must list this upgrade as requiresUpgrade"
+                        }
+                    }
+                    p.harbors.forEach { h ->
+                        check(h.counters.any { it.kind == kind }) {
+                            "${u.id}: harbor '${h.id}' needs a '${e.pad}' counter"
+                        }
+                    }
+                }
                 is UpgradeEffect.WorkerMoveSpeed -> check(e.speedPermille > 1000) {
                     "${u.id}: worker_move_speed must exceed 1000 (base speed)"
                 }
@@ -360,6 +481,50 @@ object ContentValidator {
         }
         findPrestigeCycle(p)?.let { errors += "Prestige requirement cycle: ${it.joinToString(" -> ")}" }
 
+        check(p.decor.items.isNotEmpty()) { "decor.items must not be empty" }
+        val prestigeCosmetics = p.prestige.milestones.mapNotNull { it.reward.cosmetic }.toSet()
+        for (d in p.decor.items) {
+            check(d.id.startsWith("decor.")) { "${d.id}: decor id must start with 'decor.'" }
+            check(d.name.isNotBlank()) { "${d.id}: name must not be blank" }
+            check(d.description.isNotBlank()) { "${d.id}: description must not be blank" }
+            check(d.cost >= 0) { "${d.id}: cost must be >= 0" }
+            check(d.patienceBonusTicks >= 0) { "${d.id}: patienceBonusTicks must be >= 0" }
+            d.requiresCosmetic?.let { cos ->
+                check(cos.isNotBlank()) { "${d.id}: requiresCosmetic must be non-empty when set" }
+                check(cos in prestigeCosmetics) {
+                    "${d.id}: requiresCosmetic '$cos' is not granted by any prestige milestone"
+                }
+            }
+        }
+
+        check(p.seasonalEvents.events.isNotEmpty()) { "seasonalEvents.events must not be empty" }
+        val seasonalWindows = mutableListOf<Triple<Int, Int, Int>>()
+        for (e in p.seasonalEvents.events) {
+            check(e.id.startsWith("event.")) { "${e.id}: seasonal event id must start with 'event.'" }
+            check(e.name.isNotBlank()) { "${e.id}: name must not be blank" }
+            check(e.description.isNotBlank()) { "${e.id}: description must not be blank" }
+            check(e.periodTicks >= 1) { "${e.id}: periodTicks must be >= 1" }
+            check(e.startTick >= 0) { "${e.id}: startTick must be >= 0" }
+            check(e.durationTicks >= 1) { "${e.id}: durationTicks must be >= 1" }
+            check(e.startTick + e.durationTicks <= e.periodTicks) {
+                "${e.id}: window must fit inside periodTicks (no wrap)"
+            }
+            e.banner?.let { b ->
+                check(b.isNotBlank()) { "${e.id}: banner must be non-empty when set" }
+            }
+            for ((sp, mult) in e.speciesWeightMultPermille) {
+                check(sp in p.speciesById) { "${e.id}: unknown species '$sp'" }
+                check(mult >= 1) { "${e.id}: speciesWeightMultPermille.$sp must be >= 1" }
+            }
+            for ((period, otherStart, otherEnd) in seasonalWindows) {
+                if (period != e.periodTicks) continue
+                check(e.endTick <= otherStart || otherEnd <= e.startTick) {
+                    "${e.id}: overlaps another seasonal event window inside the period"
+                }
+            }
+            seasonalWindows += Triple(e.periodTicks, e.startTick, e.endTick)
+        }
+
         for (w in p.workers) {
             w.requires.forEach { req -> check(req in requirable) { "${w.id}: unknown requirement '$req'" } }
         }
@@ -376,8 +541,11 @@ object ContentValidator {
                     "${c.id}: ${c.kind.wire} customers must tip (priceMultPermille > 1000)"
                 }
             }
-            if (c.kind == CustomerKind.BULK || c.kind == CustomerKind.WHOLESALER) {
-                check(c.basketMin >= 5) { "${c.id}: ${c.kind.wire} customers need basketMin >= 5" }
+            if (c.kind == CustomerKind.BULK) {
+                check(c.basketMin >= 5) { "${c.id}: bulk customers need basketMin >= 5" }
+            }
+            if (c.kind == CustomerKind.WHOLESALER) {
+                check(c.basketMin >= 2) { "${c.id}: wholesaler customers need basketMin >= 2" }
             }
             if (c.kind == CustomerKind.CRITIC) {
                 check(c.preferredProducts.isNotEmpty()) { "${c.id}: critic customers need preferred products" }
@@ -407,13 +575,30 @@ object ContentValidator {
             }
         }
 
+        val specializationIds = mutableSetOf<String>()
         for (h in p.harbors) {
             val zoneIds = h.zonesById.keys
             for (req in h.requires) {
-                check(req in p.upgradesById || req in p.questsById) {
+                check(req in p.upgradesById || req in p.questsById || req in p.prestigeMilestonesById) {
                     "${h.id}: unknown requirement '$req'"
                 }
             }
+            val sp = checkNotNull(h.specialization) { "${h.id}: specialization is required" }
+            check(sp.id.startsWith("spec.")) { "${h.id}: specialization.id must start with 'spec.'" }
+            check(sp.name.isNotBlank()) { "${h.id}: specialization.name must not be blank" }
+            check(sp.description.isNotBlank()) { "${h.id}: specialization.description must not be blank" }
+            check(sp.maintenanceDiscountPerStation >= 0) {
+                "${h.id}: specialization.maintenanceDiscountPerStation must be >= 0"
+            }
+            check(sp.rareChanceBonusPermille in 0..1000) {
+                "${h.id}: specialization.rareChanceBonusPermille must be 0..1000"
+            }
+            val kindWires = CustomerKind.entries.map { it.wire }.toSet()
+            for ((kind, mult) in sp.kindSpawnMultPermille) {
+                check(kind in kindWires) { "${h.id}: specialization.kindSpawnMultPermille unknown kind '$kind'" }
+                check(mult >= 1) { "${h.id}: specialization.kindSpawnMultPermille.$kind must be >= 1" }
+            }
+            check(specializationIds.add(sp.id)) { "${h.id}: duplicate specialization '${sp.id}'" }
             check(h.walkable.any { it.contains(h.playerSpawn.x, h.playerSpawn.z) }) { "${h.id}: spawn is not walkable" }
             check(h.obstacles.none { it.contains(h.playerSpawn.x, h.playerSpawn.z) }) { "${h.id}: spawn is inside an obstacle" }
             val fishingZoneIds = h.zones.filter { it.kind == ZoneKind.FISHING }.map { it.id }.toSet()
@@ -498,6 +683,9 @@ object ContentValidator {
                 c.products.forEach { pid -> check(pid in p.productsById) { "${c.id}: unknown product '$pid'" } }
                 check(c.products.toSet().size == c.products.size) { "${c.id}: duplicate products" }
                 check(h.zonesById[c.zone]?.kind == ZoneKind.COUNTER) { "${c.id}: bad counter zone" }
+                c.requiresUpgrade?.let { req ->
+                    check(req in p.upgradesById) { "${c.id}: requiresUpgrade unknown '$req'" }
+                }
                 for (i in 0 until c.maxQueue + rushQueueBonus) {
                     val slot = c.queueSlot(i)
                     check(open(slot.x, slot.z)) { "${c.id}: queue slot $i is not on open walkable ground" }

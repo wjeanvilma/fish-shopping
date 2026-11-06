@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import sunriseSceneUrl from "../../../shared/assets/models/sunrise_pier_blockout.glb?url";
 import moonSceneUrl from "../../../shared/assets/models/moon_cove_blockout.glb?url";
-import type { ActiveContractView, BaitOfferView, ContextCard, ContractOfferView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SimView, StaffHireView, StationView, TrophySetView, UpgradeView } from "../engine";
+import jettySceneUrl from "../../../shared/assets/models/obsidian_jetty_blockout.glb?url";
+import type { ActiveContractView, AutomationIssueView, BaitOfferView, BankView, ContextCard, ContractOfferView, DecorOfferView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SeasonalEventBannerView, SimView, StaffGearView, StaffHireView, StationView, TrophySetView, UpgradeView, WorkerView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
 import type { GameSettings, JoystickScale } from "../game/settingsStore";
 import { GameHost, type HostState } from "../game/GameHost";
@@ -11,6 +12,7 @@ import { Joystick } from "./Joystick";
 const BLOCKOUT_URLS: Record<string, string> = {
   "sunrise_pier_blockout.glb": sunriseSceneUrl,
   "moon_cove_blockout.glb": moonSceneUrl,
+  "obsidian_jetty_blockout.glb": jettySceneUrl,
 };
 
 /** The harbor is the home screen; panels open over it (blueprint "Navigation rules"). */
@@ -46,7 +48,6 @@ export function App() {
         <Hud host={host} state={state} />
       )}
       <MessageTicker host={host} />
-      <RotateHint />
     </div>
   );
 }
@@ -270,6 +271,11 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
     <div className="hud">
       <div className="pill top-left">
         {v.harborName}
+        {v.harborSpecializationName ? (
+          <span className="spec" title={v.harborSpecializationDescription ?? undefined}>
+            {" · "}{v.harborSpecializationName}
+          </span>
+        ) : null}
         {v.harborRating > 0 ? <span className="rating">{"★".repeat(v.harborRating)}</span> : null}
         <span className="rep" title={`${v.reputationLabel} · ${Math.trunc(v.reputationScorePermille / 10)}%`}>
           {" · Rep "}{Math.trunc(v.reputationScorePermille / 10)}%
@@ -282,13 +288,27 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           {v.rush.name} · {formatRushSeconds(v.rush.ticksRemaining)}s
         </div>
       )}
+      {v.seasonalEvent && (
+        <div className="pill seasonal-banner" aria-live="polite">
+          {v.seasonalEvent.name} · {formatRushSeconds(v.seasonalEvent.ticksRemaining)}s
+        </div>
+      )}
       {v.supervisorOnDuty && (
         <div className="pill supervisor-banner" aria-live="polite">Supervisor on duty</div>
       )}
-      <button className="button pause-button" onClick={() => host.setPauseOpen(true)}>
-        Pause <kbd>P</kbd>
-      </button>
-      <div className="top-actions">
+      {state.settings.showBalanceStrip && (
+        <div className="pill balance-strip" aria-live="polite" title="Balance telemetry strip">
+          Abandon {Math.trunc(v.telemetryRates.abandonPermille / 10)}%
+          {" · "}Wage {Math.trunc(v.telemetryRates.wageRatioPermille / 10)}%
+          {v.telemetryRates.topSpecies[0]
+            ? ` · Top ${v.telemetryRates.topSpecies[0].name} ${Math.trunc(v.telemetryRates.topSpecies[0].sharePermille / 10)}%`
+            : ""}
+        </div>
+      )}
+      <div className="top-actions" role="toolbar" aria-label="Harbor actions">
+        <button className="button" onClick={() => host.setPauseOpen(true)}>
+          Pause <kbd>P</kbd>
+        </button>
         <button className="button" onClick={() => host.setMapOpen(true)}>
           Map <kbd>M</kbd>
         </button>
@@ -347,13 +367,23 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       {staffOpen && (
         <StaffPanel
           staff={v.staff}
-          workersOnDuty={v.workers.length}
+          workers={v.workers}
+          staffGear={v.staffGear}
+          automationIssues={v.automationIssues}
+          stations={v.stations}
+          onShiftCount={v.onShiftCount}
+          freeOnShiftSlots={v.freeOnShiftSlots}
+          overtimeOnShiftCount={v.overtimeOnShiftCount}
           wagePerWorkerPerHour={v.workerWagePerWorkerPerHour}
           maintenanceCoinsPerStation={v.maintenanceCoinsPerStation}
           economyUnlocked={v.economyUnlocked}
           bagFishSpoilActive={v.bagFishSpoilActive}
           coins={v.coins}
           onHire={(id) => host.hire(id)}
+          onSetShift={(id, on) => host.setWorkerShift(id, on)}
+          onAssignGear={(workerId, upgradeId) => host.assignWorkerGear(workerId, upgradeId)}
+          onUnequipGear={(workerId, slotId) => host.unequipWorkerGear(workerId, slotId)}
+          onRepair={(id) => host.repairMachine(id)}
           onClose={() => host.setStaffOpen(false)}
         />
       )}
@@ -365,8 +395,17 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           harborRating={v.harborRating}
           prestige={v.prestige}
           unlockedCosmetics={v.unlockedCosmetics}
+          seasonalEvent={v.seasonalEvent}
+          bank={v.bank}
+          coins={v.coins}
+          decorOffers={v.decorOffers}
+          decorPatienceBonusTicks={v.decorPatienceBonusTicks}
           trophySets={v.trophySets}
           trophiesCount={v.trophies.length}
+          onPurchaseDecor={(id) => host.purchaseDecor(id)}
+          onTakeLoan={() => host.takeLoan()}
+          onRepayLoan={() => host.repayLoan()}
+          onSetCoinGoal={(amount) => host.setCoinGoal(amount)}
           onClose={() => host.setQuestsOpen(false)}
         />
       )}
@@ -400,6 +439,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
         <SettingsPanel
           settings={state.settings}
           cloudAvailable={host.cloudAvailable()}
+          telemetryRates={v.telemetryRates}
           onChange={(partial) => host.updateSettings(partial)}
           onExportTelemetry={() => host.exportTelemetryJson()}
           onExportBalance={() => host.exportBalanceJson()}
@@ -427,8 +467,10 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
         <StationDetailPanel
           card={v.context}
           stations={v.stations}
+          coins={v.coins}
           onCycleRecipe={v.context.stationId ? () => host.cycleStationRecipe(v.context!.stationId!) : undefined}
           onSetPaused={(id, paused) => host.setMachinePaused(id, paused)}
+          onRepair={(id) => host.repairMachine(id)}
           onClose={() => host.setStationOpen(false)}
         />
       )}
@@ -498,9 +540,10 @@ function PausePanel({ onResume, onSettings, onTitle }: {
   );
 }
 
-function SettingsPanel({ settings, cloudAvailable, onChange, onExportTelemetry, onExportBalance, onClose }: {
+function SettingsPanel({ settings, cloudAvailable, telemetryRates, onChange, onExportTelemetry, onExportBalance, onClose }: {
   settings: GameSettings;
   cloudAvailable: boolean;
+  telemetryRates: SimView["telemetryRates"];
   onChange: (partial: Partial<GameSettings>) => void;
   onExportTelemetry: () => string | null;
   onExportBalance: () => string | null;
@@ -562,9 +605,29 @@ function SettingsPanel({ settings, cloudAvailable, onChange, onExportTelemetry, 
               {settings.cloudSyncEnabled ? "On" : "Off"}
             </button>
           </li>
+          <li>
+            <div className="grow">
+              <strong>Balance strip</strong>
+              <div className="small muted">In-dev HUD rates: abandon, wage ratio, top catch share.</div>
+            </div>
+            <button
+              className="button"
+              aria-pressed={settings.showBalanceStrip}
+              onClick={() => onChange({ showBalanceStrip: !settings.showBalanceStrip })}
+            >
+              {settings.showBalanceStrip ? "On" : "Off"}
+            </button>
+          </li>
         </ul>
         <div className="small" style={{ marginTop: 12 }}>Telemetry</div>
-        <div className="small muted">Privacy-safe counters and content balance knobs. Copied as JSON.</div>
+        <div className="small muted">Privacy-safe counters (fish.telemetry.v2) and content balance knobs. Copied as JSON.</div>
+        <div className="small reward" style={{ marginTop: 6 }}>
+          Abandon {Math.trunc(telemetryRates.abandonPermille / 10)}%
+          {" · "}Wage {Math.trunc(telemetryRates.wageRatioPermille / 10)}%
+          {telemetryRates.topSpecies[0]
+            ? ` · Top ${telemetryRates.topSpecies[0].name} ${Math.trunc(telemetryRates.topSpecies[0].sharePermille / 10)}%`
+            : " · No catches yet"}
+        </div>
         <div className="quality-row">
           <button
             className="button"
@@ -722,11 +785,13 @@ function BaitKioskPanel({ offers, preferredBaitId, coins, onBuy, onSelect, onClo
   );
 }
 
-function StationDetailPanel({ card, stations, onCycleRecipe, onSetPaused, onClose }: {
+function StationDetailPanel({ card, stations, coins, onCycleRecipe, onSetPaused, onRepair, onClose }: {
   card: ContextCard;
   stations: StationView[];
+  coins: number;
   onCycleRecipe?: () => void;
   onSetPaused: (stationId: string, paused: boolean) => void;
+  onRepair: (stationId: string) => void;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -741,6 +806,12 @@ function StationDetailPanel({ card, stations, onCycleRecipe, onSetPaused, onClos
           <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
         </div>
         {card.lines.map((l) => <div key={l} className="num">{l}</div>)}
+        {station?.needsRepair && (
+          <div className="small danger">
+            {station.status === "NEEDS_REPAIR" ? "Broken — pay for a repair to resume." : "Running slow — repair clears the fault early."}
+            {station.slowTicksRemaining > 0 ? ` · ${formatRushSeconds(station.slowTicksRemaining)}s left` : ""}
+          </div>
+        )}
         {card.progress !== null && (
           <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(card.progress * 100)}>
             <div style={{ width: `${Math.min(100, Math.max(0, card.progress * 100))}%` }} />
@@ -751,6 +822,15 @@ function StationDetailPanel({ card, stations, onCycleRecipe, onSetPaused, onClos
             {onCycleRecipe && card.recipeModeLabel && (
               <button className="button" onClick={onCycleRecipe}>
                 Recipe: {card.recipeModeLabel} <kbd>R</kbd>
+              </button>
+            )}
+            {card.stationId && station?.needsRepair && (
+              <button
+                className="button"
+                disabled={coins < station.repairCost}
+                onClick={() => onRepair(card.stationId!)}
+              >
+                Repair · {formatCoins(station.repairCost)}
               </button>
             )}
             {card.stationId && (
@@ -857,6 +937,12 @@ function HarborMapPanel({ harbors, onTravel, onClose }: {
             <li key={h.harborId}>
               <div className="grow">
                 <strong>{h.name}</strong>
+                {h.specializationName ? (
+                  <div className="small muted" title={h.specializationDescription ?? undefined}>
+                    {h.specializationName}
+                    {h.specializationDescription ? ` — ${h.specializationDescription}` : ""}
+                  </div>
+                ) : null}
                 <div className={`small ${h.unlocked ? "muted" : "danger"}`}>
                   {h.current ? "You are here" : h.unlocked ? "Ready to travel" : (h.reason ?? "Locked")}
                 </div>
@@ -888,8 +974,17 @@ function QuestLogPanel({
   harborRating,
   prestige,
   unlockedCosmetics,
+  seasonalEvent,
+  bank,
+  coins,
+  decorOffers,
+  decorPatienceBonusTicks,
   trophySets,
   trophiesCount,
+  onPurchaseDecor,
+  onTakeLoan,
+  onRepayLoan,
+  onSetCoinGoal,
   onClose,
 }: {
   quests: QuestView[];
@@ -898,8 +993,17 @@ function QuestLogPanel({
   harborRating: number;
   prestige: PrestigeView[];
   unlockedCosmetics: string[];
+  seasonalEvent: SeasonalEventBannerView | null;
+  bank: BankView;
+  coins: number;
+  decorOffers: DecorOfferView[];
+  decorPatienceBonusTicks: number;
   trophySets: TrophySetView[];
   trophiesCount: number;
+  onPurchaseDecor: (decorId: string) => void;
+  onTakeLoan: () => void;
+  onRepayLoan: () => void;
+  onSetCoinGoal: (amount: number) => void;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -912,6 +1016,92 @@ function QuestLogPanel({
           <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
         </div>
         <ul className="upgrade-list">
+          {seasonalEvent && (
+            <li>
+              <div className="grow">
+                <strong>{seasonalEvent.name}</strong>
+                <div className="small">{seasonalEvent.description}</div>
+                <div className="small reward">
+                  {formatRushSeconds(seasonalEvent.ticksRemaining)}s left
+                  {seasonalEvent.banner ? ` · ${seasonalEvent.banner}` : ""}
+                </div>
+              </div>
+              <span className="num">Event</span>
+            </li>
+          )}
+          <li>
+            <div className="grow">
+              <strong>Pier bank</strong>
+              {!bank.unlocked ? (
+                <div className="small danger">{bank.lockedReason ?? "Locked"}</div>
+              ) : bank.loanOwed > 0 ? (
+                <>
+                  <div className="small">
+                    Owed {formatCoins(bank.loanOwed)}
+                    {bank.loanOverdue
+                      ? " · overdue (auto-collect)"
+                      : ` · due in ${formatRushSeconds(bank.loanDueTicksLeft)}s`}
+                  </div>
+                  <button
+                    className="button"
+                    disabled={!bank.canRepayLoan}
+                    onClick={onRepayLoan}
+                  >
+                    Repay · up to {formatCoins(Math.min(coins, bank.loanOwed))}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="small">
+                    Borrow {formatCoins(bank.loanPrincipal)} · repay {formatCoins(bank.repayAmount)}
+                    {" "}in {formatRushSeconds(bank.termTicks)}s
+                  </div>
+                  <button
+                    className="button"
+                    disabled={!bank.canTakeLoan}
+                    onClick={onTakeLoan}
+                  >
+                    Take loan · {formatCoins(bank.loanPrincipal)}
+                  </button>
+                </>
+              )}
+            </div>
+            <span className="num">Bank</span>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Coin goal</strong>
+              <div className="small">
+                {bank.coinGoal > 0
+                  ? bank.coinGoalCelebrated
+                    ? `Reached ${formatCoins(bank.coinGoal)}`
+                    : `${formatCoins(coins)} / ${formatCoins(bank.coinGoal)}`
+                  : "Pick a savings target"}
+              </div>
+              {bank.coinGoal > 0 && !bank.coinGoalCelebrated && (
+                <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={bank.coinGoal} aria-valuenow={Math.min(coins, bank.coinGoal)}>
+                  <div style={{ width: `${Math.min(100, Math.max(0, (coins / Math.max(1, bank.coinGoal)) * 100))}%` }} />
+                </div>
+              )}
+              <div className="row wrap" style={{ gap: 6, marginTop: 6 }}>
+                {bank.goalPresets.map((amount) => (
+                  <button
+                    key={amount}
+                    className={`button ghost${bank.coinGoal === amount ? " active" : ""}`}
+                    onClick={() => onSetCoinGoal(amount)}
+                  >
+                    {formatCoins(amount)}
+                  </button>
+                ))}
+                {bank.coinGoal > 0 && (
+                  <button className="button ghost" onClick={() => onSetCoinGoal(0)}>
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+            <span className="num">Goal</span>
+          </li>
           <li>
             <div className="grow">
               <strong>Trophy board</strong>
@@ -993,6 +1183,32 @@ function QuestLogPanel({
               </li>
             );
           })}
+          <li>
+            <div className="grow">
+              <strong>Shop decor</strong>
+              <div className="small muted">
+                Placable cosmetics
+                {decorPatienceBonusTicks > 0 ? ` · +${decorPatienceBonusTicks} customer patience` : ""}
+              </div>
+            </div>
+          </li>
+          {decorOffers.map((d) => (
+            <li key={d.id}>
+              <div className="grow">
+                <strong>{d.name}</strong>
+                <div className="small">{d.description}</div>
+                <div className="small reward">+{d.patienceBonusTicks} patience · {formatCoins(d.cost)} coins</div>
+                {d.reason && <div className="small danger">{d.reason}</div>}
+              </div>
+              {d.status === "owned" ? (
+                <span className="owned">Owned</span>
+              ) : (
+                <button className="button" disabled={!d.canAfford} onClick={() => onPurchaseDecor(d.id)}>
+                  Buy
+                </button>
+              )}
+            </li>
+          ))}
         </ul>
       </div>
     </div>
@@ -1071,13 +1287,16 @@ function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLe
   );
 }
 
-function StaffPanel({ staff, workersOnDuty, wagePerWorkerPerHour, maintenanceCoinsPerStation, economyUnlocked, bagFishSpoilActive, coins, onHire, onClose }: {
-  staff: StaffHireView[]; workersOnDuty: number; wagePerWorkerPerHour: number;
-  maintenanceCoinsPerStation: number; economyUnlocked: boolean; bagFishSpoilActive: boolean;
-  coins: number; onHire: (roleId: string) => void; onClose: () => void;
+function StaffPanel({ staff, workers, staffGear, automationIssues, stations, onShiftCount, freeOnShiftSlots, overtimeOnShiftCount, wagePerWorkerPerHour, maintenanceCoinsPerStation, economyUnlocked, bagFishSpoilActive, coins, onHire, onSetShift, onAssignGear, onUnequipGear, onRepair, onClose }: {
+  staff: StaffHireView[]; workers: WorkerView[]; staffGear: StaffGearView[]; automationIssues: AutomationIssueView[]; stations: StationView[]; onShiftCount: number; freeOnShiftSlots: number; overtimeOnShiftCount: number;
+  wagePerWorkerPerHour: number; maintenanceCoinsPerStation: number; economyUnlocked: boolean; bagFishSpoilActive: boolean;
+  coins: number; onHire: (roleId: string) => void; onSetShift: (workerId: string, onShift: boolean) => void;
+  onAssignGear: (workerId: string, upgradeId: string) => void; onUnequipGear: (workerId: string, slotId: string) => void;
+  onRepair: (stationId: string) => void; onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => closeRef.current?.focus(), []);
+  const freeGear = staffGear.filter((g) => !g.equippedOnWorkerId);
   return (
     <div className="scrim" onClick={onClose}>
       <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Staff" onClick={(e) => e.stopPropagation()}>
@@ -1085,8 +1304,9 @@ function StaffPanel({ staff, workersOnDuty, wagePerWorkerPerHour, maintenanceCoi
           <div className="grow">
             <h2>Staff</h2>
             <div className="small muted">
-              {workersOnDuty} on duty
-              {wagePerWorkerPerHour > 0 ? ` · ${wagePerWorkerPerHour} coins/hr each` : ""}
+              {onShiftCount} on shift · {freeOnShiftSlots} free slots
+              {overtimeOnShiftCount > 0 ? ` · ${overtimeOnShiftCount} overtime` : ""}
+              {wagePerWorkerPerHour > 0 ? ` · ${wagePerWorkerPerHour} coins/hr` : ""}
               {economyUnlocked && maintenanceCoinsPerStation > 0 ? ` · upkeep ${maintenanceCoinsPerStation}/station` : ""}
               {bagFishSpoilActive ? " · bag fish spoil" : ""}
             </div>
@@ -1094,6 +1314,95 @@ function StaffPanel({ staff, workersOnDuty, wagePerWorkerPerHour, maintenanceCoi
           <span className="num">{formatCoins(coins)} coins</span>
           <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
         </div>
+        {workers.length > 0 && (
+          <ul className="upgrade-list">
+            {workers.map((w) => (
+              <li key={w.id}>
+                <div className="grow">
+                  <strong>{w.roleName} · Lv {w.level}</strong>
+                  <div className="small">
+                    {w.xpToNext === null ? "Max level" : `${w.xpToNext} XP to next`}
+                    {w.traitNames.length > 0 ? ` · ${w.traitNames.join(", ")}` : ""}
+                  </div>
+                  {w.blockedReason && <div className="small danger">{w.blockedReason}</div>}
+                  {w.equipment.length > 0 && (
+                    <div className="small">
+                      {w.equipment.map((eq) => (
+                        <button
+                          key={eq.slotId}
+                          className="button ghost"
+                          style={{ marginRight: 4, marginTop: 4 }}
+                          onClick={() => onUnequipGear(w.id, eq.slotId)}
+                          title={`Unequip ${eq.upgradeName}`}
+                        >
+                          {eq.slotName}: {eq.upgradeName} ×
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {freeGear.length > 0 && (
+                    <div className="small">
+                      {freeGear.map((g) => (
+                        <button
+                          key={g.upgradeId}
+                          className="button ghost"
+                          style={{ marginRight: 4, marginTop: 4 }}
+                          onClick={() => onAssignGear(w.id, g.upgradeId)}
+                        >
+                          Equip {g.slotName}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  className="button ghost"
+                  onClick={() => onSetShift(w.id, !w.onShift)}
+                >
+                  {w.onShift ? "On shift" : "Off shift"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {staffGear.length > 0 && (
+          <div className="small muted" style={{ marginBottom: 8 }}>
+            Gear: {staffGear.map((g) =>
+              g.equippedOnRoleName
+                ? `${g.name} → ${g.equippedOnRoleName}`
+                : `${g.name} (free)`,
+            ).join(" · ")}
+          </div>
+        )}
+        {automationIssues.length > 0 && (
+          <ul className="upgrade-list">
+            {automationIssues.map((issue) => {
+              const station = issue.kind === "machine"
+                ? stations.find((s) => s.stationId === issue.id)
+                : undefined;
+              const canRepair = !!station?.needsRepair;
+              return (
+                <li key={`${issue.kind}:${issue.id}`}>
+                  <div className="grow">
+                    <strong>{issue.label}</strong>
+                    <div className="small danger">{issue.reason}</div>
+                  </div>
+                  {canRepair ? (
+                    <button
+                      className="button num"
+                      disabled={coins < (station?.repairCost ?? 0)}
+                      onClick={() => onRepair(issue.id)}
+                    >
+                      Repair · {formatCoins(station!.repairCost)}
+                    </button>
+                  ) : (
+                    <span className="small muted">{issue.kind}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
         <ul className="upgrade-list">
           {staff.map((row) => (
             <li key={row.roleId}>
@@ -1123,9 +1432,6 @@ function MessageTicker({ host }: { host: GameHost }) {
 }
 
 /** Portrait gameplay is later scope (blueprint "Responsive layout"): suggest rotating. */
-function RotateHint() {
-  return <div className="rotate-hint panel">Rotate your device to landscape to play.</div>;
-}
 
 function CenterCard({ title, children, danger }: { title: string; children: React.ReactNode; danger?: boolean }) {
   return (

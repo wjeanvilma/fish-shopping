@@ -29,8 +29,11 @@ export const Stats = {
   WORKERS_HIRED: "stat.workers_hired",
   WORKER_FISH_CAUGHT: "stat.worker_fish_caught",
   WORKER_ITEMS_MOVED: "stat.worker_items_moved",
+  WORKER_XP: "stat.worker_xp",
+  WORKER_LEVEL_UPS: "stat.worker_level_ups",
   LEASES_EXPIRED: "stat.leases_expired",
   WAGES_PAID: "stat.wages_paid",
+  OVERTIME_WAGES: "stat.overtime_wages",
   QUESTS_COMPLETED: "stat.quests_completed",
   CONTRACTS_COMPLETED: "stat.contracts_completed",
   CONTRACTS_FAILED: "stat.contracts_failed",
@@ -43,6 +46,16 @@ export const Stats = {
   TROPHY_SPECIES: "stat.trophy_species",
   TROPHY_RECORDS: "stat.trophy_records",
   TROPHY_SETS_COMPLETE: "stat.trophy_sets_complete",
+  DECOR_BOUGHT: "stat.decor_bought",
+  MACHINES_BROKEN: "stat.machines_broken",
+  MACHINES_SLOWED: "stat.machines_slowed",
+  MACHINES_REPAIRED: "stat.machines_repaired",
+  REPAIR_SPENT: "stat.repair_spent",
+  LOANS_TAKEN: "stat.loans_taken",
+  LOAN_INTEREST_ACCRUED: "stat.loan_interest_accrued",
+  LOAN_REPAID: "stat.loan_repaid",
+  LOAN_COLLECTED: "stat.loan_collected",
+  COIN_GOALS_REACHED: "stat.coin_goals_reached",
 } as const;
 
 /** Personal-best specimen mounted on the museum board for one species. */
@@ -58,10 +71,13 @@ export const STAT_KEYS: readonly string[] = [
   Stats.SALES, Stats.ITEMS_SOLD, Stats.REVENUE, Stats.LOST_CUSTOMERS, Stats.UPGRADES_BOUGHT,
   Stats.TIMING_BONUSES, Stats.PERFECT_REELS, Stats.GOOD_REELS, Stats.BAIT_BOUGHT, Stats.BAIT_USED, Stats.RARE_CATCHES,
   Stats.PREMIUM_SALES, Stats.BULK_SALES, Stats.TOURIST_SALES, Stats.WHOLESALER_SALES, Stats.CRITIC_SALES, Stats.NIGHT_SALES, Stats.UNMET_PREFERENCE_SALES,
-  Stats.WORKERS_HIRED, Stats.WORKER_FISH_CAUGHT, Stats.WORKER_ITEMS_MOVED, Stats.LEASES_EXPIRED, Stats.WAGES_PAID,
+  Stats.WORKERS_HIRED, Stats.WORKER_FISH_CAUGHT, Stats.WORKER_ITEMS_MOVED, Stats.WORKER_XP, Stats.WORKER_LEVEL_UPS,
+  Stats.LEASES_EXPIRED, Stats.WAGES_PAID, Stats.OVERTIME_WAGES,
   Stats.QUESTS_COMPLETED, Stats.CONTRACTS_COMPLETED, Stats.CONTRACTS_FAILED, Stats.CONTRACT_REVENUE,
   Stats.CONTRACT_ITEMS_DELIVERED, Stats.HARBORS_TRAVELED, Stats.MAINTENANCE_PAID, Stats.ITEMS_SPOILED,
-  Stats.PRESTIGE_COMPLETED, Stats.TROPHY_SPECIES, Stats.TROPHY_RECORDS, Stats.TROPHY_SETS_COMPLETE,
+  Stats.PRESTIGE_COMPLETED, Stats.TROPHY_SPECIES, Stats.TROPHY_RECORDS, Stats.TROPHY_SETS_COMPLETE, Stats.DECOR_BOUGHT,
+  Stats.MACHINES_BROKEN, Stats.MACHINES_SLOWED, Stats.MACHINES_REPAIRED, Stats.REPAIR_SPENT,
+  Stats.LOANS_TAKEN, Stats.LOAN_INTEREST_ACCRUED, Stats.LOAN_REPAID, Stats.LOAN_COLLECTED, Stats.COIN_GOALS_REACHED,
 ];
 
 export type WorkerTaskPhase = "NONE" | "WALK_TO_WORK" | "WORK" | "PICKUP" | "WALK_TO_DROP" | "DROP";
@@ -86,6 +102,16 @@ export class WorkerState {
   fishingSpecies: string | null = null;
   fishingProgress = 0;
   fishingCatchTicks = 0;
+  /** Lifetime XP toward staff levels (Phase 16). */
+  xp = 0;
+  /** Derived from XP; starts at 1. */
+  level = 1;
+  /** Hire-time trait IDs from content staffProgression.traits. */
+  traits: string[] = [];
+  /** When false the worker is hired but off shift (no AI, no wage) — Phase 17. */
+  onShift = true;
+  /** Equipped staff gear: loadout slot id → upgrade id (Phase 19). */
+  equipment: Record<string, string> = {};
   constructor(
     readonly id: string,
     readonly roleId: string,
@@ -130,7 +156,13 @@ export class FishingSpotState {
   constructor(readonly zoneId: string, public stock: number) {}
 }
 
-export type MachineStatus = "WAITING_FOR_INPUT" | "PROCESSING" | "OUTPUT_FULL" | "PAUSED" | "LOCKED";
+export type MachineStatus =
+  | "WAITING_FOR_INPUT"
+  | "PROCESSING"
+  | "OUTPUT_FULL"
+  | "PAUSED"
+  | "LOCKED"
+  | "NEEDS_REPAIR";
 
 export interface Batch {
   readonly id: string;
@@ -147,6 +179,17 @@ export class MachineState {
   /** Null = Auto; otherwise only this recipe may start. */
   preferredRecipeId: string | null = null;
   readonly recipeDurations = new Map<string, number>();
+  /**
+   * Ephemeral (not snapshotted): consecutive idle ticks while WAITING_FOR_INPUT / OUTPUT_FULL
+   * during a rush — Phase 20 automation alerts.
+   */
+  idleTicks = 0;
+  /** Ephemeral: tick when the last idle alert fired for this station (0 = never). */
+  lastIdleAlertTick = 0;
+  /** Phase 25: hard break — no new batches until repaired. */
+  broken = false;
+  /** Phase 25: process duration mult applies while tick < this (0 = none). */
+  slowUntilTick = 0;
   constructor(readonly stationId: string, readonly machineId: string, readonly input: Inventory, readonly output: Inventory) {}
 }
 
@@ -263,8 +306,12 @@ export class GameState {
   readonly completedQuests = new Set<string>();
   readonly completedPrestige = new Set<string>();
   readonly unlockedCosmetics = new Set<string>();
+  /** Phase 23 owned shop decor (placable cosmetics). */
+  readonly ownedDecor = new Set<string>();
   /** Best catch per species id (museum / trophy board). */
   readonly trophies = new Map<string, TrophyRecord>();
+  /** Phase 27 lifetime catches per species id (telemetry v2). */
+  readonly speciesCatches = new Map<string, number>();
   readonly stats = new Map<string, number>();
   readonly purchaseReceipts = new Map<string, Receipt>();
   readonly ledger: Receipt[] = [];
@@ -290,6 +337,18 @@ export class GameState {
   prestigePriceBonusPermille = 1000;
   /** Progress toward next station upkeep (not persisted). */
   maintenanceAccrualTicks = 0;
+  /** Progress toward next machine wear check (not persisted). */
+  wearAccrualTicks = 0;
+  /** Progress toward next overdue loan collection (not persisted). */
+  loanCollectionAccrualTicks = 0;
+  /** Phase 26 outstanding loan repayment (0 = none). */
+  loanOwed = 0;
+  /** Tick when the outstanding loan becomes overdue (0 when no loan). */
+  loanDueTick = 0;
+  /** Phase 26 player coin goal (0 = none). */
+  coinGoal = 0;
+  /** True after [coinGoal] has been celebrated for the current target. */
+  coinGoalCelebrated = false;
   /** Progress toward next counter spoilage (not persisted). */
   counterSpoilAccrualTicks = 0;
   /** Progress toward next bag fish spoilage (not persisted). */
@@ -311,6 +370,11 @@ export class GameState {
 
   stat(key: string): number { return this.stats.get(key) ?? 0; }
   bumpStat(key: string, by = 1): void { this.stats.set(key, SafeMath.add(this.stat(key), by)); }
+  /** Record a landed catch for telemetry species shares (Phase 27). */
+  recordSpeciesCatch(speciesId: string, by = 1): void {
+    if (by <= 0) return;
+    this.speciesCatches.set(speciesId, SafeMath.add(this.speciesCatches.get(speciesId) ?? 0, by));
+  }
   newId(prefix: string): string { return `${prefix}.${this.nextSerial++}`; }
 
   record(r: Receipt): void {
@@ -351,12 +415,22 @@ export class GameState {
 export type Command =
   | { type: "move"; x: number; z: number }
   | { type: "purchase_upgrade"; upgradeId: string; requestId: string }
+  | { type: "purchase_decor"; decorId: string; requestId: string }
+  | { type: "repair_machine"; stationId: string; requestId: string }
+  | { type: "take_loan"; requestId: string }
+  | { type: "repay_loan"; requestId: string }
+  | { type: "set_coin_goal"; amount: number }
   | { type: "buy_bait"; baitId: string; requestId: string }
   | { type: "select_bait"; baitId: string | null }
   | { type: "set_machine_paused"; stationId: string; paused: boolean }
   | { type: "reel" }
   | { type: "select_machine_recipe"; stationId: string; recipeId: string | null }
   | { type: "hire_worker"; roleId: string; requestId: string }
+  | { type: "set_worker_shift"; workerId: string; onShift: boolean }
+  /** Equip an owned staff-gear upgrade onto a worker (Phase 19). */
+  | { type: "assign_worker_gear"; workerId: string; upgradeId: string }
+  /** Remove gear from a worker loadout slot (Phase 19). */
+  | { type: "unequip_worker_gear"; workerId: string; slotId: string }
   /** Accept a posted contract offer; requestId makes retries idempotent. */
   | { type: "accept_contract"; offerId: string; requestId: string }
   /** Deliver matching items from the player bag toward an active contract. */
@@ -377,10 +451,30 @@ export type GameEvent =
   | { type: "customer_left"; tick: number; customerId: string; paid: boolean }
   | { type: "rush_started"; tick: number; rushId: string; name: string }
   | { type: "rush_ended"; tick: number; rushId: string; name: string }
+  | { type: "seasonal_event_started"; tick: number; eventId: string; name: string }
+  | { type: "seasonal_event_ended"; tick: number; eventId: string; name: string }
+  /** Station stayed WAITING_FOR_INPUT / OUTPUT_FULL too long during a rush (Phase 20). */
+  | { type: "machine_idle_alert"; tick: number; stationId: string; machineId: string; reason: string }
   | { type: "sale_committed"; tick: number; saleId: string; customerId: string; items: { item: string; quantity: number }[]; coins: number; customerTypeId?: string; priceMultPermille?: number; preferenceMet?: boolean; preferredProductId?: string | null }
   | { type: "upgrade_purchased"; tick: number; upgradeId: string; receipt: Receipt; replayed: boolean }
   | { type: "purchase_rejected"; tick: number; upgradeId: string; requestId: string; reason: string }
+  | { type: "decor_purchased"; tick: number; decorId: string; receipt: Receipt; replayed: boolean }
+  | { type: "decor_purchase_rejected"; tick: number; decorId: string; requestId: string; reason: string }
+  | { type: "machine_broke"; tick: number; stationId: string; machineId: string }
+  | { type: "machine_slowed"; tick: number; stationId: string; machineId: string; untilTick: number }
+  | { type: "machine_repaired"; tick: number; stationId: string; machineId: string; receipt: Receipt; replayed: boolean }
+  | { type: "machine_repair_rejected"; tick: number; stationId: string; requestId: string; reason: string }
+  | { type: "loan_taken"; tick: number; principal: number; owed: number; dueTick: number; receipt: Receipt; replayed: boolean }
+  | { type: "loan_repaid"; tick: number; paid: number; remaining: number; receipt: Receipt; replayed: boolean }
+  | { type: "loan_collected"; tick: number; seized: number; remaining: number }
+  | { type: "loan_rejected"; tick: number; requestId: string; reason: string }
+  | { type: "coin_goal_set"; tick: number; amount: number }
+  | { type: "coin_goal_reached"; tick: number; amount: number; coins: number }
   | { type: "worker_hired"; tick: number; roleId: string; receipt: Receipt; replayed: boolean }
+  | { type: "worker_leveled_up"; tick: number; workerId: string; roleId: string; level: number }
+  | { type: "worker_shift_changed"; tick: number; workerId: string; roleId: string; onShift: boolean }
+  | { type: "worker_gear_assigned"; tick: number; workerId: string; upgradeId: string; slotId: string }
+  | { type: "worker_gear_unequipped"; tick: number; workerId: string; upgradeId: string; slotId: string }
   | { type: "hire_rejected"; tick: number; roleId: string; requestId: string; reason: string }
   | { type: "wages_paid"; tick: number; workers: number; coins: number }
   | { type: "lease_expired"; tick: number; workerId: string; itemId: string | null; sourceInvId: string | null }

@@ -470,6 +470,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         joystickScale: Float = settings.joystickScale,
         tapToMove: Boolean = settings.tapToMove,
         cloudSyncEnabled: Boolean = settings.cloudSyncEnabled,
+        showBalanceStrip: Boolean = settings.showBalanceStrip,
     ) {
         var next = GameSettings(
             muted = muted,
@@ -478,6 +479,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             joystickScale = GameSettings.clampScale(joystickScale),
             tapToMove = tapToMove,
             cloudSyncEnabled = cloudSyncEnabled,
+            showBalanceStrip = showBalanceStrip,
             cloudAccountId = settings.cloudAccountId,
         )
         if (next.cloudSyncEnabled && !cloud.available) {
@@ -525,8 +527,64 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun purchaseDecor(decorId: String) {
+        commands += Command.PurchaseDecor(decorId, UUID.randomUUID().toString())
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    fun repairMachine(stationId: String) {
+        commands += Command.RepairMachine(stationId, UUID.randomUUID().toString())
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    fun takeLoan() {
+        commands += Command.TakeLoan(UUID.randomUUID().toString())
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    fun repayLoan() {
+        commands += Command.RepayLoan(UUID.randomUUID().toString())
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    fun setCoinGoal(amount: Long) {
+        commands += Command.SetCoinGoal(amount)
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
     fun hire(roleId: String) {
         commands += Command.HireWorker(roleId, UUID.randomUUID().toString())
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    fun setWorkerShift(workerId: String, onShift: Boolean) {
+        commands += Command.SetWorkerShift(workerId, onShift)
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    fun assignWorkerGear(workerId: String, upgradeId: String) {
+        commands += Command.AssignWorkerGear(workerId, upgradeId)
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    fun unequipWorkerGear(workerId: String, slotId: String) {
+        commands += Command.UnequipWorkerGear(workerId, slotId)
         if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
@@ -637,6 +695,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     _messages.tryEmit("${e.name}!")
                     transaction = true
                 }
+                is GameEvent.MachineIdleAlert -> {
+                    val name = s.content.machinesById[e.machineId]?.name ?: e.stationId
+                    _messages.tryEmit("$name: ${e.reason}")
+                    transaction = true
+                }
                 is GameEvent.UpgradePurchased -> if (!e.replayed) {
                     _messages.tryEmit("Bought ${s.content.upgradesById[e.upgradeId]?.name ?: e.upgradeId}")
                     transaction = true
@@ -645,6 +708,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 is GameEvent.WorkerHired -> if (!e.replayed) {
                     _messages.tryEmit("Hired ${s.content.workersById[e.roleId]?.name ?: e.roleId}")
                     transaction = true
+                }
+                is GameEvent.WorkerLeveledUp -> {
+                    val name = s.content.workersById[e.roleId]?.name ?: e.roleId
+                    _messages.tryEmit("$name reached level ${e.level}")
+                }
+                is GameEvent.WorkerShiftChanged -> {
+                    val name = s.content.workersById[e.roleId]?.name ?: e.roleId
+                    _messages.tryEmit(if (e.onShift) "$name on shift" else "$name off shift")
                 }
                 is GameEvent.HireRejected -> { _messages.tryEmit(e.reason); transaction = true }
                 is GameEvent.WagesPaid -> {

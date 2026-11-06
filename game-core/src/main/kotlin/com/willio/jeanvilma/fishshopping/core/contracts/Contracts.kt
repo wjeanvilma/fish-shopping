@@ -217,7 +217,7 @@ object ContractSystem {
         s.contractOffers.clear()
         val activeTemplates = s.activeContracts.map { it.templateId }.toSet()
         val pool = def.templates.filter { t ->
-            t.id !in activeTemplates && templateEligibleForBoard(s, t)
+            t.id !in activeTemplates && templateEligibleForBoard(ctx.content, s, t)
         }.toMutableList()
         val slots = min(def.boardSlots, pool.size)
         repeat(slots) {
@@ -230,7 +230,15 @@ object ContractSystem {
         ctx.emit(GameEvent.ContractBoardRefreshed(s.tick, s.contractOffers.map { it.id }))
     }
 
-    private fun templateEligibleForBoard(s: GameState, t: ContractTemplateDef): Boolean {
+    private fun templateEligibleForBoard(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+        t: ContractTemplateDef,
+    ): Boolean {
+        t.requiresSeasonalEvent?.let { eventId ->
+            val active = com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem.active(content, s.tick)
+            if (active?.id != eventId) return false
+        }
         if (!t.isStanding) return true
         return s.tick >= standingCooldownUntil(s, t.id)
     }

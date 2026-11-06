@@ -137,12 +137,71 @@ object ContentLoader {
                 requires = w["requires"].list { it.string() },
             )
         },
+        staffProgression = r["staffProgression"].let { sp ->
+            StaffProgressionDef(
+                maxLevel = sp["maxLevel"].int(min = 1, max = 10),
+                xpThresholds = sp["xpThresholds"].list { it.int(min = 0) },
+                moveSpeedPermillePerLevel = sp["moveSpeedPermillePerLevel"].int(min = 0),
+                catchSpeedPermillePerLevel = sp["catchSpeedPermillePerLevel"].int(min = 0),
+                carryBonusEveryLevels = sp["carryBonusEveryLevels"].int(min = 1),
+                xpFishCaught = sp["xpFishCaught"].int(min = 0),
+                xpItemMoved = sp["xpItemMoved"].int(min = 0),
+                xpSaleAssisted = sp["xpSaleAssisted"].int(min = 0),
+                traitsOnHire = sp["traitsOnHire"].int(min = 0, max = 3),
+                shifts = sp["shifts"].let { sh ->
+                    StaffShiftsDef(
+                        baseOnShiftSlots = sh["baseOnShiftSlots"].int(min = 1),
+                        overtimeWagePermille = sh["overtimeWagePermille"].int(min = 1),
+                        supervisorExtraSlots = sh["supervisorExtraSlots"].int(min = 0),
+                    )
+                },
+                roleBuffs = sp["roleBuffs"].let { rb ->
+                    StaffRoleBuffsDef(
+                        greeterPatienceDrainMultPermille = rb["greeterPatienceDrainMultPermille"].int(min = 1),
+                        smokerSpecialistProcessSpeedPermille =
+                            rb["smokerSpecialistProcessSpeedPermille"].int(min = 1),
+                        iceRunnerFragileSpoilTierMin = rb["iceRunnerFragileSpoilTierMin"].int(min = 1, max = 3),
+                        iceRunnerSpoilScoreBonus = rb["iceRunnerSpoilScoreBonus"].int(min = 0),
+                    )
+                },
+                loadouts = sp["loadouts"].let { lo ->
+                    StaffLoadoutsDef(
+                        slots = lo["slots"].list { slot ->
+                            StaffLoadoutSlotDef(
+                                id = slot["id"].string(),
+                                name = slot["name"].string(),
+                                upgradeIds = slot["upgradeIds"].list { it.string() },
+                            )
+                        },
+                    )
+                },
+                traits = sp["traits"].list { t ->
+                    WorkerTraitDef(
+                        id = t["id"].string(),
+                        name = t["name"].string(),
+                        description = t["description"].string(),
+                        weight = t["weight"].int(min = 1),
+                        moveSpeedPermille = t.optional("moveSpeedPermille")?.int(min = 1) ?: 1000,
+                        catchSpeedPermille = t.optional("catchSpeedPermille")?.int(min = 1) ?: 1000,
+                        carryBonus = t.optional("carryBonus")?.int(min = 0) ?: 0,
+                        transferIntervalMultPermille =
+                            t.optional("transferIntervalMultPermille")?.int(min = 1) ?: 1000,
+                    )
+                },
+            )
+        },
         routing = r["routing"].let { rt ->
             RoutingDef(
                 urgencyWeight = rt["urgencyWeight"].int(min = 0),
                 distanceWeight = rt["distanceWeight"].int(min = 0),
                 demandWeight = rt["demandWeight"].int(min = 0),
                 supervisorDemandBoostPermille = rt["supervisorDemandBoostPermille"].int(min = 1),
+            )
+        },
+        automationAlerts = r["automationAlerts"].let { a ->
+            AutomationAlertsDef(
+                machineIdleTicksDuringRush = a["machineIdleTicksDuringRush"].int(min = 1),
+                alertCooldownTicks = a["alertCooldownTicks"].int(min = 1),
             )
         },
         offline = r["offline"].let { o ->
@@ -161,6 +220,17 @@ object ContentLoader {
                 bagFishSpoilPeriodTicks = e["bagFishSpoilPeriodTicks"].int(min = 1),
                 bagFishSpoilUnits = e["bagFishSpoilUnits"].int(min = 0),
                 scarcityPriceCurvePermille = e["scarcityPriceCurvePermille"].list { it.int(min = 1) },
+                wear = e["wear"].let { w ->
+                    MachineWearDef(
+                        requires = w["requires"].list { it.string() },
+                        checkPeriodTicks = w["checkPeriodTicks"].int(min = 1),
+                        chancePermille = w["chancePermille"].int(min = 0, max = 1000),
+                        breakChancePermille = w["breakChancePermille"].int(min = 0, max = 1000),
+                        slowDurationTicks = w["slowDurationTicks"].int(min = 1),
+                        slowProcessMultPermille = w["slowProcessMultPermille"].int(min = 1000),
+                        repairCoins = w["repairCoins"].long(min = 0),
+                    )
+                },
             )
         },
         ecology = r["ecology"].let { e ->
@@ -252,6 +322,7 @@ object ContentLoader {
                         penaltyEscalatePermille = t.optional("penaltyEscalatePermille")?.int(min = 1) ?: 1000,
                         maxStreak = t.optional("maxStreak")?.int(min = 1) ?: 1,
                         failCooldownTicks = t.optional("failCooldownTicks")?.int(min = 1) ?: 1,
+                        requiresSeasonalEvent = t.optional("requiresSeasonalEvent")?.string(),
                     )
                 },
             )
@@ -281,6 +352,47 @@ object ContentLoader {
             }
             TutorialStepDef(t["id"].string(), t["text"].string(), trigger)
         },
+        decor = r["decor"].let { d ->
+            DecorCatalog(
+                items = d["items"].list { it ->
+                    DecorDef(
+                        id = it["id"].string(),
+                        name = it["name"].string(),
+                        description = it["description"].string(),
+                        cost = it["cost"].long(min = 0),
+                        requiresCosmetic = it.optional("requiresCosmetic")?.string(),
+                        patienceBonusTicks = it.optional("patienceBonusTicks")?.int(min = 0) ?: 0,
+                    )
+                },
+            )
+        },
+        seasonalEvents = r["seasonalEvents"].let { se ->
+            SeasonalEventsCatalog(
+                events = se["events"].list { e ->
+                    SeasonalEventDef(
+                        id = e["id"].string(),
+                        name = e["name"].string(),
+                        description = e["description"].string(),
+                        periodTicks = e["periodTicks"].int(min = 1),
+                        startTick = e["startTick"].int(min = 0),
+                        durationTicks = e["durationTicks"].int(min = 1),
+                        banner = e.optional("banner")?.string(),
+                        speciesWeightMultPermille = e.optional("speciesWeightMultPermille")?.stringIntMap()
+                            ?: emptyMap(),
+                    )
+                },
+            )
+        },
+        bank = r["bank"].let { b ->
+            BankDef(
+                requires = b["requires"].list { it.string() },
+                loanPrincipal = b["loanPrincipal"].long(min = 1),
+                repayPermille = b["repayPermille"].int(min = 1000),
+                termTicks = b["termTicks"].int(min = 1),
+                collectionPeriodTicks = b["collectionPeriodTicks"].int(min = 1),
+                goalPresets = b["goalPresets"].list { it.long(min = 1) },
+            )
+        },
         harbors = r["harbors"].list(::harbor),
     )
 
@@ -307,6 +419,7 @@ object ContentLoader {
         "fish_regen" -> UpgradeEffect.FishRegen(n["speedPermille"].int(min = 1))
         "unlock_fishing_spot" -> UpgradeEffect.UnlockFishingSpot(n["zone"].string())
         "unlock_machine" -> UpgradeEffect.UnlockMachine(n["machine"].string())
+        "unlock_counter" -> UpgradeEffect.UnlockCounter(n["pad"].string())
         "worker_move_speed" -> UpgradeEffect.WorkerMoveSpeed(n["speedPermille"].int(min = 1))
         "worker_carry" -> UpgradeEffect.WorkerCarry(n["capacityUnits"].int(min = 1))
         "worker_catch_speed" -> UpgradeEffect.WorkerCatchSpeed(n["speedPermille"].int(min = 1))
@@ -357,6 +470,8 @@ object ContentLoader {
                 c["id"].string(), c["products"].list { it.string() }, c["capacityUnits"].int(min = 1), c["zone"].string(),
                 c["checkoutTicks"].int(min = 1), c["maxQueue"].int(min = 1),
                 point(c["queueAnchor"]), point(c["queueStep"]),
+                kind = c.optional("kind")?.string()?.let { CounterKind.fromWire(it) } ?: CounterKind.RETAIL,
+                requiresUpgrade = c.optional("requiresUpgrade")?.string(),
             )
         },
         customerSpawnTicks = h["customerSpawnTicks"].int(min = 1),
@@ -373,6 +488,16 @@ object ContentLoader {
                 spawnSpeedPermille = r["spawnSpeedPermille"].int(min = 1),
                 queueBonus = r["queueBonus"].int(min = 0, max = 16),
                 priceMultPermille = r.optional("priceMultPermille")?.int(min = 1) ?: 1000,
+            )
+        },
+        specialization = h.optional("specialization")?.let { sp ->
+            HarborSpecializationDef(
+                id = sp["id"].string(),
+                name = sp["name"].string(),
+                description = sp["description"].string(),
+                maintenanceDiscountPerStation = sp.optional("maintenanceDiscountPerStation")?.int(min = 0) ?: 0,
+                rareChanceBonusPermille = sp.optional("rareChanceBonusPermille")?.int(min = 0, max = 1000) ?: 0,
+                kindSpawnMultPermille = sp.optional("kindSpawnMultPermille")?.stringIntMap() ?: emptyMap(),
             )
         },
     )

@@ -2,6 +2,7 @@ package com.willio.jeanvilma.fishshopping.core.customers
 
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
 import com.willio.jeanvilma.fishshopping.core.content.CounterDef
+import com.willio.jeanvilma.fishshopping.core.content.CounterKind
 import com.willio.jeanvilma.fishshopping.core.content.CustomerDef
 import com.willio.jeanvilma.fishshopping.core.content.CustomerKind
 import com.willio.jeanvilma.fishshopping.core.content.HarborDef
@@ -37,8 +38,14 @@ import kotlin.math.max
  * tick cost is the sum of per-segment ceil(dist/speed). Leaving is presentation-only.
  *
  * Cashier (Phase 12): a worker in WORK at the counter zone can serve instead of the player.
+ *
+ * Wholesale pad (Phase 15): second sell point gated by upgrade; spawn routes
+ * wholesalers to unlocked wholesale counters when space allows.
  */
 object CustomerSystem {
+
+    fun isUnlocked(def: CounterDef, state: GameState): Boolean =
+        def.requiresUpgrade == null || def.requiresUpgrade in state.ownedUpgrades
 
     fun step(ctx: StepContext) {
         announceRushTransitions(ctx)
@@ -78,7 +85,7 @@ object CustomerSystem {
             val counter = s.counters.first { it.counterId == c.counterId }
             val def = ctx.harbor.counters.first { it.id == c.counterId }
             val type = ctx.content.customersById.getValue(c.typeId)
-            val drain = patienceDrain(c, counter, def, type.unmetPatienceDrainPermille)
+            val drain = patienceDrain(ctx, c, counter, def, type.unmetPatienceDrainPermille)
             c.patienceLeft -= drain
             if (c.patienceLeft <= 0) leaving += c
         }
@@ -128,17 +135,26 @@ object CustomerSystem {
     }
 
     private fun patienceDrain(
+        ctx: StepContext,
         c: CustomerState,
         counter: CounterState,
         def: CounterDef,
         unmetDrainPermille: Int,
     ): Int {
-        val pref = c.preferredProductId ?: return 1
+        val pref = c.preferredProductId
         val stillNeeds = c.wants - c.reserved
-        if (stillNeeds <= 0) return 1
-        val prefAvailable = if (def.accepts(pref)) counter.stock.available(pref) else 0
-        if (prefAvailable > 0) return 1
-        return (unmetDrainPermille / 1000).coerceAtLeast(1)
+        var drain = if (pref == null || stillNeeds <= 0) {
+            1
+        } else {
+            val prefAvailable = if (def.accepts(pref)) counter.stock.available(pref) else 0
+            if (prefAvailable > 0) 1
+            else (unmetDrainPermille / 1000).coerceAtLeast(1)
+        }
+        if (com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem.greeterOnDuty(ctx.content, ctx.state)) {
+            val mult = ctx.content.staffProgression.roleBuffs.greeterPatienceDrainMultPermille
+            drain = ((drain.toLong() * mult) / 1000L).toInt().coerceAtLeast(1)
+        }
+        return drain
     }
 
     private fun releaseAll(c: CustomerState, counter: CounterState) {
@@ -184,6 +200,19 @@ object CustomerSystem {
             counter.stock.takeReserved(itemId, qty)
         }
         c.clearReservations()
+        // Phase 16: on-duty cashier at this pad earns XP for the assist.
+        val counterZone = ctx.harbor.counters.first { it.id == counter.counterId }.zone
+        ctx.state.workers.firstOrNull { w ->
+            val role = ctx.content.workersById[w.roleId]?.role
+            role == WorkerRoleKind.CASHIER &&
+                !w.busyWalking &&
+                w.phase == WorkerTaskPhase.WORK &&
+                w.taskZoneId == counterZone
+        }?.let { cashier ->
+            com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem.grantXp(
+                ctx, cashier, ctx.content.staffProgression.xpSaleAssisted,
+            )
+        }
         ctx.emit(
             GameEvent.SaleCommitted(
                 s.tick, saleId, c.id, items, amount,
@@ -266,27 +295,55 @@ object CustomerSystem {
         if (++s.customerSpawnProgress < interval) return
         s.customerSpawnProgress = 0
         val rush = activeRush(ctx.harbor, s.tick)
-        val counterDef = ctx.harbor.counters.firstOrNull { d ->
-            s.customers.count { it.counterId == d.id } < effectiveMaxQueue(d, rush)
-        } ?: return
-        val types = ctx.content.customers
-        val type = types[s.rng.pickWeighted(types.map { effectiveSpawnWeight(ctx.content, s, it) })]
-        val wants = s.rng.nextInRange(type.basketMin, type.basketMax)
-        val preferred = if (type.preferredProducts.isEmpty()) null
-        else {
-            val pick = type.preferredProducts[s.rng.pickWeighted(type.preferredProducts.map { it.weight })]
-            // Only keep preferences the destination counter can sell.
-            pick.item.takeIf { counterDef.accepts(it) }
+        val open = ctx.harbor.counters.filter { d ->
+            isUnlocked(d, s) &&
+                s.customers.count { it.counterId == d.id } < effectiveMaxQueue(d, rush)
         }
+        if (open.isEmpty()) return
+        val types = ctx.content.customers
+        val type = types[s.rng.pickWeighted(types.map { effectiveSpawnWeight(ctx.content, s, ctx.harbor, it) })]
+        val wants = s.rng.nextInRange(type.basketMin, type.basketMax)
+        val preferredRoll = if (type.preferredProducts.isEmpty()) null
+        else type.preferredProducts[s.rng.pickWeighted(type.preferredProducts.map { it.weight })].item
+        val counterDef = pickCounter(open, type, preferredRoll, s) ?: return
+        val preferred = preferredRoll?.takeIf { counterDef.accepts(it) }
         val slot = counterDef.queueSlot(s.customers.count { it.counterId == counterDef.id })
         val path = approachPath(ctx.harbor, slot)
+        val patience = type.patienceTicks +
+            com.willio.jeanvilma.fishshopping.core.world.DecorSystem.patienceBonusTicks(ctx.content, s)
         val c = CustomerState(
-            s.newId("customer"), type.id, counterDef.id, wants, type.patienceTicks,
+            s.newId("customer"), type.id, counterDef.id, wants, patience,
             pathWalkTicks(path, ctx.harbor.customerWalkMmPerTick),
             preferredProductId = preferred,
         )
         s.customers += c
         ctx.emit(GameEvent.CustomerArrived(s.tick, c.id, counterDef.id))
+    }
+
+    /**
+     * Choose an open unlocked counter: wholesalers prefer wholesale pads;
+     * others prefer a pad that can sell their preferred SKU; then least queue.
+     */
+    fun pickCounter(
+        open: List<CounterDef>,
+        type: CustomerDef,
+        preferred: String?,
+        state: GameState,
+    ): CounterDef? {
+        if (open.isEmpty()) return null
+        val matching = preferred?.let { p -> open.filter { it.accepts(p) } }.orEmpty()
+        val wholesale = open.filter { it.kind == CounterKind.WHOLESALE }
+        val pool = when {
+            type.kind == CustomerKind.WHOLESALER && matching.any { it.kind == CounterKind.WHOLESALE } ->
+                matching.filter { it.kind == CounterKind.WHOLESALE }
+            type.kind == CustomerKind.WHOLESALER && wholesale.isNotEmpty() -> wholesale
+            matching.isNotEmpty() -> matching
+            else -> open
+        }
+        return pool.minWithOrNull(
+            compareBy<CounterDef> { d -> state.customers.count { it.counterId == d.id } }
+                .thenBy { it.id },
+        )
     }
 
     /** True when a cashier is on duty at [counterZoneId] (arrived, not walking). */
@@ -314,14 +371,24 @@ object CustomerSystem {
         return max(1, ((harbor.customerSpawnTicks.toLong() * 1000L) / rush.spawnSpeedPermille).toInt())
     }
 
-    /** Base spawn weight scaled by day-part (Phase 11) and reputation kind bias (Phase 13). */
-    fun effectiveSpawnWeight(content: ContentPack, state: GameState, type: CustomerDef): Int {
+    /**
+     * Base spawn weight scaled by day-part (Phase 11), reputation kind bias (Phase 13),
+     * and harbor specialization kind multipliers (Phase 22).
+     */
+    fun effectiveSpawnWeight(
+        content: ContentPack,
+        state: GameState,
+        harbor: HarborDef,
+        type: CustomerDef,
+    ): Int {
         val part = FishingSystem.dayPartAt(content, state.tick)
         val dayMult = type.dayPartSpawnMultPermille[part.id] ?: 1000
         val repMult = ReputationSystem.kindSpawnMultPermille(content, state, type.kind)
+        val harborMult = harbor.specialization?.kindSpawnMultPermille?.get(type.kind.wire) ?: 1000
         var weight = type.spawnWeight.toLong()
         weight = (weight * dayMult.toLong()) / 1000L
         weight = (weight * repMult.toLong()) / 1000L
+        weight = (weight * harborMult.toLong()) / 1000L
         return max(1, weight.toInt())
     }
 

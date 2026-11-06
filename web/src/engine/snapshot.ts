@@ -10,7 +10,7 @@ import {
   ContractState, CounterState, CustomerState, FishingSpotState, GameState, MachineState, WorkerState,
   type HarborWorldStash, type MachineStatus, type Receipt, type WorkerTaskPhase,
 } from "./state";
-import { FishingSystem, PrestigeSystem, TrophySystem, UpgradeSystem } from "./systems";
+import { FishingSystem, PrestigeSystem, TrophySystem, UpgradeSystem, WorkerSystem } from "./systems";
 
 export class SnapshotError extends Error {}
 
@@ -64,6 +64,8 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
       paused: m.paused,
       status: m.status,
       preferredRecipeId: m.preferredRecipeId,
+      broken: m.broken,
+      slowUntilTick: m.slowUntilTick,
       input: inv(m.input),
       output: inv(m.output),
       activeBatch: m.activeBatch
@@ -99,6 +101,11 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
       fishingSpecies: w.fishingSpecies,
       fishingProgress: w.fishingProgress,
       fishingCatchTicks: w.fishingCatchTicks,
+      xp: w.xp,
+      level: w.level,
+      traits: [...w.traits],
+      onShift: w.onShift,
+      equipment: encodeEquipment(w.equipment),
     })),
     contractBoardRefreshAt: s.contractBoardRefreshAt,
     contractOffers: s.contractOffers.map((o) => ({
@@ -115,6 +122,19 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
     completedQuests: [...s.completedQuests].sort(compareStrings),
     completedPrestige: [...s.completedPrestige].sort(compareStrings),
     unlockedCosmetics: [...s.unlockedCosmetics].sort(compareStrings),
+    ownedDecor: [...s.ownedDecor].sort(compareStrings),
+    loanOwed: s.loanOwed,
+    loanDueTick: s.loanDueTick,
+    coinGoal: s.coinGoal,
+    coinGoalCelebrated: s.coinGoalCelebrated,
+    speciesCatches: (() => {
+      const o: Record<string, number> = {};
+      for (const id of sortedKeys(s.speciesCatches)) {
+        const count = s.speciesCatches.get(id)!;
+        if (count > 0) o[id] = count;
+      }
+      return o;
+    })(),
     trophies: (() => {
       const o: Record<string, Json> = {};
       for (const id of sortedKeys(s.trophies)) {
@@ -186,6 +206,13 @@ export function decodeSnapshotEnvelope(content: ContentPack, text: string): Deco
  *  - v9 -> v10: completedPrestige + unlockedCosmetics.
  *  - v10 -> v11: player preferredBaitId + activeBaitId.
  *  - v11 -> v12: trophies map (museum personal bests).
+ *  - v12 -> v13: worker xp / level / traits (Phase 16).
+ *  - v13 -> v14: worker onShift (Phase 17).
+ *  - v14 -> v15: worker equipment loadouts (Phase 19).
+ *  - v15 -> v16: ownedDecor (Phase 23 shop cosmetics).
+ *  - v16 -> v17: machine broken + slowUntilTick (Phase 25 wear).
+ *  - v17 -> v18: loanOwed / loanDueTick / coinGoal / coinGoalCelebrated (Phase 26 bank).
+ *  - v18 -> v19: speciesCatches map (Phase 27 telemetry v2).
  */
 function readState(content: ContentPack, n: Reader, version: number): GameState {
   const harborId = n.get("harborId").string();
@@ -235,12 +262,17 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
     if (!m) continue;
     m.paused = mn.get("paused").bool();
     const status = mn.get("status").string();
-    m.status = (["WAITING_FOR_INPUT", "PROCESSING", "OUTPUT_FULL", "PAUSED", "LOCKED"] as const).includes(status as MachineStatus)
+    m.status = (["WAITING_FOR_INPUT", "PROCESSING", "OUTPUT_FULL", "PAUSED", "LOCKED", "NEEDS_REPAIR"] as const)
+      .includes(status as MachineStatus)
       ? (status as MachineStatus) : "WAITING_FOR_INPUT";
     if (version >= 5) {
       const pref = mn.optional("preferredRecipeId")?.string() ?? null;
       const allowed = content.machinesById.get(m.machineId)?.recipes ?? [];
       m.preferredRecipeId = pref && allowed.includes(pref) ? pref : null;
+    }
+    if (version >= 17) {
+      m.broken = mn.optional("broken")?.bool() ?? false;
+      m.slowUntilTick = mn.optional("slowUntilTick")?.int(0) ?? 0;
     }
     readInv(mn.get("input"), m.input);
     readInv(mn.get("output"), m.output);
@@ -317,6 +349,19 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
       w.fishingSpecies = species !== null && content.speciesById.has(species) ? species : null;
       w.fishingProgress = wn.get("fishingProgress").int(0);
       w.fishingCatchTicks = wn.get("fishingCatchTicks").int(0);
+      if (version >= 13) {
+        w.xp = wn.get("xp").int(0);
+        w.level = Math.min(Math.max(wn.get("level").int(1), 1), content.staffProgression.maxLevel);
+        for (const t of wn.get("traits").list()) {
+          const tid = t.string();
+          if (content.workerTraitsById.has(tid)) w.traits.push(tid);
+        }
+      } else {
+        w.xp = 0;
+        w.level = 1;
+      }
+      w.onShift = version >= 14 ? wn.get("onShift").bool() : true;
+      if (version >= 15) readWorkerEquipment(content, wn, w);
       s.workers.push(w);
     }
   }
@@ -359,6 +404,37 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
       .forEach((id) => s.completedPrestige.add(id));
     n.get("unlockedCosmetics").list().forEach((x) => s.unlockedCosmetics.add(x.string()));
   }
+  if (version >= 16) {
+    n.get("ownedDecor").list().map((x) => x.string()).filter((id) => content.decorById.has(id))
+      .forEach((id) => s.ownedDecor.add(id));
+  }
+  if (version >= 18) {
+    s.loanOwed = n.optional("loanOwed")?.int(0) ?? 0;
+    s.loanDueTick = n.optional("loanDueTick")?.int(0) ?? 0;
+    s.coinGoal = n.optional("coinGoal")?.int(0) ?? 0;
+    s.coinGoalCelebrated = n.optional("coinGoalCelebrated")?.bool() ?? false;
+    if (s.loanOwed <= 0) {
+      s.loanOwed = 0;
+      s.loanDueTick = 0;
+    }
+    if (s.coinGoal <= 0) {
+      s.coinGoal = 0;
+      s.coinGoalCelebrated = false;
+    } else if (!content.bank.goalPresets.includes(s.coinGoal)) {
+      s.coinGoal = 0;
+      s.coinGoalCelebrated = false;
+    }
+  }
+  if (version >= 19) {
+    const catchesNode = n.optional("speciesCatches");
+    if (catchesNode) {
+      for (const [speciesId, node] of catchesNode.entries()) {
+        if (!content.speciesById.has(speciesId)) continue;
+        const count = node.int(0);
+        if (count > 0) s.speciesCatches.set(speciesId, count);
+      }
+    }
+  }
   if (version >= 12) {
     const trophiesNode = n.optional("trophies");
     if (trophiesNode) {
@@ -389,7 +465,80 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
     PrestigeSystem.applyReward(s, content.prestigeMilestonesById.get(id)!);
   }
   if (version >= 12) TrophySystem.rebuildSetStats(content, s);
+  pruneWorkerEquipment(content, s, s.workers);
+  for (const stash of s.harborStashes.values()) pruneWorkerEquipment(content, s, stash.workers);
+  if (version < 15) {
+    WorkerSystem.migrateLegacyGlobalGear(content, s);
+    for (const stash of s.harborStashes.values()) autoEquipOwnedGear(content, s, stash.workers);
+  }
+  for (const w of s.workers) {
+    const def = content.workersById.get(w.roleId);
+    if (!def) continue;
+    w.level = Math.min(
+      Math.max(WorkerSystem.levelForXp(content, w.xp), 1),
+      content.staffProgression.maxLevel,
+    );
+    w.bag.capacityUnits = WorkerSystem.carryCapacity(content, s, def, w);
+  }
+  for (const stash of s.harborStashes.values()) {
+    for (const w of stash.workers) {
+      const def = content.workersById.get(w.roleId);
+      if (!def) continue;
+      w.level = Math.min(
+        Math.max(WorkerSystem.levelForXp(content, w.xp), 1),
+        content.staffProgression.maxLevel,
+      );
+      w.bag.capacityUnits = WorkerSystem.carryCapacity(content, s, def, w);
+    }
+  }
   return s;
+}
+
+function encodeEquipment(equipment: Record<string, string>): Record<string, string> {
+  const o: Record<string, string> = {};
+  for (const k of Object.keys(equipment).sort(compareStrings)) o[k] = equipment[k]!;
+  return o;
+}
+
+function readWorkerEquipment(content: ContentPack, wn: Reader, w: WorkerState): void {
+  const eq = wn.optional("equipment");
+  if (!eq) return;
+  for (const [slotId, node] of eq.entries()) {
+    const upgradeId = node.string();
+    const slot = content.staffProgression.loadouts.slots.find((x) => x.id === slotId);
+    if (slot && slot.upgradeIds.includes(upgradeId)) w.equipment[slotId] = upgradeId;
+  }
+}
+
+function pruneWorkerEquipment(content: ContentPack, s: GameState, workers: WorkerState[]): void {
+  const seen = new Set<string>();
+  for (const w of workers) {
+    for (const [slotId, upgradeId] of Object.entries(w.equipment)) {
+      const slot = content.staffProgression.loadouts.slots.find((x) => x.id === slotId);
+      if (!slot || !slot.upgradeIds.includes(upgradeId) || !s.ownedUpgrades.has(upgradeId) || seen.has(upgradeId)) {
+        delete w.equipment[slotId];
+      } else {
+        seen.add(upgradeId);
+      }
+    }
+  }
+}
+
+function autoEquipOwnedGear(content: ContentPack, s: GameState, workers: WorkerState[]): void {
+  const equipped = new Set<string>([
+    ...s.workers.flatMap((w) => Object.values(w.equipment)),
+    ...[...s.harborStashes.values()].flatMap((st) => st.workers.flatMap((w) => Object.values(w.equipment))),
+  ]);
+  const assignable = WorkerSystem.assignableUpgradeIds(content);
+  for (const upgradeId of content.upgrades.map((u) => u.id).filter((id) => assignable.has(id) && s.ownedUpgrades.has(id))) {
+    if (equipped.has(upgradeId)) continue;
+    const slotId = WorkerSystem.loadoutSlotFor(content, upgradeId);
+    if (!slotId) continue;
+    const target = workers.find((w) => !(slotId in w.equipment));
+    if (!target) continue;
+    target.equipment[slotId] = upgradeId;
+    equipped.add(upgradeId);
+  }
 }
 
 function encodeStash(stash: HarborWorldStash): Json {
@@ -400,6 +549,8 @@ function encodeStash(stash: HarborWorldStash): Json {
       paused: m.paused,
       status: m.status,
       preferredRecipeId: m.preferredRecipeId,
+      broken: m.broken,
+      slowUntilTick: m.slowUntilTick,
       input: inv(m.input),
       output: inv(m.output),
       activeBatch: m.activeBatch
@@ -435,6 +586,11 @@ function encodeStash(stash: HarborWorldStash): Json {
       fishingSpecies: w.fishingSpecies,
       fishingProgress: w.fishingProgress,
       fishingCatchTicks: w.fishingCatchTicks,
+      xp: w.xp,
+      level: w.level,
+      traits: [...w.traits],
+      onShift: w.onShift,
+      equipment: encodeEquipment(w.equipment),
     })),
     customerSpawnProgress: stash.customerSpawnProgress,
     playerX: stash.playerX,
@@ -468,12 +624,17 @@ function readStash(content: ContentPack, harborId: string, n: Reader, version: n
     if (!m) continue;
     m.paused = mn.get("paused").bool();
     const status = mn.get("status").string();
-    m.status = (["WAITING_FOR_INPUT", "PROCESSING", "OUTPUT_FULL", "PAUSED", "LOCKED"] as const).includes(status as MachineStatus)
+    m.status = (["WAITING_FOR_INPUT", "PROCESSING", "OUTPUT_FULL", "PAUSED", "LOCKED", "NEEDS_REPAIR"] as const)
+      .includes(status as MachineStatus)
       ? (status as MachineStatus) : "WAITING_FOR_INPUT";
     if (version >= 5) {
       const pref = mn.optional("preferredRecipeId")?.string() ?? null;
       const allowed = content.machinesById.get(m.machineId)?.recipes ?? [];
       m.preferredRecipeId = pref && allowed.includes(pref) ? pref : null;
+    }
+    if (version >= 17) {
+      m.broken = mn.optional("broken")?.bool() ?? false;
+      m.slowUntilTick = mn.optional("slowUntilTick")?.int(0) ?? 0;
     }
     readInv(mn.get("input"), m.input);
     readInv(mn.get("output"), m.output);
@@ -540,6 +701,16 @@ function readStash(content: ContentPack, harborId: string, n: Reader, version: n
     w.fishingSpecies = species !== null && content.speciesById.has(species) ? species : null;
     w.fishingProgress = wn.get("fishingProgress").int(0);
     w.fishingCatchTicks = wn.get("fishingCatchTicks").int(0);
+    if (version >= 13) {
+      w.xp = wn.get("xp").int(0);
+      w.level = Math.min(Math.max(wn.get("level").int(1), 1), content.staffProgression.maxLevel);
+      for (const t of wn.get("traits").list()) {
+        const tid = t.string();
+        if (content.workerTraitsById.has(tid)) w.traits.push(tid);
+      }
+    }
+    w.onShift = version >= 14 ? wn.get("onShift").bool() : true;
+    if (version >= 15) readWorkerEquipment(content, wn, w);
     workers.push(w);
   }
   return {
