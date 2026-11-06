@@ -45,6 +45,10 @@ object ContentLoader {
                 startFishRegenPermille = it["startFishRegenPermille"].int(min = 1),
                 timingWindowStartPermille = it["timingWindowStartPermille"].int(min = 0, max = 1000),
                 timingWindowEndPermille = it["timingWindowEndPermille"].int(min = 0, max = 1000),
+                timingPerfectStartPermille = it["timingPerfectStartPermille"].int(min = 0, max = 1000),
+                timingPerfectEndPermille = it["timingPerfectEndPermille"].int(min = 0, max = 1000),
+                timingGoodBonusPermille = it["timingGoodBonusPermille"].int(min = 1),
+                timingPerfectBonusPermille = it["timingPerfectBonusPermille"].int(min = 1),
             )
         },
         species = r["species"].list { s ->
@@ -145,6 +149,20 @@ object ContentLoader {
                 bagFishSpoilUnits = e["bagFishSpoilUnits"].int(min = 0),
             )
         },
+        ecology = r["ecology"].let { e ->
+            EcologyDef(
+                dayLengthTicks = e["dayLengthTicks"].int(min = 1),
+                parts = e["parts"].list { p ->
+                    DayPartDef(
+                        id = p["id"].string(),
+                        name = p["name"].string(),
+                        endPermille = p["endPermille"].int(min = 1, max = 1000),
+                        regenMultPermille = p["regenMultPermille"].int(min = 1),
+                        catchSpeedMultPermille = p["catchSpeedMultPermille"].int(min = 1),
+                    )
+                },
+            )
+        },
         prestige = r["prestige"].let { p ->
             PrestigeDef(
                 requires = p["requires"].list { it.string() },
@@ -226,6 +244,12 @@ object ContentLoader {
             n["machine"].string(), n["recipe"].string(), n["durationTicks"].int(min = 1),
         )
         "catch_speed" -> UpgradeEffect.CatchSpeed(n["speedPermille"].int(min = 1))
+        "timing_window" -> UpgradeEffect.TimingWindow(
+            windowStartPermille = n["windowStartPermille"].int(min = 0, max = 1000),
+            windowEndPermille = n["windowEndPermille"].int(min = 0, max = 1000),
+            perfectStartPermille = n["perfectStartPermille"].int(min = 0, max = 1000),
+            perfectEndPermille = n["perfectEndPermille"].int(min = 0, max = 1000),
+        )
         "fish_regen" -> UpgradeEffect.FishRegen(n["speedPermille"].int(min = 1))
         "unlock_fishing_spot" -> UpgradeEffect.UnlockFishingSpot(n["zone"].string())
         "unlock_machine" -> UpgradeEffect.UnlockMachine(n["machine"].string())
@@ -261,6 +285,7 @@ object ContentLoader {
                 stockMax = f["stockMax"].int(min = 1),
                 regenTicks = f["regenTicks"].int(min = 1),
                 regenCurvePermille = f["regenCurvePermille"].list { it.int(min = 1) },
+                dayPartRegenMultPermille = f.optional("dayPartRegenMultPermille")?.stringIntMap() ?: emptyMap(),
                 requiresUpgrade = f.optional("requiresUpgrade")?.string(),
             )
         },
@@ -347,5 +372,12 @@ internal class Node(val el: JsonElement, val path: String) {
     fun <T> list(f: (Node) -> T): List<T> {
         val a = el as? JsonArray ?: fail("expected an array")
         return a.mapIndexed { i, e -> f(Node(e, "$path[$i]")) }
+    }
+
+    fun stringIntMap(): Map<String, Int> {
+        val o = obj()
+        return o.entries.associate { (k, v) ->
+            k to Node(v, "$path.$k").int(min = 1)
+        }
     }
 }

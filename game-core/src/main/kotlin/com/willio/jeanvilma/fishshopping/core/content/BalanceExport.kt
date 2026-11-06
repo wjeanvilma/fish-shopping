@@ -32,6 +32,10 @@ object BalanceExport {
                 put("startFishRegenPermille", p.startFishRegenPermille)
                 put("timingWindowStartPermille", p.timingWindowStartPermille)
                 put("timingWindowEndPermille", p.timingWindowEndPermille)
+                put("timingPerfectStartPermille", p.timingPerfectStartPermille)
+                put("timingPerfectEndPermille", p.timingPerfectEndPermille)
+                put("timingGoodBonusPermille", p.timingGoodBonusPermille)
+                put("timingPerfectBonusPermille", p.timingPerfectBonusPermille)
             },
         )
         put(
@@ -52,6 +56,29 @@ object BalanceExport {
                 put("counterSpoilUnits", e.counterSpoilUnits)
                 put("bagFishSpoilPeriodTicks", e.bagFishSpoilPeriodTicks)
                 put("bagFishSpoilUnits", e.bagFishSpoilUnits)
+            },
+        )
+        put(
+            "ecology",
+            buildJsonObject {
+                val eco = content.ecology
+                put("dayLengthTicks", eco.dayLengthTicks)
+                put(
+                    "parts",
+                    buildJsonArray {
+                        for (part in eco.parts) {
+                            add(
+                                buildJsonObject {
+                                    put("id", part.id)
+                                    put("name", part.name)
+                                    put("endPermille", part.endPermille)
+                                    put("regenMultPermille", part.regenMultPermille)
+                                    put("catchSpeedMultPermille", part.catchSpeedMultPermille)
+                                },
+                            )
+                        }
+                    },
+                )
             },
         )
         put(
@@ -204,6 +231,14 @@ object BalanceExport {
                                                     "regenCurvePermille",
                                                     JsonArray(s.regenCurvePermille.map { JsonPrimitive(it) }),
                                                 )
+                                                put(
+                                                    "dayPartRegenMultPermille",
+                                                    buildJsonObject {
+                                                        for ((k, v) in s.dayPartRegenMultPermille) {
+                                                            put(k, v)
+                                                        }
+                                                    },
+                                                )
                                             },
                                         )
                                     }
@@ -327,6 +362,13 @@ object BalanceExport {
         }
         is UpgradeEffect.CatchSpeed -> buildJsonObject {
             put("kind", "catch_speed"); put("speedPermille", e.speedPermille)
+        }
+        is UpgradeEffect.TimingWindow -> buildJsonObject {
+            put("kind", "timing_window")
+            put("windowStartPermille", e.windowStartPermille)
+            put("windowEndPermille", e.windowEndPermille)
+            put("perfectStartPermille", e.perfectStartPermille)
+            put("perfectEndPermille", e.perfectEndPermille)
         }
         is UpgradeEffect.FishRegen -> buildJsonObject {
             put("kind", "fish_regen"); put("speedPermille", e.speedPermille)

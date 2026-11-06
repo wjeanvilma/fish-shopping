@@ -40,43 +40,153 @@ object StarterLineFixture {
     fun record(): String {
         val sim = newSim(SEED)
         val pilot = Autopilot(sim)
-        val purchases = mutableListOf<Pair<Long, Command.PurchaseUpgrade>>()
+        val scripted = mutableListOf<Pair<Long, Command>>()
         val s = sim.state
         val bag = s.player.bag
         val machine = s.machines.first { it.stationId == "station.cutter_1" }
         val counter = s.counters.single()
         var requestSerial = 0
+        val portion = "product.basic_portion"
+        val fillet = "product.fillet"
 
         fun done() = s.tick >= TICKS
-        while (!done()) {
-            pilot.walkTo(-7000, 0); if (done()) break
+        fun issue(cmd: Command) {
+            scripted += (s.tick + 1) to cmd
+            pilot.tick(Command.Move(0, 0), listOf(cmd))
+        }
+        fun buyBagUpgrades() {
+            // Keep cash for the Act II hire; bag_capacity_3 can wait until a porter is on payroll.
+            val allowed = if (s.workers.isEmpty()) {
+                listOf("upgrade.bag_capacity_2")
+            } else {
+                listOf("upgrade.bag_capacity_2", "upgrade.bag_capacity_3")
+            }
+            val next = allowed.firstOrNull {
+                it !in s.ownedUpgrades && s.coins >= sim.content.upgradesById.getValue(it).cost
+            } ?: return
+            issue(Command.PurchaseUpgrade(next, "fixture-${++requestSerial}"))
+        }
+        fun fishCutStockOnce(stockCounter: Boolean) {
+            if (done()) return
+            pilot.walkTo(-7000, 0); if (done()) return
             pilot.walkTo(-14250, 0)
-            pilot.waitUntil(TICKS - s.tick.toInt()) { bag.freeUnits() == 0 }; if (done()) break
+            pilot.waitUntil(TICKS - s.tick.toInt()) { bag.freeUnits() == 0 }; if (done()) return
             pilot.walkTo(-7000, 0)
             pilot.walkTo(1200, -4000)
-            pilot.waitUntil(TICKS - s.tick.toInt()) { bag.isEmpty() || machine.input.freeUnits() == 0 }; if (done()) break
+            pilot.waitUntil(TICKS - s.tick.toInt()) { bag.isEmpty() || machine.input.freeUnits() == 0 }; if (done()) return
             pilot.walkTo(3000, -6000)
             pilot.walkTo(4800, -4000)
-            pilot.waitUntil(TICKS - s.tick.toInt()) { bag.freeUnits() == 0 || (machine.output.isEmpty() && machine.activeBatch == null) }
-            if (done()) break
-            pilot.walkTo(3000, 2750)
-            pilot.waitUntil(TICKS - s.tick.toInt()) { bag.isEmpty() && counter.stock.isEmpty() && s.customers.none { it.reserved > 0 } || s.tick % 600 == 0L }
-            if (done()) break
-            // Buy the next affordable bag upgrade.
-            val next = listOf("upgrade.bag_capacity_2", "upgrade.bag_capacity_3")
-                .firstOrNull { it !in s.ownedUpgrades && s.coins >= sim.content.upgradesById.getValue(it).cost }
-            if (next != null) {
-                val cmd = Command.PurchaseUpgrade(next, "fixture-${++requestSerial}")
-                purchases += (s.tick + 1) to cmd
-                pilot.tick(Command.Move(0, 0), listOf(cmd))
+            pilot.waitUntil(TICKS - s.tick.toInt()) {
+                bag.freeUnits() == 0 || (machine.output.isEmpty() && machine.activeBatch == null)
+            }
+            if (done()) return
+            if (stockCounter) {
+                pilot.walkTo(3000, 2750)
+                pilot.waitUntil(TICKS - s.tick.toInt()) {
+                    bag.isEmpty() && counter.stock.isEmpty() && s.customers.none { it.reserved > 0 } || s.tick % 600 == 0L
+                }
             }
         }
 
-        val commands = (pilot.recorded.map { it.first to (it.second as Command) } + purchases)
+        // Act I: core loop until the buy-upgrade tutorial step is done (index 7).
+        while (!done() && s.tutorialIndex < 7) {
+            fishCutStockOnce(stockCounter = true)
+            if (done()) break
+            buyBagUpgrades()
+        }
+
+        // Act II: first contract → hire → grill pad (no staff until the job is done).
+        while (!done() && s.tutorialIndex < sim.content.tutorial.size) {
+            when {
+                s.stat(com.willio.jeanvilma.fishshopping.core.sim.Stats.CONTRACTS_COMPLETED) == 0L -> {
+                    if ("quest.first_ten_sales" !in s.completedQuests) {
+                        fishCutStockOnce(stockCounter = true)
+                    } else {
+                        val job = s.activeContracts.firstOrNull()
+                        if (job == null) {
+                            val pick = s.contractOffers.firstOrNull { it.itemId == portion || it.itemId == fillet }
+                                ?: s.contractOffers.firstOrNull { it.itemId.startsWith("species.") }
+                                ?: s.contractOffers.firstOrNull { bag.available(it.itemId) >= it.quantity }
+                            if (pick != null) {
+                                issue(Command.AcceptContract(pick.id, "fixture-acc-${++requestSerial}"))
+                            } else {
+                                pilot.tick(Command.Move(0, 0))
+                            }
+                        } else {
+                            val need = job.quantity - job.delivered
+                            if (need > 0 && bag.available(job.itemId) > 0) {
+                                issue(Command.DeliverContract(job.id, "fixture-del-${++requestSerial}"))
+                            } else if (job.itemId.startsWith("species.")) {
+                                if (bag.usedUnits() > 0) {
+                                    pilot.walkTo(-7000, 0)
+                                    if (!done()) pilot.walkTo(1200, -4000)
+                                    if (!done()) {
+                                        pilot.waitUntil(TICKS - s.tick.toInt()) {
+                                            bag.isEmpty() || machine.input.freeUnits() == 0
+                                        }
+                                    }
+                                }
+                                if (!done()) {
+                                    pilot.walkTo(-7000, 0)
+                                    if (!done()) pilot.walkTo(-14250, 0)
+                                    if (!done()) {
+                                        pilot.waitUntil(TICKS - s.tick.toInt()) {
+                                            bag.available(job.itemId) >= need || bag.freeUnits() == 0
+                                        }
+                                    }
+                                }
+                            } else if (bag.available(job.itemId) > 0) {
+                                pilot.walkTo(4800, -4000)
+                                if (!done()) {
+                                    val before = bag.available(job.itemId)
+                                    pilot.waitUntil(TICKS - s.tick.toInt()) {
+                                        bag.available(job.itemId) > before ||
+                                            (machine.output.isEmpty() && machine.activeBatch == null) ||
+                                            bag.freeUnits() == 0
+                                    }
+                                }
+                            } else {
+                                fishCutStockOnce(stockCounter = false)
+                            }
+                        }
+                    }
+                }
+                s.workers.isEmpty() -> {
+                    val porter = sim.content.workersById.getValue("worker.porter")
+                    if (s.coins >= porter.hireCost) {
+                        issue(Command.HireWorker(porter.id, "fixture-hire-${++requestSerial}"))
+                    } else {
+                        fishCutStockOnce(stockCounter = true)
+                    }
+                }
+                else -> {
+                    if ("upgrade.harbor_grill" !in s.ownedUpgrades) {
+                        fishCutStockOnce(stockCounter = true)
+                    } else if (s.player.zoneId != "zone.grill_in") {
+                        // Stay on the land strip (z≈0) then drop south to the grill pad.
+                        pilot.walkTo(s.player.x, 0)
+                        if (!done()) pilot.walkTo(10700, 0)
+                        if (!done()) pilot.walkTo(10700, -4000)
+                    } else {
+                        pilot.tick(Command.Move(0, 0))
+                    }
+                }
+            }
+            if (s.tutorialIndex >= 7) buyBagUpgrades()
+        }
+
+        // Spend any remaining ticks on the core loop.
+        while (!done()) {
+            fishCutStockOnce(stockCounter = true)
+            if (done()) break
+            buyBagUpgrades()
+        }
+
+        val commands = (pilot.recorded.map { it.first to (it.second as Command) } + scripted)
             .sortedWith(compareBy({ it.first }, { if (it.second is Command.Move) 0 else 1 }))
         val fixture = buildJsonObject {
             put("name", "starter-line")
-            put("description", "Five minutes of the Sunrise Pier loop: fish, cut, stock, serve, buy bag upgrades.")
+            put("description", "Five minutes of the Sunrise Pier loop: fish, cut, stock, serve, hire, contract, grill, bag upgrades.")
             put("contentVersion", sim.content.contentVersion)
             put("harborId", HARBOR)
             put("seed", SEED)

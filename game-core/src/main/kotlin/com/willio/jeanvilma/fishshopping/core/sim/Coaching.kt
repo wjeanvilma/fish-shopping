@@ -5,7 +5,7 @@ import com.willio.jeanvilma.fishshopping.core.economy.EconomySystem
 import com.willio.jeanvilma.fishshopping.core.progression.ProgressionSystem
 
 /**
- * First-session / empty-state coaching for the HUD (Phase 30 / Phase 4 spoil tips).
+ * First-session / empty-state coaching for the HUD (Phase 30 / Phase 6 Act II tips).
  * Presentation-only: never mutates state. Mirrored by web/src/engine/coaching.ts.
  */
 data class ObjectiveView(
@@ -66,6 +66,31 @@ object Coaching {
             state.stat(Stats.MACHINE_INPUTS) == 0L
         ) {
             return "Drop raw fish on a teal input pad to start cutting"
+        }
+
+        val bagHasProducts = bag.contents().any { (id, qty) ->
+            qty > 0 && id in content.productsById
+        }
+        if (stocked == 0 && (bagHasProducts || hasOutput) && state.stat(Stats.FISH_CAUGHT) > 0L) {
+            return "Counter is empty — stock portions before the next customer"
+        }
+
+        if ("quest.first_ten_sales" in state.completedQuests &&
+            "quest.first_hire" !in state.completedQuests &&
+            state.workers.isEmpty()
+        ) {
+            return "No staff yet — hire a fisher or porter from the Staff panel"
+        }
+
+        val contractsUnlocked = content.contracts.requires.all {
+            it in state.ownedUpgrades || it in state.completedQuests
+        }
+        if (contractsUnlocked &&
+            state.activeContracts.isEmpty() &&
+            state.contractOffers.isNotEmpty() &&
+            state.stat(Stats.CONTRACTS_COMPLETED) == 0L
+        ) {
+            return "No active jobs — take a harbor contract from the Jobs board"
         }
 
         if (EconomySystem.unlocked(content, state)) {

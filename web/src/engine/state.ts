@@ -14,6 +14,8 @@ export const Stats = {
   LOST_CUSTOMERS: "stat.lost_customers",
   UPGRADES_BOUGHT: "stat.upgrades_bought",
   TIMING_BONUSES: "stat.timing_bonuses",
+  PERFECT_REELS: "stat.perfect_reels",
+  GOOD_REELS: "stat.good_reels",
   RARE_CATCHES: "stat.rare_catches",
   PREMIUM_SALES: "stat.premium_sales",
   BULK_SALES: "stat.bulk_sales",
@@ -38,7 +40,7 @@ export const Stats = {
 export const STAT_KEYS: readonly string[] = [
   Stats.FISH_CAUGHT, Stats.MACHINE_INPUTS, Stats.OUTPUTS_COLLECTED, Stats.COUNTER_STOCKED,
   Stats.SALES, Stats.ITEMS_SOLD, Stats.REVENUE, Stats.LOST_CUSTOMERS, Stats.UPGRADES_BOUGHT,
-  Stats.TIMING_BONUSES, Stats.RARE_CATCHES, Stats.PREMIUM_SALES, Stats.BULK_SALES, Stats.UNMET_PREFERENCE_SALES,
+  Stats.TIMING_BONUSES, Stats.PERFECT_REELS, Stats.GOOD_REELS, Stats.RARE_CATCHES, Stats.PREMIUM_SALES, Stats.BULK_SALES, Stats.UNMET_PREFERENCE_SALES,
   Stats.WORKERS_HIRED, Stats.WORKER_FISH_CAUGHT, Stats.WORKER_ITEMS_MOVED, Stats.LEASES_EXPIRED, Stats.WAGES_PAID,
   Stats.QUESTS_COMPLETED, Stats.CONTRACTS_COMPLETED, Stats.CONTRACTS_FAILED, Stats.CONTRACT_REVENUE,
   Stats.CONTRACT_ITEMS_DELIVERED, Stats.HARBORS_TRAVELED, Stats.MAINTENANCE_PAID, Stats.ITEMS_SPOILED,
@@ -77,6 +79,8 @@ export class WorkerState {
   get busyWalking(): boolean { return this.walkTicksLeft > 0; }
 }
 
+export type TimingTier = "miss" | "good" | "perfect";
+
 export class PlayerState {
   facingX = 0;
   facingZ = INPUT_SCALE;
@@ -95,6 +99,10 @@ export class PlayerState {
     readonly bag: Inventory,
     public catchSpeedPermille = 1000,
     public fishRegenPermille = 1000,
+    public timingWindowStartPermille = 650,
+    public timingWindowEndPermille = 850,
+    public timingPerfectStartPermille = 720,
+    public timingPerfectEndPermille = 780,
   ) {}
 }
 
@@ -293,6 +301,10 @@ export class GameState {
         new Inventory("inv.player_bag", content.player.startCarryCapacityUnits, units),
         content.player.startCatchSpeedPermille,
         content.player.startFishRegenPermille,
+        content.player.timingWindowStartPermille,
+        content.player.timingWindowEndPermille,
+        content.player.timingPerfectStartPermille,
+        content.player.timingPerfectEndPermille,
       ),
       h.fishingSpots.map((f) => new FishingSpotState(f.zone, f.stockMax)),
       h.stations.map((st) => {
@@ -324,7 +336,7 @@ export type Command =
 
 export type GameEvent =
   | { type: "zone_entered"; tick: number; zoneId: string | null }
-  | { type: "fish_caught"; tick: number; speciesId: string; zoneId: string; timingBonus?: boolean; rareUpgrade?: boolean }
+  | { type: "fish_caught"; tick: number; speciesId: string; zoneId: string; timingBonus?: boolean; timingTier?: TimingTier; rareUpgrade?: boolean }
   | { type: "fishing_spot_depleted"; tick: number; zoneId: string }
   | { type: "items_transferred"; tick: number; from: string; to: string; itemId: string; count: number }
   | { type: "batch_started"; tick: number; batchId: string; stationId: string; recipeId: string }

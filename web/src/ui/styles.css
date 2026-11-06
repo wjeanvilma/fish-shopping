@@ -61,6 +61,7 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
 .danger { color: var(--danger); }
 .reward { color: var(--reward); }
 .rating { margin-left: 8px; color: var(--reward); letter-spacing: 0.05em; }
+.day-part { margin-left: 4px; opacity: 0.72; font-weight: 600; }
 .eyebrow { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--action); font-weight: 700; }
 .objective-detail { color: var(--muted, #6b7c86); font-weight: 600; letter-spacing: 0.04em; }
 .title-tagline { margin: 0; color: var(--muted, #6b7c86); font-size: 14px; }
@@ -88,6 +89,7 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
   transform: translateX(-50%);
 }
 .reel.hot { background: var(--reward); color: var(--ink); }
+.reel.perfect { background: color-mix(in srgb, var(--reward) 70%, #ffe08a); box-shadow: 0 0 0 2px color-mix(in srgb, var(--reward) 45%, transparent); }
 .carry { right: max(var(--gap), env(safe-area-inset-right)); bottom: max(var(--gap), env(safe-area-inset-bottom)); min-width: 140px; }
 button.carry { font: inherit; color: inherit; text-align: left; cursor: pointer; border: 0; }
 .station-card { cursor: pointer; }

@@ -271,6 +271,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       <div className="pill top-left">
         {v.harborName}
         {v.harborRating > 0 ? <span className="rating">{"★".repeat(v.harborRating)}</span> : null}
+        <span className="day-part"> · {v.dayPartName}{v.tideChartOwned ? " · tides" : ""}</span>
       </div>
       <div className="pill coins top-center" aria-live="polite">{formatCoins(v.coins)} coins</div>
       {v.rush && (
@@ -330,10 +331,10 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       )}
       {v.fishingCanReel && (
         <button
-          className={`button reel ${v.fishingTimingWindow ? "hot" : ""}`}
+          className={`button reel ${v.fishingTimingWindow ? "hot" : ""} ${v.fishingTimingTier === "perfect" ? "perfect" : ""}`}
           onClick={() => host.reel()}
         >
-          {v.fishingTimingWindow ? "Reel!" : "Reel"} <kbd>F</kbd>
+          {v.fishingTimingTier === "perfect" ? "Perfect!" : v.fishingTimingTier === "good" ? "Good!" : "Reel"} <kbd>F</kbd>
         </button>
       )}
       <CarryIndicator v={v} onOpen={() => host.setBagOpen(true)} />

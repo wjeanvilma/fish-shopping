@@ -12,6 +12,14 @@ function effectJson(e: UpgradeEffect): Record<string, unknown> {
     case "recipe_duration":
       return { kind: e.kind, machine: e.machine, recipe: e.recipe, durationTicks: e.durationTicks };
     case "catch_speed": return { kind: e.kind, speedPermille: e.speedPermille };
+    case "timing_window":
+      return {
+        kind: e.kind,
+        windowStartPermille: e.windowStartPermille,
+        windowEndPermille: e.windowEndPermille,
+        perfectStartPermille: e.perfectStartPermille,
+        perfectEndPermille: e.perfectEndPermille,
+      };
     case "fish_regen": return { kind: e.kind, speedPermille: e.speedPermille };
     case "unlock_fishing_spot": return { kind: e.kind, zone: e.zone };
     case "unlock_machine": return { kind: e.kind, machine: e.machine };
@@ -43,6 +51,10 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
       startFishRegenPermille: p.startFishRegenPermille,
       timingWindowStartPermille: p.timingWindowStartPermille,
       timingWindowEndPermille: p.timingWindowEndPermille,
+      timingPerfectStartPermille: p.timingPerfectStartPermille,
+      timingPerfectEndPermille: p.timingPerfectEndPermille,
+      timingGoodBonusPermille: p.timingGoodBonusPermille,
+      timingPerfectBonusPermille: p.timingPerfectBonusPermille,
     },
     offline: {
       capHours: raw.offline.capHours,
@@ -56,6 +68,16 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
       counterSpoilUnits: e.counterSpoilUnits,
       bagFishSpoilPeriodTicks: e.bagFishSpoilPeriodTicks,
       bagFishSpoilUnits: e.bagFishSpoilUnits,
+    },
+    ecology: {
+      dayLengthTicks: raw.ecology.dayLengthTicks,
+      parts: raw.ecology.parts.map((part) => ({
+        id: part.id,
+        name: part.name,
+        endPermille: part.endPermille,
+        regenMultPermille: part.regenMultPermille,
+        catchSpeedMultPermille: part.catchSpeedMultPermille,
+      })),
     },
     routing: {
       urgencyWeight: r.urgencyWeight,
@@ -115,6 +137,7 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
         stockMax: s.stockMax,
         regenTicks: s.regenTicks,
         regenCurvePermille: s.regenCurvePermille,
+        dayPartRegenMultPermille: s.dayPartRegenMultPermille ?? {},
       })),
       counters: h.counters.map((c) => ({
         id: c.id,

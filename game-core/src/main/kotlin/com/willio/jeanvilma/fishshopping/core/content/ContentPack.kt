@@ -22,6 +22,8 @@ data class ContentPack(
     val offline: OfflineDef,
     /** Soft coin/stock sinks after early progression (Phase 19). */
     val economy: EconomyDef,
+    /** Day-part fishing ecology (Phase 7). */
+    val ecology: EcologyDef,
     /** End-of-run prestige milestones (Phase 20); additive, never wipes the save. */
     val prestige: PrestigeDef,
     /** Timed delivery contracts board (Phase 17). */
@@ -63,10 +65,18 @@ data class PlayerDef(
     val startCatchSpeedPermille: Int,
     /** 1000 = normal spot regen; higher restocks empty spots faster. */
     val startFishRegenPermille: Int,
-    /** Cast progress (0..1000) where the Reel timing window opens. */
+    /** Cast progress (0..1000) where the Good reel window opens. */
     val timingWindowStartPermille: Int,
-    /** Cast progress (0..1000) where the Reel timing window closes (exclusive). */
+    /** Cast progress (0..1000) where the Good reel window closes (exclusive). */
     val timingWindowEndPermille: Int,
+    /** Perfect zone start; must sit inside the Good window. */
+    val timingPerfectStartPermille: Int,
+    /** Perfect zone end (exclusive). */
+    val timingPerfectEndPermille: Int,
+    /** Tip payout for a Good reel as permille of species baseValue. */
+    val timingGoodBonusPermille: Int,
+    /** Tip payout for a Perfect reel as permille of species baseValue. */
+    val timingPerfectBonusPermille: Int,
 )
 
 data class RareUpgradeDef(val to: String, val chancePermille: Int)
@@ -117,6 +127,16 @@ sealed interface UpgradeEffect {
     data class RecipeDuration(val machine: String, val recipe: String, val durationTicks: Int) : UpgradeEffect
     /** Catch speed multiplier in permille (1250 = 25% faster). */
     data class CatchSpeed(val speedPermille: Int) : UpgradeEffect
+    /**
+     * Widens reel timing windows idempotently: Good/Perfect starts take min,
+     * ends take max (same pattern as catch_speed floors).
+     */
+    data class TimingWindow(
+        val windowStartPermille: Int,
+        val windowEndPermille: Int,
+        val perfectStartPermille: Int,
+        val perfectEndPermille: Int,
+    ) : UpgradeEffect
     /** Spot regen multiplier in permille (1250 = 25% faster restock). */
     data class FishRegen(val speedPermille: Int) : UpgradeEffect
     /** Ownership unlocks the fishing spot for [zone]; apply is a no-op. */
@@ -326,6 +346,24 @@ enum class ZoneKind(val wire: String) {
 
 data class ZoneDef(val id: String, val kind: ZoneKind, val rect: RectMm)
 
+data class DayPartDef(
+    val id: String,
+    val name: String,
+    /** Exclusive end of this part within the day cycle (1..1000); last part must be 1000. */
+    val endPermille: Int,
+    /** Regen duration multiplier (1000 = normal; higher = slower). */
+    val regenMultPermille: Int,
+    /** Player catch-speed multiplier when a tide chart is owned. */
+    val catchSpeedMultPermille: Int,
+)
+
+data class EcologyDef(
+    val dayLengthTicks: Int,
+    val parts: List<DayPartDef>,
+) {
+    val partsById = parts.associateBy { it.id }
+}
+
 data class FishingSpotDef(
     val zone: String,
     val species: List<String>,
@@ -333,6 +371,8 @@ data class FishingSpotDef(
     val regenTicks: Int,
     /** Duration multipliers at stock ratios 0..1 (length >= 2). Empty spots take longer. */
     val regenCurvePermille: List<Int>,
+    /** Optional per-day-part regen overrides keyed by [DayPartDef.id]. */
+    val dayPartRegenMultPermille: Map<String, Int> = emptyMap(),
     /** When set, the spot cannot be fished until this upgrade is owned. */
     val requiresUpgrade: String? = null,
 )

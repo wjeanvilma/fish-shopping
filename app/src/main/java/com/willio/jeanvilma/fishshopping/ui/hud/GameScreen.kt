@@ -229,6 +229,12 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                         fontWeight = FontWeight.Bold,
                     )
                 }
+                Text(
+                    "· ${v.dayPartName}${if (v.tideChartOwned) " · tides" else ""}",
+                    style = Tabular,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Ink.copy(alpha = 0.72f),
+                )
             }
         }
         // Top centre: coins.
@@ -333,7 +339,13 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                     .heightIn(min = 48.dp),
                 enabled = true,
             ) {
-                Text(if (v.fishingTimingWindow) "Reel!" else "Reel")
+                Text(
+                    when (v.fishingTimingTier) {
+                        "perfect" -> "Perfect!"
+                        "good" -> "Good!"
+                        else -> if (v.fishingTimingWindow) "Reel!" else "Reel"
+                    },
+                )
             }
         }
         // Bottom right: carry indicator.

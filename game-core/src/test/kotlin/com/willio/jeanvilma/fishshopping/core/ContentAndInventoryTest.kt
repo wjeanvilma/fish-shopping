@@ -23,6 +23,27 @@ class ContentAndInventoryTest {
         assertEquals(listOf("quest.first_ten_sales"), c.economy.requires)
         assertEquals(2, c.economy.maintenanceCoinsPerStation)
         assertEquals(listOf("quest.busy_harbor"), c.prestige.requires)
+        assertEquals(8, c.quests.size)
+        assertEquals(
+            listOf(
+                "quest.first_cast",
+                "quest.line_running",
+                "quest.first_ten_sales",
+                "quest.fill_the_hold",
+                "quest.first_hire",
+                "quest.specialty_kitchen",
+                "quest.busy_harbor",
+                "quest.moon_crossing",
+            ),
+            c.quests.map { it.id },
+        )
+        assertEquals(listOf("upgrade.harbor_grill"), c.questsById.getValue("quest.fill_the_hold").reward.unlockUpgrades)
+        assertEquals(listOf("upgrade.side_pier"), c.questsById.getValue("quest.specialty_kitchen").reward.unlockUpgrades)
+        assertEquals(listOf("quest.specialty_kitchen"), c.upgradesById.getValue("upgrade.side_pier").requires)
+        assertEquals(10, c.tutorial.size)
+        assertEquals("tutorial.first_contract", c.tutorial[7].id)
+        assertEquals("tutorial.hire_staff", c.tutorial[8].id)
+        assertEquals("tutorial.grill_line", c.tutorial[9].id)
         assertEquals(3, c.prestige.milestones.size)
         assertEquals(listOf(0L, 250L, 750L, 1500L, 3000L), c.prestige.ratingThresholds)
         assertEquals(10, c.harborsById.getValue("harbor.sunrise_pier").counters.single().products.size)

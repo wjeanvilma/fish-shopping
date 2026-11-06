@@ -1,19 +1,28 @@
 package com.willio.jeanvilma.fishshopping.core.fishing
 
+import com.willio.jeanvilma.fishshopping.core.content.ContentPack
+import com.willio.jeanvilma.fishshopping.core.content.DayPartDef
 import com.willio.jeanvilma.fishshopping.core.content.FishingSpotDef
 import com.willio.jeanvilma.fishshopping.core.content.ZoneKind
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
 import com.willio.jeanvilma.fishshopping.core.sim.GameState
+import com.willio.jeanvilma.fishshopping.core.sim.PlayerState
 import com.willio.jeanvilma.fishshopping.core.sim.SafeMath
 import com.willio.jeanvilma.fishshopping.core.sim.Stats
 import com.willio.jeanvilma.fishshopping.core.sim.StepContext
+import com.willio.jeanvilma.fishshopping.core.sim.TimingTier
 
 /**
  * Automatic fishing while standing in an unlocked fishing zone.
- * Catch speed upgrades shorten cast duration. Reel in the timing window pays a bonus.
- * Spot stock uses a deplete/regen curve (empty spots restock slower) scaled by fishRegenPermille.
+ * Catch speed upgrades shorten cast duration. Reel timing has Perfect / Good / Miss
+ * tiers with distinct tip bonuses; timing_window upgrades widen the windows.
+ * Spot stock uses a deplete/regen curve (empty spots restock slower) scaled by
+ * fishRegenPermille and day-part ecology. Tide chart eases night penalties and
+ * applies day-part catch-speed bonuses.
  */
 object FishingSystem {
+    const val TIDE_CHART_UPGRADE = "upgrade.tide_chart"
+
     fun step(ctx: StepContext) {
         regenerate(ctx)
 
@@ -48,45 +57,70 @@ object FishingSystem {
             val pick = candidates[ctx.state.rng.pickWeighted(candidates.map { it.rarityWeight })]
             p.fishingSpecies = pick.id
             p.fishingProgress = 0
-            p.fishingCatchTicks = catchTicksFor(effectiveCatchSpeed(ctx.state), pick.catchTicks)
+            p.fishingCatchTicks = catchTicksFor(effectiveCatchSpeed(ctx.content, ctx.state), pick.catchTicks)
             p.reelAttemptedThisCast = false
         }
 
         val species = ctx.content.speciesById.getValue(p.fishingSpecies!!)
-        val duration = if (p.fishingCatchTicks > 0) p.fishingCatchTicks else catchTicksFor(effectiveCatchSpeed(ctx.state), species.catchTicks)
+        val duration = if (p.fishingCatchTicks > 0) {
+            p.fishingCatchTicks
+        } else {
+            catchTicksFor(effectiveCatchSpeed(ctx.content, ctx.state), species.catchTicks)
+        }
         p.fishingCatchTicks = duration
 
-        var timingBonus = false
+        var reelTier = TimingTier.MISS
         if (p.reelRequested) {
             p.reelRequested = false
             if (!p.reelAttemptedThisCast) {
                 p.reelAttemptedThisCast = true
-                if (inTimingWindow(
-                        p.fishingProgress, duration,
-                        ctx.content.player.timingWindowStartPermille,
-                        ctx.content.player.timingWindowEndPermille,
-                    )
-                ) {
-                    timingBonus = true
-                    // Finish the cast immediately on a perfect reel.
+                reelTier = timingTierAt(p, p.fishingProgress, duration)
+                if (reelTier != TimingTier.MISS) {
+                    // Finish the cast immediately on a Good or Perfect reel.
                     p.fishingProgress = duration
                 }
             }
         }
 
-        if (!timingBonus) p.fishingProgress++
+        if (reelTier == TimingTier.MISS) p.fishingProgress++
         if (p.fishingProgress < duration) return
 
-        commitCatch(ctx, zone.id, spot.zoneId, species.id, timingBonus)
+        commitCatch(ctx, zone.id, spot.zoneId, species.id, reelTier)
         clearCast(p)
     }
 
     fun isUnlocked(def: FishingSpotDef, state: GameState): Boolean =
         def.requiresUpgrade == null || def.requiresUpgrade in state.ownedUpgrades
 
-    /** Player upgrades and prestige floors both apply (whichever is faster). */
-    fun effectiveCatchSpeed(state: GameState): Int =
-        maxOf(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille)
+    fun hasTideChart(state: GameState): Boolean =
+        TIDE_CHART_UPGRADE in state.ownedUpgrades || state.player.fishRegenPermille > 1000
+
+    /** Current day-part from absolute sim tick. */
+    fun dayPartAt(content: ContentPack, tick: Long): DayPartDef {
+        val eco = content.ecology
+        val phase = ((tick % eco.dayLengthTicks.toLong()) * 1000L / eco.dayLengthTicks.toLong()).toInt()
+        return eco.parts.first { phase < it.endPermille }
+    }
+
+    /**
+     * Spot regen duration multiplier for the current day-part.
+     * Tide chart halves penalties above 1000 (slow night restock eases).
+     */
+    fun effectiveDayPartRegenMult(content: ContentPack, state: GameState, def: FishingSpotDef, part: DayPartDef): Int {
+        var mult = def.dayPartRegenMultPermille[part.id] ?: part.regenMultPermille
+        if (hasTideChart(state) && mult > 1000) {
+            mult = 1000 + (mult - 1000) / 2
+        }
+        return mult.coerceAtLeast(1)
+    }
+
+    /** Player upgrades, prestige floors, and (with tide chart) day-part catch bonuses. */
+    fun effectiveCatchSpeed(content: ContentPack, state: GameState): Int {
+        val base = maxOf(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille)
+        if (!hasTideChart(state)) return base
+        val part = dayPartAt(content, state.tick)
+        return ((base.toLong() * part.catchSpeedMultPermille) / 1000L).toInt().coerceAtLeast(1)
+    }
 
     fun catchTicksFor(catchSpeedPermille: Int, baseCatchTicks: Int): Int {
         require(catchSpeedPermille > 0)
@@ -100,12 +134,43 @@ object FishingSystem {
         return permille >= startPermille && permille < endPermille
     }
 
-    /** Linear interpolation of [curve] across stock/stockMax, then scale by fishRegenPermille. */
-    fun regenTicksFor(def: FishingSpotDef, stock: Int, fishRegenPermille: Int): Int {
+    /** Perfect > Good > Miss using the player's live (upgrade-widened) windows. */
+    fun timingTierAt(player: PlayerState, progress: Int, duration: Int): TimingTier {
+        if (duration <= 0) return TimingTier.MISS
+        if (inTimingWindow(progress, duration, player.timingPerfectStartPermille, player.timingPerfectEndPermille)) {
+            return TimingTier.PERFECT
+        }
+        if (inTimingWindow(progress, duration, player.timingWindowStartPermille, player.timingWindowEndPermille)) {
+            return TimingTier.GOOD
+        }
+        return TimingTier.MISS
+    }
+
+    fun timingBonusPermille(content: ContentPack, tier: TimingTier): Int = when (tier) {
+        TimingTier.PERFECT -> content.player.timingPerfectBonusPermille
+        TimingTier.GOOD -> content.player.timingGoodBonusPermille
+        TimingTier.MISS -> 0
+    }
+
+    /** Curve × day-part, then scale by fishRegenPermille. */
+    fun regenTicksFor(
+        def: FishingSpotDef,
+        stock: Int,
+        fishRegenPermille: Int,
+        dayPartRegenMultPermille: Int = 1000,
+    ): Int {
         require(fishRegenPermille > 0)
+        require(dayPartRegenMultPermille > 0)
         val mult = curveMultPermille(def.regenCurvePermille, stock, def.stockMax)
         val base = (def.regenTicks.toLong() * mult) / 1000L
-        return ((base * 1000L) / fishRegenPermille.toLong()).toInt().coerceAtLeast(1)
+        val withDay = (base * dayPartRegenMultPermille) / 1000L
+        return ((withDay * 1000L) / fishRegenPermille.toLong()).toInt().coerceAtLeast(1)
+    }
+
+    fun regenTicksFor(content: ContentPack, state: GameState, def: FishingSpotDef, stock: Int): Int {
+        val part = dayPartAt(content, state.tick)
+        val dayMult = effectiveDayPartRegenMult(content, state, def, part)
+        return regenTicksFor(def, stock, state.player.fishRegenPermille, dayMult)
     }
 
     fun curveMultPermille(curve: List<Int>, stock: Int, stockMax: Int): Int {
@@ -127,7 +192,7 @@ object FishingSystem {
         zoneId: String,
         spotZoneId: String,
         rolledSpeciesId: String,
-        timingBonus: Boolean,
+        timingTier: TimingTier,
     ) {
         val s = ctx.state
         val p = s.player
@@ -150,14 +215,28 @@ object FishingSystem {
             spot.stock--
             s.bumpStat(Stats.FISH_CAUGHT)
             if (rare) s.bumpStat(Stats.RARE_CATCHES)
+            val bonusMult = timingBonusPermille(ctx.content, timingTier)
             var bonusCoins = 0L
-            if (timingBonus) {
-                bonusCoins = finalSpecies.baseValue
-                s.coins = SafeMath.creditCoins(s.coins, bonusCoins)
-                s.bumpStat(Stats.TIMING_BONUSES)
-                s.bumpStat(Stats.REVENUE, bonusCoins)
+            if (bonusMult > 0) {
+                bonusCoins = (finalSpecies.baseValue * bonusMult.toLong()) / 1000L
+                if (bonusCoins > 0) {
+                    s.coins = SafeMath.creditCoins(s.coins, bonusCoins)
+                    s.bumpStat(Stats.TIMING_BONUSES)
+                    s.bumpStat(Stats.REVENUE, bonusCoins)
+                }
+                when (timingTier) {
+                    TimingTier.PERFECT -> s.bumpStat(Stats.PERFECT_REELS)
+                    TimingTier.GOOD -> s.bumpStat(Stats.GOOD_REELS)
+                    TimingTier.MISS -> Unit
+                }
             }
-            ctx.emit(GameEvent.FishCaught(s.tick, finalSpecies.id, zoneId, timingBonus = timingBonus, rareUpgrade = rare))
+            val timingBonus = timingTier != TimingTier.MISS
+            ctx.emit(
+                GameEvent.FishCaught(
+                    s.tick, finalSpecies.id, zoneId,
+                    timingBonus = timingBonus, timingTier = timingTier, rareUpgrade = rare,
+                ),
+            )
             if (bonusCoins > 0) {
                 s.record(
                     com.willio.jeanvilma.fishshopping.core.sim.Receipt(
@@ -185,7 +264,7 @@ object FishingSystem {
                 spot.regenProgress = 0
                 continue
             }
-            val needed = regenTicksFor(def, spot.stock, ctx.state.player.fishRegenPermille)
+            val needed = regenTicksFor(ctx.content, ctx.state, def, spot.stock)
             if (++spot.regenProgress >= needed) {
                 spot.stock++
                 spot.regenProgress = 0

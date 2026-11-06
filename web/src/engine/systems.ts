@@ -2,7 +2,8 @@
  * Per-tick systems. Each function mirrors the Kotlin object of the same name in game-core;
  * keep them line-for-line comparable so fixture mismatches are easy to trace.
  */
-import type { ContentPack, ContractTemplateDef, HarborDef, ItemQuantity, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, UpgradeDef, UpgradeEffect, WorkerDef } from "./content";
+import type { ContentPack, ContractTemplateDef, DayPartDef, FishingSpotDef, HarborDef, ItemQuantity, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, UpgradeDef, UpgradeEffect, WorkerDef } from "./content";
+import type { TimingTier } from "./state";
 import { counterAccepts, queueSlot, rectCenterX, rectCenterZ, rectContains } from "./content";
 import { INPUT_SCALE, SafeMath, TICKS_PER_SECOND, compareStrings, idiv } from "./foundations";
 import { Inventory, Transfers } from "./inventory";
@@ -137,46 +138,72 @@ export const FishingSystem = {
       const pick = candidates[s.rng.pickWeighted(candidates.map((c) => c.rarityWeight))]!;
       p.fishingSpecies = pick.id;
       p.fishingProgress = 0;
-      p.fishingCatchTicks = FishingSystem.catchTicksFor(FishingSystem.effectiveCatchSpeed(s), pick.catchTicks);
+      p.fishingCatchTicks = FishingSystem.catchTicksFor(
+        FishingSystem.effectiveCatchSpeed(ctx.content, s), pick.catchTicks,
+      );
       p.reelAttemptedThisCast = false;
     }
 
     const species = ctx.content.speciesById.get(p.fishingSpecies)!;
     const duration = p.fishingCatchTicks > 0
       ? p.fishingCatchTicks
-      : FishingSystem.catchTicksFor(FishingSystem.effectiveCatchSpeed(s), species.catchTicks);
+      : FishingSystem.catchTicksFor(FishingSystem.effectiveCatchSpeed(ctx.content, s), species.catchTicks);
     p.fishingCatchTicks = duration;
 
-    let timingBonus = false;
+    let reelTier: TimingTier = "miss";
     if (p.reelRequested) {
       p.reelRequested = false;
       if (!p.reelAttemptedThisCast) {
         p.reelAttemptedThisCast = true;
-        if (FishingSystem.inTimingWindow(
-          p.fishingProgress, duration,
-          ctx.content.player.timingWindowStartPermille,
-          ctx.content.player.timingWindowEndPermille,
-        )) {
-          timingBonus = true;
+        reelTier = FishingSystem.timingTierAt(p, p.fishingProgress, duration);
+        if (reelTier !== "miss") {
           p.fishingProgress = duration;
         }
       }
     }
 
-    if (!timingBonus) p.fishingProgress++;
+    if (reelTier === "miss") p.fishingProgress++;
     if (p.fishingProgress < duration) return;
 
-    FishingSystem.commitCatch(ctx, zone.id, spot.zoneId, species.id, timingBonus);
+    FishingSystem.commitCatch(ctx, zone.id, spot.zoneId, species.id, reelTier);
     FishingSystem.clearCast(p);
   },
+
+  TIDE_CHART_UPGRADE: "upgrade.tide_chart",
 
   isUnlocked(def: { requiresUpgrade?: string | null }, state: GameState): boolean {
     return !def.requiresUpgrade || state.ownedUpgrades.has(def.requiresUpgrade);
   },
 
-  /** Player upgrades and prestige floors both apply (whichever is faster). */
-  effectiveCatchSpeed(state: GameState): number {
-    return Math.max(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille);
+  hasTideChart(state: GameState): boolean {
+    return state.ownedUpgrades.has(FishingSystem.TIDE_CHART_UPGRADE) || state.player.fishRegenPermille > 1000;
+  },
+
+  dayPartAt(content: ContentPack, tick: number): DayPartDef {
+    const eco = content.ecology;
+    const phase = idiv((tick % eco.dayLengthTicks) * 1000, eco.dayLengthTicks);
+    return eco.parts.find((p) => phase < p.endPermille)!;
+  },
+
+  effectiveDayPartRegenMult(
+    content: ContentPack,
+    state: GameState,
+    def: FishingSpotDef,
+    part: DayPartDef,
+  ): number {
+    let mult = def.dayPartRegenMultPermille?.[part.id] ?? part.regenMultPermille;
+    if (FishingSystem.hasTideChart(state) && mult > 1000) {
+      mult = 1000 + idiv(mult - 1000, 2);
+    }
+    return Math.max(1, mult);
+  },
+
+  /** Player upgrades, prestige floors, and (with tide chart) day-part catch bonuses. */
+  effectiveCatchSpeed(content: ContentPack, state: GameState): number {
+    const base = Math.max(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille);
+    if (!FishingSystem.hasTideChart(state)) return base;
+    const part = FishingSystem.dayPartAt(content, state.tick);
+    return Math.max(1, idiv(base * part.catchSpeedMultPermille, 1000));
   },
 
   catchTicksFor(catchSpeedPermille: number, baseCatchTicks: number): number {
@@ -187,6 +214,23 @@ export const FishingSystem = {
     if (duration <= 0) return false;
     const permille = idiv(progress * 1000, duration);
     return permille >= startPermille && permille < endPermille;
+  },
+
+  timingTierAt(player: PlayerState, progress: number, duration: number): TimingTier {
+    if (duration <= 0) return "miss";
+    if (FishingSystem.inTimingWindow(
+      progress, duration, player.timingPerfectStartPermille, player.timingPerfectEndPermille,
+    )) return "perfect";
+    if (FishingSystem.inTimingWindow(
+      progress, duration, player.timingWindowStartPermille, player.timingWindowEndPermille,
+    )) return "good";
+    return "miss";
+  },
+
+  timingBonusPermille(content: ContentPack, tier: TimingTier): number {
+    if (tier === "perfect") return content.player.timingPerfectBonusPermille;
+    if (tier === "good") return content.player.timingGoodBonusPermille;
+    return 0;
   },
 
   curveMultPermille(curve: readonly number[], stock: number, stockMax: number): number {
@@ -207,13 +251,21 @@ export const FishingSystem = {
     def: { stockMax: number; regenTicks: number; regenCurvePermille: readonly number[] },
     stock: number,
     fishRegenPermille: number,
+    dayPartRegenMultPermille = 1000,
   ): number {
     const mult = FishingSystem.curveMultPermille(def.regenCurvePermille, stock, def.stockMax);
     const base = idiv(def.regenTicks * mult, 1000);
-    return Math.max(1, idiv(base * 1000, fishRegenPermille));
+    const withDay = idiv(base * dayPartRegenMultPermille, 1000);
+    return Math.max(1, idiv(withDay * 1000, fishRegenPermille));
   },
 
-  commitCatch(ctx: StepContext, zoneId: string, spotZoneId: string, rolledSpeciesId: string, timingBonus: boolean): void {
+  regenTicksForState(content: ContentPack, state: GameState, def: FishingSpotDef, stock: number): number {
+    const part = FishingSystem.dayPartAt(content, state.tick);
+    const dayMult = FishingSystem.effectiveDayPartRegenMult(content, state, def, part);
+    return FishingSystem.regenTicksFor(def, stock, state.player.fishRegenPermille, dayMult);
+  },
+
+  commitCatch(ctx: StepContext, zoneId: string, spotZoneId: string, rolledSpeciesId: string, timingTier: TimingTier): void {
     const s = ctx.state;
     const p = s.player;
     const spot = s.fishingSpots.find((f) => f.zoneId === spotZoneId)!;
@@ -231,17 +283,23 @@ export const FishingSystem = {
       spot.stock--;
       s.bumpStat(Stats.FISH_CAUGHT);
       if (rare) s.bumpStat(Stats.RARE_CATCHES);
+      const bonusMult = FishingSystem.timingBonusPermille(ctx.content, timingTier);
       let bonusCoins = 0;
-      if (timingBonus) {
-        bonusCoins = finalSpecies.baseValue;
-        s.coins = SafeMath.creditCoins(s.coins, bonusCoins);
-        s.bumpStat(Stats.TIMING_BONUSES);
-        s.bumpStat(Stats.REVENUE, bonusCoins);
-        s.record({ id: s.newId("tip"), type: "timing_bonus", coinDelta: bonusCoins, tick: s.tick, reference: finalSpecies.id });
+      if (bonusMult > 0) {
+        bonusCoins = idiv(finalSpecies.baseValue * bonusMult, 1000);
+        if (bonusCoins > 0) {
+          s.coins = SafeMath.creditCoins(s.coins, bonusCoins);
+          s.bumpStat(Stats.TIMING_BONUSES);
+          s.bumpStat(Stats.REVENUE, bonusCoins);
+          s.record({ id: s.newId("tip"), type: "timing_bonus", coinDelta: bonusCoins, tick: s.tick, reference: finalSpecies.id });
+        }
+        if (timingTier === "perfect") s.bumpStat(Stats.PERFECT_REELS);
+        else if (timingTier === "good") s.bumpStat(Stats.GOOD_REELS);
       }
+      const timingBonus = timingTier !== "miss";
       ctx.emit({
         type: "fish_caught", tick: s.tick, speciesId: finalSpecies.id, zoneId,
-        timingBonus, rareUpgrade: rare,
+        timingBonus, timingTier, rareUpgrade: rare,
       });
       if (spot.stock === 0) {
         ctx.emit({ type: "fishing_spot_depleted", tick: s.tick, zoneId });
@@ -263,7 +321,7 @@ export const FishingSystem = {
         spot.regenProgress = 0;
         continue;
       }
-      const needed = FishingSystem.regenTicksFor(def, spot.stock, ctx.state.player.fishRegenPermille);
+      const needed = FishingSystem.regenTicksForState(ctx.content, ctx.state, def, spot.stock);
       if (++spot.regenProgress >= needed) {
         spot.stock++;
         spot.regenProgress = 0;
@@ -754,6 +812,20 @@ export const UpgradeSystem = {
       }
     } else if (effect.kind === "catch_speed") {
       s.player.catchSpeedPermille = Math.max(s.player.catchSpeedPermille, effect.speedPermille);
+    } else if (effect.kind === "timing_window") {
+      const p = s.player;
+      p.timingWindowStartPermille = Math.min(p.timingWindowStartPermille, effect.windowStartPermille);
+      p.timingWindowEndPermille = Math.max(p.timingWindowEndPermille, effect.windowEndPermille);
+      p.timingPerfectStartPermille = Math.min(p.timingPerfectStartPermille, effect.perfectStartPermille);
+      p.timingPerfectEndPermille = Math.max(p.timingPerfectEndPermille, effect.perfectEndPermille);
+      p.timingPerfectStartPermille = Math.max(
+        p.timingWindowStartPermille,
+        Math.min(p.timingPerfectStartPermille, p.timingWindowEndPermille - 1),
+      );
+      p.timingPerfectEndPermille = Math.max(
+        p.timingPerfectStartPermille + 1,
+        Math.min(p.timingPerfectEndPermille, p.timingWindowEndPermille),
+      );
     } else if (effect.kind === "fish_regen") {
       s.player.fishRegenPermille = Math.max(s.player.fishRegenPermille, effect.speedPermille);
     } else if (effect.kind === "worker_move_speed") {

@@ -165,7 +165,7 @@ describe("simulation", () => {
   });
 
   it("species roster is harbor-gated with rare upgrade chains", () => {
-    expect(content.contentVersion).toBe("0.26.0");
+    expect(content.contentVersion).toBe("0.30.0");
     expect(content.raw.species.length).toBe(24);
     const sunrise = content.harborsById.get("harbor.sunrise_pier")!.fishingSpots
       .flatMap((s) => s.species);
@@ -423,7 +423,7 @@ describe("simulation", () => {
     const sim = newSim();
     const h = sim.harbor;
     expect(h.customerPathWaypoints.length).toBeGreaterThan(0);
-    expect(content.contentVersion).toBe("0.26.0");
+    expect(content.contentVersion).toBe("0.30.0");
     const slot = { x: h.counters[0]!.queueAnchor.x, z: h.counters[0]!.queueAnchor.z };
     const path = CustomerSystem.approachPath(h, slot);
     const routed = CustomerSystem.pathWalkTicks(path, h.customerWalkMmPerTick);
@@ -458,7 +458,7 @@ describe("simulation", () => {
   });
 
   it("harbor grill unlocks as a second production line", () => {
-    expect(content.contentVersion).toBe("0.26.0");
+    expect(content.contentVersion).toBe("0.30.0");
     expect(content.machinesById.has("machine.harbor_grill")).toBe(true);
     expect(content.upgradesById.get("upgrade.harbor_grill")!.effect).toEqual({
       kind: "unlock_machine", machine: "machine.harbor_grill",
@@ -493,7 +493,7 @@ describe("simulation", () => {
   });
 
   it("product recipe tree supports multi-input and intermediate crafts", () => {
-    expect(content.contentVersion).toBe("0.26.0");
+    expect(content.contentVersion).toBe("0.30.0");
     expect(content.raw.products.map((p) => p.id)).toEqual(expect.arrayContaining([
       "product.diced_fish", "product.skewer", "product.soup_stock", "product.ice_packed_crate",
     ]));
@@ -557,24 +557,53 @@ describe("simulation", () => {
     expect(expected).toBeLessThan(rolled.catchTicks);
   });
 
-  it("perfect reel finishes cast early and pays timing bonus", () => {
+  it("good reel finishes cast early and pays half tip", () => {
     const sim = newSim(99);
     walkTo(sim, -14250, 0);
     for (let i = 0; i < 5; i++) checkedStep(sim);
     expect(sim.state.player.fishingSpecies).not.toBeNull();
-    const duration = sim.state.player.fishingCatchTicks;
-    const windowStart = Math.trunc((duration * 650) / 1000);
-    while (sim.state.player.fishingProgress < windowStart) checkedStep(sim);
-    expect(buildView(sim).fishingTimingWindow).toBe(true);
+    while (buildView(sim).fishingTimingTier !== "good") {
+      checkedStep(sim);
+      expect(sim.state.player.fishingSpecies).not.toBeNull();
+    }
+    expect(buildView(sim).fishingTimingTier).toBe("good");
     expect(buildView(sim).fishingCanReel).toBe(true);
     const beforeCoins = sim.state.coins;
     const events = checkedStep(sim, [{ type: "reel" }]);
     const caught = events.filter((e) => e.type === "fish_caught");
     expect(caught).toHaveLength(1);
-    expect(caught[0]).toMatchObject({ timingBonus: true });
+    expect(caught[0]).toMatchObject({ timingBonus: true, timingTier: "good" });
     expect(sim.state.stat("stat.timing_bonuses")).toBeGreaterThanOrEqual(1);
+    expect(sim.state.stat("stat.good_reels")).toBeGreaterThanOrEqual(1);
     expect(sim.state.coins).toBeGreaterThan(beforeCoins);
     expect(sim.state.player.fishingSpecies).toBeNull();
+  });
+
+  it("perfect reel pays full tip and timing_window upgrades widen windows", () => {
+    const sim = newSim(99);
+    walkTo(sim, -14250, 0);
+    for (let i = 0; i < 5; i++) checkedStep(sim);
+    while (buildView(sim).fishingTimingTier !== "perfect") {
+      checkedStep(sim);
+      expect(sim.state.player.fishingSpecies).not.toBeNull();
+    }
+    expect(buildView(sim).fishingTimingTier).toBe("perfect");
+    const beforeCoins = sim.state.coins;
+    const events = checkedStep(sim, [{ type: "reel" }]);
+    const caught = events.filter((e) => e.type === "fish_caught");
+    expect(caught[0]).toMatchObject({ timingBonus: true, timingTier: "perfect" });
+    expect(sim.state.stat("stat.perfect_reels")).toBeGreaterThanOrEqual(1);
+    expect(sim.state.coins).toBeGreaterThan(beforeCoins);
+
+    const baseStart = content.player.timingWindowStartPermille;
+    sim.state.coins = 10_000;
+    sim.state.ownedUpgrades.add("upgrade.rod_speed_2");
+    const buy = checkedStep(sim, [
+      { type: "purchase_upgrade", upgradeId: "upgrade.timing_sights", requestId: "req-sights" },
+    ]);
+    expect(buy.some((e) => e.type === "upgrade_purchased" && e.upgradeId === "upgrade.timing_sights")).toBe(true);
+    expect(sim.state.player.timingWindowStartPermille).toBeLessThan(baseStart);
+    expect(sim.state.player.timingWindowEndPermille).toBeGreaterThan(content.player.timingWindowEndPermille);
   });
 
   it("preferred recipe locks out other ready inputs", () => {
@@ -648,8 +677,8 @@ describe("simulation", () => {
   it("empty spot regen uses slower curve than near-full", () => {
     const sim = newSim();
     const def = content.harborsById.get(HARBOR)!.fishingSpots.find((f) => f.zone === "zone.pier_end")!;
-    const empty = FishingSystem.regenTicksFor(def, 0, 1000);
-    const nearlyFull = FishingSystem.regenTicksFor(def, def.stockMax - 1, 1000);
+    const empty = FishingSystem.regenTicksForState(content, sim.state, def, 0);
+    const nearlyFull = FishingSystem.regenTicksForState(content, sim.state, def, def.stockMax - 1);
     expect(empty).toBeGreaterThan(nearlyFull);
     const spot = sim.state.fishingSpots.find((f) => f.zoneId === "zone.pier_end")!;
     spot.stock = 0;
@@ -663,9 +692,10 @@ describe("simulation", () => {
   it("fish regen upgrade shortens restock wait", () => {
     const sim = newSim();
     const def = content.harborsById.get(HARBOR)!.fishingSpots.find((f) => f.zone === "zone.pier_end")!;
-    expect(FishingSystem.regenTicksFor(def, 0, 1250)).toBeLessThan(FishingSystem.regenTicksFor(def, 0, 1000));
+    const base = FishingSystem.regenTicksForState(content, sim.state, def, 0);
     sim.state.player.fishRegenPermille = 1250;
-    const needed = FishingSystem.regenTicksFor(def, 0, 1250);
+    const needed = FishingSystem.regenTicksForState(content, sim.state, def, 0);
+    expect(needed).toBeLessThan(base);
     const spot = sim.state.fishingSpots.find((f) => f.zoneId === "zone.pier_end")!;
     spot.stock = 0;
     spot.regenProgress = 0;
@@ -673,6 +703,36 @@ describe("simulation", () => {
     expect(spot.stock).toBe(0);
     checkedStep(sim);
     expect(spot.stock).toBe(1);
+  });
+
+  it("day-part ecology slows night regen and tide chart eases it", () => {
+    const sim = newSim();
+    const def = content.harborsById.get(HARBOR)!.fishingSpots.find((f) => f.zone === "zone.pier_end")!;
+    const dayLen = content.ecology.dayLengthTicks;
+    sim.state.tick = 0;
+    const dawn = FishingSystem.regenTicksForState(content, sim.state, def, 0);
+    sim.state.tick = Math.floor((dayLen * 850) / 1000);
+    const night = FishingSystem.regenTicksForState(content, sim.state, def, 0);
+    expect(night).toBeGreaterThan(dawn);
+    expect(FishingSystem.dayPartAt(content, sim.state.tick).id).toBe("night");
+
+    sim.state.ownedUpgrades.add("upgrade.tide_chart");
+    sim.state.player.fishRegenPermille = 1250;
+    const nightWithChart = FishingSystem.regenTicksForState(content, sim.state, def, 0);
+    expect(nightWithChart).toBeLessThan(night);
+    expect(FishingSystem.hasTideChart(sim.state)).toBe(true);
+    expect(buildView(sim).tideChartOwned).toBe(true);
+  });
+
+  it("tide chart boosts dawn catch speed", () => {
+    const sim = newSim();
+    sim.state.tick = 0;
+    sim.state.player.catchSpeedPermille = 1000;
+    expect(FishingSystem.effectiveCatchSpeed(content, sim.state)).toBe(1000);
+    sim.state.ownedUpgrades.add("upgrade.tide_chart");
+    sim.state.player.fishRegenPermille = 1250;
+    expect(FishingSystem.effectiveCatchSpeed(content, sim.state)).toBe(1100);
+    expect(buildView(sim).dayPartId).toBe("dawn");
   });
 
   it("side pier locked until upgrade then fishes", () => {
@@ -686,9 +746,8 @@ describe("simulation", () => {
     expect(sim.state.player.fishingSpecies).toBeNull();
     expect(sim.state.stat("stat.fish_caught")).toBe(0);
     sim.state.coins = 10_000;
+    sim.state.completedQuests.add("quest.specialty_kitchen");
     const buy = checkedStep(sim, [
-      { type: "purchase_upgrade", upgradeId: "upgrade.bag_capacity_2", requestId: "req-bag" },
-      { type: "purchase_upgrade", upgradeId: "upgrade.tide_chart", requestId: "req-tide" },
       { type: "purchase_upgrade", upgradeId: "upgrade.side_pier", requestId: "req-spur" },
     ]);
     expect(buy.some((e) => e.type === "upgrade_purchased" && e.upgradeId === "upgrade.side_pier")).toBe(true);
@@ -736,7 +795,7 @@ describe("simulation", () => {
 
   it("hire fisher and porter is idempotent and shows staff", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("0.26.0");
+    expect(content.contentVersion).toBe("0.30.0");
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.fisher")).toBe(true);
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.operator")).toBe(true);
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.cashier")).toBe(true);
@@ -945,39 +1004,69 @@ describe("simulation", () => {
   it("quest chain locks rewards and shows log", () => {
     const sim = newSim();
     const log = buildView(sim).quests;
-    expect(log).toHaveLength(4);
-    expect(log.find((q) => q.id === "quest.first_ten_sales")!.status).toBe("active");
-    expect(log.filter((q) => q.id !== "quest.first_ten_sales").every((q) => q.status === "locked")).toBe(true);
+    expect(log).toHaveLength(8);
+    expect(log.find((q) => q.id === "quest.first_cast")!.status).toBe("active");
+    expect(log.filter((q) => q.id !== "quest.first_cast").every((q) => q.status === "locked")).toBe(true);
+
+    sim.state.bumpStat("stat.fish_caught", 5);
+    const cast = checkedStep(sim).filter((e) => e.type === "quest_completed");
+    expect(cast).toHaveLength(1);
+    expect(cast[0]).toMatchObject({ questId: "quest.first_cast", coinsRewarded: 20 });
+    expect(buildView(sim).quests.find((q) => q.id === "quest.line_running")!.status).toBe("active");
+
+    sim.state.bumpStat("stat.machine_inputs", 8);
+    checkedStep(sim);
+    expect(sim.state.completedQuests.has("quest.line_running")).toBe(true);
+    expect(buildView(sim).quests.find((q) => q.id === "quest.first_ten_sales")!.status).toBe("active");
 
     sim.state.bumpStat("stat.sales", 10);
     const coinsBefore = sim.state.coins;
-    const events = checkedStep(sim);
-    const done = events.filter((e) => e.type === "quest_completed");
-    expect(done).toHaveLength(1);
-    expect(done[0]).toMatchObject({ questId: "quest.first_ten_sales", coinsRewarded: 50 });
+    const salesDone = checkedStep(sim).filter((e) => e.type === "quest_completed");
+    expect(salesDone).toHaveLength(1);
+    expect(salesDone[0]).toMatchObject({ questId: "quest.first_ten_sales", coinsRewarded: 50 });
     expect(sim.state.coins).toBe(coinsBefore + 50);
-    expect(sim.state.stat("stat.quests_completed")).toBe(1);
-    expect(sim.state.completedQuests.has("quest.first_ten_sales")).toBe(true);
+    expect(sim.state.stat("stat.quests_completed")).toBe(3);
 
-    const after = buildView(sim).quests;
-    expect(after.find((q) => q.id === "quest.first_ten_sales")!.status).toBe("completed");
-    expect(after.find((q) => q.id === "quest.fill_the_hold")!.status).toBe("active");
-    expect(after.find((q) => q.id === "quest.first_hire")!.status).toBe("active");
-    expect(after.find((q) => q.id === "quest.busy_harbor")!.status).toBe("locked");
+    const afterSales = buildView(sim).quests;
+    expect(afterSales.find((q) => q.id === "quest.first_ten_sales")!.status).toBe("completed");
+    expect(afterSales.find((q) => q.id === "quest.fill_the_hold")!.status).toBe("active");
+    expect(afterSales.find((q) => q.id === "quest.first_hire")!.status).toBe("active");
+    expect(afterSales.find((q) => q.id === "quest.specialty_kitchen")!.status).toBe("locked");
+    expect(afterSales.find((q) => q.id === "quest.busy_harbor")!.status).toBe("locked");
 
-    sim.state.bumpStat("stat.fish_caught", 25);
+    sim.state.bumpStat("stat.fish_caught", 20); // total 25
     sim.state.bumpStat("stat.workers_hired", 1);
     checkedStep(sim);
     expect(sim.state.completedQuests.has("quest.fill_the_hold")).toBe(true);
     expect(sim.state.completedQuests.has("quest.first_hire")).toBe(true);
+    expect(sim.state.ownedUpgrades.has("upgrade.harbor_grill")).toBe(true);
+    expect(buildView(sim).quests.find((q) => q.id === "quest.specialty_kitchen")!.status).toBe("active");
+    expect(buildView(sim).quests.find((q) => q.id === "quest.busy_harbor")!.status).toBe("locked");
+
+    sim.state.bumpStat("stat.outputs_collected", 12);
+    const specialty = checkedStep(sim).filter((e) => e.type === "quest_completed");
+    expect(specialty).toHaveLength(1);
+    expect(specialty[0]).toMatchObject({
+      questId: "quest.specialty_kitchen",
+      unlockUpgrades: ["upgrade.side_pier"],
+    });
+    expect(sim.state.ownedUpgrades.has("upgrade.side_pier")).toBe(true);
+    expect(buildView(sim).quests.find((q) => q.id === "quest.busy_harbor")!.status).toBe("active");
 
     sim.state.bumpStat("stat.revenue", 250);
-    const finale = checkedStep(sim).filter((e) => e.type === "quest_completed");
-    expect(finale).toHaveLength(1);
-    expect(finale[0]).toMatchObject({ questId: "quest.busy_harbor", unlockUpgrades: ["upgrade.tide_chart"] });
+    const busy = checkedStep(sim).filter((e) => e.type === "quest_completed");
+    expect(busy).toHaveLength(1);
+    expect(busy[0]).toMatchObject({ questId: "quest.busy_harbor", unlockUpgrades: ["upgrade.tide_chart"] });
     expect(sim.state.ownedUpgrades.has("upgrade.tide_chart")).toBe(true);
     expect(sim.state.player.fishRegenPermille).toBe(1250);
     expect(buildView(sim).quests.find((q) => q.id === "quest.busy_harbor")!.status).toBe("completed");
+    expect(buildView(sim).quests.find((q) => q.id === "quest.moon_crossing")!.status).toBe("active");
+
+    sim.state.bumpStat("stat.harbors_traveled", 1);
+    const crossing = checkedStep(sim).filter((e) => e.type === "quest_completed");
+    expect(crossing).toHaveLength(1);
+    expect(crossing[0]).toMatchObject({ questId: "quest.moon_crossing", coinsRewarded: 100 });
+    expect(buildView(sim).quests.find((q) => q.id === "quest.moon_crossing")!.status).toBe("completed");
   });
 
   it("contracts stay locked until first ten sales, then pay out or penalize", () => {
@@ -1070,10 +1159,11 @@ describe("simulation", () => {
 
     const traveled = checkedStep(sim, [{ type: "travel_to_harbor", harborId: "harbor.moon_cove", requestId: "go-2" }]);
     expect(traveled.some((e) => e.type === "harbor_traveled" && !e.replayed && e.toHarborId === "harbor.moon_cove")).toBe(true);
+    expect(traveled.some((e) => e.type === "quest_completed" && e.questId === "quest.moon_crossing")).toBe(true);
     expect(sim.state.harborId).toBe("harbor.moon_cove");
     expect(buildView(sim).harborName).toBe("Moon Cove");
     expect(buildView(sim).blockoutAsset).toBe("moon_cove_blockout.glb");
-    expect(sim.state.coins).toBe(777);
+    expect(sim.state.coins).toBe(877); // +100 from moon_crossing
     expect(sim.state.player.bag.quantity(SPRAT)).toBe(2);
     expect(sim.state.player.x).toBe(sim.harbor.playerSpawn.x);
     expect(sim.state.player.z).toBe(sim.harbor.playerSpawn.z);
@@ -1081,6 +1171,7 @@ describe("simulation", () => {
     expect(sim.state.harborStashes.has(HARBOR)).toBe(true);
     expect(sim.state.harborStashes.get(HARBOR)!.fishingSpots.find((f) => f.zoneId === "zone.pier_end")!.stock).toBe(3);
     expect(sim.state.stat("stat.harbors_traveled")).toBe(1);
+    expect(sim.state.completedQuests.has("quest.moon_crossing")).toBe(true);
 
     const replay = checkedStep(sim, [{ type: "travel_to_harbor", harborId: "harbor.moon_cove", requestId: "go-2" }]);
     expect(replay.find((e) => e.type === "harbor_traveled")).toMatchObject({ replayed: true });
@@ -1169,7 +1260,7 @@ describe("simulation", () => {
   });
 
   it("spoil tiers prefer fragile counter stock and separate case ice", () => {
-    expect(content.contentVersion).toBe("0.26.0");
+    expect(content.contentVersion).toBe("0.30.0");
     expect(content.productsById.get("product.basic_portion")!.spoilTier).toBe(3);
     expect(content.productsById.get("product.smoked_fillet")!.spoilTier).toBe(1);
     expect(content.speciesById.get(SPRAT)!.spoilTier).toBe(3);
@@ -1203,7 +1294,7 @@ describe("simulation", () => {
 
   it("prestige stays locked until busy harbor, then grants bonuses and cosmetics", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("0.26.0");
+    expect(content.contentVersion).toBe("0.30.0");
     const locked = buildView(sim);
     expect(locked.prestigeUnlocked).toBe(false);
     expect(locked.prestigeLockedReason).toBe("Requires: Busy harbor");

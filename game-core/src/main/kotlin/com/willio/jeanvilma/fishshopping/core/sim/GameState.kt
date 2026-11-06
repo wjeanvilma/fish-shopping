@@ -20,6 +20,8 @@ object Stats {
     const val LOST_CUSTOMERS = "stat.lost_customers"
     const val UPGRADES_BOUGHT = "stat.upgrades_bought"
     const val TIMING_BONUSES = "stat.timing_bonuses"
+    const val PERFECT_REELS = "stat.perfect_reels"
+    const val GOOD_REELS = "stat.good_reels"
     const val RARE_CATCHES = "stat.rare_catches"
     const val PREMIUM_SALES = "stat.premium_sales"
     const val BULK_SALES = "stat.bulk_sales"
@@ -43,7 +45,7 @@ object Stats {
     val ALL: List<String> = listOf(
         FISH_CAUGHT, MACHINE_INPUTS, OUTPUTS_COLLECTED, COUNTER_STOCKED,
         SALES, ITEMS_SOLD, REVENUE, LOST_CUSTOMERS, UPGRADES_BOUGHT,
-        TIMING_BONUSES, RARE_CATCHES, PREMIUM_SALES, BULK_SALES, UNMET_PREFERENCE_SALES,
+        TIMING_BONUSES, PERFECT_REELS, GOOD_REELS, RARE_CATCHES, PREMIUM_SALES, BULK_SALES, UNMET_PREFERENCE_SALES,
         WORKERS_HIRED, WORKER_FISH_CAUGHT, WORKER_ITEMS_MOVED, LEASES_EXPIRED, WAGES_PAID,
         QUESTS_COMPLETED, CONTRACTS_COMPLETED, CONTRACTS_FAILED, CONTRACT_REVENUE,
         CONTRACT_ITEMS_DELIVERED, HARBORS_TRAVELED, MAINTENANCE_PAID, ITEMS_SPOILED,
@@ -101,6 +103,11 @@ class PlayerState(
     var catchSpeedPermille: Int = 1000,
     /** 1000 = normal; rebuilt from content + owned fish_regen upgrades on load. */
     var fishRegenPermille: Int = 1000,
+    /** Good reel window start; widened by timing_window upgrades. */
+    var timingWindowStartPermille: Int = 650,
+    var timingWindowEndPermille: Int = 850,
+    var timingPerfectStartPermille: Int = 720,
+    var timingPerfectEndPermille: Int = 780,
 ) {
     var facingX = 0
     var facingZ = SimConstants.INPUT_SCALE
@@ -116,6 +123,26 @@ class PlayerState(
     var reelAttemptedThisCast = false
     /** Set by Command.Reel; consumed by FishingSystem on the same tick. */
     var reelRequested = false
+}
+
+/** Reel timing result for a cast (Phase 8). */
+enum class TimingTier {
+    MISS, GOOD, PERFECT;
+
+    val wire: String get() = when (this) {
+        MISS -> "miss"
+        GOOD -> "good"
+        PERFECT -> "perfect"
+    }
+
+    companion object {
+        fun fromWire(s: String): TimingTier? = when (s) {
+            "miss" -> MISS
+            "good" -> GOOD
+            "perfect" -> PERFECT
+            else -> null
+        }
+    }
 }
 
 class FishingSpotState(val zoneId: String, var stock: Int) {
@@ -317,6 +344,10 @@ class GameState(
                 Inventory("inv.player_bag", content.player.startCarryCapacityUnits, units),
                 catchSpeedPermille = content.player.startCatchSpeedPermille,
                 fishRegenPermille = content.player.startFishRegenPermille,
+                timingWindowStartPermille = content.player.timingWindowStartPermille,
+                timingWindowEndPermille = content.player.timingWindowEndPermille,
+                timingPerfectStartPermille = content.player.timingPerfectStartPermille,
+                timingPerfectEndPermille = content.player.timingPerfectEndPermille,
             )
             return GameState(
                 harborId = harborId,
@@ -375,6 +406,7 @@ sealed interface GameEvent {
         val speciesId: String,
         val zoneId: String,
         val timingBonus: Boolean = false,
+        val timingTier: TimingTier = TimingTier.MISS,
         val rareUpgrade: Boolean = false,
     ) : GameEvent
     /** Soft feedback when a fishing spot's stock hits zero. */

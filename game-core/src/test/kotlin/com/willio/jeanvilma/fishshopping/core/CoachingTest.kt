@@ -41,6 +41,9 @@ class CoachingTest {
         state.completedQuests.addAll(Shared.content.quests.map { it.id })
         state.bumpStat(Stats.FISH_CAUGHT, 5)
         state.bumpStat(Stats.MACHINE_INPUTS, 2)
+        state.bumpStat(Stats.CONTRACTS_COMPLETED, 1)
+        state.ownedUpgrades += "upgrade.display_case_ice"
+        state.counters.single().stock.add("product.smoked_fillet", 1)
         assertNull(Coaching.emptyStateTip(Shared.content, state))
     }
 
@@ -51,9 +54,59 @@ class CoachingTest {
         state.completedQuests.addAll(Shared.content.quests.map { it.id })
         state.bumpStat(Stats.FISH_CAUGHT, 5)
         state.bumpStat(Stats.MACHINE_INPUTS, 2)
+        state.bumpStat(Stats.CONTRACTS_COMPLETED, 1)
         state.counters.single().stock.add("product.basic_portion", 2)
         val tip = Coaching.emptyStateTip(Shared.content, state)
         assertNotNull(tip)
         assertTrue(tip!!.contains("display case ice", ignoreCase = true))
+    }
+
+    @Test
+    fun tipsWhenCounterEmptyWithPortionsReady() {
+        val state = GameState.newGame(Shared.content, HARBOR, 1)
+        state.tutorialIndex = Shared.content.tutorial.size
+        state.completedQuests.addAll(Shared.content.quests.map { it.id })
+        state.bumpStat(Stats.FISH_CAUGHT, 5)
+        state.bumpStat(Stats.CONTRACTS_COMPLETED, 1)
+        state.player.bag.add("product.basic_portion", 2)
+        val tip = Coaching.emptyStateTip(Shared.content, state)
+        assertNotNull(tip)
+        assertTrue(tip!!.contains("Counter is empty", ignoreCase = true))
+    }
+
+    @Test
+    fun tipsWhenStaffUnlockedButNoneHired() {
+        val state = GameState.newGame(Shared.content, HARBOR, 1)
+        state.tutorialIndex = Shared.content.tutorial.size
+        state.completedQuests += "quest.first_ten_sales"
+        state.bumpStat(Stats.FISH_CAUGHT, 5)
+        state.bumpStat(Stats.MACHINE_INPUTS, 2)
+        state.counters.single().stock.add("product.basic_portion", 1)
+        val tip = Coaching.emptyStateTip(Shared.content, state)
+        assertNotNull(tip)
+        assertTrue(tip!!.contains("No staff yet", ignoreCase = true))
+    }
+
+    @Test
+    fun tipsWhenJobsBoardHasOffersButNoneActive() {
+        val state = GameState.newGame(Shared.content, HARBOR, 1)
+        state.tutorialIndex = Shared.content.tutorial.size
+        state.completedQuests += "quest.first_ten_sales"
+        state.completedQuests += "quest.first_hire"
+        state.bumpStat(Stats.FISH_CAUGHT, 5)
+        state.bumpStat(Stats.MACHINE_INPUTS, 2)
+        state.counters.single().stock.add("product.basic_portion", 1)
+        state.contractOffers += com.willio.jeanvilma.fishshopping.core.sim.ContractOffer(
+            id = "offer.test",
+            templateId = "contract.portion_order",
+            itemId = "product.basic_portion",
+            quantity = 4,
+            durationTicks = 2000,
+            payout = 55,
+            penalty = 15,
+        )
+        val tip = Coaching.emptyStateTip(Shared.content, state)
+        assertNotNull(tip)
+        assertTrue(tip!!.contains("No active jobs", ignoreCase = true))
     }
 }

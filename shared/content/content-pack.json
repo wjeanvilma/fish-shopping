@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/content-pack.schema.json",
-  "contentVersion": "0.26.0",
+  "contentVersion": "0.30.0",
   "ticksPerSecond": 20,
   "units": {
     "distance": "millimetres (integer); x/z ground plane, y is up",
@@ -15,7 +15,11 @@
     "startCatchSpeedPermille": 1000,
     "startFishRegenPermille": 1000,
     "timingWindowStartPermille": 650,
-    "timingWindowEndPermille": 850
+    "timingWindowEndPermille": 850,
+    "timingPerfectStartPermille": 720,
+    "timingPerfectEndPermille": 780,
+    "timingGoodBonusPermille": 500,
+    "timingPerfectBonusPermille": 1000
   },
   "species": [
     {
@@ -1235,9 +1239,41 @@
       }
     },
     {
+      "id": "upgrade.timing_sights",
+      "name": "Timing sights",
+      "description": "Widen the Good reel window so timing bonuses are easier to land.",
+      "cost": 110,
+      "requires": [
+        "upgrade.rod_speed_2"
+      ],
+      "effect": {
+        "kind": "timing_window",
+        "windowStartPermille": 600,
+        "windowEndPermille": 890,
+        "perfectStartPermille": 710,
+        "perfectEndPermille": 790
+      }
+    },
+    {
+      "id": "upgrade.timing_mastery",
+      "name": "Master reel",
+      "description": "Widen the Perfect zone for bigger tip payouts on precise reels.",
+      "cost": 280,
+      "requires": [
+        "upgrade.timing_sights"
+      ],
+      "effect": {
+        "kind": "timing_window",
+        "windowStartPermille": 570,
+        "windowEndPermille": 920,
+        "perfectStartPermille": 685,
+        "perfectEndPermille": 815
+      }
+    },
+    {
       "id": "upgrade.tide_chart",
       "name": "Tide chart",
-      "description": "Empty fishing spots restock 25% faster.",
+      "description": "Spots restock 25% faster, night regen penalties ease, and dawn/dusk casts finish quicker.",
       "cost": 90,
       "requires": [
         "upgrade.bag_capacity_2"
@@ -1253,7 +1289,7 @@
       "description": "Unlock a second fishing spot on the north spur.",
       "cost": 180,
       "requires": [
-        "upgrade.tide_chart"
+        "quest.specialty_kitchen"
       ],
       "effect": {
         "kind": "unlock_fishing_spot",
@@ -1367,10 +1403,42 @@
   ],
   "quests": [
     {
+      "id": "quest.first_cast",
+      "name": "First cast",
+      "description": "Catch 5 fish from the pier to start the Act II chain.",
+      "requires": [],
+      "goal": {
+        "stat": "stat.fish_caught",
+        "atLeast": 5
+      },
+      "reward": {
+        "coins": 20,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.line_running",
+      "name": "Get the line running",
+      "description": "Feed station input pads 8 times to keep the cutter busy.",
+      "requires": [
+        "quest.first_cast"
+      ],
+      "goal": {
+        "stat": "stat.machine_inputs",
+        "atLeast": 8
+      },
+      "reward": {
+        "coins": 30,
+        "unlockUpgrades": []
+      }
+    },
+    {
       "id": "quest.first_ten_sales",
       "name": "Make 10 sales",
       "description": "Serve ten paying customers at the counter.",
-      "requires": [],
+      "requires": [
+        "quest.line_running"
+      ],
       "goal": {
         "stat": "stat.sales",
         "atLeast": 10
@@ -1383,7 +1451,7 @@
     {
       "id": "quest.fill_the_hold",
       "name": "Fill the hold",
-      "description": "Catch 25 fish from the pier.",
+      "description": "Catch 25 fish from the pier. Completing this installs the harbor grill.",
       "requires": [
         "quest.first_ten_sales"
       ],
@@ -1393,7 +1461,9 @@
       },
       "reward": {
         "coins": 40,
-        "unlockUpgrades": []
+        "unlockUpgrades": [
+          "upgrade.harbor_grill"
+        ]
       }
     },
     {
@@ -1413,12 +1483,31 @@
       }
     },
     {
+      "id": "quest.specialty_kitchen",
+      "name": "Specialty kitchen",
+      "description": "Collect 12 finished products from station pads \u2014 smoke, grill, or cut specialty stock.",
+      "requires": [
+        "quest.fill_the_hold"
+      ],
+      "goal": {
+        "stat": "stat.outputs_collected",
+        "atLeast": 12
+      },
+      "reward": {
+        "coins": 70,
+        "unlockUpgrades": [
+          "upgrade.side_pier"
+        ]
+      }
+    },
+    {
       "id": "quest.busy_harbor",
       "name": "Busy harbor",
-      "description": "Earn 250 coins in total sales revenue.",
+      "description": "Earn 250 coins in total sales revenue to open Moon Cove travel.",
       "requires": [
         "quest.fill_the_hold",
-        "quest.first_hire"
+        "quest.first_hire",
+        "quest.specialty_kitchen"
       ],
       "goal": {
         "stat": "stat.revenue",
@@ -1429,6 +1518,22 @@
         "unlockUpgrades": [
           "upgrade.tide_chart"
         ]
+      }
+    },
+    {
+      "id": "quest.moon_crossing",
+      "name": "Moon crossing",
+      "description": "Travel to Moon Cove and prove the dual-harbor route.",
+      "requires": [
+        "quest.busy_harbor"
+      ],
+      "goal": {
+        "stat": "stat.harbors_traveled",
+        "atLeast": 1
+      },
+      "reward": {
+        "coins": 100,
+        "unlockUpgrades": []
       }
     }
   ],
@@ -1520,6 +1625,39 @@
     "capHours": 4,
     "summaryMinSeconds": 5
   },
+  "ecology": {
+    "dayLengthTicks": 4800,
+    "parts": [
+      {
+        "id": "dawn",
+        "name": "Dawn",
+        "endPermille": 250,
+        "regenMultPermille": 800,
+        "catchSpeedMultPermille": 1100
+      },
+      {
+        "id": "day",
+        "name": "Day",
+        "endPermille": 625,
+        "regenMultPermille": 1000,
+        "catchSpeedMultPermille": 1000
+      },
+      {
+        "id": "dusk",
+        "name": "Dusk",
+        "endPermille": 800,
+        "regenMultPermille": 850,
+        "catchSpeedMultPermille": 1080
+      },
+      {
+        "id": "night",
+        "name": "Night",
+        "endPermille": 1000,
+        "regenMultPermille": 1450,
+        "catchSpeedMultPermille": 850
+      }
+    ]
+  },
   "economy": {
     "requires": [
       "quest.first_ten_sales"
@@ -1602,7 +1740,7 @@
   "contracts": {
     "boardSlots": 3,
     "maxActive": 2,
-    "refreshPeriodTicks": 2400,
+    "refreshPeriodTicks": 1200,
     "requires": [
       "quest.first_ten_sales"
     ],
@@ -1623,11 +1761,11 @@
         "name": "Portion order",
         "description": "Stock basic portions for a lunch cart.",
         "item": "product.basic_portion",
-        "quantity": 4,
+        "quantity": 2,
         "durationTicks": 2000,
-        "payout": 55,
-        "penalty": 15,
-        "weight": 35
+        "payout": 40,
+        "penalty": 10,
+        "weight": 120
       },
       {
         "id": "contract.fillet_rush",
@@ -1638,7 +1776,7 @@
         "durationTicks": 1400,
         "payout": 70,
         "penalty": 20,
-        "weight": 25
+        "weight": 80
       },
       {
         "id": "contract.smoked_specialty",
@@ -1918,6 +2056,32 @@
         "stat": "stat.upgrades_bought",
         "atLeast": 1
       }
+    },
+    {
+      "id": "tutorial.first_contract",
+      "text": "Open Jobs, accept a harbor contract, and deliver it",
+      "advanceOn": {
+        "kind": "stat",
+        "stat": "stat.contracts_completed",
+        "atLeast": 1
+      }
+    },
+    {
+      "id": "tutorial.hire_staff",
+      "text": "Open Staff and hire your first hand once Make 10 sales unlocks hiring",
+      "advanceOn": {
+        "kind": "stat",
+        "stat": "stat.workers_hired",
+        "atLeast": 1
+      }
+    },
+    {
+      "id": "tutorial.grill_line",
+      "text": "After Fill the hold unlocks the grill, deliver fish to the charcoal grill pad",
+      "advanceOn": {
+        "kind": "enter_zone",
+        "zone": "zone.grill_in"
+      }
     }
   ],
   "harbors": [
@@ -2072,12 +2236,18 @@
           "stockMax": 18,
           "regenTicks": 40,
           "regenCurvePermille": [
-            2000,
-            1500,
-            1000,
+            2200,
+            1600,
+            1100,
             850,
-            700
-          ]
+            650
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 700,
+            "day": 1000,
+            "dusk": 850,
+            "night": 1500
+          }
         },
         {
           "zone": "zone.pier_spur",
@@ -2092,12 +2262,18 @@
           "stockMax": 10,
           "regenTicks": 50,
           "regenCurvePermille": [
-            1800,
-            1400,
-            1100,
+            2000,
+            1500,
+            1150,
             900,
-            750
+            700
           ],
+          "dayPartRegenMultPermille": {
+            "dawn": 900,
+            "day": 1000,
+            "dusk": 700,
+            "night": 1400
+          },
           "requiresUpgrade": "upgrade.side_pier"
         }
       ],
@@ -2345,12 +2521,18 @@
           "stockMax": 20,
           "regenTicks": 40,
           "regenCurvePermille": [
-            2000,
-            1500,
-            1000,
-            850,
-            700
-          ]
+            2100,
+            1550,
+            1050,
+            800,
+            650
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 900,
+            "day": 1050,
+            "dusk": 850,
+            "night": 1100
+          }
         },
         {
           "zone": "zone.cove_shelf",
@@ -2362,14 +2544,20 @@
             "species.blue_mackerel"
           ],
           "stockMax": 10,
-          "regenTicks": 50,
+          "regenTicks": 55,
           "regenCurvePermille": [
-            1800,
-            1400,
-            1100,
-            900,
+            2300,
+            1700,
+            1200,
+            950,
             750
-          ]
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1200,
+            "day": 1150,
+            "dusk": 900,
+            "night": 750
+          }
         }
       ],
       "stations": [

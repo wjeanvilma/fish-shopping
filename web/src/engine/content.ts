@@ -16,6 +16,10 @@ export interface PlayerDef {
   startFishRegenPermille: number;
   timingWindowStartPermille: number;
   timingWindowEndPermille: number;
+  timingPerfectStartPermille: number;
+  timingPerfectEndPermille: number;
+  timingGoodBonusPermille: number;
+  timingPerfectBonusPermille: number;
 }
 export interface RareUpgradeDef { to: string; chancePermille: number }
 export interface SpeciesDef {
@@ -40,6 +44,13 @@ export type UpgradeEffect =
   | { kind: "carry_capacity"; capacityUnits: number }
   | { kind: "recipe_duration"; machine: string; recipe: string; durationTicks: number }
   | { kind: "catch_speed"; speedPermille: number }
+  | {
+    kind: "timing_window";
+    windowStartPermille: number;
+    windowEndPermille: number;
+    perfectStartPermille: number;
+    perfectEndPermille: number;
+  }
   | { kind: "fish_regen"; speedPermille: number }
   | { kind: "unlock_fishing_spot"; zone: string }
   | { kind: "unlock_machine"; machine: string }
@@ -174,12 +185,28 @@ export interface TutorialStepDef { id: string; text: string; advanceOn: Tutorial
 export interface RectMm { id: string; minX: number; minZ: number; maxX: number; maxZ: number }
 export type ZoneKind = "fishing" | "machine_input" | "machine_output" | "counter";
 export interface ZoneDef extends RectMm { kind: ZoneKind }
+export interface DayPartDef {
+  id: string;
+  name: string;
+  /** Exclusive end of this part within the day cycle (1..1000); last part must be 1000. */
+  endPermille: number;
+  /** Regen duration multiplier (1000 = normal; higher = slower). */
+  regenMultPermille: number;
+  /** Player catch-speed multiplier when a tide chart is owned. */
+  catchSpeedMultPermille: number;
+}
+export interface EcologyDef {
+  dayLengthTicks: number;
+  parts: DayPartDef[];
+}
 export interface FishingSpotDef {
   zone: string;
   species: string[];
   stockMax: number;
   regenTicks: number;
   regenCurvePermille: number[];
+  /** Optional per-day-part regen overrides keyed by ecology part id. */
+  dayPartRegenMultPermille?: Record<string, number>;
   requiresUpgrade?: string | null;
 }
 export interface StationDef {
@@ -248,6 +275,8 @@ export interface RawContentPack {
   offline: OfflineDef;
   /** Soft coin/stock sinks after early progression (Phase 19). */
   economy: EconomyDef;
+  /** Day-part fishing ecology (Phase 7). */
+  ecology: EcologyDef;
   /** End-of-run prestige milestones (Phase 20); additive, never wipes the save. */
   prestige: PrestigeDef;
   contracts: ContractsDef;
@@ -308,6 +337,7 @@ export class ContentPack {
   get routing() { return this.raw.routing; }
   get offline() { return this.raw.offline; }
   get economy() { return this.raw.economy; }
+  get ecology() { return this.raw.ecology; }
   get prestige() { return this.raw.prestige; }
   get contracts() { return this.raw.contracts; }
   get harbors() { return this.raw.harbors; }
@@ -361,6 +391,15 @@ export function validateContent(p: ContentPack): string[] {
     `ticksPerSecond is ${r.ticksPerSecond}; the simulation contract requires ${TICKS_PER_SECOND}`);
   check(r.player.timingWindowStartPermille < r.player.timingWindowEndPermille, () =>
     "player.timingWindowStartPermille must be < timingWindowEndPermille");
+  check(r.player.timingPerfectStartPermille < r.player.timingPerfectEndPermille, () =>
+    "player.timingPerfectStartPermille must be < timingPerfectEndPermille");
+  check(r.player.timingPerfectStartPermille >= r.player.timingWindowStartPermille, () =>
+    "player.timingPerfectStartPermille must be >= timingWindowStartPermille");
+  check(r.player.timingPerfectEndPermille <= r.player.timingWindowEndPermille, () =>
+    "player.timingPerfectEndPermille must be <= timingWindowEndPermille");
+  check(r.player.timingGoodBonusPermille >= 1, () => "player.timingGoodBonusPermille must be >= 1");
+  check(r.player.timingPerfectBonusPermille >= r.player.timingGoodBonusPermille, () =>
+    "player.timingPerfectBonusPermille must be >= timingGoodBonusPermille");
   check(r.player.startCatchSpeedPermille >= 1000, () =>
     "player.startCatchSpeedPermille must be >= 1000");
   check(r.player.startFishRegenPermille >= 1000, () =>
@@ -396,6 +435,21 @@ export function validateContent(p: ContentPack): string[] {
   for (const req of r.economy.requires) {
     check(economyRequirable.has(req), () => `economy: unknown requirement '${req}'`);
   }
+  check(!!r.ecology, () => "ecology is required");
+  check(r.ecology.dayLengthTicks >= 1, () => "ecology.dayLengthTicks must be >= 1");
+  check(r.ecology.parts.length >= 2, () => "ecology.parts needs at least 2 day parts");
+  check(new Set(r.ecology.parts.map((p) => p.id)).size === r.ecology.parts.length, () =>
+    "ecology.parts ids must be unique");
+  let prevEnd = 0;
+  for (const part of r.ecology.parts) {
+    check(part.endPermille > prevEnd, () =>
+      `ecology.${part.id}: endPermille must increase (was ${prevEnd} → ${part.endPermille})`);
+    check(part.regenMultPermille >= 1, () => `ecology.${part.id}: regenMultPermille must be >= 1`);
+    check(part.catchSpeedMultPermille >= 1, () => `ecology.${part.id}: catchSpeedMultPermille must be >= 1`);
+    prevEnd = part.endPermille;
+  }
+  check(r.ecology.parts[r.ecology.parts.length - 1]!.endPermille === 1000, () =>
+    "ecology.parts must end at endPermille 1000");
   check(r.prestige.ratingThresholds.length === 5, () => "prestige.ratingThresholds must have exactly 5 entries");
   check(r.prestige.milestones.length > 0, () => "prestige.milestones must not be empty");
   for (let i = 1; i < r.prestige.ratingThresholds.length; i++) {
@@ -471,6 +525,19 @@ export function validateContent(p: ContentPack): string[] {
     } else if (e.kind === "catch_speed") {
       check(e.speedPermille > r.player.startCatchSpeedPermille, () =>
         `${u.id}: catch speed does not exceed the starting catch speed`);
+    } else if (e.kind === "timing_window") {
+      check(e.windowStartPermille < e.windowEndPermille, () =>
+        `${u.id}: timing_window windowStart must be < windowEnd`);
+      check(e.perfectStartPermille < e.perfectEndPermille, () =>
+        `${u.id}: timing_window perfectStart must be < perfectEnd`);
+      check(e.perfectStartPermille >= e.windowStartPermille, () =>
+        `${u.id}: timing_window Perfect must sit inside Good (start)`);
+      check(e.perfectEndPermille <= e.windowEndPermille, () =>
+        `${u.id}: timing_window Perfect must sit inside Good (end)`);
+      check(e.windowStartPermille < r.player.timingWindowStartPermille, () =>
+        `${u.id}: timing_window must widen Good start vs player default`);
+      check(e.windowEndPermille > r.player.timingWindowEndPermille, () =>
+        `${u.id}: timing_window must widen Good end vs player default`);
     } else if (e.kind === "fish_regen") {
       check(e.speedPermille > r.player.startFishRegenPermille, () =>
         `${u.id}: fish regen does not exceed the starting fish regen`);
@@ -593,6 +660,11 @@ export function validateContent(p: ContentPack): string[] {
       check(zones.get(f.zone)?.kind === "fishing", () => `${h.id}: '${f.zone}' is not a fishing zone`);
       f.species.forEach((s) => check(p.speciesById.has(s), () => `${h.id}: unknown species '${s}'`));
       check(f.regenCurvePermille.length >= 2, () => `${h.id}: '${f.zone}' regenCurvePermille needs >= 2 entries`);
+      for (const [partId, mult] of Object.entries(f.dayPartRegenMultPermille ?? {})) {
+        check(r.ecology.parts.some((part) => part.id === partId), () =>
+          `${h.id}: '${f.zone}' dayPartRegenMultPermille unknown part '${partId}'`);
+        check(mult >= 1, () => `${h.id}: '${f.zone}' dayPartRegenMultPermille.${partId} must be >= 1`);
+      }
       if (f.requiresUpgrade) {
         check(p.upgradesById.has(f.requiresUpgrade), () => `${h.id}: '${f.zone}' requiresUpgrade unknown '${f.requiresUpgrade}'`);
       }

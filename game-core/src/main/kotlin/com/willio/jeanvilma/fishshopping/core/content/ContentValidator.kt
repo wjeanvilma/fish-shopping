@@ -25,6 +25,21 @@ object ContentValidator {
         check(p.player.timingWindowStartPermille < p.player.timingWindowEndPermille) {
             "player.timingWindowStartPermille must be < timingWindowEndPermille"
         }
+        check(p.player.timingPerfectStartPermille < p.player.timingPerfectEndPermille) {
+            "player.timingPerfectStartPermille must be < timingPerfectEndPermille"
+        }
+        check(p.player.timingPerfectStartPermille >= p.player.timingWindowStartPermille) {
+            "player.timingPerfectStartPermille must be >= timingWindowStartPermille"
+        }
+        check(p.player.timingPerfectEndPermille <= p.player.timingWindowEndPermille) {
+            "player.timingPerfectEndPermille must be <= timingWindowEndPermille"
+        }
+        check(p.player.timingGoodBonusPermille >= 1) {
+            "player.timingGoodBonusPermille must be >= 1"
+        }
+        check(p.player.timingPerfectBonusPermille >= p.player.timingGoodBonusPermille) {
+            "player.timingPerfectBonusPermille must be >= timingGoodBonusPermille"
+        }
         check(p.player.startCatchSpeedPermille >= 1000) {
             "player.startCatchSpeedPermille must be >= 1000"
         }
@@ -65,6 +80,21 @@ object ContentValidator {
         p.economy.requires.forEach { req ->
             check(req in economyRequirable) { "economy: unknown requirement '$req'" }
         }
+        check(p.ecology.dayLengthTicks >= 1) { "ecology.dayLengthTicks must be >= 1" }
+        check(p.ecology.parts.size >= 2) { "ecology.parts needs at least 2 day parts" }
+        check(p.ecology.parts.map { it.id }.toSet().size == p.ecology.parts.size) {
+            "ecology.parts ids must be unique"
+        }
+        var prevEnd = 0
+        for (part in p.ecology.parts) {
+            check(part.endPermille > prevEnd) {
+                "ecology.${part.id}: endPermille must increase (was $prevEnd → ${part.endPermille})"
+            }
+            check(part.regenMultPermille >= 1) { "ecology.${part.id}: regenMultPermille must be >= 1" }
+            check(part.catchSpeedMultPermille >= 1) { "ecology.${part.id}: catchSpeedMultPermille must be >= 1" }
+            prevEnd = part.endPermille
+        }
+        check(p.ecology.parts.last().endPermille == 1000) { "ecology.parts must end at endPermille 1000" }
         check(p.prestige.ratingThresholds.size == 5) { "prestige.ratingThresholds must have exactly 5 entries" }
         check(p.prestige.milestones.isNotEmpty()) { "prestige.milestones must not be empty" }
         for (i in 1 until p.prestige.ratingThresholds.size) {
@@ -131,6 +161,26 @@ object ContentValidator {
                 }
                 is UpgradeEffect.CatchSpeed -> check(e.speedPermille > p.player.startCatchSpeedPermille) {
                     "${u.id}: catch speed does not exceed the starting catch speed"
+                }
+                is UpgradeEffect.TimingWindow -> {
+                    check(e.windowStartPermille < e.windowEndPermille) {
+                        "${u.id}: timing_window windowStart must be < windowEnd"
+                    }
+                    check(e.perfectStartPermille < e.perfectEndPermille) {
+                        "${u.id}: timing_window perfectStart must be < perfectEnd"
+                    }
+                    check(e.perfectStartPermille >= e.windowStartPermille) {
+                        "${u.id}: timing_window Perfect must sit inside Good (start)"
+                    }
+                    check(e.perfectEndPermille <= e.windowEndPermille) {
+                        "${u.id}: timing_window Perfect must sit inside Good (end)"
+                    }
+                    check(e.windowStartPermille < p.player.timingWindowStartPermille) {
+                        "${u.id}: timing_window must widen Good start vs player default"
+                    }
+                    check(e.windowEndPermille > p.player.timingWindowEndPermille) {
+                        "${u.id}: timing_window must widen Good end vs player default"
+                    }
                 }
                 is UpgradeEffect.FishRegen -> check(e.speedPermille > p.player.startFishRegenPermille) {
                     "${u.id}: fish regen does not exceed the starting fish regen"
@@ -261,6 +311,12 @@ object ContentValidator {
                 check(h.zonesById[f.zone]?.kind == ZoneKind.FISHING) { "${h.id}: '${f.zone}' is not a fishing zone" }
                 f.species.forEach { s -> check(s in p.speciesById) { "${h.id}: unknown species '$s'" } }
                 check(f.regenCurvePermille.size >= 2) { "${h.id}: '${f.zone}' regenCurvePermille needs >= 2 entries" }
+                f.dayPartRegenMultPermille.forEach { (partId, mult) ->
+                    check(partId in p.ecology.partsById) {
+                        "${h.id}: '${f.zone}' dayPartRegenMultPermille unknown part '$partId'"
+                    }
+                    check(mult >= 1) { "${h.id}: '${f.zone}' dayPartRegenMultPermille.$partId must be >= 1" }
+                }
                 f.requiresUpgrade?.let { req ->
                     check(req in p.upgradesById) { "${h.id}: '${f.zone}' requiresUpgrade unknown '$req'" }
                 }

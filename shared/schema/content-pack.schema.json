@@ -18,6 +18,7 @@
     "routing",
     "offline",
     "economy",
+    "ecology",
     "prestige",
     "contracts",
     "customers",
@@ -48,7 +49,11 @@
         "startCatchSpeedPermille",
         "startFishRegenPermille",
         "timingWindowStartPermille",
-        "timingWindowEndPermille"
+        "timingWindowEndPermille",
+        "timingPerfectStartPermille",
+        "timingPerfectEndPermille",
+        "timingGoodBonusPermille",
+        "timingPerfectBonusPermille"
       ],
       "properties": {
         "startCoins": {
@@ -75,13 +80,33 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 1000,
-          "description": "Cast progress (0..1000) where the Reel timing window opens."
+          "description": "Cast progress (0..1000) where the Good reel window opens."
         },
         "timingWindowEndPermille": {
           "type": "integer",
           "minimum": 0,
           "maximum": 1000,
-          "description": "Cast progress (0..1000) where the Reel timing window closes (exclusive)."
+          "description": "Cast progress (0..1000) where the Good reel window closes (exclusive)."
+        },
+        "timingPerfectStartPermille": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "Cast progress where the Perfect reel zone opens (must sit inside the Good window)."
+        },
+        "timingPerfectEndPermille": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "Cast progress where the Perfect reel zone closes (exclusive)."
+        },
+        "timingGoodBonusPermille": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Tip payout for a Good reel as permille of species baseValue (500 = half)."
+        },
+        "timingPerfectBonusPermille": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Tip payout for a Perfect reel as permille of species baseValue (1000 = full)."
         }
       }
     },
@@ -354,6 +379,46 @@
                   "speedPermille": {
                     "$ref": "#/$defs/positiveInt",
                     "description": "Catch speed multiplier in permille (1250 = 25% faster)."
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "windowStartPermille",
+                  "windowEndPermille",
+                  "perfectStartPermille",
+                  "perfectEndPermille"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "const": "timing_window"
+                  },
+                  "windowStartPermille": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000,
+                    "description": "Widens Good window start via min(current, this)."
+                  },
+                  "windowEndPermille": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000,
+                    "description": "Widens Good window end via max(current, this)."
+                  },
+                  "perfectStartPermille": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000,
+                    "description": "Widens Perfect zone start via min(current, this)."
+                  },
+                  "perfectEndPermille": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000,
+                    "description": "Widens Perfect zone end via max(current, this)."
                   }
                 }
               },
@@ -782,6 +847,62 @@
         }
       }
     },
+    "ecology": {
+      "type": "object",
+      "required": [
+        "dayLengthTicks",
+        "parts"
+      ],
+      "additionalProperties": false,
+      "description": "Harbor day-part cycle that scales fishing-spot regen (and tide-chart catch speed).",
+      "properties": {
+        "dayLengthTicks": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Ticks in one dawn→night cycle (tick % dayLengthTicks)."
+        },
+        "parts": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "endPermille",
+              "regenMultPermille",
+              "catchSpeedMultPermille"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "description": "Day-part id (no dotted namespace; referenced by fishingSpots.dayPartRegenMultPermille)."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "endPermille": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000,
+                "description": "Exclusive end of this part within the day (parts must end at 1000)."
+              },
+              "regenMultPermille": {
+                "$ref": "#/$defs/positiveInt",
+                "description": "Spot regen duration multiplier (1000 = normal; higher = slower restock)."
+              },
+              "catchSpeedMultPermille": {
+                "$ref": "#/$defs/positiveInt",
+                "description": "Applied to player cast speed when a tide chart is owned."
+              }
+            }
+          }
+        }
+      }
+    },
     "economy": {
       "type": "object",
       "required": [
@@ -1197,6 +1318,13 @@
                     "$ref": "#/$defs/positiveInt"
                   },
                   "description": "Regen duration multipliers at stock ratios 0..1 (empty is slower = stock pressure)."
+                },
+                "dayPartRegenMultPermille": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/$defs/positiveInt"
+                  },
+                  "description": "Optional per-day-part regen multipliers keyed by ecology.parts[].id (overrides the global part regenMult)."
                 },
                 "requiresUpgrade": {
                   "$ref": "#/$defs/id",

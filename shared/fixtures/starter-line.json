@@ -1,7 +1,7 @@
 {
     "name": "starter-line",
-    "description": "Five minutes of the Sunrise Pier loop: fish, cut, stock, serve, buy bag upgrades.",
-    "contentVersion": "0.26.0",
+    "description": "Five minutes of the Sunrise Pier loop: fish, cut, stock, serve, hire, contract, grill, bag upgrades.",
+    "contentVersion": "0.30.0",
     "harborId": "harbor.sunrise_pier",
     "seed": 20261105,
     "ticks": 6000,
@@ -2066,9 +2066,9 @@
         },
         {
             "tick": 4201,
-            "type": "purchase_upgrade",
-            "upgradeId": "upgrade.bag_capacity_3",
-            "requestId": "fixture-2"
+            "type": "accept_contract",
+            "offerId": "offer.67",
+            "requestId": "fixture-acc-2"
         },
         {
             "tick": 4202,
@@ -2275,559 +2275,631 @@
             "z": 0
         },
         {
-            "tick": 5222,
+            "tick": 5012,
             "type": "move",
             "x": 1000,
             "z": 0
         },
         {
-            "tick": 5258,
+            "tick": 5048,
             "type": "move",
             "x": 0,
             "z": 0
         },
         {
-            "tick": 5259,
+            "tick": 5049,
             "type": "move",
             "x": 899,
             "z": -436
         },
         {
-            "tick": 5271,
+            "tick": 5061,
             "type": "move",
             "x": 900,
             "z": -435
         },
         {
-            "tick": 5272,
+            "tick": 5062,
             "type": "move",
             "x": 900,
             "z": -436
         },
         {
-            "tick": 5281,
+            "tick": 5071,
             "type": "move",
             "x": 899,
             "z": -436
         },
         {
-            "tick": 5284,
+            "tick": 5074,
             "type": "move",
             "x": 900,
             "z": -436
         },
         {
-            "tick": 5285,
+            "tick": 5075,
             "type": "move",
             "x": 899,
             "z": -436
         },
         {
-            "tick": 5289,
+            "tick": 5079,
             "type": "move",
             "x": 900,
             "z": -436
         },
         {
-            "tick": 5290,
+            "tick": 5080,
             "type": "move",
             "x": 899,
             "z": -436
         },
         {
-            "tick": 5291,
+            "tick": 5081,
             "type": "move",
             "x": 899,
             "z": -435
         },
         {
-            "tick": 5292,
+            "tick": 5082,
             "type": "move",
             "x": 900,
             "z": -435
         },
         {
-            "tick": 5294,
+            "tick": 5084,
             "type": "move",
             "x": 900,
             "z": -436
         },
         {
-            "tick": 5300,
+            "tick": 5090,
             "type": "move",
             "x": 900,
             "z": -437
         },
         {
-            "tick": 5302,
+            "tick": 5092,
             "type": "move",
             "x": 900,
             "z": -438
         },
         {
-            "tick": 5303,
+            "tick": 5093,
             "type": "move",
             "x": 900,
             "z": -441
         },
         {
-            "tick": 5304,
+            "tick": 5094,
             "type": "move",
             "x": 860,
             "z": -420
         },
         {
-            "tick": 5305,
+            "tick": 5095,
             "type": "move",
             "x": 0,
             "z": 0
         },
         {
-            "tick": 5337,
+            "tick": 5115,
             "type": "move",
             "x": 669,
             "z": -743
         },
         {
-            "tick": 5341,
+            "tick": 5119,
             "type": "move",
             "x": 705,
             "z": -708
         },
         {
-            "tick": 5342,
+            "tick": 5120,
             "type": "move",
             "x": 742,
             "z": -671
         },
         {
-            "tick": 5343,
+            "tick": 5121,
             "type": "move",
             "x": 777,
             "z": -629
         },
         {
-            "tick": 5344,
+            "tick": 5122,
             "type": "move",
             "x": 812,
             "z": -584
         },
         {
-            "tick": 5345,
+            "tick": 5123,
             "type": "move",
             "x": 843,
             "z": -537
         },
         {
-            "tick": 5346,
+            "tick": 5124,
             "type": "move",
             "x": 872,
             "z": -489
         },
         {
-            "tick": 5349,
+            "tick": 5127,
             "type": "move",
             "x": 872,
             "z": -490
         },
         {
-            "tick": 5351,
+            "tick": 5129,
             "type": "move",
             "x": 873,
             "z": -490
         },
         {
-            "tick": 5352,
+            "tick": 5130,
             "type": "move",
             "x": 872,
             "z": -491
         },
         {
-            "tick": 5353,
+            "tick": 5131,
             "type": "move",
             "x": 875,
             "z": -492
         },
         {
-            "tick": 5354,
+            "tick": 5132,
             "type": "move",
             "x": 0,
             "z": 0
         },
         {
-            "tick": 5355,
+            "tick": 5133,
             "type": "move",
             "x": 671,
             "z": 740
         },
         {
-            "tick": 5357,
+            "tick": 5135,
             "type": "move",
             "x": 672,
             "z": 740
         },
         {
-            "tick": 5358,
+            "tick": 5136,
             "type": "move",
             "x": 671,
             "z": 740
         },
         {
-            "tick": 5359,
+            "tick": 5137,
             "type": "move",
             "x": 672,
             "z": 740
         },
         {
-            "tick": 5360,
+            "tick": 5138,
             "type": "move",
             "x": 630,
             "z": 776
         },
         {
-            "tick": 5361,
+            "tick": 5139,
             "type": "move",
             "x": 585,
             "z": 810
         },
         {
-            "tick": 5362,
+            "tick": 5140,
             "type": "move",
             "x": 538,
             "z": 843
         },
         {
-            "tick": 5363,
+            "tick": 5141,
             "type": "move",
             "x": 490,
             "z": 871
         },
         {
-            "tick": 5364,
+            "tick": 5142,
             "type": "move",
             "x": 442,
             "z": 897
         },
         {
-            "tick": 5365,
+            "tick": 5143,
             "type": "move",
             "x": 394,
             "z": 918
         },
         {
-            "tick": 5366,
+            "tick": 5144,
             "type": "move",
             "x": 350,
             "z": 936
         },
         {
-            "tick": 5368,
+            "tick": 5146,
             "type": "move",
             "x": 350,
             "z": 937
         },
         {
-            "tick": 5372,
+            "tick": 5150,
             "type": "move",
             "x": 351,
             "z": 939
         },
         {
-            "tick": 5373,
+            "tick": 5151,
             "type": "move",
             "x": 175,
             "z": 470
         },
         {
-            "tick": 5374,
+            "tick": 5152,
             "type": "move",
             "x": 0,
             "z": 0
         },
         {
-            "tick": 5413,
-            "type": "move",
-            "x": -257,
-            "z": 966
+            "tick": 5175,
+            "type": "deliver_contract",
+            "contractId": "job.74",
+            "requestId": "fixture-del-3"
         },
         {
-            "tick": 5418,
-            "type": "move",
-            "x": -258,
-            "z": 966
+            "tick": 5176,
+            "type": "hire_worker",
+            "roleId": "worker.porter",
+            "requestId": "fixture-hire-4"
         },
         {
-            "tick": 5424,
-            "type": "move",
-            "x": -258,
-            "z": 965
+            "tick": 5177,
+            "type": "purchase_upgrade",
+            "upgradeId": "upgrade.bag_capacity_3",
+            "requestId": "fixture-5"
         },
         {
-            "tick": 5425,
+            "tick": 5178,
             "type": "move",
-            "x": -258,
-            "z": 966
+            "x": 0,
+            "z": 1000
         },
         {
-            "tick": 5427,
-            "type": "move",
-            "x": -259,
-            "z": 965
-        },
-        {
-            "tick": 5431,
-            "type": "move",
-            "x": -260,
-            "z": 965
-        },
-        {
-            "tick": 5434,
-            "type": "move",
-            "x": -259,
-            "z": 965
-        },
-        {
-            "tick": 5435,
-            "type": "move",
-            "x": -260,
-            "z": 965
-        },
-        {
-            "tick": 5440,
-            "type": "move",
-            "x": -260,
-            "z": 966
-        },
-        {
-            "tick": 5441,
-            "type": "move",
-            "x": -260,
-            "z": 965
-        },
-        {
-            "tick": 5445,
-            "type": "move",
-            "x": -260,
-            "z": 966
-        },
-        {
-            "tick": 5446,
-            "type": "move",
-            "x": -261,
-            "z": 967
-        },
-        {
-            "tick": 5447,
-            "type": "move",
-            "x": -255,
-            "z": 940
-        },
-        {
-            "tick": 5448,
+            "tick": 5198,
             "type": "move",
             "x": 0,
             "z": 0
         },
         {
-            "tick": 5639,
+            "tick": 5199,
             "type": "move",
-            "x": -964,
-            "z": -265
+            "x": 1000,
+            "z": 0
         },
         {
-            "tick": 5648,
+            "tick": 5228,
             "type": "move",
-            "x": -964,
-            "z": -264
+            "x": 500,
+            "z": 0
         },
         {
-            "tick": 5649,
-            "type": "move",
-            "x": -964,
-            "z": -265
-        },
-        {
-            "tick": 5652,
-            "type": "move",
-            "x": -964,
-            "z": -264
-        },
-        {
-            "tick": 5653,
-            "type": "move",
-            "x": -964,
-            "z": -265
-        },
-        {
-            "tick": 5656,
-            "type": "move",
-            "x": -964,
-            "z": -264
-        },
-        {
-            "tick": 5657,
-            "type": "move",
-            "x": -964,
-            "z": -265
-        },
-        {
-            "tick": 5660,
-            "type": "move",
-            "x": -964,
-            "z": -264
-        },
-        {
-            "tick": 5661,
-            "type": "move",
-            "x": -964,
-            "z": -265
-        },
-        {
-            "tick": 5665,
-            "type": "move",
-            "x": -964,
-            "z": -264
-        },
-        {
-            "tick": 5666,
-            "type": "move",
-            "x": -964,
-            "z": -265
-        },
-        {
-            "tick": 5669,
-            "type": "move",
-            "x": -964,
-            "z": -264
-        },
-        {
-            "tick": 5670,
-            "type": "move",
-            "x": -964,
-            "z": -265
-        },
-        {
-            "tick": 5674,
-            "type": "move",
-            "x": -964,
-            "z": -264
-        },
-        {
-            "tick": 5675,
-            "type": "move",
-            "x": -964,
-            "z": -265
-        },
-        {
-            "tick": 5677,
-            "type": "move",
-            "x": -964,
-            "z": -264
-        },
-        {
-            "tick": 5678,
-            "type": "move",
-            "x": -964,
-            "z": -265
-        },
-        {
-            "tick": 5682,
-            "type": "move",
-            "x": -964,
-            "z": -264
-        },
-        {
-            "tick": 5683,
-            "type": "move",
-            "x": -964,
-            "z": -265
-        },
-        {
-            "tick": 5686,
-            "type": "move",
-            "x": -964,
-            "z": -264
-        },
-        {
-            "tick": 5687,
-            "type": "move",
-            "x": -964,
-            "z": -265
-        },
-        {
-            "tick": 5689,
-            "type": "move",
-            "x": -966,
-            "z": -265
-        },
-        {
-            "tick": 5690,
-            "type": "move",
-            "x": -967,
-            "z": -271
-        },
-        {
-            "tick": 5691,
+            "tick": 5229,
             "type": "move",
             "x": 0,
             "z": 0
         },
         {
-            "tick": 5692,
+            "tick": 5230,
+            "type": "move",
+            "x": 0,
+            "z": -1000
+        },
+        {
+            "tick": 5250,
+            "type": "move",
+            "x": 0,
+            "z": 0
+        },
+        {
+            "tick": 5251,
+            "type": "move",
+            "x": -975,
+            "z": 220
+        },
+        {
+            "tick": 5261,
+            "type": "move",
+            "x": -976,
+            "z": 217
+        },
+        {
+            "tick": 5262,
+            "type": "move",
+            "x": -976,
+            "z": 215
+        },
+        {
+            "tick": 5263,
+            "type": "move",
+            "x": -977,
+            "z": 212
+        },
+        {
+            "tick": 5264,
+            "type": "move",
+            "x": -977,
+            "z": 210
+        },
+        {
+            "tick": 5265,
+            "type": "move",
+            "x": -978,
+            "z": 207
+        },
+        {
+            "tick": 5266,
+            "type": "move",
+            "x": -978,
+            "z": 205
+        },
+        {
+            "tick": 5267,
+            "type": "move",
+            "x": -979,
+            "z": 203
+        },
+        {
+            "tick": 5268,
+            "type": "move",
+            "x": -979,
+            "z": 200
+        },
+        {
+            "tick": 5269,
+            "type": "move",
+            "x": -980,
+            "z": 198
+        },
+        {
+            "tick": 5270,
+            "type": "move",
+            "x": -980,
+            "z": 196
+        },
+        {
+            "tick": 5271,
+            "type": "move",
+            "x": -981,
+            "z": 193
+        },
+        {
+            "tick": 5272,
+            "type": "move",
+            "x": -981,
+            "z": 191
+        },
+        {
+            "tick": 5273,
+            "type": "move",
+            "x": -981,
+            "z": 189
+        },
+        {
+            "tick": 5274,
+            "type": "move",
+            "x": -982,
+            "z": 187
+        },
+        {
+            "tick": 5275,
+            "type": "move",
+            "x": -982,
+            "z": 184
+        },
+        {
+            "tick": 5276,
+            "type": "move",
+            "x": -983,
+            "z": 182
+        },
+        {
+            "tick": 5277,
+            "type": "move",
+            "x": -983,
+            "z": 180
+        },
+        {
+            "tick": 5278,
+            "type": "move",
+            "x": -983,
+            "z": 178
+        },
+        {
+            "tick": 5279,
+            "type": "move",
+            "x": -984,
+            "z": 176
+        },
+        {
+            "tick": 5280,
+            "type": "move",
+            "x": -984,
+            "z": 174
+        },
+        {
+            "tick": 5281,
+            "type": "move",
+            "x": -985,
+            "z": 172
+        },
+        {
+            "tick": 5282,
+            "type": "move",
+            "x": -985,
+            "z": 170
+        },
+        {
+            "tick": 5283,
+            "type": "move",
+            "x": -985,
+            "z": 168
+        },
+        {
+            "tick": 5301,
+            "type": "move",
+            "x": -985,
+            "z": 169
+        },
+        {
+            "tick": 5315,
+            "type": "move",
+            "x": -985,
+            "z": 170
+        },
+        {
+            "tick": 5360,
+            "type": "move",
+            "x": -986,
+            "z": 170
+        },
+        {
+            "tick": 5362,
+            "type": "move",
+            "x": -987,
+            "z": 170
+        },
+        {
+            "tick": 5363,
+            "type": "move",
+            "x": -925,
+            "z": 165
+        },
+        {
+            "tick": 5364,
+            "type": "move",
+            "x": 0,
+            "z": 0
+        },
+        {
+            "tick": 5365,
             "type": "move",
             "x": -1000,
             "z": 0
         },
         {
-            "tick": 5704,
+            "tick": 5401,
             "type": "move",
-            "x": -1000,
-            "z": -1
+            "x": 0,
+            "z": 0
         },
         {
-            "tick": 5716,
+            "tick": 5782,
             "type": "move",
-            "x": -1000,
-            "z": -2
+            "x": 1000,
+            "z": 0
         },
         {
-            "tick": 5720,
+            "tick": 5818,
             "type": "move",
-            "x": -1000,
-            "z": -3
+            "x": 0,
+            "z": 0
         },
         {
-            "tick": 5723,
+            "tick": 5819,
             "type": "move",
-            "x": -1000,
-            "z": -4
+            "x": 898,
+            "z": -438
         },
         {
-            "tick": 5724,
+            "tick": 5833,
             "type": "move",
-            "x": -1000,
-            "z": -5
+            "x": 898,
+            "z": -439
         },
         {
-            "tick": 5725,
+            "tick": 5845,
             "type": "move",
-            "x": -1000,
-            "z": -6
+            "x": 897,
+            "z": -440
         },
         {
-            "tick": 5727,
+            "tick": 5846,
             "type": "move",
-            "x": -1000,
-            "z": -7
+            "x": 898,
+            "z": -440
         },
         {
-            "tick": 5728,
+            "tick": 5849,
             "type": "move",
-            "x": -325,
-            "z": -5
+            "x": 898,
+            "z": -439
         },
         {
-            "tick": 5729,
+            "tick": 5850,
+            "type": "move",
+            "x": 898,
+            "z": -440
+        },
+        {
+            "tick": 5852,
+            "type": "move",
+            "x": 898,
+            "z": -439
+        },
+        {
+            "tick": 5853,
+            "type": "move",
+            "x": 898,
+            "z": -440
+        },
+        {
+            "tick": 5855,
+            "type": "move",
+            "x": 898,
+            "z": -439
+        },
+        {
+            "tick": 5856,
+            "type": "move",
+            "x": 898,
+            "z": -440
+        },
+        {
+            "tick": 5858,
+            "type": "move",
+            "x": 898,
+            "z": -439
+        },
+        {
+            "tick": 5859,
+            "type": "move",
+            "x": 898,
+            "z": -440
+        },
+        {
+            "tick": 5862,
+            "type": "move",
+            "x": 899,
+            "z": -440
+        },
+        {
+            "tick": 5863,
+            "type": "move",
+            "x": 900,
+            "z": -438
+        },
+        {
+            "tick": 5864,
+            "type": "move",
+            "x": 720,
+            "z": -355
+        },
+        {
+            "tick": 5865,
             "type": "move",
             "x": 0,
             "z": 0
@@ -2835,55 +2907,67 @@
     ],
     "expect": {
         "tick": 6000,
-        "coins": 203,
-        "rngState": -698244662,
-        "playerX": -14250,
-        "playerZ": 0,
+        "coins": 240,
+        "rngState": 629367875,
+        "playerX": 1200,
+        "playerZ": -4000,
         "bag": {
-            "species.dawn_anchovy": 1,
-            "species.silver_sprat": 2
+            "product.basic_portion": 1,
+            "product.fillet": 6
         },
         "bagCapacityUnits": 12,
         "machineInput": {
-            "species.copper_mullet": 1,
-            "species.dawn_anchovy": 1,
+            "species.dawn_anchovy": 2,
             "species.sail_needlefish": 1
         },
         "machineOutput": {
-            "product.basic_portion": 7,
-            "product.fillet": 3,
-            "product.premium_portion": 4
+            "product.fillet": 11
         },
-        "activeBatchRemaining": 50,
-        "counterStock": {},
-        "customers": 4,
+        "activeBatchRemaining": 85,
+        "counterStock": {
+            "product.basic_portion": 6,
+            "product.premium_portion": 3
+        },
+        "customers": 5,
         "fishingStock": {
             "zone.pier_end": 18,
             "zone.pier_spur": 10
         },
         "ownedUpgrades": [
             "upgrade.bag_capacity_2",
-            "upgrade.bag_capacity_3"
+            "upgrade.bag_capacity_3",
+            "upgrade.harbor_grill",
+            "upgrade.side_pier"
         ],
         "completedQuests": [
             "quest.fill_the_hold",
-            "quest.first_ten_sales"
+            "quest.first_cast",
+            "quest.first_hire",
+            "quest.first_ten_sales",
+            "quest.line_running",
+            "quest.specialty_kitchen"
         ],
-        "tutorialIndex": 7,
+        "tutorialIndex": 10,
         "stats": {
-            "stat.counter_stocked": 41,
-            "stat.fish_caught": 39,
-            "stat.items_sold": 41,
-            "stat.lost_customers": 23,
-            "stat.machine_inputs": 36,
-            "stat.outputs_collected": 41,
-            "stat.premium_sales": 2,
-            "stat.quests_completed": 2,
+            "stat.contract_items_delivered": 2,
+            "stat.contract_revenue": 40,
+            "stat.contracts_completed": 1,
+            "stat.counter_stocked": 38,
+            "stat.fish_caught": 38,
+            "stat.items_sold": 28,
+            "stat.items_spoiled": 1,
+            "stat.lost_customers": 24,
+            "stat.machine_inputs": 38,
+            "stat.outputs_collected": 48,
+            "stat.premium_sales": 1,
+            "stat.quests_completed": 6,
             "stat.rare_catches": 1,
-            "stat.revenue": 303,
-            "stat.sales": 18,
-            "stat.unmet_preference_sales": 15,
-            "stat.upgrades_bought": 2
+            "stat.revenue": 200,
+            "stat.sales": 12,
+            "stat.unmet_preference_sales": 10,
+            "stat.upgrades_bought": 2,
+            "stat.worker_items_moved": 19,
+            "stat.workers_hired": 1
         }
     }
 }

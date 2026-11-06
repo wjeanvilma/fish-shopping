@@ -1,5 +1,5 @@
 /**
- * First-session / empty-state coaching for the HUD (Phase 30 / Phase 4 spoil tips).
+ * First-session / empty-state coaching for the HUD (Phase 30 / Phase 6 Act II tips).
  * Presentation-only: never mutates state. Mirrors game-core Coaching.kt.
  */
 import type { ContentPack } from "./content";
@@ -65,6 +65,31 @@ export function emptyStateTip(content: ContentPack, state: GameState): string | 
     state.stat(Stats.MACHINE_INPUTS) === 0
   ) {
     return "Drop raw fish on a teal input pad to start cutting";
+  }
+
+  const bagHasProducts = bag.contents().some(([id, qty]) => qty > 0 && content.productsById.has(id));
+  if (stocked === 0 && (bagHasProducts || hasOutput) && state.stat(Stats.FISH_CAUGHT) > 0) {
+    return "Counter is empty — stock portions before the next customer";
+  }
+
+  if (
+    state.completedQuests.has("quest.first_ten_sales") &&
+    !state.completedQuests.has("quest.first_hire") &&
+    state.workers.length === 0
+  ) {
+    return "No staff yet — hire a fisher or porter from the Staff panel";
+  }
+
+  const contractsUnlocked = content.contracts.requires.every(
+    (id) => state.ownedUpgrades.has(id) || state.completedQuests.has(id),
+  );
+  if (
+    contractsUnlocked &&
+    state.activeContracts.length === 0 &&
+    state.contractOffers.length > 0 &&
+    state.stat(Stats.CONTRACTS_COMPLETED) === 0
+  ) {
+    return "No active jobs — take a harbor contract from the Jobs board";
   }
 
   if (EconomySystem.unlocked(content, state)) {

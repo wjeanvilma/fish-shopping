@@ -86,7 +86,7 @@ class SimulationTest {
     @Test
     fun speciesRosterIsHarborGatedWithRareUpgradeChains() {
         val c = Shared.content
-        assertEquals("0.26.0", c.contentVersion)
+        assertEquals("0.30.0", c.contentVersion)
         assertEquals(24, c.species.size)
         val sunrise = c.harborsById.getValue("harbor.sunrise_pier").fishingSpots.flatMap { it.species }
         val moon = c.harborsById.getValue("harbor.moon_cove").fishingSpots.flatMap { it.species }
@@ -612,7 +612,7 @@ class SimulationTest {
     @Test
     fun harborGrillUnlocksAsSecondProductionLine() {
         val c = Shared.content
-        assertEquals("0.26.0", c.contentVersion)
+        assertEquals("0.30.0", c.contentVersion)
         assertTrue(c.machinesById.containsKey("machine.harbor_grill"))
         val effect = c.upgradesById.getValue("upgrade.harbor_grill").effect
         assertTrue(effect is com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine)
@@ -651,7 +651,7 @@ class SimulationTest {
     @Test
     fun productRecipeTreeSupportsMultiInputAndIntermediateCrafts() {
         val c = Shared.content
-        assertEquals("0.26.0", c.contentVersion)
+        assertEquals("0.30.0", c.contentVersion)
         val productIds = c.products.map { it.id }.toSet()
         assertTrue(productIds.containsAll(listOf(
             "product.diced_fish", "product.skewer", "product.soup_stock", "product.ice_packed_crate",
@@ -720,38 +720,64 @@ class SimulationTest {
     }
 
     @Test
-    fun perfectReelFinishesCastEarlyAndPaysTimingBonus() {
+    fun goodReelFinishesCastEarlyAndPaysHalfTip() {
         val sim = newSim(seed = 99)
         val pilot = Autopilot(sim)
         pilot.walkTo(-14250, 0)
-        // Advance into the timing window (65%..85% of the cast).
-        var duration = 0
-        repeat(5) { pilot.tick(Command.Move(0, 0)) } // start a cast
+        // Enter Good window (650) but stay before Perfect (720).
+        repeat(5) { pilot.tick(Command.Move(0, 0)) }
         assertNotNull(sim.state.player.fishingSpecies)
-        duration = sim.state.player.fishingCatchTicks
-        val windowStart = (duration * 650) / 1000
-        while (sim.state.player.fishingProgress < windowStart) {
+        while (sim.view().fishingTimingTier != "good") {
             pilot.tick(Command.Move(0, 0))
+            assertTrue(sim.state.player.fishingSpecies != null)
         }
-        assertTrue(sim.view().fishingTimingWindow)
+        assertEquals("good", sim.view().fishingTimingTier)
         assertTrue(sim.view().fishingCanReel)
         val beforeCoins = sim.state.coins
         val events = pilot.tick(Command.Move(0, 0), listOf(Command.Reel))
         val caught = events.filterIsInstance<GameEvent.FishCaught>().single()
         assertTrue(caught.timingBonus)
+        assertEquals(com.willio.jeanvilma.fishshopping.core.sim.TimingTier.GOOD, caught.timingTier)
         assertTrue(sim.state.stat(Stats.TIMING_BONUSES) >= 1)
+        assertTrue(sim.state.stat(Stats.GOOD_REELS) >= 1)
         assertTrue(sim.state.coins > beforeCoins)
         assertNull(sim.state.player.fishingSpecies)
+    }
+
+    @Test
+    fun perfectReelPaysFullTipAndTimingWindowUpgradeWidens() {
+        val sim = newSim(seed = 99)
+        val pilot = Autopilot(sim)
+        pilot.walkTo(-14250, 0)
+        repeat(5) { pilot.tick(Command.Move(0, 0)) }
+        while (sim.view().fishingTimingTier != "perfect") {
+            pilot.tick(Command.Move(0, 0))
+            assertTrue(sim.state.player.fishingSpecies != null)
+        }
+        assertEquals("perfect", sim.view().fishingTimingTier)
+        val beforeCoins = sim.state.coins
+        val events = pilot.tick(Command.Move(0, 0), listOf(Command.Reel))
+        val caught = events.filterIsInstance<GameEvent.FishCaught>().single()
+        assertEquals(com.willio.jeanvilma.fishshopping.core.sim.TimingTier.PERFECT, caught.timingTier)
+        assertTrue(sim.state.stat(Stats.PERFECT_REELS) >= 1)
+        assertTrue(sim.state.coins > beforeCoins)
+
+        val baseStart = sim.content.player.timingWindowStartPermille
+        sim.state.coins = 10_000
+        sim.state.ownedUpgrades += "upgrade.rod_speed_2"
+        val buy = sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.timing_sights", "req-sights")))
+        assertTrue(buy.any { it is GameEvent.UpgradePurchased && it.upgradeId == "upgrade.timing_sights" })
+        assertTrue(sim.state.player.timingWindowStartPermille < baseStart)
+        assertTrue(sim.state.player.timingWindowEndPermille > sim.content.player.timingWindowEndPermille)
     }
 
     @Test
     fun emptySpotRegenUsesSlowerCurveThanNearFull() {
         val sim = newSim()
         val def = sim.content.harborsById.getValue(HARBOR).fishingSpots.first { it.zone == "zone.pier_end" }
-        val empty = com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
-            .regenTicksFor(def, stock = 0, fishRegenPermille = 1000)
-        val nearlyFull = com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
-            .regenTicksFor(def, stock = def.stockMax - 1, fishRegenPermille = 1000)
+        val FS = com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
+        val empty = FS.regenTicksFor(sim.content, sim.state, def, stock = 0)
+        val nearlyFull = FS.regenTicksFor(sim.content, sim.state, def, stock = def.stockMax - 1)
         assertTrue("empty=$empty nearlyFull=$nearlyFull", empty > nearlyFull)
         val spot = sim.state.fishingSpots.first { it.zoneId == "zone.pier_end" }
         spot.stock = 0
@@ -766,12 +792,11 @@ class SimulationTest {
     fun fishRegenUpgradeShortensRestockWait() {
         val sim = newSim()
         val def = sim.content.harborsById.getValue(HARBOR).fishingSpots.first { it.zone == "zone.pier_end" }
-        val base = com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
-            .regenTicksFor(def, 0, 1000)
-        val boosted = com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
-            .regenTicksFor(def, 0, 1250)
-        assertTrue(boosted < base)
+        val FS = com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
+        val base = FS.regenTicksFor(sim.content, sim.state, def, 0)
         sim.state.player.fishRegenPermille = 1250
+        val boosted = FS.regenTicksFor(sim.content, sim.state, def, 0)
+        assertTrue(boosted < base)
         val spot = sim.state.fishingSpots.first { it.zoneId == "zone.pier_end" }
         spot.stock = 0
         spot.regenProgress = 0
@@ -779,6 +804,42 @@ class SimulationTest {
         assertEquals(0, spot.stock)
         sim.checkedStep()
         assertEquals(1, spot.stock)
+    }
+
+    @Test
+    fun dayPartEcologySlowsNightRegenAndTideChartEasesIt() {
+        val sim = newSim()
+        val def = sim.content.harborsById.getValue(HARBOR).fishingSpots.first { it.zone == "zone.pier_end" }
+        val FS = com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
+        val dayLen = sim.content.ecology.dayLengthTicks.toLong()
+        // Dawn phase (tick 0) vs night (last quarter of the day cycle).
+        sim.state.tick = 0
+        val dawn = FS.regenTicksFor(sim.content, sim.state, def, 0)
+        sim.state.tick = (dayLen * 850L) / 1000L
+        val night = FS.regenTicksFor(sim.content, sim.state, def, 0)
+        assertTrue("dawn=$dawn night=$night", night > dawn)
+        assertEquals("night", FS.dayPartAt(sim.content, sim.state.tick).id)
+
+        sim.state.ownedUpgrades += "upgrade.tide_chart"
+        sim.state.player.fishRegenPermille = 1250
+        val nightWithChart = FS.regenTicksFor(sim.content, sim.state, def, 0)
+        assertTrue("night=$night chart=$nightWithChart", nightWithChart < night)
+        assertTrue(FS.hasTideChart(sim.state))
+        assertTrue(sim.view().tideChartOwned)
+    }
+
+    @Test
+    fun tideChartBoostsDawnCatchSpeed() {
+        val sim = newSim()
+        val FS = com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
+        sim.state.tick = 0
+        sim.state.player.catchSpeedPermille = 1000
+        assertEquals(1000, FS.effectiveCatchSpeed(sim.content, sim.state))
+        sim.state.ownedUpgrades += "upgrade.tide_chart"
+        sim.state.player.fishRegenPermille = 1250
+        // Dawn catchSpeedMultPermille is 1100 → 1100 with chart.
+        assertEquals(1100, FS.effectiveCatchSpeed(sim.content, sim.state))
+        assertEquals("dawn", sim.view().dayPartId)
     }
 
     @Test
@@ -795,10 +856,9 @@ class SimulationTest {
         assertEquals(0, sim.state.stat(Stats.FISH_CAUGHT))
 
         sim.state.coins = 10_000
+        sim.state.completedQuests += "quest.specialty_kitchen"
         val buy = sim.checkedStep(
             listOf(
-                Command.PurchaseUpgrade("upgrade.bag_capacity_2", "req-bag"),
-                Command.PurchaseUpgrade("upgrade.tide_chart", "req-tide"),
                 Command.PurchaseUpgrade("upgrade.side_pier", "req-spur"),
             ),
         )
@@ -924,7 +984,7 @@ class SimulationTest {
     @Test
     fun hireFisherAndPorterIsIdempotentAndShowsStaffPanel() {
         val sim = newSim()
-        assertEquals("0.26.0", Shared.content.contentVersion)
+        assertEquals("0.30.0", Shared.content.contentVersion)
         assertTrue(sim.view().staff.any { it.roleId == "worker.fisher" })
         assertTrue(sim.view().staff.any { it.roleId == "worker.operator" })
         assertTrue(sim.view().staff.any { it.roleId == "worker.cashier" })
@@ -1186,39 +1246,66 @@ class SimulationTest {
     fun questChainLocksRewardsAndShowsLog() {
         val sim = newSim()
         val log = sim.view().quests
-        assertEquals(4, log.size)
-        assertEquals("active", log.first { it.id == "quest.first_ten_sales" }.status)
-        assertTrue(log.filter { it.id != "quest.first_ten_sales" }.all { it.status == "locked" })
+        assertEquals(8, log.size)
+        assertEquals("active", log.first { it.id == "quest.first_cast" }.status)
+        assertTrue(log.filter { it.id != "quest.first_cast" }.all { it.status == "locked" })
+
+        sim.state.bumpStat(Stats.FISH_CAUGHT, 5)
+        val cast = sim.checkedStep().filterIsInstance<GameEvent.QuestCompleted>().single()
+        assertEquals("quest.first_cast", cast.questId)
+        assertEquals(20L, cast.coinsRewarded)
+        assertEquals("active", sim.view().quests.first { it.id == "quest.line_running" }.status)
+
+        sim.state.bumpStat(Stats.MACHINE_INPUTS, 8)
+        sim.checkedStep()
+        assertTrue("quest.line_running" in sim.state.completedQuests)
+        assertEquals("active", sim.view().quests.first { it.id == "quest.first_ten_sales" }.status)
 
         sim.state.bumpStat(Stats.SALES, 10)
         val coinsBefore = sim.state.coins
-        val events = sim.checkedStep()
-        val done = events.filterIsInstance<GameEvent.QuestCompleted>().single()
-        assertEquals("quest.first_ten_sales", done.questId)
-        assertEquals(50L, done.coinsRewarded)
+        val salesDone = sim.checkedStep().filterIsInstance<GameEvent.QuestCompleted>().single()
+        assertEquals("quest.first_ten_sales", salesDone.questId)
+        assertEquals(50L, salesDone.coinsRewarded)
         assertEquals(coinsBefore + 50, sim.state.coins)
-        assertEquals(1L, sim.state.stat(Stats.QUESTS_COMPLETED))
-        assertTrue("quest.first_ten_sales" in sim.state.completedQuests)
+        assertEquals(3L, sim.state.stat(Stats.QUESTS_COMPLETED))
 
-        val after = sim.view().quests
-        assertEquals("completed", after.first { it.id == "quest.first_ten_sales" }.status)
-        assertEquals("active", after.first { it.id == "quest.fill_the_hold" }.status)
-        assertEquals("active", after.first { it.id == "quest.first_hire" }.status)
-        assertEquals("locked", after.first { it.id == "quest.busy_harbor" }.status)
+        val afterSales = sim.view().quests
+        assertEquals("completed", afterSales.first { it.id == "quest.first_ten_sales" }.status)
+        assertEquals("active", afterSales.first { it.id == "quest.fill_the_hold" }.status)
+        assertEquals("active", afterSales.first { it.id == "quest.first_hire" }.status)
+        assertEquals("locked", afterSales.first { it.id == "quest.specialty_kitchen" }.status)
+        assertEquals("locked", afterSales.first { it.id == "quest.busy_harbor" }.status)
 
-        sim.state.bumpStat(Stats.FISH_CAUGHT, 25)
+        sim.state.bumpStat(Stats.FISH_CAUGHT, 20) // total 25
         sim.state.bumpStat(Stats.WORKERS_HIRED, 1)
         sim.checkedStep()
         assertTrue("quest.fill_the_hold" in sim.state.completedQuests)
         assertTrue("quest.first_hire" in sim.state.completedQuests)
+        assertTrue("upgrade.harbor_grill" in sim.state.ownedUpgrades)
+        assertEquals("active", sim.view().quests.first { it.id == "quest.specialty_kitchen" }.status)
+        assertEquals("locked", sim.view().quests.first { it.id == "quest.busy_harbor" }.status)
+
+        sim.state.bumpStat(Stats.OUTPUTS_COLLECTED, 12)
+        val specialty = sim.checkedStep().filterIsInstance<GameEvent.QuestCompleted>().single()
+        assertEquals("quest.specialty_kitchen", specialty.questId)
+        assertEquals(listOf("upgrade.side_pier"), specialty.unlockUpgrades)
+        assertTrue("upgrade.side_pier" in sim.state.ownedUpgrades)
+        assertEquals("active", sim.view().quests.first { it.id == "quest.busy_harbor" }.status)
 
         sim.state.bumpStat(Stats.REVENUE, 250)
-        val finale = sim.checkedStep().filterIsInstance<GameEvent.QuestCompleted>().single()
-        assertEquals("quest.busy_harbor", finale.questId)
-        assertEquals(listOf("upgrade.tide_chart"), finale.unlockUpgrades)
+        val busy = sim.checkedStep().filterIsInstance<GameEvent.QuestCompleted>().single()
+        assertEquals("quest.busy_harbor", busy.questId)
+        assertEquals(listOf("upgrade.tide_chart"), busy.unlockUpgrades)
         assertTrue("upgrade.tide_chart" in sim.state.ownedUpgrades)
         assertEquals(1250, sim.state.player.fishRegenPermille)
         assertEquals("completed", sim.view().quests.first { it.id == "quest.busy_harbor" }.status)
+        assertEquals("active", sim.view().quests.first { it.id == "quest.moon_crossing" }.status)
+
+        sim.state.bumpStat(Stats.HARBORS_TRAVELED, 1)
+        val crossing = sim.checkedStep().filterIsInstance<GameEvent.QuestCompleted>().single()
+        assertEquals("quest.moon_crossing", crossing.questId)
+        assertEquals(100L, crossing.coinsRewarded)
+        assertEquals("completed", sim.view().quests.first { it.id == "quest.moon_crossing" }.status)
     }
 
     @Test
@@ -1308,10 +1395,11 @@ class SimulationTest {
 
         val traveled = sim.checkedStep(listOf(Command.TravelToHarbor("harbor.moon_cove", "go-2")))
         assertTrue(traveled.filterIsInstance<GameEvent.HarborTraveled>().any { !it.replayed && it.toHarborId == "harbor.moon_cove" })
+        assertTrue(traveled.filterIsInstance<GameEvent.QuestCompleted>().any { it.questId == "quest.moon_crossing" })
         assertEquals("harbor.moon_cove", sim.state.harborId)
         assertEquals("Moon Cove", sim.view().harborName)
         assertEquals("moon_cove_blockout.glb", sim.view().blockoutAsset)
-        assertEquals(777L, sim.state.coins)
+        assertEquals(877L, sim.state.coins) // +100 from moon_crossing
         assertEquals(2, sim.state.player.bag.quantity("species.silver_sprat"))
         assertEquals(sim.harbor.playerSpawn.x, sim.state.player.x)
         assertEquals(sim.harbor.playerSpawn.z, sim.state.player.z)
@@ -1319,6 +1407,7 @@ class SimulationTest {
         assertTrue(sim.state.harborStashes.containsKey(HARBOR))
         assertEquals(3, sim.state.harborStashes.getValue(HARBOR).fishingSpots.first { it.zoneId == "zone.pier_end" }.stock)
         assertEquals(1L, sim.state.stat(Stats.HARBORS_TRAVELED))
+        assertTrue("quest.moon_crossing" in sim.state.completedQuests)
 
         val replay = sim.checkedStep(listOf(Command.TravelToHarbor("harbor.moon_cove", "go-2")))
         assertTrue(replay.filterIsInstance<GameEvent.HarborTraveled>().single().replayed)
@@ -1418,7 +1507,7 @@ class SimulationTest {
     @Test
     fun spoilTiersPreferFragileCounterStockAndSeparateCaseIce() {
         val c = Shared.content
-        assertEquals("0.26.0", c.contentVersion)
+        assertEquals("0.30.0", c.contentVersion)
         assertEquals(3, c.productsById.getValue("product.basic_portion").spoilTier)
         assertEquals(1, c.productsById.getValue("product.smoked_fillet").spoilTier)
         assertEquals(3, c.speciesById.getValue("species.silver_sprat").spoilTier)
@@ -1454,7 +1543,7 @@ class SimulationTest {
     @Test
     fun prestigeStaysLockedUntilBusyHarborThenGrantsBonusesAndCosmetics() {
         val sim = newSim()
-        assertEquals("0.26.0", Shared.content.contentVersion)
+        assertEquals("0.30.0", Shared.content.contentVersion)
         val locked = sim.view()
         assertFalse(locked.prestigeUnlocked)
         assertEquals("Requires: Busy harbor", locked.prestigeLockedReason)

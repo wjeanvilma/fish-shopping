@@ -137,9 +137,13 @@ export interface SimView {
   bagCapacityUnits: number;
   fishingProgress: number | null;
   fishingTimingWindow: boolean;
+  fishingTimingTier: "perfect" | "good" | null;
   fishingCanReel: boolean;
   fishingSpotEmpty: boolean;
   fishingRegenProgress: number | null;
+  dayPartId: string;
+  dayPartName: string;
+  tideChartOwned: boolean;
   context: ContextCard | null;
   stations: StationView[];
   counters: CounterView[];
@@ -227,20 +231,27 @@ export function buildView(sim: Simulation): SimView {
     const casting = p.fishingSpecies !== null && p.fishingCatchTicks > 0;
     const inWindow = casting && FishingSystem.inTimingWindow(
       p.fishingProgress, p.fishingCatchTicks,
-      c.player.timingWindowStartPermille, c.player.timingWindowEndPermille,
+      p.timingWindowStartPermille, p.timingWindowEndPermille,
     );
     const empty = unlocked && spot.stock <= 0;
+    const part = FishingSystem.dayPartAt(c, s.tick);
+    const tideOwned = FishingSystem.hasTideChart(s);
+    const tier = casting ? FishingSystem.timingTierAt(p, p.fishingProgress, p.fishingCatchTicks) : "miss";
+    const reelHint = tier === "perfect" ? "Perfect — reel now!"
+      : tier === "good" ? "Good — reel for a tip!"
+        : "Reel now for a bonus!";
     const lines = [
       !unlocked
         ? `Locked — buy ${spotDef.requiresUpgrade ? (c.upgradesById.get(spotDef.requiresUpgrade)?.name ?? spotDef.requiresUpgrade) : "an upgrade"}`
         : full ? "Bag full - deliver your catch"
           : empty ? "Pier empty — fish are returning"
-            : casting && inWindow && !p.reelAttemptedThisCast ? "Reel now for a bonus!"
+            : casting && inWindow && !p.reelAttemptedThisCast ? reelHint
               : "Fishing...",
       `Fish here: ${spot.stock}/${spotDef.stockMax}`,
+      tideOwned ? `${part.name} · tide chart` : part.name,
     ];
     if (casting) lines.push(`Hooked: ${c.speciesById.get(p.fishingSpecies!)!.name}`);
-    const regenNeeded = FishingSystem.regenTicksFor(spotDef, spot.stock, p.fishRegenPermille);
+    const regenNeeded = FishingSystem.regenTicksForState(c, s, spotDef, spot.stock);
     context = {
       title: "Fishing spot",
       lines,
@@ -332,8 +343,13 @@ export function buildView(sim: Simulation): SimView {
     fishingTimingWindow: p.fishingSpecies !== null && p.fishingCatchTicks > 0 &&
       FishingSystem.inTimingWindow(
         p.fishingProgress, p.fishingCatchTicks,
-        c.player.timingWindowStartPermille, c.player.timingWindowEndPermille,
+        p.timingWindowStartPermille, p.timingWindowEndPermille,
       ),
+    fishingTimingTier: (() => {
+      if (p.fishingSpecies === null || p.fishingCatchTicks <= 0) return null;
+      const tier = FishingSystem.timingTierAt(p, p.fishingProgress, p.fishingCatchTicks);
+      return tier === "miss" ? null : tier;
+    })(),
     fishingCanReel: p.fishingSpecies !== null && !p.reelAttemptedThisCast,
     fishingSpotEmpty: (() => {
       if (!zone || zone.kind !== "fishing") return false;
@@ -346,8 +362,11 @@ export function buildView(sim: Simulation): SimView {
       const def = h.fishingSpots.find((f) => f.zone === zone.id)!;
       const spot = s.fishingSpots.find((f) => f.zoneId === zone.id)!;
       if (!FishingSystem.isUnlocked(def, s) || spot.stock >= def.stockMax) return null;
-      return spot.regenProgress / FishingSystem.regenTicksFor(def, spot.stock, p.fishRegenPermille);
+      return spot.regenProgress / FishingSystem.regenTicksForState(c, s, def, spot.stock);
     })(),
+    dayPartId: FishingSystem.dayPartAt(c, s.tick).id,
+    dayPartName: FishingSystem.dayPartAt(c, s.tick).name,
+    tideChartOwned: FishingSystem.hasTideChart(s),
     context,
     stations,
     counters: s.counters.map((ct) => ({

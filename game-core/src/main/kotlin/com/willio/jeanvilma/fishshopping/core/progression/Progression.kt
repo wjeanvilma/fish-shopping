@@ -77,6 +77,17 @@ object UpgradeSystem {
                 }
             is UpgradeEffect.CatchSpeed ->
                 s.player.catchSpeedPermille = maxOf(s.player.catchSpeedPermille, effect.speedPermille)
+            is UpgradeEffect.TimingWindow -> {
+                val p = s.player
+                p.timingWindowStartPermille = minOf(p.timingWindowStartPermille, effect.windowStartPermille)
+                p.timingWindowEndPermille = maxOf(p.timingWindowEndPermille, effect.windowEndPermille)
+                p.timingPerfectStartPermille = minOf(p.timingPerfectStartPermille, effect.perfectStartPermille)
+                p.timingPerfectEndPermille = maxOf(p.timingPerfectEndPermille, effect.perfectEndPermille)
+                p.timingPerfectStartPermille =
+                    p.timingPerfectStartPermille.coerceIn(p.timingWindowStartPermille, p.timingWindowEndPermille - 1)
+                p.timingPerfectEndPermille =
+                    p.timingPerfectEndPermille.coerceIn(p.timingPerfectStartPermille + 1, p.timingWindowEndPermille)
+            }
             is UpgradeEffect.FishRegen ->
                 s.player.fishRegenPermille = maxOf(s.player.fishRegenPermille, effect.speedPermille)
             is UpgradeEffect.UnlockFishingSpot -> Unit // gated by ownedUpgrades in FishingSystem

@@ -29,14 +29,21 @@ data class SimView(
     val bagUsedUnits: Int,
     val bagCapacityUnits: Int,
     val fishingProgress: Float?,
-    /** True while casting and progress is inside the Reel timing window. */
+    /** True while casting and progress is inside the Good or Perfect reel window. */
     val fishingTimingWindow: Boolean,
+    /** Current reel tier while casting: perfect / good / null outside the window. */
+    val fishingTimingTier: String?,
     /** True while casting and the player can still attempt Reel. */
     val fishingCanReel: Boolean,
     /** True when standing on an unlocked fishing spot with zero stock. */
     val fishingSpotEmpty: Boolean,
     /** Progress toward the next restocked fish when the current spot is regenerating. */
     val fishingRegenProgress: Float?,
+    /** Current harbor day-part id (dawn/day/dusk/night). */
+    val dayPartId: String,
+    val dayPartName: String,
+    /** True when tide chart is owned (night regen eases + dawn/dusk cast bonus). */
+    val tideChartOwned: Boolean,
     val context: ContextCard?,
     val stations: List<StationView>,
     val counters: List<CounterView>,
@@ -303,9 +310,11 @@ fun Simulation.view(): SimView {
             val casting = p.fishingSpecies != null && p.fishingCatchTicks > 0
             val inWindow = casting && FishingSystem.inTimingWindow(
                 p.fishingProgress, p.fishingCatchTicks,
-                c.player.timingWindowStartPermille, c.player.timingWindowEndPermille,
+                p.timingWindowStartPermille, p.timingWindowEndPermille,
             )
             val empty = unlocked && spot.stock <= 0
+            val part = FishingSystem.dayPartAt(c, s.tick)
+            val tideOwned = FishingSystem.hasTideChart(s)
             val lines = mutableListOf(
                 when {
                     !unlocked -> {
@@ -314,13 +323,20 @@ fun Simulation.view(): SimView {
                     }
                     full -> "Bag full - deliver your catch"
                     empty -> "Pier empty — fish are returning"
-                    casting && inWindow && !p.reelAttemptedThisCast -> "Reel now for a bonus!"
+                    casting && inWindow && !p.reelAttemptedThisCast -> {
+                        when (FishingSystem.timingTierAt(p, p.fishingProgress, p.fishingCatchTicks)) {
+                            TimingTier.PERFECT -> "Perfect — reel now!"
+                            TimingTier.GOOD -> "Good — reel for a tip!"
+                            TimingTier.MISS -> "Reel now for a bonus!"
+                        }
+                    }
                     else -> "Fishing..."
                 },
                 "Fish here: ${spot.stock}/${spotDef.stockMax}",
+                if (tideOwned) "${part.name} · tide chart" else part.name,
             )
             if (casting) lines += "Hooked: ${c.speciesById.getValue(p.fishingSpecies!!).name}"
-            val regenNeeded = FishingSystem.regenTicksFor(spotDef, spot.stock, p.fishRegenPermille)
+            val regenNeeded = FishingSystem.regenTicksFor(c, s, spotDef, spot.stock)
             val progress = when {
                 casting -> p.fishingProgress.toFloat() / p.fishingCatchTicks
                 unlocked && spot.stock < spotDef.stockMax -> spot.regenProgress.toFloat() / regenNeeded
@@ -422,8 +438,16 @@ fun Simulation.view(): SimView {
         fishingTimingWindow = p.fishingSpecies != null && p.fishingCatchTicks > 0 &&
             FishingSystem.inTimingWindow(
                 p.fishingProgress, p.fishingCatchTicks,
-                c.player.timingWindowStartPermille, c.player.timingWindowEndPermille,
+                p.timingWindowStartPermille, p.timingWindowEndPermille,
             ),
+        fishingTimingTier = run {
+            if (p.fishingSpecies == null || p.fishingCatchTicks <= 0) return@run null
+            when (FishingSystem.timingTierAt(p, p.fishingProgress, p.fishingCatchTicks)) {
+                TimingTier.PERFECT -> "perfect"
+                TimingTier.GOOD -> "good"
+                TimingTier.MISS -> null
+            }
+        },
         fishingCanReel = p.fishingSpecies != null && !p.reelAttemptedThisCast,
         fishingSpotEmpty = run {
             val z = zone ?: return@run false
@@ -438,9 +462,12 @@ fun Simulation.view(): SimView {
             val def = harbor.fishingSpots.first { it.zone == z.id }
             val spot = s.fishingSpots.first { it.zoneId == z.id }
             if (!FishingSystem.isUnlocked(def, s) || spot.stock >= def.stockMax) return@run null
-            val needed = FishingSystem.regenTicksFor(def, spot.stock, p.fishRegenPermille)
+            val needed = FishingSystem.regenTicksFor(c, s, def, spot.stock)
             spot.regenProgress.toFloat() / needed
         },
+        dayPartId = FishingSystem.dayPartAt(c, s.tick).id,
+        dayPartName = FishingSystem.dayPartAt(c, s.tick).name,
+        tideChartOwned = FishingSystem.hasTideChart(s),
         context = context,
         stations = stationViews,
         counters = s.counters.map { ct ->
