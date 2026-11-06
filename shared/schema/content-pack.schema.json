@@ -14,6 +14,9 @@
     "machines",
     "upgrades",
     "quests",
+    "workers",
+    "routing",
+    "offline",
     "customers",
     "tutorial",
     "harbors"
@@ -370,6 +373,70 @@
                     "description": "Fishing zone unlocked when this upgrade is owned."
                   }
                 }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "speedPermille"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "worker_move_speed"
+                  },
+                  "speedPermille": {
+                    "$ref": "#/$defs/positiveInt",
+                    "description": "Staff walk-speed multiplier in permille (1250 = 25% faster)."
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "capacityUnits"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "worker_carry"
+                  },
+                  "capacityUnits": {
+                    "$ref": "#/$defs/positiveInt",
+                    "description": "Minimum bag capacity for hired staff."
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "speedPermille"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "worker_catch_speed"
+                  },
+                  "speedPermille": {
+                    "$ref": "#/$defs/positiveInt",
+                    "description": "Minimum fisher catch-speed permille (applies if higher than the role default)."
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "coinsPerWorkerPerHour"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "worker_wage"
+                  },
+                  "coinsPerWorkerPerHour": {
+                    "$ref": "#/$defs/positiveInt",
+                    "description": "Coins charged per hired worker each simulated hour."
+                  }
+                }
               }
             ]
           }
@@ -480,6 +547,125 @@
             "$ref": "#/$defs/positiveInt",
             "description": "Patience drain per tick while preferred stock is missing (2000 = 2x)."
           }
+        }
+      }
+    },
+    "workers": {
+      "type": "array",
+      "description": "Hireable worker roles (Phase 11+). FISHER catches fish; PORTER hauls machine output to the counter.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "role",
+          "hireCost",
+          "maxHired",
+          "carryCapacityUnits",
+          "moveSpeedMmPerTick",
+          "catchSpeedPermille",
+          "transferIntervalTicks",
+          "leaseTicks",
+          "requires"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id",
+            "pattern": "^worker\\.[a-z0-9_]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "enum": [
+              "fisher",
+              "porter",
+              "operator",
+              "cashier",
+              "supervisor"
+            ]
+          },
+          "hireCost": {
+            "$ref": "#/$defs/coins"
+          },
+          "maxHired": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "carryCapacityUnits": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "moveSpeedMmPerTick": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "catchSpeedPermille": {
+            "$ref": "#/$defs/positiveInt",
+            "description": "Used by fisher casts (1000 = normal species catchTicks)."
+          },
+          "transferIntervalTicks": {
+            "$ref": "#/$defs/positiveInt"
+          },
+          "leaseTicks": {
+            "$ref": "#/$defs/positiveInt",
+            "description": "How long a claimed haul reservation lasts before it is released."
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/id"
+            },
+            "description": "Upgrade or quest IDs that must be owned/completed before this role can be hired."
+          }
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "required": [
+        "urgencyWeight",
+        "distanceWeight",
+        "demandWeight",
+        "supervisorDemandBoostPermille"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "urgencyWeight": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Weight for source fullness / OUTPUT_FULL urgency when scoring haul tasks."
+        },
+        "distanceWeight": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Weight for proximity (closer sources score higher)."
+        },
+        "demandWeight": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Weight for destination demand (waiting customers, empty stock, hungry machines)."
+        },
+        "supervisorDemandBoostPermille": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Multiplies demandWeight while a supervisor is on duty (1000 = unchanged)."
+        }
+      }
+    },
+    "offline": {
+      "type": "object",
+      "required": [
+        "capHours",
+        "summaryMinSeconds"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "capHours": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Maximum real-time hours credited as offline simulation ticks."
+        },
+        "summaryMinSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum absence (seconds) before the offline summary screen is shown."
         }
       }
     },

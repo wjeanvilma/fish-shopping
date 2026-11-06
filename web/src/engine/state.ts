@@ -18,7 +18,44 @@ export const Stats = {
   PREMIUM_SALES: "stat.premium_sales",
   BULK_SALES: "stat.bulk_sales",
   UNMET_PREFERENCE_SALES: "stat.unmet_preference_sales",
+  WORKERS_HIRED: "stat.workers_hired",
+  WORKER_FISH_CAUGHT: "stat.worker_fish_caught",
+  WORKER_ITEMS_MOVED: "stat.worker_items_moved",
+  LEASES_EXPIRED: "stat.leases_expired",
+  WAGES_PAID: "stat.wages_paid",
 } as const;
+
+export type WorkerTaskPhase = "NONE" | "WALK_TO_WORK" | "WORK" | "PICKUP" | "WALK_TO_DROP" | "DROP";
+
+/** Hired staff. Fishers catch into [bag] and deliver to machines; porters haul machine output to counters. */
+export class WorkerState {
+  walkTicksLeft = 0;
+  walkTicksTotal = 0;
+  walkFromX = 0;
+  walkFromZ = 0;
+  walkToX = 0;
+  walkToZ = 0;
+  transferCooldown = 0;
+  phase: WorkerTaskPhase = "NONE";
+  taskId: string | null = null;
+  taskZoneId: string | null = null;
+  taskSourceInvId: string | null = null;
+  taskDestInvId: string | null = null;
+  taskItemId: string | null = null;
+  taskQuantity = 0;
+  leaseExpiresAt = 0;
+  fishingSpecies: string | null = null;
+  fishingProgress = 0;
+  fishingCatchTicks = 0;
+  constructor(
+    readonly id: string,
+    readonly roleId: string,
+    public x: number,
+    public z: number,
+    readonly bag: Inventory,
+  ) {}
+  get busyWalking(): boolean { return this.walkTicksLeft > 0; }
+}
 
 export class PlayerState {
   facingX = 0;
@@ -124,11 +161,19 @@ export class GameState {
   tutorialIndex = 0;
   customerSpawnProgress = 0;
   readonly customers: CustomerState[] = [];
+  readonly workers: WorkerState[] = [];
   readonly ownedUpgrades = new Set<string>();
   readonly completedQuests = new Set<string>();
   readonly stats = new Map<string, number>();
   readonly purchaseReceipts = new Map<string, Receipt>();
   readonly ledger: Receipt[] = [];
+  /** Rebuilt from owned upgrades on load (idempotent max). */
+  workerMoveSpeedPermille = 1000;
+  workerCatchSpeedPermille = 0;
+  workerCarryCapacityFloor = 0;
+  workerWagePerWorkerPerHour = 0;
+  /** Ticks since last hourly wage debit (not persisted). */
+  workerWageAccrualTicks = 0;
 
   constructor(
     readonly harborId: string,
@@ -179,7 +224,8 @@ export type Command =
   | { type: "purchase_upgrade"; upgradeId: string; requestId: string }
   | { type: "set_machine_paused"; stationId: string; paused: boolean }
   | { type: "reel" }
-  | { type: "select_machine_recipe"; stationId: string; recipeId: string | null };
+  | { type: "select_machine_recipe"; stationId: string; recipeId: string | null }
+  | { type: "hire_worker"; roleId: string; requestId: string };
 
 export type GameEvent =
   | { type: "zone_entered"; tick: number; zoneId: string | null }
@@ -195,6 +241,10 @@ export type GameEvent =
   | { type: "sale_committed"; tick: number; saleId: string; customerId: string; items: { item: string; quantity: number }[]; coins: number; customerTypeId?: string; priceMultPermille?: number; preferenceMet?: boolean; preferredProductId?: string | null }
   | { type: "upgrade_purchased"; tick: number; upgradeId: string; receipt: Receipt; replayed: boolean }
   | { type: "purchase_rejected"; tick: number; upgradeId: string; requestId: string; reason: string }
+  | { type: "worker_hired"; tick: number; roleId: string; receipt: Receipt; replayed: boolean }
+  | { type: "hire_rejected"; tick: number; roleId: string; requestId: string; reason: string }
+  | { type: "wages_paid"; tick: number; workers: number; coins: number }
+  | { type: "lease_expired"; tick: number; workerId: string; itemId: string | null; sourceInvId: string | null }
   | { type: "quest_completed"; tick: number; questId: string }
   | { type: "tutorial_advanced"; tick: number; stepIndex: number }
   | { type: "checkpoint_requested"; tick: number; reason: string };

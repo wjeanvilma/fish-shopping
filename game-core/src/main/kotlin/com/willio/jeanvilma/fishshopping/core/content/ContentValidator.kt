@@ -35,8 +35,25 @@ object ContentValidator {
         // Unique IDs across every collection (IDs are global and namespaced by prefix).
         val allIds = p.species.map { it.id } + p.products.map { it.id } + p.recipes.map { it.id } +
             p.machines.map { it.id } + p.upgrades.map { it.id } + p.quests.map { it.id } +
-            p.customers.map { it.id } + p.tutorial.map { it.id } + p.harbors.map { it.id }
+            p.workers.map { it.id } + p.customers.map { it.id } + p.tutorial.map { it.id } + p.harbors.map { it.id }
         allIds.groupingBy { it }.eachCount().filter { it.value > 1 }.keys.forEach { errors += "Duplicate id '$it'" }
+
+        for (w in p.workers) {
+            check(w.hireCost >= 0) { "${w.id}: hireCost must be >= 0" }
+            check(w.maxHired >= 1) { "${w.id}: maxHired must be >= 1" }
+            check(w.catchSpeedPermille >= 1) { "${w.id}: catchSpeedPermille must be >= 1" }
+        }
+        check(p.workers.any { it.role == WorkerRoleKind.FISHER }) { "content needs at least one fisher worker" }
+        check(p.workers.any { it.role == WorkerRoleKind.PORTER }) { "content needs at least one porter worker" }
+        check(p.workers.any { it.role == WorkerRoleKind.OPERATOR }) { "content needs at least one operator worker" }
+        check(p.workers.any { it.role == WorkerRoleKind.CASHIER }) { "content needs at least one cashier worker" }
+        check(p.workers.any { it.role == WorkerRoleKind.SUPERVISOR }) { "content needs at least one supervisor worker" }
+        check(p.routing.urgencyWeight >= 0) { "routing.urgencyWeight must be >= 0" }
+        check(p.routing.distanceWeight >= 0) { "routing.distanceWeight must be >= 0" }
+        check(p.routing.demandWeight >= 0) { "routing.demandWeight must be >= 0" }
+        check(p.routing.supervisorDemandBoostPermille >= 1) { "routing.supervisorDemandBoostPermille must be >= 1" }
+        check(p.offline.capHours >= 1) { "offline.capHours must be >= 1" }
+        check(p.offline.summaryMinSeconds >= 0) { "offline.summaryMinSeconds must be >= 0" }
 
         for (sp in p.species) {
             sp.rareUpgrade?.let { ru ->
@@ -91,9 +108,28 @@ object ContentValidator {
                         "${u.id}: unlock_fishing_spot zone must list this upgrade as requiresUpgrade"
                     }
                 }
+                is UpgradeEffect.WorkerMoveSpeed -> check(e.speedPermille > 1000) {
+                    "${u.id}: worker_move_speed must exceed 1000 (base speed)"
+                }
+                is UpgradeEffect.WorkerCarry -> {
+                    val minCarry = p.workers.minOfOrNull { it.carryCapacityUnits } ?: 1
+                    check(e.capacityUnits > minCarry) {
+                        "${u.id}: worker_carry must exceed the smallest role carry capacity"
+                    }
+                }
+                is UpgradeEffect.WorkerCatchSpeed -> check(e.speedPermille >= 1000) {
+                    "${u.id}: worker_catch_speed must be >= 1000"
+                }
+                is UpgradeEffect.WorkerWage -> check(e.coinsPerWorkerPerHour >= 1) {
+                    "${u.id}: worker_wage must be >= 1"
+                }
             }
         }
         findUpgradeCycle(p)?.let { errors += "Upgrade requirement cycle: ${it.joinToString(" -> ")}" }
+
+        for (w in p.workers) {
+            w.requires.forEach { req -> check(req in requirable) { "${w.id}: unknown requirement '$req'" } }
+        }
 
         for (c in p.customers) {
             check(c.basketMax >= c.basketMin) { "${c.id}: basketMax < basketMin" }

@@ -23,6 +23,53 @@ object Stats {
     const val PREMIUM_SALES = "stat.premium_sales"
     const val BULK_SALES = "stat.bulk_sales"
     const val UNMET_PREFERENCE_SALES = "stat.unmet_preference_sales"
+    const val WORKERS_HIRED = "stat.workers_hired"
+    const val WORKER_FISH_CAUGHT = "stat.worker_fish_caught"
+    const val WORKER_ITEMS_MOVED = "stat.worker_items_moved"
+    const val LEASES_EXPIRED = "stat.leases_expired"
+    const val WAGES_PAID = "stat.wages_paid"
+}
+
+enum class WorkerTaskPhase {
+    NONE,
+    WALK_TO_WORK,
+    WORK,
+    PICKUP,
+    WALK_TO_DROP,
+    DROP,
+}
+
+/**
+ * Hired staff. Fishers catch into [bag] and deliver to machines; porters haul
+ * machine output to counters under a short lease/reservation.
+ */
+class WorkerState(
+    val id: String,
+    val roleId: String,
+    var x: Int,
+    var z: Int,
+    val bag: Inventory,
+) {
+    var walkTicksLeft = 0
+    var walkTicksTotal = 0
+    var walkFromX = 0
+    var walkFromZ = 0
+    var walkToX = 0
+    var walkToZ = 0
+    var transferCooldown = 0
+    var phase = WorkerTaskPhase.NONE
+    var taskId: String? = null
+    var taskZoneId: String? = null
+    var taskSourceInvId: String? = null
+    var taskDestInvId: String? = null
+    var taskItemId: String? = null
+    var taskQuantity = 0
+    var leaseExpiresAt = 0L
+    var fishingSpecies: String? = null
+    var fishingProgress = 0
+    var fishingCatchTicks = 0
+
+    val busyWalking get() = walkTicksLeft > 0
 }
 
 class PlayerState(
@@ -155,9 +202,21 @@ class GameState(
     var tutorialIndex = 0
     var customerSpawnProgress = 0
     val customers = mutableListOf<CustomerState>()
+    val workers = mutableListOf<WorkerState>()
     val ownedUpgrades = TreeSet<String>()
     val completedQuests = TreeSet<String>()
     val stats = TreeMap<String, Long>()
+
+    /** Staff walk multiplier (1000 = content speeds). Rebuilt from owned upgrades on load. */
+    var workerMoveSpeedPermille = 1000
+    /** Minimum fisher catch speed; 0 means use each role's content default only. */
+    var workerCatchSpeedPermille = 0
+    /** Minimum bag capacity for hired staff. */
+    var workerCarryCapacityFloor = 0
+    /** Coins charged per hired worker each simulated hour. */
+    var workerWagePerWorkerPerHour = 0
+    /** Progress toward the next wage payday (not persisted). */
+    var workerWageAccrualTicks = 0
 
     /** Purchase receipts keyed by client request ID: a retried request returns the same receipt. */
     val purchaseReceipts = TreeMap<String, Receipt>()
@@ -226,6 +285,8 @@ sealed interface Command {
      * from the HUD; this command sets an absolute preference.
      */
     data class SelectMachineRecipe(val stationId: String, val recipeId: String?) : Command
+    /** Hire a content worker role; [requestId] makes retries idempotent. */
+    data class HireWorker(val roleId: String, val requestId: String) : Command
 }
 
 /** Results of simulation. UI effects consume these but never change economic state. */
@@ -266,6 +327,10 @@ sealed interface GameEvent {
     }
     data class UpgradePurchased(override val tick: Long, val upgradeId: String, val receipt: Receipt, val replayed: Boolean) : GameEvent
     data class PurchaseRejected(override val tick: Long, val upgradeId: String, val requestId: String, val reason: String) : GameEvent
+    data class WorkerHired(override val tick: Long, val roleId: String, val receipt: Receipt, val replayed: Boolean) : GameEvent
+    data class HireRejected(override val tick: Long, val roleId: String, val requestId: String, val reason: String) : GameEvent
+    data class LeaseExpired(override val tick: Long, val workerId: String, val itemId: String?, val sourceInvId: String?) : GameEvent
+    data class WagesPaid(override val tick: Long, val workers: Int, val coins: Long) : GameEvent
     data class QuestCompleted(override val tick: Long, val questId: String) : GameEvent
     data class TutorialAdvanced(override val tick: Long, val stepIndex: Int) : GameEvent
     data class CheckpointRequested(override val tick: Long, val reason: String) : GameEvent

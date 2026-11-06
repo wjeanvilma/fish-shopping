@@ -13,7 +13,8 @@ object InvariantChecker {
         val p = mutableListOf<String>()
         val inventories = listOf(s.player.bag) +
             s.machines.flatMap { listOf(it.input, it.output) } +
-            s.counters.map { it.stock }
+            s.counters.map { it.stock } +
+            s.workers.map { it.bag }
         inventories.forEach { inv ->
             p += inv.invariantProblems()
             inv.contents().keys.forEach { if (!content.isKnownItem(it)) p += "${inv.id}: unknown item $it" }
@@ -21,7 +22,7 @@ object InvariantChecker {
         if (s.coins < 0) p += "Negative coins ${s.coins}"
         if (s.coins > SimConstants.MAX_SAFE_INTEGER) p += "Coins above safe range"
 
-        // Every reservation belongs to a valid claimant (today: queued customers only).
+        // Counter reservations belong to queued customers.
         for (c in s.counters) {
             val claimedByItem = sortedMapOf<String, Int>()
             for (cust in s.customers.filter { it.counterId == c.counterId }) {
@@ -37,6 +38,23 @@ object InvariantChecker {
             for ((item, qty) in claimedByItem) {
                 if (c.stock.reservedQuantity(item) != qty) {
                     p += "${c.counterId}: customers claim $qty $item but stock has ${c.stock.reservedQuantity(item)} reserved"
+                }
+            }
+        }
+        // Machine-output reservations belong to porter haul leases (pre-pickup).
+        for (m in s.machines) {
+            val claimedByItem = sortedMapOf<String, Int>()
+            for (w in s.workers) {
+                if (w.taskSourceInvId != m.output.id) continue
+                val item = w.taskItemId ?: continue
+                if (w.phase != com.willio.jeanvilma.fishshopping.core.sim.WorkerTaskPhase.WALK_TO_WORK &&
+                    w.phase != com.willio.jeanvilma.fishshopping.core.sim.WorkerTaskPhase.PICKUP
+                ) continue
+                claimedByItem[item] = (claimedByItem[item] ?: 0) + w.taskQuantity.coerceAtLeast(1)
+            }
+            for ((item, qty) in m.output.reservations()) {
+                if (claimedByItem[item] != qty) {
+                    p += "${m.stationId}.output: $qty reserved $item but workers claim ${claimedByItem[item] ?: 0}"
                 }
             }
         }

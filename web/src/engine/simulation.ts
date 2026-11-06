@@ -71,6 +71,9 @@ export class Simulation {
         m.preferredRecipeId = c.recipeId && allowed.includes(c.recipeId) ? c.recipeId : null;
         break;
       }
+      case "hire_worker":
+        WorkerSystem.hire(ctx, c.roleId, c.requestId);
+        break;
     }
   }
 }

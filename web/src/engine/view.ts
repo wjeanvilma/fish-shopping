@@ -2,7 +2,7 @@
 import { queueSlot } from "./content";
 import type { MachineStatus } from "./state";
 import type { Simulation } from "./simulation";
-import { CustomerSystem, FishingSystem, ProductionSystem, UpgradeSystem } from "./systems";
+import { CustomerSystem, FishingSystem, ProductionSystem, UpgradeSystem, WorkerSystem } from "./systems";
 
 export interface ItemCount { itemId: string; name: string; count: number }
 export interface ContextCard {
@@ -31,6 +31,27 @@ export interface CustomerView {
 }
 export interface UpgradeView { id: string; name: string; description: string; cost: number; owned: boolean; purchasable: boolean; reason: string | null }
 export interface RushBannerView { rushId: string; name: string; ticksRemaining: number }
+export interface WorkerView {
+  id: string;
+  roleId: string;
+  roleName: string;
+  roleKind: string;
+  xMm: number;
+  zMm: number;
+  bagUsedUnits: number;
+  bagCapacityUnits: number;
+  phase: string;
+}
+export interface StaffHireView {
+  roleId: string;
+  name: string;
+  roleKind: string;
+  cost: number;
+  hired: number;
+  maxHired: number;
+  purchasable: boolean;
+  reason: string | null;
+}
 
 export interface SimView {
   tick: number;
@@ -56,6 +77,12 @@ export interface SimView {
   tutorialText: string | null;
   upgrades: UpgradeView[];
   rush: RushBannerView | null;
+  /** True while a hired supervisor is posted (boosts haul demand scoring). */
+  supervisorOnDuty: boolean;
+  /** Coins charged per hired worker each simulated hour (0 = unpaid). */
+  workerWagePerWorkerPerHour: number;
+  workers: WorkerView[];
+  staff: StaffHireView[];
 }
 
 export function buildView(sim: Simulation): SimView {
@@ -230,5 +257,26 @@ export function buildView(sim: Simulation): SimView {
       const r = CustomerSystem.activeRush(h, s.tick);
       return r ? { rushId: r.id, name: r.name, ticksRemaining: CustomerSystem.ticksRemaining(r, s.tick) } : null;
     })(),
+    supervisorOnDuty: WorkerSystem.supervisorOnDuty(c, s),
+    workerWagePerWorkerPerHour: s.workerWagePerWorkerPerHour,
+    workers: s.workers.map((w) => {
+      const def = c.workersById.get(w.roleId);
+      return {
+        id: w.id, roleId: w.roleId, roleName: def?.name ?? w.roleId, roleKind: def?.role ?? "fisher",
+        xMm: w.x, zMm: w.z, bagUsedUnits: w.bag.usedUnits(), bagCapacityUnits: w.bag.capacityUnits, phase: w.phase,
+      };
+    }),
+    staff: c.workers.map((def) => {
+      const a = WorkerSystem.availability(c, s, def);
+      const hired = s.workers.filter((w) => w.roleId === def.id).length;
+      return {
+        roleId: def.id, name: def.name, roleKind: def.role, cost: def.hireCost, hired, maxHired: def.maxHired,
+        purchasable: a.kind === "purchasable",
+        reason: a.kind === "locked" ? a.reason
+          : a.kind === "too_expensive" ? `Need ${a.missing} more coins`
+          : a.kind === "maxed" ? "Max hired"
+          : null,
+      };
+    }),
   };
 }

@@ -5,8 +5,8 @@
  */
 import type { ContentPack } from "./content";
 import { MAX_SAFE_INTEGER, SCHEMA_VERSION, compareStrings, sortedKeys } from "./foundations";
-import type { Inventory } from "./inventory";
-import { CustomerState, GameState, type MachineStatus, type Receipt } from "./state";
+import { Inventory } from "./inventory";
+import { CustomerState, GameState, WorkerState, type MachineStatus, type Receipt, type WorkerTaskPhase } from "./state";
 import { FishingSystem, UpgradeSystem } from "./systems";
 
 export class SnapshotError extends Error {}
@@ -30,7 +30,7 @@ const entriesRecord = (entries: [string, number][]): Record<string, number> => O
 const inv = (i: Inventory) => ({ quantities: entriesRecord(i.contents()), reserved: entriesRecord(i.reservations()) });
 const receipt = (r: Receipt) => ({ id: r.id, type: r.type, coinDelta: r.coinDelta, tick: r.tick, reference: r.reference });
 
-export function encodeSnapshot(content: ContentPack, s: GameState): string {
+export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochMs: number | null = null): string {
   const p = s.player;
   const receipts: Record<string, Json> = {};
   for (const k of sortedKeys(s.purchaseReceipts)) receipts[k] = receipt(s.purchaseReceipts.get(k)!);
@@ -76,6 +76,25 @@ export function encodeSnapshot(content: ContentPack, s: GameState): string {
       walkTicksTotal: c.walkTicksTotal, walkTicksLeft: c.walkTicksLeft,
       preferredProductId: c.preferredProductId,
     })),
+    workers: s.workers.map((w) => ({
+      id: w.id, roleId: w.roleId, x: w.x, z: w.z,
+      bag: inv(w.bag),
+      walkTicksTotal: w.walkTicksTotal, walkTicksLeft: w.walkTicksLeft,
+      walkFromX: w.walkFromX, walkFromZ: w.walkFromZ,
+      walkToX: w.walkToX, walkToZ: w.walkToZ,
+      transferCooldown: w.transferCooldown,
+      phase: w.phase,
+      taskId: w.taskId,
+      taskZoneId: w.taskZoneId,
+      taskSourceInvId: w.taskSourceInvId,
+      taskDestInvId: w.taskDestInvId,
+      taskItemId: w.taskItemId,
+      taskQuantity: w.taskQuantity,
+      leaseExpiresAt: w.leaseExpiresAt,
+      fishingSpecies: w.fishingSpecies,
+      fishingProgress: w.fishingProgress,
+      fishingCatchTicks: w.fishingCatchTicks,
+    })),
     ownedUpgrades: [...s.ownedUpgrades].sort(compareStrings),
     completedQuests: [...s.completedQuests].sort(compareStrings),
     stats: sortedRecord(s.stats),
@@ -84,10 +103,24 @@ export function encodeSnapshot(content: ContentPack, s: GameState): string {
   };
   const stateJson = JSON.stringify(state);
   // Splice the already-serialised state in so the checksum covers exactly those bytes.
-  return `{"schemaVersion":${SCHEMA_VERSION},"contentVersion":${JSON.stringify(content.contentVersion)},"checksum":"${crc32Hex(stateJson)}","state":${stateJson}}`;
+  // Omitting savedAt keeps fixture/parity encodes byte-identical to prior versions.
+  const savedAt = savedAtEpochMs === undefined || savedAtEpochMs === null
+    ? ""
+    : `,"savedAtEpochMs":${savedAtEpochMs}`;
+  return `{"schemaVersion":${SCHEMA_VERSION},"contentVersion":${JSON.stringify(content.contentVersion)},"checksum":"${crc32Hex(stateJson)}"${savedAt},"state":${stateJson}}`;
+}
+
+export interface DecodedSnapshot {
+  state: GameState;
+  /** Wall-clock millis when this snapshot was written, or null for legacy saves. */
+  savedAtEpochMs: number | null;
 }
 
 export function decodeSnapshot(content: ContentPack, text: string): GameState {
+  return decodeSnapshotEnvelope(content, text).state;
+}
+
+export function decodeSnapshotEnvelope(content: ContentPack, text: string): DecodedSnapshot {
   let root: unknown;
   try {
     root = JSON.parse(text);
@@ -104,7 +137,9 @@ export function decodeSnapshot(content: ContentPack, text: string): GameState {
   if (env.get("checksum").string() !== crc32Hex(JSON.stringify(stateValue))) {
     throw new SnapshotError("Checksum mismatch: save is corrupt");
   }
-  return readState(content, new Reader(stateValue, "$.state"), version);
+  const savedAtNode = env.optional("savedAtEpochMs");
+  const savedAtEpochMs = savedAtNode ? savedAtNode.int(0) : null;
+  return { state: readState(content, new Reader(stateValue, "$.state"), version), savedAtEpochMs };
 }
 
 /**
@@ -114,6 +149,7 @@ export function decodeSnapshot(content: ContentPack, text: string): GameState {
  *  - v3 -> v4: player mid-cast fishingCatchTicks + reelAttemptedThisCast.
  *  - v4 -> v5: machines.preferredRecipeId (null = Auto).
  *  - v5 -> v6: customers.preferredProductId.
+ *  - v6 -> v7: workers list.
  */
 function readState(content: ContentPack, n: Reader, version: number): GameState {
   const harborId = n.get("harborId").string();
@@ -206,6 +242,41 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
     }
     c.walkTicksLeft = version >= 2 ? Math.min(cn.get("walkTicksLeft").int(0), walkTotal) : 0;
     s.customers.push(c);
+  }
+  if (version >= 7) {
+    const phases: readonly WorkerTaskPhase[] = ["NONE", "WALK_TO_WORK", "WORK", "PICKUP", "WALK_TO_DROP", "DROP"];
+    for (const wn of n.get("workers").list()) {
+      const roleId = wn.get("roleId").string();
+      const def = content.workersById.get(roleId);
+      if (!def) continue;
+      const id = wn.get("id").string();
+      const w = new WorkerState(
+        id, roleId, wn.get("x").int(), wn.get("z").int(),
+        new Inventory(`inv.${id}.bag`, def.carryCapacityUnits, content.carryUnits),
+      );
+      readInv(wn.get("bag"), w.bag);
+      w.walkTicksTotal = wn.get("walkTicksTotal").int(0);
+      w.walkTicksLeft = Math.min(wn.get("walkTicksLeft").int(0), w.walkTicksTotal);
+      w.walkFromX = wn.get("walkFromX").int();
+      w.walkFromZ = wn.get("walkFromZ").int();
+      w.walkToX = wn.get("walkToX").int();
+      w.walkToZ = wn.get("walkToZ").int();
+      w.transferCooldown = wn.get("transferCooldown").int(0);
+      const phase = wn.get("phase").string();
+      w.phase = (phases as readonly string[]).includes(phase) ? phase as WorkerTaskPhase : "NONE";
+      w.taskId = wn.optional("taskId")?.string() ?? null;
+      w.taskZoneId = wn.optional("taskZoneId")?.string() ?? null;
+      w.taskSourceInvId = wn.optional("taskSourceInvId")?.string() ?? null;
+      w.taskDestInvId = wn.optional("taskDestInvId")?.string() ?? null;
+      w.taskItemId = wn.optional("taskItemId")?.string() ?? null;
+      w.taskQuantity = wn.get("taskQuantity").int(0);
+      w.leaseExpiresAt = wn.get("leaseExpiresAt").int(0);
+      const species = wn.optional("fishingSpecies")?.string() ?? null;
+      w.fishingSpecies = species !== null && content.speciesById.has(species) ? species : null;
+      w.fishingProgress = wn.get("fishingProgress").int(0);
+      w.fishingCatchTicks = wn.get("fishingCatchTicks").int(0);
+      s.workers.push(w);
+    }
   }
   n.get("ownedUpgrades").list().map((x) => x.string()).filter((u) => content.upgradesById.has(u)).forEach((u) => s.ownedUpgrades.add(u));
   n.get("completedQuests").list().forEach((x) => s.completedQuests.add(x.string()));

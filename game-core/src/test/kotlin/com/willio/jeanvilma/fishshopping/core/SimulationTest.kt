@@ -3,10 +3,14 @@ package com.willio.jeanvilma.fishshopping.core
 import com.willio.jeanvilma.fishshopping.core.persistence.SnapshotCodec
 import com.willio.jeanvilma.fishshopping.core.persistence.SnapshotException
 import com.willio.jeanvilma.fishshopping.core.sim.Command
+import com.willio.jeanvilma.fishshopping.core.sim.CustomerState
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
 import com.willio.jeanvilma.fishshopping.core.sim.MachineStatus
+import com.willio.jeanvilma.fishshopping.core.sim.OfflinePolicy
 import com.willio.jeanvilma.fishshopping.core.sim.Simulation
 import com.willio.jeanvilma.fishshopping.core.sim.Stats
+import com.willio.jeanvilma.fishshopping.core.sim.WorkerTaskPhase
+import com.willio.jeanvilma.fishshopping.core.sim.applyOffline
 import com.willio.jeanvilma.fishshopping.core.sim.view
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -21,6 +25,13 @@ class SimulationTest {
     private val portion = "product.basic_portion"
     private fun cutter(sim: Simulation) = sim.state.machines.first { it.stationId == "station.cutter_1" }
     private fun smoker(sim: Simulation) = sim.state.machines.first { it.stationId == "station.smoker_1" }
+    private fun unlockStaffHiring(sim: Simulation) {
+        sim.state.completedQuests += "quest.first_ten_sales"
+    }
+    private fun unlockSupervisorHiring(sim: Simulation) {
+        unlockStaffHiring(sim)
+        sim.state.ownedUpgrades += "upgrade.staff_boots"
+    }
 
     @Test
     fun walkingToPierFillsBagThenStops() {
@@ -161,7 +172,7 @@ class SimulationTest {
             assertTrue(e.message!!.contains("Checksum"))
         }
         try {
-            SnapshotCodec.decode(sim.content, saved.replace("\"schemaVersion\":6", "\"schemaVersion\":99"))
+            SnapshotCodec.decode(sim.content, saved.replace("\"schemaVersion\":7", "\"schemaVersion\":99"))
             fail("newer schema should be refused")
         } catch (e: SnapshotException) {
             assertTrue(e.message!!.contains("newer"))
@@ -449,7 +460,6 @@ class SimulationTest {
         val sim = newSim()
         val h = sim.harbor
         assertTrue(h.customerPathWaypoints.isNotEmpty())
-        assertEquals("0.12.0", Shared.content.contentVersion)
         val slot = h.counters.single().queueSlot(0)
         val path = com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem.approachPath(h, slot)
         val routed = com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem.pathWalkTicks(
@@ -504,7 +514,7 @@ class SimulationTest {
         assertTrue(s.customers.isNotEmpty())
         assertTrue(s.customers.all { it.arrived && it.walkTicksTotal == 0 })
         val reencoded = SnapshotCodec.encode(Shared.content, s)
-        assertTrue(reencoded.startsWith("{\"schemaVersion\":6,"))
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":7,"))
         val sim = Simulation(Shared.content, SnapshotCodec.decode(Shared.content, reencoded))
         repeat(200) { sim.checkedStep() }
     }
@@ -767,5 +777,266 @@ class SimulationTest {
         pilot.waitUntil(40) { sim.state.player.bag.quantity("product.smoked_fillet") >= 1 }
         assertEquals(1, sim.state.player.bag.quantity("product.smoked_fillet"))
         assertTrue(smoker(sim).output.isEmpty())
+    }
+
+    @Test
+    fun hireFisherAndPorterIsIdempotentAndShowsStaffPanel() {
+        val sim = newSim()
+        assertEquals("0.17.0", Shared.content.contentVersion)
+        assertTrue(sim.view().staff.any { it.roleId == "worker.fisher" })
+        assertTrue(sim.view().staff.any { it.roleId == "worker.operator" })
+        assertTrue(sim.view().staff.any { it.roleId == "worker.cashier" })
+        assertTrue(sim.view().staff.any { it.roleId == "worker.supervisor" })
+        assertTrue(sim.view().staff.filter { it.roleId != "worker.supervisor" }
+            .all { it.reason?.startsWith("Requires:") == true })
+        unlockStaffHiring(sim)
+        sim.state.coins = 500
+        val hire1 = sim.checkedStep(listOf(Command.HireWorker("worker.fisher", "hire-f1")))
+        assertTrue(hire1.filterIsInstance<GameEvent.WorkerHired>().any { !it.replayed })
+        assertEquals(1, sim.state.workers.size)
+        assertEquals(1L, sim.state.stat(Stats.WORKERS_HIRED))
+        val coinsAfter = sim.state.coins
+        val hireReplay = sim.checkedStep(listOf(Command.HireWorker("worker.fisher", "hire-f1")))
+        assertTrue(hireReplay.filterIsInstance<GameEvent.WorkerHired>().single().replayed)
+        assertEquals(1, sim.state.workers.size)
+        assertEquals(coinsAfter, sim.state.coins)
+        sim.checkedStep(listOf(Command.HireWorker("worker.porter", "hire-p1")))
+        assertEquals(2, sim.state.workers.size)
+        assertTrue(sim.view().workers.any { it.roleKind == "fisher" })
+        assertTrue(sim.view().workers.any { it.roleKind == "porter" })
+        assertTrue(sim.view().staff.none { it.reason == "Coming soon" })
+        assertTrue(sim.view().staff.filter { it.roleId == "worker.operator" || it.roleId == "worker.cashier" }
+            .all { it.purchasable || it.reason?.startsWith("Need") == true })
+        assertTrue(sim.view().staff.first { it.roleId == "worker.supervisor" }.reason!!.startsWith("Requires:"))
+    }
+
+    @Test
+    fun fisherCatchesFishAndDeliversToCutter() {
+        val sim = newSim()
+        unlockStaffHiring(sim)
+        sim.state.coins = 200
+        sim.checkedStep(listOf(Command.HireWorker("worker.fisher", "hf")))
+        val events = (1..8_000).flatMap { sim.checkedStep() }
+        assertTrue(events.filterIsInstance<GameEvent.FishCaught>().isNotEmpty())
+        assertTrue(sim.state.stat(Stats.WORKER_FISH_CAUGHT) > 0)
+        assertTrue(
+            "fisher should feed the cutter",
+            cutter(sim).input.usedUnits() > 0 || cutter(sim).output.usedUnits() > 0 || cutter(sim).activeBatch != null,
+        )
+    }
+
+    @Test
+    fun porterHaulsMachineOutputToCounter() {
+        val sim = newSim()
+        unlockStaffHiring(sim)
+        sim.state.coins = 200
+        sim.checkedStep(listOf(Command.HireWorker("worker.porter", "hp")))
+        cutter(sim).output.add(portion, 3)
+        val events = (1..4_000).flatMap { sim.checkedStep() }
+        assertTrue(events.filterIsInstance<GameEvent.ItemsTransferred>().any {
+            it.to == sim.state.counters.single().stock.id
+        })
+        assertTrue(sim.state.counters.single().stock.quantity(portion) > 0)
+        assertTrue(sim.state.stat(Stats.WORKER_ITEMS_MOVED) > 0)
+    }
+
+    @Test
+    fun operatorHaulsFilletFromCutterToSmoker() {
+        val sim = newSim()
+        unlockStaffHiring(sim)
+        sim.state.coins = 200
+        sim.checkedStep(listOf(Command.HireWorker("worker.operator", "ho")))
+        val fillet = "product.fillet"
+        cutter(sim).output.add(fillet, 2)
+        val events = (1..4_000).flatMap { sim.checkedStep() }
+        assertTrue(events.filterIsInstance<GameEvent.ItemsTransferred>().any {
+            it.from == cutter(sim).output.id || it.to == smoker(sim).input.id
+        })
+        assertTrue(
+            "operator should feed the smoker",
+            smoker(sim).input.quantity(fillet) > 0 ||
+                smoker(sim).activeBatch != null ||
+                smoker(sim).output.quantity("product.smoked_fillet") > 0,
+        )
+        assertTrue(sim.state.stat(Stats.WORKER_ITEMS_MOVED) > 0)
+    }
+
+    @Test
+    fun cashierServesCustomersWithoutPlayerAtCounter() {
+        val sim = newSim()
+        unlockStaffHiring(sim)
+        sim.state.coins = 200
+        sim.checkedStep(listOf(Command.HireWorker("worker.cashier", "hc")))
+        var onDuty = false
+        repeat(4_000) {
+            sim.checkedStep()
+            val w = sim.state.workers.single()
+            if (!w.busyWalking && w.phase == WorkerTaskPhase.WORK && w.taskZoneId == "zone.counter_1") {
+                onDuty = true
+                return@repeat
+            }
+        }
+        assertTrue("cashier should reach the counter", onDuty)
+        assertTrue(sim.state.player.zoneId != "zone.counter_1")
+
+        val counter = sim.state.counters.single()
+        counter.stock.add(portion, 2)
+        val type = sim.content.customers.first()
+        sim.state.customers += CustomerState(
+            "customer.test_cashier", type.id, counter.counterId,
+            wants = 1, patienceLeft = 9_999, walkTicksTotal = 0,
+        )
+        val events = (1..80).flatMap { sim.checkedStep() }
+        assertTrue(events.filterIsInstance<GameEvent.SaleCommitted>().isNotEmpty())
+        assertTrue(sim.state.player.zoneId != "zone.counter_1")
+        assertTrue(sim.state.stat(Stats.SALES) > 0)
+    }
+
+    @Test
+    fun operatorTakesIntermediatesBeforePorterWithoutSupervisor() {
+        val sim = newSim()
+        unlockStaffHiring(sim)
+        sim.state.coins = 500
+        sim.checkedStep(listOf(Command.HireWorker("worker.porter", "hp")))
+        sim.checkedStep(listOf(Command.HireWorker("worker.operator", "ho")))
+        assertEquals(2, sim.state.workers.size)
+        val fillet = "product.fillet"
+        cutter(sim).output.add(fillet, 1)
+        (1..4_000).forEach { sim.checkedStep() }
+        // Porter must not stock raw fillet; operator routes it through the smoker
+        // (which may already have finished and been collected as smoked fillet).
+        assertEquals(0, sim.state.counters.single().stock.quantity(fillet))
+        assertEquals(0, cutter(sim).output.available(fillet))
+        assertTrue(sim.state.stat(Stats.WORKER_ITEMS_MOVED) > 0)
+    }
+
+    @Test
+    fun supervisorLetsPorterHaulIntermediatesWhenCounterDemands() {
+        val sim = newSim()
+        unlockSupervisorHiring(sim)
+        sim.state.coins = 500
+        sim.checkedStep(listOf(Command.HireWorker("worker.supervisor", "hs")))
+        var onDuty = false
+        repeat(4_000) {
+            sim.checkedStep()
+            if (sim.view().supervisorOnDuty) {
+                onDuty = true
+                return@repeat
+            }
+        }
+        assertTrue(onDuty)
+        sim.checkedStep(listOf(Command.HireWorker("worker.porter", "hp")))
+        val fillet = "product.fillet"
+        val counter = sim.state.counters.single()
+        // Empty counter + waiting customer preferring fillet → demand override.
+        val type = sim.content.customers.first()
+        sim.state.customers += CustomerState(
+            "customer.test_sup", type.id, counter.counterId,
+            wants = 1, patienceLeft = 9_999, walkTicksTotal = 0,
+            preferredProductId = fillet,
+        )
+        cutter(sim).output.add(fillet, 1)
+        (1..4_000).forEach { sim.checkedStep() }
+        assertTrue(counter.stock.quantity(fillet) > 0 || sim.state.stat(Stats.WORKER_ITEMS_MOVED) > 0)
+        assertTrue(sim.view().supervisorOnDuty)
+    }
+
+    @Test
+    fun haulLeaseExpiryReleasesReservation() {
+        val sim = newSim()
+        unlockStaffHiring(sim)
+        sim.state.coins = 200
+        sim.checkedStep(listOf(Command.HireWorker("worker.porter", "hp")))
+        cutter(sim).output.add(portion, 1)
+        // Assign the haul (reserve) then force the lease to expire before pickup finishes.
+        repeat(200) {
+            sim.checkedStep()
+            val w = sim.state.workers.single()
+            if (w.phase == WorkerTaskPhase.WALK_TO_WORK || w.phase == WorkerTaskPhase.PICKUP) {
+                assertTrue(cutter(sim).output.reservedQuantity(portion) >= 1)
+                w.leaseExpiresAt = sim.state.tick
+                val events = sim.checkedStep()
+                assertTrue(events.filterIsInstance<GameEvent.LeaseExpired>().isNotEmpty())
+                assertEquals(0, cutter(sim).output.reservedQuantity(portion))
+                assertEquals(1L, sim.state.stat(Stats.LEASES_EXPIRED))
+                return
+            }
+        }
+        fail("porter never claimed a haul lease")
+    }
+
+    @Test
+    fun offlineApplyRunsWorkersWithoutPlayerZoneActions() {
+        val sim = newSim()
+        unlockStaffHiring(sim)
+        sim.state.coins = 500
+        sim.checkedStep(listOf(Command.HireWorker("worker.porter", "hp-off")))
+        cutter(sim).output.add(portion, 3)
+        sim.state.player.zoneId = "zone.pier_end"
+        val beforeTick = sim.state.tick
+        val report = applyOffline(sim, 60_000) // 60s → 1200 ticks
+        assertEquals(1200L, report.ticksCredited)
+        assertEquals(beforeTick + 1200, sim.state.tick)
+        assertEquals("zone.pier_end", sim.state.player.zoneId)
+        assertTrue(sim.state.stat(Stats.WORKER_ITEMS_MOVED) > 0)
+        assertTrue(OfflinePolicy.shouldShowSummary(sim.content, report))
+    }
+
+    @Test
+    fun snapshotEnvelopeCarriesSavedAtWithoutBreakingChecksum() {
+        val sim = newSim()
+        sim.run(5)
+        val withAt = SnapshotCodec.encode(sim.content, sim.state, savedAtEpochMs = 1_700_000_000_000L)
+        val decoded = SnapshotCodec.decodeEnvelope(sim.content, withAt)
+        assertEquals(1_700_000_000_000L, decoded.savedAtEpochMs)
+        assertEquals(5L, decoded.state.tick)
+        assertEquals(SnapshotCodec.encode(sim.content, sim.state), SnapshotCodec.encode(sim.content, decoded.state))
+    }
+
+    @Test
+    fun destinationCapacityBlocksOverclaim() {
+        val sim = newSim()
+        unlockStaffHiring(sim)
+        sim.state.coins = 500
+        sim.checkedStep(listOf(
+            Command.HireWorker("worker.porter", "hp1"),
+            Command.HireWorker("worker.porter", "hp2"),
+        ))
+        val counter = sim.state.counters.single()
+        // Leave room for exactly one portion unit at the counter.
+        val room = counter.stock.roomFor(portion)
+        if (room > 1) {
+            // Fill until one unit of free capacity remains.
+            while (counter.stock.roomFor(portion) > 1) counter.stock.add(portion, 1)
+        }
+        cutter(sim).output.add(portion, 5)
+        (1..2_000).forEach { sim.checkedStep() }
+        // Never overfill: used + free == capacity, and no invariant break (checkedStep).
+        assertTrue(counter.stock.usedUnits() <= counter.stock.capacityUnits)
+        assertTrue(counter.stock.quantity(portion) >= 1)
+    }
+
+    @Test
+    fun workerUpgradesBoostCarryCatchAndChargeWages() {
+        val sim = newSim()
+        unlockStaffHiring(sim)
+        sim.state.coins = 10_000
+        sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.staff_boots", "ub")))
+        sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.staff_satchels", "us")))
+        sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.staff_tackle", "ut")))
+        sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.shift_lead", "uw")))
+        assertEquals(1250, sim.state.workerMoveSpeedPermille)
+        assertEquals(5, sim.state.workerCarryCapacityFloor)
+        assertEquals(1000, sim.state.workerCatchSpeedPermille)
+        assertEquals(3, sim.state.workerWagePerWorkerPerHour)
+        assertEquals(3, sim.view().workerWagePerWorkerPerHour)
+        sim.checkedStep(listOf(Command.HireWorker("worker.porter", "hp-wage")))
+        assertEquals(5, sim.state.workers.single().bag.capacityUnits)
+        sim.state.workerWageAccrualTicks = 3600 * 20 - 1
+        val coinsBefore = sim.state.coins
+        val events = sim.checkedStep()
+        assertTrue(events.filterIsInstance<GameEvent.WagesPaid>().any { it.workers == 1 && it.coins == 3L })
+        assertEquals(coinsBefore - 3, sim.state.coins)
+        assertEquals(3L, sim.state.stat(Stats.WAGES_PAID))
     }
 }

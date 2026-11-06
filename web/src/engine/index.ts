@@ -6,4 +6,5 @@ export * from "./state";
 export * from "./simulation";
 export * from "./view";
 export * from "./snapshot";
-export { UpgradeSystem, ProductionSystem, FishingSystem, CustomerSystem, isOpen, PLAYER_RADIUS_MM } from "./systems";
+export * from "./offline";
+export { UpgradeSystem, ProductionSystem, FishingSystem, CustomerSystem, WorkerSystem, isOpen, PLAYER_RADIUS_MM } from "./systems";

@@ -88,6 +88,36 @@ object ContentLoader {
             )
         },
         quests = r["quests"].list { q -> QuestDef(q["id"].string(), q["name"].string(), statGoal(q["goal"])) },
+        workers = r["workers"].list { w ->
+            WorkerDef(
+                id = w["id"].string(),
+                name = w["name"].string(),
+                role = WorkerRoleKind.fromWire(w["role"].string())
+                    ?: w.fail("unknown worker role '${w["role"].string()}'"),
+                hireCost = w["hireCost"].long(min = 0),
+                maxHired = w["maxHired"].int(min = 1),
+                carryCapacityUnits = w["carryCapacityUnits"].int(min = 1),
+                moveSpeedMmPerTick = w["moveSpeedMmPerTick"].int(min = 1),
+                catchSpeedPermille = w["catchSpeedPermille"].int(min = 1),
+                transferIntervalTicks = w["transferIntervalTicks"].int(min = 1),
+                leaseTicks = w["leaseTicks"].int(min = 1),
+                requires = w["requires"].list { it.string() },
+            )
+        },
+        routing = r["routing"].let { rt ->
+            RoutingDef(
+                urgencyWeight = rt["urgencyWeight"].int(min = 0),
+                distanceWeight = rt["distanceWeight"].int(min = 0),
+                demandWeight = rt["demandWeight"].int(min = 0),
+                supervisorDemandBoostPermille = rt["supervisorDemandBoostPermille"].int(min = 1),
+            )
+        },
+        offline = r["offline"].let { o ->
+            OfflineDef(
+                capHours = o["capHours"].int(min = 1),
+                summaryMinSeconds = o["summaryMinSeconds"].int(min = 0),
+            )
+        },
         customers = r["customers"].list { c ->
             val kindText = c["kind"].string()
             val kind = CustomerKind.fromWire(kindText) ?: c["kind"].fail("unknown customer kind '$kindText'")
@@ -127,6 +157,10 @@ object ContentLoader {
         "catch_speed" -> UpgradeEffect.CatchSpeed(n["speedPermille"].int(min = 1))
         "fish_regen" -> UpgradeEffect.FishRegen(n["speedPermille"].int(min = 1))
         "unlock_fishing_spot" -> UpgradeEffect.UnlockFishingSpot(n["zone"].string())
+        "worker_move_speed" -> UpgradeEffect.WorkerMoveSpeed(n["speedPermille"].int(min = 1))
+        "worker_carry" -> UpgradeEffect.WorkerCarry(n["capacityUnits"].int(min = 1))
+        "worker_catch_speed" -> UpgradeEffect.WorkerCatchSpeed(n["speedPermille"].int(min = 1))
+        "worker_wage" -> UpgradeEffect.WorkerWage(n["coinsPerWorkerPerHour"].int(min = 1))
         else -> n.fail("unknown upgrade effect kind '$kind'")
     }
 

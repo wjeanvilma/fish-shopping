@@ -63,5 +63,6 @@ class FoundationsTest {
         assertEquals(0L, OfflinePolicy.creditedTicks(-60_000))
         assertEquals(20L, OfflinePolicy.creditedTicks(1_000))
         assertEquals(SimConstants.OFFLINE_CAP_TICKS, OfflinePolicy.creditedTicks(48L * 3600 * 1000))
+        assertEquals(SimConstants.OFFLINE_CAP_TICKS, OfflinePolicy.capTicks(Shared.content))
     }
 }

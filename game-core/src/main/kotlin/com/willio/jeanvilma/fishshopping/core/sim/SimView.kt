@@ -5,6 +5,7 @@ import com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
 import com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
 import com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
 import com.willio.jeanvilma.fishshopping.core.progression.UpgradeSystem
+import com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem
 
 /**
  * Immutable presentation snapshot built on the simulation thread and handed to
@@ -45,6 +46,12 @@ data class SimView(
     val upgrades: List<UpgradeView>,
     /** Non-null while a harbor rush window is active. */
     val rush: RushBannerView?,
+    /** True while a hired supervisor is posted (boosts haul demand scoring). */
+    val supervisorOnDuty: Boolean,
+    /** Coins charged per hired worker each simulated hour (0 = unpaid). */
+    val workerWagePerWorkerPerHour: Int,
+    val workers: List<WorkerView>,
+    val staff: List<StaffHireView>,
 )
 
 /**
@@ -109,6 +116,29 @@ data class RushBannerView(
 )
 
 data class PathPointView(val xMm: Int, val zMm: Int)
+
+data class WorkerView(
+    val id: String,
+    val roleId: String,
+    val roleName: String,
+    val roleKind: String,
+    val xMm: Int,
+    val zMm: Int,
+    val bagUsedUnits: Int,
+    val bagCapacityUnits: Int,
+    val phase: String,
+)
+
+data class StaffHireView(
+    val roleId: String,
+    val name: String,
+    val roleKind: String,
+    val cost: Long,
+    val hired: Int,
+    val maxHired: Int,
+    val purchasable: Boolean,
+    val reason: String?,
+)
 
 private fun Simulation.customerViews(): List<CustomerView> {
     return harbor.counters.flatMap { def ->
@@ -305,6 +335,29 @@ fun Simulation.view(): SimView {
         },
         rush = CustomerSystem.activeRush(harbor, s.tick)?.let { r ->
             RushBannerView(r.id, r.name, CustomerSystem.ticksRemaining(r, s.tick))
+        },
+        supervisorOnDuty = WorkerSystem.supervisorOnDuty(c, s),
+        workerWagePerWorkerPerHour = s.workerWagePerWorkerPerHour,
+        workers = s.workers.map { w ->
+            val def = c.workersById[w.roleId]
+            WorkerView(
+                w.id, w.roleId, def?.name ?: w.roleId, def?.role?.wire ?: "fisher",
+                w.x, w.z, w.bag.usedUnits(), w.bag.capacityUnits, w.phase.name,
+            )
+        },
+        staff = c.workers.map { def ->
+            val a = WorkerSystem.availability(c, s, def)
+            val hired = s.workers.count { it.roleId == def.id }
+            StaffHireView(
+                def.id, def.name, def.role.wire, def.hireCost, hired, def.maxHired,
+                purchasable = a is WorkerSystem.WorkerHireAvailability.Purchasable,
+                reason = when (a) {
+                    is WorkerSystem.WorkerHireAvailability.Locked -> a.reason
+                    is WorkerSystem.WorkerHireAvailability.TooExpensive -> "Need ${a.missing} more coins"
+                    is WorkerSystem.WorkerHireAvailability.Maxed -> "Max hired"
+                    else -> null
+                },
+            )
         },
     )
 }

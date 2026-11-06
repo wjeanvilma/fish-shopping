@@ -45,6 +45,16 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+.supervisor-banner {
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 52px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.rush-banner ~ .supervisor-banner {
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 96px);
+}
 .num { font-variant-numeric: tabular-nums; }
 .muted { opacity: 0.6; }
 .small { font-size: 13px; }
@@ -54,6 +64,7 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
 .top-left { top: max(var(--gap), env(safe-area-inset-top)); left: max(var(--gap), env(safe-area-inset-left)); }
 .top-center { top: max(var(--gap), env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); }
 .top-right { top: max(var(--gap), env(safe-area-inset-top)); right: max(var(--gap), env(safe-area-inset-right)); }
+.top-actions { top: max(var(--gap), env(safe-area-inset-top)); right: max(var(--gap), env(safe-area-inset-right)); display: flex; gap: 8px; }
 .objective { left: max(var(--gap), env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); max-width: 220px; }
 .joystick, .keys-hint { left: max(var(--gap), env(safe-area-inset-left)); bottom: max(var(--gap), env(safe-area-inset-bottom)); }
 .keys-hint { font-size: 14px; }
@@ -85,7 +96,8 @@ kbd { display: inline-block; min-width: 1.6em; padding: 1px 5px; margin: 0 2px; 
 .scrim { position: absolute; inset: 0; background: rgb(21 52 73 / 0.25); display: grid; place-items: center; }
 .sheet { position: relative; width: min(440px, calc(100vw - 32px)); max-height: min(360px, calc(100vh - 32px)); overflow: auto; background: var(--surface); padding: 16px; }
 .sheet-header { display: flex; align-items: center; gap: 12px; }
-.sheet-header h2 { margin: 0; flex: 1; font-size: 20px; }
+.sheet-header > h2 { margin: 0; flex: 1; font-size: 20px; }
+.sheet-header .grow h2 { margin: 0; font-size: 20px; }
 .upgrade-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
 .upgrade-list li { display: flex; align-items: center; gap: 12px; }
 .grow { flex: 1; }

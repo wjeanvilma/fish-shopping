@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/content-pack.schema.json",
-  "contentVersion": "0.12.0",
+  "contentVersion": "0.17.0",
   "ticksPerSecond": 20,
   "units": {
     "distance": "millimetres (integer); x/z ground plane, y is up",
@@ -313,6 +313,38 @@
       "cost": 180,
       "requires": ["upgrade.tide_chart"],
       "effect": { "kind": "unlock_fishing_spot", "zone": "zone.pier_spur" }
+    },
+    {
+      "id": "upgrade.staff_boots",
+      "name": "Staff work boots",
+      "description": "Hired staff walk 25% faster.",
+      "cost": 200,
+      "requires": ["quest.first_ten_sales"],
+      "effect": { "kind": "worker_move_speed", "speedPermille": 1250 }
+    },
+    {
+      "id": "upgrade.staff_satchels",
+      "name": "Staff satchels",
+      "description": "Hired staff can carry at least 5 units.",
+      "cost": 250,
+      "requires": ["upgrade.staff_boots"],
+      "effect": { "kind": "worker_carry", "capacityUnits": 5 }
+    },
+    {
+      "id": "upgrade.staff_tackle",
+      "name": "Staff tackle",
+      "description": "Fishers catch at full angler speed.",
+      "cost": 180,
+      "requires": ["quest.first_ten_sales"],
+      "effect": { "kind": "worker_catch_speed", "speedPermille": 1000 }
+    },
+    {
+      "id": "upgrade.shift_lead",
+      "name": "Shift lead",
+      "description": "Staff hustle harder, but wages cost 3 coins per worker each hour.",
+      "cost": 150,
+      "requires": ["upgrade.staff_boots"],
+      "effect": { "kind": "worker_wage", "coinsPerWorkerPerHour": 3 }
     }
   ],
   "quests": [
@@ -322,6 +354,83 @@
       "goal": { "stat": "stat.sales", "atLeast": 10 }
     }
   ],
+  "workers": [
+    {
+      "id": "worker.fisher",
+      "name": "Fisher",
+      "role": "fisher",
+      "hireCost": 120,
+      "maxHired": 2,
+      "carryCapacityUnits": 3,
+      "moveSpeedMmPerTick": 160,
+      "catchSpeedPermille": 800,
+      "transferIntervalTicks": 4,
+      "leaseTicks": 600,
+      "requires": ["quest.first_ten_sales"]
+    },
+    {
+      "id": "worker.porter",
+      "name": "Porter",
+      "role": "porter",
+      "hireCost": 100,
+      "maxHired": 2,
+      "carryCapacityUnits": 4,
+      "moveSpeedMmPerTick": 180,
+      "catchSpeedPermille": 1000,
+      "transferIntervalTicks": 4,
+      "leaseTicks": 600,
+      "requires": ["quest.first_ten_sales"]
+    },
+    {
+      "id": "worker.operator",
+      "name": "Operator",
+      "role": "operator",
+      "hireCost": 150,
+      "maxHired": 2,
+      "carryCapacityUnits": 4,
+      "moveSpeedMmPerTick": 170,
+      "catchSpeedPermille": 1000,
+      "transferIntervalTicks": 4,
+      "leaseTicks": 600,
+      "requires": ["quest.first_ten_sales"]
+    },
+    {
+      "id": "worker.cashier",
+      "name": "Cashier",
+      "role": "cashier",
+      "hireCost": 140,
+      "maxHired": 1,
+      "carryCapacityUnits": 1,
+      "moveSpeedMmPerTick": 160,
+      "catchSpeedPermille": 1000,
+      "transferIntervalTicks": 4,
+      "leaseTicks": 600,
+      "requires": ["quest.first_ten_sales"]
+    },
+    {
+      "id": "worker.supervisor",
+      "name": "Supervisor",
+      "role": "supervisor",
+      "hireCost": 220,
+      "maxHired": 1,
+      "carryCapacityUnits": 1,
+      "moveSpeedMmPerTick": 150,
+      "catchSpeedPermille": 1000,
+      "transferIntervalTicks": 4,
+      "leaseTicks": 600,
+      "requires": ["quest.first_ten_sales", "upgrade.staff_boots"]
+    }
+  ],
+  "routing": {
+    "urgencyWeight": 2,
+    "distanceWeight": 1,
+    "demandWeight": 3,
+    "supervisorDemandBoostPermille": 2000
+  },
+  "offline": {
+    "capHours": 4,
+    "summaryMinSeconds": 5
+  },
   "customers": [
     {
       "id": "customer.local_shopper",

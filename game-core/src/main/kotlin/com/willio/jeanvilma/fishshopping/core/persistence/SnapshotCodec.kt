@@ -12,6 +12,8 @@ import com.willio.jeanvilma.fishshopping.core.sim.GameState
 import com.willio.jeanvilma.fishshopping.core.sim.MachineStatus
 import com.willio.jeanvilma.fishshopping.core.sim.Receipt
 import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
+import com.willio.jeanvilma.fishshopping.core.sim.WorkerState
+import com.willio.jeanvilma.fishshopping.core.sim.WorkerTaskPhase
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -37,9 +39,19 @@ class NewerSaveException(val schemaVersion: Int) :
  * Capacities are not stored: they are rebuilt from content plus owned upgrades, so
  * a content update cannot leave a save with stale limits.
  */
+data class DecodedSnapshot(
+    val state: GameState,
+    /** Wall-clock millis when this snapshot was written, or null for legacy saves. */
+    val savedAtEpochMs: Long?,
+)
+
 object SnapshotCodec {
 
-    fun encode(content: ContentPack, s: GameState): String {
+    /**
+     * @param savedAtEpochMs when non-null, written into the envelope for offline catch-up.
+     * Omitting it keeps fixture/parity encodes byte-identical to prior versions.
+     */
+    fun encode(content: ContentPack, s: GameState, savedAtEpochMs: Long? = null): String {
         val state = buildJsonObject {
             put("harborId", s.harborId)
             put("tick", s.tick)
@@ -102,6 +114,30 @@ object SnapshotCodec {
                     })
                 }
             })
+            put("workers", buildJsonArray {
+                s.workers.forEach { w ->
+                    add(buildJsonObject {
+                        put("id", w.id); put("roleId", w.roleId)
+                        put("x", w.x); put("z", w.z)
+                        put("bag", inv(w.bag))
+                        put("walkTicksTotal", w.walkTicksTotal); put("walkTicksLeft", w.walkTicksLeft)
+                        put("walkFromX", w.walkFromX); put("walkFromZ", w.walkFromZ)
+                        put("walkToX", w.walkToX); put("walkToZ", w.walkToZ)
+                        put("transferCooldown", w.transferCooldown)
+                        put("phase", w.phase.name)
+                        put("taskId", w.taskId)
+                        put("taskZoneId", w.taskZoneId)
+                        put("taskSourceInvId", w.taskSourceInvId)
+                        put("taskDestInvId", w.taskDestInvId)
+                        put("taskItemId", w.taskItemId)
+                        put("taskQuantity", w.taskQuantity)
+                        put("leaseExpiresAt", w.leaseExpiresAt)
+                        put("fishingSpecies", w.fishingSpecies)
+                        put("fishingProgress", w.fishingProgress)
+                        put("fishingCatchTicks", w.fishingCatchTicks)
+                    })
+                }
+            })
             put("ownedUpgrades", JsonArray(s.ownedUpgrades.map { JsonPrimitive(it) }))
             put("completedQuests", JsonArray(s.completedQuests.map { JsonPrimitive(it) }))
             put("stats", JsonObject(s.stats.mapValues { JsonPrimitive(it.value) }))
@@ -112,12 +148,15 @@ object SnapshotCodec {
             put("schemaVersion", SimConstants.SCHEMA_VERSION)
             put("contentVersion", content.contentVersion)
             put("checksum", checksum(state))
+            if (savedAtEpochMs != null) put("savedAtEpochMs", savedAtEpochMs)
             put("state", state)
         }
         return envelope.toString()
     }
 
-    fun decode(content: ContentPack, text: String): GameState {
+    fun decode(content: ContentPack, text: String): GameState = decodeEnvelope(content, text).state
+
+    fun decodeEnvelope(content: ContentPack, text: String): DecodedSnapshot {
         val root = try {
             Json.parseToJsonElement(text)
         } catch (e: Exception) {
@@ -132,7 +171,8 @@ object SnapshotCodec {
             if (version < 1) throw SnapshotException("Unsupported save schema $version")
             val stateEl = (root as JsonObject)["state"] as? JsonObject ?: throw SnapshotException("Missing state")
             if (env["checksum"].string() != checksum(stateEl)) throw SnapshotException("Checksum mismatch: save is corrupt")
-            return readState(content, Node(stateEl, "$.state"), version)
+            val savedAt = env.optional("savedAtEpochMs")?.long(min = 0)
+            return DecodedSnapshot(readState(content, Node(stateEl, "$.state"), version), savedAt)
         } catch (e: ContentException) {
             throw SnapshotException("Malformed save: ${e.message}", e)
         }
@@ -145,6 +185,7 @@ object SnapshotCodec {
      *  - v3 -> v4: player mid-cast fishingCatchTicks + reelAttemptedThisCast.
      *  - v4 -> v5: machines.preferredRecipeId (null = Auto).
      *  - v5 -> v6: customers.preferredProductId.
+     *  - v6 -> v7: workers list.
      */
     private fun readState(content: ContentPack, n: Node, version: Int): GameState {
         val harborId = n["harborId"].string()
@@ -230,6 +271,37 @@ object SnapshotCodec {
                 cust.walkTicksLeft = if (version >= 2) cn["walkTicksLeft"].int(min = 0).coerceAtMost(walkTotal) else 0
             }
         }.forEach { s.customers += it }
+
+        if (version >= 7) {
+            for (wn in n["workers"].list { it }) {
+                val roleId = wn["roleId"].string()
+                val def = content.workersById[roleId] ?: continue
+                val id = wn["id"].string()
+                val w = WorkerState(
+                    id, roleId, wn["x"].int(), wn["z"].int(),
+                    Inventory("inv.$id.bag", def.carryCapacityUnits, content::carryUnits),
+                )
+                readInv(wn["bag"], w.bag)
+                w.walkTicksTotal = wn["walkTicksTotal"].int(min = 0)
+                w.walkTicksLeft = wn["walkTicksLeft"].int(min = 0).coerceAtMost(w.walkTicksTotal)
+                w.walkFromX = wn["walkFromX"].int(); w.walkFromZ = wn["walkFromZ"].int()
+                w.walkToX = wn["walkToX"].int(); w.walkToZ = wn["walkToZ"].int()
+                w.transferCooldown = wn["transferCooldown"].int(min = 0)
+                w.phase = WorkerTaskPhase.entries.firstOrNull { it.name == wn["phase"].string() }
+                    ?: WorkerTaskPhase.NONE
+                w.taskId = wn.optional("taskId")?.string()
+                w.taskZoneId = wn.optional("taskZoneId")?.string()
+                w.taskSourceInvId = wn.optional("taskSourceInvId")?.string()
+                w.taskDestInvId = wn.optional("taskDestInvId")?.string()
+                w.taskItemId = wn.optional("taskItemId")?.string()
+                w.taskQuantity = wn["taskQuantity"].int(min = 0)
+                w.leaseExpiresAt = wn["leaseExpiresAt"].long(min = 0)
+                w.fishingSpecies = wn.optional("fishingSpecies")?.string()?.takeIf { it in content.speciesById }
+                w.fishingProgress = wn["fishingProgress"].int(min = 0)
+                w.fishingCatchTicks = wn["fishingCatchTicks"].int(min = 0)
+                s.workers += w
+            }
+        }
 
         n["ownedUpgrades"].list { it.string() }.filter { it in content.upgradesById }.forEach { s.ownedUpgrades += it }
         n["completedQuests"].list { it.string() }.forEach { s.completedQuests += it }

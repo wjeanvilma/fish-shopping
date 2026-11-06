@@ -70,6 +70,7 @@ class Simulation(val content: ContentPack, val state: GameState) {
                 val allowed = content.machinesById[m.machineId]?.recipes.orEmpty()
                 m.preferredRecipeId = c.recipeId?.takeIf { it in allowed }
             }
+            is Command.HireWorker -> WorkerSystem.hire(ctx, c.roleId, c.requestId)
         }
     }
 }

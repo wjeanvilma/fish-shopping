@@ -4,8 +4,8 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   type Command, ContentError, CustomerState, CustomerSystem, FixedStepClock, FishingSystem, GameState, Inventory, NewerSaveError,
-  OfflinePolicy, OFFLINE_CAP_TICKS, ProductionSystem, SafeMath, Simulation, SnapshotError, Transfers, buildView,
-  decodeSnapshot, encodeSnapshot, loadContent, MS_PER_TICK,
+  OfflinePolicy, OFFLINE_CAP_TICKS, ProductionSystem, SafeMath, Simulation, SnapshotError, Transfers, applyOffline,
+  buildView, decodeSnapshot, decodeSnapshotEnvelope, encodeSnapshot, loadContent, MS_PER_TICK,
 } from "../src/engine";
 
 const raw = readFileSync(resolve(__dirname, "../../shared/content/content-pack.json"), "utf8");
@@ -17,6 +17,11 @@ const PORTION = "product.basic_portion";
 const newSim = (seed = 1234) => new Simulation(content, GameState.newGame(content, HARBOR, seed));
 const cutter = (sim: Simulation) => sim.state.machines.find((m) => m.stationId === "station.cutter_1")!;
 const smoker = (sim: Simulation) => sim.state.machines.find((m) => m.stationId === "station.smoker_1")!;
+const unlockStaffHiring = (sim: Simulation) => { sim.state.completedQuests.add("quest.first_ten_sales"); };
+const unlockSupervisorHiring = (sim: Simulation) => {
+  unlockStaffHiring(sim);
+  sim.state.ownedUpgrades.add("upgrade.staff_boots");
+};
 
 function checkedStep(sim: Simulation, cmds: Command[] = []) {
   const events = sim.step(cmds);
@@ -55,6 +60,35 @@ describe("foundations", () => {
     expect(OfflinePolicy.creditedTicks(-60_000)).toBe(0);
     expect(OfflinePolicy.creditedTicks(1000)).toBe(20);
     expect(OfflinePolicy.creditedTicks(48 * 3600 * 1000)).toBe(OFFLINE_CAP_TICKS);
+    expect(OfflinePolicy.capTicks(content)).toBe(OFFLINE_CAP_TICKS);
+  });
+
+  it("offline apply runs workers without player zone actions", () => {
+    const sim = newSim();
+    unlockStaffHiring(sim);
+    sim.state.coins = 500;
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.porter", requestId: "hp-off" }]);
+    cutter(sim).output.add(PORTION, 3);
+    // Park the player on the pier — offline must clear the zone so they do not fish.
+    sim.state.player.zoneId = "zone.pier_end";
+    const beforeTick = sim.state.tick;
+    const report = applyOffline(sim, 60_000); // 60s → 1200 ticks
+    expect(report.ticksCredited).toBe(1200);
+    expect(sim.state.tick).toBe(beforeTick + 1200);
+    expect(sim.state.player.zoneId).toBe("zone.pier_end"); // restored
+    expect(sim.state.stat("stat.worker_items_moved")).toBeGreaterThan(0);
+    expect(OfflinePolicy.shouldShowSummary(content, report)).toBe(true);
+  });
+
+  it("snapshot envelope carries savedAtEpochMs without breaking checksum", () => {
+    const sim = newSim();
+    sim.run(5);
+    const withAt = encodeSnapshot(content, sim.state, 1_700_000_000_000);
+    const decoded = decodeSnapshotEnvelope(content, withAt);
+    expect(decoded.savedAtEpochMs).toBe(1_700_000_000_000);
+    expect(decoded.state.tick).toBe(5);
+    // Round-trip without savedAt stays fixture-compatible.
+    expect(encodeSnapshot(content, decoded.state)).toBe(encodeSnapshot(content, sim.state));
   });
 });
 
@@ -173,7 +207,7 @@ describe("simulation", () => {
     sim.run(5);
     const saved = encodeSnapshot(content, sim.state);
     expect(() => decodeSnapshot(content, saved.replace('"tick":5', '"tick":6'))).toThrow(/Checksum/);
-    expect(() => decodeSnapshot(content, saved.replace('"schemaVersion":6', '"schemaVersion":99'))).toThrow(NewerSaveError);
+    expect(() => decodeSnapshot(content, saved.replace('"schemaVersion":7', '"schemaVersion":99'))).toThrow(NewerSaveError);
     expect(() => decodeSnapshot(content, "{")).toThrow(SnapshotError);
   });
 
@@ -361,7 +395,7 @@ describe("simulation", () => {
     const sim = newSim();
     const h = sim.harbor;
     expect(h.customerPathWaypoints.length).toBeGreaterThan(0);
-    expect(content.contentVersion).toBe("0.12.0");
+    expect(content.contentVersion).toBe("0.17.0");
     const slot = { x: h.counters[0]!.queueAnchor.x, z: h.counters[0]!.queueAnchor.z };
     const path = CustomerSystem.approachPath(h, slot);
     const routed = CustomerSystem.pathWalkTicks(path, h.customerWalkMmPerTick);
@@ -581,5 +615,213 @@ describe("simulation", () => {
     for (let i = 0; i < 40 && sim.state.player.bag.quantity("product.smoked_fillet") < 1; i++) checkedStep(sim);
     expect(sim.state.player.bag.quantity("product.smoked_fillet")).toBe(1);
     expect(smoker().output.isEmpty()).toBe(true);
+  });
+
+  it("hire fisher and porter is idempotent and shows staff", () => {
+    const sim = newSim();
+    expect(content.contentVersion).toBe("0.17.0");
+    expect(buildView(sim).staff.some((row) => row.roleId === "worker.fisher")).toBe(true);
+    expect(buildView(sim).staff.some((row) => row.roleId === "worker.operator")).toBe(true);
+    expect(buildView(sim).staff.some((row) => row.roleId === "worker.cashier")).toBe(true);
+    expect(buildView(sim).staff.some((row) => row.roleId === "worker.supervisor")).toBe(true);
+    expect(buildView(sim).staff.filter((row) => row.roleId !== "worker.supervisor")
+      .every((row) => row.reason?.startsWith("Requires:"))).toBe(true);
+    unlockStaffHiring(sim);
+    sim.state.coins = 500;
+    const hire1 = checkedStep(sim, [{ type: "hire_worker", roleId: "worker.fisher", requestId: "hire-f1" }]);
+    expect(hire1.some((e) => e.type === "worker_hired" && !e.replayed)).toBe(true);
+    expect(sim.state.workers).toHaveLength(1);
+    expect(sim.state.stat("stat.workers_hired")).toBe(1);
+    const coinsAfter = sim.state.coins;
+    const hireReplay = checkedStep(sim, [{ type: "hire_worker", roleId: "worker.fisher", requestId: "hire-f1" }]);
+    const replayed = hireReplay.filter((e) => e.type === "worker_hired");
+    expect(replayed).toHaveLength(1);
+    expect(replayed[0]).toMatchObject({ replayed: true });
+    expect(sim.state.workers).toHaveLength(1);
+    expect(sim.state.coins).toBe(coinsAfter);
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.porter", requestId: "hire-p1" }]);
+    expect(sim.state.workers).toHaveLength(2);
+    const view = buildView(sim);
+    expect(view.workers.some((w) => w.roleKind === "fisher")).toBe(true);
+    expect(view.workers.some((w) => w.roleKind === "porter")).toBe(true);
+    expect(view.staff.every((row) => row.reason !== "Coming soon")).toBe(true);
+    expect(view.staff.filter((row) => row.roleId === "worker.operator" || row.roleId === "worker.cashier")
+      .every((row) => row.purchasable || row.reason?.startsWith("Need"))).toBe(true);
+    expect(view.staff.find((row) => row.roleId === "worker.supervisor")!.reason!.startsWith("Requires:")).toBe(true);
+  });
+
+  it("fisher catches fish and delivers to cutter", () => {
+    const sim = newSim();
+    unlockStaffHiring(sim);
+    sim.state.coins = 200;
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.fisher", requestId: "hf" }]);
+    const events = Array.from({ length: 8000 }, () => checkedStep(sim)).flat();
+    expect(events.some((e) => e.type === "fish_caught")).toBe(true);
+    expect(sim.state.stat("stat.worker_fish_caught")).toBeGreaterThan(0);
+    const m = cutter(sim);
+    expect(m.input.usedUnits() > 0 || m.output.usedUnits() > 0 || m.activeBatch !== null).toBe(true);
+  });
+
+  it("porter hauls machine output to counter", () => {
+    const sim = newSim();
+    unlockStaffHiring(sim);
+    sim.state.coins = 200;
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.porter", requestId: "hp" }]);
+    cutter(sim).output.add(PORTION, 3);
+    const events = Array.from({ length: 4000 }, () => checkedStep(sim)).flat();
+    expect(events.some((e) => e.type === "items_transferred" && e.to === sim.state.counters[0]!.stock.id)).toBe(true);
+    expect(sim.state.counters[0]!.stock.quantity(PORTION)).toBeGreaterThan(0);
+    expect(sim.state.stat("stat.worker_items_moved")).toBeGreaterThan(0);
+  });
+
+  it("operator hauls fillet from cutter to smoker", () => {
+    const sim = newSim();
+    unlockStaffHiring(sim);
+    sim.state.coins = 200;
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.operator", requestId: "ho" }]);
+    const fillet = "product.fillet";
+    cutter(sim).output.add(fillet, 2);
+    const events = Array.from({ length: 4000 }, () => checkedStep(sim)).flat();
+    expect(events.some((e) =>
+      e.type === "items_transferred" &&
+      (e.from === cutter(sim).output.id || e.to === smoker(sim).input.id),
+    )).toBe(true);
+    const s = smoker(sim);
+    expect(
+      s.input.quantity(fillet) > 0 || s.activeBatch !== null || s.output.quantity("product.smoked_fillet") > 0,
+    ).toBe(true);
+    expect(sim.state.stat("stat.worker_items_moved")).toBeGreaterThan(0);
+  });
+
+  it("cashier serves customers without player at counter", () => {
+    const sim = newSim();
+    unlockStaffHiring(sim);
+    sim.state.coins = 200;
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.cashier", requestId: "hc" }]);
+    let onDuty = false;
+    for (let i = 0; i < 4000; i++) {
+      checkedStep(sim);
+      const w = sim.state.workers[0]!;
+      if (!w.busyWalking && w.phase === "WORK" && w.taskZoneId === "zone.counter_1") {
+        onDuty = true;
+        break;
+      }
+    }
+    expect(onDuty).toBe(true);
+    expect(sim.state.player.zoneId).not.toBe("zone.counter_1");
+
+    const counter = sim.state.counters[0]!;
+    counter.stock.add(PORTION, 2);
+    const type = content.customers[0]!;
+    sim.state.customers.push(new CustomerState(
+      "customer.test_cashier", type.id, counter.counterId, 1, 9999, 0, null,
+    ));
+    const events = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
+    expect(events.some((e) => e.type === "sale_committed")).toBe(true);
+    expect(sim.state.player.zoneId).not.toBe("zone.counter_1");
+    expect(sim.state.stat("stat.sales")).toBeGreaterThan(0);
+  });
+
+  it("operator takes intermediates before porter without supervisor", () => {
+    const sim = newSim();
+    unlockStaffHiring(sim);
+    sim.state.coins = 500;
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.porter", requestId: "hp" }]);
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.operator", requestId: "ho" }]);
+    expect(sim.state.workers).toHaveLength(2);
+    const fillet = "product.fillet";
+    cutter(sim).output.add(fillet, 1);
+    for (let i = 0; i < 4000; i++) checkedStep(sim);
+    // Porter must not stock raw fillet; operator routes it through the smoker.
+    expect(sim.state.counters[0]!.stock.quantity(fillet)).toBe(0);
+    expect(cutter(sim).output.available(fillet)).toBe(0);
+    expect(sim.state.stat("stat.worker_items_moved")).toBeGreaterThan(0);
+  });
+
+  it("supervisor lets porter haul intermediates when counter demands", () => {
+    const sim = newSim();
+    unlockSupervisorHiring(sim);
+    sim.state.coins = 500;
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.supervisor", requestId: "hs" }]);
+    let onDuty = false;
+    for (let i = 0; i < 4000; i++) {
+      checkedStep(sim);
+      if (buildView(sim).supervisorOnDuty) { onDuty = true; break; }
+    }
+    expect(onDuty).toBe(true);
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.porter", requestId: "hp" }]);
+    const fillet = "product.fillet";
+    const counter = sim.state.counters[0]!;
+    const type = content.customers[0]!;
+    sim.state.customers.push(new CustomerState(
+      "customer.test_sup", type.id, counter.counterId, 1, 9999, 0, fillet,
+    ));
+    cutter(sim).output.add(fillet, 1);
+    for (let i = 0; i < 4000; i++) checkedStep(sim);
+    expect(counter.stock.quantity(fillet) > 0 || sim.state.stat("stat.worker_items_moved") > 0).toBe(true);
+    expect(buildView(sim).supervisorOnDuty).toBe(true);
+  });
+
+  it("haul lease expiry releases reservation", () => {
+    const sim = newSim();
+    unlockStaffHiring(sim);
+    sim.state.coins = 200;
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.porter", requestId: "hp" }]);
+    cutter(sim).output.add(PORTION, 1);
+    let claimed = false;
+    for (let i = 0; i < 200; i++) {
+      checkedStep(sim);
+      const w = sim.state.workers[0]!;
+      if (w.phase === "WALK_TO_WORK" || w.phase === "PICKUP") {
+        expect(cutter(sim).output.reservedQuantity(PORTION)).toBeGreaterThanOrEqual(1);
+        w.leaseExpiresAt = sim.state.tick;
+        const events = checkedStep(sim);
+        expect(events.some((e) => e.type === "lease_expired")).toBe(true);
+        expect(cutter(sim).output.reservedQuantity(PORTION)).toBe(0);
+        expect(sim.state.stat("stat.leases_expired")).toBe(1);
+        claimed = true;
+        break;
+      }
+    }
+    expect(claimed).toBe(true);
+  });
+
+  it("destination capacity blocks overclaim", () => {
+    const sim = newSim();
+    unlockStaffHiring(sim);
+    sim.state.coins = 500;
+    checkedStep(sim, [
+      { type: "hire_worker", roleId: "worker.porter", requestId: "hp1" },
+      { type: "hire_worker", roleId: "worker.porter", requestId: "hp2" },
+    ]);
+    const counter = sim.state.counters[0]!;
+    while (counter.stock.roomFor(PORTION) > 1) counter.stock.add(PORTION, 1);
+    cutter(sim).output.add(PORTION, 5);
+    for (let i = 0; i < 2000; i++) checkedStep(sim);
+    expect(counter.stock.usedUnits()).toBeLessThanOrEqual(counter.stock.capacityUnits);
+    expect(counter.stock.quantity(PORTION)).toBeGreaterThanOrEqual(1);
+  });
+
+  it("worker upgrades boost carry catch and charge wages", () => {
+    const sim = newSim();
+    unlockStaffHiring(sim);
+    sim.state.coins = 10_000;
+    checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.staff_boots", requestId: "ub" }]);
+    checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.staff_satchels", requestId: "us" }]);
+    checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.staff_tackle", requestId: "ut" }]);
+    checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.shift_lead", requestId: "uw" }]);
+    expect(sim.state.workerMoveSpeedPermille).toBe(1250);
+    expect(sim.state.workerCarryCapacityFloor).toBe(5);
+    expect(sim.state.workerCatchSpeedPermille).toBe(1000);
+    expect(sim.state.workerWagePerWorkerPerHour).toBe(3);
+    expect(buildView(sim).workerWagePerWorkerPerHour).toBe(3);
+    checkedStep(sim, [{ type: "hire_worker", roleId: "worker.porter", requestId: "hp-wage" }]);
+    expect(sim.state.workers[0]!.bag.capacityUnits).toBe(5);
+    sim.state.workerWageAccrualTicks = 3600 * 20 - 1;
+    const coinsBefore = sim.state.coins;
+    const events = checkedStep(sim);
+    expect(events.some((e) => e.type === "wages_paid" && e.workers === 1 && e.coins === 3)).toBe(true);
+    expect(sim.state.coins).toBe(coinsBefore - 3);
+    expect(sim.state.stat("stat.wages_paid")).toBe(3);
   });
 });

@@ -78,6 +78,18 @@ object UpgradeSystem {
             is UpgradeEffect.FishRegen ->
                 s.player.fishRegenPermille = maxOf(s.player.fishRegenPermille, effect.speedPermille)
             is UpgradeEffect.UnlockFishingSpot -> Unit // gated by ownedUpgrades in FishingSystem
+            is UpgradeEffect.WorkerMoveSpeed ->
+                s.workerMoveSpeedPermille = maxOf(s.workerMoveSpeedPermille, effect.speedPermille)
+            is UpgradeEffect.WorkerCarry -> {
+                s.workerCarryCapacityFloor = maxOf(s.workerCarryCapacityFloor, effect.capacityUnits)
+                for (w in s.workers) {
+                    w.bag.capacityUnits = maxOf(w.bag.capacityUnits, s.workerCarryCapacityFloor)
+                }
+            }
+            is UpgradeEffect.WorkerCatchSpeed ->
+                s.workerCatchSpeedPermille = maxOf(s.workerCatchSpeedPermille, effect.speedPermille)
+            is UpgradeEffect.WorkerWage ->
+                s.workerWagePerWorkerPerHour = maxOf(s.workerWagePerWorkerPerHour, effect.coinsPerWorkerPerHour)
         }
     }
 }

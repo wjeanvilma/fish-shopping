@@ -15,6 +15,11 @@ data class ContentPack(
     val machines: List<MachineDef>,
     val upgrades: List<UpgradeDef>,
     val quests: List<QuestDef>,
+    val workers: List<WorkerDef>,
+    /** Task scoring weights for worker haul routing (Phase 13). */
+    val routing: RoutingDef,
+    /** Offline catch-up policy (Phase 14). */
+    val offline: OfflineDef,
     val customers: List<CustomerDef>,
     val tutorial: List<TutorialStepDef>,
     val harbors: List<HarborDef>,
@@ -25,6 +30,7 @@ data class ContentPack(
     val machinesById = machines.associateBy { it.id }
     val upgradesById = upgrades.associateBy { it.id }
     val questsById = quests.associateBy { it.id }
+    val workersById = workers.associateBy { it.id }
     val customersById = customers.associateBy { it.id }
     val harborsById = harbors.associateBy { it.id }
 
@@ -103,6 +109,14 @@ sealed interface UpgradeEffect {
     data class FishRegen(val speedPermille: Int) : UpgradeEffect
     /** Ownership unlocks the fishing spot for [zone]; apply is a no-op. */
     data class UnlockFishingSpot(val zone: String) : UpgradeEffect
+    /** Staff walk-speed multiplier in permille (1250 = 25% faster). */
+    data class WorkerMoveSpeed(val speedPermille: Int) : UpgradeEffect
+    /** Minimum bag capacity for hired staff. */
+    data class WorkerCarry(val capacityUnits: Int) : UpgradeEffect
+    /** Minimum fisher catch-speed permille (used when higher than the role default). */
+    data class WorkerCatchSpeed(val speedPermille: Int) : UpgradeEffect
+    /** Coins charged per hired worker each simulated hour. */
+    data class WorkerWage(val coinsPerWorkerPerHour: Int) : UpgradeEffect
 }
 
 data class UpgradeDef(
@@ -118,6 +132,49 @@ data class UpgradeDef(
 data class StatGoal(val stat: String, val atLeast: Long)
 
 data class QuestDef(val id: String, val name: String, val goal: StatGoal)
+
+enum class WorkerRoleKind(val wire: String) {
+    FISHER("fisher"),
+    PORTER("porter"),
+    OPERATOR("operator"),
+    CASHIER("cashier"),
+    SUPERVISOR("supervisor");
+
+    companion object {
+        fun fromWire(s: String) = entries.firstOrNull { it.wire == s }
+    }
+}
+
+data class WorkerDef(
+    val id: String,
+    val name: String,
+    val role: WorkerRoleKind,
+    val hireCost: Long,
+    val maxHired: Int,
+    val carryCapacityUnits: Int,
+    val moveSpeedMmPerTick: Int,
+    val catchSpeedPermille: Int,
+    val transferIntervalTicks: Int,
+    val leaseTicks: Int,
+    /** Upgrade or quest IDs that must be owned / completed before hiring. */
+    val requires: List<String> = emptyList(),
+)
+
+/** Weights for scoring worker haul candidates (urgency / distance / demand). */
+data class RoutingDef(
+    val urgencyWeight: Int,
+    val distanceWeight: Int,
+    val demandWeight: Int,
+    /** Multiplies [demandWeight] while a supervisor is on duty (1000 = unchanged). */
+    val supervisorDemandBoostPermille: Int,
+)
+
+/** Offline catch-up: how long absence is simulated when loading / resuming. */
+data class OfflineDef(
+    val capHours: Int,
+    /** Absences shorter than this do not show the summary screen. */
+    val summaryMinSeconds: Int,
+)
 
 enum class CustomerKind(val wire: String) {
     STANDARD("standard"),

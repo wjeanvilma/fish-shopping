@@ -27,8 +27,9 @@ object SimConstants {
      * 4: player stores fishingCatchTicks + reelAttemptedThisCast for mid-cast resume.
      * 5: machines store preferredRecipeId for multi-recipe selection.
      * 6: customers store preferredProductId for product demand.
+     * 7: workers list (hired staff + bags + task state).
      */
-    const val SCHEMA_VERSION = 6
+    const val SCHEMA_VERSION = 7
 }
 
 /** Integer arithmetic that refuses to leave the shared safe range. */
@@ -136,10 +137,27 @@ class FixedStepClock(private val maxCatchUpTicks: Int = 5) {
 
 /** Offline-time policy. Manual actions never happen while absent. */
 object OfflinePolicy {
+    /** Cap in ticks for [content], matching [SimConstants.OFFLINE_CAP_TICKS] when capHours is 4. */
+    fun capTicks(content: com.willio.jeanvilma.fishshopping.core.content.ContentPack): Long =
+        content.offline.capHours.toLong() * 60L * 60L * SimConstants.TICKS_PER_SECOND
+
     /** Ticks to credit for a real-time absence: never negative, never above the cap. */
-    fun creditedTicks(elapsedMillis: Long): Long {
+    fun creditedTicks(elapsedMillis: Long, capTicks: Long = SimConstants.OFFLINE_CAP_TICKS): Long {
         if (elapsedMillis <= 0) return 0
         val ticks = elapsedMillis / (1000L / SimConstants.TICKS_PER_SECOND)
-        return ticks.coerceAtMost(SimConstants.OFFLINE_CAP_TICKS)
+        return ticks.coerceAtMost(capTicks)
+    }
+
+    fun creditedTicks(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        elapsedMillis: Long,
+    ): Long = creditedTicks(elapsedMillis, capTicks(content))
+
+    fun shouldShowSummary(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        report: OfflineReport,
+    ): Boolean {
+        val minTicks = content.offline.summaryMinSeconds.toLong() * SimConstants.TICKS_PER_SECOND
+        return report.ticksCredited >= minTicks
     }
 }

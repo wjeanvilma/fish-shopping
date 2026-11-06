@@ -48,12 +48,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.willio.jeanvilma.fishshopping.core.sim.ContextCard
+import com.willio.jeanvilma.fishshopping.core.sim.OfflineReport
+import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
+import com.willio.jeanvilma.fishshopping.core.sim.StaffHireView
 import com.willio.jeanvilma.fishshopping.core.sim.UpgradeView
 import com.willio.jeanvilma.fishshopping.game.GameUiState
 import com.willio.jeanvilma.fishshopping.game.GameViewModel
 import com.willio.jeanvilma.fishshopping.render.HarborView
-import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
 import com.willio.jeanvilma.fishshopping.ui.theme.Action
 import com.willio.jeanvilma.fishshopping.ui.theme.Danger
 import com.willio.jeanvilma.fishshopping.ui.theme.Ink
@@ -94,7 +96,13 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
     val focus = remember { FocusRequester() }
     val keys = remember { mutableStateListOf<Key>() }
 
-    BackHandler(enabled = state.upgradesOpen) { vm.setUpgradesOpen(false) }
+    BackHandler(enabled = state.upgradesOpen || state.staffOpen || state.offlineReport != null) {
+        when {
+            state.offlineReport != null -> vm.dismissOfflineReport()
+            state.upgradesOpen -> vm.setUpgradesOpen(false)
+            else -> vm.setStaffOpen(false)
+        }
+    }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
     Box(
@@ -145,9 +153,27 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 )
             }
         }
+        if (v.supervisorOnDuty) {
+            Pill(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = if (v.rush != null) 96.dp else 52.dp),
+                background = PanelSurface,
+            ) {
+                Text("Supervisor on duty", style = Tabular, fontWeight = FontWeight.SemiBold, color = Ink)
+            }
+        }
         // Top right: management.
-        Button(onClick = { vm.setUpgradesOpen(true) }, modifier = Modifier.align(Alignment.TopEnd).heightIn(min = 48.dp)) {
-            Text("Upgrades")
+        Row(
+            Modifier.align(Alignment.TopEnd),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Button(onClick = { vm.setStaffOpen(true) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text("Staff")
+            }
+            Button(onClick = { vm.setUpgradesOpen(true) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text("Upgrades")
+            }
         }
         // Left edge: tracked objective with one clear next step.
         v.tutorialText?.let { text ->
@@ -192,6 +218,24 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 coins = v.coins,
                 onBuy = vm::purchase,
                 onClose = { vm.setUpgradesOpen(false) },
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        if (state.staffOpen) {
+            StaffPanel(
+                staff = v.staff,
+                workersOnDuty = v.workers.size,
+                wagePerWorkerPerHour = v.workerWagePerWorkerPerHour,
+                coins = v.coins,
+                onHire = vm::hire,
+                onClose = { vm.setStaffOpen(false) },
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        state.offlineReport?.let { report ->
+            OfflineSummaryPanel(
+                report = report,
+                onContinue = vm::dismissOfflineReport,
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -269,6 +313,101 @@ private fun UpgradePanel(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StaffPanel(
+    staff: List<StaffHireView>,
+    workersOnDuty: Int,
+    wagePerWorkerPerHour: Int,
+    coins: Long,
+    onHire: (String) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier,
+) {
+    Surface(modifier.width(440.dp).heightIn(max = 320.dp), shape = PanelShape, color = PanelSurface, shadowElevation = 8.dp) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Staff", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        buildString {
+                            append("$workersOnDuty on duty")
+                            if (wagePerWorkerPerHour > 0) append(" · $wagePerWorkerPerHour coins/hr each")
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.7f),
+                    )
+                }
+                Text("${formatCoins(coins)} coins", style = Tabular, color = Ink)
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(staff, key = { it.roleId }) { row ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(row.name, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "${row.roleKind} · ${row.hired}/${row.maxHired} hired",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            row.reason?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Danger) }
+                        }
+                        Button(
+                            onClick = { onHire(row.roleId) },
+                            enabled = row.purchasable,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        ) { Text("${formatCoins(row.cost)}", style = Tabular) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OfflineSummaryPanel(report: OfflineReport, onContinue: () -> Unit, modifier: Modifier) {
+    Surface(modifier.width(400.dp), shape = PanelShape, color = PanelSurface, shadowElevation = 8.dp) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("While you were away", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                buildString {
+                    append(formatAwayDuration(report.elapsedMillis))
+                    if (report.capped) append(" · capped at max offline time")
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = Ink.copy(alpha = 0.75f),
+            )
+            Text(
+                "Your staff kept the harbor running.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            val lines = buildList {
+                if (report.coinsDelta != 0L) add("${if (report.coinsDelta > 0) "+" else ""}${formatCoins(report.coinsDelta)} coins")
+                if (report.sales > 0) add("${report.sales} sales")
+                if (report.workerFishCaught > 0) add("${report.workerFishCaught} fish caught by staff")
+                if (report.workerItemsMoved > 0) add("${report.workerItemsMoved} items moved by staff")
+                if (isEmpty() && !report.hadActivity) add("Quiet shift — hire staff to earn while away")
+            }
+            lines.forEach { Text(it, style = Tabular, fontWeight = FontWeight.SemiBold) }
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = onContinue, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Text("Continue")
+            }
+        }
+    }
+}
+
+private fun formatAwayDuration(elapsedMillis: Long): String {
+    val totalSec = (elapsedMillis / 1000L).coerceAtLeast(0L)
+    val h = totalSec / 3600
+    val m = (totalSec % 3600) / 60
+    val s = totalSec % 60
+    return when {
+        h > 0 -> "Away ${h}h ${m}m"
+        m > 0 -> "Away ${m}m ${s}s"
+        else -> "Away ${s}s"
     }
 }
 

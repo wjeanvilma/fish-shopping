@@ -31,10 +31,44 @@ export type UpgradeEffect =
   | { kind: "recipe_duration"; machine: string; recipe: string; durationTicks: number }
   | { kind: "catch_speed"; speedPermille: number }
   | { kind: "fish_regen"; speedPermille: number }
-  | { kind: "unlock_fishing_spot"; zone: string };
+  | { kind: "unlock_fishing_spot"; zone: string }
+  | { kind: "worker_move_speed"; speedPermille: number }
+  | { kind: "worker_carry"; capacityUnits: number }
+  | { kind: "worker_catch_speed"; speedPermille: number }
+  | { kind: "worker_wage"; coinsPerWorkerPerHour: number };
 export interface UpgradeDef { id: string; name: string; description: string; cost: number; requires: string[]; effect: UpgradeEffect }
 export interface StatGoal { stat: string; atLeast: number }
 export interface QuestDef { id: string; name: string; goal: StatGoal }
+export type WorkerRoleKind = "fisher" | "porter" | "operator" | "cashier" | "supervisor";
+export interface WorkerDef {
+  id: string;
+  name: string;
+  role: WorkerRoleKind;
+  hireCost: number;
+  maxHired: number;
+  carryCapacityUnits: number;
+  moveSpeedMmPerTick: number;
+  catchSpeedPermille: number;
+  transferIntervalTicks: number;
+  leaseTicks: number;
+  requires: string[];
+}
+
+/** Weights for scoring worker haul candidates (urgency / distance / demand). */
+export interface RoutingDef {
+  urgencyWeight: number;
+  distanceWeight: number;
+  demandWeight: number;
+  /** Multiplies demandWeight while a supervisor is on duty (1000 = unchanged). */
+  supervisorDemandBoostPermille: number;
+}
+
+/** Offline catch-up: how long absence is simulated when loading / resuming. */
+export interface OfflineDef {
+  capHours: number;
+  /** Absences shorter than this do not show the summary screen. */
+  summaryMinSeconds: number;
+}
 export type CustomerKind = "standard" | "premium" | "bulk";
 export interface ProductWeight { item: string; weight: number }
 export interface CustomerDef {
@@ -114,6 +148,9 @@ export interface RawContentPack {
   machines: MachineDef[];
   upgrades: UpgradeDef[];
   quests: QuestDef[];
+  workers: WorkerDef[];
+  routing: RoutingDef;
+  offline: OfflineDef;
   customers: CustomerDef[];
   tutorial: TutorialStepDef[];
   harbors: HarborDef[];
@@ -135,6 +172,7 @@ export class ContentPack {
   readonly machinesById: Map<string, MachineDef>;
   readonly upgradesById: Map<string, UpgradeDef>;
   readonly questsById: Map<string, QuestDef>;
+  readonly workersById: Map<string, WorkerDef>;
   readonly customersById: Map<string, CustomerDef>;
   readonly harborsById: Map<string, HarborDef>;
 
@@ -145,6 +183,7 @@ export class ContentPack {
     this.machinesById = byId(raw.machines);
     this.upgradesById = byId(raw.upgrades);
     this.questsById = byId(raw.quests);
+    this.workersById = byId(raw.workers);
     this.customersById = byId(raw.customers);
     this.harborsById = byId(raw.harbors);
   }
@@ -155,6 +194,9 @@ export class ContentPack {
   get customers() { return this.raw.customers; }
   get upgrades() { return this.raw.upgrades; }
   get quests() { return this.raw.quests; }
+  get workers() { return this.raw.workers; }
+  get routing() { return this.raw.routing; }
+  get offline() { return this.raw.offline; }
 
   carryUnits = (itemId: string): number => {
     const u = this.speciesById.get(itemId)?.carryUnits ?? this.productsById.get(itemId)?.carryUnits;
@@ -211,8 +253,25 @@ export function validateContent(p: ContentPack): string[] {
     "player.startFishRegenPermille must be >= 1000");
 
   const allIds = [...r.species, ...r.products, ...r.recipes, ...r.machines, ...r.upgrades, ...r.quests,
-    ...r.customers, ...r.tutorial, ...r.harbors].map((x) => x.id);
+    ...r.workers, ...r.customers, ...r.tutorial, ...r.harbors].map((x) => x.id);
   duplicates(allIds).forEach((id) => errors.push(`Duplicate id '${id}'`));
+
+  for (const w of r.workers) {
+    check(w.hireCost >= 0, () => `${w.id}: hireCost must be >= 0`);
+    check(w.maxHired >= 1, () => `${w.id}: maxHired must be >= 1`);
+    check(w.catchSpeedPermille >= 1, () => `${w.id}: catchSpeedPermille must be >= 1`);
+  }
+  check(r.workers.some((w) => w.role === "fisher"), () => "content needs at least one fisher worker");
+  check(r.workers.some((w) => w.role === "porter"), () => "content needs at least one porter worker");
+  check(r.workers.some((w) => w.role === "operator"), () => "content needs at least one operator worker");
+  check(r.workers.some((w) => w.role === "cashier"), () => "content needs at least one cashier worker");
+  check(r.workers.some((w) => w.role === "supervisor"), () => "content needs at least one supervisor worker");
+  check(r.routing.urgencyWeight >= 0, () => "routing.urgencyWeight must be >= 0");
+  check(r.routing.distanceWeight >= 0, () => "routing.distanceWeight must be >= 0");
+  check(r.routing.demandWeight >= 0, () => "routing.demandWeight must be >= 0");
+  check(r.routing.supervisorDemandBoostPermille >= 1, () => "routing.supervisorDemandBoostPermille must be >= 1");
+  check(r.offline.capHours >= 1, () => "offline.capHours must be >= 1");
+  check(r.offline.summaryMinSeconds >= 0, () => "offline.summaryMinSeconds must be >= 0");
 
   const unitsOrZero = (item: string) => p.speciesById.get(item)?.carryUnits ?? p.productsById.get(item)?.carryUnits ?? 0;
 
@@ -261,15 +320,31 @@ export function validateContent(p: ContentPack): string[] {
     } else if (e.kind === "fish_regen") {
       check(e.speedPermille > r.player.startFishRegenPermille, () =>
         `${u.id}: fish regen does not exceed the starting fish regen`);
-    } else {
+    } else if (e.kind === "unlock_fishing_spot") {
       const spot = r.harbors.flatMap((h) => h.fishingSpots).find((f) => f.zone === e.zone);
       check(!!spot, () => `${u.id}: unlock_fishing_spot unknown zone '${e.zone}'`);
       check(spot?.requiresUpgrade === u.id, () =>
         `${u.id}: unlock_fishing_spot zone must list this upgrade as requiresUpgrade`);
+    } else if (e.kind === "worker_move_speed") {
+      check(e.speedPermille > 1000, () => `${u.id}: worker_move_speed must exceed 1000 (base speed)`);
+    } else if (e.kind === "worker_carry") {
+      const minCarry = r.workers.reduce((m, w) => Math.min(m, w.carryCapacityUnits), Number.POSITIVE_INFINITY);
+      check(e.capacityUnits > minCarry, () => `${u.id}: worker_carry must exceed the smallest role carry capacity`);
+    } else if (e.kind === "worker_catch_speed") {
+      check(e.speedPermille >= 1000, () => `${u.id}: worker_catch_speed must be >= 1000`);
+    } else if (e.kind === "worker_wage") {
+      check(e.coinsPerWorkerPerHour >= 1, () => `${u.id}: worker_wage must be >= 1`);
     }
   }
   const cycle = findUpgradeCycle(p);
   if (cycle) errors.push(`Upgrade requirement cycle: ${cycle.join(" -> ")}`);
+
+  const requirable = new Set([...p.upgradesById.keys(), ...p.questsById.keys()]);
+  for (const w of r.workers) {
+    for (const req of w.requires) {
+      check(requirable.has(req), () => `${w.id}: unknown requirement '${req}'`);
+    }
+  }
 
   for (const c of r.customers) {
     check(c.basketMax >= c.basketMin, () => `${c.id}: basketMax < basketMin`);

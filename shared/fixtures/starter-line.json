@@ -1,7 +1,7 @@
 {
     "name": "starter-line",
     "description": "Five minutes of the Sunrise Pier loop: fish, cut, stock, serve, buy bag upgrades.",
-    "contentVersion": "0.12.0",
+    "contentVersion": "0.17.0",
     "harborId": "harbor.sunrise_pier",
     "seed": 20261105,
     "ticks": 6015,

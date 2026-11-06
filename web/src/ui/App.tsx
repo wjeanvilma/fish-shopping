@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import sceneUrl from "../../../shared/assets/models/sunrise_pier_blockout.glb?url";
-import type { ContextCard, SimView, UpgradeView } from "../engine";
+import type { ContextCard, OfflineReport, SimView, StaffHireView, UpgradeView } from "../engine";
 import { GameHost, type HostState } from "../game/GameHost";
 import { HarborScene, hasWebGL2 } from "../render/HarborScene";
 import { Joystick } from "./Joystick";
@@ -87,6 +87,8 @@ function isTextInput(t: EventTarget | null): boolean {
 
 function Hud({ host, state }: { host: GameHost; state: HostState }) {
   const upgradesOpen = state.status === "ready" && state.upgradesOpen;
+  const staffOpen = state.status === "ready" && state.staffOpen;
+  const offlineReport = state.status === "ready" ? state.offlineReport : null;
   const [touch, setTouch] = useState(() => window.matchMedia?.("(pointer: coarse)").matches ?? false);
 
   // Keyboard: WASD / arrows move, U opens upgrades, Escape closes the panel.
@@ -99,8 +101,14 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
     };
     const down = (e: KeyboardEvent) => {
       if (isTextInput(e.target)) return;
-      if (e.code === "Escape") { host.setUpgradesOpen(false); return; }
+      if (e.code === "Escape") {
+        if (offlineReport) host.dismissOfflineReport();
+        else if (upgradesOpen) host.setUpgradesOpen(false);
+        else if (staffOpen) host.setStaffOpen(false);
+        return;
+      }
       if (e.code === "KeyU" && !e.repeat) { host.setUpgradesOpen(!upgradesOpen); return; }
+      if (e.code === "KeyH" && !e.repeat) { host.setStaffOpen(!staffOpen); return; }
       if ((e.code === "Space" || e.code === "KeyF") && !e.repeat) { e.preventDefault(); host.reel(); return; }
       if (e.code === "KeyR" && !e.repeat) {
         const ready = host.getState();
@@ -124,7 +132,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", blur);
     };
-  }, [host, upgradesOpen]);
+  }, [host, upgradesOpen, staffOpen, offlineReport]);
 
   useEffect(() => {
     const onTouch = () => setTouch(true);
@@ -145,9 +153,17 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           {v.rush.name} · {formatRushSeconds(v.rush.ticksRemaining)}s
         </div>
       )}
-      <button className="button top-right" onClick={() => host.setUpgradesOpen(true)}>
-        Upgrades <kbd>U</kbd>
-      </button>
+      {v.supervisorOnDuty && (
+        <div className="pill supervisor-banner" aria-live="polite">Supervisor on duty</div>
+      )}
+      <div className="top-actions">
+        <button className="button" onClick={() => host.setStaffOpen(true)}>
+          Staff <kbd>H</kbd>
+        </button>
+        <button className="button" onClick={() => host.setUpgradesOpen(true)}>
+          Upgrades <kbd>U</kbd>
+        </button>
+      </div>
       {v.tutorialText && (
         <div className="panel objective">
           <div className="eyebrow">Next</div>
@@ -176,6 +192,19 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       <CarryIndicator v={v} />
       {upgradesOpen && (
         <UpgradePanel upgrades={v.upgrades} coins={v.coins} onBuy={(id) => host.purchase(id)} onClose={() => host.setUpgradesOpen(false)} />
+      )}
+      {staffOpen && (
+        <StaffPanel
+          staff={v.staff}
+          workersOnDuty={v.workers.length}
+          wagePerWorkerPerHour={v.workerWagePerWorkerPerHour}
+          coins={v.coins}
+          onHire={(id) => host.hire(id)}
+          onClose={() => host.setStaffOpen(false)}
+        />
+      )}
+      {offlineReport && (
+        <OfflineSummaryPanel report={offlineReport} onContinue={() => host.dismissOfflineReport()} />
       )}
     </div>
   );
@@ -233,6 +262,83 @@ function UpgradePanel({ upgrades, coins, onBuy, onClose }: {
               {u.owned ? <span className="owned">Owned</span> : (
                 <button className="button num" disabled={!u.purchasable} onClick={() => onBuy(u.id)}>{formatCoins(u.cost)}</button>
               )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function OfflineSummaryPanel({ report, onContinue }: { report: OfflineReport; onContinue: () => void }) {
+  const continueRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => continueRef.current?.focus(), []);
+  const lines: string[] = [];
+  if (report.coinsDelta !== 0) lines.push(`${report.coinsDelta > 0 ? "+" : ""}${formatCoins(report.coinsDelta)} coins`);
+  if (report.sales > 0) lines.push(`${report.sales} sales`);
+  if (report.workerFishCaught > 0) lines.push(`${report.workerFishCaught} fish caught by staff`);
+  if (report.workerItemsMoved > 0) lines.push(`${report.workerItemsMoved} items moved by staff`);
+  if (lines.length === 0 && !report.hadActivity) lines.push("Quiet shift — hire staff to earn while away");
+  return (
+    <div className="scrim">
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="While you were away" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>While you were away</h2>
+        </div>
+        <p className="small muted">
+          {formatAwayDuration(report.elapsedMillis)}
+          {report.capped ? " · capped at max offline time" : ""}
+        </p>
+        <p>Your staff kept the harbor running.</p>
+        <ul className="upgrade-list">
+          {lines.map((l) => <li key={l}><strong className="num">{l}</strong></li>)}
+        </ul>
+        <button ref={continueRef} className="button" style={{ width: "100%", marginTop: 12 }} onClick={onContinue}>
+          Continue
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function formatAwayDuration(elapsedMillis: number): string {
+  const totalSec = Math.max(0, Math.floor(elapsedMillis / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `Away ${h}h ${m}m`;
+  if (m > 0) return `Away ${m}m ${s}s`;
+  return `Away ${s}s`;
+}
+
+function StaffPanel({ staff, workersOnDuty, wagePerWorkerPerHour, coins, onHire, onClose }: {
+  staff: StaffHireView[]; workersOnDuty: number; wagePerWorkerPerHour: number; coins: number; onHire: (roleId: string) => void; onClose: () => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Staff" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <div className="grow">
+            <h2>Staff</h2>
+            <div className="small muted">
+              {workersOnDuty} on duty
+              {wagePerWorkerPerHour > 0 ? ` · ${wagePerWorkerPerHour} coins/hr each` : ""}
+            </div>
+          </div>
+          <span className="num">{formatCoins(coins)} coins</span>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        <ul className="upgrade-list">
+          {staff.map((row) => (
+            <li key={row.roleId}>
+              <div className="grow">
+                <strong>{row.name}</strong>
+                <div className="small">{row.roleKind} · {row.hired}/{row.maxHired} hired</div>
+                {row.reason && <div className="small danger">{row.reason}</div>}
+              </div>
+              <button className="button num" disabled={!row.purchasable} onClick={() => onHire(row.roleId)}>{formatCoins(row.cost)}</button>
             </li>
           ))}
         </ul>

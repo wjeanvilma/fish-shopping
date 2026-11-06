@@ -103,6 +103,11 @@ object StarterLineFixture {
                 put("stationId", c.stationId)
                 put("recipeId", c.recipeId)
             }
+            is Command.HireWorker -> {
+                put("type", "hire_worker")
+                put("roleId", c.roleId)
+                put("requestId", c.requestId)
+            }
         }
     }
 
@@ -115,6 +120,7 @@ object StarterLineFixture {
             o["stationId"]!!.jsonPrimitive.content,
             o["recipeId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
         )
+        "hire_worker" -> Command.HireWorker(o["roleId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         else -> error("unknown command ${o["type"]}")
     }
 

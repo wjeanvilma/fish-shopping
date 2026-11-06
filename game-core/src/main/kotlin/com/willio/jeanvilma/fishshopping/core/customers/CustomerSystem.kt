@@ -6,6 +6,7 @@ import com.willio.jeanvilma.fishshopping.core.content.HarborDef
 import com.willio.jeanvilma.fishshopping.core.content.ItemQuantity
 import com.willio.jeanvilma.fishshopping.core.content.PointMm
 import com.willio.jeanvilma.fishshopping.core.content.RushWindowDef
+import com.willio.jeanvilma.fishshopping.core.content.WorkerRoleKind
 import com.willio.jeanvilma.fishshopping.core.sim.CounterState
 import com.willio.jeanvilma.fishshopping.core.sim.CustomerState
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
@@ -13,11 +14,12 @@ import com.willio.jeanvilma.fishshopping.core.sim.Receipt
 import com.willio.jeanvilma.fishshopping.core.sim.SafeMath
 import com.willio.jeanvilma.fishshopping.core.sim.Stats
 import com.willio.jeanvilma.fishshopping.core.sim.StepContext
+import com.willio.jeanvilma.fishshopping.core.sim.WorkerTaskPhase
 import kotlin.math.max
 
 /**
  * Customer journey: spawn -> walk -> queue -> reserve (preferred product first) ->
- * checkout while the player stands at the counter -> pay once -> leave.
+ * checkout while the player or an on-duty cashier is at the counter -> pay once -> leave.
  *
  * Product demand (Phase 8): each customer rolls a preferred product from content
  * weights. Unmet preference drains patience faster while that SKU is missing and
@@ -29,7 +31,7 @@ import kotlin.math.max
  * Pathing (Phase 10): approach follows entry → content waypoints → queue slot;
  * tick cost is the sum of per-segment ceil(dist/speed). Leaving is presentation-only.
  *
- * TODO(blueprint): cashier staff.
+ * Cashier (Phase 12): a worker in WORK at the counter zone can serve instead of the player.
  */
 object CustomerSystem {
 
@@ -50,7 +52,7 @@ object CustomerSystem {
             val availableAccepted = acceptedAvailable(front, counter, def)
             val basketReady = front.reserved > 0 &&
                 (front.reserved == front.wants || availableAccepted == 0)
-            val served = s.player.zoneId == def.zone
+            val served = s.player.zoneId == def.zone || cashierCovering(ctx, def.zone)
             if (basketReady && served) {
                 if (++counter.checkoutProgress >= def.checkoutTicks) {
                     pay(ctx, front, counter)
@@ -271,6 +273,16 @@ object CustomerSystem {
         s.customers += c
         ctx.emit(GameEvent.CustomerArrived(s.tick, c.id, counterDef.id))
     }
+
+    /** True when a cashier is on duty at [counterZoneId] (arrived, not walking). */
+    fun cashierCovering(ctx: StepContext, counterZoneId: String): Boolean =
+        ctx.state.workers.any { w ->
+            val role = ctx.content.workersById[w.roleId]?.role
+            role == WorkerRoleKind.CASHIER &&
+                !w.busyWalking &&
+                w.phase == WorkerTaskPhase.WORK &&
+                w.taskZoneId == counterZoneId
+        }
 
     /** Active rush for [tick], or null outside every window. */
     fun activeRush(harbor: HarborDef, tick: Long): RushWindowDef? {

@@ -19,8 +19,9 @@ export const CHECKPOINT_INTERVAL_TICKS = 30 * TICKS_PER_SECOND;
  * 4: player stores fishingCatchTicks + reelAttemptedThisCast for mid-cast resume.
  * 5: machines store preferredRecipeId for multi-recipe selection.
  * 6: customers store preferredProductId for product demand.
+ * 7: workers list (hired staff + bags + task state).
  */
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 /** Kotlin-style integer division (truncates toward zero). */
 export function idiv(a: number, b: number): number {
@@ -124,10 +125,32 @@ export class FixedStepClock {
   }
 }
 
+export interface OfflineReport {
+  elapsedMillis: number;
+  ticksCredited: number;
+  capped: boolean;
+  coinsDelta: number;
+  fishCaught: number;
+  sales: number;
+  itemsSold: number;
+  workerFishCaught: number;
+  workerItemsMoved: number;
+  hadActivity: boolean;
+}
+
 export const OfflinePolicy = {
-  creditedTicks(elapsedMillis: number): number {
+  capTicks(content: { offline: { capHours: number } }): number {
+    return content.offline.capHours * 60 * 60 * TICKS_PER_SECOND;
+  },
+
+  creditedTicks(elapsedMillis: number, capTicks: number = OFFLINE_CAP_TICKS): number {
     if (elapsedMillis <= 0) return 0;
-    return Math.min(Math.floor(elapsedMillis / MS_PER_TICK), OFFLINE_CAP_TICKS);
+    return Math.min(Math.floor(elapsedMillis / MS_PER_TICK), capTicks);
+  },
+
+  shouldShowSummary(content: { offline: { summaryMinSeconds: number } }, report: OfflineReport): boolean {
+    const minTicks = content.offline.summaryMinSeconds * TICKS_PER_SECOND;
+    return report.ticksCredited >= minTicks;
   },
 };
 

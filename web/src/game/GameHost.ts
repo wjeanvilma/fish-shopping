@@ -6,15 +6,16 @@
  */
 import contentJson from "../../../shared/content/content-pack.json";
 import {
-  type Command, type ContentPack, FixedStepClock, GameState, INPUT_SCALE, NewerSaveError, ProductionSystem,
-  Simulation, type SimView, buildView, decodeSnapshot, encodeSnapshot, loadContent,
+  type Command, type ContentPack, FixedStepClock, GameState, INPUT_SCALE, NewerSaveError, OfflinePolicy,
+  type OfflineReport, ProductionSystem, Simulation, type SimView, applyOffline, buildView,
+  decodeSnapshotEnvelope, encodeSnapshot, loadContent,
 } from "../engine";
 import { CameraRig } from "./cameraRig";
 import { openSaveStore, type SaveStore } from "./saveStore";
 
 export type HostState =
   | { status: "loading" }
-  | { status: "ready"; view: SimView; upgradesOpen: boolean }
+  | { status: "ready"; view: SimView; upgradesOpen: boolean; staffOpen: boolean; offlineReport: OfflineReport | null }
   | { status: "failed"; message: string };
 
 const START_HARBOR = "harbor.sunrise_pier";
@@ -31,10 +32,13 @@ export class GameHost {
   private allowSaving = true;
   private rotateOnNextSave = true;
   private upgradesOpen = false;
+  private staffOpen = false;
   private running = false;
   private lastMove = { x: 0, z: 0 };
   private lastHudPublishMs = 0;
   private saveChain: Promise<void> = Promise.resolve();
+  private lastCheckpointEpochMs: number | null = null;
+  private pendingOfflineReport: OfflineReport | null = null;
 
   /** Latest snapshot for the renderer (updated every tick). */
   latestView: SimView | null = null;
@@ -51,8 +55,11 @@ export class GameHost {
     try {
       const content = loadContent(contentJson);
       this.store = await openSaveStore();
-      const state = await this.restoreOrCreate(content);
-      this.sim = new Simulation(content, state);
+      const restored = await this.restoreOrCreate(content);
+      this.sim = new Simulation(content, restored.state);
+      this.lastCheckpointEpochMs = restored.savedAtEpochMs;
+      this.applyPendingOffline(Date.now());
+      if (this.pendingOfflineReport !== null || restored.savedAtEpochMs !== null) this.save();
       this.latestView = buildView(this.sim);
       if (!this.store.persistent) this.say("Saving is unavailable in this browser window");
       this.publish(true);
@@ -62,26 +69,28 @@ export class GameHost {
     }
   }
 
-  private async restoreOrCreate(content: ContentPack): Promise<GameState> {
+  private async restoreOrCreate(content: ContentPack): Promise<{ state: GameState; savedAtEpochMs: number | null }> {
     for (const [label, text] of await this.store!.readCandidates()) {
       try {
-        const s = decodeSnapshot(content, text);
+        const decoded = decodeSnapshotEnvelope(content, text);
         if (label !== "latest") {
           this.rotateOnNextSave = false;
           this.say("Recovered your previous save");
         }
-        return s;
+        return decoded;
       } catch (e) {
         if (e instanceof NewerSaveError) throw e; // never overwrite a newer app's save
         console.warn(`Save '${label}' unusable:`, e);
       }
     }
-    return GameState.newGame(content, START_HARBOR, (Math.random() * 2 ** 32) | 0);
+    return { state: GameState.newGame(content, START_HARBOR, (Math.random() * 2 ** 32) | 0), savedAtEpochMs: null };
   }
 
   // ---- loop -------------------------------------------------------------------------
 
   resume(): void {
+    this.applyPendingOffline(Date.now());
+    this.publish(true);
     this.running = true;
     this.clock.reset();
   }
@@ -93,10 +102,28 @@ export class GameHost {
     this.save();
   }
 
+  dismissOfflineReport(): void {
+    this.pendingOfflineReport = null;
+    this.publish(true);
+  }
+
+  private applyPendingOffline(nowEpochMs: number): void {
+    const sim = this.sim;
+    if (!sim) return;
+    const since = this.lastCheckpointEpochMs;
+    if (since === null) return;
+    const elapsed = nowEpochMs - since;
+    this.lastCheckpointEpochMs = nowEpochMs;
+    if (elapsed <= 0) return;
+    const report = applyOffline(sim, elapsed);
+    this.pendingOfflineReport = OfflinePolicy.shouldShowSummary(sim.content, report) ? report : null;
+    this.latestView = buildView(sim);
+  }
+
   /** Advance the simulation for this animation frame. */
   frame(nowMs: number): void {
     const sim = this.sim;
-    if (!sim || !this.running || this.upgradesOpen) {
+    if (!sim || !this.running || this.panelOpen) {
       this.clock.reset();
       return;
     }
@@ -140,6 +167,14 @@ export class GameHost {
           if (!e.replayed) { this.say(`Bought ${sim.content.upgradesById.get(e.upgradeId)?.name ?? e.upgradeId}`); transaction = true; }
           break;
         case "purchase_rejected": this.say(e.reason); transaction = true; break;
+        case "worker_hired":
+          if (!e.replayed) { this.say(`Hired ${sim.content.workersById.get(e.roleId)?.name ?? e.roleId}`); transaction = true; }
+          break;
+        case "hire_rejected": this.say(e.reason); transaction = true; break;
+        case "wages_paid":
+          this.say(`Paid ${e.coins} coins in wages`);
+          transaction = true;
+          break;
         case "quest_completed": this.say(`Goal complete: ${sim.content.questsById.get(e.questId)?.name}`); break;
         case "checkpoint_requested": this.save(); break;
         default: break;
@@ -153,7 +188,7 @@ export class GameHost {
 
   /** Joystick / keys in screen space: x right, y down, each -1..1. */
   setMove(screenX: number, screenY: number): void {
-    if (this.upgradesOpen) return;
+    if (this.panelOpen) return;
     this.enqueueMove(screenX, screenY);
   }
 
@@ -167,29 +202,53 @@ export class GameHost {
     }
   }
 
+  private get panelOpen(): boolean {
+    return this.upgradesOpen || this.staffOpen || this.pendingOfflineReport !== null;
+  }
+
   setUpgradesOpen(open: boolean): void {
     this.upgradesOpen = open;
-    if (open) this.enqueueMove(0, 0);
+    if (open) {
+      this.staffOpen = false;
+      this.enqueueMove(0, 0);
+    }
+    this.publish(true);
+  }
+
+  setStaffOpen(open: boolean): void {
+    this.staffOpen = open;
+    if (open) {
+      this.upgradesOpen = false;
+      this.enqueueMove(0, 0);
+    }
     this.publish(true);
   }
 
   purchase(upgradeId: string): void {
     this.commands.push({ type: "purchase_upgrade", upgradeId, requestId: crypto.randomUUID() });
-    // Panels pause the world; advance a single tick so the command commits now.
-    if (this.upgradesOpen && this.sim) {
+    // Management panels pause the world; advance a single tick so the command commits now.
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  hire(roleId: string): void {
+    this.commands.push({ type: "hire_worker", roleId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
       this.step(this.sim);
       this.publish(true);
     }
   }
 
   reel(): void {
-    if (this.upgradesOpen) return;
+    if (this.panelOpen) return;
     this.commands.push({ type: "reel" });
   }
 
   /** Cycle Auto → each recipe → Auto for a station (no tick advance). */
   cycleStationRecipe(stationId: string): void {
-    if (this.upgradesOpen || !this.sim) return;
+    if (this.panelOpen || !this.sim) return;
     const m = this.sim.state.machines.find((mm) => mm.stationId === stationId);
     if (!m) return;
     ProductionSystem.cyclePreferredRecipe(this.sim.content, m);
@@ -204,7 +263,9 @@ export class GameHost {
     const sim = this.sim;
     const store = this.store;
     if (!sim || !store || !this.allowSaving) return;
-    const text = encodeSnapshot(sim.content, sim.state);
+    const now = Date.now();
+    this.lastCheckpointEpochMs = now;
+    const text = encodeSnapshot(sim.content, sim.state, now);
     const rotate = this.rotateOnNextSave;
     this.rotateOnNextSave = true;
     this.saveChain = this.saveChain
@@ -235,7 +296,13 @@ export class GameHost {
     const now = performance.now();
     if (!force && now - this.lastHudPublishMs < HUD_PUBLISH_INTERVAL_MS) return;
     this.lastHudPublishMs = now;
-    this.setState({ status: "ready", view: this.latestView, upgradesOpen: this.upgradesOpen });
+    this.setState({
+      status: "ready",
+      view: this.latestView,
+      upgradesOpen: this.upgradesOpen,
+      staffOpen: this.staffOpen,
+      offlineReport: this.pendingOfflineReport,
+    });
   }
 
   private setState(s: HostState): void {
