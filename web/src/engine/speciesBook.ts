@@ -1,7 +1,8 @@
-/** Phase 8 species book — mirrors game-core inventory/SpeciesBook.kt. */
+/** Phase 8 species book + Finish 2.0 Phase 12 codex — mirrors game-core inventory/SpeciesBook.kt. */
 import type { ContentPack } from "./content";
-import { compareStrings } from "./foundations";
+import { SafeMath, compareStrings } from "./foundations";
 import type { GameState } from "./state";
+import { MasterySystem } from "./systems";
 
 export interface SpeciesBookEntryView {
   speciesId: string;
@@ -14,6 +15,17 @@ export interface SpeciesBookEntryView {
   trophyBestValueCoins: number | null;
   rarityWeight: number;
   baseSpeciesId: string | null;
+  family: string;
+  lore: string | null;
+  habitatHint: string | null;
+  journalTip: string | null;
+  rarityBand: string;
+  baseValue: number;
+  catchValueEstimate: number;
+  /** Finish 2.0 Phase 14 — species mastery level (1..max when discovered). */
+  masteryLevel: number;
+  masteryXp: number;
+  masteryXpToNext: number | null;
 }
 
 export interface SpeciesBookView {
@@ -21,6 +33,15 @@ export interface SpeciesBookView {
   discovered: number;
   total: number;
   empty: boolean;
+  families: string[];
+}
+
+export function rarityBand(weight: number): string {
+  if (weight >= 80) return "common";
+  if (weight >= 40) return "uncommon";
+  if (weight >= 15) return "rare";
+  if (weight >= 2) return "epic";
+  return "legendary";
 }
 
 export const SpeciesBook = {
@@ -70,6 +91,9 @@ export const SpeciesBook = {
       const discovered = catches > 0 || trophy !== undefined;
       const harbors = [...(harborsBySpecies.get(sp.id) ?? [])].sort(compareStrings);
       const recipes = [...(recipesBySpecies.get(sp.id) ?? [])].sort(compareStrings);
+      const codex = content.codexBySpeciesId.get(sp.id);
+      const masteryXp = discovered ? MasterySystem.xpOf(state, sp.id) : 0;
+      const masteryLevel = discovered ? MasterySystem.levelOf(content, state, sp.id) : 0;
       return {
         speciesId: sp.id,
         name: discovered ? sp.name : "???",
@@ -81,6 +105,16 @@ export const SpeciesBook = {
         trophyBestValueCoins: discovered && trophy ? trophy.valueCoins : null,
         rarityWeight: sp.rarityWeight,
         baseSpeciesId: baseOfRare.get(sp.id) ?? null,
+        family: codex?.family ?? "pier",
+        lore: discovered ? (codex?.lore ?? null) : null,
+        habitatHint: codex?.habitatHint ?? null,
+        journalTip: discovered ? (codex?.journalTip ?? null) : null,
+        rarityBand: rarityBand(sp.rarityWeight),
+        baseValue: sp.baseValue,
+        catchValueEstimate: discovered && catches > 0 ? SafeMath.multiply(sp.baseValue, catches) : 0,
+        masteryLevel,
+        masteryXp,
+        masteryXpToNext: discovered ? MasterySystem.xpToNext(content, masteryXp) : null,
       };
     });
 
@@ -90,6 +124,7 @@ export const SpeciesBook = {
       discovered: discoveredCount,
       total: entries.length,
       empty: discoveredCount === 0,
+      families: [...content.codex.families],
     };
   },
 };

@@ -39,6 +39,8 @@ export const Stats = {
   CONTRACTS_FAILED: "stat.contracts_failed",
   CONTRACT_REVENUE: "stat.contract_revenue",
   CONTRACT_ITEMS_DELIVERED: "stat.contract_items_delivered",
+  CONTRACT_CHAINS_COMPLETED: "stat.contract_chains_completed",
+  CONTRACT_FAIL_STREAK: "stat.contract_fail_streak",
   HARBORS_TRAVELED: "stat.harbors_traveled",
   MAINTENANCE_PAID: "stat.maintenance_paid",
   ITEMS_SPOILED: "stat.items_spoiled",
@@ -46,6 +48,13 @@ export const Stats = {
   TROPHY_SPECIES: "stat.trophy_species",
   TROPHY_RECORDS: "stat.trophy_records",
   TROPHY_SETS_COMPLETE: "stat.trophy_sets_complete",
+  /** Finish 2.0 Phase 11 — lifetime achievement unlocks. */
+  ACHIEVEMENTS_UNLOCKED: "stat.achievements_unlocked",
+  MASTERY_XP: "stat.mastery_xp",
+  MASTERY_LEVEL_UPS: "stat.mastery_level_ups",
+  /** Finish 2.0 Phase 15 — staff branch train purchases / unlocks. */
+  STAFF_BRANCH_TRAINING: "stat.staff_branch_training",
+  STAFF_BRANCHES_UNLOCKED: "stat.staff_branches_unlocked",
   DECOR_BOUGHT: "stat.decor_bought",
   MACHINES_BROKEN: "stat.machines_broken",
   MACHINES_SLOWED: "stat.machines_slowed",
@@ -56,6 +65,8 @@ export const Stats = {
   LOAN_REPAID: "stat.loan_repaid",
   LOAN_COLLECTED: "stat.loan_collected",
   COIN_GOALS_REACHED: "stat.coin_goals_reached",
+  DAILY_LOGIN_STREAK: "stat.daily_login_streak",
+  DAILY_GOALS_CLAIMED: "stat.daily_goals_claimed",
 } as const;
 
 /** Personal-best specimen mounted on the museum board for one species. */
@@ -74,10 +85,13 @@ export const STAT_KEYS: readonly string[] = [
   Stats.WORKERS_HIRED, Stats.WORKER_FISH_CAUGHT, Stats.WORKER_ITEMS_MOVED, Stats.WORKER_XP, Stats.WORKER_LEVEL_UPS,
   Stats.LEASES_EXPIRED, Stats.WAGES_PAID, Stats.OVERTIME_WAGES,
   Stats.QUESTS_COMPLETED, Stats.CONTRACTS_COMPLETED, Stats.CONTRACTS_FAILED, Stats.CONTRACT_REVENUE,
-  Stats.CONTRACT_ITEMS_DELIVERED, Stats.HARBORS_TRAVELED, Stats.MAINTENANCE_PAID, Stats.ITEMS_SPOILED,
-  Stats.PRESTIGE_COMPLETED, Stats.TROPHY_SPECIES, Stats.TROPHY_RECORDS, Stats.TROPHY_SETS_COMPLETE, Stats.DECOR_BOUGHT,
+  Stats.CONTRACT_ITEMS_DELIVERED, Stats.CONTRACT_CHAINS_COMPLETED, Stats.CONTRACT_FAIL_STREAK,
+  Stats.HARBORS_TRAVELED, Stats.MAINTENANCE_PAID, Stats.ITEMS_SPOILED,
+  Stats.PRESTIGE_COMPLETED, Stats.TROPHY_SPECIES, Stats.TROPHY_RECORDS, Stats.TROPHY_SETS_COMPLETE, Stats.ACHIEVEMENTS_UNLOCKED,
+  Stats.MASTERY_XP, Stats.MASTERY_LEVEL_UPS, Stats.STAFF_BRANCH_TRAINING, Stats.STAFF_BRANCHES_UNLOCKED, Stats.DECOR_BOUGHT,
   Stats.MACHINES_BROKEN, Stats.MACHINES_SLOWED, Stats.MACHINES_REPAIRED, Stats.REPAIR_SPENT,
   Stats.LOANS_TAKEN, Stats.LOAN_INTEREST_ACCRUED, Stats.LOAN_REPAID, Stats.LOAN_COLLECTED, Stats.COIN_GOALS_REACHED,
+  Stats.DAILY_LOGIN_STREAK, Stats.DAILY_GOALS_CLAIMED,
 ];
 
 export type WorkerTaskPhase = "NONE" | "WALK_TO_WORK" | "WORK" | "PICKUP" | "WALK_TO_DROP" | "DROP";
@@ -112,6 +126,14 @@ export class WorkerState {
   onShift = true;
   /** Equipped staff gear: loadout slot id → upgrade id (Phase 19). */
   equipment: Record<string, string> = {};
+  /** Finish 2.0 Phase 15 / schema 23 — active specialization branch. */
+  activeBranchId: string | null = null;
+  /** Unlocked specialization branch ids. */
+  unlockedBranchIds: string[] = [];
+  /** Training progress toward branch unlock (usually cleared on unlock). */
+  branchTrainingXp = new Map<string, number>();
+  /** Assigned automation schedule id, if any. */
+  scheduleId: string | null = null;
   constructor(
     readonly id: string,
     readonly roleId: string,
@@ -313,6 +335,18 @@ export class GameState {
    * Sunrise Pier stays free; grant is idempotent via purchase receipts.
    */
   fullHarborUnlock = false;
+  /**
+   * Finish 2.0 Phase 7 / schema 21: unlocked achievement ids (engine grants in Phase 11).
+   * Empty on migrate from schema ≤20.
+   */
+  readonly unlockedAchievements = new Set<string>();
+  /**
+   * Finish 2.0 Phase 14 / schema 22: per-species fishing mastery XP.
+   * Empty on migrate from schema ≤21.
+   */
+  readonly speciesMasteryXp = new Map<string, number>();
+  /** Finish 2.0 Phase 14 — active rod technique id, or null for default unlocked. */
+  activeTechniqueId: string | null = null;
   /** Best catch per species id (museum / trophy board). */
   readonly trophies = new Map<string, TrophyRecord>();
   /** Phase 27 lifetime catches per species id (telemetry v2). */
@@ -433,6 +467,7 @@ export type Command =
   | { type: "set_coin_goal"; amount: number }
   | { type: "buy_bait"; baitId: string; requestId: string }
   | { type: "select_bait"; baitId: string | null }
+  | { type: "select_technique"; techniqueId: string | null }
   | { type: "set_machine_paused"; stationId: string; paused: boolean }
   | { type: "reel" }
   | { type: "select_machine_recipe"; stationId: string; recipeId: string | null }
@@ -442,12 +477,22 @@ export type Command =
   | { type: "assign_worker_gear"; workerId: string; upgradeId: string }
   /** Remove gear from a worker loadout slot (Phase 19). */
   | { type: "unequip_worker_gear"; workerId: string; slotId: string }
+  /** Finish 2.0 Phase 15 — pay to train a specialization branch. */
+  | { type: "train_worker_branch"; workerId: string; branchId: string; requestId: string }
+  /** Finish 2.0 Phase 15 — select an unlocked specialization branch (null = clear). */
+  | { type: "select_worker_branch"; workerId: string; branchId: string | null }
+  /** Finish 2.0 Phase 15 — assign an automation schedule (null = clear). */
+  | { type: "set_worker_schedule"; workerId: string; scheduleId: string | null }
   /** Accept a posted contract offer; requestId makes retries idempotent. */
   | { type: "accept_contract"; offerId: string; requestId: string }
   /** Deliver matching items from the player bag toward an active contract. */
   | { type: "deliver_contract"; contractId: string; requestId: string }
   /** Travel to another harbor; requestId makes retries idempotent. */
-  | { type: "travel_to_harbor"; harborId: string; requestId: string };
+  | { type: "travel_to_harbor"; harborId: string; requestId: string }
+  /** Finish 2.0 Phase 18 — push host wall-clock ms for local daily goals / streak. */
+  | { type: "sync_wall_clock"; epochMs: number }
+  /** Finish 2.0 Phase 18 — claim a completed daily objective; requestId idempotent. */
+  | { type: "claim_daily_goal"; objectiveId: string; requestId: string };
 
 export type GameEvent =
   | { type: "zone_entered"; tick: number; zoneId: string | null }
@@ -509,4 +554,20 @@ export type GameEvent =
   | { type: "bait_purchase_rejected"; tick: number; baitId: string; requestId: string; reason: string }
   | { type: "maintenance_paid"; tick: number; stations: number; coins: number }
   | { type: "items_spoiled"; tick: number; location: "counter" | "bag"; items: ItemQuantity[] }
-  | { type: "prestige_unlocked"; tick: number; prestigeId: string; coinsRewarded: number; cosmetic: string | null; catchSpeedPermille: number; priceBonusPermille: number };
+  | { type: "prestige_unlocked"; tick: number; prestigeId: string; coinsRewarded: number; cosmetic: string | null; catchSpeedPermille: number; priceBonusPermille: number }
+  | { type: "achievement_unlocked"; tick: number; achievementId: string; coinsRewarded: number }
+  | { type: "weather_changed"; tick: number; weatherId: string; name: string }
+  | { type: "tide_changed"; tick: number; tidePhaseId: string; name: string }
+  /** Finish 2.0 Phase 14 — species mastery XP gained. */
+  | { type: "mastery_xp_gained"; tick: number; speciesId: string; xpGained: number; totalXp: number; level: number }
+  /** Finish 2.0 Phase 14 — species mastery level increased. */
+  | { type: "mastery_level_up"; tick: number; speciesId: string; level: number }
+  /** Finish 2.0 Phase 15 — staff branch training purchase. */
+  | { type: "worker_branch_trained"; tick: number; workerId: string; branchId: string; receipt: Receipt; replayed: boolean }
+  | { type: "worker_branch_train_rejected"; tick: number; workerId: string; branchId: string; requestId: string; reason: string }
+  | { type: "worker_branch_unlocked"; tick: number; workerId: string; branchId: string }
+  | { type: "worker_branch_selected"; tick: number; workerId: string; branchId: string | null }
+  | { type: "worker_schedule_changed"; tick: number; workerId: string; scheduleId: string | null }
+  | { type: "daily_goals_rolled"; tick: number; dayId: number; streak: number }
+  | { type: "daily_goal_claimed"; tick: number; objectiveId: string; payout: number; streak: number; receipt: Receipt; replayed: boolean }
+  | { type: "daily_goal_rejected"; tick: number; objectiveId: string; requestId: string; reason: string };

@@ -2,16 +2,25 @@ package com.willio.jeanvilma.fishshopping.core.inventory
 
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
 import com.willio.jeanvilma.fishshopping.core.sim.GameState
+import com.willio.jeanvilma.fishshopping.core.sim.SafeMath
 import com.willio.jeanvilma.fishshopping.core.sim.SpeciesBookEntryView
 import com.willio.jeanvilma.fishshopping.core.sim.SpeciesBookView
 import java.util.TreeMap
 import java.util.TreeSet
 
 /**
- * Phase 8 species book: collection rollup from [GameState.speciesCatches] and trophies,
- * with harbor zones and recipes that consume each species.
+ * Phase 8 species book + Finish 2.0 Phase 12 codex/journal depth:
+ * lore, habitat hints, family filters, rarity bands, and catch value estimates.
  */
 object SpeciesBook {
+
+    fun rarityBand(weight: Int): String = when {
+        weight >= 80 -> "common"
+        weight >= 40 -> "uncommon"
+        weight >= 15 -> "rare"
+        weight >= 2 -> "epic"
+        else -> "legendary"
+    }
 
     fun build(content: ContentPack, state: GameState): SpeciesBookView {
         val harborsBySpecies = TreeMap<String, TreeSet<String>>()
@@ -47,6 +56,17 @@ object SpeciesBook {
             val trophy = state.trophies[sp.id]
             val discovered = catches > 0L || trophy != null
             val harbors = harborsBySpecies[sp.id]?.toList().orEmpty()
+            val codex = content.codexBySpeciesId[sp.id]
+            val masteryXp = if (discovered) {
+                com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.xpOf(state, sp.id)
+            } else {
+                0
+            }
+            val masteryLevel = if (discovered) {
+                com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.levelOf(content, state, sp.id)
+            } else {
+                0
+            }
             SpeciesBookEntryView(
                 speciesId = sp.id,
                 name = if (discovered) sp.name else "???",
@@ -58,6 +78,24 @@ object SpeciesBook {
                 trophyBestValueCoins = if (discovered) trophy?.valueCoins else null,
                 rarityWeight = sp.rarityWeight,
                 baseSpeciesId = baseOfRare[sp.id],
+                family = codex?.family ?: "pier",
+                lore = if (discovered) codex?.lore else null,
+                habitatHint = codex?.habitatHint,
+                journalTip = if (discovered) codex?.journalTip else null,
+                rarityBand = rarityBand(sp.rarityWeight),
+                baseValue = sp.baseValue,
+                catchValueEstimate = if (discovered && catches > 0L) {
+                    SafeMath.multiply(sp.baseValue, catches)
+                } else {
+                    0L
+                },
+                masteryLevel = masteryLevel,
+                masteryXp = masteryXp,
+                masteryXpToNext = if (discovered) {
+                    com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.xpToNext(content, masteryXp)
+                } else {
+                    null
+                },
             )
         }
 
@@ -67,6 +105,7 @@ object SpeciesBook {
             discovered = discoveredCount,
             total = entries.size,
             empty = discoveredCount == 0,
+            families = content.codex.families,
         )
     }
 }

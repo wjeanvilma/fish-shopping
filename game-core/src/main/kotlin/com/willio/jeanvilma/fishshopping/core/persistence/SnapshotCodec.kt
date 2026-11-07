@@ -111,6 +111,16 @@ object SnapshotCodec {
             put("unlockedCosmetics", JsonArray(s.unlockedCosmetics.map { JsonPrimitive(it) }))
             put("ownedDecor", JsonArray(s.ownedDecor.map { JsonPrimitive(it) }))
             put("fullHarborUnlock", s.fullHarborUnlock)
+            put("unlockedAchievements", JsonArray(s.unlockedAchievements.map { JsonPrimitive(it) }))
+            put(
+                "speciesMasteryXp",
+                buildJsonObject {
+                    for ((speciesId, xp) in s.speciesMasteryXp) {
+                        if (xp > 0) put(speciesId, xp)
+                    }
+                },
+            )
+            put("activeTechniqueId", s.activeTechniqueId)
             put("loanOwed", s.loanOwed)
             put("loanDueTick", s.loanDueTick)
             put("coinGoal", s.coinGoal)
@@ -202,6 +212,9 @@ object SnapshotCodec {
      *  - v17 -> v18: loanOwed / loanDueTick / coinGoal / coinGoalCelebrated (Phase 26 bank).
      *  - v18 -> v19: speciesCatches map (Phase 27 telemetry v2).
      *  - v19 -> v20: fullHarborUnlock (Phase 23 one-time IAP entitlement).
+     *  - v20 -> v21: unlockedAchievements (Finish 2.0 Phase 7 achievements scaffold).
+     *  - v21 -> v22: speciesMasteryXp + activeTechniqueId (Finish 2.0 Phase 14 fishing mastery).
+     *  - v22 -> v23: worker activeBranchId / unlockedBranchIds / branchTrainingXp / scheduleId (Phase 15).
      */
     private fun readState(content: ContentPack, n: Node, version: Int): GameState {
         val harborId = n["harborId"].string()
@@ -335,6 +348,7 @@ object SnapshotCodec {
                 }
                 w.onShift = if (version >= 14) wn["onShift"].bool() else true
                 if (version >= 15) readWorkerEquipment(content, wn, w)
+                if (version >= 23) readWorkerStaffTrees(content, wn, w)
                 s.workers += w
             }
         }
@@ -386,6 +400,18 @@ object SnapshotCodec {
         }
         if (version >= 20) {
             s.fullHarborUnlock = n.optional("fullHarborUnlock")?.bool() ?: false
+        }
+        if (version >= 21) {
+            n["unlockedAchievements"].list { it.string() }.forEach { s.unlockedAchievements += it }
+        }
+        if (version >= 22) {
+            (n.optional("speciesMasteryXp")?.el as? JsonObject)?.forEach { (speciesId, v) ->
+                if (speciesId !in content.speciesById) return@forEach
+                val xp = Node(v, "$.state.speciesMasteryXp.$speciesId").int(min = 0)
+                if (xp > 0) s.speciesMasteryXp[speciesId] = xp
+            }
+            n.optional("activeTechniqueId")?.string()?.takeIf { it in content.techniquesById }
+                ?.let { s.activeTechniqueId = it }
         }
         if (version >= 18) {
             s.loanOwed = n.optional("loanOwed")?.long(min = 0) ?: 0L
@@ -476,6 +502,28 @@ object SnapshotCodec {
             val upgradeId = Node(el, "$.workers.equipment.$slotId").string()
             val slot = content.staffProgression.loadouts.slots.firstOrNull { it.id == slotId } ?: return@forEach
             if (upgradeId in slot.upgradeIds) w.equipment[slotId] = upgradeId
+        }
+    }
+
+    private fun readWorkerStaffTrees(
+        content: ContentPack,
+        wn: Node,
+        w: WorkerState,
+    ) {
+        wn.optional("activeBranchId")?.string()?.takeIf { it in content.staffBranchesById }
+            ?.let { w.activeBranchId = it }
+        wn.optional("unlockedBranchIds")?.list { it.string() }
+            ?.filter { it in content.staffBranchesById }
+            ?.forEach { w.unlockedBranchIds += it }
+        (wn.optional("branchTrainingXp")?.el as? JsonObject)?.forEach { (branchId, v) ->
+            if (branchId !in content.staffBranchesById) return@forEach
+            val xp = Node(v, "$.workers.branchTrainingXp.$branchId").int(min = 0)
+            if (xp > 0) w.branchTrainingXp[branchId] = xp
+        }
+        wn.optional("scheduleId")?.string()?.takeIf { it in content.staffSchedulesById }
+            ?.let { w.scheduleId = it }
+        if (w.activeBranchId != null && w.activeBranchId !in w.unlockedBranchIds) {
+            w.activeBranchId = null
         }
     }
 
@@ -599,6 +647,13 @@ object SnapshotCodec {
                     "equipment",
                     JsonObject(w.equipment.toSortedMap().mapValues { JsonPrimitive(it.value) }),
                 )
+                put("activeBranchId", w.activeBranchId)
+                put("unlockedBranchIds", JsonArray(w.unlockedBranchIds.map { JsonPrimitive(it) }))
+                put(
+                    "branchTrainingXp",
+                    JsonObject(w.branchTrainingXp.mapValues { JsonPrimitive(it.value) }),
+                )
+                put("scheduleId", w.scheduleId)
             })
         }
     }
@@ -717,6 +772,7 @@ object SnapshotCodec {
             }
             w.onShift = if (version >= 14) wn["onShift"].bool() else true
             if (version >= 15) readWorkerEquipment(content, wn, w)
+            if (version >= 23) readWorkerStaffTrees(content, wn, w)
             workers += w
         }
         return HarborWorldStash(

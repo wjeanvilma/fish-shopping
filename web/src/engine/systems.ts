@@ -2,11 +2,11 @@
  * Per-tick systems. Each function mirrors the Kotlin object of the same name in game-core;
  * keep them line-for-line comparable so fixture mismatches are easy to trace.
  */
-import type { BaitDef, ContentPack, ContractTemplateDef, CounterDef, DayPartDef, DecorDef, FishingSpotDef, HarborDef, ItemQuantity, PlotDef, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, SeasonalEventDef, SpeciesDef, UpgradeDef, UpgradeEffect, WorkerDef } from "./content";
+import type { AchievementDef, BaitDef, ContentPack, ContractTemplateDef, CounterDef, DailyObjectiveDef, DayPartDef, DecorDef, FishingSpotDef, HarborDef, ItemQuantity, PlotDef, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, SeasonalEventDef, SpeciesDef, TidePhaseDef, UpgradeDef, UpgradeEffect, WeatherPatternDef, WorkerDef } from "./content";
 import { bankRepayAmount } from "./content";
 import type { TimingTier, TrophyRecord } from "./state";
 import { counterAccepts, queueSlot, rectCenterX, rectCenterZ, rectContains } from "./content";
-import { INPUT_SCALE, SafeMath, TICKS_PER_SECOND, compareStrings, idiv } from "./foundations";
+import { INPUT_SCALE, Prng, SafeMath, TICKS_PER_SECOND, compareStrings, idiv, type OfflineReport } from "./foundations";
 import { Inventory, Transfers } from "./inventory";
 import { ContractState, CounterState, CustomerState, FishingSpotState, GameState, MachineState, PlayerState, Receipt, Stats, WorkerState, type ContractOffer, type GameEvent, type HarborWorldStash } from "./state";
 
@@ -148,7 +148,7 @@ export const FishingSystem = {
       p.fishingSpecies = pick.id;
       p.fishingProgress = 0;
       p.fishingCatchTicks = FishingSystem.catchTicksFor(
-        FishingSystem.effectiveCatchSpeed(ctx.content, s), pick.catchTicks,
+        FishingSystem.effectiveCatchSpeed(ctx.content, s, pick.id), pick.catchTicks,
       );
       p.reelAttemptedThisCast = false;
     }
@@ -156,7 +156,7 @@ export const FishingSystem = {
     const species = ctx.content.speciesById.get(p.fishingSpecies)!;
     const duration = p.fishingCatchTicks > 0
       ? p.fishingCatchTicks
-      : FishingSystem.catchTicksFor(FishingSystem.effectiveCatchSpeed(ctx.content, s), species.catchTicks);
+      : FishingSystem.catchTicksFor(FishingSystem.effectiveCatchSpeed(ctx.content, s, species.id), species.catchTicks);
     p.fishingCatchTicks = duration;
 
     let reelTier: TimingTier = "miss";
@@ -164,7 +164,7 @@ export const FishingSystem = {
       p.reelRequested = false;
       if (!p.reelAttemptedThisCast) {
         p.reelAttemptedThisCast = true;
-        reelTier = FishingSystem.timingTierAt(p, p.fishingProgress, duration);
+        reelTier = FishingSystem.timingTierAtContent(ctx.content, s, p.fishingProgress, duration);
         if (reelTier !== "miss") {
           p.fishingProgress = duration;
         }
@@ -207,12 +207,20 @@ export const FishingSystem = {
     return Math.max(1, mult);
   },
 
-  /** Player upgrades, prestige floors, and (with tide chart) day-part catch bonuses. */
-  effectiveCatchSpeed(content: ContentPack, state: GameState): number {
-    const base = Math.max(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille);
-    if (!FishingSystem.hasTideChart(state)) return base;
-    const part = FishingSystem.dayPartAt(content, state.tick);
-    return Math.max(1, idiv(base * part.catchSpeedMultPermille, 1000));
+  /**
+   * Player upgrades, prestige floors, (with tide chart) day-part catch bonuses,
+   * Finish 2.0 Phase 13 weather + tide, and Phase 14 mastery / technique multipliers.
+   */
+  effectiveCatchSpeed(content: ContentPack, state: GameState, speciesId: string | null = null): number {
+    let speed = Math.max(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille);
+    if (FishingSystem.hasTideChart(state)) {
+      const part = FishingSystem.dayPartAt(content, state.tick);
+      speed = idiv(speed * part.catchSpeedMultPermille, 1000);
+    }
+    const weatherTide = WeatherSystem.catchSpeedMultPermille(content, state);
+    speed = idiv(speed * weatherTide, 1000);
+    const mastery = MasterySystem.catchSpeedMultPermille(content, state, speciesId);
+    return Math.max(1, idiv(speed * mastery, 1000));
   },
 
   catchTicksFor(catchSpeedPermille: number, baseCatchTicks: number): number {
@@ -223,6 +231,18 @@ export const FishingSystem = {
     if (duration <= 0) return false;
     const permille = idiv(progress * 1000, duration);
     return permille >= startPermille && permille < endPermille;
+  },
+
+  timingTierAtContent(content: ContentPack, state: GameState, progress: number, duration: number): TimingTier {
+    if (duration <= 0) return "miss";
+    const windows = MasterySystem.timingWindows(content, state);
+    if (FishingSystem.inTimingWindow(progress, duration, windows.perfectStart, windows.perfectEnd)) {
+      return "perfect";
+    }
+    if (FishingSystem.inTimingWindow(progress, duration, windows.goodStart, windows.goodEnd)) {
+      return "good";
+    }
+    return "miss";
   },
 
   timingTierAt(player: PlayerState, progress: number, duration: number): TimingTier {
@@ -271,7 +291,9 @@ export const FishingSystem = {
   regenTicksForState(content: ContentPack, state: GameState, def: FishingSpotDef, stock: number): number {
     const part = FishingSystem.dayPartAt(content, state.tick);
     const dayMult = FishingSystem.effectiveDayPartRegenMult(content, state, def, part);
-    return FishingSystem.regenTicksFor(def, stock, state.player.fishRegenPermille, dayMult);
+    const weatherTide = WeatherSystem.regenMultPermille(content, state);
+    const combined = Math.max(1, idiv(dayMult * weatherTide, 1000));
+    return FishingSystem.regenTicksFor(def, stock, state.player.fishRegenPermille, combined);
   },
 
   commitCatch(ctx: StepContext, zoneId: string, spotZoneId: string, rolledSpeciesId: string, timingTier: TimingTier): void {
@@ -288,7 +310,11 @@ export const FishingSystem = {
     const ru = rolled.rareUpgrade;
     if (ru) {
       const harborBonus = ctx.harbor.specialization?.rareChanceBonusPermille ?? 0;
-      const chance = BaitSystem.rareChancePermille(ru.chancePermille, bait, harborBonus);
+      const weatherBonus = WeatherSystem.rareChanceBonusPermille(ctx.content, s.tick);
+      const masteryBonus = MasterySystem.rareChanceBonusPermille(ctx.content, s, rolledSpeciesId);
+      const chance = BaitSystem.rareChancePermille(
+        ru.chancePermille, bait, harborBonus + weatherBonus + masteryBonus,
+      );
       if (s.rng.nextBelow(1000) < chance) {
         finalId = ru.to;
         rare = true;
@@ -305,7 +331,7 @@ export const FishingSystem = {
         p.bag.remove(bait.id, 1);
         s.bumpStat(Stats.BAIT_USED);
       }
-      const bonusMult = FishingSystem.timingBonusPermille(ctx.content, timingTier);
+      const bonusMult = MasterySystem.timingBonusPermille(ctx.content, s, timingTier);
       let bonusCoins = 0;
       if (bonusMult > 0) {
         bonusCoins = idiv(finalSpecies.baseValue * bonusMult, 1000);
@@ -320,6 +346,7 @@ export const FishingSystem = {
       }
       const timingBonus = timingTier !== "miss";
       const { sizePermille, valueCoins, personalBest } = TrophySystem.record(ctx, finalSpecies.id, timingTier);
+      MasterySystem.grantCatchXp(ctx, finalSpecies.id, timingTier, rare);
       ctx.emit({
         type: "fish_caught", tick: s.tick, speciesId: finalSpecies.id, zoneId,
         timingBonus, timingTier, rareUpgrade: rare,
@@ -918,7 +945,7 @@ export const CustomerSystem = {
 
   spawn(ctx: StepContext): void {
     const s = ctx.state;
-    const interval = CustomerSystem.spawnIntervalTicks(ctx.harbor, s.tick);
+    const interval = CustomerSystem.spawnIntervalTicks(ctx.content, s, ctx.harbor);
     if (++s.customerSpawnProgress < interval) return;
     s.customerSpawnProgress = 0;
     const rush = CustomerSystem.activeRush(ctx.harbor, s.tick);
@@ -993,14 +1020,23 @@ export const CustomerSystem = {
 
   /**
    * Base spawn weight scaled by day-part (Phase 11), reputation kind bias (Phase 13),
-   * and harbor specialization kind multipliers (Phase 22).
+   * harbor specialization (Phase 22), and festival-only gating (Finish 2.0 Phase 16).
    */
   effectiveSpawnWeight(
     content: ContentPack,
     state: GameState,
     harbor: HarborDef,
-    type: { kind: string; spawnWeight: number; dayPartSpawnMultPermille?: Record<string, number> },
+    type: {
+      id?: string;
+      kind: string;
+      spawnWeight: number;
+      dayPartSpawnMultPermille?: Record<string, number>;
+      requiresSeasonalEvent?: string | null;
+    },
   ): number {
+    const event = SeasonalEventSystem.active(content, state.tick);
+    const req = type.requiresSeasonalEvent;
+    if (req && event?.id !== req) return 0;
     const part = FishingSystem.dayPartAt(content, state.tick);
     const dayMult = type.dayPartSpawnMultPermille?.[part.id] ?? 1000;
     const repMult = ReputationSystem.kindSpawnMultPermille(content, state, type.kind);
@@ -1009,6 +1045,9 @@ export const CustomerSystem = {
     weight = idiv(weight * dayMult, 1000);
     weight = idiv(weight * repMult, 1000);
     weight = idiv(weight * harborMult, 1000);
+    if (event && type.id && (event.festivalCustomerIds ?? []).includes(type.id)) {
+      weight = idiv(weight * 2000, 1000);
+    }
     return Math.max(1, weight);
   },
 
@@ -1037,7 +1076,7 @@ export const CustomerSystem = {
     return table[stars]!;
   },
 
-  /** Combined ephemeral demand multiplier (rush × scarcity × rating), excluding permanent prestige. */
+  /** Combined ephemeral demand multiplier (rush × scarcity × rating × festival). */
   demandPriceMultPermille(
     content: ContentPack,
     state: GameState,
@@ -1049,6 +1088,7 @@ export const CustomerSystem = {
     mult = idiv(mult * CustomerSystem.rushPriceMultPermille(harbor, state.tick), 1000);
     mult = idiv(mult * CustomerSystem.scarcityPriceMultPermille(content, def, counter), 1000);
     mult = idiv(mult * CustomerSystem.ratingPriceMultPermille(content, state), 1000);
+    mult = idiv(mult * SeasonalEventSystem.priceMultPermille(content, state.tick), 1000);
     return Math.max(1, mult);
   },
 
@@ -1061,10 +1101,15 @@ export const CustomerSystem = {
     return null;
   },
 
-  spawnIntervalTicks(harbor: HarborDef, tick: number): number {
-    const rush = CustomerSystem.activeRush(harbor, tick);
-    if (!rush) return harbor.customerSpawnTicks;
-    return Math.max(1, idiv(harbor.customerSpawnTicks * 1000, rush.spawnSpeedPermille));
+  spawnIntervalTicks(content: ContentPack, state: GameState, harbor: HarborDef): number {
+    const rush = CustomerSystem.activeRush(harbor, state.tick);
+    let ticks = !rush
+      ? harbor.customerSpawnTicks
+      : Math.max(1, idiv(harbor.customerSpawnTicks * 1000, rush.spawnSpeedPermille));
+    const crowd = WeatherSystem.customerSpawnMultPermille(content, state);
+    ticks = Math.max(1, idiv(ticks * 1000, crowd));
+    const festival = SeasonalEventSystem.customerSpawnMultPermille(content, state.tick);
+    return Math.max(1, idiv(ticks * 1000, festival));
   },
 
   effectiveMaxQueue(def: { maxQueue: number }, rush: RushWindowDef | null): number {
@@ -1375,9 +1420,10 @@ export const ReputationSystem = {
 };
 
 /**
- * Phase 24 content-driven seasonal overlays. Windows repeat on the sim clock
- * (no live server). Active events boost catch weights, unlock banner cosmetics,
- * and gate event-only contract templates.
+ * Phase 24 / Finish 2.0 Phase 16 content-driven seasonal festival weekends.
+ * Windows repeat on the sim clock (no live server). Active events boost catch
+ * weights, stack crowd/price with weather, unlock banner cosmetics, and gate
+ * festival-only customers/contracts.
  */
 export const SeasonalEventSystem = {
   active(content: ContentPack, tick: number): SeasonalEventDef | null {
@@ -1397,6 +1443,14 @@ export const SeasonalEventSystem = {
 
   speciesWeightMultPermille(content: ContentPack, tick: number, speciesId: string): number {
     return SeasonalEventSystem.active(content, tick)?.speciesWeightMultPermille?.[speciesId] ?? 1000;
+  },
+
+  customerSpawnMultPermille(content: ContentPack, tick: number): number {
+    return SeasonalEventSystem.active(content, tick)?.customerSpawnMultPermille ?? 1000;
+  },
+
+  priceMultPermille(content: ContentPack, tick: number): number {
+    return SeasonalEventSystem.active(content, tick)?.priceMultPermille ?? 1000;
   },
 
   scaledWeight(base: number, content: ContentPack, tick: number, speciesId: string): number {
@@ -1554,14 +1608,531 @@ function completePrestige(ctx: StepContext, m: PrestigeMilestoneDef): void {
   ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "prestige" });
 }
 
+/**
+ * Finish 2.0 Phase 18 — local daily objectives + login streak (no network).
+ * Wall clock is pushed via [syncClock]; day, streak, board, and claims live in stats (schema 23).
+ */
+export const DailyGoalsSystem = {
+  WALL_MS: "stat.daily_goals_wall_ms",
+  DAY_ID: "stat.daily_goals_day_id",
+  STREAK: Stats.DAILY_LOGIN_STREAK,
+  LAST_STREAK_DAY: "stat.daily_goals_last_streak_day",
+
+  boardSlotKey(index: number): string {
+    return `stat.daily_board_${index}`;
+  },
+  baselineKey(stat: string): string {
+    return `stat.daily_baseline.${stat}`;
+  },
+  claimedDayKey(objectiveId: string): string {
+    return `stat.daily_claimed_day.${objectiveId}`;
+  },
+
+  wallClockEpochMs(state: GameState): number {
+    return state.stat(DailyGoalsSystem.WALL_MS);
+  },
+
+  dayId(content: ContentPack, epochMs: number): number {
+    const len = Math.max(1, content.dailyGoals.dayLengthMs);
+    return Math.trunc(Math.max(0, epochMs) / len);
+  },
+
+  currentDayId(content: ContentPack, state: GameState): number {
+    const wall = DailyGoalsSystem.wallClockEpochMs(state);
+    if (wall <= 0) return state.stat(DailyGoalsSystem.DAY_ID);
+    return DailyGoalsSystem.dayId(content, wall);
+  },
+
+  streak(state: GameState): number {
+    return Math.max(0, state.stat(DailyGoalsSystem.STREAK));
+  },
+
+  boardObjectives(content: ContentPack, state: GameState): DailyObjectiveDef[] {
+    const out: DailyObjectiveDef[] = [];
+    const slots = content.dailyGoals.boardSlots;
+    for (let i = 0; i < slots; i++) {
+      const idx = state.stat(DailyGoalsSystem.boardSlotKey(i)) - 1;
+      if (idx >= 0 && idx < content.dailyGoals.objectives.length) {
+        out.push(content.dailyGoals.objectives[idx]!);
+      }
+    }
+    return out;
+  },
+
+  progress(content: ContentPack, state: GameState, objective: DailyObjectiveDef): number {
+    const baseline = state.stat(DailyGoalsSystem.baselineKey(objective.goal.stat));
+    return Math.max(0, state.stat(objective.goal.stat) - baseline);
+  },
+
+  isComplete(content: ContentPack, state: GameState, objective: DailyObjectiveDef): boolean {
+    return DailyGoalsSystem.progress(content, state, objective) >= objective.goal.atLeast;
+  },
+
+  isClaimed(content: ContentPack, state: GameState, objective: DailyObjectiveDef): boolean {
+    const day = DailyGoalsSystem.currentDayId(content, state);
+    if (day <= 0) return false;
+    return state.stat(DailyGoalsSystem.claimedDayKey(objective.id)) === day;
+  },
+
+  claimRewardCoins(content: ContentPack, state: GameState, objective: DailyObjectiveDef): number {
+    const streakBonus = Math.min(DailyGoalsSystem.streak(state), content.dailyGoals.maxStreakBonusDays)
+      * content.dailyGoals.streakBonusCoinsPerDay;
+    return objective.rewardCoins + streakBonus;
+  },
+
+  syncClock(ctx: StepContext, epochMs: number): void {
+    const s = ctx.state;
+    s.stats.set(DailyGoalsSystem.WALL_MS, Math.max(0, epochMs));
+    rolloverIfNeeded(ctx);
+  },
+
+  step(ctx: StepContext): void {
+    if (DailyGoalsSystem.wallClockEpochMs(ctx.state) <= 0) return;
+    rolloverIfNeeded(ctx);
+  },
+
+  claim(ctx: StepContext, objectiveId: string, requestId: string): void {
+    const s = ctx.state;
+    const existing = s.purchaseReceipts.get(requestId);
+    if (existing) {
+      ctx.emit({
+        type: "daily_goal_claimed",
+        tick: s.tick,
+        objectiveId,
+        payout: existing.coinDelta,
+        streak: DailyGoalsSystem.streak(s),
+        receipt: existing,
+        replayed: true,
+      });
+      return;
+    }
+    const reject = (reason: string) => {
+      ctx.emit({ type: "daily_goal_rejected", tick: s.tick, objectiveId, requestId, reason });
+    };
+    if (DailyGoalsSystem.wallClockEpochMs(s) <= 0) {
+      reject("Wall clock not synced");
+      return;
+    }
+    rolloverIfNeeded(ctx);
+    const objective = ctx.content.dailyObjectivesById.get(objectiveId);
+    if (!objective) {
+      reject("Unknown daily objective");
+      return;
+    }
+    if (!DailyGoalsSystem.boardObjectives(ctx.content, s).some((o) => o.id === objectiveId)) {
+      reject("Not on today's board");
+      return;
+    }
+    if (DailyGoalsSystem.isClaimed(ctx.content, s, objective)) {
+      reject("Already claimed today");
+      return;
+    }
+    if (!DailyGoalsSystem.isComplete(ctx.content, s, objective)) {
+      reject("Objective not complete");
+      return;
+    }
+    const payout = DailyGoalsSystem.claimRewardCoins(ctx.content, s, objective);
+    const day = DailyGoalsSystem.currentDayId(ctx.content, s);
+    s.stats.set(DailyGoalsSystem.claimedDayKey(objectiveId), day);
+    if (payout > 0) s.coins = SafeMath.creditCoins(s.coins, payout);
+    s.bumpStat(Stats.DAILY_GOALS_CLAIMED);
+    const receipt: Receipt = {
+      id: s.newId("daily"),
+      type: "daily_goal_reward",
+      coinDelta: payout,
+      tick: s.tick,
+      reference: objectiveId,
+    };
+    s.record(receipt);
+    s.purchaseReceipts.set(requestId, receipt);
+    ctx.emit({
+      type: "daily_goal_claimed",
+      tick: s.tick,
+      objectiveId,
+      payout,
+      streak: DailyGoalsSystem.streak(s),
+      receipt,
+      replayed: false,
+    });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "daily_goal" });
+  },
+
+  journalLines(content: ContentPack, state: GameState, report: OfflineReport): string[] {
+    const lines: string[] = [];
+    if (report.capped) {
+      lines.push(`Away time hit the ${content.offline.capHours}h catch-up cap.`);
+    }
+    if (report.fishCaught > 0) {
+      lines.push(`Crew landed ${report.fishCaught} fish while you were out.`);
+    }
+    if (report.sales > 0) {
+      lines.push(`Counters rang up ${report.sales} sales offline.`);
+    }
+    if (report.workerFishCaught > 0 || report.workerItemsMoved > 0) {
+      lines.push(
+        `Staff kept the harbor moving (catch ${report.workerFishCaught}, hauls ${report.workerItemsMoved}).`,
+      );
+    }
+    if (report.coinsDelta > 0) {
+      lines.push(`Harbor purse grew by ${report.coinsDelta} coins.`);
+    } else if (report.coinsDelta < 0) {
+      lines.push(`Away-time upkeep cost ${-report.coinsDelta} coins.`);
+    }
+    const streak = DailyGoalsSystem.streak(state);
+    if (streak > 0) {
+      lines.push(`Harbor streak: ${streak} day${streak === 1 ? "" : "s"}.`);
+    }
+    const board = DailyGoalsSystem.boardObjectives(content, state);
+    const claimable = board.filter(
+      (o) => DailyGoalsSystem.isComplete(content, state, o) && !DailyGoalsSystem.isClaimed(content, state, o),
+    ).length;
+    if (claimable > 0) {
+      lines.push(`${claimable} daily objective${claimable === 1 ? "" : "s"} ready to claim.`);
+    }
+    if (lines.length === 0 && report.hadActivity) {
+      lines.push("Harbor kept a quiet watch while you were away.");
+    }
+    return lines;
+  },
+};
+
+function rolloverIfNeeded(ctx: StepContext): void {
+  const s = ctx.state;
+  const content = ctx.content;
+  const wall = DailyGoalsSystem.wallClockEpochMs(s);
+  if (wall <= 0) return;
+  const newDay = DailyGoalsSystem.dayId(content, wall);
+  const oldDay = s.stat(DailyGoalsSystem.DAY_ID);
+  if (oldDay === newDay && DailyGoalsSystem.boardObjectives(content, s).length > 0) return;
+
+  const previousStreakDay = s.stat(DailyGoalsSystem.LAST_STREAK_DAY);
+  let nextStreak: number;
+  if (previousStreakDay <= 0) nextStreak = 1;
+  else if (previousStreakDay === newDay) nextStreak = Math.max(1, DailyGoalsSystem.streak(s));
+  else if (previousStreakDay === newDay - 1) nextStreak = DailyGoalsSystem.streak(s) + 1;
+  else nextStreak = 1;
+
+  s.stats.set(DailyGoalsSystem.DAY_ID, newDay);
+  s.stats.set(DailyGoalsSystem.STREAK, nextStreak);
+  s.stats.set(DailyGoalsSystem.LAST_STREAK_DAY, newDay);
+
+  for (const stat of [...new Set(content.dailyGoals.objectives.map((o) => o.goal.stat))]) {
+    s.stats.set(DailyGoalsSystem.baselineKey(stat), s.stat(stat));
+  }
+  refreshDailyBoard(content, s, newDay);
+  if (oldDay !== 0 && oldDay !== newDay) {
+    ctx.emit({ type: "daily_goals_rolled", tick: s.tick, dayId: newDay, streak: nextStreak });
+  }
+}
+
+function refreshDailyBoard(content: ContentPack, state: GameState, day: number): void {
+  const def = content.dailyGoals;
+  const pool = [...def.objectives];
+  const rng = new Prng((day ^ 0x5a1eda11) | 0);
+  const slots = Math.min(def.boardSlots, pool.length);
+  for (let i = 0; i < def.boardSlots; i++) {
+    state.stats.delete(DailyGoalsSystem.boardSlotKey(i));
+  }
+  for (let i = 0; i < slots; i++) {
+    if (pool.length === 0) break;
+    const idxInPool = rng.pickWeighted(pool.map((it) => it.weight));
+    const picked = pool.splice(idxInPool, 1)[0]!;
+    const contentIndex = def.objectives.findIndex((it) => it.id === picked.id);
+    if (contentIndex >= 0) {
+      state.stats.set(DailyGoalsSystem.boardSlotKey(i), contentIndex + 1);
+    }
+  }
+}
+
+/**
+ * Finish 2.0 Phase 11 — content-driven achievements granted into
+ * GameState.unlockedAchievements.
+ */
+export const AchievementSystem = {
+  step(ctx: StepContext): void {
+    for (const a of ctx.content.achievements.entries) {
+      if (ctx.state.unlockedAchievements.has(a.id)) continue;
+      if (ctx.state.stat(a.goal.stat) < a.goal.atLeast) continue;
+      unlockAchievement(ctx, a);
+    }
+  },
+};
+
+function unlockAchievement(ctx: StepContext, a: AchievementDef): void {
+  const s = ctx.state;
+  s.unlockedAchievements.add(a.id);
+  s.bumpStat(Stats.ACHIEVEMENTS_UNLOCKED);
+  if (a.rewardCoins > 0) {
+    s.coins = SafeMath.creditCoins(s.coins, a.rewardCoins);
+    const receipt: Receipt = {
+      id: s.newId("achieve"),
+      type: "achievement_reward",
+      coinDelta: a.rewardCoins,
+      tick: s.tick,
+      reference: a.id,
+    };
+    s.record(receipt);
+  }
+  ctx.emit({
+    type: "achievement_unlocked",
+    tick: s.tick,
+    achievementId: a.id,
+    coinsRewarded: a.rewardCoins,
+  });
+  ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "achievement" });
+}
+
+/**
+ * Finish 2.0 Phase 14 — per-species fishing mastery XP, rod techniques, coaching hooks.
+ */
+export const MasterySystem = {
+  xpOf(state: GameState, speciesId: string): number {
+    return state.speciesMasteryXp.get(speciesId) ?? 0;
+  },
+
+  levelForXp(content: ContentPack, xp: number): number {
+    const thresholds = content.fishingMastery.xpThresholds;
+    let level = 1;
+    for (let i = 0; i < thresholds.length; i++) {
+      if (xp >= thresholds[i]!) level = i + 1;
+      else break;
+    }
+    return Math.max(1, Math.min(level, content.fishingMastery.maxLevel));
+  },
+
+  levelOf(content: ContentPack, state: GameState, speciesId: string): number {
+    return MasterySystem.levelForXp(content, MasterySystem.xpOf(state, speciesId));
+  },
+
+  xpToNext(content: ContentPack, xp: number): number | null {
+    const thresholds = content.fishingMastery.xpThresholds;
+    const level = MasterySystem.levelForXp(content, xp);
+    if (level >= content.fishingMastery.maxLevel) return null;
+    return thresholds[level]! - xp;
+  },
+
+  globalLevel(content: ContentPack, state: GameState): number {
+    if (state.speciesMasteryXp.size === 0) return 0;
+    let max = 0;
+    for (const id of state.speciesMasteryXp.keys()) {
+      max = Math.max(max, MasterySystem.levelOf(content, state, id));
+    }
+    return max;
+  },
+
+  isUnlocked(content: ContentPack, state: GameState, tech: { requiresMasteryLevel: number }): boolean {
+    return MasterySystem.globalLevel(content, state) >= tech.requiresMasteryLevel;
+  },
+
+  technique(content: ContentPack, state: GameState) {
+    const active = state.activeTechniqueId;
+    if (active) {
+      const tech = content.techniquesById.get(active);
+      if (tech && MasterySystem.isUnlocked(content, state, tech)) return tech;
+    }
+    return content.fishingMastery.techniques.find((t) => MasterySystem.isUnlocked(content, state, t))!;
+  },
+
+  select(state: GameState, content: ContentPack, techniqueId: string | null): void {
+    if (techniqueId == null) {
+      state.activeTechniqueId = null;
+      return;
+    }
+    const tech = content.techniquesById.get(techniqueId);
+    if (!tech || !MasterySystem.isUnlocked(content, state, tech)) return;
+    state.activeTechniqueId = techniqueId;
+  },
+
+  catchSpeedMultPermille(content: ContentPack, state: GameState, speciesId: string | null): number {
+    const tech = MasterySystem.technique(content, state);
+    let mult = tech.catchSpeedMultPermille;
+    if (speciesId) {
+      const level = MasterySystem.levelOf(content, state, speciesId);
+      const per = content.fishingMastery.catchSpeedPermillePerLevel;
+      mult = idiv(mult * (1000 + per * (level - 1)), 1000);
+    }
+    return Math.max(1, mult);
+  },
+
+  rareChanceBonusPermille(content: ContentPack, state: GameState, speciesId: string | null): number {
+    const tech = MasterySystem.technique(content, state);
+    let bonus = tech.rareChanceBonusPermille;
+    if (speciesId) {
+      const level = MasterySystem.levelOf(content, state, speciesId);
+      bonus += content.fishingMastery.rareChanceBonusPermillePerLevel * (level - 1);
+    }
+    return Math.max(0, Math.min(1000, bonus));
+  },
+
+  timingWindows(content: ContentPack, state: GameState): {
+    goodStart: number; goodEnd: number; perfectStart: number; perfectEnd: number;
+  } {
+    const p = state.player;
+    const tech = MasterySystem.technique(content, state);
+    let goodStart = Math.max(0, Math.min(999, p.timingWindowStartPermille + tech.windowStartDeltaPermille));
+    let goodEnd = Math.max(1, Math.min(1000, p.timingWindowEndPermille + tech.windowEndDeltaPermille));
+    if (goodStart >= goodEnd) {
+      goodStart = p.timingWindowStartPermille;
+      goodEnd = p.timingWindowEndPermille;
+    }
+    let perfectStart = Math.max(0, Math.min(999, p.timingPerfectStartPermille + tech.perfectStartDeltaPermille));
+    let perfectEnd = Math.max(1, Math.min(1000, p.timingPerfectEndPermille + tech.perfectEndDeltaPermille));
+    if (perfectStart >= perfectEnd) {
+      perfectStart = p.timingPerfectStartPermille;
+      perfectEnd = p.timingPerfectEndPermille;
+    }
+    perfectStart = Math.max(perfectStart, goodStart);
+    perfectEnd = Math.min(perfectEnd, goodEnd);
+    if (perfectStart >= perfectEnd) {
+      perfectStart = p.timingPerfectStartPermille;
+      perfectEnd = p.timingPerfectEndPermille;
+    }
+    return { goodStart, goodEnd, perfectStart, perfectEnd };
+  },
+
+  timingBonusPermille(content: ContentPack, state: GameState, tier: TimingTier): number {
+    const base = FishingSystem.timingBonusPermille(content, tier);
+    if (tier !== "perfect") return base;
+    return base + MasterySystem.technique(content, state).perfectBonusPermille;
+  },
+
+  grantCatchXp(ctx: StepContext, speciesId: string, timingTier: TimingTier, rare: boolean): void {
+    const s = ctx.state;
+    const m = ctx.content.fishingMastery;
+    let gain = m.xpCatch;
+    if (timingTier === "perfect") gain += m.xpPerfectReel;
+    else if (timingTier === "good") gain += m.xpGoodReel;
+    if (rare) gain += m.xpRareCatch;
+    if (gain <= 0) return;
+    const before = MasterySystem.xpOf(s, speciesId);
+    const beforeLevel = MasterySystem.levelForXp(ctx.content, before);
+    const after = before + gain;
+    s.speciesMasteryXp.set(speciesId, after);
+    s.bumpStat(Stats.MASTERY_XP, gain);
+    const afterLevel = MasterySystem.levelForXp(ctx.content, after);
+    ctx.emit({
+      type: "mastery_xp_gained", tick: s.tick, speciesId, xpGained: gain, totalXp: after, level: afterLevel,
+    });
+    if (afterLevel > beforeLevel) {
+      s.bumpStat(Stats.MASTERY_LEVEL_UPS);
+      ctx.emit({ type: "mastery_level_up", tick: s.tick, speciesId, level: afterLevel });
+    }
+  },
+
+  coachingTip(content: ContentPack, state: GameState): string | null {
+    const global = MasterySystem.globalLevel(content, state);
+    let maxSpecies = 0;
+    for (const id of state.speciesMasteryXp.keys()) {
+      maxSpecies = Math.max(maxSpecies, MasterySystem.levelOf(content, state, id));
+    }
+    const tip = content.fishingMastery.coachingTips.find(
+      (t) => global >= t.minGlobalLevel && global <= t.maxGlobalLevel && maxSpecies >= t.minSpeciesLevel,
+    );
+    return tip?.text ?? null;
+  },
+};
+
+/**
+ * Finish 2.0 Phase 13 — deterministic weather cycle + tide phases.
+ */
+export const WeatherSystem = {
+  weatherAt(content: ContentPack, tick: number): WeatherPatternDef {
+    const patterns = content.weather.patterns;
+    const total = Math.max(1, patterns.reduce((sum, p) => sum + p.durationTicks, 0));
+    let t = ((tick % total) + total) % total;
+    for (const p of patterns) {
+      if (t < p.durationTicks) return p;
+      t -= p.durationTicks;
+    }
+    return patterns[patterns.length - 1]!;
+  },
+
+  tidePhaseAt(content: ContentPack, tick: number): TidePhaseDef {
+    const tide = content.weather.tide;
+    const phase = idiv((tick % tide.periodTicks) * 1000, tide.periodTicks);
+    return tide.phases.find((p) => phase < p.endPermille)!;
+  },
+
+  ticksUntilWeatherChange(content: ContentPack, tick: number): number {
+    const patterns = content.weather.patterns;
+    const total = Math.max(1, patterns.reduce((sum, p) => sum + p.durationTicks, 0));
+    let t = ((tick % total) + total) % total;
+    for (const p of patterns) {
+      if (t < p.durationTicks) return Math.max(1, p.durationTicks - t);
+      t -= p.durationTicks;
+    }
+    return patterns[patterns.length - 1]!.durationTicks;
+  },
+
+  ticksUntilTideChange(content: ContentPack, tick: number): number {
+    const tide = content.weather.tide;
+    const period = tide.periodTicks;
+    const phasePermille = idiv((tick % period) * 1000, period);
+    const current = tide.phases.find((p) => phasePermille < p.endPermille)!;
+    const endTickInPeriod = idiv(current.endPermille * period, 1000);
+    const pos = tick % period;
+    return Math.max(1, endTickInPeriod - pos);
+  },
+
+  catchSpeedMultPermille(content: ContentPack, state: GameState): number {
+    const weather = WeatherSystem.weatherAt(content, state.tick);
+    const tide = WeatherSystem.tideCatchMultPermille(content, state);
+    return Math.max(1, idiv(weather.catchSpeedMultPermille * tide, 1000));
+  },
+
+  regenMultPermille(content: ContentPack, state: GameState): number {
+    const weather = WeatherSystem.weatherAt(content, state.tick);
+    let tide = WeatherSystem.tidePhaseAt(content, state.tick).regenMultPermille;
+    if (FishingSystem.hasTideChart(state) && tide > 1000) {
+      const ease = content.weather.tide.chartRegenEasePermille;
+      tide = 1000 + idiv((tide - 1000) * (1000 - ease), 1000);
+    }
+    return Math.max(1, idiv(weather.regenMultPermille * tide, 1000));
+  },
+
+  customerSpawnMultPermille(content: ContentPack, state: GameState): number {
+    const weather = WeatherSystem.weatherAt(content, state.tick);
+    let tide = WeatherSystem.tidePhaseAt(content, state.tick).customerSpawnMultPermille;
+    if (FishingSystem.hasTideChart(state)) {
+      tide += content.weather.tide.chartCrowdBonusPermille;
+    }
+    return Math.max(1, idiv(weather.customerSpawnMultPermille * tide, 1000));
+  },
+
+  rareChanceBonusPermille(content: ContentPack, tick: number): number {
+    return WeatherSystem.weatherAt(content, tick).rareChanceBonusPermille;
+  },
+
+  tideCatchMultPermille(content: ContentPack, state: GameState): number {
+    let mult = WeatherSystem.tidePhaseAt(content, state.tick).catchSpeedMultPermille;
+    if (FishingSystem.hasTideChart(state)) {
+      mult += content.weather.tide.chartCatchBonusPermille;
+    }
+    return Math.max(1, mult);
+  },
+
+  step(ctx: StepContext): void {
+    const tick = ctx.state.tick;
+    if (tick <= 0) return;
+    const prevWeather = WeatherSystem.weatherAt(ctx.content, tick - 1);
+    const curWeather = WeatherSystem.weatherAt(ctx.content, tick);
+    if (prevWeather.id !== curWeather.id) {
+      ctx.emit({ type: "weather_changed", tick, weatherId: curWeather.id, name: curWeather.name });
+    }
+    const prevTide = WeatherSystem.tidePhaseAt(ctx.content, tick - 1);
+    const curTide = WeatherSystem.tidePhaseAt(ctx.content, tick);
+    if (prevTide.id !== curTide.id) {
+      ctx.emit({ type: "tide_changed", tick, tidePhaseId: curTide.id, name: curTide.name });
+    }
+  },
+};
+
 // ---------------------------------------------------------------- contracts/Contracts.kt
 
 /**
- * Timed delivery contracts (Phase 17).
- *
- * Board posts weighted offers after contracts.requires are met; accepting moves
- * an offer into active work. Deliver from the player bag; miss the deadline and pay
- * a penalty (capped by current coins).
+ * Timed delivery contracts with standing orders, festival gates, and Finish 2.0
+ * Phase 17 Contracts 2.0: delivery chains, reputation-tier board gates/payouts,
+ * and global failure-streak board pressure.
  */
 export const ContractSystem = {
   streakStatKey(templateId: string): string {
@@ -1576,6 +2147,9 @@ export const ContractSystem = {
   standingCooldownUntil(state: GameState, templateId: string): number {
     return state.stat(ContractSystem.cooldownStatKey(templateId));
   },
+  failStreak(state: GameState): number {
+    return Math.max(0, state.stat(Stats.CONTRACT_FAIL_STREAK));
+  },
   scaleAmount(base: number, escalatePermille: number, streak: number, maxStreak: number): number {
     const steps = Math.min(Math.max(0, streak), Math.max(0, maxStreak));
     let value = base;
@@ -1584,6 +2158,49 @@ export const ContractSystem = {
   },
   isStanding(t: { kind?: string } | undefined | null): boolean {
     return t?.kind === "standing";
+  },
+  isChain(t: { chainId?: string | null } | undefined | null): boolean {
+    return t?.chainId != null;
+  },
+  isChainHead(t: { chainId?: string | null; chainStep?: number } | undefined | null): boolean {
+    if (!t?.chainId) return true;
+    return (t.chainStep ?? 1) <= 1;
+  },
+  chainLength(content: ContentPack, chainId: string): number {
+    return content.contracts.templates.filter((t) => t.chainId === chainId).length;
+  },
+  nextChainTemplate(content: ContentPack, current: ContractTemplateDef): ContractTemplateDef | null {
+    const chainId = current.chainId;
+    if (!chainId) return null;
+    const step = (current.chainStep ?? 1) + 1;
+    const matches = content.contracts.templates
+      .filter((t) => t.chainId === chainId && (t.chainStep ?? 1) === step)
+      .sort((a, b) => a.id.localeCompare(b.id));
+    return matches[0] ?? null;
+  },
+  reputationPayoutMultPermille(content: ContentPack, state: GameState): number {
+    const table = content.contracts.reputationPayoutMultPermille ?? [];
+    if (table.length === 0) return 1000;
+    const band = Math.min(table.length - 1, Math.max(0, ReputationSystem.band(content, state)));
+    return table[band]!;
+  },
+  offerWeight(content: ContentPack, state: GameState, t: ContractTemplateDef): number {
+    let weight = t.weight;
+    const def = content.contracts;
+    const threshold = def.failStreakThreshold ?? 3;
+    if (ContractSystem.failStreak(state) >= threshold) {
+      weight = idiv(weight * (def.failStreakOfferWeightMultPermille ?? 700), 1000);
+    }
+    return Math.max(1, weight);
+  },
+  effectiveBoardSlots(content: ContentPack, state: GameState): number {
+    const def = content.contracts;
+    let slots = def.boardSlots;
+    const threshold = def.failStreakThreshold ?? 3;
+    if (ContractSystem.failStreak(state) >= threshold) {
+      slots -= def.failStreakBoardSlotPenalty ?? 1;
+    }
+    return Math.max(1, slots);
   },
 
   step(ctx: StepContext): void {
@@ -1627,6 +2244,16 @@ export const ContractSystem = {
     if (s.activeContracts.some((c) => c.templateId === offer.templateId)) {
       reject("Already running that standing order");
       return;
+    }
+    const template = ctx.content.contractTemplatesById.get(offer.templateId);
+    const chainId = template?.chainId;
+    if (chainId) {
+      const runningChain = s.activeContracts.some((job) =>
+        ctx.content.contractTemplatesById.get(job.templateId)?.chainId === chainId);
+      if (runningChain) {
+        reject("Already running that delivery chain");
+        return;
+      }
     }
     for (let i = s.contractOffers.length - 1; i >= 0; i--) {
       if (s.contractOffers[i]!.id === offerId) s.contractOffers.splice(i, 1);
@@ -1687,6 +2314,7 @@ export const ContractSystem = {
       s.coins = SafeMath.creditCoins(s.coins, payout);
       s.bumpStat(Stats.CONTRACTS_COMPLETED);
       s.bumpStat(Stats.CONTRACT_REVENUE, payout);
+      s.stats.set(Stats.CONTRACT_FAIL_STREAK, 0);
       const receipt: Receipt = { id: s.newId("contract"), type: "contract_payout", coinDelta: payout, tick: s.tick, reference: c.id };
       s.record(receipt);
       s.purchaseReceipts.set(requestId, receipt);
@@ -1695,6 +2323,8 @@ export const ContractSystem = {
       const template = ctx.content.contractTemplatesById.get(c.templateId);
       if (ContractSystem.isStanding(template)) {
         refreshStandingJob(s, c, template!);
+      } else if (template && ContractSystem.isChain(template)) {
+        advanceOrFinishChain(ctx, idx, c, template);
       } else {
         s.activeContracts.splice(idx, 1);
       }
@@ -1706,7 +2336,38 @@ export const ContractSystem = {
       ctx.emit({ type: "contract_delivered", tick: s.tick, contractId: c.id, count: take, completed: false, receipt, replayed: false });
     }
   },
+
+  templateEligibleForBoard(content: ContentPack, s: GameState, t: ContractTemplateDef): boolean {
+    return templateEligibleForBoard(content, s, t);
+  },
 };
+
+function advanceOrFinishChain(
+  ctx: StepContext,
+  idx: number,
+  c: ContractState,
+  template: ContractTemplateDef,
+): void {
+  const s = ctx.state;
+  const next = ContractSystem.nextChainTemplate(ctx.content, template);
+  if (!next) {
+    s.bumpStat(Stats.CONTRACT_CHAINS_COMPLETED);
+    s.activeContracts.splice(idx, 1);
+    return;
+  }
+  const payoutMult = ContractSystem.reputationPayoutMultPermille(ctx.content, s);
+  const payout = idiv(next.payout * payoutMult, 1000);
+  s.activeContracts[idx] = new ContractState(
+    c.id,
+    next.id,
+    next.item,
+    next.quantity,
+    0,
+    s.tick + next.durationTicks,
+    payout,
+    next.penalty,
+  );
+}
 
 function refreshStandingJob(s: GameState, c: ContractState, template: ContractTemplateDef): void {
   const nextStreak = ContractSystem.standingStreak(s, template.id) + 1;
@@ -1737,6 +2398,7 @@ function expireDeadlines(ctx: StepContext): void {
       s.record(receipt);
     }
     s.bumpStat(Stats.CONTRACTS_FAILED);
+    s.stats.set(Stats.CONTRACT_FAIL_STREAK, ContractSystem.failStreak(s) + 1);
     const template = ctx.content.contractTemplatesById.get(c.templateId);
     if (ContractSystem.isStanding(template)) {
       s.stats.set(ContractSystem.streakStatKey(c.templateId), 0);
@@ -1767,36 +2429,51 @@ function refreshOffers(ctx: StepContext): void {
   const def = ctx.content.contracts;
   s.contractOffers.length = 0;
   const activeTemplates = new Set(s.activeContracts.map((c) => c.templateId));
-  const pool = def.templates.filter((t) => !activeTemplates.has(t.id) && templateEligibleForBoard(ctx.content, s, t));
-  const slots = Math.min(def.boardSlots, pool.length);
+  const activeChains = new Set(
+    s.activeContracts
+      .map((c) => ctx.content.contractTemplatesById.get(c.templateId)?.chainId)
+      .filter((id): id is string => !!id),
+  );
+  const pool = def.templates.filter((t) =>
+    !activeTemplates.has(t.id) &&
+    (!t.chainId || !activeChains.has(t.chainId)) &&
+    templateEligibleForBoard(ctx.content, s, t));
+  const slots = Math.min(ContractSystem.effectiveBoardSlots(ctx.content, s), pool.length);
   for (let n = 0; n < slots; n++) {
     if (pool.length === 0) continue;
-    const idx = s.rng.pickWeighted(pool.map((t) => t.weight));
+    const idx = s.rng.pickWeighted(pool.map((t) => ContractSystem.offerWeight(ctx.content, s, t)));
     const t = pool.splice(idx, 1)[0]!;
-    s.contractOffers.push(offerFrom(s, t));
+    s.contractOffers.push(offerFrom(ctx.content, s, t));
   }
   s.contractBoardRefreshAt = s.tick + def.refreshPeriodTicks;
   ctx.emit({ type: "contract_board_refreshed", tick: s.tick, offerIds: s.contractOffers.map((o) => o.id) });
 }
 
 function templateEligibleForBoard(content: ContentPack, s: GameState, t: ContractTemplateDef): boolean {
+  if (!ContractSystem.isChainHead(t)) return false;
   if (t.requiresSeasonalEvent) {
     const active = SeasonalEventSystem.active(content, s.tick);
     if (active?.id !== t.requiresSeasonalEvent) return false;
+  }
+  if (t.requiresReputationBand != null) {
+    if (ReputationSystem.band(content, s) < t.requiresReputationBand) return false;
   }
   if (!ContractSystem.isStanding(t)) return true;
   return s.tick >= ContractSystem.standingCooldownUntil(s, t.id);
 }
 
-function offerFrom(s: GameState, t: ContractTemplateDef): ContractOffer {
+function offerFrom(content: ContentPack, s: GameState, t: ContractTemplateDef): ContractOffer {
   const streak = ContractSystem.isStanding(t) ? ContractSystem.standingStreak(s, t.id) : 0;
+  let payout = ContractSystem.scaleAmount(t.payout, t.payoutEscalatePermille ?? 1000, streak, t.maxStreak ?? 1);
+  const repMult = ContractSystem.reputationPayoutMultPermille(content, s);
+  payout = idiv(payout * repMult, 1000);
   return {
     id: s.newId("offer"),
     templateId: t.id,
     itemId: t.item,
     quantity: t.quantity,
     durationTicks: t.durationTicks,
-    payout: ContractSystem.scaleAmount(t.payout, t.payoutEscalatePermille ?? 1000, streak, t.maxStreak ?? 1),
+    payout,
     penalty: ContractSystem.scaleAmount(t.penalty, t.penaltyEscalatePermille ?? 1000, streak, t.maxStreak ?? 1),
   };
 }
@@ -2297,6 +2974,87 @@ export const CosmeticsIapSystem = {
       title: "Captain's crest",
       description: "A harbor crest plaque. Visual only — never changes rates, wages, or sale prices.",
     },
+    {
+      id: "entitlement.cosmetic.harbor_lantern",
+      sku: "fish.cosmetic.harbor_lantern",
+      webProductId: "fish.cosmetic.harbor_lantern",
+      androidProductId: "fish_cosmetic_harbor_lantern",
+      grantsCosmetic: "banner.iap_harbor_lantern",
+      title: "Harbor lantern",
+      description: "Soft pier lantern glow. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.tide_ribbon",
+      sku: "fish.cosmetic.tide_ribbon",
+      webProductId: "fish.cosmetic.tide_ribbon",
+      androidProductId: "fish_cosmetic_tide_ribbon",
+      grantsCosmetic: "banner.iap_tide_ribbon",
+      title: "Tide ribbon",
+      description: "Tide-blue ribbon streamers. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.fog_pennant",
+      sku: "fish.cosmetic.fog_pennant",
+      webProductId: "fish.cosmetic.fog_pennant",
+      androidProductId: "fish_cosmetic_fog_pennant",
+      grantsCosmetic: "banner.iap_fog_pennant",
+      title: "Fog pennant",
+      description: "Mist-grey fog pennant. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.coral_streamer",
+      sku: "fish.cosmetic.coral_streamer",
+      webProductId: "fish.cosmetic.coral_streamer",
+      androidProductId: "fish_cosmetic_coral_streamer",
+      grantsCosmetic: "banner.iap_coral_streamer",
+      title: "Coral streamer",
+      description: "Coral carnival streamers. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.storm_flag",
+      sku: "fish.cosmetic.storm_flag",
+      webProductId: "fish.cosmetic.storm_flag",
+      androidProductId: "fish_cosmetic_storm_flag",
+      grantsCosmetic: "banner.iap_storm_flag",
+      title: "Storm flag",
+      description: "Storm Quay weather flag. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.ember_pennant",
+      sku: "fish.cosmetic.ember_pennant",
+      webProductId: "fish.cosmetic.ember_pennant",
+      androidProductId: "fish_cosmetic_ember_pennant",
+      grantsCosmetic: "banner.iap_ember_pennant",
+      title: "Ember pennant",
+      description: "Ember Wharf heat pennant. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.northlight_banner",
+      sku: "fish.cosmetic.northlight_banner",
+      webProductId: "fish.cosmetic.northlight_banner",
+      androidProductId: "fish_cosmetic_northlight_banner",
+      grantsCosmetic: "banner.iap_northlight_banner",
+      title: "Northlight banner",
+      description: "Aurora-thread northlight banner. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.marina_pennant",
+      sku: "fish.cosmetic.marina_pennant",
+      webProductId: "fish.cosmetic.marina_pennant",
+      androidProductId: "fish_cosmetic_marina_pennant",
+      grantsCosmetic: "banner.iap_marina_pennant",
+      title: "Marina pennant",
+      description: "Grand Marina dress pennant. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.moonlit_bunting",
+      sku: "fish.cosmetic.moonlit_bunting",
+      webProductId: "fish.cosmetic.moonlit_bunting",
+      androidProductId: "fish_cosmetic_moonlit_bunting",
+      grantsCosmetic: "banner.iap_moonlit_bunting",
+      title: "Moonlit bunting",
+      description: "Moon Cove silver bunting. Visual only — never changes rates, wages, or sale prices.",
+    },
   ] as const,
 
   BY_SKU: new Map<string, {
@@ -2492,6 +3250,151 @@ function clearTransientPlayer(s: GameState): void {
   p.reelAttemptedThisCast = false;
   p.reelRequested = false;
 }
+
+// ---------------------------------------------------------------- workers/StaffTreesSystem.kt
+
+/** Finish 2.0 Phase 15 — staff specialization branches + automation schedules. */
+export const StaffTreesSystem = {
+  branchOf(content: ContentPack, w: WorkerState) {
+    return w.activeBranchId ? content.staffBranchesById.get(w.activeBranchId) ?? null : null;
+  },
+
+  scheduleOf(content: ContentPack, w: WorkerState) {
+    return w.scheduleId ? content.staffSchedulesById.get(w.scheduleId) ?? null : null;
+  },
+
+  roleWire(content: ContentPack, w: WorkerState): string {
+    return content.workersById.get(w.roleId)?.role ?? "";
+  },
+
+  canTrain(content: ContentPack, state: GameState, w: WorkerState, branchId: string): string | null {
+    const branch = content.staffBranchesById.get(branchId);
+    if (!branch) return "Unknown branch";
+    if (branch.role !== StaffTreesSystem.roleWire(content, w)) return "Wrong role for this branch";
+    if (w.unlockedBranchIds.includes(branch.id)) return "Already unlocked";
+    if (w.level < branch.requiresWorkerLevel) return `Needs staff level ${branch.requiresWorkerLevel}`;
+    const parent = branch.parentId;
+    if (parent !== null && !w.unlockedBranchIds.includes(parent)) return "Unlock parent branch first";
+    if (state.coins < branch.trainingCostCoins) return `Need ${branch.trainingCostCoins - state.coins} more coins`;
+    return null;
+  },
+
+  train(ctx: StepContext, workerId: string, branchId: string, requestId: string): void {
+    const s = ctx.state;
+    if (s.purchaseReceipts.has(requestId)) {
+      const prior = s.purchaseReceipts.get(requestId)!;
+      ctx.emit({
+        type: "worker_branch_trained", tick: s.tick, workerId, branchId, receipt: prior, replayed: true,
+      });
+      return;
+    }
+    const w = s.workers.find((x) => x.id === workerId);
+    if (!w) {
+      ctx.emit({
+        type: "worker_branch_train_rejected", tick: s.tick, workerId, branchId, requestId, reason: "Unknown worker",
+      });
+      return;
+    }
+    const reason = StaffTreesSystem.canTrain(ctx.content, s, w, branchId);
+    if (reason !== null) {
+      ctx.emit({
+        type: "worker_branch_train_rejected", tick: s.tick, workerId, branchId, requestId, reason,
+      });
+      return;
+    }
+    const branch = ctx.content.staffBranchesById.get(branchId)!;
+    const cost = branch.trainingCostCoins;
+    s.coins -= cost;
+    w.branchTrainingXp.set(branchId, branch.trainingXpRequired);
+    if (!w.unlockedBranchIds.includes(branchId)) w.unlockedBranchIds.push(branchId);
+    w.branchTrainingXp.delete(branchId);
+    const receipt: Receipt = { id: s.newId("train"), type: "staff_branch_train", coinDelta: -cost, tick: s.tick, reference: requestId };
+    s.purchaseReceipts.set(requestId, receipt);
+    s.record(receipt);
+    s.bumpStat(Stats.STAFF_BRANCH_TRAINING);
+    s.bumpStat(Stats.STAFF_BRANCHES_UNLOCKED);
+    ctx.emit({
+      type: "worker_branch_trained", tick: s.tick, workerId, branchId, receipt, replayed: false,
+    });
+    ctx.emit({ type: "worker_branch_unlocked", tick: s.tick, workerId, branchId });
+    if (w.activeBranchId === null) {
+      w.activeBranchId = branchId;
+      ctx.emit({ type: "worker_branch_selected", tick: s.tick, workerId, branchId });
+    }
+  },
+
+  selectBranch(ctx: StepContext, workerId: string, branchId: string | null): void {
+    const s = ctx.state;
+    const w = s.workers.find((x) => x.id === workerId);
+    if (!w) return;
+    if (branchId === null) {
+      w.activeBranchId = null;
+      ctx.emit({ type: "worker_branch_selected", tick: s.tick, workerId, branchId: null });
+      return;
+    }
+    if (!w.unlockedBranchIds.includes(branchId)) return;
+    const branch = ctx.content.staffBranchesById.get(branchId);
+    if (!branch || branch.role !== StaffTreesSystem.roleWire(ctx.content, w)) return;
+    w.activeBranchId = branchId;
+    ctx.emit({ type: "worker_branch_selected", tick: s.tick, workerId, branchId });
+  },
+
+  setSchedule(ctx: StepContext, workerId: string, scheduleId: string | null): void {
+    const s = ctx.state;
+    const w = s.workers.find((x) => x.id === workerId);
+    if (!w) return;
+    if (scheduleId === null) {
+      w.scheduleId = null;
+      ctx.emit({ type: "worker_schedule_changed", tick: s.tick, workerId, scheduleId: null });
+      return;
+    }
+    if (!ctx.content.staffSchedulesById.has(scheduleId)) return;
+    w.scheduleId = scheduleId;
+    ctx.emit({ type: "worker_schedule_changed", tick: s.tick, workerId, scheduleId });
+    StaffTreesSystem.applySchedule(ctx, w);
+  },
+
+  applySchedule(ctx: StepContext, w: WorkerState): void {
+    const schedule = StaffTreesSystem.scheduleOf(ctx.content, w);
+    if (!schedule || !schedule.autoOnShift) return;
+    const part = FishingSystem.dayPartAt(ctx.content, ctx.state.tick);
+    const wantOn = schedule.dayParts.includes(part.id);
+    if (w.onShift !== wantOn) WorkerSystem.setShift(ctx, w.id, wantOn);
+  },
+
+  step(ctx: StepContext): void {
+    for (const w of ctx.state.workers) StaffTreesSystem.applySchedule(ctx, w);
+  },
+
+  catchSpeedMultPermille(content: ContentPack, w: WorkerState): number {
+    return StaffTreesSystem.branchOf(content, w)?.catchSpeedMultPermille ?? 1000;
+  },
+
+  moveSpeedMultPermille(content: ContentPack, w: WorkerState): number {
+    return StaffTreesSystem.branchOf(content, w)?.moveSpeedMultPermille ?? 1000;
+  },
+
+  carryBonus(content: ContentPack, w: WorkerState): number {
+    return StaffTreesSystem.branchOf(content, w)?.carryBonus ?? 0;
+  },
+
+  transferIntervalMultPermille(content: ContentPack, w: WorkerState): number {
+    return StaffTreesSystem.branchOf(content, w)?.transferIntervalMultPermille ?? 1000;
+  },
+
+  wageMultPermille(content: ContentPack, w: WorkerState): number {
+    let mult = StaffTreesSystem.branchOf(content, w)?.wageMultPermille ?? 1000;
+    const schedule = StaffTreesSystem.scheduleOf(content, w);
+    if (schedule !== null) {
+      mult = Math.trunc((mult * schedule.wageMultPermille) / 1000);
+    }
+    return Math.max(1, mult);
+  },
+
+  trainingProgress(w: WorkerState, branchId: string): number {
+    return w.branchTrainingXp.get(branchId) ?? 0;
+  },
+};
 
 // ---------------------------------------------------------------- workers/Workers.kt
 
@@ -2768,6 +3671,7 @@ export const WorkerSystem = {
     speed = Math.trunc((speed * gearMove) / 1000);
     speed = Math.trunc((speed * levelMult) / 1000);
     speed = Math.trunc((speed * traitMove) / 1000);
+    speed = Math.trunc((speed * StaffTreesSystem.moveSpeedMultPermille(content, w)) / 1000);
     return Math.max(1, speed);
   },
 
@@ -2779,6 +3683,7 @@ export const WorkerSystem = {
     let speed = Math.max(def.catchSpeedPermille, gearCatch);
     speed = Math.trunc((speed * levelMult) / 1000);
     speed = Math.trunc((speed * traitCatch) / 1000);
+    speed = Math.trunc((speed * StaffTreesSystem.catchSpeedMultPermille(content, w)) / 1000);
     return Math.max(1, speed);
   },
 
@@ -2789,7 +3694,8 @@ export const WorkerSystem = {
       : Math.trunc(Math.max(w.level - 1, 0) / prog.carryBonusEveryLevels);
     const [, , traitCarry] = traitBonus(content, w);
     const [, , gearCarry] = WorkerSystem.gearBonuses(content, w);
-    return Math.max(def.carryCapacityUnits, gearCarry) + levelBonus + traitCarry;
+    return Math.max(def.carryCapacityUnits, gearCarry) + levelBonus + traitCarry
+      + StaffTreesSystem.carryBonus(content, w);
   },
 
   transferInterval(content: ContentPack, def: WorkerDef, w: WorkerState): number {
@@ -2827,6 +3733,7 @@ function transferIntervalMult(content: ContentPack, w: WorkerState): number {
     if (!t) continue;
     mult = Math.trunc((mult * (t.transferIntervalMultPermille ?? 1000)) / 1000);
   }
+  mult = Math.trunc((mult * StaffTreesSystem.transferIntervalMultPermille(content, w)) / 1000);
   return Math.max(1, mult);
 }
 
@@ -2931,12 +3838,14 @@ function accrueWages(ctx: StepContext): void {
   s.workerWageAccrualTicks = 0;
   const n = onShift.length;
   const free = WorkerSystem.freeOnShiftSlots(ctx.content, s);
-  const standardN = Math.min(n, free);
-  const overtimeN = Math.max(0, n - free);
-  const standard = rate * standardN;
-  const overtime = Math.trunc(
-    (rate * overtimeN * ctx.content.staffProgression.shifts.overtimeWagePermille) / 1000,
-  );
+  const otMult = ctx.content.staffProgression.shifts.overtimeWagePermille;
+  let standard = 0;
+  let overtime = 0;
+  onShift.forEach((w, index) => {
+    const base = Math.trunc((rate * StaffTreesSystem.wageMultPermille(ctx.content, w)) / 1000);
+    if (index < free) standard += base;
+    else overtime += Math.trunc((base * otMult) / 1000);
+  });
   const cost = standard + overtime;
   const paid = Math.min(cost, s.coins);
   if (paid <= 0) return;

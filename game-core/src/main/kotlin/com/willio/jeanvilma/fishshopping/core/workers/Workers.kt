@@ -347,6 +347,7 @@ object WorkerSystem {
             val t = content.workerTraitsById[tid] ?: continue
             mult = (mult * t.transferIntervalMultPermille.toLong()) / 1000L
         }
+        mult = (mult * StaffTreesSystem.transferIntervalMultPermille(content, w).toLong()) / 1000L
         return mult.toInt().coerceAtLeast(1)
     }
 
@@ -470,6 +471,7 @@ object WorkerSystem {
         speed = (speed * gearMove.toLong()) / 1000L
         speed = (speed * levelMult) / 1000L
         speed = (speed * traitMove.toLong()) / 1000L
+        speed = (speed * StaffTreesSystem.moveSpeedMultPermille(content, w).toLong()) / 1000L
         return max(1, speed.toInt())
     }
 
@@ -490,6 +492,7 @@ object WorkerSystem {
         var speed = max(def.catchSpeedPermille, gearCatch).toLong()
         speed = (speed * levelMult) / 1000L
         speed = (speed * traitCatch.toLong()) / 1000L
+        speed = (speed * StaffTreesSystem.catchSpeedMultPermille(content, w).toLong()) / 1000L
         return max(1, speed.toInt())
     }
 
@@ -507,7 +510,8 @@ object WorkerSystem {
         else (w.level - 1).coerceAtLeast(0) / prog.carryBonusEveryLevels
         val (_, _, traitCarry) = traitBonus(content, w)
         val (_, _, gearCarry) = gearBonuses(content, w)
-        return max(def.carryCapacityUnits, gearCarry) + levelBonus + traitCarry
+        return max(def.carryCapacityUnits, gearCarry) + levelBonus + traitCarry +
+            StaffTreesSystem.carryBonus(content, w)
     }
 
     fun carryCapacity(s: GameState, def: WorkerDef): Int =
@@ -1041,10 +1045,14 @@ object WorkerSystem {
         s.workerWageAccrualTicks = 0
         val n = onShift.size
         val free = freeOnShiftSlots(ctx.content, s)
-        val standardN = min(n, free)
-        val overtimeN = max(0, n - free)
-        val standard = rate.toLong() * standardN
-        val overtime = (rate.toLong() * overtimeN * ctx.content.staffProgression.shifts.overtimeWagePermille) / 1000L
+        val otMult = ctx.content.staffProgression.shifts.overtimeWagePermille
+        var standard = 0L
+        var overtime = 0L
+        onShift.forEachIndexed { index, w ->
+            val base = (rate.toLong() * StaffTreesSystem.wageMultPermille(ctx.content, w)) / 1000L
+            if (index < free) standard += base
+            else overtime += (base * otMult) / 1000L
+        }
         val cost = standard + overtime
         val paid = min(cost, s.coins)
         if (paid <= 0L) return

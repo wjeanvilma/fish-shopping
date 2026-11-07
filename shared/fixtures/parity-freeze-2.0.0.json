@@ -1,0 +1,31 @@
+{
+  "schema": "fish.fixtures.parity_freeze_2.v1",
+  "freeze2Marker": "authored-finish-2.0-phase-30",
+  "phase": 30,
+  "plan": "30_finish_2.0",
+  "expect": {
+    "contentVersion": "2.0.0",
+    "schemaVersion": 23,
+    "versionName": "2.0.0",
+    "versionCode": 3,
+    "releaseTag": "v2.0.0",
+    "contentFloors": {
+      "harbors": 8,
+      "species": 50,
+      "machines": 8,
+      "quests": 20,
+      "seasonalEvents": 8,
+      "baits": 8,
+      "cosmetics": 12
+    },
+    "locEnforceMode": "freeze_anti_regression",
+    "completeTagArchived": "v1.0-complete",
+    "gates": [
+      "pin_at_2_0_0",
+      "content_floors_met",
+      "loc_freeze_enforced",
+      "dod_finish2_ready",
+      "tag_manual_only"
+    ]
+  }
+}

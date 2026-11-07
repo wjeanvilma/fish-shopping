@@ -156,6 +156,13 @@ object Coaching {
         ) {
             return "Harbor reviews are glowing — keep preferred stock filled"
         }
+
+        // Mastery tips coach growth; once the player is at max global mastery they stay quiet.
+        val masteryTip = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.coachingTip(content, state)
+        val globalMastery = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.globalLevel(content, state)
+        if (masteryTip != null && globalMastery < content.fishingMastery.maxLevel) {
+            return masteryTip
+        }
         return null
     }
 }

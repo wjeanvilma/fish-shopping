@@ -21,7 +21,7 @@ describe("Support runbook (post-1.0 Phase 28)", () => {
   it("locks triage, restore, refund, and known-issue contracts", () => {
     expect(SUPPORT_RUNBOOK_PHASE).toBe(28);
     expect(SUPPORT_RUNBOOK_SCHEMA).toBe("fish.ops.support_runbook.v1");
-    expect(SUPPORT_RUNBOOK.schemaVersion).toBe(20);
+    expect(SUPPORT_RUNBOOK.schemaVersion).toBe(21);
     expect(SUPPORT_EMAIL).toContain("@");
     expect(SUPPORT_MAILTO.startsWith("mailto:")).toBe(true);
     expect(SUPPORT_ISSUES_URL).toContain("github.com");

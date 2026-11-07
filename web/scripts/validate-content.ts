@@ -1,5 +1,6 @@
 /**
- * Phase 28 content tooling — schema (Ajv) + cross-ref validate shared content pack.
+ * Post-1.0 Phase 28 content tooling — schema (Ajv) + cross-ref validate shared content pack.
+ * Finish 2.0 Phase 27 adds scaffolds via `npm run content:scaffold` / contentcli:validate.
  *
  * Usage:
  *   npm run content:validate

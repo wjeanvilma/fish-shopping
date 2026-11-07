@@ -1,0 +1,52 @@
+{
+  "phase": 26,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.firestore_rules_snippet.v1",
+  "description": "Finish 2.0 Phase 26 — Firestore rules as reviewed snippet file only + cloud QA harness for conflict/offline queue. Distinct from post-1.0 Phase 25 cloud cutover catalog and post-1.0 Phase 26 analytics. No deployable firestore.rules in repo; deploy stays manual.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "firestoreSnippetMarker": "authored-finish-2.0-phase-26",
+  "productionPathCatalog": "shared/cloud/production-path.json",
+  "snippetPath": "shared/cloud/snippets/firestore-harbor-save.rules",
+  "snippetMode": "snippet_only_not_deployed",
+  "forbiddenDeployablePaths": [
+    "firestore.rules",
+    "firebase/firestore.rules"
+  ],
+  "documentPath": "users/{uid}/saves/harbor",
+  "documentFields": ["snapshot", "savedAtEpochMs", "checksum"],
+  "conflictUi": "phase11_dual_snapshot_choice",
+  "offlineQueuePolicy": "latest_snapshot_wins",
+  "qaScenarioMin": 4,
+  "parityFixture": "shared/fixtures/parity-firestore-rules-snippet.json",
+  "validateScript": "npm run firestoreqa:validate",
+  "manualCommands": [
+    "Paste shared/cloud/snippets/firestore-harbor-save.rules into Firebase Console → Firestore → Rules (operator-owned; do not auto-deploy from CI)",
+    "Optional emulator: firebase emulators:start --only auth,firestore (requires local firebase.json outside this snippet-only ship)",
+    "Enable cloud sync; grant guest on two browsers/devices; diverge saves → confirm Phase 11 conflict UI",
+    "Airplane mode → checkpoint → restore network → confirm offline queue flush (latest snapshot wins)",
+    "cd web && npm run firestoreqa:validate"
+  ],
+  "checklist": [
+    "Snippet file exists under shared/cloud/snippets/ (not repo-root firestore.rules)",
+    "Snippet matches users/{uid}/saves/harbor + documentFields from production-path",
+    "production-path.firestoreRules points at snippet; mode snippet_only_not_deployed",
+    "No deployable firestore.rules / firebase/firestore.rules in repo",
+    "Cloud QA harness covers conflict offer + offline enqueue/flush (≥4 scenarios)",
+    "post-1.0 cloud:validate still green",
+    "parity-firestore-rules-snippet + firestoreqa:validate green",
+    "CI runs firestoreqa:validate",
+    "schema stays 23 (snippet/QA tooling; no save bump)"
+  ],
+  "preflightGates": [
+    "shared/ship/firestore-rules-snippet.json",
+    "shared/fixtures/parity-firestore-rules-snippet.json",
+    "shared/cloud/snippets/firestore-harbor-save.rules",
+    "shared/cloud/production-path.json",
+    "web/src/ship/firestoreRulesSnippet.ts",
+    "web/src/cloud/cloudQaHarness.ts",
+    "web/scripts/validate-firestore-rules-snippet.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/FirestoreRulesSnippet.kt",
+    "game-core/src/test/kotlin/com/willio/jeanvilma/fishshopping/core/FirestoreRulesSnippetCatalogTest.kt"
+  ]
+}

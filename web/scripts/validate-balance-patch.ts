@@ -43,18 +43,19 @@ function validate(): string[] {
   if (catalog.constraints?.keepSchemaVersion !== 20) errors.push("keepSchemaVersion must be 20");
   if (catalog.constraints?.patchBumpOnly !== true) errors.push("patchBumpOnly required");
 
-  if (pack.contentVersion !== "1.0.1") errors.push("content-pack must be 1.0.1");
-  if (pin.contentVersion !== "1.0.1") errors.push("RELEASE_PIN contentVersion must be 1.0.1");
-  if (pin.versionName !== "1.0.1") errors.push("RELEASE_PIN versionName must be 1.0.1");
-  if (pin.versionCode !== 2) errors.push("RELEASE_PIN versionCode must be 2");
-  if (pin.schemaVersion !== 20) errors.push("RELEASE_PIN schemaVersion must stay 20");
-  if (pin.releaseTag !== "v1.0.1") errors.push("RELEASE_PIN releaseTag must be v1.0.1");
+  // Balance patch historically landed 1.0.0→1.0.1; Finish 2.0 Phase 30 freezes pack/pin at 2.0.0.
+  if (pack.contentVersion !== "2.0.0") errors.push("content-pack must be 2.0.0 (Finish 2.0 freeze)");
+  if (pin.contentVersion !== "2.0.0") errors.push("RELEASE_PIN contentVersion must be 2.0.0");
+  if (pin.versionName !== "2.0.0") errors.push("RELEASE_PIN versionName must be 2.0.0");
+  if (pin.versionCode !== 3) errors.push("RELEASE_PIN versionCode must be 3");
+  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN schemaVersion must be 23");
+  if (pin.releaseTag !== "v2.0.0") errors.push("RELEASE_PIN releaseTag must be v2.0.0");
   if (pin.balancePatch !== "shared/content/balance-patch-1.0.1.json") {
     errors.push("RELEASE_PIN.balancePatch path");
   }
-  if (dod.contentVersion !== "1.0.1") errors.push("DoD contentVersion must be 1.0.1");
-  if (dod.schemaVersion !== 20) errors.push("DoD schemaVersion must stay 20");
-  if (dod.releaseTag !== "v1.0.1") errors.push("DoD releaseTag must be v1.0.1");
+  if (dod.contentVersion !== "2.0.0") errors.push("DoD contentVersion must be 2.0.0");
+  if (dod.schemaVersion !== 23) errors.push("DoD schemaVersion must be 23");
+  if (dod.releaseTag !== "v2.0.0") errors.push("DoD releaseTag must be v2.0.0");
 
   // Phase 18 public ship cut stays frozen at 1.0.0-store.
   if (publicShip.contentVersion !== "1.0.0") errors.push("public-ship catalog stays 1.0.0");
@@ -66,8 +67,8 @@ function validate(): string[] {
   }
   if (pin.storeRelease?.versionCode !== 1) errors.push("storeRelease.versionCode stays 1");
 
-  if (listingCopy.copy?.whatsNewVersion !== "1.0.1") {
-    errors.push("listing-copy whatsNewVersion must be 1.0.1");
+  if (listingCopy.copy?.whatsNewVersion !== "2.0.0") {
+    errors.push("listing-copy whatsNewVersion must be 2.0.0");
   }
 
   const bag = byId(pack.upgrades, "upgrade.bag_capacity_2");
@@ -109,4 +110,4 @@ if (errors.length) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
-console.log("OK balance:validate — content 1.0.1 / schema 20; Phase 18 store cut frozen");
+console.log("OK balance:validate — balance patch 1.0.1 retained under content 2.0.0 freeze; Phase 18 store cut frozen");

@@ -6,7 +6,9 @@ matches the simulation's walkable areas, footprints and zones.
 Phase 14 replaces grey-box pier / machine / counter boxes with authored modules
 (shared/tools/env_modules.py → models/modules/*.glb). Phase 15 replaces grey-box
 characters with stylized player / customer / worker meshes (models/characters/*.glb)
-and adds a Worker_* pool. Presenter socket names:
+and adds a Worker_* pool. Finish 2.0 Phase 19 adds per-harbor HarborArt_* props +
+palette themes (shared/tools/harbor_themes.py) for ≥3 authored harbors.
+Presenter socket names:
 
     Player / PlayerBody / PlayerNose / PlayerRod
     Bag_<i>_fish / Bag_<i>_portion
@@ -42,10 +44,19 @@ from glb_geometry import (  # noqa: E402
     srgb_to_linear,
     unit_cube,
 )
+from harbor_themes import (  # noqa: E402
+    HARBOR_ART_BUILDERS,
+    HARBOR_ART_COLORS,
+    HARBOR_ART_MARKER,
+    THEME_PALETTE,
+    THEME_PLACEMENTS,
+    theme_for_harbor,
+)
 
 PALETTE = {
     **MODULE_COLORS,
     **CHARACTER_COLORS,
+    **HARBOR_ART_COLORS,
     "water": "#2E7FA8",
     "player_nose": "#FBF7EF",
     "vfx_burst": "#F6E27A",
@@ -69,26 +80,32 @@ VFX_BURST_SIZE = [0.28, 0.28, 0.28]
 
 def _machine_key(obstacle_id: str) -> str:
     oid = obstacle_id.lower()
-    for key in ("smoker", "grill", "chiller", "fryer", "packer", "cutter", "counter"):
+    for key in ("smoker", "grill", "chiller", "fryer", "packer", "steamer", "kiln", "cutter", "counter"):
         if key in oid:
             return key
     return "counter"
 
 
 def build(content, harbor):
+    theme = theme_for_harbor(harbor["id"])
+    palette = {**PALETTE, **(THEME_PALETTE.get(theme, {}) if theme else {})}
+
     cube_pos, cube_nrm, cube_idx = unit_cube()
     fish_pos, fish_nrm, fish_idx, fish_bounds = fish_silhouette("default")
     portion_pos, portion_nrm, portion_idx, portion_bounds = product_silhouette("portion")
 
     geom_index = {}  # mesh_key -> (pos_acc, nrm_acc, idx_acc)
-    # Accessors: cube=0..2, fish=3..5, portion=6..8, then env modules, then characters
+    # Accessors: cube=0..2, fish=3..5, portion=6..8, then env modules, then characters, then art
     next_acc = 9
     parts = [
         (cube_pos, cube_nrm, cube_idx, ([-.5, -.5, -.5], [.5, .5, .5])),
         (fish_pos, fish_nrm, fish_idx, fish_bounds),
         (portion_pos, portion_nrm, portion_idx, portion_bounds),
     ]
-    for name in ("pier", "ground", "zone", "counter", "cutter", "smoker", "grill", "chiller", "fryer", "packer"):
+    for name in (
+        "pier", "ground", "zone", "counter", "cutter", "smoker", "grill",
+        "chiller", "fryer", "packer", "steamer", "kiln",
+    ):
         pos, nrm, idx, bounds = MODULE_BUILDERS[name]()
         geom_index[name] = (next_acc, next_acc + 1, next_acc + 2)
         next_acc += 3
@@ -98,6 +115,13 @@ def build(content, harbor):
         geom_index[name] = (next_acc, next_acc + 1, next_acc + 2)
         next_acc += 3
         parts.append((pos, nrm, idx, bounds))
+    if theme:
+        needed = {mesh_key for mesh_key, _, _ in THEME_PLACEMENTS[theme]}
+        for name in sorted(needed):
+            pos, nrm, idx, bounds = HARBOR_ART_BUILDERS[name]()
+            geom_index[name] = (next_acc, next_acc + 1, next_acc + 2)
+            next_acc += 3
+            parts.append((pos, nrm, idx, bounds))
 
     blob, buffer_views, accessors = pack_geometry(parts)
     geom = {
@@ -111,18 +135,24 @@ def build(content, harbor):
         geom[zk] = geom["zone"]
     geom["customer"] = geom["customer_0"]
 
+    extras = {
+        "itemArt": "stylized-phase-13",
+        "envArt": "modular-phase-14",
+        "characterArt": "clips-phase-15",
+        "machineVfx": "phase-16",
+    }
+    if theme:
+        extras["envArt"] = "modular-phase-14+harbor-art-19"
+        extras["harborArt"] = HARBOR_ART_MARKER
+        extras["harborTheme"] = theme
+
     gltf = {
         "asset": {"version": "2.0", "generator": "fish-shopping generate_blockout.py"},
         "buffers": [{"byteLength": len(blob)}],
         "bufferViews": buffer_views,
         "accessors": accessors,
         "materials": [], "meshes": [], "nodes": [], "scenes": [{"name": harbor["id"], "nodes": []}], "scene": 0,
-        "extras": {
-            "itemArt": "stylized-phase-13",
-            "envArt": "modular-phase-14",
-            "characterArt": "clips-phase-15",
-            "machineVfx": "phase-16",
-        },
+        "extras": extras,
     }
     mesh_for = {}
 
@@ -145,7 +175,7 @@ def build(content, harbor):
             gltf["materials"].append({
                 "name": color_key,
                 "pbrMetallicRoughness": {
-                    "baseColorFactor": srgb_to_linear(PALETTE.get(color_key, "#888888")),
+                    "baseColorFactor": srgb_to_linear(palette.get(color_key, "#888888")),
                     "metallicFactor": 0.05 if stylized else 0.0,
                     "roughnessFactor": 0.55 if stylized else 0.85,
                 },
@@ -286,6 +316,18 @@ def build(content, harbor):
     # Phase 16: pooled world bursts (pay / celebrate / machine_done).
     for i in range(VFX_BURST_POOL):
         node(f"VfxBurst_{i}", [0, -10, 0], VFX_BURST_SIZE, "vfx_burst")
+
+    # Finish 2.0 Phase 19: authored low-poly harbor props (theme-specific).
+    if theme:
+        for i, (mesh_key, translation, scale) in enumerate(THEME_PLACEMENTS[theme]):
+            s = float(scale)
+            short = mesh_key.replace("art_", "")
+            node(
+                f"HarborArt_{short}_{i}",
+                list(translation),
+                [s, s, s],
+                mesh_key,
+            )
 
     # Fix buffer length now that materials/meshes are known (blob already final).
     gltf["buffers"][0]["byteLength"] = len(blob)

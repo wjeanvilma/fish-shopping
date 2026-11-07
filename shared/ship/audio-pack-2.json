@@ -1,0 +1,63 @@
+{
+  "phase": 21,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.audio_pack_2.v1",
+  "description": "Finish 2.0 Phase 21 — SFX/music pack 2: more stingers + festival/storm beds; ducking policy frozen from music-pack.json. Distinct from post-1.0 Phase 19/20 sfx/music catalogs and post-1.0 Phase 21 vfx-juice.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "audioPackMarker": "authored-finish-2.0-phase-21",
+  "extendsCatalogs": {
+    "sfx": "shared/audio/sfx-pack.json",
+    "music": "shared/audio/music-pack.json"
+  },
+  "newStingerMin": 7,
+  "newBedMin": 2,
+  "duckingPolicyFrozen": true,
+  "frozenDucking": {
+    "sfxDuckFactor": 0.35,
+    "sfxDuckRecoveryMs": 280,
+    "focusLossSilence": true,
+    "focusTransientCanDuckFactor": 0.25,
+    "webHiddenSuspendsContext": true,
+    "respectMute": true,
+    "respectMusicVolume": true
+  },
+  "newStingers": [
+    "achievement",
+    "festival",
+    "contract_done",
+    "contract_fail",
+    "goal_claim",
+    "mastery_up",
+    "quest_done"
+  ],
+  "newBeds": [
+    "festival",
+    "storm"
+  ],
+  "parityFixture": "shared/fixtures/parity-audio-pack-2.json",
+  "validateScript": "npm run audiopack2:validate",
+  "generator": "shared/tools/generate_sfx_pack.py + shared/tools/generate_music_pack.py",
+  "checklist": [
+    "≥7 new SFX stingers baked + mirrored (shared/web/android)",
+    "≥2 new music beds (festival + storm) baked + mirrored",
+    "music-pack.json ducking object unchanged (frozen)",
+    "sfxFromEvent maps 2.0 systems (achievement/festival/contract/goal/mastery/quest)",
+    "bed switch priority festival > storm > shop > harbor",
+    "licenses.json records authored-audio-pack-2",
+    "parity-audio-pack-2 + audiopack2:validate green",
+    "CI runs audiopack2:validate",
+    "schema stays 23 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/audio-pack-2.json",
+    "shared/ship/schema-23.json",
+    "shared/fixtures/parity-audio-pack-2.json",
+    "web/src/ship/audioPack2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/AudioPack2.kt",
+    "web/src/audio/sfxCues.ts",
+    "web/src/audio/musicBeds.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/audio/SfxCues.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/audio/AudioBus.kt"
+  ]
+}

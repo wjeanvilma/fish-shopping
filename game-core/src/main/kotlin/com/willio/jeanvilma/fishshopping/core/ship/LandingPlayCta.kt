@@ -17,5 +17,5 @@ object LandingPlayCta {
     const val CTA_PLAY = "Play in browser"
     const val CTA_PRIVACY = "Privacy"
     const val CTA_SUPPORT = "Support"
-    const val SCHEMA_VERSION = 20
+    const val SCHEMA_VERSION = 21
 }

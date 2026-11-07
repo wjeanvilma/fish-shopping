@@ -15,7 +15,7 @@
   "androidRawPrefix": "music_",
   "loopDurationSec": 4,
   "maxBytesPerBed": 190000,
-  "maxTotalBytes": 400000,
+  "maxTotalBytes": 720000,
   "masterMusicScale": 0.42,
   "beds": [
     {
@@ -31,10 +31,28 @@
       "androidRaw": "music_shop",
       "role": "shop",
       "design": "warm major pad with light pulse for counter / station"
+    },
+    {
+      "id": "festival",
+      "file": "festival.wav",
+      "androidRaw": "music_festival",
+      "role": "festival",
+      "design": "bright pentatonic sparkle pad for seasonal weekends",
+      "pack2": true
+    },
+    {
+      "id": "storm",
+      "file": "storm.wav",
+      "androidRaw": "music_storm",
+      "role": "storm",
+      "design": "low rumble + sparse rain ticks for storm weather",
+      "pack2": true
     }
   ],
   "defaultBed": "harbor",
   "bedSwitch": {
+    "festivalWhen": ["seasonal_active"],
+    "stormWhen": ["weather_storm"],
     "shopWhen": ["station_open"],
     "harborOtherwise": true
   },

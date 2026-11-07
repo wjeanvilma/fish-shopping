@@ -555,7 +555,7 @@ class FlyingTransfers(poolSize: Int = FLYING_TRANSFER_POOL) {
     }
 }
 
-/** Phase 16/21 — pooled world bursts (catch / pay / celebrate / machine_done). */
+/** Phase 16/21 — pooled world bursts; Finish 2.0 Phase 22 adds achievement/festival/contract_done/goal_claim. */
 const val VFX_BURST_POOL = 8
 
 fun worldBurstPoolForQuality(quality: PresenterQuality): Int = when (quality) {
@@ -564,7 +564,10 @@ fun worldBurstPoolForQuality(quality: PresenterQuality): Int = when (quality) {
     PresenterQuality.HIGH -> VFX_BURST_POOL
 }
 
-enum class WorldBurstKind { CATCH, PAY, CELEBRATE, MACHINE_DONE }
+enum class WorldBurstKind {
+    CATCH, PAY, CELEBRATE, MACHINE_DONE,
+    ACHIEVEMENT, FESTIVAL, CONTRACT_DONE, GOAL_CLAIM,
+}
 
 data class WorldBurstCue(
     val xMm: Int,
@@ -591,10 +594,14 @@ private fun burstDurationS(kind: WorldBurstKind): Double = when (kind) {
     WorldBurstKind.PAY -> 0.45
     WorldBurstKind.CELEBRATE -> 0.7
     WorldBurstKind.MACHINE_DONE -> 0.4
+    WorldBurstKind.ACHIEVEMENT -> 0.55
+    WorldBurstKind.FESTIVAL -> 0.6
+    WorldBurstKind.CONTRACT_DONE -> 0.4
+    WorldBurstKind.GOAL_CLAIM -> 0.35
 }
 
-/** Phase 21 — screen-shake kinds for catch / cut / sale / celebrate. */
-enum class ShakeKind { CATCH, CUT, SALE, CELEBRATE }
+/** Phase 21 — screen-shake kinds; Finish 2.0 Phase 22 adds achievement/festival. */
+enum class ShakeKind { CATCH, CUT, SALE, CELEBRATE, ACHIEVEMENT, FESTIVAL }
 
 const val SHAKE_DURATION_S = 0.18
 const val MAX_SHAKE_AMPLITUDE_M = 0.12
@@ -604,6 +611,8 @@ fun shakeAmplitudeM(kind: ShakeKind): Double = when (kind) {
     ShakeKind.CUT -> 0.03
     ShakeKind.SALE -> 0.05
     ShakeKind.CELEBRATE -> 0.08
+    ShakeKind.ACHIEVEMENT -> 0.06
+    ShakeKind.FESTIVAL -> 0.05
 }
 
 fun shakeScaleForQuality(quality: PresenterQuality): Double = when (quality) {
@@ -706,6 +715,22 @@ fun resolveMachineDoneBurst(v: SimView, stationId: String): WorldBurstCue? {
 fun resolveCelebrateBurst(v: SimView): WorldBurstCue =
     WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.CELEBRATE)
 
+/** Finish 2.0 Phase 22 — achievement sparkle at the player. */
+fun resolveAchievementBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.ACHIEVEMENT)
+
+/** Finish 2.0 Phase 22 — festival cue at the player (seasonal start). */
+fun resolveFestivalBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.FESTIVAL)
+
+/** Finish 2.0 Phase 22 — contract complete at the player. */
+fun resolveContractDoneBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.CONTRACT_DONE)
+
+/** Finish 2.0 Phase 22 — daily goal claim at the player. */
+fun resolveGoalClaimBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.GOAL_CLAIM)
+
 /**
  * Ephemeral world bursts. Quality-budgeted; never mutates sim.
  */
@@ -752,14 +777,18 @@ class WorldBursts(poolSize: Int = VFX_BURST_POOL) {
             val t = min(1.0, s.age / s.duration)
             val rise = t * (2.0 - t)
             val kindScale = when (s.kind) {
-                WorldBurstKind.CELEBRATE -> 1.4
+                WorldBurstKind.CELEBRATE,
+                WorldBurstKind.ACHIEVEMENT,
+                WorldBurstKind.FESTIVAL -> 1.4
                 WorldBurstKind.CATCH -> 0.85
                 else -> 1.0
             }
             val scale = kindScale * (0.35 + 1.1 * rise)
             val opacity = 1.0 - t * t
             val yRise = when (s.kind) {
-                WorldBurstKind.CELEBRATE -> 1.1
+                WorldBurstKind.CELEBRATE,
+                WorldBurstKind.ACHIEVEMENT,
+                WorldBurstKind.FESTIVAL -> 1.1
                 WorldBurstKind.CATCH -> 0.55
                 else -> 0.7
             }

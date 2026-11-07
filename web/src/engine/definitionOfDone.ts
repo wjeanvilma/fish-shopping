@@ -10,6 +10,24 @@ export interface DodPhaseGate {
   validate: string | null;
 }
 
+export interface Finish2FreezeCloseout {
+  phase: number;
+  plan: string;
+  status: string;
+  statusValues: string[];
+  releaseTag: string;
+  contentVersion: string;
+  schemaVersion: number;
+  versionName: string;
+  versionCode: number;
+  catalog: string;
+  validateScript: string;
+  locEnforceMode: string;
+  completeTagArchived: string;
+  checklist: string[];
+  manualCommands: string[];
+}
+
 export interface DefinitionOfDoneCatalog {
   phase: number;
   schema: string;
@@ -17,7 +35,14 @@ export interface DefinitionOfDoneCatalog {
   completeTag: string;
   contentVersion: string;
   schemaVersion: number;
-  quotas: { harbors: number; speciesMin: number; machineClasses: number };
+  quotas: {
+    harbors: number;
+    speciesMin: number;
+    machineClasses: number;
+    quests?: number;
+    cosmetics?: number;
+    baits?: number;
+  };
   checks: string[];
   screensPresent: string[];
   closeout: {
@@ -34,6 +59,7 @@ export interface DefinitionOfDoneCatalog {
     evidence: Record<string, string>;
     manualCommands: string[];
   };
+  finish2Freeze?: Finish2FreezeCloseout;
 }
 
 export const DEFINITION_OF_DONE = dodJson as unknown as DefinitionOfDoneCatalog;
@@ -62,9 +88,18 @@ export function dodRequiredChecks(): string[] {
     "legal_urls_pages_ready",
     "closed_test_signoff_path",
     "hotfix_lane_ready",
+    "finish2_freeze_2_0_0",
+    "content_floors_2_0",
+    "loc_freeze_anti_regression",
   ];
 }
 
 export function isCloseoutReady(status: string = DOD_CLOSEOUT_STATUS): boolean {
   return status === "ready_for_complete_tag" || status === "tag_cut" || status === "archived";
+}
+
+export function isFinish2FreezeReady(
+  status: string = DEFINITION_OF_DONE.finish2Freeze?.status ?? "",
+): boolean {
+  return status === "ready_for_release_tag" || status === "tag_cut" || status === "archived";
 }

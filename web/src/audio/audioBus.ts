@@ -5,6 +5,7 @@
  */
 import {
   duckedMusicGain,
+  MUSIC_BED_IDS,
   musicBedForPanels,
   musicPack,
   musicPublicPath,
@@ -119,8 +120,12 @@ export class AudioBus {
   }
 
   /** Host helper: pick bed from station panel state. */
-  syncMusicBedFromPanels(stationOpen: boolean): void {
-    this.setMusicBed(musicBedForPanels(stationOpen));
+  syncMusicBedFromPanels(
+    stationOpen: boolean,
+    festivalActive = false,
+    stormActive = false,
+  ): void {
+    this.setMusicBed(musicBedForPanels(stationOpen, festivalActive, stormActive));
   }
 
   get musicBed(): MusicBedId {
@@ -256,7 +261,7 @@ export class AudioBus {
     }
     const ctx = this.ensure();
     this.musicLoadPromise = Promise.all(
-      (["harbor", "shop"] as MusicBedId[]).map(async (bed) => {
+      (MUSIC_BED_IDS as readonly MusicBedId[]).map(async (bed) => {
         if (this.musicBuffers.has(bed)) return;
         const res = await fetch(musicPublicPath(bed));
         if (!res.ok) throw new Error(`music fetch failed ${bed}: ${res.status}`);

@@ -1,7 +1,7 @@
 {
   "phase": 18,
   "schema": "fish.ship.public_ship.v1",
-  "description": "Post-1.0 Phase 18 — public Play production track + web 1.0 release readiness. Promote the signed closed-test AAB to production, cut tag v1.0.0-store, pin store build hashes in RELEASE_PIN. Deploy/tag are manual (no auto-push).",
+  "description": "Post-1.0 Phase 18 \u2014 public Play production track + web 1.0 release readiness. Promote the signed closed-test AAB to production, cut tag v1.0.0-store, pin store build hashes in RELEASE_PIN. Deploy/tag are manual (no auto-push).",
   "releaseTag": "v1.0.0-store",
   "releasePin": "shared/fixtures/RELEASE_PIN.json",
   "packageName": "com.willio.jeanvilma.fishshopping",
@@ -23,14 +23,14 @@
       "ciArtifactName": "android-release-aab",
       "ciJob": "android-release"
     },
-    "consolePath": "Play Console → Fish Shopping → Production → Create new release (or Promote release from closed)",
+    "consolePath": "Play Console \u2192 Fish Shopping \u2192 Production \u2192 Create new release (or Promote release from closed)",
     "requireSignedUploadKey": true,
     "requireMappingUpload": true,
     "stagedRollout": {
       "initialPercent": 20,
       "hotfixLanePhase": 29,
       "hotfixLaneCatalog": "shared/ship/hotfix-lane.json",
-      "note": "Start production at 20%; Phase 29 hotfix lane owns 10→50→100% staged-rollout policy."
+      "note": "Start production at 20%; Phase 29 hotfix lane owns 10\u219250\u2192100% staged-rollout policy."
     },
     "whatsNewSource": "shared/store/listing-copy.json#copy.whatsNew"
   },
@@ -110,7 +110,7 @@
       "Closed testing (Phase 17) vitals triaged; no open blockers",
       "CI android-release produced AAB + mapping for pin versionName/versionCode",
       "npm run public-ship:hash refreshed RELEASE_PIN storeRelease.hashes.inputs",
-      "Promote same AAB to Play production track (start ≤20% staged rollout)",
+      "Promote same AAB to Play production track (start \u226420% staged rollout)",
       "CI web-release archived Vite dist (or local npm run build)",
       "Legal/landing Pages still 200 on canonicalHost",
       "Cut annotated git tag v1.0.0-store when production + web artifacts are accepted",
@@ -123,7 +123,7 @@
     "gh run download <run_id> -n android-release-aab",
     "gh run download <run_id> -n web-release-dist",
     "npm run public-ship:hash:artifacts",
-    "Play Console → Production → upload/promote app-release.aab + mapping (≤20% rollout)",
+    "Play Console \u2192 Production \u2192 upload/promote app-release.aab + mapping (\u226420% rollout)",
     "git tag -a v1.0.0-store -m \"Fish Shopping 1.0 public store + web\""
   ]
 }

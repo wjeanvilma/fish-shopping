@@ -1,0 +1,67 @@
+{
+  "phase": 8,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.harbors_6_8.v1",
+  "description": "Finish 2.0 Phase 8 — author harbors 6–8 (Coral Lagoon, Storm Quay, Ember Wharf) with layouts, specializations, prestige/quest circuit, trophy galleries, and regenerated blockouts.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 21,
+  "harborCount": 8,
+  "newHarbors": [
+    {
+      "id": "harbor.coral_lagoon",
+      "name": "Coral Lagoon",
+      "requires": ["prestige.five_harbors"],
+      "specialization": "spec.coral_reef",
+      "blockout": "shared/assets/models/coral_lagoon_blockout.glb",
+      "landingQuest": "quest.coral_lagoon_landing",
+      "prestigeUnlock": "prestige.six_harbors",
+      "gallery": "gallery.coral_lagoon"
+    },
+    {
+      "id": "harbor.storm_quay",
+      "name": "Storm Quay",
+      "requires": ["prestige.six_harbors"],
+      "specialization": "spec.storm_front",
+      "blockout": "shared/assets/models/storm_quay_blockout.glb",
+      "landingQuest": "quest.storm_quay_landing",
+      "prestigeUnlock": "prestige.seven_harbors",
+      "gallery": "gallery.storm_quay"
+    },
+    {
+      "id": "harbor.ember_wharf",
+      "name": "Ember Wharf",
+      "requires": ["prestige.seven_harbors"],
+      "specialization": "spec.ember_coast",
+      "blockout": "shared/assets/models/ember_wharf_blockout.glb",
+      "landingQuest": "quest.ember_wharf_landing",
+      "prestigeUnlock": "prestige.eight_harbors",
+      "gallery": "gallery.ember_wharf"
+    }
+  ],
+  "circuitPrestige": [
+    "prestige.six_harbors",
+    "prestige.seven_harbors",
+    "prestige.eight_harbors"
+  ],
+  "travelFixture": "shared/fixtures/parity-harbors-6-8.json",
+  "blockoutTool": "shared/tools/generate_blockout.py",
+  "definitionOfDoneQuota": 8,
+  "validateScript": "npm run harbors68:validate",
+  "checklist": [
+    "content-pack has 8 harbors including coral_lagoon, storm_quay, ember_wharf",
+    "Blockouts regenerated for all 8 harbor GLBs",
+    "Prestige six/seven/eight + landing quests + galleries/curators wired",
+    "DoD quotas.harbors = 8",
+    "parity-harbors-6-8 fixture + harbors68:validate green",
+    "CI runs harbors68:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/harbors-6-8.json",
+    "shared/fixtures/parity-harbors-6-8.json",
+    "shared/assets/models/coral_lagoon_blockout.glb",
+    "shared/assets/models/storm_quay_blockout.glb",
+    "shared/assets/models/ember_wharf_blockout.glb",
+    "web/src/ship/harbors68.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Harbors68.kt"
+  ]
+}

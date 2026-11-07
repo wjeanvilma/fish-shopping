@@ -1,0 +1,30 @@
+{
+  "schema": "fish.fixture.parity_vfx_juice_2.v1",
+  "description": "Finish 2.0 Phase 22: weather/festival/achievement visual juice under budget-gate.",
+  "eventBurstMin": 4,
+  "eventShakeMin": 2,
+  "weatherAmbientMin": 5,
+  "vfxJuice2Marker": "authored-finish-2.0-phase-22",
+  "expect": {
+    "eventBursts": ["achievement", "festival", "contract_done", "goal_claim"],
+    "eventShake": ["achievement", "festival"],
+    "weatherPatterns": [
+      "weather.clear",
+      "weather.overcast",
+      "weather.rain",
+      "weather.fog",
+      "weather.gale"
+    ],
+    "maxShakeAmplitudeM": 0.12,
+    "sharesBurstPool": true,
+    "ambientConsumesBurstPool": false,
+    "simHzInvariant": 20,
+    "eventMap": {
+      "achievement_unlocked": { "burst": "achievement", "shake": "achievement" },
+      "seasonal_event_started": { "burst": "festival", "shake": "festival" },
+      "contract_completed": { "burst": "contract_done" },
+      "daily_goal_claimed": { "burst": "goal_claim" }
+    },
+    "weatherAmbientIds": ["clear", "overcast", "rain", "fog", "gale"]
+  }
+}

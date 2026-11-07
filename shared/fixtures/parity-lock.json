@@ -1,9 +1,11 @@
 {
   "phase": 27,
   "schema": "fish.fixtures.parity_lock.v1",
-  "description": "Post-1.0 Phase 27 — expanded Kotlin↔web golden parity suite for economy, unlocks, tutorial, and entitlements after polish. Schema 20 / content 1.0.1 frozen.",
-  "contentVersion": "1.0.1",
-  "schemaVersion": 20,
+  "description": "Post-1.0 Phase 27 parity lock + Finish 2.0 Phase 29 expansion. Schema 23 / content 2.0.0; legacy migrations through v22. Suites cover baseline economy/entitlements plus achievements, weather/tide, fishing mastery, and festival weekends.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 23,
+  "finish2ParityLockPhase": 29,
+  "parityLock2Catalog": "shared/ship/parity-lock-2.0.json",
   "constraints": {
     "byteIdenticalSnapshots": true,
     "sharedFixturesOnly": true,
@@ -14,7 +16,9 @@
       "id": "prng",
       "title": "Mulberry32 vectors",
       "fixture": "shared/fixtures/prng-vectors.json",
-      "covers": ["rng"]
+      "covers": [
+        "rng"
+      ]
     },
     {
       "id": "starter_line",
@@ -22,17 +26,28 @@
       "fixture": "shared/fixtures/starter-line.json",
       "snapshot": "shared/fixtures/snapshot-starter-line-t2500.json",
       "snapshotTick": 2500,
-      "covers": ["economy", "tutorial", "upgrades", "quests", "contracts", "workers"]
+      "covers": [
+        "economy",
+        "tutorial",
+        "upgrades",
+        "quests",
+        "contracts",
+        "workers"
+      ]
     },
     {
       "id": "entitlements_unlock",
       "title": "Full-harbor unlock + cosmetic (travel unlocked)",
       "fixture": "shared/fixtures/parity-entitlements.json",
-      "covers": ["entitlements", "unlocks", "cosmetics"]
+      "covers": [
+        "entitlements",
+        "unlocks",
+        "cosmetics"
+      ]
     },
     {
       "id": "legacy_migrations",
-      "title": "Legacy snapshot migrations → schema 20",
+      "title": "Legacy snapshot migrations → schema 23",
       "fixtures": [
         "shared/fixtures/legacy/snapshot-v1-starter-line-t2500.json",
         "shared/fixtures/legacy/snapshot-v12-starter-line-t2500.json",
@@ -42,15 +57,61 @@
         "shared/fixtures/legacy/snapshot-v16-starter-line-t2500.json",
         "shared/fixtures/legacy/snapshot-v17-starter-line-t2500.json",
         "shared/fixtures/legacy/snapshot-v18-starter-line-t2500.json",
-        "shared/fixtures/legacy/snapshot-v19-starter-line-t2500.json"
+        "shared/fixtures/legacy/snapshot-v19-starter-line-t2500.json",
+        "shared/fixtures/legacy/snapshot-v20-starter-line-t2500.json",
+        "shared/fixtures/legacy/snapshot-v21-starter-line-t2500.json",
+        "shared/fixtures/legacy/snapshot-v22-starter-line-t2500.json"
       ],
-      "covers": ["persistence", "migrations"]
+      "covers": [
+        "persistence",
+        "migrations"
+      ]
+    },
+    {
+      "id": "achievements",
+      "title": "Achievements first-catch + first-sale",
+      "fixture": "shared/fixtures/parity-achievements.json",
+      "covers": [
+        "achievements"
+      ],
+      "finish2": true
+    },
+    {
+      "id": "weather_tide",
+      "title": "Weather + tide determinism",
+      "fixture": "shared/fixtures/parity-weather-tide.json",
+      "covers": [
+        "weather",
+        "tide"
+      ],
+      "finish2": true
+    },
+    {
+      "id": "fishing_mastery",
+      "title": "Fishing mastery XP + techniques",
+      "fixture": "shared/fixtures/parity-fishing-mastery.json",
+      "covers": [
+        "mastery",
+        "techniques"
+      ],
+      "finish2": true
+    },
+    {
+      "id": "festival_weekends",
+      "title": "Festival weekend tips + gated content",
+      "fixture": "shared/fixtures/parity-festival-weekends.json",
+      "covers": [
+        "festivals",
+        "seasonal"
+      ],
+      "finish2": true
     }
   ],
   "expandedExpectFields": [
     "harborId",
     "fullHarborUnlock",
     "unlockedCosmetics",
+    "unlockedAchievements",
     "ownedDecor",
     "loanOwed",
     "coinGoal",
@@ -59,19 +120,31 @@
     "coins",
     "ownedUpgrades",
     "completedQuests",
-    "stats"
+    "stats",
+    "speciesMasteryXp",
+    "activeTechniqueId"
   ],
   "gates": {
     "tutorialFinishedInStarterLine": true,
     "entitlementGrantsIdempotent": true,
-    "midRunSnapshotByteIdentical": true
+    "midRunSnapshotByteIdentical": true,
+    "achievementsIdempotent": true,
+    "weatherDeterministicFromTick": true,
+    "masteryXpOnCatch": true,
+    "festivalTipsCatalogDriven": true
   },
+  "suiteFloor": 8,
+  "finish2SuiteFloor": 4,
   "recordCommand": "./gradlew :game-core:test --tests '*ParityLock*' --tests StarterLineFixtureTest -PrecordFixtures=true",
   "preflightGates": [
     "shared/fixtures/parity-lock.json",
     "shared/fixtures/starter-line.json",
     "shared/fixtures/parity-entitlements.json",
     "shared/fixtures/snapshot-starter-line-t2500.json",
+    "shared/fixtures/parity-achievements.json",
+    "shared/fixtures/parity-weather-tide.json",
+    "shared/fixtures/parity-fishing-mastery.json",
+    "shared/fixtures/parity-festival-weekends.json",
     "web/src/engine/parityLock.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/ParityLock.kt"
   ]

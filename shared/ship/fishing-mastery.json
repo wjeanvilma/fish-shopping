@@ -1,0 +1,48 @@
+{
+  "phase": 14,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.fishing_mastery.v1",
+  "description": "Finish 2.0 Phase 14 — fishing mastery: per-species XP/levels, rod techniques beyond Perfect/Good/Miss, coaching tips wired to mastery, Kotlin↔web parity.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 22,
+  "maxLevel": 5,
+  "techniqueCount": 3,
+  "coachingTipCount": 5,
+  "techniques": [
+    "technique.steady_reel",
+    "technique.power_set",
+    "technique.patient_drift"
+  ],
+  "coachingTips": [
+    "tip.mastery.first_catch",
+    "tip.mastery.level_one",
+    "tip.mastery.power_set",
+    "tip.mastery.journal",
+    "tip.mastery.patient_drift"
+  ],
+  "parityFixture": "shared/fixtures/parity-fishing-mastery.json",
+  "definitionOfDoneMasteryTechniques": 3,
+  "definitionOfDoneMasteryCoachingTips": 5,
+  "validateScript": "npm run mastery:validate",
+  "checklist": [
+    "content-pack.fishingMastery has ≥3 techniques and ≥5 coaching tips",
+    "MasterySystem grants per-species XP; levels affect catch/rare",
+    "Rod techniques selectable beyond Perfect/Good/Miss timing",
+    "SimView + Species journal show mastery; coaching tips use mastery",
+    "schema 22 speciesMasteryXp + activeTechniqueId migrate",
+    "parity-fishing-mastery fixture + mastery:validate green",
+    "CI runs mastery:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/fishing-mastery.json",
+    "shared/ship/schema-22.json",
+    "shared/fixtures/parity-fishing-mastery.json",
+    "shared/fixtures/legacy/snapshot-v21-starter-line-t2500.json",
+    "web/src/ship/fishingMastery.ts",
+    "web/src/ship/schema22.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/FishingMastery.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Schema22.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/fishing/Mastery.kt",
+    "web/src/engine/systems.ts"
+  ]
+}

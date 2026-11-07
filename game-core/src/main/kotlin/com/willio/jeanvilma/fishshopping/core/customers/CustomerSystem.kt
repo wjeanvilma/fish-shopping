@@ -291,7 +291,7 @@ object CustomerSystem {
 
     private fun spawn(ctx: StepContext) {
         val s = ctx.state
-        val interval = spawnIntervalTicks(ctx.harbor, s.tick)
+        val interval = spawnIntervalTicks(ctx.content, s, ctx.harbor)
         if (++s.customerSpawnProgress < interval) return
         s.customerSpawnProgress = 0
         val rush = activeRush(ctx.harbor, s.tick)
@@ -366,14 +366,26 @@ object CustomerSystem {
         return null
     }
 
-    fun spawnIntervalTicks(harbor: HarborDef, tick: Long): Int {
-        val rush = activeRush(harbor, tick) ?: return harbor.customerSpawnTicks
-        return max(1, ((harbor.customerSpawnTicks.toLong() * 1000L) / rush.spawnSpeedPermille).toInt())
+    fun spawnIntervalTicks(content: ContentPack, state: GameState, harbor: HarborDef): Int {
+        val rush = activeRush(harbor, state.tick)
+        var ticks = if (rush == null) {
+            harbor.customerSpawnTicks
+        } else {
+            max(1, ((harbor.customerSpawnTicks.toLong() * 1000L) / rush.spawnSpeedPermille).toInt())
+        }
+        val crowd = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem
+            .customerSpawnMultPermille(content, state)
+        ticks = max(1, ((ticks.toLong() * 1000L) / crowd.toLong()).toInt())
+        // Finish 2.0 Phase 16 — festival weekends stack on weather/tide crowd.
+        val festival = com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem
+            .customerSpawnMultPermille(content, state.tick)
+        ticks = max(1, ((ticks.toLong() * 1000L) / festival.toLong()).toInt())
+        return ticks
     }
 
     /**
      * Base spawn weight scaled by day-part (Phase 11), reputation kind bias (Phase 13),
-     * and harbor specialization kind multipliers (Phase 22).
+     * harbor specialization (Phase 22), and festival-only gating (Finish 2.0 Phase 16).
      */
     fun effectiveSpawnWeight(
         content: ContentPack,
@@ -381,6 +393,9 @@ object CustomerSystem {
         harbor: HarborDef,
         type: CustomerDef,
     ): Int {
+        val event = com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem.active(content, state.tick)
+        val req = type.requiresSeasonalEvent
+        if (req != null && event?.id != req) return 0
         val part = FishingSystem.dayPartAt(content, state.tick)
         val dayMult = type.dayPartSpawnMultPermille[part.id] ?: 1000
         val repMult = ReputationSystem.kindSpawnMultPermille(content, state, type.kind)
@@ -389,6 +404,9 @@ object CustomerSystem {
         weight = (weight * dayMult.toLong()) / 1000L
         weight = (weight * repMult.toLong()) / 1000L
         weight = (weight * harborMult.toLong()) / 1000L
+        if (event != null && type.id in event.festivalCustomerIds) {
+            weight = (weight * 2000L) / 1000L
+        }
         return max(1, weight.toInt())
     }
 
@@ -418,7 +436,10 @@ object CustomerSystem {
         return table[stars]
     }
 
-    /** Combined ephemeral demand multiplier (rush × scarcity × rating), excluding permanent prestige. */
+    /**
+     * Combined ephemeral demand multiplier (rush × scarcity × rating × festival),
+     * excluding permanent prestige.
+     */
     fun demandPriceMultPermille(
         content: ContentPack,
         state: GameState,
@@ -430,6 +451,8 @@ object CustomerSystem {
         mult = (mult * rushPriceMultPermille(harbor, state.tick).toLong()) / 1000L
         mult = (mult * scarcityPriceMultPermille(content, def, counter).toLong()) / 1000L
         mult = (mult * ratingPriceMultPermille(content, state).toLong()) / 1000L
+        mult = (mult * com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem
+            .priceMultPermille(content, state.tick).toLong()) / 1000L
         return max(1, mult.toInt())
     }
 

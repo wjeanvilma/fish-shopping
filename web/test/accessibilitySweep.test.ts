@@ -39,7 +39,7 @@ describe("accessibility sweep (post-1.0 Phase 16)", () => {
     expect(joystick).toContain(accessibilitySweep.talkBack.android.joystickContentDescription);
     const app = readFileSync(resolve(root, "web/src/ui/App.tsx"), "utf8");
     expect(app).toContain('aria-label="Harbor"');
-    expect(app).toContain("Harbor actions");
+    expect(app.includes("Harbor actions") || app.includes('t("hud.toolbar")')).toBe(true);
   });
 
   it("a11y:validate exits 0", () => {

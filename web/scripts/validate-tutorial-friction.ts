@@ -48,13 +48,13 @@ function validate(): string[] {
   if (catalog.contentVersion !== "1.0.0") {
     errors.push("tutorial-friction catalog records Phase 22 freeze at content 1.0.0");
   }
-  if (catalog.schemaVersion !== 20) errors.push("schemaVersion must stay 20");
-  // Phase 23 may bump live pack/pin; Phase 22 only froze advanceOn + copy at 1.0.0.
-  if (pack.contentVersion !== "1.0.0" && pack.contentVersion !== "1.0.1") {
+  if (catalog.schemaVersion !== 21) errors.push("schemaVersion must stay 21");
+  // Later phases may bump live pack/pin; Phase 22 only froze advanceOn + copy at 1.0.0.
+  if (!["1.0.0", "1.0.1", "2.0.0"].includes(pack.contentVersion)) {
     errors.push(`unexpected content-pack version ${pack.contentVersion}`);
   }
   const pin = readJson(resolve(root, "shared/fixtures/RELEASE_PIN.json"));
-  if (pin.schemaVersion !== 20) errors.push("RELEASE_PIN schemaVersion must stay 20");
+  if (pin.schemaVersion < 21) errors.push("RELEASE_PIN schemaVersion must be ≥21");
   if (pin.contentVersion !== pack.contentVersion) {
     errors.push(`RELEASE_PIN contentVersion ${pin.contentVersion} ≠ pack ${pack.contentVersion}`);
   }

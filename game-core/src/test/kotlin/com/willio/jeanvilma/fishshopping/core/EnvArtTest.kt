@@ -27,6 +27,7 @@ class EnvArtTest {
 
     private val harbors = listOf(
         "sunrise_pier", "moon_cove", "obsidian_jetty", "northlight_harbor", "grand_marina",
+        "coral_lagoon", "storm_quay", "ember_wharf",
     )
 
     @Test
@@ -53,8 +54,12 @@ class EnvArtTest {
             assertTrue(file.isFile)
             val gltf = readGlbJson(file)
             val extras = gltf["extras"]!!.jsonObject
-            assertEquals("modular-phase-14", extras["envArt"]!!.jsonPrimitive.contentOrNull)
+            val envArt = extras["envArt"]!!.jsonPrimitive.contentOrNull!!
+            assertTrue("$harbor envArt", envArt.startsWith("modular-phase-14"))
             assertEquals("stylized-phase-13", extras["itemArt"]!!.jsonPrimitive.contentOrNull)
+            if (harbor == "sunrise_pier" || harbor == "coral_lagoon" || harbor == "storm_quay") {
+                assertEquals("authored-phase-19", extras["harborArt"]!!.jsonPrimitive.contentOrNull)
+            }
 
             val names = gltf["nodes"]!!.jsonArray.map {
                 it.jsonObject["name"]!!.jsonPrimitive.contentOrNull!!

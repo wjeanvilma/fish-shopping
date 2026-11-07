@@ -1,0 +1,10 @@
+{
+  "id": "species.scaffold_tide_perch",
+  "name": "Tide perch",
+  "carryUnits": 1,
+  "catchTicks": 100,
+  "baseValue": 3,
+  "rarityWeight": 50,
+  "asset": "models/fish_scaffold_tide_perch.glb",
+  "spoilTier": 2
+}

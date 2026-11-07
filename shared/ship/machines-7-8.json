@@ -1,0 +1,59 @@
+{
+  "phase": 10,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.machines_7_8.v1",
+  "description": "Finish 2.0 Phase 10 — author machine classes 7–8 (Harbor steamer + Harbor kiln) with recipe graphs, unlock plots on all harbors, product SKUs, and warehouse reconcile coverage.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 21,
+  "machineCount": 8,
+  "newMachines": [
+    {
+      "id": "machine.harbor_steamer",
+      "name": "Harbor steamer",
+      "unlockUpgrade": "upgrade.harbor_steamer",
+      "recipeCount": 6,
+      "sampleRecipe": "recipe.steam_fillet",
+      "products": [
+        "product.steamed_fillet",
+        "product.steamed_portion",
+        "product.harbor_broth",
+        "product.steam_carton"
+      ]
+    },
+    {
+      "id": "machine.harbor_kiln",
+      "name": "Harbor kiln",
+      "unlockUpgrade": "upgrade.harbor_kiln",
+      "recipeCount": 5,
+      "sampleRecipe": "recipe.cure_fillet",
+      "products": [
+        "product.cured_fillet",
+        "product.dried_strip",
+        "product.kiln_carton"
+      ]
+    }
+  ],
+  "recipeFixture": "shared/fixtures/parity-machines-7-8.json",
+  "definitionOfDoneMachineClasses": 8,
+  "validateScript": "npm run machines78:validate",
+  "checklist": [
+    "content-pack has 8 machine classes including harbor_steamer and harbor_kiln",
+    "Unlock upgrades + expansion plots on all 8 harbors",
+    "Recipe graph produces new retail/wholesale SKUs",
+    "Product GLBs + harbor blockouts regenerated",
+    "DoD quotas.machineClasses = 8",
+    "parity-machines-7-8 fixture + machines78:validate green",
+    "Warehouse reconcile stays green",
+    "CI runs machines78:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/machines-7-8.json",
+    "shared/fixtures/parity-machines-7-8.json",
+    "shared/assets/models/modules/steamer.glb",
+    "shared/assets/models/modules/kiln.glb",
+    "shared/assets/models/product_steamed_fillet.glb",
+    "shared/assets/models/product_cured_fillet.glb",
+    "web/src/ship/machines78.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Machines78.kt"
+  ]
+}

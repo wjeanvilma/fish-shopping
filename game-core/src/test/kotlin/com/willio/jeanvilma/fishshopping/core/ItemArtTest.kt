@@ -40,7 +40,11 @@ class ItemArtTest {
             assertTrue("$id generator $generator", generator?.contains("generate_item_art") == true)
             val extras = gltf["extras"]!!.jsonObject
             assertEquals("$id stylized", true, extras["stylized"]!!.jsonPrimitive.booleanOrNull)
-            assertEquals("$id phase", 13, extras["phase"]!!.jsonPrimitive.intOrNull)
+            val phase = extras["phase"]!!.jsonPrimitive.intOrNull
+            assertTrue("$id phase $phase", phase == 13 || phase == 20)
+            if (phase == 20) {
+                assertEquals("$id fishArt", "authored-phase-20", extras["fishArt"]!!.jsonPrimitive.contentOrNull)
+            }
             val verts = gltf["accessors"]!!.jsonArray[0].jsonObject["count"]!!.jsonPrimitive.intOrNull!!
             assertTrue("$id still grey-box cube ($verts verts)", verts > 24)
         }
@@ -54,9 +58,13 @@ class ItemArtTest {
             "stylized-phase-13",
             gltf["extras"]!!.jsonObject["itemArt"]!!.jsonPrimitive.contentOrNull,
         )
+        assertTrue(
+            gltf["extras"]!!.jsonObject["envArt"]!!.jsonPrimitive.contentOrNull!!
+                .startsWith("modular-phase-14"),
+        )
         assertEquals(
-            "modular-phase-14",
-            gltf["extras"]!!.jsonObject["envArt"]!!.jsonPrimitive.contentOrNull,
+            "authored-phase-19",
+            gltf["extras"]!!.jsonObject["harborArt"]!!.jsonPrimitive.contentOrNull,
         )
         assertEquals(
             "clips-phase-15",

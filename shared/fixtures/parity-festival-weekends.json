@@ -1,0 +1,17 @@
+{
+  "schema": "fish.fixture.parity_festival_weekends.v1",
+  "description": "Finish 2.0 Phase 16: jump into Silver Tide weekend, assert stacked crowd/price, festival customer gate, contract, and banner view.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1,
+  "eventId": "event.silver_tide",
+  "tickInWindow": 6200,
+  "festivalCustomerId": "customer.silver_tide_buyer",
+  "gatedContractId": "contract.silver_tide_crate",
+  "expect": {
+    "customerSpawnMultPermille": 1450,
+    "priceMultPermille": 1200,
+    "speciesWeightSilverSprat": 2200,
+    "festivalCustomerWeightActive": true,
+    "festivalCustomerWeightInactive": 0
+  }
+}

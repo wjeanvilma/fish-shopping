@@ -23,7 +23,7 @@ class AnalyticsDashboardTest {
         val json = Json.parseToJsonElement(text).jsonObject
         assertEquals(26, json.getValue("phase").jsonPrimitive.content.toInt())
         assertEquals(AnalyticsDashboard.SCHEMA, json.getValue("schema").jsonPrimitive.content)
-        assertEquals(20, json.getValue("schemaVersion").jsonPrimitive.content.toInt())
+        assertEquals(21, json.getValue("schemaVersion").jsonPrimitive.content.toInt())
         assertEquals(Analytics.SCHEMA, json.getValue("analyticsSchema").jsonPrimitive.content)
         assertTrue(json.getValue("consentRequired").jsonPrimitive.content.toBoolean())
         val alerts = json.getValue("alerts").jsonArray

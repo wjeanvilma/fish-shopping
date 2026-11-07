@@ -51,7 +51,8 @@ function validate(): string[] {
       );
     }
   }
-  if (pin.schemaVersion !== 20) errors.push("RELEASE_PIN schemaVersion must stay 20");
+  // Phase 18 store cut stays at schema 20 via storeRelease; Finish 2.0 mainline is schema 21+.
+  if (pin.schemaVersion < 21) errors.push("RELEASE_PIN schemaVersion must be ≥21");
 
   if (catalog.prerequisite.closedTestingPhase !== 17) errors.push("prerequisite closed phase");
   if (catalog.prerequisite.closedTestingCatalog !== "shared/android/closed-testing.json") {
@@ -126,13 +127,20 @@ function validate(): string[] {
     if (store.versionCode !== 1) errors.push("storeRelease.versionCode must stay 1");
     if (store.hashes?.algorithm !== "sha256") errors.push("hashes.algorithm must be sha256");
 
-    const inputs = store.hashes?.inputs ?? {};
-    for (const rel of catalog.storeBuildHashes.inputFiles as string[]) {
-      const key = rel.replace(/^shared\//, "").replace(/\//g, "__").replace(/\.json$/, "");
-      const expected = sha256File(resolve(root, rel));
-      if (inputs[key] !== expected) {
-        errors.push(`stale hash for ${rel} — run npm run public-ship:hash`);
+    // storeRelease input hashes freeze the Phase 18 cut. When mainline pin has moved past
+    // that contentVersion (Finish 2.0 → 2.0.0), live files may diverge — keep the archive pin.
+    const mainlinePastStoreCut = pin.contentVersion !== store.contentVersion;
+    if (!mainlinePastStoreCut) {
+      const inputs = store.hashes?.inputs ?? {};
+      for (const rel of catalog.storeBuildHashes.inputFiles as string[]) {
+        const key = rel.replace(/^shared\//, "").replace(/\//g, "__").replace(/\.json$/, "");
+        const expected = sha256File(resolve(root, rel));
+        if (inputs[key] !== expected) {
+          errors.push(`stale hash for ${rel} — run npm run public-ship:hash`);
+        }
       }
+    } else if (!store.hashes?.inputs || Object.keys(store.hashes.inputs).length < 1) {
+      errors.push("storeRelease.hashes.inputs must remain pinned for the v1.0.0-store archive");
     }
 
     const artifacts = store.hashes?.artifacts ?? {};

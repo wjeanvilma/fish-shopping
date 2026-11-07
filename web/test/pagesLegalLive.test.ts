@@ -17,7 +17,7 @@ describe("Pages legal live (Finish 2.0 Phase 1)", () => {
     expect(PAGES_LEGAL_LIVE_PHASE).toBe(1);
     expect(PAGES_LEGAL_LIVE_SCHEMA).toBe("fish.ship.pages_legal_live.v1");
     expect(PAGES_LEGAL_LIVE.plan).toBe("30_finish_2.0");
-    expect(PAGES_LEGAL_LIVE.schemaVersion).toBe(20);
+    expect(PAGES_LEGAL_LIVE.schemaVersion).toBe(21);
     expect(PAGES_LEGAL_LIVE.pages.buildType).toBe("workflow");
     expect(PAGES_LEGAL_LIVE.pages.requirePublicRepo).toBe(true);
     expect(pagesLegalLiveUrls()).toHaveLength(3);

@@ -7,6 +7,7 @@
 import contentJson from "../../../shared/content/content-pack.json";
 import {
   type Command, type ContentPack, CosmeticsIapSystem, FixedStepClock, FullUnlockSystem, GameState, INPUT_SCALE, NewerSaveError, OfflinePolicy,
+  DailyGoalsSystem,
   type OfflineReport, ProductionSystem, Simulation, type SimView, applyOffline, buildView,
   decodeSnapshotEnvelope, encodeBalanceExport, encodeSnapshot, encodeTelemetry, loadContent,
 } from "../engine";
@@ -34,6 +35,7 @@ import { STORAGE_UNAVAILABLE_TOAST } from "./lifecyclePolicy";
 import { openSaveStore, type SaveStore } from "./saveStore";
 import {
   formatLastSavedLabel,
+  applyLocaleFromSettings,
   loadSettings,
   saveSettings,
   type GameSettings,
@@ -47,9 +49,13 @@ import {
   type LocalRecoveryView,
 } from "./snapshotChoice";
 import {
+  resolveAchievementBurst,
   resolveCatchBurst,
   resolveCelebrateBurst,
+  resolveContractDoneBurst,
+  resolveFestivalBurst,
   resolveFlyingTransfer,
+  resolveGoalClaimBurst,
   resolveMachineDoneBurst,
   resolvePayBurst,
   type FlyingTransferCue,
@@ -113,7 +119,11 @@ export class GameHost {
   private content: ContentPack | null = null;
   private sim: Simulation | null = null;
   private store: SaveStore | null = null;
-  private settings: GameSettings = loadSettings();
+  private settings: GameSettings = (() => {
+    const s = loadSettings();
+    applyLocaleFromSettings(s);
+    return s;
+  })();
   private readonly audio = new AudioBus();
   private readonly cloud = new CloudSyncCoordinator();
   private readonly billing: EntitlementBilling = createEntitlementBilling();
@@ -200,8 +210,16 @@ export class GameHost {
       sfxVolume: this.settings.sfxVolume,
       hapticsEnabled: this.settings.hapticsEnabled,
     });
-    // Phase 20: harbor vs shop bed from station panel.
-    this.audio.syncMusicBedFromPanels(this.stationOpen);
+    this.syncMusicBed();
+  }
+
+  /** Finish 2.0 Phase 21: festival/storm beds; ducking unchanged. */
+  private syncMusicBed(): void {
+    const v = this.latestView;
+    const festivalActive = !!v?.seasonalEvent;
+    const weatherId = v?.weatherId ?? "";
+    const stormActive = weatherId.includes("rain") || weatherId.includes("gale");
+    this.audio.syncMusicBedFromPanels(this.stationOpen, festivalActive, stormActive);
   }
 
   private applyAnalyticsConsent(): void {
@@ -420,6 +438,7 @@ export class GameHost {
     this.sim = new Simulation(this.content!, state);
     this.lastCheckpointEpochMs = savedAtEpochMs;
     this.applyPendingOffline(Date.now());
+    this.syncWallClock(Date.now());
     if (this.pendingOfflineReport !== null || savedAtEpochMs !== null) this.save();
     this.latestView = buildView(this.sim);
     if (this.store && !this.store.persistent) this.say(STORAGE_UNAVAILABLE_TOAST);
@@ -527,13 +546,25 @@ export class GameHost {
     if (since === null) return;
     const elapsed = nowEpochMs - since;
     this.lastCheckpointEpochMs = nowEpochMs;
-    if (elapsed <= 0) return;
-    const report = applyOffline(sim, elapsed);
-    if (OfflinePolicy.shouldShowSummary(sim.content, report)) {
-      this.pendingOfflineReport = report;
-      sharedAnalyticsBus.onOfflineClaimed(report);
-    } else {
-      this.pendingOfflineReport = null;
+    let report: OfflineReport | null = null;
+    if (elapsed > 0) {
+      report = applyOffline(sim, elapsed);
+    }
+    this.commands.push({ type: "sync_wall_clock", epochMs: nowEpochMs });
+    this.step(sim);
+    if (report) {
+      const journalLines = DailyGoalsSystem.journalLines(sim.content, sim.state, report);
+      report = {
+        ...report,
+        journalLines,
+        hadActivity: report.hadActivity || journalLines.length > 0,
+      };
+      if (OfflinePolicy.shouldShowSummary(sim.content, report)) {
+        this.pendingOfflineReport = report;
+        sharedAnalyticsBus.onOfflineClaimed(report);
+      } else {
+        this.pendingOfflineReport = null;
+      }
     }
     this.latestView = buildView(sim);
   }
@@ -559,6 +590,10 @@ export class GameHost {
     const machineDone: string[] = [];
     let celebrate = false;
     let catchCount = 0;
+    let achievementBurst = false;
+    let festivalBurst = false;
+    let contractDoneBurst = false;
+    let goalClaimBurst = false;
     const events = sim.step(batch);
     sharedAnalyticsBus.onGameEvents(events, sim.state);
     for (const e of events) {
@@ -656,6 +691,16 @@ export class GameHost {
           break;
         }
         case "hire_rejected": this.say(e.reason); transaction = true; break;
+        case "worker_branch_unlocked": {
+          const name = sim.content.staffBranchesById.get(e.branchId)?.name ?? e.branchId;
+          this.say(`Unlocked ${name}`);
+          transaction = true;
+          break;
+        }
+        case "worker_branch_train_rejected":
+          this.say(e.reason);
+          transaction = true;
+          break;
         case "wages_paid":
           this.say(`Paid ${e.coins} coins in wages`);
           transaction = true;
@@ -678,11 +723,38 @@ export class GameHost {
           transaction = true;
           break;
         }
+        case "achievement_unlocked": {
+          const name = sim.content.achievementsById.get(e.achievementId)?.name ?? e.achievementId;
+          const tip = e.coinsRewarded > 0
+            ? `Achievement: ${name} (+${e.coinsRewarded})`
+            : `Achievement: ${name}`;
+          this.say(tip);
+          achievementBurst = true;
+          transaction = true;
+          break;
+        }
+        case "seasonal_event_started":
+          this.say(`${e.name}!`);
+          festivalBurst = true;
+          transaction = true;
+          break;
+        case "weather_changed":
+          this.say(`Weather: ${e.name}`);
+          break;
+        case "tide_changed":
+          this.say(`Tide: ${e.name}`);
+          break;
+        case "mastery_level_up": {
+          const name = sim.content.speciesById.get(e.speciesId)?.name ?? e.speciesId;
+          this.say(`Mastery: ${name} Lv ${e.level}`);
+          break;
+        }
         case "contract_accepted":
           if (!e.replayed) { this.say("Contract accepted"); transaction = true; }
           break;
         case "contract_completed":
           this.say(`Contract complete +${e.payout}`);
+          contractDoneBurst = true;
           transaction = true;
           break;
         case "contract_failed":
@@ -690,6 +762,15 @@ export class GameHost {
           transaction = true;
           break;
         case "contract_rejected": this.say(e.reason); transaction = true; break;
+        case "daily_goal_claimed":
+          if (!e.replayed) {
+            const name = sim.content.dailyObjectivesById.get(e.objectiveId)?.name ?? e.objectiveId;
+            this.say(`Daily claimed: ${name} (+${e.payout})`);
+            goalClaimBurst = true;
+            transaction = true;
+          }
+          break;
+        case "daily_goal_rejected": this.say(e.reason); transaction = true; break;
         case "harbor_traveled":
           if (!e.replayed) {
             const name = sim.content.harborsById.get(e.toHarborId)?.name ?? e.toHarborId;
@@ -717,6 +798,7 @@ export class GameHost {
       }
     }
     this.latestView = buildView(sim);
+    this.syncMusicBed();
     const view = this.latestView;
     if (view) {
       for (const t of transferred) {
@@ -733,6 +815,17 @@ export class GameHost {
         this.pendingBursts.push(resolveCelebrateBurst(view));
         this.pendingShakes.push("celebrate");
       }
+      // Finish 2.0 Phase 22 — weather/festival/achievement visual juice (shared burst pool).
+      if (achievementBurst) {
+        this.pendingBursts.push(resolveAchievementBurst(view));
+        this.pendingShakes.push("achievement");
+      }
+      if (festivalBurst) {
+        this.pendingBursts.push(resolveFestivalBurst(view));
+        this.pendingShakes.push("festival");
+      }
+      if (contractDoneBurst) this.pendingBursts.push(resolveContractDoneBurst(view));
+      if (goalClaimBurst) this.pendingBursts.push(resolveGoalClaimBurst(view));
     }
     if (transaction) this.publish(true);
   }
@@ -824,7 +917,7 @@ export class GameHost {
       this.enqueueMove(0, 0);
       // Phase 19: authored UI click when a management panel opens.
       this.audio.play("ui");
-      this.audio.syncMusicBedFromPanels(this.stationOpen);
+      this.syncMusicBed();
     } else {
       switch (which) {
         case "upgrades": this.upgradesOpen = false; break;
@@ -840,14 +933,32 @@ export class GameHost {
         case "bag": this.bagOpen = false; break;
         case "station": this.stationOpen = false; break;
       }
-      this.audio.syncMusicBedFromPanels(this.stationOpen);
+      this.syncMusicBed();
     }
     this.publish(true);
   }
 
   setUpgradesOpen(open: boolean): void { this.setPanelOpen("upgrades", open); }
   setStaffOpen(open: boolean): void { this.setPanelOpen("staff", open); }
-  setQuestsOpen(open: boolean): void { this.setPanelOpen("quests", open); }
+  setQuestsOpen(open: boolean): void {
+    if (open && this.sim) this.syncWallClock(Date.now());
+    this.setPanelOpen("quests", open);
+  }
+
+  syncWallClock(epochMs: number): void {
+    if (!this.sim) return;
+    this.commands.push({ type: "sync_wall_clock", epochMs });
+    this.step(this.sim);
+    this.publish(true);
+  }
+
+  claimDailyGoal(objectiveId: string): void {
+    this.commands.push({ type: "claim_daily_goal", objectiveId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
   setContractsOpen(open: boolean): void { this.setPanelOpen("contracts", open); }
   setMapOpen(open: boolean): void { this.setPanelOpen("map", open); }
   setWarehouseOpen(open: boolean): void { this.setPanelOpen("warehouse", open); }
@@ -1233,6 +1344,30 @@ export class GameHost {
     }
   }
 
+  trainWorkerBranch(workerId: string, branchId: string): void {
+    this.commands.push({ type: "train_worker_branch", workerId, branchId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  selectWorkerBranch(workerId: string, branchId: string | null): void {
+    this.commands.push({ type: "select_worker_branch", workerId, branchId });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  setWorkerSchedule(workerId: string, scheduleId: string | null): void {
+    this.commands.push({ type: "set_worker_schedule", workerId, scheduleId });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
   assignWorkerGear(workerId: string, upgradeId: string): void {
     this.commands.push({ type: "assign_worker_gear", workerId, upgradeId });
     if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
@@ -1283,6 +1418,14 @@ export class GameHost {
 
   selectBait(baitId: string | null): void {
     this.commands.push({ type: "select_bait", baitId });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  selectTechnique(techniqueId: string | null): void {
+    this.commands.push({ type: "select_technique", techniqueId });
     if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
       this.step(this.sim);
       this.publish(true);

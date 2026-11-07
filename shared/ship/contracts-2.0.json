@@ -1,0 +1,44 @@
+{
+  "phase": 17,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.contracts_2_0.v1",
+  "description": "Finish 2.0 Phase 17 — Contracts 2.0: delivery chains, reputation-tier gates/payouts, failure-streak board pressure, richer Jobs UI; schema 23.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "deliveryChainCount": 2,
+  "reputationGatedCount": 2,
+  "chains": [
+    "chain.morning_market",
+    "chain.harbor_dinner"
+  ],
+  "chainHeads": [
+    "contract.chain_morning_catch",
+    "contract.chain_dinner_haul"
+  ],
+  "reputationGated": [
+    "contract.vip_crate",
+    "contract.harbor_elite_board"
+  ],
+  "parityFixture": "shared/fixtures/parity-contracts-2.0.json",
+  "definitionOfDoneDeliveryChains": 2,
+  "definitionOfDoneReputationGated": 2,
+  "validateScript": "npm run contracts:validate",
+  "checklist": [
+    "≥2 delivery chains with contiguous steps; only heads post to board",
+    "requiresReputationBand gates offers; reputationPayoutMultPermille tips payouts",
+    "fail streak reduces board slots / offer weights at threshold",
+    "Jobs UI shows chain step, rep gate, fail streak",
+    "schema stays 23 (chain progress via active templateId + stats)",
+    "parity-contracts-2.0 fixture + contracts:validate green",
+    "CI runs contracts:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/contracts-2.0.json",
+    "shared/ship/schema-23.json",
+    "shared/fixtures/parity-contracts-2.0.json",
+    "web/src/ship/contracts20.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Contracts20.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/contracts/Contracts.kt",
+    "web/src/engine/systems.ts"
+  ]
+}

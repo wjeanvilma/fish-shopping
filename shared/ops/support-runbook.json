@@ -1,9 +1,11 @@
 {
   "phase": 28,
   "schema": "fish.ops.support_runbook.v1",
-  "description": "Post-1.0 Phase 28 — support/refund/restore runbook: triage channels, refund steps, restore purchases, known issues. Linked from support.html and in-app Settings.",
+  "description": "Post-1.0 Phase 28 — support/refund/restore runbook: triage channels, refund steps, restore purchases, known issues. Linked from support.html and in-app Settings. Finish 2.0 Phase 28 expands via shared/ops/support-ops-2.0.json (feature FAQ, refund matrix, extra known issues).",
   "contentVersion": "1.0.1",
-  "schemaVersion": 20,
+  "schemaVersion": 21,
+  "finish2OpsPhase": 28,
+  "ops2Catalog": "shared/ops/support-ops-2.0.json",
   "packageName": "com.willio.jeanvilma.fishshopping",
   "supportUrl": "https://wjeanvilma.github.io/fish-shopping/support.html",
   "privacyUrl": "https://wjeanvilma.github.io/fish-shopping/privacy.html",
@@ -37,7 +39,16 @@
       "fish.full_harbor_unlock",
       "fish.cosmetic.sunset_bunting",
       "fish.cosmetic.pearl_string",
-      "fish.cosmetic.captain_crest"
+      "fish.cosmetic.captain_crest",
+      "fish.cosmetic.harbor_lantern",
+      "fish.cosmetic.tide_ribbon",
+      "fish.cosmetic.fog_pennant",
+      "fish.cosmetic.coral_streamer",
+      "fish.cosmetic.storm_flag",
+      "fish.cosmetic.ember_pennant",
+      "fish.cosmetic.northlight_banner",
+      "fish.cosmetic.marina_pennant",
+      "fish.cosmetic.moonlit_bunting"
     ],
     "idempotent": true,
     "powerNeutralCosmetics": true
@@ -80,7 +91,7 @@
       "id": "cloud_keys_missing",
       "title": "Cloud sync on without Firebase keys",
       "symptom": "Cloud on, keys missing in Settings",
-      "workaround": "Local play is fine. Set VITE_FIREBASE_* / fish.firebase.* to link remote saves; rules stay out of repo.",
+      "workaround": "Local play is fine. Set VITE_FIREBASE_* / fish.firebase.* to link remote saves. Operator applies the reviewed rules snippet from shared/cloud/snippets/ (not auto-deployed).",
       "severity": "info"
     },
     {
@@ -95,6 +106,34 @@
       "title": "Frame stutter on mid devices",
       "symptom": "Harbor feels choppy",
       "workaround": "Settings → Quality → Low/Medium. Sim stays 20 Hz; quality only changes presentation cost.",
+      "severity": "info"
+    },
+    {
+      "id": "cloud_pending_upload",
+      "title": "Cloud pending upload badge",
+      "symptom": "Settings shows pending upload after airplane mode",
+      "workaround": "Reconnect; the offline queue flushes the latest snapshot on online/resume.",
+      "severity": "info"
+    },
+    {
+      "id": "locale_partial_content",
+      "title": "Locale covers UI chrome first",
+      "symptom": "Some content names stay English after switching to Español",
+      "workaround": "Expected for the i18n scaffold — UI chrome is localized; species/quest lore may stay English for now.",
+      "severity": "info"
+    },
+    {
+      "id": "billing_api_unset",
+      "title": "Web purchases stay stubbed",
+      "symptom": "Web IAP never hits a real checkout URL",
+      "workaround": "Set VITE_BILLING_API_BASE for emulator/production; leave blank for stub-only playtests.",
+      "severity": "info"
+    },
+    {
+      "id": "festival_stack_confusion",
+      "title": "Festival + weather tips stack",
+      "symptom": "Sale prices look higher than usual during an event",
+      "workaround": "Check festival HUD and weather strip. Tips are temporary catalog mults, not permanent wage changes.",
       "severity": "info"
     }
   ],
@@ -117,21 +156,34 @@
     {
       "id": "refunds",
       "title": "Refunds",
-      "body": "Android: request via Play Store Payments & subscriptions, or contact support with the order id. Web: reply to the checkout receipt with the order id."
+      "body": "Android: request via Play Store Payments & subscriptions, or contact support with the order id. Web: reply to the checkout receipt with the order id. See the refund matrix on Support for SKU × platform paths."
     },
     {
       "id": "performance",
       "title": "Performance",
       "body": "Lower Quality in Settings if frames stutter. The simulation stays fixed at 20 Hz; quality only changes presentation cost."
+    },
+    {
+      "id": "features_2",
+      "title": "2.0 systems",
+      "body": "Weather/tide, festivals, achievements, species journal, mastery, staff trees, contracts 2.0, and daily goals are documented under Features 2.0 on the Support page."
+    },
+    {
+      "id": "language",
+      "title": "Language",
+      "body": "Settings → Language: English or Español for UI chrome. Listing copy locales match; not all lore strings are translated yet."
     }
   ],
   "ui": {
     "settingsSupportLabel": "Support",
     "restoreHelpLine": "Lost an unlock? Restore purchases in Goals, or open Support for refund steps.",
-    "runbookAnchor": "#refunds"
+    "runbookAnchor": "#refunds",
+    "ops2FeaturesAnchor": "#features-2",
+    "ops2RefundMatrixAnchor": "#refund-matrix"
   },
   "preflightGates": [
     "shared/ops/support-runbook.json",
+    "shared/ops/support-ops-2.0.json",
     "web/public/support.html",
     "shared/store/listing.json",
     "shared/store/legal-pages.json",

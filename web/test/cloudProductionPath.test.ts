@@ -67,7 +67,7 @@ describe("cloudProductionPath (Phase 25)", () => {
     vi.unstubAllGlobals();
   });
 
-  it("documents web + android env keys, offline queue, and keeps rules out of repo", () => {
+  it("documents web + android env keys, offline queue, and snippet-only rules", () => {
     const catalog = JSON.parse(
       readFileSync(resolve(__dirname, "../../shared/cloud/production-path.json"), "utf8"),
     );
@@ -79,7 +79,11 @@ describe("cloudProductionPath (Phase 25)", () => {
       "fish.firebase.apiKey",
       "fish.firebase.projectId",
     ]);
-    expect(CLOUD_PRODUCTION_PATH.firestoreRules).toBe("not_shipped_ask_for_snippet");
+    expect(CLOUD_PRODUCTION_PATH.firestoreRules).toBe(
+      "shared/cloud/snippets/firestore-harbor-save.rules",
+    );
+    expect(CLOUD_PRODUCTION_PATH.firestoreRulesMode).toBe("snippet_only_not_deployed");
+    expect(CLOUD_PRODUCTION_PATH.finish2FirestoreSnippetPhase).toBe(26);
     expect(CLOUD_PRODUCTION_PATH.guestRecovery.persisted).toContain("cloudRefreshToken");
     expect(CLOUD_PRODUCTION_PATH.offlineQueue.enabled).toBe(true);
     expect(CLOUD_PRODUCTION_PATH.offlineQueue.policy).toBe("latest_snapshot_wins");
@@ -106,6 +110,7 @@ describe("cloudProductionPath (Phase 25)", () => {
     expect(missing.missingKeys).toEqual(WEB_FIREBASE_ENV_KEYS);
     expect(missing.conflictUiShipped).toBe(true);
     expect(missing.firestoreRulesInRepo).toBe(false);
+    expect(missing.firestoreRulesSnippetShipped).toBe(true);
     expect(missing.offlineQueueEnabled).toBe(true);
 
     const ready = cloudProductionReadiness({

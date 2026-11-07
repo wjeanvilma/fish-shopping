@@ -1,0 +1,45 @@
+{
+  "schema": "fish.fixture.parity_support_ops_2.v1",
+  "description": "Finish 2.0 Phase 28: support/ops 2.0 floors and support.html sections.",
+  "supportOps2Marker": "authored-finish-2.0-phase-28",
+  "featureFaqMin": 6,
+  "refundMatrixRowMin": 4,
+  "knownIssue2Min": 4,
+  "supportHtmlSectionMin": 3,
+  "expect": {
+    "featureFaqIds": [
+      "weather_tide",
+      "festivals",
+      "achievements_codex",
+      "mastery_staff",
+      "contracts_daily",
+      "language_a11y",
+      "cloud_offline_2",
+      "web_checkout_local"
+    ],
+    "refundMatrixIds": [
+      "android_full_unlock",
+      "android_cosmetic",
+      "web_full_unlock",
+      "web_cosmetic"
+    ],
+    "knownIssue2Ids": [
+      "cloud_pending_upload",
+      "locale_partial_content",
+      "billing_api_unset",
+      "festival_stack_confusion"
+    ],
+    "supportHtmlSections": [
+      "features-2",
+      "refund-matrix",
+      "ops2-known"
+    ],
+    "supportHtmlNeedles": [
+      "Features 2.0",
+      "Refund matrix",
+      "Ops 2.0 known issues",
+      "fish.full_harbor_unlock",
+      "VITE_BILLING_API_BASE"
+    ]
+  }
+}

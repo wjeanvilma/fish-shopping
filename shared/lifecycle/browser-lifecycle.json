@@ -1,7 +1,7 @@
 {
   "phase": 28,
   "schema": "fish.lifecycle.browser_android.v1",
-  "description": "Browser + Android lifecycle QA gates: WebGL2, context loss, storage fallback, audio gesture/focus, tab/background pause+checkpoint, process-death restore via AtomicFile/IndexedDB slots, legacy fixtures migrate through schema 19→current.",
+  "description": "Browser + Android lifecycle QA gates: WebGL2, context loss, storage fallback, audio gesture/focus, tab/background pause+checkpoint, process-death restore via AtomicFile/IndexedDB slots, legacy fixtures migrate through schema 20\u2192current.",
   "web": {
     "webgl2Required": true,
     "webgl2GateCopy": "Fish Shopping needs a browser with WebGL 2. Try a current version of Chrome, Firefox, Edge or Safari, and make sure hardware acceleration is turned on.",
@@ -9,7 +9,7 @@
       "preventDefault": true,
       "pauseRenderWhileLost": true,
       "reloadHarborOnRestore": true,
-      "bannerCopy": "Graphics context lost — recovering scene…"
+      "bannerCopy": "Graphics context lost \u2014 recovering scene\u2026"
     },
     "storageUnavailable": {
       "fallback": "memory",
@@ -17,7 +17,11 @@
       "settingsLabel": "Memory-only (storage unavailable)."
     },
     "audioGesture": {
-      "unlockEvents": ["pointerdown", "keydown", "touchstart"],
+      "unlockEvents": [
+        "pointerdown",
+        "keydown",
+        "touchstart"
+      ],
       "resumeSuspendedContext": true,
       "note": "Phase 14: touchstart required for Safari / iOS AudioContext unlock."
     },
@@ -32,7 +36,13 @@
   "android": {
     "pauseSimOnStop": true,
     "checkpointOnStop": true,
-    "configChangesHandled": ["orientation", "screenSize", "screenLayout", "smallestScreenSize", "keyboardHidden"],
+    "configChangesHandled": [
+      "orientation",
+      "screenSize",
+      "screenLayout",
+      "smallestScreenSize",
+      "keyboardHidden"
+    ],
     "screenOrientation": "fullSensor",
     "audioFocus": {
       "usage": "USAGE_GAME",
@@ -42,7 +52,10 @@
       "restoreOnGain": true
     },
     "processDeath": {
-      "restoreFrom": ["harbor_save_latest.json", "harbor_save_previous.json"],
+      "restoreFrom": [
+        "harbor_save_latest.json",
+        "harbor_save_previous.json"
+      ],
       "note": "ViewModel onCleared + onStop checkpoint; cold start reloads AtomicFile slots."
     },
     "deviceMatrixPhase": 13,
@@ -51,8 +64,21 @@
   },
   "fixtures": {
     "legacyDir": "shared/fixtures/legacy",
-    "migrateThroughSchema": 19,
-    "currentSchema": 20,
-    "requiredLegacyVersions": [1, 12, 13, 14, 15, 16, 17, 18, 19]
+    "migrateThroughSchema": 22,
+    "currentSchema": 23,
+    "requiredLegacyVersions": [
+      1,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22
+    ]
   }
 }

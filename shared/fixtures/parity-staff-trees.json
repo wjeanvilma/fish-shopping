@@ -1,0 +1,15 @@
+{
+  "schema": "fish.fixture.parity_staff_trees.v1",
+  "description": "Finish 2.0 Phase 15: hire fisher, train line_pro branch, select it, assign dawn schedule, assert effects + view.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1,
+  "roleId": "worker.fisher",
+  "branchId": "branch.fisher.line_pro",
+  "scheduleId": "schedule.dawn_crew",
+  "forceWorkerLevel": 2,
+  "expectAfterTrain": {
+    "unlockedBranchId": "branch.fisher.line_pro",
+    "activeBranchId": "branch.fisher.line_pro",
+    "catchSpeedMultPermille": 1120
+  }
+}

@@ -28,6 +28,60 @@
       "sku": "fish.cosmetic.captain_crest",
       "status": "active",
       "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_harbor_lantern",
+      "sku": "fish.cosmetic.harbor_lantern",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_tide_ribbon",
+      "sku": "fish.cosmetic.tide_ribbon",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_fog_pennant",
+      "sku": "fish.cosmetic.fog_pennant",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_coral_streamer",
+      "sku": "fish.cosmetic.coral_streamer",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_storm_flag",
+      "sku": "fish.cosmetic.storm_flag",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_ember_pennant",
+      "sku": "fish.cosmetic.ember_pennant",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_northlight_banner",
+      "sku": "fish.cosmetic.northlight_banner",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_marina_pennant",
+      "sku": "fish.cosmetic.marina_pennant",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_moonlit_bunting",
+      "sku": "fish.cosmetic.moonlit_bunting",
+      "status": "active",
+      "type": "non_consumable"
     }
   ]
 }

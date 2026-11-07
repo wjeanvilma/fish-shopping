@@ -17,7 +17,7 @@ describe("listing copy freeze (post-1.0 Phase 11)", () => {
     expect(LISTING_COPY_PHASE).toBe(11);
     expect(LISTING_COPY_SCHEMA).toBe("fish.store.listing_copy.v1");
     expect(listingCopy.frozen).toBe(true);
-    expect(listingCopy.locales).toEqual(["en"]);
+    expect(listingCopy.locales).toEqual(["en", "es"]);
     expect(withinPlayLimits()).toBe(true);
     expect(listingCopy.copy.title.length).toBeLessThanOrEqual(listingCopy.playLimits.titleMax);
     expect(listingCopy.copy.shortDescription.length).toBeLessThanOrEqual(
@@ -44,6 +44,10 @@ describe("listing copy freeze (post-1.0 Phase 11)", () => {
     const strings = readFileSync(resolve(root, listingCopy.androidStrings), "utf8");
     expect(strings).toContain(listingCopy.copy.shortDescription);
     expect(strings).toContain(listingCopy.copy.whatsNew);
+    const es = JSON.parse(readFileSync(resolve(root, "shared/store/locales/es.json"), "utf8"));
+    expect(es.locale).toBe("es");
+    expect(es.frozen).toBe(true);
+    expect(existsSync(resolve(root, "app/src/main/res/values-es/strings.xml"))).toBe(true);
     const pin = JSON.parse(readFileSync(resolve(root, "shared/fixtures/RELEASE_PIN.json"), "utf8"));
     expect(listingCopy.copy.whatsNewVersion).toBe(pin.versionName);
   });

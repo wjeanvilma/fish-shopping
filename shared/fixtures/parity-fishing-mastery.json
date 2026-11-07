@@ -1,0 +1,18 @@
+{
+  "schema": "fish.fixture.parity_fishing_mastery.v1",
+  "description": "Finish 2.0 Phase 14: grant species mastery XP on catch, level-up event, technique unlock/select, catch-speed mult.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1,
+  "catchSpeciesId": "species.silver_sprat",
+  "expectAfterCatch": {
+    "minXp": 1,
+    "minLevel": 1,
+    "techniqueId": "technique.steady_reel",
+    "eventType": "mastery_xp_gained"
+  },
+  "expectAfterLevel2Xp": {
+    "xp": 40,
+    "level": 3,
+    "unlockedTechniqueId": "technique.power_set"
+  }
+}

@@ -104,8 +104,12 @@ class AudioBus(context: Context) {
         }
     }
 
-    fun syncMusicBedFromPanels(stationOpen: Boolean) {
-        setMusicBed(MusicPack.bedForStationOpen(stationOpen))
+    fun syncMusicBedFromPanels(
+        stationOpen: Boolean,
+        festivalActive: Boolean = false,
+        stormActive: Boolean = false,
+    ) {
+        setMusicBed(MusicPack.bedForContext(stationOpen, festivalActive, stormActive))
     }
 
     fun currentMusicBed(): String = currentBed
@@ -209,6 +213,13 @@ class AudioBus(context: Context) {
         SfxCue.ABANDON -> 260L
         SfxCue.UPGRADE -> 280L
         SfxCue.RUSH -> 340L
+        SfxCue.ACHIEVEMENT -> 320L
+        SfxCue.FESTIVAL -> 300L
+        SfxCue.CONTRACT_DONE -> 240L
+        SfxCue.CONTRACT_FAIL -> 280L
+        SfxCue.GOAL_CLAIM -> 140L
+        SfxCue.MASTERY_UP -> 300L
+        SfxCue.QUEST_DONE -> 340L
     }
 
     private fun pulseHaptic(cue: SfxCue) {

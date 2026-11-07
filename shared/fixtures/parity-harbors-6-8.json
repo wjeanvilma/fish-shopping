@@ -1,0 +1,62 @@
+{
+  "name": "parity-harbors-6-8",
+  "description": "Finish 2.0 Phase 8: from five-harbor prestige, travel Coral Lagoon → Storm Quay → Ember Wharf; landing quests + six/seven/eight prestige unlock.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 21,
+  "harborId": "harbor.sunrise_pier",
+  "seed": 28008,
+  "setup": {
+    "completedQuests": [
+      "quest.busy_harbor",
+      "quest.moon_crossing",
+      "quest.obsidian_landing",
+      "quest.northlight_landing",
+      "quest.grand_marina_landing"
+    ],
+    "completedPrestige": [
+      "prestige.twin_harbors",
+      "prestige.triple_harbors",
+      "prestige.quad_harbors",
+      "prestige.five_harbors"
+    ],
+    "unlockedCosmetics": [
+      "banner.twin_harbors",
+      "banner.triple_harbors",
+      "banner.quad_harbors",
+      "banner.five_harbors"
+    ],
+    "harborsTraveled": 5
+  },
+  "travels": [
+    {
+      "harborId": "harbor.coral_lagoon",
+      "requestId": "p8-coral-1",
+      "expectQuest": "quest.coral_lagoon_landing",
+      "expectPrestige": "prestige.six_harbors",
+      "expectBanner": "banner.six_harbors",
+      "expectBlockout": "coral_lagoon_blockout.glb"
+    },
+    {
+      "harborId": "harbor.storm_quay",
+      "requestId": "p8-storm-1",
+      "expectQuest": "quest.storm_quay_landing",
+      "expectPrestige": "prestige.seven_harbors",
+      "expectBanner": "banner.seven_harbors",
+      "expectBlockout": "storm_quay_blockout.glb"
+    },
+    {
+      "harborId": "harbor.ember_wharf",
+      "requestId": "p8-ember-1",
+      "expectQuest": "quest.ember_wharf_landing",
+      "expectPrestige": "prestige.eight_harbors",
+      "expectBanner": "banner.eight_harbors",
+      "expectBlockout": "ember_wharf_blockout.glb"
+    }
+  ],
+  "expectFinal": {
+    "harborId": "harbor.ember_wharf",
+    "harborsTraveled": 8,
+    "specializationId": "spec.ember_coast",
+    "blockoutAsset": "ember_wharf_blockout.glb"
+  }
+}

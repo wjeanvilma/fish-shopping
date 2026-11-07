@@ -1,0 +1,52 @@
+{
+  "phase": 16,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.festival_weekends.v1",
+  "description": "Finish 2.0 Phase 16 — festival weekends: ≥8 seasonal events stacking crowd/price with weather, festival-only customers & contracts, Kotlin↔web parity.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "weekendEventCount": 8,
+  "events": [
+    "event.harvest_moon_pier",
+    "event.coral_carnival",
+    "event.northlight_freeze",
+    "event.storm_regatta",
+    "event.silver_tide",
+    "event.ember_night_market",
+    "event.moonlit_market",
+    "event.grand_regatta"
+  ],
+  "festivalCustomers": [
+    "customer.harvest_pier_regular",
+    "customer.coral_carnival_tourist",
+    "customer.northlight_critic",
+    "customer.storm_quay_bulk",
+    "customer.silver_tide_buyer",
+    "customer.ember_night_wanderer",
+    "customer.moonlit_lantern_guest",
+    "customer.regatta_vip"
+  ],
+  "parityFixture": "shared/fixtures/parity-festival-weekends.json",
+  "definitionOfDoneSeasonalEvents": 8,
+  "validateScript": "npm run festivals:validate",
+  "checklist": [
+    "content-pack.seasonalEvents has ≥8 weekend events",
+    "each event has crowd + price mults and ≥1 festival customer",
+    "CustomerSystem spawn/price stacks festival with weather/tide/rush",
+    "festival-only customers gated by requiresSeasonalEvent",
+    "gated contracts + banners unlock on activation",
+    "SimView + Goals panel show crowd/price tips",
+    "schema stays 23 (content-only overlays)",
+    "parity-festival-weekends fixture + festivals:validate green",
+    "CI runs festivals:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/festival-weekends.json",
+    "shared/ship/schema-23.json",
+    "shared/fixtures/parity-festival-weekends.json",
+    "web/src/ship/festivalWeekends.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/FestivalWeekends.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/world/SeasonalEvents.kt",
+    "web/src/engine/systems.ts"
+  ]
+}

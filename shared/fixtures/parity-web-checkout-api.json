@@ -1,0 +1,66 @@
+{
+  "schema": "fish.fixture.parity_web_checkout_api.v1",
+  "description": "Finish 2.0 Phase 25: web checkout API contract vectors (stub + session fulfill).",
+  "checkoutApiMarker": "authored-finish-2.0-phase-25",
+  "routeCount": 3,
+  "skuFloor": 4,
+  "localEmulatorDefaultBase": "http://localhost:8787",
+  "clientEnvKey": "VITE_BILLING_API_BASE",
+  "purchaseTokenPrefix": "stub-",
+  "expect": {
+    "routes": [
+      {
+        "id": "checkout",
+        "method": "POST",
+        "path": "/v1/checkout",
+        "body": ["webProductId", "cloudAccountId", "successUrl", "cancelUrl"],
+        "responseStatuses": ["completed", "owned", "checkout"]
+      },
+      {
+        "id": "entitlements",
+        "method": "GET",
+        "path": "/v1/entitlements",
+        "query": ["cloudAccountId"],
+        "responseRoot": "entitlements"
+      },
+      {
+        "id": "fulfill",
+        "method": "POST",
+        "path": "/v1/fulfill",
+        "body": ["sessionId", "cloudAccountId"],
+        "responseRoot": "entitlements"
+      }
+    ],
+    "webProductIds": [
+      "fish.full_harbor_unlock",
+      "fish.cosmetic.sunset_bunting",
+      "fish.cosmetic.pearl_string",
+      "fish.cosmetic.captain_crest"
+    ],
+    "instantCheckout": {
+      "request": { "webProductId": "fish.full_harbor_unlock", "cloudAccountId": null },
+      "responseStatus": "completed",
+      "fields": ["webProductId", "purchaseToken"]
+    },
+    "ownedRepeat": {
+      "responseStatus": "owned"
+    },
+    "sessionCheckout": {
+      "request": {
+        "webProductId": "fish.cosmetic.sunset_bunting",
+        "cloudAccountId": "acct_test",
+        "successUrl": "http://localhost:5173/?billing=success",
+        "cancelUrl": "http://localhost:5173/?billing=cancel"
+      },
+      "responseStatus": "checkout",
+      "fields": ["url"]
+    },
+    "moduleFiles": [
+      "checkout-api/src/server.ts",
+      "checkout-api/src/handlers.ts",
+      "checkout-api/src/store.ts",
+      "checkout-api/src/catalog.ts",
+      "checkout-api/.env.example"
+    ]
+  }
+}

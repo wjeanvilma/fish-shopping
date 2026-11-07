@@ -14,7 +14,7 @@ object SpaHost {
     const val PLAY_URL = "https://wjeanvilma.github.io/fish-shopping/play/"
     const val VITE_BASE = "/fish-shopping/play/"
     const val HOST = "github_pages"
-    const val SCHEMA_VERSION = 20
+    const val SCHEMA_VERSION = 21
     const val FALLBACK_404 = true
     const val STRIP_LEGAL_HTML_FROM_PLAY = true
 

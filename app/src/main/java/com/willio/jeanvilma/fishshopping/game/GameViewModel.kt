@@ -18,6 +18,7 @@ import com.willio.jeanvilma.fishshopping.billing.PendingEntitlementLedger
 import com.willio.jeanvilma.fishshopping.billing.PurchaseOutcome
 import com.willio.jeanvilma.fishshopping.billing.RestoredEntitlement
 import com.willio.jeanvilma.fishshopping.core.lifecycle.AndroidDeviceLifecycle
+import com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem
 import com.willio.jeanvilma.fishshopping.core.progression.EntitlementReconcile
 import com.willio.jeanvilma.fishshopping.cloud.CloudSyncCoordinator
 import com.willio.jeanvilma.fishshopping.core.content.BalanceExport
@@ -48,9 +49,13 @@ import com.willio.jeanvilma.fishshopping.persistence.SnapshotStore
 import com.willio.jeanvilma.fishshopping.render.FlyingTransferCue
 import com.willio.jeanvilma.fishshopping.render.ShakeKind
 import com.willio.jeanvilma.fishshopping.render.WorldBurstCue
+import com.willio.jeanvilma.fishshopping.render.resolveAchievementBurst
 import com.willio.jeanvilma.fishshopping.render.resolveCatchBurst
 import com.willio.jeanvilma.fishshopping.render.resolveCelebrateBurst
+import com.willio.jeanvilma.fishshopping.render.resolveContractDoneBurst
+import com.willio.jeanvilma.fishshopping.render.resolveFestivalBurst
 import com.willio.jeanvilma.fishshopping.render.resolveFlyingTransfer
+import com.willio.jeanvilma.fishshopping.render.resolveGoalClaimBurst
 import com.willio.jeanvilma.fishshopping.render.resolveMachineDoneBurst
 import com.willio.jeanvilma.fishshopping.render.resolvePayBurst
 import com.willio.jeanvilma.fishshopping.ui.hud.TapTarget
@@ -455,6 +460,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         sim = Simulation(pack, state)
         lastCheckpointEpochMs = savedAtEpochMs
         applyPendingOffline(System.currentTimeMillis())
+        pushWallClock(System.currentTimeMillis())
         // Stamp a fresh checkpoint so a crash before the next pause cannot re-credit.
         if (pendingOfflineReport != null || savedAtEpochMs != null) save()
         latestView = sim?.view()
@@ -606,15 +612,41 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val since = lastCheckpointEpochMs ?: return
         val elapsed = nowEpochMs - since
         lastCheckpointEpochMs = nowEpochMs
-        if (elapsed <= 0L) return
-        val report = applyOffline(s, elapsed)
-        if (OfflinePolicy.shouldShowSummary(s.content, report)) {
-            pendingOfflineReport = report
-            AnalyticsBus.shared.onOfflineClaimed(report)
-        } else {
-            pendingOfflineReport = null
+        var report: OfflineReport? = null
+        if (elapsed > 0L) {
+            report = applyOffline(s, elapsed)
+        }
+        pushWallClock(nowEpochMs)
+        if (report != null) {
+            val enriched = report.copy(
+                journalLines = DailyGoalsSystem.journalLines(s.content, s.state, report),
+            )
+            if (OfflinePolicy.shouldShowSummary(s.content, enriched)) {
+                pendingOfflineReport = enriched
+                AnalyticsBus.shared.onOfflineClaimed(enriched)
+            } else {
+                pendingOfflineReport = null
+            }
         }
         latestView = s.view()
+    }
+
+    private fun pushWallClock(epochMs: Long) {
+        val s = sim ?: return
+        commands += Command.SyncWallClock(epochMs)
+        step(s)
+    }
+
+    fun syncWallClock(epochMs: Long = System.currentTimeMillis()) {
+        pushWallClock(epochMs)
+        viewModelScope.launch(simDispatcher) { publish(force = true) }
+    }
+
+    fun claimDailyGoal(objectiveId: String) {
+        commands += Command.ClaimDailyGoal(objectiveId, UUID.randomUUID().toString())
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
     }
 
     /** Joystick in screen space: x right, y down, each -1..1. */
@@ -660,7 +692,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setUpgradesOpen(open: Boolean) = setPanelOpen(Panel.UPGRADES, open)
     fun setStaffOpen(open: Boolean) = setPanelOpen(Panel.STAFF, open)
-    fun setQuestsOpen(open: Boolean) = setPanelOpen(Panel.QUESTS, open)
+    fun setQuestsOpen(open: Boolean) {
+        if (open) syncWallClock(System.currentTimeMillis())
+        setPanelOpen(Panel.QUESTS, open)
+    }
     fun setContractsOpen(open: Boolean) = setPanelOpen(Panel.CONTRACTS, open)
     fun setMapOpen(open: Boolean) = setPanelOpen(Panel.MAP, open)
     fun setWarehouseOpen(open: Boolean) = setPanelOpen(Panel.WAREHOUSE, open)
@@ -695,7 +730,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         enqueueMove(0f, 0f)
         // Phase 19: authored UI click when a management panel opens.
         audio.play(SfxCue.UI)
-        audio.syncMusicBedFromPanels(stationOpen)
+        syncMusicBed()
     }
 
     private fun closePanel(which: Panel) {
@@ -713,7 +748,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             Panel.BAG -> bagOpen = false
             Panel.STATION -> stationOpen = false
         }
-        audio.syncMusicBedFromPanels(stationOpen)
+        syncMusicBed()
     }
 
     private fun closeAllPanels() {
@@ -729,7 +764,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         settingsOpen = false
         bagOpen = false
         stationOpen = false
-        audio.syncMusicBedFromPanels(stationOpen)
+        syncMusicBed()
     }
 
     /** Presentation settings (mute, quality, a11y, cloud). Not part of the parity save. */
@@ -752,6 +787,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         analyticsConsent: Boolean = settings.analyticsConsent,
         analyticsConsentDecided: Boolean = settings.analyticsConsentDecided,
         equippedCosmeticId: String? = settings.equippedCosmeticId,
+        locale: String = settings.locale,
     ) {
         var next = GameSettings(
             muted = muted,
@@ -774,6 +810,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             cloudAccountId = settings.cloudAccountId,
             cloudRefreshToken = settings.cloudRefreshToken,
             equippedCosmeticId = equippedCosmeticId?.takeIf { it.isNotBlank() },
+            locale = com.willio.jeanvilma.fishshopping.core.i18n.UiStrings.resolveLocale(locale),
         )
         val enablingCloud = next.cloudSyncEnabled && !settings.cloudSyncEnabled
         if (next.cloudSyncEnabled && !cloud.available) {
@@ -845,8 +882,16 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             sfxVolume = settings.sfxVolume,
             hapticsEnabled = settings.hapticsEnabled,
         )
-        // Phase 20: harbor vs shop bed from station panel.
-        audio.syncMusicBedFromPanels(stationOpen)
+        syncMusicBed()
+    }
+
+    /** Finish 2.0 Phase 21: festival/storm beds; ducking unchanged. */
+    private fun syncMusicBed() {
+        val v = latestView
+        val festivalActive = v?.seasonalEvent != null
+        val weatherId = v?.weatherId.orEmpty()
+        val stormActive = weatherId.contains("rain") || weatherId.contains("gale")
+        audio.syncMusicBedFromPanels(stationOpen, festivalActive, stormActive)
     }
 
     /** Whether a remote backend is configured (Firebase keys). Local play never needs this. */
@@ -1133,6 +1178,34 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun selectTechnique(techniqueId: String?) {
+        commands += Command.SelectTechnique(techniqueId)
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    fun trainWorkerBranch(workerId: String, branchId: String) {
+        commands += Command.TrainWorkerBranch(workerId, branchId, UUID.randomUUID().toString())
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    fun selectWorkerBranch(workerId: String, branchId: String?) {
+        commands += Command.SelectWorkerBranch(workerId, branchId)
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    fun setWorkerSchedule(workerId: String, scheduleId: String?) {
+        commands += Command.SetWorkerSchedule(workerId, scheduleId)
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
     fun reel() {
         if (panelOpen) return
         commands += Command.Reel
@@ -1167,6 +1240,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val machineDone = ArrayList<String>()
         var celebrate = false
         var catchCount = 0
+        var achievementBurst = false
+        var festivalBurst = false
+        var contractDoneBurst = false
+        var goalClaimBurst = false
         for (e in events) {
             sfxFromEvent(e)?.let { audio.play(it) }
             when (e) {
@@ -1283,12 +1360,42 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     _messages.tryEmit(tip)
                     transaction = true
                 }
+                is GameEvent.AchievementUnlocked -> {
+                    val name = s.content.achievementsById[e.achievementId]?.name ?: e.achievementId
+                    val tip = buildString {
+                        append("Achievement: $name")
+                        if (e.coinsRewarded > 0) append(" (+${e.coinsRewarded})")
+                    }
+                    _messages.tryEmit(tip)
+                    achievementBurst = true
+                    transaction = true
+                }
+                is GameEvent.SeasonalEventStarted -> {
+                    _messages.tryEmit("${e.name}!")
+                    festivalBurst = true
+                    transaction = true
+                }
+                is GameEvent.WeatherChanged -> _messages.tryEmit("Weather: ${e.name}")
+                is GameEvent.TideChanged -> _messages.tryEmit("Tide: ${e.name}")
+                is GameEvent.MasteryLevelUp -> {
+                    val name = s.content.speciesById[e.speciesId]?.name ?: e.speciesId
+                    _messages.tryEmit("Mastery: $name Lv ${e.level}")
+                }
+                is GameEvent.WorkerBranchUnlocked -> {
+                    val name = s.content.staffBranchesById[e.branchId]?.name ?: e.branchId
+                    _messages.tryEmit("Unlocked $name")
+                }
+                is GameEvent.WorkerBranchTrainRejected -> {
+                    _messages.tryEmit(e.reason)
+                    transaction = true
+                }
                 is GameEvent.ContractAccepted -> if (!e.replayed) {
                     _messages.tryEmit("Contract accepted")
                     transaction = true
                 }
                 is GameEvent.ContractCompleted -> {
                     _messages.tryEmit("Contract complete +${e.payout}")
+                    contractDoneBurst = true
                     transaction = true
                 }
                 is GameEvent.ContractFailed -> {
@@ -1298,6 +1405,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     transaction = true
                 }
                 is GameEvent.ContractRejected -> { _messages.tryEmit(e.reason); transaction = true }
+                is GameEvent.DailyGoalClaimed -> if (!e.replayed) {
+                    val name = s.content.dailyObjectivesById[e.objectiveId]?.name ?: e.objectiveId
+                    _messages.tryEmit("Daily claimed: $name (+${e.payout})")
+                    goalClaimBurst = true
+                    transaction = true
+                }
+                is GameEvent.DailyGoalRejected -> { _messages.tryEmit(e.reason); transaction = true }
                 is GameEvent.HarborTraveled -> if (!e.replayed) {
                     val name = s.content.harborsById[e.toHarborId]?.name ?: e.toHarborId
                     _messages.tryEmit("Traveled to $name")
@@ -1323,6 +1437,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         latestView = s.view()
+        syncMusicBed()
         val view = latestView
         if (view != null) {
             for (e in transferred) {
@@ -1337,6 +1452,17 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 worldBursts.offer(resolveCelebrateBurst(view))
                 pendingShakes.offer(ShakeKind.CELEBRATE)
             }
+            // Finish 2.0 Phase 22 — weather/festival/achievement visual juice (shared burst pool).
+            if (achievementBurst) {
+                worldBursts.offer(resolveAchievementBurst(view))
+                pendingShakes.offer(ShakeKind.ACHIEVEMENT)
+            }
+            if (festivalBurst) {
+                worldBursts.offer(resolveFestivalBurst(view))
+                pendingShakes.offer(ShakeKind.FESTIVAL)
+            }
+            if (contractDoneBurst) worldBursts.offer(resolveContractDoneBurst(view))
+            if (goalClaimBurst) worldBursts.offer(resolveGoalClaimBurst(view))
         }
         if (transaction) publish(force = true)
     }

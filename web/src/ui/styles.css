@@ -1,6 +1,8 @@
 /* Tokens mirror shared/tokens/design-tokens.json (blueprint "Visual system"). */
 :root {
   --ink: #153449;
+  --muted: #4a5d68;
+  --reward-text: #8a5a10;
   --action: #008f95;
   --reward: #e8af4a;
   --surface: #fbf7ef;
@@ -114,15 +116,15 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
   top: calc(max(var(--gap), env(safe-area-inset-top)) + 184px);
 }
 .num { font-variant-numeric: tabular-nums; }
-.muted { opacity: 0.6; }
+.muted { color: var(--muted); }
 .small { font-size: 13px; }
 .danger { color: var(--danger); }
-.reward { color: var(--reward); }
+.reward { color: var(--reward-text); }
 .rating { margin-left: 8px; color: var(--reward); letter-spacing: 0.05em; }
 .rep { margin-left: 4px; opacity: 0.82; font-weight: 600; font-variant-numeric: tabular-nums; }
 .day-part { margin-left: 4px; opacity: 0.72; font-weight: 600; }
 .eyebrow { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--action); font-weight: 700; }
-.objective-detail { color: var(--muted, #6b7c86); font-weight: 600; letter-spacing: 0.04em; }
+.objective-detail { color: var(--muted); font-weight: 600; letter-spacing: 0.04em; }
 .title-card { text-align: center; }
 .title-brand { display: block; margin: 0 auto 12px; width: 72px; height: 72px; }
 .title-wordmark {
@@ -133,8 +135,8 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
   letter-spacing: 0.01em;
   color: var(--ink);
 }
-.title-tagline { margin: 8px 0 0; color: var(--muted, #6b7c86); font-size: 14px; }
-.title-funnel-hint { margin: 14px 0 0; color: var(--muted, #6b7c86); font-size: 13px; }
+.title-tagline { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+.title-funnel-hint { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
 
 .top-left {
   top: max(var(--gap), env(safe-area-inset-top));

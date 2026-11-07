@@ -54,10 +54,13 @@ class CloudProductionPathTest {
         assertEquals(CloudProductionPath.ANDROID_PROP_KEYS, missing.missingKeys)
         assertTrue(missing.conflictUiShipped)
         assertFalse(missing.firestoreRulesInRepo)
+        assertTrue(missing.firestoreRulesSnippetShipped)
         assertTrue(missing.offlineQueueEnabled)
 
         val ready = CloudProductionPath.readiness("k", "p")
         assertTrue(ready.keysConfigured)
+        assertTrue(ready.firestoreRulesSnippetShipped)
+        assertFalse(ready.firestoreRulesInRepo)
         assertEquals("users/abc/saves/harbor", CloudProductionPath.documentPathFor("abc"))
     }
 

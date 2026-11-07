@@ -1,0 +1,33 @@
+{
+  "schema": "fish.fixture.parity_parity_lock_2.v1",
+  "description": "Finish 2.0 Phase 29: parity-lock 2.0 suite floors and required system fixtures.",
+  "parityLock2Marker": "authored-finish-2.0-phase-29",
+  "suiteFloor": 8,
+  "finish2SuiteFloor": 4,
+  "expect": {
+    "baselineSuiteIds": [
+      "prng",
+      "starter_line",
+      "entitlements_unlock",
+      "legacy_migrations"
+    ],
+    "finish2SuiteIds": [
+      "achievements",
+      "weather_tide",
+      "fishing_mastery",
+      "festival_weekends"
+    ],
+    "finish2Fixtures": [
+      "shared/fixtures/parity-achievements.json",
+      "shared/fixtures/parity-weather-tide.json",
+      "shared/fixtures/parity-fishing-mastery.json",
+      "shared/fixtures/parity-festival-weekends.json"
+    ],
+    "gates": [
+      "achievementsIdempotent",
+      "weatherDeterministicFromTick",
+      "masteryXpOnCatch",
+      "festivalTipsCatalogDriven"
+    ]
+  }
+}

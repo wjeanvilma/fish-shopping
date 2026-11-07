@@ -93,20 +93,35 @@ function validate(): string[] {
     errors.push("public-ship stagedRollout.note must mention Phase 29");
   }
 
-  const pinErrors = validateHotfixPin({
-    versionName: pin.versionName,
-    contentVersion: pin.contentVersion,
-    versionCode: pin.versionCode,
-    schemaVersion: pin.schemaVersion,
-    storeRelease: pin.storeRelease,
-  });
-  for (const e of pinErrors) errors.push(`RELEASE_PIN: ${e}`);
-
-  if (!isHotfixVersionName(pin.versionName)) {
-    errors.push(`pin versionName ${pin.versionName} not on hotfix line`);
+  // 1.0.x hotfix policy stays frozen at schema 20. Finish 2.0 mainline may exceed that
+  // (schema 21+); only validateHotfixPin against the live pin when still on the freeze.
+  if (pin.storeRelease?.schemaVersion !== 20) {
+    errors.push("storeRelease.schemaVersion must stay 20 (Phase 18 cut)");
   }
-  if (hotfixTagFor(pin.versionName) !== `v${pin.versionName}`) {
-    errors.push("hotfix tag pattern mismatch");
+  if (pin.schemaVersion === pol.schemaMustStay) {
+    const pinErrors = validateHotfixPin({
+      versionName: pin.versionName,
+      contentVersion: pin.contentVersion,
+      versionCode: pin.versionCode,
+      schemaVersion: pin.schemaVersion,
+      storeRelease: pin.storeRelease,
+    });
+    for (const e of pinErrors) errors.push(`RELEASE_PIN: ${e}`);
+  } else if (pin.schemaVersion < pol.schemaMustStay) {
+    errors.push(`RELEASE_PIN schemaVersion ${pin.schemaVersion} below hotfix freeze ${pol.schemaMustStay}`);
+  } else if (!Number.isInteger(pin.schemaVersion) || pin.schemaVersion < 21) {
+    errors.push("mainline RELEASE_PIN schemaVersion must be ≥21 once past hotfix freeze");
+  }
+
+  // Hotfix lane stays on 1.0.x. Finish 2.0 mainline freeze (2.0.0 / schema 23) leaves that line.
+  if (isHotfixVersionName(pin.versionName)) {
+    if (hotfixTagFor(pin.versionName) !== `v${pin.versionName}`) {
+      errors.push("hotfix tag pattern mismatch");
+    }
+  } else if (!/^2\.\d+\.\d+$/.test(pin.versionName)) {
+    errors.push(`pin versionName ${pin.versionName} must be 1.0.x hotfix or 2.x mainline`);
+  } else if (hotfixTagFor("1.0.1") !== "v1.0.1") {
+    errors.push("hotfix tag helper regression");
   }
   if (initialHotfixRolloutPercent() !== 10) errors.push("initialHotfixRolloutPercent must be 10");
   if (!isValidHotfixBump("1.0.1", "1.0.2")) errors.push("isValidHotfixBump 1.0.1→1.0.2 failed");

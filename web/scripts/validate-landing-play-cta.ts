@@ -44,7 +44,7 @@ async function validate(): Promise<string[]> {
   if (catalog.schema !== LANDING_PLAY_CTA_SCHEMA) errors.push("bad schema");
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (LANDING_PLAY_CTA_PHASE !== 2) errors.push("phase mirror mismatch");
-  if (catalog.schemaVersion !== 20) errors.push("schemaVersion must stay 20");
+  if (catalog.schemaVersion !== 21) errors.push("schemaVersion must stay 21");
 
   if (listing.webLanding?.ctaPlay !== catalog.cta.play) {
     errors.push("listing.webLanding.ctaPlay ≠ catalog");

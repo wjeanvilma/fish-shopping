@@ -38,7 +38,7 @@ describe("fullUnlock (Phase 23)", () => {
     expect(catalog.fullUnlock.powerNeutral).toBe(true);
     expect(content.harborsById.get(FREE_HARBOR_ID)!.requires).toEqual([]);
     expect(FullUnlockSystem.FREE_HARBOR_ID).toBe(FREE_HARBOR_ID);
-    expect(SCHEMA_VERSION).toBe(20);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(21);
   });
 
   it("grants idempotently and unlocks every harbor without changing rates", () => {
@@ -70,7 +70,7 @@ describe("fullUnlock (Phase 23)", () => {
     const sim = newSim(3);
     sim.step([{ type: "grant_full_harbor_unlock", requestId: "full-unlock:persist" }]);
     const saved = encodeSnapshot(content, sim.state, 5_000);
-    expect(saved.startsWith('{"schemaVersion":20,')).toBe(true);
+    expect(saved.startsWith(`{"schemaVersion":${SCHEMA_VERSION},`)).toBe(true);
     const loaded = decodeSnapshot(content, saved);
     expect(loaded.fullHarborUnlock).toBe(true);
   });

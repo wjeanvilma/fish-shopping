@@ -1,12 +1,15 @@
 {
   "phase": 2,
   "schema": "fish.billing.web_production.v1",
-  "description": "Web production IAP path for non-consumable full-harbor unlock and cosmetics. Uses the same logical SKUs as Android; maps via webProductId. Local stub when VITE_BILLING_API_BASE is unset.",
+  "description": "Web production IAP path for non-consumable full-harbor unlock and cosmetics. Uses the same logical SKUs as Android; maps via webProductId. Local stub when VITE_BILLING_API_BASE is unset. Finish 2.0 Phase 25 ships the in-repo checkout-api emulator that implements this contract.",
   "provider": "checkout_api",
   "productType": "non_consumable",
   "localBackend": "stub",
   "productionBackend": "web",
   "forceStubEnv": "VITE_BILLING_FORCE_STUB",
+  "finish2CheckoutApiPhase": 25,
+  "moduleCatalog": "shared/ship/web-checkout-api.json",
+  "localEmulator": "checkout-api/",
   "catalog": "shared/billing/entitlements.json",
   "envKeys": [
     {
@@ -29,24 +32,61 @@
     "checkout": {
       "method": "POST",
       "path": "/v1/checkout",
-      "body": ["webProductId", "cloudAccountId", "successUrl", "cancelUrl"],
+      "body": [
+        "webProductId",
+        "cloudAccountId",
+        "successUrl",
+        "cancelUrl"
+      ],
       "responses": [
-        { "status": "completed", "fields": ["webProductId", "purchaseToken"] },
-        { "status": "owned", "fields": ["webProductId", "purchaseToken"] },
-        { "status": "checkout", "fields": ["url"] }
+        {
+          "status": "completed",
+          "fields": [
+            "webProductId",
+            "purchaseToken"
+          ]
+        },
+        {
+          "status": "owned",
+          "fields": [
+            "webProductId",
+            "purchaseToken"
+          ]
+        },
+        {
+          "status": "checkout",
+          "fields": [
+            "url"
+          ]
+        }
       ]
     },
     "entitlements": {
       "method": "GET",
       "path": "/v1/entitlements",
-      "query": ["cloudAccountId"],
-      "response": { "entitlements": ["webProductId", "purchaseToken"] }
+      "query": [
+        "cloudAccountId"
+      ],
+      "response": {
+        "entitlements": [
+          "webProductId",
+          "purchaseToken"
+        ]
+      }
     },
     "fulfill": {
       "method": "POST",
       "path": "/v1/fulfill",
-      "body": ["sessionId", "cloudAccountId"],
-      "response": { "entitlements": ["webProductId", "purchaseToken"] }
+      "body": [
+        "sessionId",
+        "cloudAccountId"
+      ],
+      "response": {
+        "entitlements": [
+          "webProductId",
+          "purchaseToken"
+        ]
+      }
     }
   },
   "returnQuery": {
@@ -77,6 +117,60 @@
       "webProductId": "fish.cosmetic.captain_crest",
       "androidProductId": "fish_cosmetic_captain_crest",
       "grantsCosmetic": "banner.iap_captain_crest"
+    },
+    {
+      "sku": "fish.cosmetic.harbor_lantern",
+      "webProductId": "fish.cosmetic.harbor_lantern",
+      "androidProductId": "fish_cosmetic_harbor_lantern",
+      "grantsCosmetic": "banner.iap_harbor_lantern"
+    },
+    {
+      "sku": "fish.cosmetic.tide_ribbon",
+      "webProductId": "fish.cosmetic.tide_ribbon",
+      "androidProductId": "fish_cosmetic_tide_ribbon",
+      "grantsCosmetic": "banner.iap_tide_ribbon"
+    },
+    {
+      "sku": "fish.cosmetic.fog_pennant",
+      "webProductId": "fish.cosmetic.fog_pennant",
+      "androidProductId": "fish_cosmetic_fog_pennant",
+      "grantsCosmetic": "banner.iap_fog_pennant"
+    },
+    {
+      "sku": "fish.cosmetic.coral_streamer",
+      "webProductId": "fish.cosmetic.coral_streamer",
+      "androidProductId": "fish_cosmetic_coral_streamer",
+      "grantsCosmetic": "banner.iap_coral_streamer"
+    },
+    {
+      "sku": "fish.cosmetic.storm_flag",
+      "webProductId": "fish.cosmetic.storm_flag",
+      "androidProductId": "fish_cosmetic_storm_flag",
+      "grantsCosmetic": "banner.iap_storm_flag"
+    },
+    {
+      "sku": "fish.cosmetic.ember_pennant",
+      "webProductId": "fish.cosmetic.ember_pennant",
+      "androidProductId": "fish_cosmetic_ember_pennant",
+      "grantsCosmetic": "banner.iap_ember_pennant"
+    },
+    {
+      "sku": "fish.cosmetic.northlight_banner",
+      "webProductId": "fish.cosmetic.northlight_banner",
+      "androidProductId": "fish_cosmetic_northlight_banner",
+      "grantsCosmetic": "banner.iap_northlight_banner"
+    },
+    {
+      "sku": "fish.cosmetic.marina_pennant",
+      "webProductId": "fish.cosmetic.marina_pennant",
+      "androidProductId": "fish_cosmetic_marina_pennant",
+      "grantsCosmetic": "banner.iap_marina_pennant"
+    },
+    {
+      "sku": "fish.cosmetic.moonlit_bunting",
+      "webProductId": "fish.cosmetic.moonlit_bunting",
+      "androidProductId": "fish_cosmetic_moonlit_bunting",
+      "grantsCosmetic": "banner.iap_moonlit_bunting"
     }
   ],
   "sandbox": {

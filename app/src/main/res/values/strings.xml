@@ -3,5 +3,5 @@
     <string name="app_name">Fish Shopping</string>
     <string name="store_short_description">Catch, cut, and sell fish in a cozy 3D harbor market.</string>
     <string name="store_tagline">Catch, cut, sell — run your harbor market</string>
-    <string name="store_whats_new">1.0.1 balance pass — cheaper early bag upgrade and first hires, slightly better portion prices, faster staff XP. Schema unchanged; 1.0.0 saves still load.</string>
+    <string name="store_whats_new">2.0.0 freeze — eight harbors, fifty species, twenty quests, twelve power-neutral cosmetics, festivals, mastery, parity lock 2.0, and web checkout. Schema 23; prior saves still load.</string>
 </resources>

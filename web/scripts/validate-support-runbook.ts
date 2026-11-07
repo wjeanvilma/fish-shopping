@@ -35,7 +35,7 @@ function validate(): string[] {
 
   if (catalog.phase !== 28) errors.push(`phase expected 28, got ${catalog.phase}`);
   if (catalog.schema !== "fish.ops.support_runbook.v1") errors.push("bad schema");
-  if (catalog.schemaVersion !== 20) errors.push("schemaVersion must stay 20");
+  if (catalog.schemaVersion !== 21) errors.push("schemaVersion must stay 21");
   if (catalog.packageName !== listing.packageName) errors.push("packageName ≠ listing");
   if (catalog.supportUrl !== listing.supportUrl) errors.push("supportUrl ≠ listing");
   if (listing.supportRunbookPhase !== 28) errors.push("listing.supportRunbookPhase must be 28");

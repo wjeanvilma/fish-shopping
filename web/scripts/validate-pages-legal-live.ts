@@ -46,7 +46,7 @@ async function validate(): Promise<string[]> {
   if (catalog.phase !== 1) errors.push(`phase expected 1, got ${catalog.phase}`);
   if (catalog.schema !== PAGES_LEGAL_LIVE_SCHEMA) errors.push("bad schema");
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
-  if (catalog.schemaVersion !== 20) errors.push("schemaVersion must stay 20");
+  if (catalog.schemaVersion !== 21) errors.push("schemaVersion must stay 21");
   if (PAGES_LEGAL_LIVE_PHASE !== 1) errors.push("PAGES_LEGAL_LIVE_PHASE mirror mismatch");
 
   if (catalog.canonicalHost !== legal.canonicalHost) {

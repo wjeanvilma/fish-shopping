@@ -30,12 +30,15 @@ object ListingCopy {
             "and power-neutral cosmetics are available via in-app purchase; Restore purchases recovers " +
             "entitlements on a new device."
     const val WHATS_NEW =
-        "1.0.1 balance pass — cheaper early bag upgrade and first hires, slightly better portion prices, " +
-            "faster staff XP. Schema unchanged; 1.0.0 saves still load."
-    const val WHATS_NEW_VERSION = "1.0.1"
+        "2.0.0 freeze — eight harbors, fifty species, twenty quests, twelve power-neutral cosmetics, " +
+            "festivals, mastery, parity lock 2.0, and web checkout. Schema 23; prior saves still load."
+    const val WHATS_NEW_VERSION = "2.0.0"
     const val WEB_TAGLINE = "Catch, cut, sell — run your harbor market"
 
-    val LOCALES: List<String> = listOf("en")
+    /** Finish 2.0 Phase 23 — en + es listing locale files. */
+    val LOCALES: List<String> = listOf("en", "es")
+    const val ES_LOCALE_PATH = "shared/store/locales/es.json"
+    const val ANDROID_STRINGS_ES = "app/src/main/res/values-es/strings.xml"
 
     fun withinPlayLimits(title: String, short: String, full: String, whatsNew: String): Boolean =
         title.length in 1..TITLE_MAX &&

@@ -140,6 +140,29 @@ def packer_module():
     return _finish(pos, nrm, idx)
 
 
+def steamer_module():
+    """Harbor steamer: kettle body, lid, steam vent stack."""
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.40, 0.0), (0.85, 0.80, 0.75))  # kettle
+    add_box(pos, nrm, idx, (0.0, 0.85, 0.0), (0.95, 0.10, 0.85))  # lid
+    add_box(pos, nrm, idx, (0.0, 1.10, 0.0), (0.20, 0.35, 0.20))  # vent stack
+    add_box(pos, nrm, idx, (0.0, 1.30, 0.0), (0.32, 0.08, 0.32))  # cap
+    add_box(pos, nrm, idx, (0.40, 0.55, 0.38), (0.25, 0.20, 0.08))  # gauge
+    return _finish(pos, nrm, idx)
+
+
+def kiln_module():
+    """Harbor kiln: firebox, curing rack, chimney."""
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.35, 0.0), (0.90, 0.70, 0.80))  # firebox
+    add_box(pos, nrm, idx, (0.0, 0.80, 0.0), (0.80, 0.08, 0.70))  # rack shelf
+    add_box(pos, nrm, idx, (-0.25, 0.95, 0.0), (0.08, 0.35, 0.55))  # rack post
+    add_box(pos, nrm, idx, (0.25, 0.95, 0.0), (0.08, 0.35, 0.55))
+    add_box(pos, nrm, idx, (0.15, 1.35, -0.10), (0.22, 0.55, 0.22))  # chimney
+    add_box(pos, nrm, idx, (0.15, 1.65, -0.10), (0.32, 0.08, 0.32))  # cap
+    return _finish(pos, nrm, idx)
+
+
 MODULE_BUILDERS = {
     "pier": pier_deck_module,
     "ground": ground_module,
@@ -151,6 +174,8 @@ MODULE_BUILDERS = {
     "chiller": chiller_module,
     "fryer": fryer_module,
     "packer": packer_module,
+    "steamer": steamer_module,
+    "kiln": kiln_module,
 }
 
 MODULE_COLORS = {
@@ -164,6 +189,8 @@ MODULE_COLORS = {
     "chiller": "#4A90A4",
     "fryer": "#D4A017",
     "packer": "#6B8F71",
+    "steamer": "#3A9B8F",
+    "kiln": "#A04828",
 }
 
 # World Y height (metres) when node scale Y = height / 1.0 after normalize.
@@ -178,4 +205,6 @@ MODULE_HEIGHTS = {
     "chiller": 1.40,
     "fryer": 1.30,
     "packer": 1.35,
+    "steamer": 1.40,
+    "kiln": 1.50,
 }

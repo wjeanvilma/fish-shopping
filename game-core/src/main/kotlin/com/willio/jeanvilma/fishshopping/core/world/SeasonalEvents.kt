@@ -7,9 +7,10 @@ import com.willio.jeanvilma.fishshopping.core.sim.StepContext
 import kotlin.math.max
 
 /**
- * Phase 24 content-driven seasonal overlays. Windows repeat on the sim clock
- * (no live server). Active events boost catch weights, unlock banner cosmetics,
- * and gate event-only contract templates.
+ * Phase 24 / Finish 2.0 Phase 16 content-driven seasonal festival weekends.
+ * Windows repeat on the sim clock (no live server). Active events boost catch
+ * weights, stack crowd/price with weather, unlock banner cosmetics, gate
+ * festival-only customers/contracts, and schedule the board refresh.
  */
 object SeasonalEventSystem {
 
@@ -29,6 +30,14 @@ object SeasonalEventSystem {
 
     fun speciesWeightMultPermille(content: ContentPack, tick: Long, speciesId: String): Int =
         active(content, tick)?.speciesWeightMultPermille?.get(speciesId) ?: 1000
+
+    /** Harbor crowd multiplier while a festival weekend is active (1000 = unchanged). */
+    fun customerSpawnMultPermille(content: ContentPack, tick: Long): Int =
+        active(content, tick)?.customerSpawnMultPermille ?: 1000
+
+    /** Harbor-wide sale tip while a festival weekend is active (1000 = unchanged). */
+    fun priceMultPermille(content: ContentPack, tick: Long): Int =
+        active(content, tick)?.priceMultPermille ?: 1000
 
     /** Scale a catch weight by the active seasonal species multiplier. */
     fun scaledWeight(base: Int, content: ContentPack, tick: Long, speciesId: String): Int {

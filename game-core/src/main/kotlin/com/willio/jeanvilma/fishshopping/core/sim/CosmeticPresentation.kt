@@ -13,8 +13,8 @@ object CosmeticPresentation {
     const val ENTITLEMENTS = "shared/billing/entitlements.json"
     const val SLOT_ID = "harbor_banner"
     const val MAX_EQUIPPED = 1
-    const val CONTENT_VERSION = "1.0.1"
-    const val SCHEMA_VERSION = 20
+    const val CONTENT_VERSION = "2.0.0"
+    const val SCHEMA_VERSION = 21
 
     data class Item(
         val cosmeticId: String,
@@ -28,6 +28,15 @@ object CosmeticPresentation {
         Item("banner.iap_sunset_bunting", "fish.cosmetic.sunset_bunting", "Sunset bunting", intArrayOf(232, 120, 64), "iap"),
         Item("banner.iap_pearl_string", "fish.cosmetic.pearl_string", "Pearl string lights", intArrayOf(236, 236, 245), "iap"),
         Item("banner.iap_captain_crest", "fish.cosmetic.captain_crest", "Captain's crest", intArrayOf(48, 96, 168), "iap"),
+        Item("banner.iap_harbor_lantern", "fish.cosmetic.harbor_lantern", "Harbor lantern", intArrayOf(210, 160, 70), "iap"),
+        Item("banner.iap_tide_ribbon", "fish.cosmetic.tide_ribbon", "Tide ribbon", intArrayOf(64, 140, 180), "iap"),
+        Item("banner.iap_fog_pennant", "fish.cosmetic.fog_pennant", "Fog pennant", intArrayOf(170, 180, 190), "iap"),
+        Item("banner.iap_coral_streamer", "fish.cosmetic.coral_streamer", "Coral streamer", intArrayOf(230, 100, 120), "iap"),
+        Item("banner.iap_storm_flag", "fish.cosmetic.storm_flag", "Storm flag", intArrayOf(70, 90, 130), "iap"),
+        Item("banner.iap_ember_pennant", "fish.cosmetic.ember_pennant", "Ember pennant", intArrayOf(220, 90, 40), "iap"),
+        Item("banner.iap_northlight_banner", "fish.cosmetic.northlight_banner", "Northlight banner", intArrayOf(120, 200, 220), "iap"),
+        Item("banner.iap_marina_pennant", "fish.cosmetic.marina_pennant", "Marina pennant", intArrayOf(40, 90, 160), "iap"),
+        Item("banner.iap_moonlit_bunting", "fish.cosmetic.moonlit_bunting", "Moonlit bunting", intArrayOf(200, 210, 230), "iap"),
     )
 
     val BY_ID: Map<String, Item> = ITEMS.associateBy { it.cosmeticId }

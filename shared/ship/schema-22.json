@@ -1,0 +1,72 @@
+{
+  "phase": 14,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.schema_22.v1",
+  "description": "Finish 2.0 Phase 14 — save schema 22: speciesMasteryXp + activeTechniqueId for fishing mastery; migrate from schema 21.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 22,
+  "fromSchema": 21,
+  "toSchema": 22,
+  "migration": {
+    "fields": [
+      {
+        "field": "speciesMasteryXp",
+        "type": "map<string,int>",
+        "default": {},
+        "note": "Empty on migrate from ≤21; MasterySystem grants XP on catch."
+      },
+      {
+        "field": "activeTechniqueId",
+        "type": "string|null",
+        "default": null,
+        "note": "Null on migrate; defaults to first unlocked technique at runtime."
+      }
+    ]
+  },
+  "engines": {
+    "kotlinSchemaConstant": "game-core/.../sim/Foundations.kt SimConstants.SCHEMA_VERSION",
+    "webSchemaConstant": "web/src/engine/foundations.ts SCHEMA_VERSION",
+    "kotlinCodec": "game-core/.../persistence/SnapshotCodec.kt",
+    "webCodec": "web/src/engine/snapshot.ts"
+  },
+  "contentPack": {
+    "path": "shared/content/content-pack.json",
+    "schemaPath": "shared/schema/content-pack.schema.json",
+    "saveSchemaVersionKey": "saveSchemaVersion",
+    "saveSchemaVersion": 22
+  },
+  "lifecycle": {
+    "catalog": "shared/lifecycle/browser-lifecycle.json",
+    "currentSchema": 22,
+    "migrateThroughSchema": 21,
+    "newLegacyFixture": "shared/fixtures/legacy/snapshot-v21-starter-line-t2500.json"
+  },
+  "releasePin": "shared/fixtures/RELEASE_PIN.json",
+  "parityLock": "shared/fixtures/parity-lock.json",
+  "historicalFrozen": {
+    "storeReleaseSchema": 20,
+    "completeReleaseSchema": 20,
+    "hotfixLaneSchemaMustStay": 20,
+    "balancePatchKeepSchemaVersion": 20,
+    "schema21Kickoff": 21
+  },
+  "validateScript": "npm run schema22:validate",
+  "checklist": [
+    "SimConstants / SCHEMA_VERSION = 22 (Kotlin + TS)",
+    "Snapshot codecs encode/decode speciesMasteryXp + activeTechniqueId; v21→v22 defaults empty/null",
+    "legacy/snapshot-v21-starter-line-t2500.json frozen; current starter-line re-recorded at 22",
+    "lifecycle currentSchema=22 migrateThroughSchema=21; requiredLegacyVersions includes 20 and 21",
+    "RELEASE_PIN.schemaVersion=22; storeRelease/completeRelease stay schema 20",
+    "content-pack.saveSchemaVersion=22 + schema const",
+    "CI runs schema22:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/schema-22.json",
+    "shared/fixtures/legacy/snapshot-v21-starter-line-t2500.json",
+    "shared/fixtures/snapshot-starter-line-t2500.json",
+    "shared/content/content-pack.json",
+    "shared/schema/content-pack.schema.json",
+    "web/src/ship/schema22.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Schema22.kt"
+  ]
+}

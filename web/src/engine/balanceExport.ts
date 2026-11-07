@@ -305,6 +305,57 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
         rewardPriceBonusPermille: m.reward.priceBonusPermille,
       })),
     },
+    achievements: {
+      entries: raw.achievements.entries.map((a) => ({
+        id: a.id,
+        category: a.category,
+        goalStat: a.goal.stat,
+        goalAtLeast: a.goal.atLeast,
+        rewardCoins: a.rewardCoins,
+      })),
+    },
+    codex: {
+      families: raw.codex.families,
+      entries: raw.codex.entries.map((e) => ({
+        speciesId: e.speciesId,
+        family: e.family,
+      })),
+    },
+    weather: {
+      patterns: raw.weather.patterns.map((p) => ({
+        id: p.id,
+        durationTicks: p.durationTicks,
+        catchSpeedMultPermille: p.catchSpeedMultPermille,
+        customerSpawnMultPermille: p.customerSpawnMultPermille,
+      })),
+      tide: {
+        periodTicks: raw.weather.tide.periodTicks,
+        phases: raw.weather.tide.phases.map((p) => ({
+          id: p.id,
+          endPermille: p.endPermille,
+          catchSpeedMultPermille: p.catchSpeedMultPermille,
+          customerSpawnMultPermille: p.customerSpawnMultPermille,
+        })),
+      },
+    },
+    fishingMastery: {
+      maxLevel: raw.fishingMastery.maxLevel,
+      xpThresholds: raw.fishingMastery.xpThresholds,
+      xpCatch: raw.fishingMastery.xpCatch,
+      xpGoodReel: raw.fishingMastery.xpGoodReel,
+      xpPerfectReel: raw.fishingMastery.xpPerfectReel,
+      xpRareCatch: raw.fishingMastery.xpRareCatch,
+      catchSpeedPermillePerLevel: raw.fishingMastery.catchSpeedPermillePerLevel,
+      rareChanceBonusPermillePerLevel: raw.fishingMastery.rareChanceBonusPermillePerLevel,
+      techniques: raw.fishingMastery.techniques.map((t) => ({
+        id: t.id,
+        requiresMasteryLevel: t.requiresMasteryLevel,
+        catchSpeedMultPermille: t.catchSpeedMultPermille,
+        perfectBonusPermille: t.perfectBonusPermille,
+        rareChanceBonusPermille: t.rareChanceBonusPermille,
+      })),
+      coachingTipCount: raw.fishingMastery.coachingTips.length,
+    },
     reputation: {
       minSample: raw.reputation.minSample,
       neutralScorePermille: raw.reputation.neutralScorePermille,

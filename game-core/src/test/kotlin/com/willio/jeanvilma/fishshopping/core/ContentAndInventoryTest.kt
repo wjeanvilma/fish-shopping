@@ -19,11 +19,11 @@ class ContentAndInventoryTest {
         assertEquals(6L, c.productsById.getValue("product.basic_portion").unitPrice)
         assertEquals(13L, c.productsById.getValue("product.fillet").unitPrice)
         assertEquals(20L, c.productsById.getValue("product.premium_portion").unitPrice)
-        assertEquals(5, c.harbors.size)
+        assertEquals(8, c.harbors.size)
         assertEquals(listOf("quest.first_ten_sales"), c.economy.requires)
         assertEquals(2, c.economy.maintenanceCoinsPerStation)
         assertEquals(listOf("quest.busy_harbor"), c.prestige.requires)
-        assertEquals(11, c.quests.size)
+        assertEquals(20, c.quests.size)
         assertEquals(
             listOf(
                 "quest.first_cast",
@@ -37,6 +37,15 @@ class ContentAndInventoryTest {
                 "quest.obsidian_landing",
                 "quest.northlight_landing",
                 "quest.grand_marina_landing",
+                "quest.coral_lagoon_landing",
+                "quest.storm_quay_landing",
+                "quest.ember_wharf_landing",
+                "quest.perfect_line",
+                "quest.rare_gallery_run",
+                "quest.contract_circuit",
+                "quest.trophy_sunrise",
+                "quest.gallery_collector",
+                "quest.prestige_wave",
             ),
             c.quests.map { it.id },
         )
@@ -48,26 +57,26 @@ class ContentAndInventoryTest {
         assertEquals("tutorial.hire_staff", c.tutorial[8].id)
         assertEquals("tutorial.grill_line", c.tutorial[9].id)
         assertEquals("tutorial.plot_marker", c.tutorial[10].id)
-        assertEquals(4, c.harborsById.getValue("harbor.sunrise_pier").plots.size)
+        assertEquals(6, c.harborsById.getValue("harbor.sunrise_pier").plots.size)
         assertTrue(c.harborsById.getValue("harbor.sunrise_pier").plotsByUpgrade.containsKey("upgrade.harbor_grill"))
-        assertEquals(5, c.harborsById.getValue("harbor.obsidian_jetty").plots.size)
-        assertEquals(12, c.prestige.milestones.size)
+        assertEquals(7, c.harborsById.getValue("harbor.obsidian_jetty").plots.size)
+        assertEquals(18, c.prestige.milestones.size)
         assertEquals(listOf(0L, 250L, 750L, 1500L, 3000L), c.prestige.ratingThresholds)
         val pierCounters = c.harborsById.getValue("harbor.sunrise_pier").counters
         assertEquals(2, pierCounters.size)
-        assertEquals(12, pierCounters.first { it.requiresUpgrade == null }.products.size)
-        assertEquals(6, pierCounters.first { it.kind.wire == "wholesale" }.products.size)
-        assertEquals(5, c.harborsById.getValue("harbor.sunrise_pier").stations.size)
-        assertEquals(6, c.machines.size)
+        assertEquals(17, pierCounters.first { it.requiresUpgrade == null }.products.size)
+        assertEquals(8, pierCounters.first { it.kind.wire == "wholesale" }.products.size)
+        assertEquals(7, c.harborsById.getValue("harbor.sunrise_pier").stations.size)
+        assertEquals(8, c.machines.size)
         assertEquals(emptyList<String>(), c.harborsById.getValue("harbor.sunrise_pier").requires)
         val cove = c.harborsById.getValue("harbor.moon_cove")
         assertEquals(listOf("quest.busy_harbor"), cove.requires)
         assertEquals("moon_cove_blockout.glb", cove.blockoutAsset)
-        assertEquals(5, cove.stations.size)
+        assertEquals(7, cove.stations.size)
         val jetty = c.harborsById.getValue("harbor.obsidian_jetty")
         assertEquals(listOf("prestige.twin_harbors"), jetty.requires)
         assertEquals("obsidian_jetty_blockout.glb", jetty.blockoutAsset)
-        assertEquals(6, jetty.stations.size)
+        assertEquals(8, jetty.stations.size)
         assertEquals(2, jetty.rushes.size)
         assertTrue(jetty.stations.any { it.machine == "machine.harbor_chiller" })
         assertTrue(jetty.stations.any { it.machine == "machine.harbor_fryer" })
@@ -75,14 +84,28 @@ class ContentAndInventoryTest {
         val northlight = c.harborsById.getValue("harbor.northlight_harbor")
         assertEquals(listOf("prestige.triple_harbors"), northlight.requires)
         assertEquals("northlight_harbor_blockout.glb", northlight.blockoutAsset)
-        assertEquals(6, northlight.stations.size)
+        assertEquals(8, northlight.stations.size)
         assertEquals(2, northlight.rushes.size)
         val marina = c.harborsById.getValue("harbor.grand_marina")
         assertEquals(listOf("prestige.quad_harbors"), marina.requires)
         assertEquals("grand_marina_blockout.glb", marina.blockoutAsset)
-        assertEquals(6, marina.stations.size)
+        assertEquals(8, marina.stations.size)
         assertEquals(3, marina.fishingSpots.size)
         assertEquals(2, marina.rushes.size)
+        val coral = c.harborsById.getValue("harbor.coral_lagoon")
+        assertEquals(listOf("prestige.five_harbors"), coral.requires)
+        assertEquals("coral_lagoon_blockout.glb", coral.blockoutAsset)
+        assertEquals(8, coral.stations.size)
+        assertEquals(3, coral.fishingSpots.size)
+        assertEquals("spec.coral_reef", coral.specialization!!.id)
+        val storm = c.harborsById.getValue("harbor.storm_quay")
+        assertEquals(listOf("prestige.six_harbors"), storm.requires)
+        assertEquals("storm_quay_blockout.glb", storm.blockoutAsset)
+        assertEquals("spec.storm_front", storm.specialization!!.id)
+        val ember = c.harborsById.getValue("harbor.ember_wharf")
+        assertEquals(listOf("prestige.seven_harbors"), ember.requires)
+        assertEquals("ember_wharf_blockout.glb", ember.blockoutAsset)
+        assertEquals("spec.ember_coast", ember.specialization!!.id)
         assertTrue(c.machinesById.containsKey("machine.harbor_chiller"))
         assertTrue(c.machinesById.containsKey("machine.harbor_fryer"))
         assertTrue(c.machinesById.containsKey("machine.harbor_packer"))

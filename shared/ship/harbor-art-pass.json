@@ -1,0 +1,63 @@
+{
+  "phase": 19,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.harbor_art_pass.v1",
+  "description": "Finish 2.0 Phase 19 — replace ≥3 harbor GLBs with authored low-poly theme sets; licenses + size budgets; web loads all 8 blockouts.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "authoredHarborMin": 3,
+  "harborArtMarker": "authored-phase-19",
+  "maxBytesPerHarbor": 200000,
+  "maxTotalAuthoredBytes": 600000,
+  "generator": "shared/tools/generate_blockout.py",
+  "themesModule": "shared/tools/harbor_themes.py",
+  "authoredHarbors": [
+    {
+      "harborId": "harbor.sunrise_pier",
+      "theme": "sunrise",
+      "asset": "shared/assets/models/sunrise_pier_blockout.glb"
+    },
+    {
+      "harborId": "harbor.coral_lagoon",
+      "theme": "coral",
+      "asset": "shared/assets/models/coral_lagoon_blockout.glb"
+    },
+    {
+      "harborId": "harbor.storm_quay",
+      "theme": "storm",
+      "asset": "shared/assets/models/storm_quay_blockout.glb"
+    }
+  ],
+  "allBlockoutAssets": [
+    "sunrise_pier_blockout.glb",
+    "moon_cove_blockout.glb",
+    "obsidian_jetty_blockout.glb",
+    "northlight_harbor_blockout.glb",
+    "grand_marina_blockout.glb",
+    "coral_lagoon_blockout.glb",
+    "storm_quay_blockout.glb",
+    "ember_wharf_blockout.glb"
+  ],
+  "parityFixture": "shared/fixtures/parity-harbor-art-pass.json",
+  "definitionOfDoneAuthoredHarbors": 3,
+  "validateScript": "npm run harborart:validate",
+  "checklist": [
+    "≥3 harbor GLBs tagged extras.harborArt=authored-phase-19 with distinct themes",
+    "HarborArt_* props present; presenter sockets unchanged",
+    "each authored GLB ≤ maxBytesPerHarbor; pairwise hashes differ",
+    "licenses.json records harbor-authored-art + generator tool",
+    "web BLOCKOUT_URLS covers all 8 harbors",
+    "parity-harbor-art-pass fixture + harborart:validate green",
+    "CI runs harborart:validate",
+    "schema stays 23 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/harbor-art-pass.json",
+    "shared/ship/schema-23.json",
+    "shared/fixtures/parity-harbor-art-pass.json",
+    "web/src/ship/harborArtPass.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/HarborArtPass.kt",
+    "shared/tools/harbor_themes.py",
+    "shared/tools/generate_blockout.py"
+  ]
+}

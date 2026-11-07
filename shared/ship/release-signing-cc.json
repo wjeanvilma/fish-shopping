@@ -1,0 +1,59 @@
+{
+  "phase": 5,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.release_signing_cc.v1",
+  "description": "Finish 2.0 Phase 5 \u2014 configuration-cache-safe release signing fail gate: dedicated checkReleaseUploadSigning task + dependsOn (no doFirst on AGP package/bundle tasks).",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 21,
+  "releaseSigningCatalog": "shared/android/release-signing.json",
+  "gradleFile": "app/build.gradle.kts",
+  "configurationCache": {
+    "enabledInGradleProperties": true,
+    "gradlePropertiesKey": "org.gradle.configuration-cache",
+    "forbiddenPatterns": [
+      "doFirst",
+      "tasks.findByName(\"packageRelease\")?.doFirst",
+      "tasks.findByName(\"assembleRelease\")?.doFirst"
+    ],
+    "requiredPatterns": [
+      "checkReleaseUploadSigning",
+      "dependsOn(checkReleaseUploadSigning)",
+      "tasks.register(\"checkReleaseUploadSigning\")"
+    ],
+    "guardTasks": [
+      "packageRelease",
+      "bundleRelease"
+    ],
+    "failTask": "checkReleaseUploadSigning",
+    "failMessageNeedle": "Release signing not configured"
+  },
+  "gates": {
+    "unsignedFail": {
+      "description": "assembleRelease without FISH_UPLOAD_* fails via checkReleaseUploadSigning; configuration cache stores",
+      "expectExitNonZero": true,
+      "expectLog": "checkReleaseUploadSigning"
+    },
+    "signedRelease": {
+      "description": "assembleRelease with ephemeral upload keystore succeeds; configuration cache stores",
+      "gradleTask": ":app:assembleRelease",
+      "expectExitZero": true
+    }
+  },
+  "validateScript": "npm run signing:validate",
+  "smokeScript": "npm run signing:smoke",
+  "checklist": [
+    "app/build.gradle.kts uses checkReleaseUploadSigning + dependsOn (not doFirst)",
+    "gradle.properties has org.gradle.configuration-cache=true",
+    "Unsigned assembleRelease fails with Release signing not configured",
+    "Signed assembleRelease with ephemeral keystore succeeds under configuration cache",
+    "CI runs signing:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/release-signing-cc.json",
+    "shared/android/release-signing.json",
+    "app/build.gradle.kts",
+    "gradle.properties",
+    "web/src/ship/releaseSigningCc.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ReleaseSigningCc.kt"
+  ]
+}

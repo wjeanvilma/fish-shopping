@@ -1,0 +1,88 @@
+{
+  "phase": 20,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.fish_art_pass.v1",
+  "description": "Finish 2.0 Phase 20 — move top species off shared silhouette stubs to authored multi-part FishArt meshes; licenses + size budgets; path contract unchanged.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "authoredSpeciesMin": 10,
+  "fishArtMarker": "authored-phase-20",
+  "maxBytesPerFish": 32000,
+  "maxTotalAuthoredBytes": 320000,
+  "generator": "shared/tools/generate_fish_stubs.py",
+  "themesModule": "shared/tools/fish_themes.py",
+  "authoredSpecies": [
+    {
+      "speciesId": "species.dawn_anchovy",
+      "theme": "pier_slender",
+      "asset": "shared/assets/models/fish_dawn_anchovy.glb"
+    },
+    {
+      "speciesId": "species.silver_sprat",
+      "theme": "pier_silver",
+      "asset": "shared/assets/models/fish_silver_sprat.glb"
+    },
+    {
+      "speciesId": "species.harbor_herring",
+      "theme": "pier_herring",
+      "asset": "shared/assets/models/fish_harbor_herring.glb"
+    },
+    {
+      "speciesId": "species.sail_needlefish",
+      "theme": "pier_needle",
+      "asset": "shared/assets/models/fish_sail_needlefish.glb"
+    },
+    {
+      "speciesId": "species.blue_mackerel",
+      "theme": "pier_mackerel",
+      "asset": "shared/assets/models/fish_blue_mackerel.glb"
+    },
+    {
+      "speciesId": "species.copper_mullet",
+      "theme": "pier_copper",
+      "asset": "shared/assets/models/fish_copper_mullet.glb"
+    },
+    {
+      "speciesId": "species.tide_bass",
+      "theme": "pier_bass",
+      "asset": "shared/assets/models/fish_tide_bass.glb"
+    },
+    {
+      "speciesId": "species.amber_snapper",
+      "theme": "pier_snapper",
+      "asset": "shared/assets/models/fish_amber_snapper.glb"
+    },
+    {
+      "speciesId": "species.king_grouper",
+      "theme": "pier_grouper",
+      "asset": "shared/assets/models/fish_king_grouper.glb"
+    },
+    {
+      "speciesId": "species.reef_perch",
+      "theme": "pier_reef",
+      "asset": "shared/assets/models/fish_reef_perch.glb"
+    }
+  ],
+  "parityFixture": "shared/fixtures/parity-fish-art-pass.json",
+  "definitionOfDoneAuthoredFish": 10,
+  "validateScript": "npm run fishart:validate",
+  "checklist": [
+    "≥10 species GLBs tagged extras.fishArt=authored-phase-20 with distinct themes",
+    "FishArt_* multi-part nodes present; models/fish_*.glb path contract unchanged",
+    "each authored GLB ≤ maxBytesPerFish; pairwise hashes differ",
+    "non-authored species remain Phase 13 stylized stubs",
+    "licenses.json records fish-authored-art + generator tool",
+    "parity-fish-art-pass fixture + fishart:validate green",
+    "CI runs fishart:validate",
+    "schema stays 23 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/fish-art-pass.json",
+    "shared/ship/schema-23.json",
+    "shared/fixtures/parity-fish-art-pass.json",
+    "web/src/ship/fishArtPass.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/FishArtPass.kt",
+    "shared/tools/fish_themes.py",
+    "shared/tools/generate_fish_stubs.py"
+  ]
+}

@@ -43,7 +43,7 @@ function validate(): string[] {
 
   if (catalog.phase !== 26) errors.push(`phase expected 26, got ${catalog.phase}`);
   if (catalog.schema !== "fish.ops.analytics_dashboard.v1") errors.push("bad schema");
-  if (catalog.schemaVersion !== 20) errors.push("schemaVersion must stay 20");
+  if (catalog.schemaVersion !== 21) errors.push("schemaVersion must stay 21");
   if (catalog.analyticsSchema !== "fish.analytics.v1") errors.push("analyticsSchema mismatch");
   if (catalog.consentRequired !== true) errors.push("consentRequired must be true");
   if (catalog.constraints?.noPii !== true) errors.push("noPii required");

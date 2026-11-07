@@ -68,6 +68,7 @@ class BrowserMatrixTest {
         assertTrue(harbor.contains("preventDefault"))
         val app = File(root, "web/src/ui/App.tsx").readText()
         assertTrue(app.contains("hasWebGL2"))
-        assertTrue(app.contains("WEBGL2_GATE_COPY"))
+        assertTrue(app.contains("lifecycle.webgl2Gate"))
+        assertTrue(File(root, "web/src/game/lifecyclePolicy.ts").readText().contains("WEBGL2_GATE_COPY"))
     }
 }

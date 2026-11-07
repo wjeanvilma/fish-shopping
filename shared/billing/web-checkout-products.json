@@ -32,6 +32,69 @@
       "androidProductId": "fish_cosmetic_captain_crest",
       "status": "active",
       "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.harbor_lantern",
+      "sku": "fish.cosmetic.harbor_lantern",
+      "androidProductId": "fish_cosmetic_harbor_lantern",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.tide_ribbon",
+      "sku": "fish.cosmetic.tide_ribbon",
+      "androidProductId": "fish_cosmetic_tide_ribbon",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.fog_pennant",
+      "sku": "fish.cosmetic.fog_pennant",
+      "androidProductId": "fish_cosmetic_fog_pennant",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.coral_streamer",
+      "sku": "fish.cosmetic.coral_streamer",
+      "androidProductId": "fish_cosmetic_coral_streamer",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.storm_flag",
+      "sku": "fish.cosmetic.storm_flag",
+      "androidProductId": "fish_cosmetic_storm_flag",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.ember_pennant",
+      "sku": "fish.cosmetic.ember_pennant",
+      "androidProductId": "fish_cosmetic_ember_pennant",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.northlight_banner",
+      "sku": "fish.cosmetic.northlight_banner",
+      "androidProductId": "fish_cosmetic_northlight_banner",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.marina_pennant",
+      "sku": "fish.cosmetic.marina_pennant",
+      "androidProductId": "fish_cosmetic_marina_pennant",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.moonlit_bunting",
+      "sku": "fish.cosmetic.moonlit_bunting",
+      "androidProductId": "fish_cosmetic_moonlit_bunting",
+      "status": "active",
+      "type": "non_consumable"
     }
   ]
 }

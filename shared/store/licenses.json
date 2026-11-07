@@ -21,6 +21,19 @@
       "rights": "original"
     },
     {
+      "id": "harbor-authored-art",
+      "paths": [
+        "shared/assets/models/sunrise_pier_blockout.glb",
+        "shared/assets/models/coral_lagoon_blockout.glb",
+        "shared/assets/models/storm_quay_blockout.glb"
+      ],
+      "kind": "3d",
+      "origin": "first_party_generated",
+      "tool": "shared/tools/generate_blockout.py",
+      "note": "Finish 2.0 Phase 19 authored low-poly harbor themes (HarborArt_* props + palettes via harbor_themes.py).",
+      "rights": "original"
+    },
+    {
       "id": "env-modules",
       "paths": ["shared/assets/models/modules/*.glb"],
       "kind": "3d",
@@ -34,6 +47,26 @@
       "kind": "3d",
       "origin": "first_party_generated",
       "tool": "shared/tools/generate_character_modules.py",
+      "rights": "original"
+    },
+    {
+      "id": "fish-authored-art",
+      "paths": [
+        "shared/assets/models/fish_dawn_anchovy.glb",
+        "shared/assets/models/fish_silver_sprat.glb",
+        "shared/assets/models/fish_harbor_herring.glb",
+        "shared/assets/models/fish_sail_needlefish.glb",
+        "shared/assets/models/fish_blue_mackerel.glb",
+        "shared/assets/models/fish_copper_mullet.glb",
+        "shared/assets/models/fish_tide_bass.glb",
+        "shared/assets/models/fish_amber_snapper.glb",
+        "shared/assets/models/fish_king_grouper.glb",
+        "shared/assets/models/fish_reef_perch.glb"
+      ],
+      "kind": "3d",
+      "origin": "first_party_generated",
+      "tool": "shared/tools/generate_fish_stubs.py",
+      "note": "Finish 2.0 Phase 20 authored multi-part FishArt meshes for Sunrise Pier gallery top species (fish_themes.py).",
       "rights": "original"
     },
     {
@@ -97,7 +130,7 @@
       "origin": "first_party_authored",
       "tool": "shared/tools/generate_sfx_pack.py",
       "rights": "original",
-      "note": "Phase 19 mono WAV stingers for catch/cut/sell/UI (plus abandon, upgrade, rush). Baked offline; no third-party sample packs."
+      "note": "Phase 19 mono WAV stingers for catch/cut/sell/UI (plus abandon, upgrade, rush). Baked offline; no third-party sample packs. Finish 2.0 Phase 21 extends the same path with pack-2 stingers."
     },
     {
       "id": "authored-music",
@@ -110,7 +143,26 @@
       "origin": "first_party_authored",
       "tool": "shared/tools/generate_music_pack.py",
       "rights": "original",
-      "note": "Phase 20 harbor/shop loop beds with mute, SFX duck, and focus-loss duck/silence. No third-party sample packs."
+      "note": "Phase 20 harbor/shop loop beds with mute, SFX duck, and focus-loss duck/silence. Finish 2.0 Phase 21 adds festival/storm beds; ducking policy unchanged. No third-party sample packs."
+    },
+    {
+      "id": "authored-audio-pack-2",
+      "paths": [
+        "shared/audio/sfx/achievement.wav",
+        "shared/audio/sfx/festival.wav",
+        "shared/audio/sfx/contract_done.wav",
+        "shared/audio/sfx/contract_fail.wav",
+        "shared/audio/sfx/goal_claim.wav",
+        "shared/audio/sfx/mastery_up.wav",
+        "shared/audio/sfx/quest_done.wav",
+        "shared/audio/music/festival.wav",
+        "shared/audio/music/storm.wav"
+      ],
+      "kind": "audio",
+      "origin": "first_party_authored",
+      "tool": "shared/tools/generate_sfx_pack.py + shared/tools/generate_music_pack.py",
+      "rights": "original",
+      "note": "Finish 2.0 Phase 21 pack-2 stingers + festival/storm beds (plan 30_finish_2.0). Distinct from post-1.0 Phase 21 vfx-juice."
     },
     {
       "id": "content-pack",

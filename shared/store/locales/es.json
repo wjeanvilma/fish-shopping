@@ -1,0 +1,31 @@
+{
+  "locale": "es",
+  "bcp47": "es",
+  "languageName": "Español",
+  "default": false,
+  "frozen": true,
+  "phase": 23,
+  "title": "Fish Shopping",
+  "shortDescription": "Pesca, corta y vende pescado en un acogedor mercado 3D del puerto.",
+  "fullDescription": "Dirige tu propio mercado de pescado junto al muelle. Lanza desde el pier, procesa las capturas en la cortadora, abastece el mostrador y atiende a una clientela creciente. Contrata personal, desbloquea mejoras, acepta contratos de entrega y expande a nuevos puertos — todo con una simulación fija a 20 Hz compartida por Android y web.\n\nBucle de la primera sesión: pescar → cortar → abastecer → vender.\n\nLa sincronización en la nube opcional y la analítica respetuosa con la privacidad permanecen desactivadas hasta que las actives. El desbloqueo de puerto de una sola vez y los cosméticos neutrales al poder están disponibles mediante compra in-app; Restaurar compras recupera los derechos en un dispositivo nuevo.",
+  "whatsNew": "Congelación 2.0.0 — ocho puertos, cincuenta especies, veinte misiones, doce cosméticos neutrales al poder, festivales, maestría, bloqueo de paridad 2.0 y checkout web. Esquema 23; las partidas anteriores siguen cargando.",
+  "webLanding": {
+    "title": "Fish Shopping",
+    "tagline": "Pesca, corta, vende — dirige tu mercado del puerto",
+    "description": "Pesca, corta y vende pescado en un acogedor mercado 3D del puerto.",
+    "ctaPlay": "Jugar en el navegador",
+    "ctaPrivacy": "Privacidad",
+    "ctaSupport": "Soporte"
+  },
+  "keywords": [
+    "pesca",
+    "tycoon",
+    "gestión",
+    "idle",
+    "3d",
+    "puerto",
+    "mercado"
+  ],
+  "category": "Simulation",
+  "contentRating": "Everyone"
+}

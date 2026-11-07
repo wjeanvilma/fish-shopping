@@ -2,7 +2,9 @@
 import type { ContentPack } from "./content";
 import type { GameState } from "./state";
 import { Stats } from "./state";
+import { DailyGoalsSystem } from "./systems";
 import { abandonPermille, wageRatioPermille } from "./telemetry";
+import type { DailyGoalView } from "./view";
 
 export interface BusinessDashboardSpeciesView {
   speciesId: string;
@@ -35,6 +37,9 @@ export interface BusinessDashboardView {
   topSpecies: BusinessDashboardSpeciesView[];
   bottlenecks: BusinessDashboardBottleneckView[];
   empty: boolean;
+  dailyLoginStreak: number;
+  dailyGoals: DailyGoalView[];
+  offlineJournalLines: string[];
 }
 
 export function formatSession(totalSeconds: number): string {
@@ -66,6 +71,22 @@ export const BusinessDashboard = {
     const minutes = Math.trunc(sessionSeconds / 60);
     const revenuePerMinute = minutes > 0 ? Math.trunc(committedRevenue / minutes) : 0;
     const salesPerMinute = minutes > 0 ? Math.trunc(sales / minutes) : 0;
+    const daily = DailyGoalsSystem.boardObjectives(content, state).map((o) => {
+      const progress = DailyGoalsSystem.progress(content, state, o);
+      const complete = DailyGoalsSystem.isComplete(content, state, o);
+      const claimed = DailyGoalsSystem.isClaimed(content, state, o);
+      return {
+        objectiveId: o.id,
+        name: o.name,
+        description: o.description,
+        progress,
+        target: o.goal.atLeast,
+        rewardCoins: DailyGoalsSystem.claimRewardCoins(content, state, o),
+        complete,
+        claimed,
+        claimEnabled: complete && !claimed,
+      };
+    });
     return {
       sessionTicks,
       sessionLabel: formatSession(sessionSeconds),
@@ -82,7 +103,10 @@ export const BusinessDashboard = {
       salesPerMinute,
       topSpecies,
       bottlenecks,
-      empty: sales === 0 && lost === 0 && committedRevenue === 0 && contractRevenue === 0,
+      empty: sales === 0 && lost === 0 && committedRevenue === 0 && contractRevenue === 0 && daily.length === 0,
+      dailyLoginStreak: DailyGoalsSystem.streak(state),
+      dailyGoals: daily,
+      offlineJournalLines: [],
     };
   },
 };

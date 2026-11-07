@@ -14,7 +14,7 @@
   "androidRawDir": "app/src/main/res/raw",
   "androidRawPrefix": "sfx_",
   "maxBytesPerClip": 24576,
-  "maxTotalBytes": 160000,
+  "maxTotalBytes": 240000,
   "maxDurationMs": 420,
   "voiceCostPerClip": 1,
   "maxSfxVoices": 6,
@@ -82,6 +82,69 @@
       "role": "feedback",
       "haptic": false,
       "design": "urgent brass-ish sting"
+    },
+    {
+      "id": "achievement",
+      "file": "achievement.wav",
+      "androidRaw": "sfx_achievement",
+      "role": "feedback",
+      "haptic": true,
+      "design": "bright rising sparkle arpeggio",
+      "pack2": true
+    },
+    {
+      "id": "festival",
+      "file": "festival.wav",
+      "androidRaw": "sfx_festival",
+      "role": "feedback",
+      "haptic": false,
+      "design": "festive chime cluster",
+      "pack2": true
+    },
+    {
+      "id": "contract_done",
+      "file": "contract_done.wav",
+      "androidRaw": "sfx_contract_done",
+      "role": "sell",
+      "haptic": false,
+      "design": "stamp + short coin settle",
+      "pack2": true
+    },
+    {
+      "id": "contract_fail",
+      "file": "contract_fail.wav",
+      "androidRaw": "sfx_contract_fail",
+      "role": "feedback",
+      "haptic": false,
+      "design": "dull thud + falling minor second",
+      "pack2": true
+    },
+    {
+      "id": "goal_claim",
+      "file": "goal_claim.wav",
+      "androidRaw": "sfx_goal_claim",
+      "role": "ui",
+      "haptic": false,
+      "design": "clean checklist ping",
+      "pack2": true
+    },
+    {
+      "id": "mastery_up",
+      "file": "mastery_up.wav",
+      "androidRaw": "sfx_mastery_up",
+      "role": "feedback",
+      "haptic": false,
+      "design": "skill-level swell",
+      "pack2": true
+    },
+    {
+      "id": "quest_done",
+      "file": "quest_done.wav",
+      "androidRaw": "sfx_quest_done",
+      "role": "feedback",
+      "haptic": false,
+      "design": "warm quest fanfare",
+      "pack2": true
     }
   ],
   "eventMap": {
@@ -91,7 +154,14 @@
     "customer_left_unpaid": "abandon",
     "upgrade_purchased": "upgrade",
     "rush_started": "rush",
-    "panel_opened": "ui"
+    "panel_opened": "ui",
+    "achievement_unlocked": "achievement",
+    "seasonal_event_started": "festival",
+    "contract_completed": "contract_done",
+    "contract_failed": "contract_fail",
+    "daily_goal_claimed": "goal_claim",
+    "mastery_level_up": "mastery_up",
+    "quest_completed": "quest_done"
   },
   "preflightGates": [
     "shared/audio/sfx-pack.json",

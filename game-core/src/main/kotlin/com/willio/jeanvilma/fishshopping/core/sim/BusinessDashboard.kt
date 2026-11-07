@@ -1,10 +1,12 @@
 package com.willio.jeanvilma.fishshopping.core.sim
 
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
+import com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem
 
 /**
  * Phase 9 business dashboard: committed sales/revenue only (never wallet coins),
  * abandon + wage rates, session interval labels, and live bottlenecks.
+ * Finish 2.0 Phase 18 adds daily streak / objectives.
  */
 object BusinessDashboard {
 
@@ -26,6 +28,22 @@ object BusinessDashboard {
         val minutes = sessionSeconds / 60L
         val revenuePerMinute = if (minutes > 0L) committedRevenue / minutes else 0L
         val salesPerMinute = if (minutes > 0L) sales / minutes else 0L
+        val daily = DailyGoalsSystem.boardObjectives(content, state).map { o ->
+            val progress = DailyGoalsSystem.progress(content, state, o)
+            val complete = DailyGoalsSystem.isComplete(content, state, o)
+            val claimed = DailyGoalsSystem.isClaimed(content, state, o)
+            DailyGoalView(
+                objectiveId = o.id,
+                name = o.name,
+                description = o.description,
+                progress = progress,
+                target = o.goal.atLeast,
+                rewardCoins = DailyGoalsSystem.claimRewardCoins(content, state, o),
+                complete = complete,
+                claimed = claimed,
+                claimEnabled = complete && !claimed,
+            )
+        }
         return BusinessDashboardView(
             sessionTicks = sessionTicks,
             sessionLabel = formatSession(sessionSeconds),
@@ -42,7 +60,10 @@ object BusinessDashboard {
             salesPerMinute = salesPerMinute,
             topSpecies = topSpecies,
             bottlenecks = bottlenecks,
-            empty = sales == 0L && lost == 0L && committedRevenue == 0L && contractRevenue == 0L,
+            empty = sales == 0L && lost == 0L && committedRevenue == 0L && contractRevenue == 0L && daily.isEmpty(),
+            dailyLoginStreak = DailyGoalsSystem.streak(state),
+            dailyGoals = daily,
+            offlineJournalLines = emptyList(),
         )
     }
 

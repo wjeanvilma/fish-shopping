@@ -2,6 +2,13 @@
   "phase": 4,
   "schema": "fish.android.release_signing.v1",
   "description": "Play upload keystore for assembleRelease. Credentials come from env / CI secrets or local.properties — never committed. Debug keystore is not the default release path.",
+  "configurationCacheGate": {
+    "finish2Phase": 5,
+    "catalog": "shared/ship/release-signing-cc.json",
+    "failTask": "checkReleaseUploadSigning",
+    "wiring": "dependsOn",
+    "forbidden": "doFirst"
+  },
   "signingConfigName": "upload",
   "storeFileNeverCommitted": true,
   "envKeys": [

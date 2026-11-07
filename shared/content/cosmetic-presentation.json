@@ -2,8 +2,8 @@
   "phase": 24,
   "schema": "fish.content.cosmetic_presentation.v1",
   "description": "Post-1.0 Phase 24 — equip/preview UX for power-neutral harbor banners. Presentation-only: equipped id lives in client settings (not sim schema). Preview is ephemeral UI state.",
-  "contentVersion": "1.0.1",
-  "schemaVersion": 20,
+  "contentVersion": "2.0.0",
+  "schemaVersion": 21,
   "entitlements": "shared/billing/entitlements.json",
   "constraints": {
     "powerNeutral": true,
@@ -29,7 +29,11 @@
       "cosmeticId": "banner.iap_sunset_bunting",
       "sku": "fish.cosmetic.sunset_bunting",
       "title": "Sunset bunting",
-      "swatchRgb": [232, 120, 64],
+      "swatchRgb": [
+        232,
+        120,
+        64
+      ],
       "source": "iap",
       "powerNeutral": true
     },
@@ -37,7 +41,11 @@
       "cosmeticId": "banner.iap_pearl_string",
       "sku": "fish.cosmetic.pearl_string",
       "title": "Pearl string lights",
-      "swatchRgb": [236, 236, 245],
+      "swatchRgb": [
+        236,
+        236,
+        245
+      ],
       "source": "iap",
       "powerNeutral": true
     },
@@ -45,14 +53,130 @@
       "cosmeticId": "banner.iap_captain_crest",
       "sku": "fish.cosmetic.captain_crest",
       "title": "Captain's crest",
-      "swatchRgb": [48, 96, 168],
+      "swatchRgb": [
+        48,
+        96,
+        168
+      ],
+      "source": "iap",
+      "powerNeutral": true
+    },
+    {
+      "cosmeticId": "banner.iap_harbor_lantern",
+      "sku": "fish.cosmetic.harbor_lantern",
+      "title": "Harbor lantern",
+      "swatchRgb": [
+        210,
+        160,
+        70
+      ],
+      "source": "iap",
+      "powerNeutral": true
+    },
+    {
+      "cosmeticId": "banner.iap_tide_ribbon",
+      "sku": "fish.cosmetic.tide_ribbon",
+      "title": "Tide ribbon",
+      "swatchRgb": [
+        64,
+        140,
+        180
+      ],
+      "source": "iap",
+      "powerNeutral": true
+    },
+    {
+      "cosmeticId": "banner.iap_fog_pennant",
+      "sku": "fish.cosmetic.fog_pennant",
+      "title": "Fog pennant",
+      "swatchRgb": [
+        170,
+        180,
+        190
+      ],
+      "source": "iap",
+      "powerNeutral": true
+    },
+    {
+      "cosmeticId": "banner.iap_coral_streamer",
+      "sku": "fish.cosmetic.coral_streamer",
+      "title": "Coral streamer",
+      "swatchRgb": [
+        230,
+        100,
+        120
+      ],
+      "source": "iap",
+      "powerNeutral": true
+    },
+    {
+      "cosmeticId": "banner.iap_storm_flag",
+      "sku": "fish.cosmetic.storm_flag",
+      "title": "Storm flag",
+      "swatchRgb": [
+        70,
+        90,
+        130
+      ],
+      "source": "iap",
+      "powerNeutral": true
+    },
+    {
+      "cosmeticId": "banner.iap_ember_pennant",
+      "sku": "fish.cosmetic.ember_pennant",
+      "title": "Ember pennant",
+      "swatchRgb": [
+        220,
+        90,
+        40
+      ],
+      "source": "iap",
+      "powerNeutral": true
+    },
+    {
+      "cosmeticId": "banner.iap_northlight_banner",
+      "sku": "fish.cosmetic.northlight_banner",
+      "title": "Northlight banner",
+      "swatchRgb": [
+        120,
+        200,
+        220
+      ],
+      "source": "iap",
+      "powerNeutral": true
+    },
+    {
+      "cosmeticId": "banner.iap_marina_pennant",
+      "sku": "fish.cosmetic.marina_pennant",
+      "title": "Marina pennant",
+      "swatchRgb": [
+        40,
+        90,
+        160
+      ],
+      "source": "iap",
+      "powerNeutral": true
+    },
+    {
+      "cosmeticId": "banner.iap_moonlit_bunting",
+      "sku": "fish.cosmetic.moonlit_bunting",
+      "title": "Moonlit bunting",
+      "swatchRgb": [
+        200,
+        210,
+        230
+      ],
       "source": "iap",
       "powerNeutral": true
     }
   ],
   "fallback": {
     "titleFromId": true,
-    "swatchRgb": [120, 160, 140],
+    "swatchRgb": [
+      120,
+      160,
+      140
+    ],
     "powerNeutral": true,
     "note": "Prestige/seasonal unlocked banners use fallback swatch when not listed in items."
   },

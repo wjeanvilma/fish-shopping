@@ -1,0 +1,42 @@
+{
+  "phase": 24,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.a11y_depth.v1",
+  "description": "Finish 2.0 Phase 24 — a11y depth ship gate for TalkBack/keyboard on 2.0 screens + contrast expansion. Distinct from post-1.0 Phase 24 cosmetic-presentation and post-1.0 Phase 16 accessibility-sweep.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "a11yDepthMarker": "authored-finish-2.0-phase-24",
+  "extendsCatalog": "shared/a11y/accessibility-sweep.json",
+  "depthCatalog": "shared/a11y/accessibility-depth.json",
+  "simHzInvariant": 20,
+  "screenSurfaceMin": 9,
+  "contrastPairMin": 4,
+  "uiA11yStringKeyMin": 12,
+  "liveRegionMin": 3,
+  "parityFixture": "shared/fixtures/parity-a11y-depth.json",
+  "validateScript": "npm run a11y2:validate",
+  "checklist": [
+    "≥9 2.0 screen surfaces with dialog/pane titles",
+    "≥4 new contrast pairs under WCAG AA (depth catalog)",
+    "≥12 UI a11y string keys in en+es catalogs",
+    "≥3 live regions (achievement, weather/tide, festival)",
+    "post-1.0 a11y:validate still green",
+    "GameHost/App + GameScreen TalkBack/keyboard wiring",
+    "parity-a11y-depth + a11y2:validate green",
+    "CI runs a11y2:validate",
+    "schema stays 23 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/a11y-depth.json",
+    "shared/a11y/accessibility-depth.json",
+    "shared/fixtures/parity-a11y-depth.json",
+    "shared/a11y/accessibility-sweep.json",
+    "web/src/ship/a11yDepth.ts",
+    "web/src/presenters/accessibilityDepth.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/A11yDepth.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/a11y/AccessibilityDepth.kt",
+    "web/src/ui/App.tsx",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt",
+    "web/src/ui/styles.css"
+  ]
+}

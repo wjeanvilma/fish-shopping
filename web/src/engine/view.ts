@@ -5,13 +5,26 @@ import { compareStrings } from "./foundations";
 import type { MachineStatus } from "./state";
 import type { Simulation } from "./simulation";
 import { abandonPermille, topSpeciesCatchShare, wageRatioPermille } from "./telemetry";
-import { BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DecorSystem, EconomySystem, FishingSystem, HarborTravelSystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, ReputationSystem, SeasonalEventSystem, UpgradeSystem, WorkerSystem } from "./systems";
+import { BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DailyGoalsSystem, DecorSystem, EconomySystem, FishingSystem, HarborTravelSystem, MasterySystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, ReputationSystem, SeasonalEventSystem, StaffTreesSystem, UpgradeSystem, WeatherSystem, WorkerSystem } from "./systems";
 import { Warehouse, type WarehouseView } from "./warehouse";
 export type { WarehouseView, WarehouseLineView, WarehouseLocationView } from "./warehouse";
 import { SpeciesBook, type SpeciesBookView } from "./speciesBook";
 export type { SpeciesBookView, SpeciesBookEntryView } from "./speciesBook";
 import { BusinessDashboard, type BusinessDashboardView } from "./businessDashboard";
 export type { BusinessDashboardView } from "./businessDashboard";
+
+/** Finish 2.0 Phase 18 — one daily board objective. */
+export interface DailyGoalView {
+  objectiveId: string;
+  name: string;
+  description: string;
+  progress: number;
+  target: number;
+  rewardCoins: number;
+  complete: boolean;
+  claimed: boolean;
+  claimEnabled: boolean;
+}
 
 export interface ItemCount { itemId: string; name: string; count: number }
 export interface ContextCard {
@@ -54,6 +67,15 @@ export interface BaitOfferView {
   reason: string | null;
   preferred: boolean;
 }
+/** Finish 2.0 Phase 14 — rod technique chip. */
+export interface TechniqueView {
+  id: string;
+  name: string;
+  description: string;
+  requiresMasteryLevel: number;
+  unlocked: boolean;
+  active: boolean;
+}
 /** Presentation-only position: interpolated along the canonical walk, then the current queue slot. */
 export interface CustomerView {
   id: string; counterId: string; queueIndex: number; xMm: number; zMm: number; arrived: boolean; wants: number; reserved: number;
@@ -68,6 +90,8 @@ export interface SeasonalEventBannerView {
   description: string;
   ticksRemaining: number;
   banner: string | null;
+  customerSpawnMultPermille: number;
+  priceMultPermille: number;
 }
 /** Phase 26 Goals-panel bank / coin-goal presentation. */
 export interface BankView {
@@ -97,6 +121,35 @@ export interface WorkerEquipmentView {
   upgradeId: string;
   upgradeName: string;
 }
+
+/** Finish 2.0 Phase 15 — specialization branch row for one worker. */
+export interface StaffBranchOfferView {
+  id: string;
+  name: string;
+  description: string;
+  parentId: string | null;
+  requiresWorkerLevel: number;
+  trainingCostCoins: number;
+  unlocked: boolean;
+  active: boolean;
+  canTrain: boolean;
+  trainReason: string | null;
+  catchSpeedMultPermille: number;
+  moveSpeedMultPermille: number;
+  carryBonus: number;
+  wageMultPermille: number;
+}
+
+/** Finish 2.0 Phase 15 — automation schedule row for one worker. */
+export interface StaffScheduleOfferView {
+  id: string;
+  name: string;
+  description: string;
+  dayParts: string[];
+  wageMultPermille: number;
+  active: boolean;
+}
+
 export interface WorkerView {
   id: string;
   roleId: string;
@@ -115,6 +168,13 @@ export interface WorkerView {
   equipment: WorkerEquipmentView[];
   /** Why this worker is stuck idle, if any (Phase 20). */
   blockedReason: string | null;
+  /** Finish 2.0 Phase 15 — active specialization + schedule. */
+  activeBranchId: string | null;
+  activeBranchName: string | null;
+  scheduleId: string | null;
+  scheduleName: string | null;
+  branches: StaffBranchOfferView[];
+  schedules: StaffScheduleOfferView[];
 }
 export interface StaffHireView {
   roleId: string;
@@ -181,6 +241,18 @@ export interface PrestigeView {
   priceBonusPermille: number;
   reason: string | null;
 }
+
+/** unlocked | active — Finish 2.0 Phase 11 achievements. */
+export interface AchievementView {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  status: string;
+  progress: number;
+  goalAtLeast: number;
+  rewardCoins: number;
+}
 export interface TrophyEntryView {
   speciesId: string;
   name: string;
@@ -227,6 +299,10 @@ export interface ContractOfferView {
   standing: boolean;
   /** Current standing streak shown on the board (0 for standard). */
   standingStreak: number;
+  chainId: string | null;
+  chainStep: number;
+  chainLength: number;
+  requiresReputationBand: number | null;
 }
 
 export interface ActiveContractView {
@@ -246,6 +322,9 @@ export interface ActiveContractView {
   standing: boolean;
   /** Completions in the current standing run. */
   standingStreak: number;
+  chainId: string | null;
+  chainStep: number;
+  chainLength: number;
 }
 
 export interface HarborMapEntryView {
@@ -293,6 +372,20 @@ export interface SimView {
   dayPartId: string;
   dayPartName: string;
   tideChartOwned: boolean;
+  /** Finish 2.0 Phase 13 — current weather pattern. */
+  weatherId: string;
+  weatherName: string;
+  weatherDescription: string;
+  weatherTicksRemaining: number;
+  /** Finish 2.0 Phase 13 — current tide phase. */
+  tidePhaseId: string;
+  tidePhaseName: string;
+  tideTicksRemaining: number;
+  /** Finish 2.0 Phase 14 — rod technique + global mastery. */
+  activeTechniqueId: string;
+  activeTechniqueName: string;
+  masteryGlobalLevel: number;
+  techniques: TechniqueView[];
   preferredBaitId: string | null;
   activeBaitId: string | null;
   baitOffers: BaitOfferView[];
@@ -334,6 +427,11 @@ export interface SimView {
   contractOffers: ContractOfferView[];
   activeContracts: ActiveContractView[];
   contractRefreshTicksLeft: number;
+  contractFailStreak: number;
+  contractFailStreakThreshold: number;
+  /** Finish 2.0 Phase 18 — local login streak + today's dailies (Goals panel). */
+  dailyLoginStreak: number;
+  dailyGoals: DailyGoalView[];
   /** Soft sinks unlocked (maintenance + spoilage). */
   economyUnlocked: boolean;
   economyLockedReason: string | null;
@@ -352,6 +450,9 @@ export interface SimView {
   /** Short band label for the HUD strip. */
   reputationLabel: string;
   prestige: PrestigeView[];
+  /** Finish 2.0 Phase 11 — lifetime achievements for Settings / HUD. */
+  achievements: AchievementView[];
+  unlockedAchievementsCount: number;
   unlockedCosmetics: string[];
   /** Phase 23 shop decor offers for the Goals panel. */
   decorOffers: DecorOfferView[];
@@ -459,14 +560,17 @@ export function buildView(sim: Simulation): SimView {
     const unlocked = FishingSystem.isUnlocked(spotDef, s);
     const full = p.bag.freeUnits() === 0;
     const casting = p.fishingSpecies !== null && p.fishingCatchTicks > 0;
+    const windows = MasterySystem.timingWindows(c, s);
     const inWindow = casting && FishingSystem.inTimingWindow(
       p.fishingProgress, p.fishingCatchTicks,
-      p.timingWindowStartPermille, p.timingWindowEndPermille,
+      windows.goodStart, windows.goodEnd,
     );
     const empty = unlocked && spot.stock <= 0;
     const part = FishingSystem.dayPartAt(c, s.tick);
     const tideOwned = FishingSystem.hasTideChart(s);
-    const tier = casting ? FishingSystem.timingTierAt(p, p.fishingProgress, p.fishingCatchTicks) : "miss";
+    const tier = casting
+      ? FishingSystem.timingTierAtContent(c, s, p.fishingProgress, p.fishingCatchTicks)
+      : "miss";
     const reelHint = tier === "perfect" ? "Perfect — reel now!"
       : tier === "good" ? "Good — reel for a tip!"
         : "Reel now for a bonus!";
@@ -649,20 +753,20 @@ export function buildView(sim: Simulation): SimView {
     fishingProgress: p.fishingSpecies
       ? p.fishingProgress / Math.max(1, p.fishingCatchTicks)
       : null,
-    fishingTimingWindow: p.fishingSpecies !== null && p.fishingCatchTicks > 0 &&
-      FishingSystem.inTimingWindow(
-        p.fishingProgress, p.fishingCatchTicks,
-        p.timingWindowStartPermille, p.timingWindowEndPermille,
-      ),
+    fishingTimingWindow: (() => {
+      if (p.fishingSpecies === null || p.fishingCatchTicks <= 0) return false;
+      const w = MasterySystem.timingWindows(c, s);
+      return FishingSystem.inTimingWindow(p.fishingProgress, p.fishingCatchTicks, w.goodStart, w.goodEnd);
+    })(),
     fishingTimingTier: (() => {
       if (p.fishingSpecies === null || p.fishingCatchTicks <= 0) return null;
-      const tier = FishingSystem.timingTierAt(p, p.fishingProgress, p.fishingCatchTicks);
+      const tier = FishingSystem.timingTierAtContent(c, s, p.fishingProgress, p.fishingCatchTicks);
       return tier === "miss" ? null : tier;
     })(),
-    timingGoodStart01: p.timingWindowStartPermille / 1000,
-    timingGoodEnd01: p.timingWindowEndPermille / 1000,
-    timingPerfectStart01: p.timingPerfectStartPermille / 1000,
-    timingPerfectEnd01: p.timingPerfectEndPermille / 1000,
+    timingGoodStart01: MasterySystem.timingWindows(c, s).goodStart / 1000,
+    timingGoodEnd01: MasterySystem.timingWindows(c, s).goodEnd / 1000,
+    timingPerfectStart01: MasterySystem.timingWindows(c, s).perfectStart / 1000,
+    timingPerfectEnd01: MasterySystem.timingWindows(c, s).perfectEnd / 1000,
     fishingCanReel: p.fishingSpecies !== null && !p.reelAttemptedThisCast,
     preferredBaitId: p.preferredBaitId,
     activeBaitId: p.activeBaitId,
@@ -683,6 +787,28 @@ export function buildView(sim: Simulation): SimView {
     dayPartId: FishingSystem.dayPartAt(c, s.tick).id,
     dayPartName: FishingSystem.dayPartAt(c, s.tick).name,
     tideChartOwned: FishingSystem.hasTideChart(s),
+    weatherId: WeatherSystem.weatherAt(c, s.tick).id,
+    weatherName: WeatherSystem.weatherAt(c, s.tick).name,
+    weatherDescription: WeatherSystem.weatherAt(c, s.tick).description,
+    weatherTicksRemaining: WeatherSystem.ticksUntilWeatherChange(c, s.tick),
+    tidePhaseId: WeatherSystem.tidePhaseAt(c, s.tick).id,
+    tidePhaseName: WeatherSystem.tidePhaseAt(c, s.tick).name,
+    tideTicksRemaining: WeatherSystem.ticksUntilTideChange(c, s.tick),
+    activeTechniqueId: MasterySystem.technique(c, s).id,
+    activeTechniqueName: MasterySystem.technique(c, s).name,
+    masteryGlobalLevel: MasterySystem.globalLevel(c, s),
+    techniques: c.fishingMastery.techniques.map((tech) => {
+      const unlocked = MasterySystem.isUnlocked(c, s, tech);
+      const active = MasterySystem.technique(c, s).id === tech.id;
+      return {
+        id: tech.id,
+        name: tech.name,
+        description: tech.description,
+        requiresMasteryLevel: tech.requiresMasteryLevel,
+        unlocked,
+        active,
+      };
+    }),
     context,
     stations,
     counters: s.counters.map((ct) => ({
@@ -745,6 +871,8 @@ export function buildView(sim: Simulation): SimView {
           description: e.description,
           ticksRemaining: SeasonalEventSystem.ticksRemaining(e, s.tick),
           banner: e.banner ?? null,
+          customerSpawnMultPermille: e.customerSpawnMultPermille ?? 1000,
+          priceMultPermille: e.priceMultPermille ?? 1000,
         }
         : null;
     })(),
@@ -789,8 +917,11 @@ export function buildView(sim: Simulation): SimView {
       const xpToNext = w.level >= prog.maxLevel
         ? null
         : Math.max((prog.xpThresholds[w.level] ?? w.xp) - w.xp, 0);
+      const roleWire = def?.role ?? "fisher";
+      const activeBranch = w.activeBranchId ? c.staffBranchesById.get(w.activeBranchId) : undefined;
+      const activeSchedule = w.scheduleId ? c.staffSchedulesById.get(w.scheduleId) : undefined;
       return {
-        id: w.id, roleId: w.roleId, roleName: def?.name ?? w.roleId, roleKind: def?.role ?? "fisher",
+        id: w.id, roleId: w.roleId, roleName: def?.name ?? w.roleId, roleKind: roleWire,
         xMm: w.x, zMm: w.z, bagUsedUnits: w.bag.usedUnits(), bagCapacityUnits: w.bag.capacityUnits, phase: w.phase,
         level: w.level,
         xp: w.xp,
@@ -808,6 +939,38 @@ export function buildView(sim: Simulation): SimView {
           }];
         }),
         blockedReason: WorkerSystem.blockedReason(c, s, h, w),
+        activeBranchId: activeBranch?.id ?? null,
+        activeBranchName: activeBranch?.name ?? null,
+        scheduleId: activeSchedule?.id ?? null,
+        scheduleName: activeSchedule?.name ?? null,
+        branches: c.staffTrees.branches.filter((branch) => branch.role === roleWire).map((branch) => {
+          const unlocked = w.unlockedBranchIds.includes(branch.id);
+          const trainReason = unlocked ? null : StaffTreesSystem.canTrain(c, s, w, branch.id);
+          return {
+            id: branch.id,
+            name: branch.name,
+            description: branch.description,
+            parentId: branch.parentId,
+            requiresWorkerLevel: branch.requiresWorkerLevel,
+            trainingCostCoins: branch.trainingCostCoins,
+            unlocked,
+            active: w.activeBranchId === branch.id,
+            canTrain: trainReason === null,
+            trainReason,
+            catchSpeedMultPermille: branch.catchSpeedMultPermille,
+            moveSpeedMultPermille: branch.moveSpeedMultPermille,
+            carryBonus: branch.carryBonus,
+            wageMultPermille: branch.wageMultPermille,
+          };
+        }),
+        schedules: c.staffTrees.schedules.map((sch) => ({
+          id: sch.id,
+          name: sch.name,
+          description: sch.description,
+          dayParts: sch.dayParts,
+          wageMultPermille: sch.wageMultPermille,
+          active: w.scheduleId === sch.id,
+        })),
       };
     }),
     staff: c.workers.map((def) => {
@@ -865,6 +1028,7 @@ export function buildView(sim: Simulation): SimView {
       const t = c.contractTemplatesById.get(o.templateId);
       const maxed = s.activeContracts.length >= c.contracts.maxActive;
       const standing = ContractSystem.isStanding(t);
+      const chainId = t?.chainId ?? null;
       return {
         offerId: o.id,
         templateId: o.templateId,
@@ -880,12 +1044,17 @@ export function buildView(sim: Simulation): SimView {
         reason: maxed ? "Max active contracts" : null,
         standing,
         standingStreak: standing ? ContractSystem.standingStreak(s, o.templateId) : 0,
+        chainId,
+        chainStep: t?.chainStep ?? 0,
+        chainLength: chainId ? ContractSystem.chainLength(c, chainId) : 0,
+        requiresReputationBand: t?.requiresReputationBand ?? null,
       };
     }),
     activeContracts: s.activeContracts.map((job) => {
       const t = c.contractTemplatesById.get(job.templateId);
       const bag = s.player.bag.available(job.itemId);
       const standing = ContractSystem.isStanding(t);
+      const chainId = t?.chainId ?? null;
       return {
         contractId: job.id,
         templateId: job.templateId,
@@ -901,9 +1070,31 @@ export function buildView(sim: Simulation): SimView {
         deliverEnabled: bag > 0 && job.delivered < job.quantity,
         standing,
         standingStreak: standing ? ContractSystem.standingStreak(s, job.templateId) : 0,
+        chainId,
+        chainStep: t?.chainStep ?? 0,
+        chainLength: chainId ? ContractSystem.chainLength(c, chainId) : 0,
       };
     }),
     contractRefreshTicksLeft: s.contractBoardRefreshAt <= 0 ? 0 : Math.max(0, s.contractBoardRefreshAt - s.tick),
+    contractFailStreak: ContractSystem.failStreak(s),
+    contractFailStreakThreshold: c.contracts.failStreakThreshold ?? 3,
+    dailyLoginStreak: DailyGoalsSystem.streak(s),
+    dailyGoals: DailyGoalsSystem.boardObjectives(c, s).map((o) => {
+      const progress = DailyGoalsSystem.progress(c, s, o);
+      const complete = DailyGoalsSystem.isComplete(c, s, o);
+      const claimed = DailyGoalsSystem.isClaimed(c, s, o);
+      return {
+        objectiveId: o.id,
+        name: o.name,
+        description: o.description,
+        progress,
+        target: o.goal.atLeast,
+        rewardCoins: DailyGoalsSystem.claimRewardCoins(c, s, o),
+        complete,
+        claimed,
+        claimEnabled: complete && !claimed,
+      };
+    }),
     economyUnlocked: EconomySystem.unlocked(c, s),
     economyLockedReason: (() => {
       const missing = EconomySystem.missingRequirement(c, s);
@@ -939,6 +1130,21 @@ export function buildView(sim: Simulation): SimView {
         reason: missing ? `Requires: ${missing}` : null,
       };
     }),
+    achievements: c.achievements.entries.map((a) => {
+      const unlocked = s.unlockedAchievements.has(a.id);
+      const progress = Math.min(s.stat(a.goal.stat), a.goal.atLeast);
+      return {
+        id: a.id,
+        name: a.name,
+        description: a.description,
+        category: a.category,
+        status: unlocked ? "unlocked" : "active",
+        progress: unlocked ? a.goal.atLeast : progress,
+        goalAtLeast: a.goal.atLeast,
+        rewardCoins: a.rewardCoins,
+      };
+    }),
+    unlockedAchievementsCount: s.unlockedAchievements.size,
     unlockedCosmetics: [...s.unlockedCosmetics].sort(compareStrings),
     decorOffers: c.decor.items.map((d) => {
       const owned = s.ownedDecor.has(d.id);

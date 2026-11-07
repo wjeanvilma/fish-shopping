@@ -8,6 +8,7 @@ import com.willio.jeanvilma.fishshopping.core.economy.EconomySystem
 import com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
 import com.willio.jeanvilma.fishshopping.core.inventory.InvariantChecker
 import com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
+import com.willio.jeanvilma.fishshopping.core.progression.AchievementSystem
 import com.willio.jeanvilma.fishshopping.core.progression.CosmeticsIapSystem
 import com.willio.jeanvilma.fishshopping.core.progression.FullUnlockSystem
 import com.willio.jeanvilma.fishshopping.core.progression.PrestigeSystem
@@ -52,9 +53,13 @@ class Simulation(val content: ContentPack, val state: GameState) {
         ProductionSystem.step(ctx)
         CustomerSystem.step(ctx)
         WorkerSystem.step(ctx)
+        com.willio.jeanvilma.fishshopping.core.workers.StaffTreesSystem.step(ctx)
         AutomationSystem.step(ctx)
         ProgressionSystem.step(ctx)
         PrestigeSystem.step(ctx)
+        AchievementSystem.step(ctx)
+        com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem.step(ctx)
+        com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.step(ctx)
         com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem.step(ctx)
         ContractSystem.step(ctx)
         EconomySystem.step(ctx)
@@ -92,9 +97,17 @@ class Simulation(val content: ContentPack, val state: GameState) {
             is Command.UnequipWorkerGear -> WorkerSystem.unequipGear(ctx, c.workerId, c.slotId)
             is Command.AcceptContract -> ContractSystem.accept(ctx, c.offerId, c.requestId)
             is Command.DeliverContract -> ContractSystem.deliver(ctx, c.contractId, c.requestId)
+            is Command.SyncWallClock ->
+                com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem.syncClock(ctx, c.epochMs)
+            is Command.ClaimDailyGoal ->
+                com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem.claim(ctx, c.objectiveId, c.requestId)
             is Command.TravelToHarbor -> HarborTravelSystem.travel(ctx, c.harborId, c.requestId)
             is Command.BuyBait -> com.willio.jeanvilma.fishshopping.core.fishing.BaitSystem.buy(ctx, c.baitId, c.requestId)
             is Command.SelectBait -> com.willio.jeanvilma.fishshopping.core.fishing.BaitSystem.select(state, content, c.baitId)
+            is Command.SelectTechnique -> com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.select(state, content, c.techniqueId)
+            is Command.TrainWorkerBranch -> com.willio.jeanvilma.fishshopping.core.workers.StaffTreesSystem.train(ctx, c.workerId, c.branchId, c.requestId)
+            is Command.SelectWorkerBranch -> com.willio.jeanvilma.fishshopping.core.workers.StaffTreesSystem.selectBranch(ctx, c.workerId, c.branchId)
+            is Command.SetWorkerSchedule -> com.willio.jeanvilma.fishshopping.core.workers.StaffTreesSystem.setSchedule(ctx, c.workerId, c.scheduleId)
             is Command.PurchaseDecor -> com.willio.jeanvilma.fishshopping.core.world.DecorSystem.purchase(ctx, c.decorId, c.requestId)
             is Command.GrantFullHarborUnlock -> FullUnlockSystem.grant(ctx, c.requestId)
             is Command.GrantIapCosmetic -> CosmeticsIapSystem.grant(ctx, c.cosmeticId, c.requestId)

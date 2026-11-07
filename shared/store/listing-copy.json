@@ -1,13 +1,16 @@
 {
   "phase": 11,
   "schema": "fish.store.listing_copy.v1",
-  "description": "Frozen Play / web listing copy for store ship. English is the only locale in pack; second locales require a new phase.",
+  "description": "Frozen Play / web listing copy for store ship. Finish 2.0 Phase 30 freezes whatsNew at 2.0.0; English remains the canonical en freeze for pin/whatsNewVersion.",
   "frozen": true,
   "packageName": "com.willio.jeanvilma.fishshopping",
   "releasePin": "shared/fixtures/RELEASE_PIN.json",
   "defaultLocale": "en",
   "localesDir": "shared/store/locales",
-  "locales": ["en"],
+  "locales": [
+    "en",
+    "es"
+  ],
   "playLimits": {
     "titleMax": 50,
     "shortDescriptionMax": 80,
@@ -18,8 +21,8 @@
     "title": "Fish Shopping",
     "shortDescription": "Catch, cut, and sell fish in a cozy 3D harbor market.",
     "fullDescription": "Run your own waterfront fish market. Cast from the pier, process catches on the cutter, stock the counter, and serve a growing crowd. Hire staff, unlock upgrades, take delivery contracts, and expand to new harbors — all with a fixed 20 Hz simulation shared by Android and web.\n\nFirst session loop: fish → cut → stock → sell.\n\nOptional cloud sync and privacy-safe analytics are off until you opt in. One-time harbor unlock and power-neutral cosmetics are available via in-app purchase; Restore purchases recovers entitlements on a new device.",
-    "whatsNew": "1.0.1 balance pass — cheaper early bag upgrade and first hires, slightly better portion prices, faster staff XP. Schema unchanged; 1.0.0 saves still load.",
-    "whatsNewVersion": "1.0.1"
+    "whatsNew": "2.0.0 freeze — eight harbors, fifty species, twenty quests, twelve power-neutral cosmetics, festivals, mastery, parity lock 2.0, and web checkout. Schema 23; prior saves still load.",
+    "whatsNewVersion": "2.0.0"
   },
   "webLanding": {
     "title": "Fish Shopping",
@@ -41,15 +44,19 @@
   "category": "Simulation",
   "contentRating": "Everyone",
   "androidStrings": "app/src/main/res/values/strings.xml",
+  "androidStringsEs": "app/src/main/res/values-es/strings.xml",
   "syncTargets": [
     "shared/store/listing.json",
     "shared/store/locales/en.json",
-    "app/src/main/res/values/strings.xml"
+    "shared/store/locales/es.json",
+    "app/src/main/res/values/strings.xml",
+    "app/src/main/res/values-es/strings.xml"
   ],
   "playConsoleChecklist": [
     "Paste title / short / full from copy.* (en locale)",
+    "Paste es locale from shared/store/locales/es.json when publishing Spanish listing",
     "Paste whatsNew into Release notes for versionName from RELEASE_PIN",
     "Category Simulation · content rating Everyone",
-    "No additional locales until a follow-up localization phase"
+    "Finish 2.0 Phase 23 scaffold: en + es locales present"
   ]
 }

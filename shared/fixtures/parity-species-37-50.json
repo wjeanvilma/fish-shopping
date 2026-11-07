@@ -1,0 +1,23 @@
+{
+  "schema": "fish.fixture.parity_species_37_50.v1",
+  "description": "Finish 2.0 Phase 9: at sunrise pier bait kiosk, buy brine_paste after bait_pouch unlock; assert Phase 9 bait/species floors.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 9001,
+  "setup": {
+    "coins": 500,
+    "ownedUpgrades": ["upgrade.bait_pouch"],
+    "walkTo": { "x": -7000, "z": -2000, "expectZone": "zone.bait_kiosk" }
+  },
+  "purchases": [
+    {
+      "baitId": "bait.brine_paste",
+      "requestId": "p9-brine-1",
+      "expectPreferred": "bait.brine_paste"
+    }
+  ],
+  "expectFinal": {
+    "baitOwned": "bait.brine_paste",
+    "speciesCount": 50,
+    "baitCount": 8
+  }
+}

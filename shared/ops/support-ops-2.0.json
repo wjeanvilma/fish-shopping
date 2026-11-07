@@ -1,0 +1,127 @@
+{
+  "phase": 28,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ops.support_ops_2.v1",
+  "description": "Finish 2.0 Phase 28 — Support/ops 2.0 expansion: 2.0 feature FAQ, structured refund matrix, additional known issues. Extends post-1.0 support-runbook.json; support.html sections. Distinct from post-1.0 Phase 28 baseline runbook and post-1.0 Phase 28 content tooling.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "supportOps2Marker": "authored-finish-2.0-phase-28",
+  "extendsCatalog": "shared/ops/support-runbook.json",
+  "featureFaqMin": 6,
+  "refundMatrixRowMin": 4,
+  "knownIssue2Min": 4,
+  "supportHtmlSectionMin": 3,
+  "featureFaq": [
+    {
+      "id": "weather_tide",
+      "title": "Weather & tide",
+      "body": "Weather and tide change catch weights and presentation. They are sim systems at 20 Hz — not cosmetics. Check the HUD weather/tide strip; storms and festivals can stack tips."
+    },
+    {
+      "id": "festivals",
+      "title": "Festival weekends",
+      "body": "Seasonal festival windows boost crowd and sale tips while active. The festival HUD banner is presentation; economy tips come from the event catalog."
+    },
+    {
+      "id": "achievements_codex",
+      "title": "Achievements & species journal",
+      "body": "Achievements unlock from sim stats. The species journal/codex tracks logged fish — open from the HUD. Neither changes wages or prices."
+    },
+    {
+      "id": "mastery_staff",
+      "title": "Fishing mastery & staff trees",
+      "body": "Mastery coaching tips and staff specialization branches are progression UI over existing hire/upgrade rules. Staff schedules stay offline-friendly."
+    },
+    {
+      "id": "contracts_daily",
+      "title": "Contracts 2.0 & daily goals",
+      "body": "Delivery chains and reputation-gated contracts sit beside classic quests. Daily goals / offline journal summarize progress after away time — claim rewards from Goals."
+    },
+    {
+      "id": "language_a11y",
+      "title": "Language & accessibility",
+      "body": "Settings → Language supports English and Spanish for UI chrome. TalkBack/keyboard titles cover 2.0 panels; raise HUD text scale or enable reduced motion if needed."
+    },
+    {
+      "id": "cloud_offline_2",
+      "title": "Cloud offline queue",
+      "body": "If a cloud push fails, the latest snapshot is queued and flushes on resume/online. Conflict UI still asks when local and remote both look valid. Rules snippet is operator-applied (not auto-deployed)."
+    },
+    {
+      "id": "web_checkout_local",
+      "title": "Web checkout (local)",
+      "body": "Without VITE_BILLING_API_BASE the web client uses a local entitlements stub. Point at the in-repo checkout-api emulator for sandbox restore/fulfill tests — never commit payment secrets."
+    }
+  ],
+  "refundMatrix": [
+    {
+      "id": "android_full_unlock",
+      "sku": "fish.full_harbor_unlock",
+      "platform": "android",
+      "playerPath": "Play Store → Payments & subscriptions → Budget & history → request refund",
+      "opsPath": "Play Console → Order management → Refund",
+      "afterRefund": "Ownership drops in Play; Restore will not re-grant. Do not hand-edit saves."
+    },
+    {
+      "id": "android_cosmetic",
+      "sku": "fish.cosmetic.*",
+      "platform": "android",
+      "playerPath": "Play Store refund flow for the cosmetic order",
+      "opsPath": "Play Console → Order management → Refund cosmetic SKU",
+      "afterRefund": "Banner unequips on next restore sync; cosmetics stay power-neutral."
+    },
+    {
+      "id": "web_full_unlock",
+      "sku": "fish.full_harbor_unlock",
+      "platform": "web",
+      "playerPath": "Reply to checkout receipt or email support with order id",
+      "opsPath": "Checkout provider dashboard → refund → confirm entitlements API no longer returns SKU",
+      "afterRefund": "Ask player to Restore purchases once; clear pending entitlement ledger if queued."
+    },
+    {
+      "id": "web_cosmetic",
+      "sku": "fish.cosmetic.*",
+      "platform": "web",
+      "playerPath": "Email support with web order id + cosmetic name",
+      "opsPath": "Refund in checkout provider; verify GET /v1/entitlements omits the product",
+      "afterRefund": "Restore syncs owned=false; presentation banner clears."
+    }
+  ],
+  "knownIssues2": [
+    {
+      "id": "cloud_pending_upload",
+      "title": "Cloud pending upload badge",
+      "symptom": "Settings shows pending upload after airplane mode",
+      "workaround": "Reconnect; the offline queue flushes the latest snapshot on online/resume. Force flush by toggling cloud sync off/on if stuck.",
+      "severity": "info"
+    },
+    {
+      "id": "locale_partial_content",
+      "title": "Locale covers UI chrome first",
+      "symptom": "Some content names stay English after switching to Español",
+      "workaround": "Expected for Phase 23 scaffold — UI chrome + listing keys are localized; species/quest lore may still be English until a later pass.",
+      "severity": "info"
+    },
+    {
+      "id": "billing_api_unset",
+      "title": "Web purchases stay stubbed",
+      "symptom": "Web IAP never hits a real checkout URL",
+      "workaround": "Set VITE_BILLING_API_BASE (local emulator http://localhost:8787 or production HTTPS). Leave blank for stub-only playtests.",
+      "severity": "info"
+    },
+    {
+      "id": "festival_stack_confusion",
+      "title": "Festival + weather tips stack",
+      "symptom": "Sale prices look higher than usual during an event",
+      "workaround": "Check festival HUD and weather strip. Tips are catalog-driven and temporary; they do not permanently change wages.",
+      "severity": "info"
+    }
+  ],
+  "supportHtmlSections": [
+    "features-2",
+    "refund-matrix",
+    "ops2-known"
+  ],
+  "parityFixture": "shared/fixtures/parity-support-ops-2.0.json",
+  "validateScript": "npm run support2:validate"
+}

@@ -9,7 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** Phase 25 — shared cloud production-path catalog (env keys, offline queue; rules not in-repo). */
+/** Phase 25 — shared cloud production-path catalog (env keys, offline queue; Finish 2.0 P26 snippet-only rules). */
 class CloudProductionCatalogTest {
     @Test
     fun productionPathJsonDocumentsEnvKeysOfflineQueueAndGuestRecovery() {
@@ -21,7 +21,17 @@ class CloudProductionCatalogTest {
         assertEquals(25, json.getValue("phase").jsonPrimitive.content.toInt())
         assertEquals("identity_toolkit_anonymous", json.getValue("authMode").jsonPrimitive.content)
         assertEquals("users/{uid}/saves/harbor", json.getValue("documentPath").jsonPrimitive.content)
-        assertEquals("not_shipped_ask_for_snippet", json.getValue("firestoreRules").jsonPrimitive.content)
+        assertEquals(
+            "shared/cloud/snippets/firestore-harbor-save.rules",
+            json.getValue("firestoreRules").jsonPrimitive.content,
+        )
+        assertEquals(
+            "snippet_only_not_deployed",
+            json.getValue("firestoreRulesMode").jsonPrimitive.content,
+        )
+        assertEquals(26, json.getValue("finish2FirestoreSnippetPhase").jsonPrimitive.content.toInt())
+        assertTrue(File(root, "shared/cloud/snippets/firestore-harbor-save.rules").isFile)
+        assertTrue(!File(root, "firestore.rules").exists())
         assertTrue(json.getValue("conflictUi").jsonPrimitive.content.contains("phase11"))
 
         val web = json.getValue("envKeys").jsonObject.getValue("web").jsonArray

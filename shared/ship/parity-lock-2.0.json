@@ -1,0 +1,50 @@
+{
+  "phase": 29,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.parity_lock_2.v1",
+  "description": "Finish 2.0 Phase 29 — Parity lock 2.0: expand parity-lock.json suites for achievements, weather/tide, fishing mastery, and festival weekends. CI gate. Distinct from post-1.0 Phase 27 baseline parity lock (economy/entitlements/migrations).",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "parityLock2Marker": "authored-finish-2.0-phase-29",
+  "parityLockCatalog": "shared/fixtures/parity-lock.json",
+  "suiteFloor": 8,
+  "finish2SuiteFloor": 4,
+  "requiredFinish2SuiteIds": [
+    "achievements",
+    "weather_tide",
+    "fishing_mastery",
+    "festival_weekends"
+  ],
+  "requiredBaselineSuiteIds": [
+    "prng",
+    "starter_line",
+    "entitlements_unlock",
+    "legacy_migrations"
+  ],
+  "parityFixture": "shared/fixtures/parity-parity-lock-2.0.json",
+  "validateScript": "npm run parity2:validate",
+  "checklist": [
+    "parity-lock.json lists ≥8 suites including 4 Finish 2.0 system suites",
+    "achievements / weather_tide / fishing_mastery / festival_weekends fixtures exist",
+    "finish2ParityLockPhase=29; gates for achievements/weather/mastery/festivals",
+    "post-1.0 parity:validate still green",
+    "parity-parity-lock-2.0 + parity2:validate green",
+    "CI runs parity2:validate",
+    "schema stays 23 (fixtures/CI; no save bump)"
+  ],
+  "preflightGates": [
+    "shared/ship/parity-lock-2.0.json",
+    "shared/fixtures/parity-lock.json",
+    "shared/fixtures/parity-parity-lock-2.0.json",
+    "shared/fixtures/parity-achievements.json",
+    "shared/fixtures/parity-weather-tide.json",
+    "shared/fixtures/parity-fishing-mastery.json",
+    "shared/fixtures/parity-festival-weekends.json",
+    "web/src/ship/parityLock2.ts",
+    "web/src/engine/parityLock.ts",
+    "web/scripts/validate-parity-lock-2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ParityLock2.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/ParityLock.kt",
+    "game-core/src/test/kotlin/com/willio/jeanvilma/fishshopping/core/ParityLock2CatalogTest.kt"
+  ]
+}

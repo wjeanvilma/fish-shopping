@@ -8,7 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** Post-1.0 Phase 4 — upload keystore signing catalog + Gradle/CI wiring. */
+/** Post-1.0 Phase 4 + Finish 2.0 Phase 5 — upload signing + CC-safe fail gate. */
 class ReleaseSigningTest {
     private val root: File = File(".").canonicalFile.let { dir ->
         generateSequence(dir) { it.parentFile }.first {
@@ -76,11 +76,18 @@ class ReleaseSigningTest {
         assertTrue(gradle.contains("signingConfigs.getByName(\"upload\")"))
         assertTrue(gradle.contains("Release signing not configured"))
         assertTrue(gradle.contains("packageRelease"))
+        assertTrue(gradle.contains("checkReleaseUploadSigning"))
+        assertTrue(gradle.contains("dependsOn(checkReleaseUploadSigning)"))
+        assertTrue(gradle.contains("tasks.register(\"checkReleaseUploadSigning\")"))
+        assertFalse(gradle.contains("tasks.findByName(taskName)?.doFirst"))
+        assertTrue(gradle.contains("FISH_UPLOAD_FORCE_UNSIGNED"))
 
         val ci = File(root, ".github/workflows/ci.yml").readText()
         assertTrue(ci.contains("FISH_UPLOAD_KEYSTORE_BASE64"))
         assertTrue(ci.contains("Prepare upload keystore"))
         assertTrue(ci.contains("ephemeral CI keystore") || ci.contains("ephemeral"))
+        assertTrue(ci.contains("signing:validate"))
+        assertTrue(ci.contains("FISH_UPLOAD_FORCE_UNSIGNED"))
 
         val ignore = File(root, ".gitignore").readText()
         for (glob in ReleaseSigning.GITIGNORE_GLOBS) {

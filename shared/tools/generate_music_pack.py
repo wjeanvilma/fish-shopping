@@ -82,9 +82,54 @@ def shop_bed(sr: int, seconds: float) -> list[float]:
     return normalize(out)
 
 
+def festival_bed(sr: int, seconds: float) -> list[float]:
+    n = int(sr * seconds)
+    out = [0.0] * n
+    for i in range(n):
+        t = i / sr
+        # Bright pentatonic sparkle (A minor-ish, loop aligned).
+        pad = (
+            0.16 * math.sin(2 * math.pi * 220.0 * t)
+            + 0.12 * math.sin(2 * math.pi * 261.63 * t)
+            + 0.10 * math.sin(2 * math.pi * 329.63 * t)
+            + 0.08 * math.sin(2 * math.pi * 392.0 * t)
+            + 0.05 * math.sin(2 * math.pi * 523.25 * t)
+        )
+        sparkle = 0.04 * math.sin(2 * math.pi * 880 * t + 0.6 * math.sin(2 * math.pi * t / seconds))
+        pulse = 0.88 + 0.12 * math.sin(2 * math.pi * 3 * t / seconds)
+        out[i] = (pad * pulse + sparkle) * 0.58
+    return normalize(out)
+
+
+def storm_bed(sr: int, seconds: float) -> list[float]:
+    n = int(sr * seconds)
+    out = [0.0] * n
+    last = 0.0
+    for i in range(n):
+        t = i / sr
+        rumble = (
+            0.28 * math.sin(2 * math.pi * 55 * t)
+            + 0.14 * math.sin(2 * math.pi * 82.5 * t)
+            + 0.08 * math.sin(2 * math.pi * 110 * t)
+        )
+        white = ((i * 1103515245 + 98765) & 0x7FFF) / 0x7FFF - 0.5
+        last = (last + 0.03 * white) / 1.03
+        rain = last * 0.55
+        tick = 0.0
+        # Sparse rain ticks every ~0.25s within the loop.
+        phase = (t * 4.0) % 1.0
+        if phase < 0.04:
+            tick = math.sin(2 * math.pi * 1800 * t) * (1.0 - phase / 0.04) * 0.12
+        swell = 0.9 + 0.1 * math.sin(2 * math.pi * t / seconds)
+        out[i] = (rumble + rain + tick) * swell * 0.52
+    return normalize(out)
+
+
 RENDERERS = {
     "harbor": harbor_bed,
     "shop": shop_bed,
+    "festival": festival_bed,
+    "storm": storm_bed,
 }
 
 

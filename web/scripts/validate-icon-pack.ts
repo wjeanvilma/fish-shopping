@@ -96,9 +96,10 @@ function validate(): string[] {
   if (!bgXml.includes("#153449")) errors.push("adaptive background missing ink fill");
 
   const manifest = readJson(resolve(root, catalog.web.manifest));
-  const srcs = (manifest.icons as any[]).map((i) => i.src);
+  const srcs = (manifest.icons as any[]).map((i) => String(i.src));
+  const normalized = new Set(srcs.map((s) => (s.startsWith("/") ? s : `/${s}`)));
   for (const need of ["/favicon.svg", "/icon-192.png", "/icon-512.png", "/icon-512-maskable.png"]) {
-    if (!srcs.includes(need)) errors.push(`manifest missing icon ${need}`);
+    if (!normalized.has(need)) errors.push(`manifest missing icon ${need}`);
   }
 
   const assets = listing.assets ?? {};

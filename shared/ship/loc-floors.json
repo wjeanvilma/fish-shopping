@@ -1,0 +1,93 @@
+{
+  "phase": 6,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.loc_floors.v1",
+  "description": "Finish 2.0 Phase 6 scoreboard → Phase 30 freeze. Measures real source only (no padding). Phase 30 enforces freeze anti-regression floors; plan targets (25k/16k/38k/80k) retained as documentation.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 23,
+  "metric": {
+    "unit": "physical_lines",
+    "note": "Count every physical line in product source files (including blanks/comments). Matches the ~42k baseline used in the Finish 2.0 plan.",
+    "excludeGlobs": [
+      "**/node_modules/**",
+      "**/build/**",
+      "**/dist/**",
+      "**/dist-legal/**",
+      "**/.gradle/**",
+      "**/generated/**"
+    ]
+  },
+  "scopes": {
+    "gameCore": {
+      "id": "game-core",
+      "root": "game-core/src/main",
+      "extensions": [
+        ".kt"
+      ],
+      "phase30Floor": 16000,
+      "planTarget": 25000
+    },
+    "app": {
+      "id": "app",
+      "root": "app/src/main",
+      "extensions": [
+        ".kt"
+      ],
+      "phase30Floor": 10000,
+      "planTarget": 16000
+    },
+    "webSrc": {
+      "id": "web/src",
+      "root": "web/src",
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "phase30Floor": 24000,
+      "planTarget": 38000
+    }
+  },
+  "productTotalFloor": 50000,
+  "enforceFloors": true,
+  "enforceAtPhase": 30,
+  "baseline": {
+    "measuredAtPhase": 6,
+    "gameCore": 13276,
+    "app": 9287,
+    "webSrc": 20114,
+    "productTotal": 42677,
+    "note": "Phase 6 cut baseline (physical lines). Growth must come from real systems/content — never copy-paste padding."
+  },
+  "testScopesInformational": {
+    "gameCoreTests": "game-core/src/test",
+    "appTests": "app/src/test",
+    "webTests": "web/test"
+  },
+  "validateScript": "npm run loc:validate",
+  "smokeScript": "npm run loc:smoke",
+  "checklist": [
+    "shared/ship/loc-floors.json locks freeze floors + plan targets",
+    "Kotlin + TS mirrors match catalog",
+    "npm run loc:smoke enforces freeze floors (enforceFloors=true)",
+    "CI runs loc:validate + loc:smoke",
+    "No LOC inflation via duplicated files or generated sources in product roots",
+    "Plan targets 25k/16k/38k/80k retained; not padded to force-meet"
+  ],
+  "preflightGates": [
+    "shared/ship/loc-floors.json",
+    "web/src/ship/locFloors.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/LocFloors.kt",
+    "web/scripts/validate-loc-floors.ts",
+    "web/scripts/smoke-loc-floors.ts"
+  ],
+  "enforceMode": "freeze_anti_regression",
+  "productTotalPlanTarget": 80000,
+  "freezeCut": {
+    "measuredAtPhase": 30,
+    "gameCore": 16459,
+    "app": 10189,
+    "webSrc": 24247,
+    "productTotal": 50895,
+    "note": "Phase 30 freeze cut (physical lines). Floors sit slightly under measured to avoid flake; growth must remain real systems/content."
+  }
+}

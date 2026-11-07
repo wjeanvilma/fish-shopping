@@ -164,6 +164,120 @@ jobs:
         working-directory: web
         run: npm run complete:validate
 
+      - name: Release-signing configuration-cache gate
+        working-directory: web
+        run: npm run signing:validate
+
+      - name: LOC freeze anti-regression floors
+        working-directory: web
+        run: |
+          npm run loc:validate
+          npm run loc:smoke
+
+      - name: 2.0.0 freeze & DoD (Finish 2.0 Phase 30)
+        working-directory: web
+        run: npm run freeze2:validate
+
+      - name: Schema 21 kickoff + v20 migration
+        working-directory: web
+        run: npm run schema21:validate
+
+      - name: Harbors 6–8 circuit
+        working-directory: web
+        run: npm run harbors68:validate
+
+      - name: Species 37–50 + baits
+        working-directory: web
+        run: npm run species3750:validate
+
+      - name: Machines 7–8 + recipes
+        working-directory: web
+        run: npm run machines78:validate
+
+      - name: Achievements engine
+        working-directory: web
+        run: npm run achievements:validate
+
+      - name: Species codex / journal
+        working-directory: web
+        run: npm run codex:validate
+
+      - name: Weather + tide
+        working-directory: web
+        run: npm run weather:validate
+
+      - name: Schema 22 kickoff + v21 migration
+        working-directory: web
+        run: npm run schema22:validate
+
+      - name: Fishing mastery
+        working-directory: web
+        run: npm run mastery:validate
+
+      - name: Schema 23 kickoff + v22 migration
+        working-directory: web
+        run: npm run schema23:validate
+
+      - name: Staff specialization trees
+        working-directory: web
+        run: npm run stafftrees:validate
+
+      - name: Festival weekends
+        working-directory: web
+        run: npm run festivals:validate
+
+      - name: Contracts 2.0
+        working-directory: web
+        run: npm run contracts:validate
+
+      - name: Offline journal + daily goals
+        working-directory: web
+        run: npm run dailygoals:validate
+
+      - name: Harbor art pass
+        working-directory: web
+        run: npm run harborart:validate
+
+      - name: Fish art pass
+        working-directory: web
+        run: npm run fishart:validate
+
+      - name: SFX/music pack 2
+        working-directory: web
+        run: npm run audiopack2:validate
+
+      - name: VFX/juice 2 under budget gate
+        working-directory: web
+        run: npm run vfx2:validate
+
+      - name: i18n scaffold (en + es)
+        working-directory: web
+        run: npm run i18n:validate
+
+      - name: A11y depth for 2.0 screens
+        working-directory: web
+        run: npm run a11y2:validate
+
+      - name: Web checkout API module (Finish 2.0 Phase 25)
+        working-directory: web
+        run: npm run checkoutapi:validate
+
+      - name: Firestore rules snippet + cloud QA (Finish 2.0 Phase 26)
+        working-directory: web
+        run: npm run firestoreqa:validate
+
+      - name: Content authoring CLI (Finish 2.0 Phase 27)
+        working-directory: web
+        run: npm run contentcli:validate
+
+      - name: Support/ops 2.0 (Finish 2.0 Phase 28)
+        working-directory: web
+        run: npm run support2:validate
+
+      - name: Parity lock 2.0 (Finish 2.0 Phase 29)
+        working-directory: web
+        run: npm run parity2:validate
+
       - name: Validate content (Kotlin ContentLoader)
         run: ./gradlew :game-core:validateContent --no-daemon
 
@@ -190,6 +304,21 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: gradle
+
+      - name: Unsigned release signing must fail (CC-safe gate)
+        run: |
+          set -uo pipefail
+          set +e
+          ./gradlew :app:checkReleaseUploadSigning --no-daemon -PFISH_UPLOAD_FORCE_UNSIGNED=true > /tmp/fish-unsigned-signing.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/fish-unsigned-signing.log
+          if [ "$status" -eq 0 ]; then
+            echo "expected checkReleaseUploadSigning to fail when unsigned" >&2
+            exit 1
+          fi
+          grep -q "Release signing not configured" /tmp/fish-unsigned-signing.log
+          grep -Eq "Configuration cache entry (stored|reused)" /tmp/fish-unsigned-signing.log
 
       - name: Prepare upload keystore (secrets or ephemeral CI key)
         run: |

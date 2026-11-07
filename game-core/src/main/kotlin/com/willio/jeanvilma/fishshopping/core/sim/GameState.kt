@@ -45,6 +45,13 @@ object Stats {
     const val CONTRACTS_FAILED = "stat.contracts_failed"
     const val CONTRACT_REVENUE = "stat.contract_revenue"
     const val CONTRACT_ITEMS_DELIVERED = "stat.contract_items_delivered"
+    /** Finish 2.0 Phase 17 — fully finished delivery chains. */
+    const val CONTRACT_CHAINS_COMPLETED = "stat.contract_chains_completed"
+    /** Consecutive contract deadline fails (resets on any successful payout). */
+    const val CONTRACT_FAIL_STREAK = "stat.contract_fail_streak"
+    /** Finish 2.0 Phase 18 — local login / play streak (calendar day). */
+    const val DAILY_LOGIN_STREAK = "stat.daily_login_streak"
+    const val DAILY_GOALS_CLAIMED = "stat.daily_goals_claimed"
     const val HARBORS_TRAVELED = "stat.harbors_traveled"
     const val MAINTENANCE_PAID = "stat.maintenance_paid"
     const val ITEMS_SPOILED = "stat.items_spoiled"
@@ -52,6 +59,14 @@ object Stats {
     const val TROPHY_SPECIES = "stat.trophy_species"
     const val TROPHY_RECORDS = "stat.trophy_records"
     const val TROPHY_SETS_COMPLETE = "stat.trophy_sets_complete"
+    /** Finish 2.0 Phase 11 — lifetime achievement unlocks. */
+    const val ACHIEVEMENTS_UNLOCKED = "stat.achievements_unlocked"
+    /** Finish 2.0 Phase 14 — fishing mastery XP granted. */
+    const val MASTERY_XP = "stat.mastery_xp"
+    const val MASTERY_LEVEL_UPS = "stat.mastery_level_ups"
+    /** Finish 2.0 Phase 15 — staff branch train purchases / unlocks. */
+    const val STAFF_BRANCH_TRAINING = "stat.staff_branch_training"
+    const val STAFF_BRANCHES_UNLOCKED = "stat.staff_branches_unlocked"
     const val DECOR_BOUGHT = "stat.decor_bought"
     const val MACHINES_BROKEN = "stat.machines_broken"
     const val MACHINES_SLOWED = "stat.machines_slowed"
@@ -72,8 +87,11 @@ object Stats {
         WORKERS_HIRED, WORKER_FISH_CAUGHT, WORKER_ITEMS_MOVED, WORKER_XP, WORKER_LEVEL_UPS,
         LEASES_EXPIRED, WAGES_PAID, OVERTIME_WAGES,
         QUESTS_COMPLETED, CONTRACTS_COMPLETED, CONTRACTS_FAILED, CONTRACT_REVENUE,
-        CONTRACT_ITEMS_DELIVERED, HARBORS_TRAVELED, MAINTENANCE_PAID, ITEMS_SPOILED,
-        PRESTIGE_COMPLETED, TROPHY_SPECIES, TROPHY_RECORDS, TROPHY_SETS_COMPLETE, DECOR_BOUGHT,
+        CONTRACT_ITEMS_DELIVERED, CONTRACT_CHAINS_COMPLETED, CONTRACT_FAIL_STREAK,
+        DAILY_LOGIN_STREAK, DAILY_GOALS_CLAIMED,
+        HARBORS_TRAVELED, MAINTENANCE_PAID, ITEMS_SPOILED,
+        PRESTIGE_COMPLETED, TROPHY_SPECIES, TROPHY_RECORDS, TROPHY_SETS_COMPLETE, ACHIEVEMENTS_UNLOCKED,
+        MASTERY_XP, MASTERY_LEVEL_UPS, STAFF_BRANCH_TRAINING, STAFF_BRANCHES_UNLOCKED, DECOR_BOUGHT,
         MACHINES_BROKEN, MACHINES_SLOWED, MACHINES_REPAIRED, REPAIR_SPENT,
         LOANS_TAKEN, LOAN_INTEREST_ACCRUED, LOAN_REPAID, LOAN_COLLECTED, COIN_GOALS_REACHED,
     )
@@ -134,6 +152,14 @@ class WorkerState(
     var onShift = true
     /** Equipped staff gear: loadout slot id → upgrade id (Phase 19). */
     val equipment = linkedMapOf<String, String>()
+    /** Finish 2.0 Phase 15 / schema 23 — active specialization branch. */
+    var activeBranchId: String? = null
+    /** Unlocked specialization branch ids. */
+    val unlockedBranchIds = java.util.TreeSet<String>()
+    /** Training progress toward branch unlock (usually cleared on unlock). */
+    val branchTrainingXp = java.util.TreeMap<String, Int>()
+    /** Assigned automation schedule id, if any. */
+    var scheduleId: String? = null
 
     val busyWalking get() = walkTicksLeft > 0
 }
@@ -344,6 +370,18 @@ class GameState(
      * Sunrise Pier stays free; grant is idempotent via purchase receipts.
      */
     var fullHarborUnlock = false
+    /**
+     * Finish 2.0 Phase 7 / schema 21: unlocked achievement ids (engine grants in Phase 11).
+     * Empty on migrate from schema ≤20.
+     */
+    val unlockedAchievements = TreeSet<String>()
+    /**
+     * Finish 2.0 Phase 14 / schema 22: per-species fishing mastery XP.
+     * Empty on migrate from schema ≤21.
+     */
+    val speciesMasteryXp = TreeMap<String, Int>()
+    /** Finish 2.0 Phase 14 — active rod technique id, or null for default unlocked. */
+    var activeTechniqueId: String? = null
     /** Best catch per species id (museum / trophy board). */
     val trophies = TreeMap<String, TrophyRecord>()
     /** Phase 27 lifetime catches per species id (telemetry v2). */
@@ -489,12 +527,24 @@ sealed interface Command {
     data class AcceptContract(val offerId: String, val requestId: String) : Command
     /** Deliver matching items from the player bag toward an active contract. */
     data class DeliverContract(val contractId: String, val requestId: String) : Command
+    /** Finish 2.0 Phase 18 — push host wall-clock ms for local daily goals / streak. */
+    data class SyncWallClock(val epochMs: Long) : Command
+    /** Finish 2.0 Phase 18 — claim a completed daily objective; [requestId] idempotent. */
+    data class ClaimDailyGoal(val objectiveId: String, val requestId: String) : Command
     /** Travel to another harbor; [requestId] makes retries idempotent. */
     data class TravelToHarbor(val harborId: String, val requestId: String) : Command
     /** Buy a bait pack at a kiosk zone; [requestId] makes retries idempotent. */
     data class BuyBait(val baitId: String, val requestId: String) : Command
     /** Set preferred bait for future casts, or null to clear (auto). */
     data class SelectBait(val baitId: String?) : Command
+    /** Finish 2.0 Phase 14 — select an unlocked rod technique (null = default). */
+    data class SelectTechnique(val techniqueId: String?) : Command
+    /** Finish 2.0 Phase 15 — pay to train a specialization branch. */
+    data class TrainWorkerBranch(val workerId: String, val branchId: String, val requestId: String) : Command
+    /** Finish 2.0 Phase 15 — select an unlocked specialization branch (null = clear). */
+    data class SelectWorkerBranch(val workerId: String, val branchId: String?) : Command
+    /** Finish 2.0 Phase 15 — assign an automation schedule (null = clear). */
+    data class SetWorkerSchedule(val workerId: String, val scheduleId: String?) : Command
     /** Buy shop decor; [requestId] makes retries idempotent (Phase 23). */
     data class PurchaseDecor(val decorId: String, val requestId: String) : Command
     /**
@@ -711,6 +761,25 @@ sealed interface GameEvent {
         val requestId: String,
         val reason: String,
     ) : GameEvent
+    data class DailyGoalsRolled(
+        override val tick: Long,
+        val dayId: Long,
+        val streak: Int,
+    ) : GameEvent
+    data class DailyGoalClaimed(
+        override val tick: Long,
+        val objectiveId: String,
+        val payout: Long,
+        val streak: Int,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class DailyGoalRejected(
+        override val tick: Long,
+        val objectiveId: String,
+        val requestId: String,
+        val reason: String,
+    ) : GameEvent
     data class HarborTraveled(
         override val tick: Long,
         val fromHarborId: String,
@@ -755,5 +824,67 @@ sealed interface GameEvent {
         val cosmetic: String? = null,
         val catchSpeedPermille: Int = 0,
         val priceBonusPermille: Int = 0,
+    ) : GameEvent
+    /** Finish 2.0 Phase 11 — achievement unlocked into [GameState.unlockedAchievements]. */
+    data class AchievementUnlocked(
+        override val tick: Long,
+        val achievementId: String,
+        val coinsRewarded: Long = 0,
+    ) : GameEvent
+    /** Finish 2.0 Phase 13 — weather pattern rotated. */
+    data class WeatherChanged(
+        override val tick: Long,
+        val weatherId: String,
+        val name: String,
+    ) : GameEvent
+    /** Finish 2.0 Phase 13 — tide phase rotated. */
+    data class TideChanged(
+        override val tick: Long,
+        val tidePhaseId: String,
+        val name: String,
+    ) : GameEvent
+    /** Finish 2.0 Phase 14 — species mastery XP gained. */
+    data class MasteryXpGained(
+        override val tick: Long,
+        val speciesId: String,
+        val xpGained: Int,
+        val totalXp: Int,
+        val level: Int,
+    ) : GameEvent
+    /** Finish 2.0 Phase 14 — species mastery level increased. */
+    data class MasteryLevelUp(
+        override val tick: Long,
+        val speciesId: String,
+        val level: Int,
+    ) : GameEvent
+    /** Finish 2.0 Phase 15 — staff branch training purchase. */
+    data class WorkerBranchTrained(
+        override val tick: Long,
+        val workerId: String,
+        val branchId: String,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class WorkerBranchTrainRejected(
+        override val tick: Long,
+        val workerId: String,
+        val branchId: String,
+        val requestId: String,
+        val reason: String,
+    ) : GameEvent
+    data class WorkerBranchUnlocked(
+        override val tick: Long,
+        val workerId: String,
+        val branchId: String,
+    ) : GameEvent
+    data class WorkerBranchSelected(
+        override val tick: Long,
+        val workerId: String,
+        val branchId: String?,
+    ) : GameEvent
+    data class WorkerScheduleChanged(
+        override val tick: Long,
+        val workerId: String,
+        val scheduleId: String?,
     ) : GameEvent
 }

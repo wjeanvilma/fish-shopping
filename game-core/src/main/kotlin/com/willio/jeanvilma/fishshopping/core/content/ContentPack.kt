@@ -26,6 +26,8 @@ data class ContentPack(
     val automationAlerts: AutomationAlertsDef,
     /** Offline catch-up policy (Phase 14). */
     val offline: OfflineDef,
+    /** Finish 2.0 Phase 18 — local daily objectives + login streak (no net). */
+    val dailyGoals: DailyGoalsCatalog,
     /** Soft coin/stock sinks after early progression (Phase 19). */
     val economy: EconomyDef,
     /** Day-part fishing ecology (Phase 7). */
@@ -34,6 +36,16 @@ data class ContentPack(
     val trophies: TrophiesDef,
     /** End-of-run prestige milestones (Phase 20); additive, never wipes the save. */
     val prestige: PrestigeDef,
+    /** Finish 2.0 Phase 11 — sim-granted achievements. */
+    val achievements: AchievementsCatalog,
+    /** Finish 2.0 Phase 12 — species codex / journal blurbs. */
+    val codex: SpeciesCodexCatalog,
+    /** Finish 2.0 Phase 13 — weather cycle + tide phases. */
+    val weather: WeatherCatalog,
+    /** Finish 2.0 Phase 14 — per-species mastery + rod techniques. */
+    val fishingMastery: FishingMasteryCatalog,
+    /** Finish 2.0 Phase 15 — staff specialization trees. */
+    val staffTrees: StaffTreesCatalog,
     /** Service reputation from served vs abandoned (Phase 13). */
     val reputation: ReputationDef,
     /** Timed delivery contracts board (Phase 17). */
@@ -58,8 +70,16 @@ data class ContentPack(
     val workersById = workers.associateBy { it.id }
     val workerTraitsById = staffProgression.traits.associateBy { it.id }
     val prestigeMilestonesById = prestige.milestones.associateBy { it.id }
+    val achievementsById = achievements.entries.associateBy { it.id }
+    val codexBySpeciesId = codex.entries.associateBy { it.speciesId }
+    val weatherPatternsById = weather.patterns.associateBy { it.id }
+    val tidePhasesById = weather.tide.phases.associateBy { it.id }
+    val techniquesById = fishingMastery.techniques.associateBy { it.id }
+    val staffBranchesById = staffTrees.branches.associateBy { it.id }
+    val staffSchedulesById = staffTrees.schedules.associateBy { it.id }
     val trophySetsById = trophies.sets.associateBy { it.id }
     val contractTemplatesById = contracts.templates.associateBy { it.id }
+    val dailyObjectivesById = dailyGoals.objectives.associateBy { it.id }
     val customersById = customers.associateBy { it.id }
     val decorById = decor.items.associateBy { it.id }
     val seasonalEventsById = seasonalEvents.events.associateBy { it.id }
@@ -231,6 +251,139 @@ data class QuestDef(
     val reward: QuestReward,
 )
 
+/** Finish 2.0 Phase 11 — content-driven achievement entry. */
+data class AchievementDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val category: String,
+    val goal: StatGoal,
+    val rewardCoins: Long,
+)
+
+data class AchievementsCatalog(
+    val entries: List<AchievementDef>,
+)
+
+/** Finish 2.0 Phase 12 — per-species journal entry. */
+data class SpeciesCodexEntryDef(
+    val speciesId: String,
+    val family: String,
+    val lore: String,
+    val habitatHint: String,
+    val journalTip: String,
+)
+
+data class SpeciesCodexCatalog(
+    val families: List<String>,
+    val entries: List<SpeciesCodexEntryDef>,
+)
+
+/** Finish 2.0 Phase 13 — one weather pattern in the rotating cycle. */
+data class WeatherPatternDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val durationTicks: Int,
+    val catchSpeedMultPermille: Int,
+    val regenMultPermille: Int,
+    val customerSpawnMultPermille: Int,
+    val rareChanceBonusPermille: Int,
+)
+
+data class TidePhaseDef(
+    val id: String,
+    val name: String,
+    /** Exclusive end within the tide period (1..1000); last must be 1000. */
+    val endPermille: Int,
+    val catchSpeedMultPermille: Int,
+    val regenMultPermille: Int,
+    val customerSpawnMultPermille: Int,
+)
+
+data class TideCatalog(
+    val periodTicks: Int,
+    val phases: List<TidePhaseDef>,
+    /** Added to tide catch mult when tide chart is owned. */
+    val chartCatchBonusPermille: Int,
+    /** Fraction of regen penalty above 1000 removed when tide chart is owned. */
+    val chartRegenEasePermille: Int,
+    /** Added to tide crowd mult when tide chart is owned. */
+    val chartCrowdBonusPermille: Int,
+)
+
+data class WeatherCatalog(
+    val patterns: List<WeatherPatternDef>,
+    val tide: TideCatalog,
+)
+
+/** Finish 2.0 Phase 14 — rod technique selectable beyond Perfect/Good/Miss. */
+data class MasteryTechniqueDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val requiresMasteryLevel: Int,
+    val windowStartDeltaPermille: Int,
+    val windowEndDeltaPermille: Int,
+    val perfectStartDeltaPermille: Int,
+    val perfectEndDeltaPermille: Int,
+    val catchSpeedMultPermille: Int,
+    val perfectBonusPermille: Int,
+    val rareChanceBonusPermille: Int,
+)
+
+data class MasteryCoachingTipDef(
+    val id: String,
+    val minGlobalLevel: Int,
+    val maxGlobalLevel: Int,
+    val minSpeciesLevel: Int,
+    val text: String,
+)
+
+/** Finish 2.0 Phase 15 — one specialization branch within a role family. */
+data class StaffBranchDef(
+    val id: String,
+    val role: String,
+    val name: String,
+    val description: String,
+    val parentId: String?,
+    val requiresWorkerLevel: Int,
+    val trainingCostCoins: Int,
+    val trainingXpRequired: Int,
+    val catchSpeedMultPermille: Int,
+    val moveSpeedMultPermille: Int,
+    val carryBonus: Int,
+    val transferIntervalMultPermille: Int,
+    val wageMultPermille: Int,
+)
+
+data class StaffScheduleDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val dayParts: List<String>,
+    val autoOnShift: Boolean,
+    val wageMultPermille: Int,
+)
+
+data class StaffTreesCatalog(
+    val branches: List<StaffBranchDef>,
+    val schedules: List<StaffScheduleDef>,
+)
+
+data class FishingMasteryCatalog(
+    val maxLevel: Int,
+    val xpThresholds: List<Int>,
+    val xpCatch: Int,
+    val xpGoodReel: Int,
+    val xpPerfectReel: Int,
+    val xpRareCatch: Int,
+    val catchSpeedPermillePerLevel: Int,
+    val rareChanceBonusPermillePerLevel: Int,
+    val techniques: List<MasteryTechniqueDef>,
+    val coachingTips: List<MasteryCoachingTipDef>,
+)
+
 enum class WorkerRoleKind(val wire: String) {
     FISHER("fisher"),
     PORTER("porter"),
@@ -356,6 +509,27 @@ data class OfflineDef(
     val capHours: Int,
     /** Absences shorter than this do not show the summary screen. */
     val summaryMinSeconds: Int,
+)
+
+/** Finish 2.0 Phase 18 — rotating daily objectives + local login streak. */
+data class DailyGoalsCatalog(
+    /** Real-world day length in ms (86400000 = civil day). */
+    val dayLengthMs: Long,
+    /** How many objectives post to the daily board. */
+    val boardSlots: Int,
+    /** Extra coins per streak day applied when claiming (capped by maxStreakBonusDays). */
+    val streakBonusCoinsPerDay: Long,
+    val maxStreakBonusDays: Int,
+    val objectives: List<DailyObjectiveDef>,
+)
+
+data class DailyObjectiveDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val goal: StatGoal,
+    val rewardCoins: Long,
+    val weight: Int,
 )
 
 /** Soft economy pressure: station upkeep + counter/bag spoilage (Phase 19). */
@@ -489,8 +663,19 @@ data class ContractTemplateDef(
     val failCooldownTicks: Int = 1,
     /** Phase 24: only post while the named seasonal event is active. */
     val requiresSeasonalEvent: String? = null,
+    /**
+     * Finish 2.0 Phase 17 — delivery chain id. Templates sharing a chainId advance
+     * in [chainStep] order after each successful delivery; only step 1 posts to the board.
+     */
+    val chainId: String? = null,
+    /** 1-based step within [chainId] (ignored when chainId is null). */
+    val chainStep: Int = 1,
+    /** Minimum service-reputation band (0=Poor) required before this offer can post. */
+    val requiresReputationBand: Int? = null,
 ) {
     val isStanding: Boolean get() = kind == ContractKind.STANDING
+    val isChain: Boolean get() = chainId != null
+    val isChainHead: Boolean get() = chainId == null || chainStep <= 1
 }
 
 /** Harbor contract board: rotating offers with timed deliveries. */
@@ -501,6 +686,18 @@ data class ContractsDef(
     /** Quest / upgrade IDs required before the board posts offers. */
     val requires: List<String>,
     val templates: List<ContractTemplateDef>,
+    /**
+     * Finish 2.0 Phase 17 — consecutive fails at/above this apply board pressure
+     * ([failStreakBoardSlotPenalty] / [failStreakOfferWeightMultPermille]).
+     */
+    val failStreakThreshold: Int = 3,
+    val failStreakBoardSlotPenalty: Int = 1,
+    val failStreakOfferWeightMultPermille: Int = 700,
+    /**
+     * Per reputation band payout tip for new offers (1000 = unchanged).
+     * Length should match reputation band count; empty disables.
+     */
+    val reputationPayoutMultPermille: List<Int> = emptyList(),
 )
 
 enum class CustomerKind(val wire: String) {
@@ -540,6 +737,11 @@ data class CustomerDef(
      * Missing keys default to 1000.
      */
     val dayPartSpawnMultPermille: Map<String, Int> = emptyMap(),
+    /**
+     * Finish 2.0 Phase 16 — when set, this customer only spawns while the named
+     * seasonal / festival weekend event is active.
+     */
+    val requiresSeasonalEvent: String? = null,
 )
 
 sealed interface TutorialTrigger {
@@ -705,6 +907,15 @@ data class SeasonalEventDef(
     val banner: String? = null,
     /** Catch-weight multipliers while active (1000 = unchanged). */
     val speciesWeightMultPermille: Map<String, Int> = emptyMap(),
+    /**
+     * Finish 2.0 Phase 16 — crowd spawn multiplier while active (stacks with weather/tide).
+     * 1000 = unchanged.
+     */
+    val customerSpawnMultPermille: Int = 1000,
+    /** Harbor-wide sale price tip while active (stacks with rush/scarcity/rating). */
+    val priceMultPermille: Int = 1000,
+    /** Festival-only customer ids that should appear while this weekend is live. */
+    val festivalCustomerIds: List<String> = emptyList(),
 ) {
     val endTick: Int get() = startTick + durationTicks
 }

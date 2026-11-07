@@ -584,7 +584,16 @@ export function worldBurstPoolForQuality(quality: PresenterQuality): number {
   return VFX_BURST_POOL_BY_QUALITY[quality];
 }
 
-export type WorldBurstKind = "catch" | "pay" | "celebrate" | "machine_done";
+/** Finish 2.0 Phase 22 adds achievement/festival/contract_done/goal_claim. */
+export type WorldBurstKind =
+  | "catch"
+  | "pay"
+  | "celebrate"
+  | "machine_done"
+  | "achievement"
+  | "festival"
+  | "contract_done"
+  | "goal_claim";
 
 export interface WorldBurstCue {
   xMm: number;
@@ -613,10 +622,14 @@ const BURST_DURATION_S: Record<WorldBurstKind, number> = {
   pay: 0.45,
   celebrate: 0.7,
   machine_done: 0.4,
+  achievement: 0.55,
+  festival: 0.6,
+  contract_done: 0.4,
+  goal_claim: 0.35,
 };
 
-/** Phase 21 — screen-shake kinds for catch / cut / sale / celebrate. */
-export type ShakeKind = "catch" | "cut" | "sale" | "celebrate";
+/** Phase 21 — screen-shake kinds; Finish 2.0 Phase 22 adds achievement/festival. */
+export type ShakeKind = "catch" | "cut" | "sale" | "celebrate" | "achievement" | "festival";
 
 export const SHAKE_DURATION_S = 0.18;
 /** Hard cap after quality scale (meters). */
@@ -626,6 +639,8 @@ export const SHAKE_AMPLITUDE_M: Record<ShakeKind, number> = {
   cut: 0.03,
   sale: 0.05,
   celebrate: 0.08,
+  achievement: 0.06,
+  festival: 0.05,
 };
 export const SHAKE_SCALE_BY_QUALITY = {
   low: 0.5,
@@ -739,6 +754,26 @@ export function resolveCelebrateBurst(v: SimView): WorldBurstCue {
   return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "celebrate" };
 }
 
+/** Finish 2.0 Phase 22 — achievement sparkle at the player. */
+export function resolveAchievementBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "achievement" };
+}
+
+/** Finish 2.0 Phase 22 — festival cue at the player (seasonal start). */
+export function resolveFestivalBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "festival" };
+}
+
+/** Finish 2.0 Phase 22 — contract complete at the player. */
+export function resolveContractDoneBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "contract_done" };
+}
+
+/** Finish 2.0 Phase 22 — daily goal claim at the player. */
+export function resolveGoalClaimBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "goal_claim" };
+}
+
 /**
  * Ephemeral world bursts. Quality-budgeted; never mutates sim.
  */
@@ -789,10 +824,17 @@ export class WorldBursts {
       s.age += dt;
       const t = Math.min(1, s.age / s.duration);
       const rise = t * (2 - t);
-      const kindScale = s.kind === "celebrate" ? 1.4 : s.kind === "catch" ? 0.85 : 1.0;
+      const kindScale =
+        s.kind === "celebrate" || s.kind === "achievement" || s.kind === "festival" ? 1.4
+          : s.kind === "catch" ? 0.85
+          : 1.0;
       const scale = kindScale * (0.35 + 1.1 * rise);
       const opacity = 1 - t * t;
-      const y = 0.35 + (s.kind === "celebrate" ? 1.1 : s.kind === "catch" ? 0.55 : 0.7) * rise;
+      const y = 0.35 + (
+        s.kind === "celebrate" || s.kind === "achievement" || s.kind === "festival" ? 1.1
+          : s.kind === "catch" ? 0.55
+          : 0.7
+      ) * rise;
       if (t >= 1) {
         this.slots[i] = null;
         return null;

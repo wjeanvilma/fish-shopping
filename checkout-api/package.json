@@ -1,0 +1,15 @@
+{
+  "name": "fishshopping-checkout-api",
+  "private": true,
+  "version": "0.0.25",
+  "type": "module",
+  "description": "Finish 2.0 Phase 25 — local web checkout API emulator (no payment secrets).",
+  "scripts": {
+    "dev": "npx --prefix ../web vite-node src/server.ts",
+    "start": "npx --prefix ../web vite-node src/server.ts",
+    "validate": "npx --prefix ../web vite-node ../web/scripts/validate-web-checkout-api.ts"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

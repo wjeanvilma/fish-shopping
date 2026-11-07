@@ -1,6 +1,7 @@
 /**
  * Phase 25 (post-1.0) — cloud save production cutover catalog
- * (mirrors shared/cloud/production-path.json). Firestore rules stay out of repo.
+ * (mirrors shared/cloud/production-path.json).
+ * Finish 2.0 Phase 26: reviewed rules snippet path only — never a deployable firestore.rules.
  */
 import productionPath from "../../../shared/cloud/production-path.json";
 
@@ -19,6 +20,9 @@ export interface CloudProductionPathCatalog {
   documentFields: string[];
   conflictUi: string;
   firestoreRules: string;
+  firestoreRulesSnippet?: string;
+  firestoreRulesMode?: string;
+  finish2FirestoreSnippetPhase?: number;
   contentVersion: string;
   schemaVersion: number;
   envKeys: {
@@ -73,7 +77,10 @@ export interface CloudProductionReadiness {
   conflictUiShipped: boolean;
   authMode: string;
   documentPath: string;
+  /** True only if a deployable firestore.rules were committed — always false (snippet-only). */
   firestoreRulesInRepo: boolean;
+  /** Finish 2.0 Phase 26: reviewed snippet path is present. */
+  firestoreRulesSnippetShipped: boolean;
   offlineQueueEnabled: boolean;
   cutoverChecklistCount: number;
 }
@@ -82,13 +89,21 @@ export function cloudProductionReadiness(
   env: Record<string, string | undefined>,
 ): CloudProductionReadiness {
   const { missing } = readWebFirebaseEnv(env);
+  const rules = CLOUD_PRODUCTION_PATH.firestoreRules;
+  const mode = CLOUD_PRODUCTION_PATH.firestoreRulesMode ?? "snippet_only_not_deployed";
+  const snippetShipped =
+    rules !== "not_shipped_ask_for_snippet" &&
+    rules.includes("shared/cloud/snippets/") &&
+    mode === "snippet_only_not_deployed";
   return {
     keysConfigured: missing.length === 0,
     missingKeys: missing,
     conflictUiShipped: CLOUD_PRODUCTION_PATH.conflictUi.includes("phase11"),
     authMode: CLOUD_PRODUCTION_PATH.authMode,
     documentPath: CLOUD_PRODUCTION_PATH.documentPath,
-    firestoreRulesInRepo: CLOUD_PRODUCTION_PATH.firestoreRules !== "not_shipped_ask_for_snippet",
+    // Never ship a deployable firestore.rules file in-repo (user + Finish 2.0 P26 rule).
+    firestoreRulesInRepo: false,
+    firestoreRulesSnippetShipped: snippetShipped,
     offlineQueueEnabled: CLOUD_PRODUCTION_PATH.offlineQueue.enabled === true,
     cutoverChecklistCount: CLOUD_PRODUCTION_PATH.cutoverChecklist.length,
   };

@@ -23,7 +23,7 @@ describe("DoD closeout (post-1.0 Phase 30)", () => {
     expect(DOD_COMPLETE_TAG).toBe("v1.0-complete");
     expect(DOD_CLOSEOUT_STATUS).toBe("archived");
     expect(isCloseoutReady()).toBe(true);
-    expect(DEFINITION_OF_DONE.schemaVersion).toBe(20);
+    expect(DEFINITION_OF_DONE.schemaVersion).toBe(23);
     expect(DEFINITION_OF_DONE.closeout.phaseGates).toHaveLength(29);
     expect(dodPhaseGateCatalogs()).toContain("shared/ship/hotfix-lane.json");
     expect(dodRequiredChecks()).toContain("legal_urls_pages_ready");

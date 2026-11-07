@@ -7,10 +7,10 @@ package com.willio.jeanvilma.fishshopping.core.lifecycle
 object LifecyclePolicy {
     const val PHASE = 28
     const val SCHEMA = "fish.lifecycle.browser_android.v1"
-    const val CURRENT_SCHEMA = 20
-    const val MIGRATE_THROUGH_SCHEMA = 19
+    const val CURRENT_SCHEMA = 23
+    const val MIGRATE_THROUGH_SCHEMA = 22
 
-    val LEGACY_FIXTURE_VERSIONS: IntArray = intArrayOf(1, 12, 13, 14, 15, 16, 17, 18, 19)
+    val LEGACY_FIXTURE_VERSIONS: IntArray = intArrayOf(1, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22)
 
     const val WEBGL2_GATE_COPY =
         "Fish Shopping needs a browser with WebGL 2. Try a current version of Chrome, Firefox, Edge or Safari, and make sure hardware acceleration is turned on."

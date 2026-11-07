@@ -1,0 +1,18 @@
+{
+  "schema": "fish.fixture.parity_weather_tide.v1",
+  "description": "Finish 2.0 Phase 13: assert weather/tide at tick 0, advance past clear→overcast boundary, verify catch-speed mult and weather_changed event.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1301,
+  "expectAtTick0": {
+    "weatherId": "weather.clear",
+    "tidePhaseId": "tide.low",
+    "weatherTicksRemaining": 1000,
+    "patternCount": 5,
+    "tidePhaseCount": 4
+  },
+  "advanceToTick": 1000,
+  "expectAfterAdvance": {
+    "weatherId": "weather.overcast",
+    "eventWeatherId": "weather.overcast"
+  }
+}

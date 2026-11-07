@@ -14,10 +14,12 @@ data class OfflineReport(
     val itemsSold: Long,
     val workerFishCaught: Long,
     val workerItemsMoved: Long,
+    /** Finish 2.0 Phase 18 — narrative lines for the away summary / dashboard. */
+    val journalLines: List<String> = emptyList(),
 ) {
     val hadActivity: Boolean
         get() = coinsDelta != 0L || fishCaught > 0L || sales > 0L ||
-            workerFishCaught > 0L || workerItemsMoved > 0L
+            workerFishCaught > 0L || workerItemsMoved > 0L || journalLines.isNotEmpty()
 }
 
 /**

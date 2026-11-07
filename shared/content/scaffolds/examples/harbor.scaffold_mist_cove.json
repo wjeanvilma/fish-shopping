@@ -1,0 +1,184 @@
+{
+  "id": "harbor.scaffold_mist_cove",
+  "name": "Mist Cove",
+  "playerSpawn": {
+    "x": 0,
+    "z": 0
+  },
+  "walkable": [
+    {
+      "id": "area.land",
+      "minX": -6000,
+      "minZ": -6000,
+      "maxX": 8000,
+      "maxZ": 6000
+    }
+  ],
+  "obstacles": [
+    {
+      "id": "footprint.cutter_1",
+      "minX": 2000,
+      "minZ": -3000,
+      "maxX": 3600,
+      "maxZ": -1400
+    },
+    {
+      "id": "footprint.counter_1",
+      "minX": 1500,
+      "minZ": 2500,
+      "maxX": 4000,
+      "maxZ": 3500
+    }
+  ],
+  "zones": [
+    {
+      "id": "zone.pier_end",
+      "minX": -5500,
+      "minZ": -800,
+      "maxX": -3500,
+      "maxZ": 800,
+      "kind": "fishing"
+    },
+    {
+      "id": "zone.cutter_in",
+      "minX": 1800,
+      "minZ": -3200,
+      "maxX": 2800,
+      "maxZ": -2200,
+      "kind": "machine_input"
+    },
+    {
+      "id": "zone.cutter_out",
+      "minX": 2800,
+      "minZ": -3200,
+      "maxX": 3800,
+      "maxZ": -2200,
+      "kind": "machine_output"
+    },
+    {
+      "id": "zone.counter_1",
+      "minX": 1600,
+      "minZ": 2200,
+      "maxX": 3900,
+      "maxZ": 3200,
+      "kind": "counter"
+    },
+    {
+      "id": "zone.kiosk_1",
+      "minX": -1000,
+      "minZ": 2000,
+      "maxX": 0,
+      "maxZ": 3000,
+      "kind": "kiosk"
+    },
+    {
+      "id": "zone.plot_grill",
+      "minX": 4500,
+      "minZ": -3000,
+      "maxX": 5500,
+      "maxZ": -2000,
+      "kind": "plot"
+    }
+  ],
+  "fishingSpots": [
+    {
+      "zone": "zone.pier_end",
+      "species": [
+        "species.harbor_herring",
+        "species.silver_sprat"
+      ],
+      "stockMax": 12,
+      "regenTicks": 45,
+      "regenCurvePermille": [
+        2000,
+        1500,
+        1100,
+        850,
+        650
+      ],
+      "dayPartRegenMultPermille": {
+        "dawn": 800,
+        "day": 1000,
+        "dusk": 900,
+        "night": 1300
+      }
+    }
+  ],
+  "stations": [
+    {
+      "id": "station.cutter_1",
+      "machine": "machine.basic_cutter",
+      "inputZone": "zone.cutter_in",
+      "outputZone": "zone.cutter_out"
+    }
+  ],
+  "counters": [
+    {
+      "id": "counter.retail_1",
+      "kind": "retail",
+      "products": [
+        "product.basic_portion",
+        "product.fillet"
+      ],
+      "capacityUnits": 20,
+      "zone": "zone.counter_1",
+      "footprint": "footprint.counter_1",
+      "checkoutTicks": 20,
+      "maxQueue": 3,
+      "queueAnchor": {
+        "x": 2800,
+        "z": 4200
+      },
+      "queueStep": {
+        "x": -900,
+        "z": 0
+      }
+    }
+  ],
+  "plots": [
+    {
+      "id": "plot.scaffold_mist_cove_grill",
+      "name": "Grill expansion",
+      "description": "Scaffold plot for Mist Cove. Point grantsUpgrade at a real unlock before merge.",
+      "zone": "zone.plot_grill",
+      "grantsUpgrade": "upgrade.harbor_grill"
+    }
+  ],
+  "customerSpawnTicks": 160,
+  "customerEntry": {
+    "x": 5000,
+    "z": 5000
+  },
+  "customerWalkMmPerTick": 100,
+  "customerPathWaypoints": [
+    {
+      "x": 3500,
+      "z": 4500
+    },
+    {
+      "x": 2500,
+      "z": 3800
+    }
+  ],
+  "rushes": [
+    {
+      "id": "rush.scaffo_lunch",
+      "name": "Lunch rush",
+      "periodTicks": 2400,
+      "startTick": 600,
+      "durationTicks": 400,
+      "spawnSpeedPermille": 2200,
+      "queueBonus": 2,
+      "priceMultPermille": 1100
+    }
+  ],
+  "requires": [],
+  "specialization": {
+    "id": "spec.scaffold_mist_cove_docks",
+    "name": "Mist Cove docks",
+    "description": "Authoring scaffold specialization for Mist Cove.",
+    "maintenanceDiscountPerStation": 0,
+    "rareChanceBonusPermille": 0,
+    "kindSpawnMultPermille": {}
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "phase": 18,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.offline_journal_daily_goals.v1",
+  "description": "Finish 2.0 Phase 18 — offline journal + local daily goals / login streak (no mandatory net); Goals + dashboard panels; schema 23 via stats.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "dailyObjectiveCount": 6,
+  "boardSlots": 3,
+  "objectives": [
+    "daily.catch_five",
+    "daily.sell_three",
+    "daily.stock_counter",
+    "daily.feed_machines",
+    "daily.contract_one",
+    "daily.perfect_reel"
+  ],
+  "parityFixture": "shared/fixtures/parity-offline-journal-daily-goals.json",
+  "definitionOfDoneDailyObjectives": 6,
+  "validateScript": "npm run dailygoals:validate",
+  "checklist": [
+    "content-pack.dailyGoals has ≥6 objectives and boardSlots 3",
+    "DailyGoalsSystem syncs wall clock, rolls day/streak, posts board",
+    "claim daily reward via ClaimDailyGoal (idempotent)",
+    "OfflineReport journal lines from away deltas + streak",
+    "Goals + Business dashboard show streak/dailies; offline summary shows journal",
+    "schema stays 23 (stats-only day/streak/board/claims)",
+    "parity-offline-journal-daily-goals fixture + dailygoals:validate green",
+    "CI runs dailygoals:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/offline-journal-daily-goals.json",
+    "shared/ship/schema-23.json",
+    "shared/fixtures/parity-offline-journal-daily-goals.json",
+    "web/src/ship/offlineJournalDailyGoals.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/OfflineJournalDailyGoals.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/progression/DailyGoals.kt",
+    "web/src/engine/systems.ts"
+  ]
+}

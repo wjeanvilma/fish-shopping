@@ -1,0 +1,17 @@
+{
+  "schema": "fish.fixture.parity_offline_journal_daily_goals.v1",
+  "description": "Finish 2.0 Phase 18: sync wall clock into a fixed day, force catch_five on board, complete + claim, assert streak and journal.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1,
+  "epochMs": 1700000000000,
+  "dayLengthMs": 86400000,
+  "objectiveId": "daily.catch_five",
+  "forceBoardIndex": 0,
+  "expect": {
+    "dayId": 19675,
+    "streakAfterSync": 1,
+    "target": 5,
+    "rewardCoinsBase": 15,
+    "streakBonusCoinsPerDay": 5
+  }
+}

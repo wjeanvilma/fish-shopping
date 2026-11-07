@@ -20,10 +20,16 @@
     "routing",
     "automationAlerts",
     "offline",
+    "dailyGoals",
     "economy",
     "ecology",
     "trophies",
     "prestige",
+    "achievements",
+    "codex",
+    "weather",
+    "fishingMastery",
+    "staffTrees",
     "reputation",
     "contracts",
     "customers",
@@ -40,6 +46,11 @@
     "contentVersion": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "saveSchemaVersion": {
+      "type": "integer",
+      "const": 23,
+      "description": "Finish 2.0 Phase 15 \u2014 save schema this content pack targets (migrations from \u226422)."
     },
     "ticksPerSecond": {
       "const": 20
@@ -845,6 +856,10 @@
               "type": "integer",
               "minimum": 1
             }
+          },
+          "requiresSeasonalEvent": {
+            "$ref": "#/$defs/id",
+            "description": "Finish 2.0 Phase 16: only spawn while the named festival weekend is active."
           }
         },
         "additionalProperties": false
@@ -1047,7 +1062,9 @@
         "loadouts": {
           "type": "object",
           "description": "Assignable staff gear slots (Phase 19). Owned worker_* upgrades equip to one worker each.",
-          "required": ["slots"],
+          "required": [
+            "slots"
+          ],
           "additionalProperties": false,
           "properties": {
             "slots": {
@@ -1055,15 +1072,28 @@
               "minItems": 1,
               "items": {
                 "type": "object",
-                "required": ["id", "name", "upgradeIds"],
+                "required": [
+                  "id",
+                  "name",
+                  "upgradeIds"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "id": { "type": "string", "minLength": 1 },
-                  "name": { "type": "string", "minLength": 1 },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
                   "upgradeIds": {
                     "type": "array",
                     "minItems": 1,
-                    "items": { "type": "string", "minLength": 1 },
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
                     "description": "Upgrade IDs that fill this slot (must use worker_move_speed / worker_carry / worker_catch_speed)."
                   }
                 }
@@ -1186,6 +1216,77 @@
         }
       }
     },
+    "dailyGoals": {
+      "type": "object",
+      "description": "Finish 2.0 Phase 18 — local daily objectives + login streak (no mandatory net).",
+      "required": [
+        "dayLengthMs",
+        "boardSlots",
+        "streakBonusCoinsPerDay",
+        "maxStreakBonusDays",
+        "objectives"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "dayLengthMs": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Real-world day length in milliseconds (86400000 = civil day)."
+        },
+        "boardSlots": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "streakBonusCoinsPerDay": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxStreakBonusDays": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "objectives": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "description",
+              "goal",
+              "rewardCoins",
+              "weight"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id",
+                "pattern": "^daily\\.[a-z0-9_]+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "goal": {
+                "$ref": "#/$defs/statGoal"
+              },
+              "rewardCoins": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "weight": {
+                "$ref": "#/$defs/positiveInt"
+              }
+            }
+          }
+        }
+      }
+    },
     "ecology": {
       "type": "object",
       "required": [
@@ -1197,7 +1298,7 @@
       "properties": {
         "dayLengthTicks": {
           "$ref": "#/$defs/positiveInt",
-          "description": "Ticks in one dawn→night cycle (tick % dayLengthTicks)."
+          "description": "Ticks in one dawn\u2192night cycle (tick % dayLengthTicks)."
         },
         "parts": {
           "type": "array",
@@ -1298,7 +1399,7 @@
             "type": "integer",
             "minimum": 1
           },
-          "description": "Phase 12 scarcity sale multipliers for counter fill bands 0–20% … 80–100% (1000 = unchanged)."
+          "description": "Phase 12 scarcity sale multipliers for counter fill bands 0\u201320% \u2026 80\u2013100% (1000 = unchanged)."
         },
         "wear": {
           "type": "object",
@@ -1316,15 +1417,35 @@
           "properties": {
             "requires": {
               "type": "array",
-              "items": { "$ref": "#/$defs/id" },
+              "items": {
+                "$ref": "#/$defs/id"
+              },
               "description": "Quest/upgrade IDs before wear events can fire."
             },
-            "checkPeriodTicks": { "$ref": "#/$defs/positiveInt" },
-            "chancePermille": { "type": "integer", "minimum": 0, "maximum": 1000 },
-            "breakChancePermille": { "type": "integer", "minimum": 0, "maximum": 1000 },
-            "slowDurationTicks": { "$ref": "#/$defs/positiveInt" },
-            "slowProcessMultPermille": { "type": "integer", "minimum": 1000 },
-            "repairCoins": { "type": "integer", "minimum": 0 }
+            "checkPeriodTicks": {
+              "$ref": "#/$defs/positiveInt"
+            },
+            "chancePermille": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "breakChancePermille": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "slowDurationTicks": {
+              "$ref": "#/$defs/positiveInt"
+            },
+            "slowProcessMultPermille": {
+              "type": "integer",
+              "minimum": 1000
+            },
+            "repairCoins": {
+              "type": "integer",
+              "minimum": 0
+            }
           }
         }
       }
@@ -1543,7 +1664,7 @@
             "minimum": 0,
             "maximum": 1000
           },
-          "description": "Non-decreasing thresholds that split score into bands (N thresholds → N+1 bands)."
+          "description": "Non-decreasing thresholds that split score into bands (N thresholds \u2192 N+1 bands)."
         },
         "kindSpawnMultPermille": {
           "type": "array",
@@ -1554,7 +1675,7 @@
               "type": "integer",
               "minimum": 1
             },
-            "description": "CustomerKind.wire → spawn weight multiplier for one reputation band."
+            "description": "CustomerKind.wire \u2192 spawn weight multiplier for one reputation band."
           },
           "description": "Per-band spawn multipliers; length must equal scoreBandThresholdsPermille.length + 1."
         },
@@ -1655,7 +1776,10 @@
               },
               "kind": {
                 "type": "string",
-                "enum": ["standard", "standing"],
+                "enum": [
+                  "standard",
+                  "standing"
+                ],
                 "description": "Phase 14: one-shot standard job or auto-refresh standing order."
               },
               "payoutEscalatePermille": {
@@ -1679,9 +1803,45 @@
               "requiresSeasonalEvent": {
                 "$ref": "#/$defs/id",
                 "description": "Phase 24: only post this template while the named seasonal event is active."
+              },
+              "chainId": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Finish 2.0 Phase 17: delivery chain id. Only chainStep 1 posts to the board."
+              },
+              "chainStep": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "1-based step within chainId."
+              },
+              "requiresReputationBand": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Minimum service-reputation band before this offer can post."
               }
             }
           }
+        },
+        "failStreakThreshold": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Finish 2.0 Phase 17: consecutive fails at/above this apply board pressure."
+        },
+        "failStreakBoardSlotPenalty": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failStreakOfferWeightMultPermille": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reputationPayoutMultPermille": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "description": "Per reputation band payout tip for new offers (1000 = unchanged)."
         }
       }
     },
@@ -1759,7 +1919,9 @@
       "properties": {
         "requires": {
           "type": "array",
-          "items": { "$ref": "#/$defs/id" },
+          "items": {
+            "$ref": "#/$defs/id"
+          },
           "description": "Quest/upgrade IDs before the bank is available."
         },
         "loanPrincipal": {
@@ -1772,7 +1934,9 @@
           "minimum": 1000,
           "description": "Total repayment as principal * repayPermille / 1000."
         },
-        "termTicks": { "$ref": "#/$defs/positiveInt" },
+        "termTicks": {
+          "$ref": "#/$defs/positiveInt"
+        },
         "collectionPeriodTicks": {
           "$ref": "#/$defs/positiveInt",
           "description": "While overdue, seize owed coins this often."
@@ -1780,7 +1944,10 @@
         "goalPresets": {
           "type": "array",
           "minItems": 1,
-          "items": { "type": "integer", "minimum": 1 },
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
           "description": "Coin-goal targets offered in the Goals panel."
         }
       }
@@ -1788,29 +1955,77 @@
     "seasonalEvents": {
       "type": "object",
       "description": "Phase 24 time-boxed overlays driven by the sim clock (no live server).",
-      "required": ["events"],
+      "required": [
+        "events"
+      ],
       "properties": {
         "events": {
           "type": "array",
           "minItems": 1,
           "items": {
             "type": "object",
-            "required": ["id", "name", "description", "periodTicks", "startTick", "durationTicks"],
+            "required": [
+              "id",
+              "name",
+              "description",
+              "periodTicks",
+              "startTick",
+              "durationTicks"
+            ],
             "properties": {
-              "id": { "$ref": "#/$defs/id", "pattern": "^event\\.[a-z0-9_]+$" },
-              "name": { "type": "string", "minLength": 1 },
-              "description": { "type": "string", "minLength": 1 },
-              "periodTicks": { "$ref": "#/$defs/positiveInt" },
-              "startTick": { "type": "integer", "minimum": 0 },
-              "durationTicks": { "$ref": "#/$defs/positiveInt" },
+              "id": {
+                "$ref": "#/$defs/id",
+                "pattern": "^event\\.[a-z0-9_]+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "periodTicks": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "startTick": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "durationTicks": {
+                "$ref": "#/$defs/positiveInt"
+              },
               "banner": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "description": "Cosmetic / banner id unlocked when the event first becomes active."
               },
               "speciesWeightMultPermille": {
                 "type": "object",
-                "additionalProperties": { "type": "integer", "minimum": 1 },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 1
+                },
                 "description": "Catch-weight multipliers for listed species while the event is active."
+              },
+              "customerSpawnMultPermille": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Finish 2.0 Phase 16: harbor crowd spawn tip while active (1000 = unchanged)."
+              },
+              "priceMultPermille": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Finish 2.0 Phase 16: harbor-wide sale tip while active (1000 = unchanged)."
+              },
+              "festivalCustomerIds": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/id"
+                },
+                "description": "Festival-only customer ids that appear while this weekend is live."
               }
             }
           }
@@ -1820,24 +2035,43 @@
     "decor": {
       "type": "object",
       "description": "Phase 23 shop decor / placable cosmetics. Owned pieces add a tiny customer patience buff.",
-      "required": ["items"],
+      "required": [
+        "items"
+      ],
       "properties": {
         "items": {
           "type": "array",
           "minItems": 1,
           "items": {
             "type": "object",
-            "required": ["id", "name", "description", "cost", "patienceBonusTicks"],
+            "required": [
+              "id",
+              "name",
+              "description",
+              "cost",
+              "patienceBonusTicks"
+            ],
             "properties": {
               "id": {
                 "$ref": "#/$defs/id",
                 "pattern": "^decor\\.[a-z0-9_]+$"
               },
-              "name": { "type": "string", "minLength": 1 },
-              "description": { "type": "string", "minLength": 1 },
-              "cost": { "$ref": "#/$defs/coins" },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cost": {
+                "$ref": "#/$defs/coins"
+              },
               "requiresCosmetic": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "description": "Optional prestige banner / cosmetic id that must already be unlocked."
               },
               "patienceBonusTicks": {
@@ -2125,7 +2359,7 @@
           },
           "customerPathWaypoints": {
             "type": "array",
-            "description": "Intermediate points for the customer approach polyline (entry → waypoints → queue slot). Empty means a straight walk. Segments must stay on open walkable ground.",
+            "description": "Intermediate points for the customer approach polyline (entry \u2192 waypoints \u2192 queue slot). Empty means a straight walk. Segments must stay on open walkable ground.",
             "items": {
               "$ref": "#/$defs/point"
             }
@@ -2223,6 +2457,554 @@
                   "type": "integer",
                   "minimum": 1
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "achievements": {
+      "type": "object",
+      "description": "Finish 2.0 Phase 11 \u2014 sim-granted achievements unlocked into save.unlockedAchievements.",
+      "required": [
+        "entries"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "description",
+              "category",
+              "goal",
+              "rewardCoins"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^achievement\\.[a-z0-9_]+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "category": {
+                "type": "string",
+                "enum": [
+                  "fishing",
+                  "kitchen",
+                  "commerce",
+                  "exploration",
+                  "mastery"
+                ]
+              },
+              "goal": {
+                "$ref": "#/$defs/statGoal"
+              },
+              "rewardCoins": {
+                "$ref": "#/$defs/coins"
+              }
+            }
+          }
+        }
+      }
+    },
+    "weather": {
+      "type": "object",
+      "description": "Finish 2.0 Phase 13 \u2014 weather cycle + tide phases that modify catch rates and crowds.",
+      "required": [
+        "patterns",
+        "tide"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "description",
+              "durationTicks",
+              "catchSpeedMultPermille",
+              "regenMultPermille",
+              "customerSpawnMultPermille",
+              "rareChanceBonusPermille"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^weather\\.[a-z0-9_]+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "durationTicks": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "catchSpeedMultPermille": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "regenMultPermille": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "customerSpawnMultPermille": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "rareChanceBonusPermille": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000
+              }
+            }
+          }
+        },
+        "tide": {
+          "type": "object",
+          "required": [
+            "periodTicks",
+            "phases",
+            "chartCatchBonusPermille",
+            "chartRegenEasePermille",
+            "chartCrowdBonusPermille"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "periodTicks": {
+              "$ref": "#/$defs/positiveInt"
+            },
+            "phases": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "name",
+                  "endPermille",
+                  "catchSpeedMultPermille",
+                  "regenMultPermille",
+                  "customerSpawnMultPermille"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^tide\\.[a-z0-9_]+$"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "endPermille": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000
+                  },
+                  "catchSpeedMultPermille": {
+                    "$ref": "#/$defs/positiveInt"
+                  },
+                  "regenMultPermille": {
+                    "$ref": "#/$defs/positiveInt"
+                  },
+                  "customerSpawnMultPermille": {
+                    "$ref": "#/$defs/positiveInt"
+                  }
+                }
+              }
+            },
+            "chartCatchBonusPermille": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "chartRegenEasePermille": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "chartCrowdBonusPermille": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          }
+        }
+      }
+    },
+    "codex": {
+      "type": "object",
+      "description": "Finish 2.0 Phase 12 \u2014 species codex / journal lore, habitat hints, and family filters.",
+      "required": [
+        "families",
+        "entries"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "families": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "pier",
+              "cove",
+              "jetty",
+              "polar",
+              "marina",
+              "reef",
+              "storm",
+              "ember",
+              "trophy"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "speciesId",
+              "family",
+              "lore",
+              "habitatHint",
+              "journalTip"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "speciesId": {
+                "$ref": "#/$defs/id",
+                "pattern": "^species\\.[a-z0-9_]+$"
+              },
+              "family": {
+                "type": "string",
+                "enum": [
+                  "pier",
+                  "cove",
+                  "jetty",
+                  "polar",
+                  "marina",
+                  "reef",
+                  "storm",
+                  "ember",
+                  "trophy"
+                ]
+              },
+              "lore": {
+                "type": "string",
+                "minLength": 1
+              },
+              "habitatHint": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Shown before discovery to aid findability without revealing the name."
+              },
+              "journalTip": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "fishingMastery": {
+      "type": "object",
+      "description": "Finish 2.0 Phase 14 \u2014 per-species fishing mastery XP, rod techniques, coaching tips.",
+      "required": [
+        "maxLevel",
+        "xpThresholds",
+        "xpCatch",
+        "xpGoodReel",
+        "xpPerfectReel",
+        "xpRareCatch",
+        "catchSpeedPermillePerLevel",
+        "rareChanceBonusPermillePerLevel",
+        "techniques",
+        "coachingTips"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "maxLevel": {
+          "$ref": "#/$defs/positiveInt"
+        },
+        "xpThresholds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "xpCatch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "xpGoodReel": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "xpPerfectReel": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "xpRareCatch": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "catchSpeedPermillePerLevel": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rareChanceBonusPermillePerLevel": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "techniques": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "description",
+              "requiresMasteryLevel",
+              "windowStartDeltaPermille",
+              "windowEndDeltaPermille",
+              "perfectStartDeltaPermille",
+              "perfectEndDeltaPermille",
+              "catchSpeedMultPermille",
+              "perfectBonusPermille",
+              "rareChanceBonusPermille"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^technique\\.[a-z0-9_]+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "requiresMasteryLevel": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "windowStartDeltaPermille": {
+                "type": "integer"
+              },
+              "windowEndDeltaPermille": {
+                "type": "integer"
+              },
+              "perfectStartDeltaPermille": {
+                "type": "integer"
+              },
+              "perfectEndDeltaPermille": {
+                "type": "integer"
+              },
+              "catchSpeedMultPermille": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "perfectBonusPermille": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "rareChanceBonusPermille": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000
+              }
+            }
+          }
+        },
+        "coachingTips": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "minGlobalLevel",
+              "maxGlobalLevel",
+              "minSpeciesLevel",
+              "text"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^tip\\.mastery\\.[a-z0-9_]+$"
+              },
+              "minGlobalLevel": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "maxGlobalLevel": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "minSpeciesLevel": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "staffTrees": {
+      "type": "object",
+      "description": "Finish 2.0 Phase 15 \u2014 staff specialization trees: role branches, training costs, automation schedules.",
+      "required": [
+        "branches",
+        "schedules"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "branches": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "role",
+              "name",
+              "description",
+              "requiresWorkerLevel",
+              "trainingCostCoins",
+              "trainingXpRequired",
+              "catchSpeedMultPermille",
+              "moveSpeedMultPermille",
+              "carryBonus",
+              "transferIntervalMultPermille",
+              "wageMultPermille"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^branch\\.[a-z0-9_]+\\.[a-z0-9_]+$"
+              },
+              "role": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "parentId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "requiresWorkerLevel": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "trainingCostCoins": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "trainingXpRequired": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "catchSpeedMultPermille": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "moveSpeedMultPermille": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "carryBonus": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "transferIntervalMultPermille": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "wageMultPermille": {
+                "$ref": "#/$defs/positiveInt"
+              }
+            }
+          }
+        },
+        "schedules": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "description",
+              "dayParts",
+              "autoOnShift",
+              "wageMultPermille"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^schedule\\.[a-z0-9_]+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "dayParts": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "autoOnShift": {
+                "type": "boolean"
+              },
+              "wageMultPermille": {
+                "$ref": "#/$defs/positiveInt"
               }
             }
           }

@@ -22,7 +22,7 @@ describe("Tutorial friction (post-1.0 Phase 22)", () => {
     expect(TUTORIAL_FRICTION_PHASE).toBe(22);
     expect(TUTORIAL_FRICTION_SCHEMA).toBe("fish.content.tutorial_friction.v1");
     expect(tutorialFriction.contentVersion).toBe("1.0.0"); // Phase 22 freeze record
-    expect(tutorialFriction.schemaVersion).toBe(20);
+    expect(tutorialFriction.schemaVersion).toBe(21);
     expect(tutorialFriction.constraints.noAdvanceOnChanges).toBe(true);
     expect(tutorialFriction.constraints.noContentVersionBump).toBe(true);
     expect(tutorialFriction.funnel.highFrictionStepIds).toEqual([

@@ -54,11 +54,24 @@ function validate(): string[] {
 
   if (catalog.phase !== 25) errors.push(`phase expected 25, got ${catalog.phase}`);
   if (catalog.schema !== "fish.cloud.production_path.v1") errors.push("bad schema");
-  if (catalog.schemaVersion !== 20) errors.push("schemaVersion must stay 20");
+  if (catalog.schemaVersion !== 21) errors.push("schemaVersion must stay 21");
   if (catalog.authMode !== "identity_toolkit_anonymous") errors.push("authMode mismatch");
   if (catalog.documentPath !== "users/{uid}/saves/harbor") errors.push("documentPath mismatch");
-  if (catalog.firestoreRules !== "not_shipped_ask_for_snippet") {
-    errors.push("firestore rules must stay out of repo");
+  // Finish 2.0 Phase 26: reviewed snippet path only — never a deployable firestore.rules.
+  if (catalog.firestoreRules !== "shared/cloud/snippets/firestore-harbor-save.rules") {
+    errors.push("firestoreRules must point at shared/cloud/snippets/firestore-harbor-save.rules");
+  }
+  if (catalog.firestoreRulesMode !== "snippet_only_not_deployed") {
+    errors.push("firestoreRulesMode must be snippet_only_not_deployed");
+  }
+  if (!existsSync(resolve(root, catalog.firestoreRules as string))) {
+    errors.push(`missing firestore rules snippet ${catalog.firestoreRules}`);
+  }
+  if (existsSync(resolve(root, "firestore.rules"))) {
+    errors.push("deployable firestore.rules must not exist at repo root");
+  }
+  if (existsSync(resolve(root, "firebase/firestore.rules"))) {
+    errors.push("deployable firebase/firestore.rules must not exist");
   }
   if (!catalog.conflictUi?.includes("phase11")) errors.push("conflictUi must reference Phase 11");
   if (catalog.offlineQueue?.enabled !== true) errors.push("offlineQueue.enabled required");
@@ -120,4 +133,4 @@ if (errors.length) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
-console.log("OK cloud:validate — production cutover offline queue; rules not in repo");
+console.log("OK cloud:validate — production cutover offline queue; rules snippet-only");

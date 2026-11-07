@@ -54,7 +54,15 @@ function validate(): string[] {
   if (!harbor.includes("webglcontextlost")) errors.push("HarborScene missing context lost handler");
   if (!harbor.includes("preventDefault")) errors.push("context lost must preventDefault");
   if (!app.includes("hasWebGL2")) errors.push("App missing WebGL2 gate");
-  if (!app.includes("WEBGL2_GATE_COPY")) errors.push("App missing WebGL2 gate copy");
+  // Finish 2.0 i18n routes the gate copy through lifecycle.webgl2Gate; keep the
+  // constant available in lifecyclePolicy.ts for matrix catalog parity.
+  if (!app.includes("WEBGL2_GATE_COPY") && !app.includes("lifecycle.webgl2Gate")) {
+    errors.push("App missing WebGL2 gate copy");
+  }
+  const lifecyclePolicy = readFileSync(resolve(root, "web/src/game/lifecyclePolicy.ts"), "utf8");
+  if (!lifecyclePolicy.includes("WEBGL2_GATE_COPY")) {
+    errors.push("lifecyclePolicy missing WEBGL2_GATE_COPY constant");
+  }
   if (!app.includes("audioUnlockEvents")) errors.push("App missing audio unlock wiring");
 
   if (!save.includes("isQuotaExceededError")) errors.push("saveStore missing quota detector");

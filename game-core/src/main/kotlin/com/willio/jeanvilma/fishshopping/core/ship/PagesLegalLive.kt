@@ -13,7 +13,7 @@ object PagesLegalLive {
     const val WORKFLOW = ".github/workflows/pages.yml"
     const val NPM_SCRIPT = "pages:legal"
     const val EXPECT_STATUS = 200
-    const val SCHEMA_VERSION = 20
+    const val SCHEMA_VERSION = 21
 
     val LIVE_URLS: List<String> = listOf(
         "https://wjeanvilma.github.io/fish-shopping/",

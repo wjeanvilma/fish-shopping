@@ -148,29 +148,36 @@ androidComponents {
     }
 }
 
-// Phase 4: fail release packaging with a clear message when upload signing is missing.
-// Use a dedicated task + dependsOn (not doFirst on AGP tasks) so configuration-cache can serialize.
-val releaseSigningReady = uploadConfigured || allowDebugFallback
+// Finish 2.0 Phase 5: fail release packaging with a clear message when upload signing is missing.
+// Dedicated task + dependsOn (never doFirst on AGP package/bundle) so configuration-cache can serialize.
+// Always registered so CI can prove the unsigned-fail path via FISH_UPLOAD_FORCE_UNSIGNED / -P.
+val forceUnsigned =
+    truthy(System.getenv("FISH_UPLOAD_FORCE_UNSIGNED")?.trim().orEmpty()) ||
+        truthy((findProperty("FISH_UPLOAD_FORCE_UNSIGNED") as? String).orEmpty())
+val releaseSigningReady = !forceUnsigned && (uploadConfigured || allowDebugFallback)
 val releaseSigningMessage =
     "Release signing not configured. Set FISH_UPLOAD_STORE_FILE / " +
         "FISH_UPLOAD_STORE_PASSWORD / FISH_UPLOAD_KEY_ALIAS / FISH_UPLOAD_KEY_PASSWORD " +
         "(or fish.upload.* in local.properties). " +
         "For local R8 smoke only, set fish.upload.allowDebugFallback=true. " +
         "See local.properties.example and shared/android/release-signing.json."
-if (!releaseSigningReady) {
-    val checkReleaseUploadSigning =
-        tasks.register("checkReleaseUploadSigning") {
-            description = "Fails release packaging when Play upload signing is not configured."
-            // Message is a configuration-time String — safe for the configuration cache.
-            val message = releaseSigningMessage
-            doLast {
+val checkReleaseUploadSigning =
+    tasks.register("checkReleaseUploadSigning") {
+        description =
+            "Fails release packaging when Play upload signing is not configured " +
+                "(configuration-cache safe; Finish 2.0 Phase 5)."
+        // Booleans/message captured at configuration time — safe for the configuration cache.
+        val ready = releaseSigningReady
+        val message = releaseSigningMessage
+        doLast {
+            if (!ready) {
                 throw GradleException(message)
             }
         }
-    arrayOf("packageRelease", "bundleRelease").forEach { taskName ->
-        tasks.matching { it.name == taskName }.configureEach {
-            dependsOn(checkReleaseUploadSigning)
-        }
+    }
+arrayOf("packageRelease", "bundleRelease").forEach { taskName ->
+    tasks.matching { it.name == taskName }.configureEach {
+        dependsOn(checkReleaseUploadSigning)
     }
 }
 

@@ -1,0 +1,125 @@
+{
+  "phase": 9,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.species_37_50.v1",
+  "description": "Finish 2.0 Phase 9 — expand species roster to 50 (ids 37–50 + rares) and bait ladder to ≥8; wire ecology spots, trophy galleries, and seasonal weight hooks.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 21,
+  "speciesCount": 50,
+  "baitCount": 8,
+  "newBaseSpecies": [
+    {
+      "id": "species.coral_wrasse",
+      "name": "Coral wrasse",
+      "rareUpgrade": "species.gilt_wrasse",
+      "harbors": ["harbor.coral_lagoon"],
+      "gallery": "gallery.coral_lagoon"
+    },
+    {
+      "id": "species.lagoon_tang",
+      "name": "Lagoon tang",
+      "rareUpgrade": "species.opal_tang",
+      "harbors": ["harbor.coral_lagoon"],
+      "gallery": "gallery.coral_lagoon"
+    },
+    {
+      "id": "species.gale_jack",
+      "name": "Gale jack",
+      "rareUpgrade": "species.thunder_jack",
+      "harbors": ["harbor.storm_quay"],
+      "gallery": "gallery.storm_quay"
+    },
+    {
+      "id": "species.squall_bass",
+      "name": "Squall bass",
+      "rareUpgrade": "species.prism_squall",
+      "harbors": ["harbor.storm_quay"],
+      "gallery": "gallery.storm_quay"
+    },
+    {
+      "id": "species.cinder_carp",
+      "name": "Cinder carp",
+      "rareUpgrade": "species.gilt_cinder",
+      "harbors": ["harbor.ember_wharf"],
+      "gallery": "gallery.ember_wharf"
+    },
+    {
+      "id": "species.ash_pike",
+      "name": "Ash pike",
+      "rareUpgrade": "species.magma_pike",
+      "harbors": ["harbor.ember_wharf"],
+      "gallery": "gallery.ember_wharf"
+    },
+    {
+      "id": "species.tropic_ray",
+      "name": "Tropic ray",
+      "rareUpgrade": "species.pearl_ray",
+      "harbors": ["harbor.coral_lagoon"],
+      "gallery": "gallery.coral_lagoon"
+    }
+  ],
+  "newRareSpecies": [
+    "species.gilt_wrasse",
+    "species.opal_tang",
+    "species.thunder_jack",
+    "species.prism_squall",
+    "species.gilt_cinder",
+    "species.magma_pike",
+    "species.pearl_ray"
+  ],
+  "newBaits": [
+    {
+      "id": "bait.brine_paste",
+      "cost": 30,
+      "requires": ["upgrade.bait_pouch"]
+    },
+    {
+      "id": "bait.coral_spark",
+      "cost": 55,
+      "requires": ["upgrade.rod_speed_2"]
+    },
+    {
+      "id": "bait.storm_jig",
+      "cost": 100,
+      "requires": ["upgrade.timing_sights"]
+    },
+    {
+      "id": "bait.ember_oil",
+      "cost": 140,
+      "requires": ["upgrade.rod_speed_3"]
+    },
+    {
+      "id": "bait.abyss_chum",
+      "cost": 200,
+      "requires": ["upgrade.timing_mastery"]
+    }
+  ],
+  "legacyBaits": [
+    "bait.shrimp_nibble",
+    "bait.glow_lure",
+    "bait.king_chum"
+  ],
+  "rareGallery": "gallery.rare_gallery",
+  "baitFixture": "shared/fixtures/parity-species-37-50.json",
+  "artTool": "shared/tools/generate_fish_stubs.py",
+  "definitionOfDoneSpeciesMin": 50,
+  "validateScript": "npm run species3750:validate",
+  "checklist": [
+    "content-pack has 50 species including coral/storm/ember wave + rares",
+    "bait ladder has ≥8 entries (3 legacy + 5 new)",
+    "Fishing spots + harbor galleries + rare_gallery wired",
+    "Seasonal weight hooks for new base species",
+    "Fish GLB stubs generated + item art validated",
+    "DoD quotas.speciesMin = 50",
+    "parity-species-37-50 fixture + species3750:validate green",
+    "CI runs species3750:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/species-37-50.json",
+    "shared/fixtures/parity-species-37-50.json",
+    "shared/assets/models/fish_coral_wrasse.glb",
+    "shared/assets/models/fish_pearl_ray.glb",
+    "web/src/ship/species3750.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Species3750.kt"
+  ]
+}

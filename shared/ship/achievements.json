@@ -1,0 +1,128 @@
+{
+  "phase": 11,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.achievements.v1",
+  "description": "Finish 2.0 Phase 11 — content-driven achievements engine: catalog entries granted into save.unlockedAchievements, HUD toast, Settings achievements screen, Kotlin↔web parity.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 21,
+  "achievementCount": 14,
+  "entries": [
+    {
+      "id": "achievement.first_catch",
+      "category": "fishing",
+      "goalStat": "stat.fish_caught",
+      "goalAtLeast": 1,
+      "rewardCoins": 5
+    },
+    {
+      "id": "achievement.pier_regular",
+      "category": "fishing",
+      "goalStat": "stat.fish_caught",
+      "goalAtLeast": 25,
+      "rewardCoins": 15
+    },
+    {
+      "id": "achievement.rare_hook",
+      "category": "fishing",
+      "goalStat": "stat.rare_catches",
+      "goalAtLeast": 1,
+      "rewardCoins": 20
+    },
+    {
+      "id": "achievement.perfect_timing",
+      "category": "fishing",
+      "goalStat": "stat.perfect_reels",
+      "goalAtLeast": 1,
+      "rewardCoins": 10
+    },
+    {
+      "id": "achievement.first_sale",
+      "category": "commerce",
+      "goalStat": "stat.sales",
+      "goalAtLeast": 1,
+      "rewardCoins": 5
+    },
+    {
+      "id": "achievement.busy_counter",
+      "category": "commerce",
+      "goalStat": "stat.sales",
+      "goalAtLeast": 25,
+      "rewardCoins": 25
+    },
+    {
+      "id": "achievement.line_cook",
+      "category": "kitchen",
+      "goalStat": "stat.machine_inputs",
+      "goalAtLeast": 20,
+      "rewardCoins": 15
+    },
+    {
+      "id": "achievement.first_hire",
+      "category": "kitchen",
+      "goalStat": "stat.workers_hired",
+      "goalAtLeast": 1,
+      "rewardCoins": 15
+    },
+    {
+      "id": "achievement.contract_runner",
+      "category": "commerce",
+      "goalStat": "stat.contracts_completed",
+      "goalAtLeast": 1,
+      "rewardCoins": 20
+    },
+    {
+      "id": "achievement.twin_harbors",
+      "category": "exploration",
+      "goalStat": "stat.harbors_traveled",
+      "goalAtLeast": 2,
+      "rewardCoins": 25
+    },
+    {
+      "id": "achievement.trophy_hunter",
+      "category": "mastery",
+      "goalStat": "stat.trophy_species",
+      "goalAtLeast": 5,
+      "rewardCoins": 20
+    },
+    {
+      "id": "achievement.bait_buyer",
+      "category": "fishing",
+      "goalStat": "stat.bait_bought",
+      "goalAtLeast": 10,
+      "rewardCoins": 10
+    },
+    {
+      "id": "achievement.rising_star",
+      "category": "mastery",
+      "goalStat": "stat.prestige_completed",
+      "goalAtLeast": 1,
+      "rewardCoins": 30
+    },
+    {
+      "id": "achievement.museum_set",
+      "category": "mastery",
+      "goalStat": "stat.trophy_sets_complete",
+      "goalAtLeast": 1,
+      "rewardCoins": 35
+    }
+  ],
+  "parityFixture": "shared/fixtures/parity-achievements.json",
+  "definitionOfDoneAchievements": 14,
+  "validateScript": "npm run achievements:validate",
+  "checklist": [
+    "content-pack achievements.entries has 14 catalog ids",
+    "AchievementSystem grants into unlockedAchievements on both clients",
+    "GameEvent.AchievementUnlocked + HUD toast",
+    "Settings achievements screen on web + Android",
+    "SimView.achievements parity",
+    "parity-achievements fixture + achievements:validate green",
+    "CI runs achievements:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/achievements.json",
+    "shared/fixtures/parity-achievements.json",
+    "web/src/ship/achievements.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/AchievementsShip.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/progression/Achievements.kt"
+  ]
+}

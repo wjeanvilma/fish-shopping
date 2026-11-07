@@ -10,6 +10,7 @@ import com.willio.jeanvilma.fishshopping.core.economy.EconomySystem
 import com.willio.jeanvilma.fishshopping.core.progression.PrestigeSystem
 import com.willio.jeanvilma.fishshopping.core.progression.ProgressionSystem
 import com.willio.jeanvilma.fishshopping.core.progression.UpgradeSystem
+import com.willio.jeanvilma.fishshopping.core.workers.StaffTreesSystem
 import com.willio.jeanvilma.fishshopping.core.workers.WorkerSystem
 import com.willio.jeanvilma.fishshopping.core.world.HarborTravelSystem
 
@@ -56,6 +57,20 @@ data class SimView(
     val dayPartName: String,
     /** True when tide chart is owned (night regen eases + dawn/dusk cast bonus). */
     val tideChartOwned: Boolean,
+    /** Finish 2.0 Phase 13 — current weather pattern. */
+    val weatherId: String = "",
+    val weatherName: String = "",
+    val weatherDescription: String = "",
+    val weatherTicksRemaining: Int = 0,
+    /** Finish 2.0 Phase 13 — current tide phase. */
+    val tidePhaseId: String = "",
+    val tidePhaseName: String = "",
+    val tideTicksRemaining: Int = 0,
+    /** Finish 2.0 Phase 14 — active rod technique. */
+    val activeTechniqueId: String = "",
+    val activeTechniqueName: String = "",
+    val masteryGlobalLevel: Int = 0,
+    val techniques: List<TechniqueView> = emptyList(),
     /** Preferred bait id for new casts (null = auto). */
     val preferredBaitId: String?,
     /** Active cast bait id, if any. */
@@ -110,6 +125,12 @@ data class SimView(
     val contractOffers: List<ContractOfferView>,
     val activeContracts: List<ActiveContractView>,
     val contractRefreshTicksLeft: Int,
+    /** Finish 2.0 Phase 17 — consecutive contract fails (board pressure). */
+    val contractFailStreak: Int = 0,
+    val contractFailStreakThreshold: Int = 3,
+    /** Finish 2.0 Phase 18 — local login streak + today's dailies (Goals panel). */
+    val dailyLoginStreak: Int = 0,
+    val dailyGoals: List<DailyGoalView> = emptyList(),
     /** Soft sinks unlocked (maintenance + spoilage). */
     val economyUnlocked: Boolean,
     val economyLockedReason: String?,
@@ -128,6 +149,9 @@ data class SimView(
     /** Short band label for the HUD strip. */
     val reputationLabel: String,
     val prestige: List<PrestigeView>,
+    /** Finish 2.0 Phase 11 — lifetime achievements for Settings / HUD. */
+    val achievements: List<AchievementView>,
+    val unlockedAchievementsCount: Int,
     val unlockedCosmetics: List<String>,
     /** Phase 23 shop decor offers for the Goals panel. */
     val decorOffers: List<DecorOfferView>,
@@ -163,12 +187,14 @@ data class WarehouseView(
     val reconcileError: String?,
 )
 
-/** Phase 8 species book collection rollup. */
+/** Phase 8 species book + Finish 2.0 Phase 12 codex/journal. */
 data class SpeciesBookView(
     val entries: List<SpeciesBookEntryView>,
     val discovered: Int,
     val total: Int,
     val empty: Boolean,
+    /** Codex family filter chips (Phase 12). */
+    val families: List<String> = emptyList(),
 )
 
 data class SpeciesBookEntryView(
@@ -183,6 +209,23 @@ data class SpeciesBookEntryView(
     val rarityWeight: Int,
     /** When this species is a rare upgrade form, the base species id. */
     val baseSpeciesId: String?,
+    /** Codex family id (pier/cove/…/trophy). */
+    val family: String = "pier",
+    /** Lore blurb when discovered. */
+    val lore: String? = null,
+    /** Habitat hint — shown even before discovery. */
+    val habitatHint: String? = null,
+    /** Coaching tip when discovered. */
+    val journalTip: String? = null,
+    /** common | uncommon | rare | epic | legendary */
+    val rarityBand: String = "common",
+    val baseValue: Long = 0,
+    /** Estimated lifetime dock value from catch count × baseValue. */
+    val catchValueEstimate: Long = 0,
+    /** Finish 2.0 Phase 14 — species mastery level (0 when undiscovered). */
+    val masteryLevel: Int = 0,
+    val masteryXp: Int = 0,
+    val masteryXpToNext: Int? = null,
 )
 
 /** Phase 9 business dashboard — committed sales only (never wallet coins). */
@@ -203,6 +246,25 @@ data class BusinessDashboardView(
     val topSpecies: List<SpeciesCatchShareView>,
     val bottlenecks: List<AutomationIssueView>,
     val empty: Boolean,
+    /** Finish 2.0 Phase 18 — local login streak. */
+    val dailyLoginStreak: Int = 0,
+    /** Today's daily objectives summary for the dashboard. */
+    val dailyGoals: List<DailyGoalView> = emptyList(),
+    /** Last offline journal lines (host may overlay pending report). */
+    val offlineJournalLines: List<String> = emptyList(),
+)
+
+/** Finish 2.0 Phase 18 — one daily board objective. */
+data class DailyGoalView(
+    val objectiveId: String,
+    val name: String,
+    val description: String,
+    val progress: Long,
+    val target: Long,
+    val rewardCoins: Long,
+    val complete: Boolean,
+    val claimed: Boolean,
+    val claimEnabled: Boolean,
 )
 
 data class WarehouseLineView(
@@ -266,6 +328,15 @@ data class ContextCard(
     val plotBuildable: Boolean = false,
 )
 
+data class TechniqueView(
+    val id: String,
+    val name: String,
+    val description: String,
+    val requiresMasteryLevel: Int,
+    val unlocked: Boolean,
+    val active: Boolean,
+)
+
 data class BaitOfferView(
     val id: String,
     val name: String,
@@ -316,6 +387,10 @@ data class SeasonalEventBannerView(
     val description: String,
     val ticksRemaining: Int,
     val banner: String? = null,
+    /** Finish 2.0 Phase 16 — crowd spawn tip while active (1000 = unchanged). */
+    val customerSpawnMultPermille: Int = 1000,
+    /** Harbor-wide sale tip while active (1000 = unchanged). */
+    val priceMultPermille: Int = 1000,
 )
 
 /** Phase 26 Goals-panel bank / coin-goal presentation. */
@@ -376,6 +451,41 @@ data class WorkerView(
     val equipment: List<WorkerEquipmentView>,
     /** Why this worker is stuck idle, if any (Phase 20). */
     val blockedReason: String?,
+    /** Finish 2.0 Phase 15 — active specialization + schedule. */
+    val activeBranchId: String?,
+    val activeBranchName: String?,
+    val scheduleId: String?,
+    val scheduleName: String?,
+    val branches: List<StaffBranchOfferView>,
+    val schedules: List<StaffScheduleOfferView>,
+)
+
+/** Finish 2.0 Phase 15 — specialization branch row for one worker. */
+data class StaffBranchOfferView(
+    val id: String,
+    val name: String,
+    val description: String,
+    val parentId: String?,
+    val requiresWorkerLevel: Int,
+    val trainingCostCoins: Int,
+    val unlocked: Boolean,
+    val active: Boolean,
+    val canTrain: Boolean,
+    val trainReason: String?,
+    val catchSpeedMultPermille: Int,
+    val moveSpeedMultPermille: Int,
+    val carryBonus: Int,
+    val wageMultPermille: Int,
+)
+
+/** Finish 2.0 Phase 15 — automation schedule row for one worker. */
+data class StaffScheduleOfferView(
+    val id: String,
+    val name: String,
+    val description: String,
+    val dayParts: List<String>,
+    val wageMultPermille: Int,
+    val active: Boolean,
 )
 
 /** Station or worker bottleneck shown in the Staff panel (Phase 20). */
@@ -438,6 +548,11 @@ data class ContractOfferView(
     val standing: Boolean = false,
     /** Current standing streak shown on the board (0 for standard). */
     val standingStreak: Int = 0,
+    /** Finish 2.0 Phase 17 delivery chain metadata. */
+    val chainId: String? = null,
+    val chainStep: Int = 0,
+    val chainLength: Int = 0,
+    val requiresReputationBand: Int? = null,
 )
 
 data class ActiveContractView(
@@ -457,6 +572,9 @@ data class ActiveContractView(
     val standing: Boolean = false,
     /** Completions in the current standing run. */
     val standingStreak: Int = 0,
+    val chainId: String? = null,
+    val chainStep: Int = 0,
+    val chainLength: Int = 0,
 )
 
 data class HarborMapEntryView(
@@ -508,6 +626,18 @@ data class PrestigeView(
     val catchSpeedPermille: Int,
     val priceBonusPermille: Int,
     val reason: String?,
+)
+
+/** unlocked | active — Finish 2.0 Phase 11 achievements. */
+data class AchievementView(
+    val id: String,
+    val name: String,
+    val description: String,
+    val category: String,
+    val status: String,
+    val progress: Long,
+    val goalAtLeast: Long,
+    val rewardCoins: Long,
 )
 
 data class TrophyEntryView(
@@ -599,9 +729,10 @@ fun Simulation.view(): SimView {
             val unlocked = FishingSystem.isUnlocked(spotDef, s)
             val full = p.bag.freeUnits() == 0
             val casting = p.fishingSpecies != null && p.fishingCatchTicks > 0
+            val windows = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.timingWindows(c, s)
             val inWindow = casting && FishingSystem.inTimingWindow(
                 p.fishingProgress, p.fishingCatchTicks,
-                p.timingWindowStartPermille, p.timingWindowEndPermille,
+                windows.goodStart, windows.goodEnd,
             )
             val empty = unlocked && spot.stock <= 0
             val part = FishingSystem.dayPartAt(c, s.tick)
@@ -811,23 +942,23 @@ fun Simulation.view(): SimView {
             val dur = p.fishingCatchTicks.coerceAtLeast(1)
             p.fishingProgress.toFloat() / dur
         },
-        fishingTimingWindow = p.fishingSpecies != null && p.fishingCatchTicks > 0 &&
-            FishingSystem.inTimingWindow(
-                p.fishingProgress, p.fishingCatchTicks,
-                p.timingWindowStartPermille, p.timingWindowEndPermille,
-            ),
+        fishingTimingWindow = run {
+            if (p.fishingSpecies == null || p.fishingCatchTicks <= 0) return@run false
+            val w = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.timingWindows(c, s)
+            FishingSystem.inTimingWindow(p.fishingProgress, p.fishingCatchTicks, w.goodStart, w.goodEnd)
+        },
         fishingTimingTier = run {
             if (p.fishingSpecies == null || p.fishingCatchTicks <= 0) return@run null
-            when (FishingSystem.timingTierAt(p, p.fishingProgress, p.fishingCatchTicks)) {
+            when (FishingSystem.timingTierAt(c, s, p.fishingProgress, p.fishingCatchTicks)) {
                 TimingTier.PERFECT -> "perfect"
                 TimingTier.GOOD -> "good"
                 TimingTier.MISS -> null
             }
         },
-        timingGoodStart01 = p.timingWindowStartPermille / 1000f,
-        timingGoodEnd01 = p.timingWindowEndPermille / 1000f,
-        timingPerfectStart01 = p.timingPerfectStartPermille / 1000f,
-        timingPerfectEnd01 = p.timingPerfectEndPermille / 1000f,
+        timingGoodStart01 = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.timingWindows(c, s).goodStart / 1000f,
+        timingGoodEnd01 = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.timingWindows(c, s).goodEnd / 1000f,
+        timingPerfectStart01 = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.timingWindows(c, s).perfectStart / 1000f,
+        timingPerfectEnd01 = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.timingWindows(c, s).perfectEnd / 1000f,
         fishingCanReel = p.fishingSpecies != null && !p.reelAttemptedThisCast,
         fishingSpotEmpty = run {
             val z = zone ?: return@run false
@@ -848,6 +979,28 @@ fun Simulation.view(): SimView {
         dayPartId = FishingSystem.dayPartAt(c, s.tick).id,
         dayPartName = FishingSystem.dayPartAt(c, s.tick).name,
         tideChartOwned = FishingSystem.hasTideChart(s),
+        weatherId = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.weatherAt(c, s.tick).id,
+        weatherName = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.weatherAt(c, s.tick).name,
+        weatherDescription = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.weatherAt(c, s.tick).description,
+        weatherTicksRemaining = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.ticksUntilWeatherChange(c, s.tick),
+        tidePhaseId = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.tidePhaseAt(c, s.tick).id,
+        tidePhaseName = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.tidePhaseAt(c, s.tick).name,
+        tideTicksRemaining = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.ticksUntilTideChange(c, s.tick),
+        activeTechniqueId = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.technique(c, s).id,
+        activeTechniqueName = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.technique(c, s).name,
+        masteryGlobalLevel = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.globalLevel(c, s),
+        techniques = c.fishingMastery.techniques.map { tech ->
+            val unlocked = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.isUnlocked(c, s, tech)
+            val active = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.technique(c, s).id == tech.id
+            TechniqueView(
+                id = tech.id,
+                name = tech.name,
+                description = tech.description,
+                requiresMasteryLevel = tech.requiresMasteryLevel,
+                unlocked = unlocked,
+                active = active,
+            )
+        },
         preferredBaitId = p.preferredBaitId,
         activeBaitId = p.activeBaitId,
         baitOffers = baitOffers,
@@ -891,6 +1044,8 @@ fun Simulation.view(): SimView {
                 description = e.description,
                 ticksRemaining = com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem.ticksRemaining(e, s.tick),
                 banner = e.banner,
+                customerSpawnMultPermille = e.customerSpawnMultPermille,
+                priceMultPermille = e.priceMultPermille,
             )
         },
         bank = run {
@@ -928,8 +1083,11 @@ fun Simulation.view(): SimView {
             val prog = c.staffProgression
             val xpToNext = if (w.level >= prog.maxLevel) null
             else prog.xpThresholds.getOrNull(w.level)?.let { (it - w.xp).coerceAtLeast(0) }
+            val roleWire = def?.role?.wire ?: "fisher"
+            val activeBranch = w.activeBranchId?.let { c.staffBranchesById[it] }
+            val activeSchedule = w.scheduleId?.let { c.staffSchedulesById[it] }
             WorkerView(
-                w.id, w.roleId, def?.name ?: w.roleId, def?.role?.wire ?: "fisher",
+                w.id, w.roleId, def?.name ?: w.roleId, roleWire,
                 w.x, w.z, w.bag.usedUnits(), w.bag.capacityUnits, w.phase.name,
                 level = w.level,
                 xp = w.xp,
@@ -946,6 +1104,41 @@ fun Simulation.view(): SimView {
                     )
                 },
                 blockedReason = WorkerSystem.blockedReason(c, s, harbor, w),
+                activeBranchId = activeBranch?.id,
+                activeBranchName = activeBranch?.name,
+                scheduleId = activeSchedule?.id,
+                scheduleName = activeSchedule?.name,
+                branches = c.staffTrees.branches.filter { it.role == roleWire }.map { branch ->
+                    val unlocked = branch.id in w.unlockedBranchIds
+                    val reason = if (unlocked) null
+                    else StaffTreesSystem.canTrain(c, s, w, branch.id)
+                    StaffBranchOfferView(
+                        id = branch.id,
+                        name = branch.name,
+                        description = branch.description,
+                        parentId = branch.parentId,
+                        requiresWorkerLevel = branch.requiresWorkerLevel,
+                        trainingCostCoins = branch.trainingCostCoins,
+                        unlocked = unlocked,
+                        active = w.activeBranchId == branch.id,
+                        canTrain = reason == null,
+                        trainReason = reason,
+                        catchSpeedMultPermille = branch.catchSpeedMultPermille,
+                        moveSpeedMultPermille = branch.moveSpeedMultPermille,
+                        carryBonus = branch.carryBonus,
+                        wageMultPermille = branch.wageMultPermille,
+                    )
+                },
+                schedules = c.staffTrees.schedules.map { sch ->
+                    StaffScheduleOfferView(
+                        id = sch.id,
+                        name = sch.name,
+                        description = sch.description,
+                        dayParts = sch.dayParts,
+                        wageMultPermille = sch.wageMultPermille,
+                        active = w.scheduleId == sch.id,
+                    )
+                },
             )
         },
         staff = c.workers.map { def ->
@@ -1003,6 +1196,7 @@ fun Simulation.view(): SimView {
             val t = c.contractTemplatesById[o.templateId]
             val maxed = s.activeContracts.size >= c.contracts.maxActive
             val standing = t?.isStanding == true
+            val chainId = t?.chainId
             ContractOfferView(
                 offerId = o.id,
                 templateId = o.templateId,
@@ -1018,12 +1212,17 @@ fun Simulation.view(): SimView {
                 reason = if (maxed) "Max active contracts" else null,
                 standing = standing,
                 standingStreak = if (standing) ContractSystem.standingStreak(s, o.templateId) else 0,
+                chainId = chainId,
+                chainStep = t?.chainStep ?: 0,
+                chainLength = chainId?.let { ContractSystem.chainLength(c, it) } ?: 0,
+                requiresReputationBand = t?.requiresReputationBand,
             )
         },
         activeContracts = s.activeContracts.map { job ->
             val t = c.contractTemplatesById[job.templateId]
             val bag = s.player.bag.available(job.itemId)
             val standing = t?.isStanding == true
+            val chainId = t?.chainId
             ActiveContractView(
                 contractId = job.id,
                 templateId = job.templateId,
@@ -1039,10 +1238,35 @@ fun Simulation.view(): SimView {
                 deliverEnabled = bag > 0 && job.delivered < job.quantity,
                 standing = standing,
                 standingStreak = if (standing) ContractSystem.standingStreak(s, job.templateId) else 0,
+                chainId = chainId,
+                chainStep = t?.chainStep ?: 0,
+                chainLength = chainId?.let { ContractSystem.chainLength(c, it) } ?: 0,
             )
         },
         contractRefreshTicksLeft = if (s.contractBoardRefreshAt <= 0L) 0
         else (s.contractBoardRefreshAt - s.tick).coerceAtLeast(0L).toInt(),
+        contractFailStreak = ContractSystem.failStreak(s),
+        contractFailStreakThreshold = c.contracts.failStreakThreshold,
+        dailyLoginStreak = com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem.streak(s),
+        dailyGoals = run {
+            val DG = com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem
+            DG.boardObjectives(c, s).map { o ->
+                val progress = DG.progress(c, s, o)
+                val complete = DG.isComplete(c, s, o)
+                val claimed = DG.isClaimed(c, s, o)
+                DailyGoalView(
+                    objectiveId = o.id,
+                    name = o.name,
+                    description = o.description,
+                    progress = progress,
+                    target = o.goal.atLeast,
+                    rewardCoins = DG.claimRewardCoins(c, s, o),
+                    complete = complete,
+                    claimed = claimed,
+                    claimEnabled = complete && !claimed,
+                )
+            }
+        },
         economyUnlocked = EconomySystem.unlocked(c, s),
         economyLockedReason = EconomySystem.missingRequirement(c, s)?.let { "Requires: $it" },
         maintenanceCoinsPerStation = if (EconomySystem.unlocked(c, s)) {
@@ -1077,6 +1301,21 @@ fun Simulation.view(): SimView {
                 reason = if (locked) PrestigeSystem.missingRequirement(c, s, m)?.let { "Requires: $it" } else null,
             )
         },
+        achievements = c.achievements.entries.map { a ->
+            val unlocked = a.id in s.unlockedAchievements
+            val progress = s.stat(a.goal.stat).coerceAtMost(a.goal.atLeast)
+            AchievementView(
+                id = a.id,
+                name = a.name,
+                description = a.description,
+                category = a.category,
+                status = if (unlocked) "unlocked" else "active",
+                progress = if (unlocked) a.goal.atLeast else progress,
+                goalAtLeast = a.goal.atLeast,
+                rewardCoins = a.rewardCoins,
+            )
+        },
+        unlockedAchievementsCount = s.unlockedAchievements.size,
         unlockedCosmetics = s.unlockedCosmetics.toList(),
         decorOffers = c.decor.items.map { d ->
             val owned = d.id in s.ownedDecor

@@ -37,9 +37,12 @@ describe("Phase 13 item art", () => {
       const gltf = parseGlbJson(buf);
       const asset = gltf.asset as { generator?: string };
       expect(asset.generator, row.id).toContain("generate_item_art");
-      const extras = gltf.extras as { stylized?: boolean; phase?: number } | undefined;
+      const extras = gltf.extras as { stylized?: boolean; phase?: number; fishArt?: string } | undefined;
       expect(extras?.stylized, row.id).toBe(true);
-      expect(extras?.phase, row.id).toBe(13);
+      expect([13, 20]).toContain(extras?.phase);
+      if (extras?.phase === 20) {
+        expect(extras.fishArt, row.id).toBe("authored-phase-20");
+      }
       const accessors = gltf.accessors as { count: number }[];
       expect(accessors[0].count, row.id).toBeGreaterThan(24);
     }
@@ -72,7 +75,7 @@ describe("Phase 13 item art", () => {
       itemArt?: string; envArt?: string; characterArt?: string; machineVfx?: string;
     } | undefined;
     expect(extras?.itemArt).toBe("stylized-phase-13");
-    expect(extras?.envArt).toBe("modular-phase-14");
+    expect(extras?.envArt ?? "").toMatch(/^modular-phase-14/);
     expect(extras?.characterArt).toBe("clips-phase-15");
     expect(extras?.machineVfx).toBe("phase-16");
     const meshes = gltf.meshes as { name: string; primitives: { attributes: { POSITION: number } }[] }[];

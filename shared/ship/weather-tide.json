@@ -1,0 +1,41 @@
+{
+  "phase": 13,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.weather_tide.v1",
+  "description": "Finish 2.0 Phase 13 — weather cycle + tide phases: content-driven catch/crowd modifiers, day-cycle presentation hooks, HUD toasts, Kotlin↔web parity.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 21,
+  "weatherPatternCount": 5,
+  "tidePhaseCount": 4,
+  "patterns": [
+    "weather.clear",
+    "weather.overcast",
+    "weather.rain",
+    "weather.fog",
+    "weather.gale"
+  ],
+  "tidePhases": [
+    "tide.low",
+    "tide.rising",
+    "tide.high",
+    "tide.falling"
+  ],
+  "parityFixture": "shared/fixtures/parity-weather-tide.json",
+  "definitionOfDoneWeatherPatterns": 5,
+  "validateScript": "npm run weather:validate",
+  "checklist": [
+    "content-pack.weather has ≥5 patterns and 4 tide phases",
+    "WeatherSystem modifies catch speed, regen, crowds, rare chance",
+    "SimView exposes weather + tide presentation fields",
+    "HUD shows weather/tide; toasts on change",
+    "parity-weather-tide fixture + weather:validate green",
+    "CI runs weather:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/weather-tide.json",
+    "shared/fixtures/parity-weather-tide.json",
+    "web/src/ship/weatherTide.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/WeatherTide.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/world/Weather.kt"
+  ]
+}

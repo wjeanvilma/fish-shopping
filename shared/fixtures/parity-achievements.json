@@ -1,0 +1,21 @@
+{
+  "schema": "fish.fixture.parity_achievements.v1",
+  "description": "Finish 2.0 Phase 11: seed first-catch + first-sale stats; one sim step grants both achievements with coin rewards into unlockedAchievements.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1101,
+  "setup": {
+    "stats": {
+      "stat.fish_caught": 1,
+      "stat.sales": 1
+    }
+  },
+  "expect": {
+    "unlocked": [
+      "achievement.first_catch",
+      "achievement.first_sale"
+    ],
+    "coinsRewarded": 10,
+    "achievementsUnlockedStat": 2,
+    "achievementCount": 14
+  }
+}

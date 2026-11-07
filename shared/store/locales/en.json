@@ -8,7 +8,7 @@
   "title": "Fish Shopping",
   "shortDescription": "Catch, cut, and sell fish in a cozy 3D harbor market.",
   "fullDescription": "Run your own waterfront fish market. Cast from the pier, process catches on the cutter, stock the counter, and serve a growing crowd. Hire staff, unlock upgrades, take delivery contracts, and expand to new harbors — all with a fixed 20 Hz simulation shared by Android and web.\n\nFirst session loop: fish → cut → stock → sell.\n\nOptional cloud sync and privacy-safe analytics are off until you opt in. One-time harbor unlock and power-neutral cosmetics are available via in-app purchase; Restore purchases recovers entitlements on a new device.",
-  "whatsNew": "1.0.1 balance pass — cheaper early bag upgrade and first hires, slightly better portion prices, faster staff XP. Schema unchanged; 1.0.0 saves still load.",
+  "whatsNew": "2.0.0 freeze — eight harbors, fifty species, twenty quests, twelve power-neutral cosmetics, festivals, mastery, parity lock 2.0, and web checkout. Schema 23; prior saves still load.",
   "webLanding": {
     "title": "Fish Shopping",
     "tagline": "Catch, cut, sell — run your harbor market",

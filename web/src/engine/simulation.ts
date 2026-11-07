@@ -3,7 +3,7 @@ import type { ContentPack, HarborDef } from "./content";
 import { CHECKPOINT_INTERVAL_TICKS, INPUT_SCALE } from "./foundations";
 import type { Command, GameEvent, GameState } from "./state";
 import {
-  AutomationSystem, BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DecorSystem, EconomySystem, FishingSystem, FullUnlockSystem, HarborTravelSystem, MovementSystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, SeasonalEventSystem,
+  AchievementSystem, AutomationSystem, BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DailyGoalsSystem, DecorSystem, EconomySystem, FishingSystem, FullUnlockSystem, HarborTravelSystem, MovementSystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, SeasonalEventSystem, WeatherSystem, MasterySystem, StaffTreesSystem,
   StepContext, TransferSystem, UpgradeSystem, WorkerSystem, invariantProblems,
 } from "./systems";
 
@@ -30,9 +30,13 @@ export class Simulation {
     ProductionSystem.step(ctx);
     CustomerSystem.step(ctx);
     WorkerSystem.step(ctx);
+    StaffTreesSystem.step(ctx);
     AutomationSystem.step(ctx);
     ProgressionSystem.step(ctx);
     PrestigeSystem.step(ctx);
+    AchievementSystem.step(ctx);
+    DailyGoalsSystem.step(ctx);
+    WeatherSystem.step(ctx);
     SeasonalEventSystem.step(ctx);
     ContractSystem.step(ctx);
     EconomySystem.step(ctx);
@@ -113,6 +117,15 @@ export class Simulation {
       case "unequip_worker_gear":
         WorkerSystem.unequipGear(ctx, c.workerId, c.slotId);
         break;
+      case "train_worker_branch":
+        StaffTreesSystem.train(ctx, c.workerId, c.branchId, c.requestId);
+        break;
+      case "select_worker_branch":
+        StaffTreesSystem.selectBranch(ctx, c.workerId, c.branchId);
+        break;
+      case "set_worker_schedule":
+        StaffTreesSystem.setSchedule(ctx, c.workerId, c.scheduleId);
+        break;
       case "accept_contract":
         ContractSystem.accept(ctx, c.offerId, c.requestId);
         break;
@@ -122,8 +135,17 @@ export class Simulation {
       case "travel_to_harbor":
         HarborTravelSystem.travel(ctx, c.harborId, c.requestId);
         break;
+      case "sync_wall_clock":
+        DailyGoalsSystem.syncClock(ctx, c.epochMs);
+        break;
+      case "claim_daily_goal":
+        DailyGoalsSystem.claim(ctx, c.objectiveId, c.requestId);
+        break;
       case "buy_bait":
         BaitSystem.buy(ctx, c.baitId, c.requestId);
+        break;
+      case "select_technique":
+        MasterySystem.select(this.state, this.content, c.techniqueId);
         break;
       case "select_bait":
         BaitSystem.select(this.state, this.content, c.baitId);

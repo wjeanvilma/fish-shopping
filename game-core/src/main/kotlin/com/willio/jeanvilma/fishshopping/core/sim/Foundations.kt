@@ -42,8 +42,12 @@ object SimConstants {
      * 17: machine broken + slowUntilTick (Phase 25 wear).
      * 18: loanOwed / loanDueTick / coinGoal / coinGoalCelebrated (Phase 26 bank).
      * 19: speciesCatches map (Phase 27 telemetry v2).
+     * 20: fullHarborUnlock (Phase 23 one-time IAP entitlement).
+     * 21: unlockedAchievements (Finish 2.0 Phase 7 — achievements engine scaffold).
+     * 22: speciesMasteryXp + activeTechniqueId (Finish 2.0 Phase 14 — fishing mastery).
+     * 23: worker branch/schedule fields (Finish 2.0 Phase 15 — staff trees).
      */
-    const val SCHEMA_VERSION = 20
+    const val SCHEMA_VERSION = 23
 }
 
 /** Integer arithmetic that refuses to leave the shared safe range. */

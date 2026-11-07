@@ -1,9 +1,9 @@
 {
   "phase": 22,
   "schema": "fish.content.tutorial_friction.v1",
-  "description": "Post-1.0 Phase 22 — telemetry-informed tutorial friction fixes. Copy + presentation timing/nudges only; advanceOn triggers, step ids, and schema 20 stay frozen. Funnel uses Phase 25 tutorial_step_completed stepIndex.",
+  "description": "Post-1.0 Phase 22 \u2014 telemetry-informed tutorial friction fixes. Copy + presentation timing/nudges only; advanceOn triggers, step ids, and schema 20 stay frozen. Funnel uses Phase 25 tutorial_step_completed stepIndex.",
   "contentPack": "shared/content/content-pack.json",
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "contentVersion": "1.0.0",
   "analyticsEvent": "tutorial_step_completed",
   "analyticsProp": "stepIndex",
@@ -49,7 +49,7 @@
   "copyPatches": [
     {
       "stepId": "tutorial.walk_to_pier",
-      "text": "Walk to the pier tip — stand where the boards meet the water"
+      "text": "Walk to the pier tip \u2014 stand where the boards meet the water"
     },
     {
       "stepId": "tutorial.catch_three",
@@ -69,7 +69,7 @@
     },
     {
       "stepId": "tutorial.serve_customer",
-      "text": "Stay at the counter — sales ring up when the pad has stock"
+      "text": "Stay at the counter \u2014 sales ring up when the pad has stock"
     },
     {
       "stepId": "tutorial.buy_upgrade",
@@ -103,12 +103,12 @@
       {
         "stepId": "tutorial.deliver_cutter",
         "hintAfterMs": 9000,
-        "nudge": "Tip: walk onto the left teal pad — dropping nearby is not enough"
+        "nudge": "Tip: walk onto the left teal pad \u2014 dropping nearby is not enough"
       },
       {
         "stepId": "tutorial.buy_upgrade",
         "hintAfterMs": 10000,
-        "nudge": "Tip: tap Upgrades (or press U) — Bag capacity is the first buy"
+        "nudge": "Tip: tap Upgrades (or press U) \u2014 Bag capacity is the first buy"
       },
       {
         "stepId": "tutorial.first_contract",
@@ -123,17 +123,58 @@
     ]
   },
   "frozenAdvanceOn": {
-    "tutorial.walk_to_pier": { "kind": "enter_zone", "zone": "zone.pier_end" },
-    "tutorial.catch_three": { "kind": "stat", "stat": "stat.fish_caught", "atLeast": 3 },
-    "tutorial.deliver_cutter": { "kind": "stat", "stat": "stat.machine_inputs", "atLeast": 1 },
-    "tutorial.collect_output": { "kind": "stat", "stat": "stat.outputs_collected", "atLeast": 1 },
-    "tutorial.stock_counter": { "kind": "stat", "stat": "stat.counter_stocked", "atLeast": 1 },
-    "tutorial.serve_customer": { "kind": "stat", "stat": "stat.sales", "atLeast": 1 },
-    "tutorial.buy_upgrade": { "kind": "stat", "stat": "stat.upgrades_bought", "atLeast": 1 },
-    "tutorial.first_contract": { "kind": "stat", "stat": "stat.contracts_completed", "atLeast": 1 },
-    "tutorial.hire_staff": { "kind": "stat", "stat": "stat.workers_hired", "atLeast": 1 },
-    "tutorial.grill_line": { "kind": "enter_zone", "zone": "zone.grill_in" },
-    "tutorial.plot_marker": { "kind": "enter_zone", "zone": "zone.plot_grill" }
+    "tutorial.walk_to_pier": {
+      "kind": "enter_zone",
+      "zone": "zone.pier_end"
+    },
+    "tutorial.catch_three": {
+      "kind": "stat",
+      "stat": "stat.fish_caught",
+      "atLeast": 3
+    },
+    "tutorial.deliver_cutter": {
+      "kind": "stat",
+      "stat": "stat.machine_inputs",
+      "atLeast": 1
+    },
+    "tutorial.collect_output": {
+      "kind": "stat",
+      "stat": "stat.outputs_collected",
+      "atLeast": 1
+    },
+    "tutorial.stock_counter": {
+      "kind": "stat",
+      "stat": "stat.counter_stocked",
+      "atLeast": 1
+    },
+    "tutorial.serve_customer": {
+      "kind": "stat",
+      "stat": "stat.sales",
+      "atLeast": 1
+    },
+    "tutorial.buy_upgrade": {
+      "kind": "stat",
+      "stat": "stat.upgrades_bought",
+      "atLeast": 1
+    },
+    "tutorial.first_contract": {
+      "kind": "stat",
+      "stat": "stat.contracts_completed",
+      "atLeast": 1
+    },
+    "tutorial.hire_staff": {
+      "kind": "stat",
+      "stat": "stat.workers_hired",
+      "atLeast": 1
+    },
+    "tutorial.grill_line": {
+      "kind": "enter_zone",
+      "zone": "zone.grill_in"
+    },
+    "tutorial.plot_marker": {
+      "kind": "enter_zone",
+      "zone": "zone.plot_grill"
+    }
   },
   "sourcePins": {
     "tutorialScriptWeb": "web/src/engine/tutorialScript.ts",

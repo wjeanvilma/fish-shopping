@@ -41,8 +41,9 @@ describe("icon pack (post-1.0 Phase 10)", () => {
     }
     const manifest = JSON.parse(readFileSync(resolve(root, iconPack.web.manifest), "utf8"));
     const srcs = manifest.icons.map((i: { src: string }) => i.src);
-    expect(srcs).toContain("/icon-192.png");
-    expect(srcs).toContain("/icon-512-maskable.png");
+    const normalized = srcs.map((s: string) => (s.startsWith("/") ? s : `/${s}`));
+    expect(normalized).toContain("/icon-192.png");
+    expect(normalized).toContain("/icon-512-maskable.png");
   });
 
   it("icons:validate exits 0", () => {

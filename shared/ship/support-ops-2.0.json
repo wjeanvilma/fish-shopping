@@ -1,0 +1,38 @@
+{
+  "phase": 28,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.support_ops_2.v1",
+  "description": "Finish 2.0 Phase 28 — Support/ops 2.0 ship gate for expanded runbook (2.0 feature FAQ, refund matrix, known issues) + support.html sections. Distinct from post-1.0 Phase 28 baseline support:validate.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "supportOps2Marker": "authored-finish-2.0-phase-28",
+  "opsCatalog": "shared/ops/support-ops-2.0.json",
+  "extendsRunbook": "shared/ops/support-runbook.json",
+  "featureFaqMin": 6,
+  "refundMatrixRowMin": 4,
+  "knownIssue2Min": 4,
+  "supportHtmlSectionMin": 3,
+  "parityFixture": "shared/fixtures/parity-support-ops-2.0.json",
+  "validateScript": "npm run support2:validate",
+  "checklist": [
+    "support-ops-2.0.json has ≥6 feature FAQ, ≥4 refund matrix rows, ≥4 ops2 known issues",
+    "support.html sections features-2, refund-matrix, ops2-known",
+    "Baseline support-runbook merges ops2 known issues + FAQ; finish2OpsPhase=28",
+    "post-1.0 support:validate still green",
+    "parity-support-ops-2.0 + support2:validate green",
+    "CI runs support2:validate",
+    "schema stays 23 (ops/docs; no save bump)"
+  ],
+  "preflightGates": [
+    "shared/ship/support-ops-2.0.json",
+    "shared/ops/support-ops-2.0.json",
+    "shared/ops/support-runbook.json",
+    "shared/fixtures/parity-support-ops-2.0.json",
+    "web/public/support.html",
+    "web/src/ship/supportOps2.ts",
+    "web/src/ops/supportOps2.ts",
+    "web/scripts/validate-support-ops-2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/SupportOps2.kt",
+    "game-core/src/test/kotlin/com/willio/jeanvilma/fishshopping/core/SupportOps2CatalogTest.kt"
+  ]
+}

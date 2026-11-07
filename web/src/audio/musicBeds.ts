@@ -1,9 +1,10 @@
 /**
  * Phase 20 (post-1.0) — authored harbor/shop music beds + ducking helpers.
+ * Finish 2.0 Phase 21 adds festival + storm beds; ducking policy unchanged.
  */
 import musicPackJson from "../../../shared/audio/music-pack.json";
 
-export type MusicBedId = "harbor" | "shop";
+export type MusicBedId = "harbor" | "shop" | "festival" | "storm";
 
 export interface MusicPackCatalog {
   phase: number;
@@ -23,7 +24,12 @@ export interface MusicPackCatalog {
     androidRaw: string;
     role: string;
   }>;
-  bedSwitch: { shopWhen: string[]; harborOtherwise: boolean };
+  bedSwitch: {
+    festivalWhen?: string[];
+    stormWhen?: string[];
+    shopWhen: string[];
+    harborOtherwise: boolean;
+  };
   ducking: {
     sfxDuckFactor: number;
     sfxDuckRecoveryMs: number;
@@ -40,13 +46,23 @@ export const musicPack = musicPackJson as unknown as MusicPackCatalog;
 export const MUSIC_PACK_PHASE = musicPack.phase;
 export const MUSIC_PACK_SCHEMA = musicPack.schema;
 export const MUSIC_BED_IDS: readonly MusicBedId[] = musicPack.beds.map((b) => b.id);
+export const MUSIC_PACK2_BED_IDS: readonly MusicBedId[] = ["festival", "storm"];
 
 export function musicPublicPath(bed: MusicBedId): string {
   return `/music/${bed}.wav`;
 }
 
-/** Resolve harbor vs shop bed from presentation panel state. */
-export function musicBedForPanels(stationOpen: boolean): MusicBedId {
+/**
+ * Resolve music bed from presentation context.
+ * Priority: festival > storm > shop > harbor.
+ */
+export function musicBedForPanels(
+  stationOpen: boolean,
+  festivalActive = false,
+  stormActive = false,
+): MusicBedId {
+  if (festivalActive) return "festival";
+  if (stormActive) return "storm";
   return stationOpen ? "shop" : "harbor";
 }
 

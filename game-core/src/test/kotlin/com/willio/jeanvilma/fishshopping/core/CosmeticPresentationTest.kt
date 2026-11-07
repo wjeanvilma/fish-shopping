@@ -23,7 +23,7 @@ class CosmeticPresentationTest {
         val catalog = Json.parseToJsonElement(File(root, CosmeticPresentation.CATALOG).readText()).jsonObject
         assertEquals(CosmeticPresentation.PHASE, catalog.getValue("phase").jsonPrimitive.content.toInt())
         assertEquals(CosmeticPresentation.SCHEMA, catalog.getValue("schema").jsonPrimitive.content)
-        assertEquals(20, catalog.getValue("schemaVersion").jsonPrimitive.content.toInt())
+        assertEquals(21, catalog.getValue("schemaVersion").jsonPrimitive.content.toInt())
         assertTrue(
             catalog.getValue("constraints").jsonObject
                 .getValue("powerNeutral").jsonPrimitive.content.toBoolean(),

@@ -12,7 +12,7 @@ object TutorialFriction {
     const val CONTENT_PACK = "shared/content/content-pack.json"
     /** Content version when Phase 22 copy patches landed (live pack may be newer). */
     const val FROZEN_AT_CONTENT_VERSION = "1.0.0"
-    const val SCHEMA_VERSION = 20
+    const val SCHEMA_VERSION = 21
     const val DEFAULT_HINT_AFTER_MS = 10_000
 
     val HIGH_FRICTION_STEP_IDS: List<String> = listOf(

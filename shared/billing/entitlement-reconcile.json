@@ -30,6 +30,15 @@
     "fish.full_harbor_unlock",
     "fish.cosmetic.sunset_bunting",
     "fish.cosmetic.pearl_string",
-    "fish.cosmetic.captain_crest"
+    "fish.cosmetic.captain_crest",
+    "fish.cosmetic.harbor_lantern",
+    "fish.cosmetic.tide_ribbon",
+    "fish.cosmetic.fog_pennant",
+    "fish.cosmetic.coral_streamer",
+    "fish.cosmetic.storm_flag",
+    "fish.cosmetic.ember_pennant",
+    "fish.cosmetic.northlight_banner",
+    "fish.cosmetic.marina_pennant",
+    "fish.cosmetic.moonlit_bunting"
   ]
 }

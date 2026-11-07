@@ -79,8 +79,8 @@ function validate(): string[] {
   if (catalog.category !== listing.category) errors.push("category mismatch");
   if (catalog.contentRating !== listing.contentRating) errors.push("contentRating mismatch");
 
-  if (!catalog.locales.includes("en") || catalog.locales.length !== 1) {
-    errors.push("locales must be exactly [en] for this freeze");
+  if (!catalog.locales.includes("en") || !catalog.locales.includes("es") || catalog.locales.length !== 2) {
+    errors.push("locales must be [en, es] (Finish 2.0 Phase 23 scaffold)");
   }
   if (en.locale !== "en" || !en.frozen) errors.push("en locale must be frozen");
   if (en.title !== copy.title) errors.push("en.title mismatch");
@@ -88,6 +88,27 @@ function validate(): string[] {
   if (en.fullDescription !== copy.fullDescription) errors.push("en.fullDescription mismatch");
   if (en.whatsNew !== copy.whatsNew) errors.push("en.whatsNew mismatch");
   if (en.webLanding.tagline !== landing.tagline) errors.push("en.webLanding.tagline mismatch");
+
+  const esPath = resolve(root, "shared/store/locales/es.json");
+  if (!existsSync(esPath)) {
+    errors.push("missing shared/store/locales/es.json");
+  } else {
+    const es = readJson(esPath);
+    if (es.locale !== "es" || !es.frozen) errors.push("es locale must be frozen");
+    for (const key of ["title", "shortDescription", "fullDescription", "whatsNew", "webLanding"]) {
+      if (es[key] == null) errors.push(`es missing listing key ${key}`);
+    }
+    if (!es.webLanding?.ctaPlay) errors.push("es.webLanding.ctaPlay missing");
+    if (es.shortDescription.length > lim.shortDescriptionMax) {
+      errors.push(`es.shortDescription length ${es.shortDescription.length} > ${lim.shortDescriptionMax}`);
+    }
+    if (es.fullDescription.length > lim.fullDescriptionMax) {
+      errors.push(`es.fullDescription length ${es.fullDescription.length} > ${lim.fullDescriptionMax}`);
+    }
+    if (es.whatsNew.length > lim.whatsNewMax) {
+      errors.push(`es.whatsNew length ${es.whatsNew.length} > ${lim.whatsNewMax}`);
+    }
+  }
 
   if (!strings.includes(`>${copy.title}<`) && !strings.includes(`>${copy.title}</string>`)) {
     // app_name
@@ -103,6 +124,10 @@ function validate(): string[] {
   if (!existsSync(resolve(root, catalog.androidStrings))) {
     errors.push(`missing ${catalog.androidStrings}`);
   }
+  const esStringsPath = catalog.androidStringsEs ?? "app/src/main/res/values-es/strings.xml";
+  if (!existsSync(resolve(root, esStringsPath))) {
+    errors.push(`missing ${esStringsPath}`);
+  }
 
   return errors;
 }
@@ -113,4 +138,4 @@ if (errors.length) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
-console.log("OK listing-copy:validate — frozen en copy within Play limits");
+console.log("OK listing-copy:validate — frozen en + es copy within Play limits");

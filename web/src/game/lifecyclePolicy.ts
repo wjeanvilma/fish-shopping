@@ -5,9 +5,9 @@
 
 export const LIFECYCLE_PHASE = 28;
 export const LIFECYCLE_SCHEMA = "fish.lifecycle.browser_android.v1";
-export const LIFECYCLE_CURRENT_SCHEMA = 20;
-export const LIFECYCLE_MIGRATE_THROUGH_SCHEMA = 19;
-export const LIFECYCLE_LEGACY_VERSIONS = [1, 12, 13, 14, 15, 16, 17, 18, 19] as const;
+export const LIFECYCLE_CURRENT_SCHEMA = 23;
+export const LIFECYCLE_MIGRATE_THROUGH_SCHEMA = 22;
+export const LIFECYCLE_LEGACY_VERSIONS = [1, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22] as const;
 
 export const WEBGL2_GATE_COPY =
   "Fish Shopping needs a browser with WebGL 2. Try a current version of Chrome, Firefox, Edge or Safari, and make sure hardware acceleration is turned on.";

@@ -1,9 +1,9 @@
 {
   "phase": 26,
   "schema": "fish.ops.analytics_dashboard.v1",
-  "description": "Post-1.0 Phase 26 — consent-gated analytics dashboard + crash-free session alert. Local rolling counters (no remote deploy). Events stay fish.analytics.v1; schema 20 unchanged.",
+  "description": "Post-1.0 Phase 26 \u2014 consent-gated analytics dashboard + crash-free session alert. Local rolling counters (no remote deploy). Events stay fish.analytics.v1; schema 20 unchanged.",
   "contentVersion": "1.0.1",
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "analyticsSchema": "fish.analytics.v1",
   "consentRequired": true,
   "constraints": {
@@ -18,8 +18,13 @@
     "webDirtyKey": "fish-shopping-analytics-session-dirty",
     "androidPrefsName": "fish_shopping_analytics_dashboard",
     "androidDirtyKey": "session_dirty",
-    "startProps": ["platform"],
-    "crashFreeProps": ["clean", "platform"]
+    "startProps": [
+      "platform"
+    ],
+    "crashFreeProps": [
+      "clean",
+      "platform"
+    ]
   },
   "storage": {
     "webKey": "fish-shopping-analytics-dashboard",
@@ -33,33 +38,69 @@
       "id": "funnel",
       "title": "Funnel",
       "metrics": [
-        { "id": "tutorial_steps", "event": "tutorial_step_completed", "aggregation": "count" },
-        { "id": "first_sales", "event": "first_sale", "aggregation": "count" },
-        { "id": "harbors", "event": "harbor_unlocked", "aggregation": "count" }
+        {
+          "id": "tutorial_steps",
+          "event": "tutorial_step_completed",
+          "aggregation": "count"
+        },
+        {
+          "id": "first_sales",
+          "event": "first_sale",
+          "aggregation": "count"
+        },
+        {
+          "id": "harbors",
+          "event": "harbor_unlocked",
+          "aggregation": "count"
+        }
       ]
     },
     {
       "id": "recovery",
       "title": "Recovery",
       "metrics": [
-        { "id": "offline_claims", "event": "offline_claimed", "aggregation": "count" },
-        { "id": "save_recoveries", "event": "save_recovery", "aggregation": "count" }
+        {
+          "id": "offline_claims",
+          "event": "offline_claimed",
+          "aggregation": "count"
+        },
+        {
+          "id": "save_recoveries",
+          "event": "save_recovery",
+          "aggregation": "count"
+        }
       ]
     },
     {
       "id": "performance",
       "title": "Performance",
       "metrics": [
-        { "id": "frame_summaries", "event": "frame_time_summary", "aggregation": "count" }
+        {
+          "id": "frame_summaries",
+          "event": "frame_time_summary",
+          "aggregation": "count"
+        }
       ]
     },
     {
       "id": "stability",
       "title": "Stability",
       "metrics": [
-        { "id": "sessions", "event": "session_start", "aggregation": "count" },
-        { "id": "crash_free_reports", "event": "crash_free_session", "aggregation": "count" },
-        { "id": "crash_free_rate_permille", "event": "crash_free_session", "aggregation": "clean_rate_permille" }
+        {
+          "id": "sessions",
+          "event": "session_start",
+          "aggregation": "count"
+        },
+        {
+          "id": "crash_free_reports",
+          "event": "crash_free_session",
+          "aggregation": "count"
+        },
+        {
+          "id": "crash_free_rate_permille",
+          "event": "crash_free_session",
+          "aggregation": "clean_rate_permille"
+        }
       ]
     }
   ],

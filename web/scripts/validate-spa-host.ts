@@ -34,7 +34,7 @@ async function validate(): Promise<string[]> {
   if (catalog.schema !== SPA_HOST_SCHEMA) errors.push("bad schema");
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (SPA_HOST_PHASE !== 3) errors.push("SPA_HOST_PHASE mirror mismatch");
-  if (catalog.schemaVersion !== 20) errors.push("schemaVersion must stay 20");
+  if (catalog.schemaVersion !== 21) errors.push("schemaVersion must stay 21");
   if (catalog.viteBase !== cta.viteBase) errors.push("spa viteBase ≠ landing-play-cta");
   if (catalog.playUrl !== cta.playUrl) errors.push("spa playUrl ≠ landing-play-cta");
 

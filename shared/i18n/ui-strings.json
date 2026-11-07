@@ -1,0 +1,24 @@
+{
+  "schema": "fish.i18n.ui_strings.v1",
+  "phase": 23,
+  "plan": "30_finish_2.0",
+  "description": "Finish 2.0 Phase 23 — UI chrome string catalogs (en + es). Content-pack names stay English.",
+  "defaultLocale": "en",
+  "supportedLocales": ["en", "es"],
+  "bundles": {
+    "en": "shared/i18n/ui-strings.en.json",
+    "es": "shared/i18n/ui-strings.es.json"
+  },
+  "keyMin": 48,
+  "namespaces": [
+    "nav",
+    "pause",
+    "settings",
+    "achievements",
+    "lifecycle",
+    "common",
+    "landing",
+    "panels",
+    "hud"
+  ]
+}

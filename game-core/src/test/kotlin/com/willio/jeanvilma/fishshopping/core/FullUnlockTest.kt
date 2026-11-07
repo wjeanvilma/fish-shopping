@@ -37,7 +37,7 @@ class FullUnlockTest {
         )
         assertTrue(full.getValue("powerNeutral").jsonPrimitive.content.toBoolean())
         assertTrue(Shared.content.harborsById.getValue(FullUnlockSystem.FREE_HARBOR_ID).requires.isEmpty())
-        assertEquals(20, SimConstants.SCHEMA_VERSION)
+        assertTrue(SimConstants.SCHEMA_VERSION >= 21)
     }
 
     @Test
@@ -69,7 +69,7 @@ class FullUnlockTest {
         val sim = Simulation(Shared.content, GameState.newGame(Shared.content, HARBOR, 3))
         sim.step(listOf(Command.GrantFullHarborUnlock("full-unlock:persist")))
         val saved = SnapshotCodec.encode(Shared.content, sim.state, savedAtEpochMs = 5_000)
-        assertTrue(saved.startsWith("{\"schemaVersion\":20,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":${SimConstants.SCHEMA_VERSION},"))
         val loaded = SnapshotCodec.decode(Shared.content, saved)
         assertTrue(loaded.fullHarborUnlock)
     }

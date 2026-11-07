@@ -1,13 +1,17 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type RefObject } from "react";
 import sunriseSceneUrl from "../../../shared/assets/models/sunrise_pier_blockout.glb?url";
 import moonSceneUrl from "../../../shared/assets/models/moon_cove_blockout.glb?url";
 import jettySceneUrl from "../../../shared/assets/models/obsidian_jetty_blockout.glb?url";
 import northlightSceneUrl from "../../../shared/assets/models/northlight_harbor_blockout.glb?url";
 import grandMarinaSceneUrl from "../../../shared/assets/models/grand_marina_blockout.glb?url";
-import type { ActiveContractView, AutomationIssueView, BaitOfferView, BankView, BusinessDashboardView, ContextCard, ContractOfferView, CosmeticIapOfferView, DecorOfferView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SeasonalEventBannerView, SimView, SpeciesBookView, StaffGearView, StaffHireView, StationView, TrophySetView, UpgradeView, WarehouseView, WorkerView } from "../engine";
+import coralLagoonSceneUrl from "../../../shared/assets/models/coral_lagoon_blockout.glb?url";
+import stormQuaySceneUrl from "../../../shared/assets/models/storm_quay_blockout.glb?url";
+import emberWharfSceneUrl from "../../../shared/assets/models/ember_wharf_blockout.glb?url";
+import type { ActiveContractView, AutomationIssueView, BaitOfferView, BankView, BusinessDashboardView, ContextCard, ContractOfferView, CosmeticIapOfferView, DailyGoalView, DecorOfferView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SeasonalEventBannerView, SimView, SpeciesBookView, StaffGearView, StaffHireView, StationView, TrophySetView, UpgradeView, WarehouseView, WorkerView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
 import { VOLUME_STEPS } from "../audio/audioBus";
 import type { GameSettings, JoystickScale, SaveStatusView } from "../game/settingsStore";
+import { t } from "../i18n/strings";
 import { GameHost, type HostState } from "../game/GameHost";
 import type { CloudConflictView, LocalRecoveryView, SnapshotChoiceRow } from "../game/snapshotChoice";
 import {
@@ -20,9 +24,6 @@ import {
 } from "../presenters/accessibility";
 import { controlsHelpLine, desktopKeysHint, tapToMoveHint } from "../presenters/controlQa";
 import {
-  CONTEXT_LOSS_BANNER,
-  STORAGE_UNAVAILABLE_SETTINGS,
-  WEBGL2_GATE_COPY,
   audioUnlockEvents,
   shouldCheckpointOnPageHide,
   shouldPauseForVisibility,
@@ -57,6 +58,9 @@ const BLOCKOUT_URLS: Record<string, string> = {
   "obsidian_jetty_blockout.glb": jettySceneUrl,
   "northlight_harbor_blockout.glb": northlightSceneUrl,
   "grand_marina_blockout.glb": grandMarinaSceneUrl,
+  "coral_lagoon_blockout.glb": coralLagoonSceneUrl,
+  "storm_quay_blockout.glb": stormQuaySceneUrl,
+  "ember_wharf_blockout.glb": emberWharfSceneUrl,
 };
 
 /** Track viewport aspect so portrait chrome follows resized windows, not only OS orientation. */
@@ -103,7 +107,7 @@ export function App() {
   if (!webgl2) {
     return (
       <CenterCard title="WebGL 2 is not available">
-        {WEBGL2_GATE_COPY}
+        {t("lifecycle.webgl2Gate")}
       </CenterCard>
     );
   }
@@ -385,7 +389,7 @@ function World({ host }: { host: GameHost }) {
       <canvas ref={canvasRef} className="world" aria-label="Harbor" />
       {contextLost ? (
         <div className="pill context-loss-banner" role="status" aria-live="assertive">
-          {CONTEXT_LOSS_BANNER}
+          {t("lifecycle.contextLoss")}
         </div>
       ) : null}
     </>
@@ -523,17 +527,30 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           {" · Rep "}{Math.trunc(v.reputationScorePermille / 10)}%
         </span>
         {!portrait && (
-          <span className="day-part"> · {v.dayPartName}{v.tideChartOwned ? " · tides" : ""}{v.preferredBaitId ? " · bait set" : ""}</span>
+          <span
+            className="day-part"
+            role="status"
+            aria-live="polite"
+            aria-label={`${t("hud.weatherTide")}: ${v.weatherName}, ${v.tidePhaseName}`}
+            title={`${v.weatherDescription} · ${v.tidePhaseName}`}
+          >
+            {" · "}{v.dayPartName}
+            {" · "}{v.weatherName}
+            {" · "}{v.tidePhaseName}
+            {" · "}{v.activeTechniqueName}
+            {v.tideChartOwned ? " · chart" : ""}
+            {v.preferredBaitId ? " · bait set" : ""}
+          </span>
         )}
       </div>
-      <div className="pill coins top-center" aria-live="polite">{formatCoins(v.coins)} coins</div>
+      <div className="pill coins top-center" aria-live="polite">{formatCoins(v.coins)} {t("hud.coins")}</div>
       {v.rush && (
         <div className="pill rush-banner" aria-live="polite">
           {v.rush.name} · {formatRushSeconds(v.rush.ticksRemaining)}s
         </div>
       )}
       {v.seasonalEvent && (
-        <div className="pill seasonal-banner" aria-live="polite">
+        <div className="pill seasonal-banner" aria-live="polite" data-a11y-live="festival_hud">
           {v.seasonalEvent.name} · {formatRushSeconds(v.seasonalEvent.ticksRemaining)}s
         </div>
       )}
@@ -563,30 +580,30 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
             : ""}
         </div>
       )}
-      <div className="top-actions" role="toolbar" aria-label="Harbor actions">
+      <div className="top-actions" role="toolbar" aria-label={t("hud.toolbar")}>
         <button className="button" onClick={() => host.setPauseOpen(true)}>
-          Pause{!portrait && <> <kbd>P</kbd></>}
+          {t("nav.pause")}{!portrait && <> <kbd>P</kbd></>}
         </button>
         <button className="button" onClick={() => host.setMapOpen(true)}>
-          Map{!portrait && <> <kbd>M</kbd></>}
+          {t("nav.map")}{!portrait && <> <kbd>M</kbd></>}
         </button>
         <button className="button" onClick={() => host.setWarehouseOpen(true)}>
-          Warehouse{!portrait && <> <kbd>I</kbd></>}
+          {t("nav.warehouse")}{!portrait && <> <kbd>I</kbd></>}
         </button>
         <button className="button" onClick={() => host.setQuestsOpen(true)}>
-          Goals{!portrait && <> <kbd>G</kbd></>}
+          {t("nav.goals")}{!portrait && <> <kbd>G</kbd></>}
         </button>
         <button className="button" onClick={() => host.setContractsOpen(true)}>
-          Jobs{!portrait && <> <kbd>J</kbd></>}
+          {t("nav.jobs")}{!portrait && <> <kbd>J</kbd></>}
         </button>
         <button className="button" onClick={() => host.setStaffOpen(true)}>
-          Staff{!portrait && <> <kbd>H</kbd></>}
+          {t("nav.staff")}{!portrait && <> <kbd>H</kbd></>}
         </button>
         <button className="button" onClick={() => host.setDashboardOpen(true)}>
-          Dash{!portrait && <> <kbd>Y</kbd></>}
+          {t("nav.dash")}{!portrait && <> <kbd>Y</kbd></>}
         </button>
         <button className="button" onClick={() => host.setUpgradesOpen(true)}>
-          Upgrades{!portrait && <> <kbd>U</kbd></>}
+          {t("nav.upgrades")}{!portrait && <> <kbd>U</kbd></>}
         </button>
       </div>
       {v.objective && (
@@ -675,12 +692,19 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           onSetShift={(id, on) => host.setWorkerShift(id, on)}
           onAssignGear={(workerId, upgradeId) => host.assignWorkerGear(workerId, upgradeId)}
           onUnequipGear={(workerId, slotId) => host.unequipWorkerGear(workerId, slotId)}
+          onTrainBranch={(workerId, branchId) => host.trainWorkerBranch(workerId, branchId)}
+          onSelectBranch={(workerId, branchId) => host.selectWorkerBranch(workerId, branchId)}
+          onSetSchedule={(workerId, scheduleId) => host.setWorkerSchedule(workerId, scheduleId)}
           onRepair={(id) => host.repairMachine(id)}
           onClose={() => host.setStaffOpen(false)}
         />
       )}
       {dashboardOpen && (
-        <BusinessDashboardPanel dash={v.businessDashboard} onClose={() => host.setDashboardOpen(false)} />
+        <BusinessDashboardPanel
+          dash={v.businessDashboard}
+          journalLines={offlineReport?.journalLines}
+          onClose={() => host.setDashboardOpen(false)}
+        />
       )}
       {questsOpen && (
         <QuestLogPanel
@@ -716,6 +740,9 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           onTakeLoan={() => host.takeLoan()}
           onRepayLoan={() => host.repayLoan()}
           onSetCoinGoal={(amount) => host.setCoinGoal(amount)}
+          dailyLoginStreak={v.dailyLoginStreak}
+          dailyGoals={v.dailyGoals}
+          onClaimDailyGoal={(id) => host.claimDailyGoal(id)}
           onClose={() => {
             host.setPreviewCosmeticId(null);
             host.setQuestsOpen(false);
@@ -732,6 +759,8 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           offers={v.contractOffers}
           active={v.activeContracts}
           refreshTicksLeft={v.contractRefreshTicksLeft}
+          failStreak={v.contractFailStreak}
+          failStreakThreshold={v.contractFailStreakThreshold}
           onAccept={(id) => host.acceptContract(id)}
           onDeliver={(id) => host.deliverContract(id)}
           onClose={() => host.setContractsOpen(false)}
@@ -761,6 +790,8 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           saveStatus={host.saveStatus()}
           telemetryRates={v.telemetryRates}
           analyticsAlertActive={host.hasAnalyticsDashboardAlerts()}
+          achievements={v.achievements}
+          unlockedAchievementsCount={v.unlockedAchievementsCount}
           onChange={(partial) => host.updateSettings(partial)}
           onExportTelemetry={() => host.exportTelemetryJson()}
           onExportBalance={() => host.exportBalanceJson()}
@@ -772,6 +803,7 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
         <BagDetailPanel
           v={v}
           onSelectBait={(id) => host.selectBait(id)}
+          onSelectTechnique={(id) => host.selectTechnique(id)}
           onClose={() => host.setBagOpen(false)}
         />
       )}
@@ -896,26 +928,28 @@ function PausePanel({ onResume, onSettings, onTitle }: {
   useEffect(() => resumeRef.current?.focus(), []);
   return (
     <div className="scrim" onClick={onResume}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Paused" onClick={(e) => e.stopPropagation()}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={t("pause.title")} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-header">
-          <h2>Paused</h2>
+          <h2>{t("pause.title")}</h2>
         </div>
         <div className="title-actions">
-          <button ref={resumeRef} className="button" onClick={onResume}>Resume</button>
-          <button className="button" onClick={onSettings}>Settings</button>
-          <button className="button ghost" onClick={onTitle}>Title</button>
+          <button ref={resumeRef} className="button" onClick={onResume}>{t("pause.resume")}</button>
+          <button className="button" onClick={onSettings}>{t("pause.settings")}</button>
+          <button className="button ghost" onClick={onTitle}>{t("pause.titleScreen")}</button>
         </div>
       </div>
     </div>
   );
 }
 
-function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, analyticsAlertActive, onChange, onExportTelemetry, onExportBalance, onExportAnalyticsDashboard, onClose }: {
+function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, analyticsAlertActive, achievements, unlockedAchievementsCount, onChange, onExportTelemetry, onExportBalance, onExportAnalyticsDashboard, onClose }: {
   settings: GameSettings;
   cloudAvailable: boolean;
   saveStatus: SaveStatusView;
   telemetryRates: SimView["telemetryRates"];
   analyticsAlertActive: boolean;
+  achievements: SimView["achievements"];
+  unlockedAchievementsCount: number;
   onChange: (partial: Partial<GameSettings>) => void;
   onExportTelemetry: () => string | null;
   onExportBalance: () => string | null;
@@ -925,7 +959,8 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, a
   const closeRef = useRef<HTMLButtonElement>(null);
   const [exportNote, setExportNote] = useState<string | null>(null);
   const [showLicenses, setShowLicenses] = useState(false);
-  useEffect(() => closeRef.current?.focus(), [showLicenses]);
+  const [showAchievements, setShowAchievements] = useState(false);
+  useEffect(() => closeRef.current?.focus(), [showLicenses, showAchievements]);
   const scales: JoystickScale[] = [0.75, 1, 1.25];
   const copyJson = async (label: string, json: string | null, emptyMsg: string) => {
     if (!json) { setExportNote(emptyMsg); return; }
@@ -936,6 +971,17 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, a
       setExportNote(`Could not copy ${label.toLowerCase()}`);
     }
   };
+  if (showAchievements) {
+    return (
+      <AchievementsPanel
+        achievements={achievements}
+        unlockedCount={unlockedAchievementsCount}
+        closeRef={closeRef}
+        onClose={() => setShowAchievements(false)}
+        onDismiss={onClose}
+      />
+    );
+  }
   if (showLicenses) {
     return (
       <div className="scrim" onClick={onClose}>
@@ -968,15 +1014,37 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, a
   }
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet settings-sheet" role="dialog" aria-modal="true" aria-label="Settings" onClick={(e) => e.stopPropagation()}>
+      <div className="panel sheet settings-sheet" role="dialog" aria-modal="true" aria-label={t("settings.title")} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-header">
-          <h2>Settings</h2>
-          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+          <h2>{t("settings.title")}</h2>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>{t("settings.close")}</button>
         </div>
         <ul className="upgrade-list">
           <li>
             <div className="grow">
-              <strong>Mute</strong>
+              <strong>{t("settings.language")}</strong>
+              <div className="small muted">{t("settings.languageHint")}</div>
+            </div>
+            <div className="quality-row">
+              <button
+                className={settings.locale === "en" ? "button" : "button ghost"}
+                aria-pressed={settings.locale === "en"}
+                onClick={() => onChange({ locale: "en" })}
+              >
+                {t("settings.languageEn")}
+              </button>
+              <button
+                className={settings.locale === "es" ? "button" : "button ghost"}
+                aria-pressed={settings.locale === "es"}
+                onClick={() => onChange({ locale: "es" })}
+              >
+                {t("settings.languageEs")}
+              </button>
+            </div>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>{t("settings.mute")}</strong>
               <div className="small muted">Master silence for music beds and stingers. Haptics stay independent.</div>
             </div>
             <button className="button" aria-pressed={settings.muted} onClick={() => onChange({ muted: !settings.muted })}>
@@ -1193,7 +1261,7 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, a
             <div className="grow">
               <strong>Save status</strong>
               <div className="small muted">
-                {saveStatus.persistent ? "Local slots: latest + previous backup." : STORAGE_UNAVAILABLE_SETTINGS}
+                {saveStatus.persistent ? "Local slots: latest + previous backup." : t("lifecycle.storageUnavailableSettings")}
                 {" "}{saveStatus.lastSavedLabel}
                 {saveStatus.cloudEnabled
                   ? saveStatus.cloudAvailable
@@ -1288,12 +1356,23 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, a
             );
           })}
         </div>
+        <div className="small" style={{ marginTop: 12 }}>Progress</div>
+        <button
+          className="button"
+          style={{ width: "100%", minHeight: 48 }}
+          onClick={() => setShowAchievements(true)}
+        >
+          {t("settings.achievements")} ({t("achievements.count", {
+            unlocked: unlockedAchievementsCount,
+            total: achievements.length,
+          })})
+        </button>
         <div className="small" style={{ marginTop: 12 }}>Legal</div>
         <div className="small muted">{STORE_SHORT_DESCRIPTION}</div>
         <div className="small muted" style={{ marginTop: 6 }}>{SUPPORT_RESTORE_HELP}</div>
         <div className="quality-row" style={{ marginTop: 8 }}>
-          <a className="button" href={PRIVACY_PAGE_PATH} target="_blank" rel="noreferrer">Privacy</a>
-          <a className="button ghost" href={`${SUPPORT_PAGE_PATH}#restore`} target="_blank" rel="noreferrer">Support</a>
+          <a className="button" href={PRIVACY_PAGE_PATH} target="_blank" rel="noreferrer">{t("landing.ctaPrivacy")}</a>
+          <a className="button ghost" href={`${SUPPORT_PAGE_PATH}#restore`} target="_blank" rel="noreferrer">{t("landing.ctaSupport")}</a>
         </div>
         <button
           className="button ghost"
@@ -1307,8 +1386,71 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, a
   );
 }
 
-function BagDetailPanel({ v, onSelectBait, onClose }: {
-  v: SimView; onSelectBait: (baitId: string | null) => void; onClose: () => void;
+function AchievementsPanel({ achievements, unlockedCount, closeRef, onClose, onDismiss }: {
+  achievements: SimView["achievements"];
+  unlockedCount: number;
+  closeRef: RefObject<HTMLButtonElement | null>;
+  onClose: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="scrim" onClick={onDismiss}>
+      <div
+        className="panel sheet settings-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("achievements.title")}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sheet-header">
+          <h2>{t("achievements.title")}</h2>
+          <span className="num">{t("achievements.count", { unlocked: unlockedCount, total: achievements.length })}</span>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>{t("common.back")}</button>
+        </div>
+        <div className="small muted" style={{ marginBottom: 12 }}>
+          Lifetime milestones. Unlocks grant a small coin reward once.
+        </div>
+        <ul className="upgrade-list" style={{ maxHeight: "50vh", overflow: "auto" }}>
+          {achievements.map((a) => (
+            <li key={a.id}>
+              <div className="grow">
+                <strong>{a.name}</strong>
+                <div className="small muted">{a.category}</div>
+                <div className="small">{a.description}</div>
+                {a.rewardCoins > 0 && (
+                  <div className="small reward">Reward: {formatCoins(a.rewardCoins)} coins</div>
+                )}
+                {a.status === "active" && (
+                  <div
+                    className="progress"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={a.goalAtLeast}
+                    aria-valuenow={a.progress}
+                  >
+                    <div style={{ width: `${Math.min(100, Math.max(0, (a.progress / a.goalAtLeast) * 100))}%` }} />
+                  </div>
+                )}
+              </div>
+              <span
+                className={a.status === "unlocked" ? "owned" : "num"}
+                aria-label={a.status === "unlocked" ? t("a11y.achievementUnlocked") : t("a11y.achievementLocked")}
+              >
+                {a.status === "unlocked" ? t("a11y.achievementUnlocked") : `${a.progress}/${a.goalAtLeast}`}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function BagDetailPanel({ v, onSelectBait, onSelectTechnique, onClose }: {
+  v: SimView;
+  onSelectBait: (baitId: string | null) => void;
+  onSelectTechnique: (techniqueId: string | null) => void;
+  onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => closeRef.current?.focus(), []);
@@ -1317,11 +1459,11 @@ function BagDetailPanel({ v, onSelectBait, onClose }: {
   const isBait = (itemId: string) => itemId.startsWith("bait.") || baitIds.has(itemId);
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Bag" onClick={(e) => e.stopPropagation()}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={t("panels.bag")} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-header">
-          <h2>Bag</h2>
+          <h2>{t("panels.bag")}</h2>
           <span className="num">{v.bagUsedUnits}/{v.bagCapacityUnits}</span>
-          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>{t("common.close")}</button>
         </div>
         {v.bagFishSpoilActive && <p className="small danger">Fish in your bag can spoil.</p>}
         {v.preferredBaitId && (
@@ -1331,6 +1473,29 @@ function BagDetailPanel({ v, onSelectBait, onClose }: {
             <button className="button ghost" onClick={() => onSelectBait(null)}>Use auto</button>
           </p>
         )}
+        <div className="small muted" style={{ marginBottom: 8 }}>
+          Rod technique · mastery {v.masteryGlobalLevel}
+        </div>
+        <ul className="upgrade-list" style={{ marginBottom: 12 }}>
+          {v.techniques.map((tech) => (
+            <li key={tech.id}>
+              <div className="grow">
+                <strong>{tech.name}</strong>
+                <div className="small muted">{tech.description}</div>
+                {!tech.unlocked && (
+                  <div className="small">Unlocks at mastery {tech.requiresMasteryLevel}</div>
+                )}
+              </div>
+              {tech.active ? (
+                <span className="small reward">Active</span>
+              ) : tech.unlocked ? (
+                <button className="button ghost" onClick={() => onSelectTechnique(tech.id)}>Use</button>
+              ) : (
+                <span className="small muted">Locked</span>
+              )}
+            </li>
+          ))}
+        </ul>
         <ul className="upgrade-list">
           {v.bag.length === 0 ? (
             <li><div className="muted">Empty</div></li>
@@ -1472,7 +1637,16 @@ function StationDetailPanel({ card, stations, coins, onCycleRecipe, onSetPaused,
   );
 }
 
-function BusinessDashboardPanel({ dash, onClose }: { dash: BusinessDashboardView; onClose: () => void }) {
+function BusinessDashboardPanel({
+  dash,
+  journalLines,
+  onClose,
+}: {
+  dash: BusinessDashboardView;
+  journalLines?: string[];
+  onClose: () => void;
+}) {
+  const offlineLines = journalLines?.length ? journalLines : dash.offlineJournalLines;
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => closeRef.current?.focus(), []);
   return (
@@ -1486,10 +1660,30 @@ function BusinessDashboardPanel({ dash, onClose }: { dash: BusinessDashboardView
           Session {dash.sessionLabel} · rates {dash.rateIntervalLabel}
         </div>
         <div className="small muted">Committed sales only — wallet coins are not counted as revenue.</div>
+        {dash.dailyLoginStreak > 0 && (
+          <div className="small reward">Harbor streak: {dash.dailyLoginStreak} day{dash.dailyLoginStreak === 1 ? "" : "s"}</div>
+        )}
         {dash.empty && (
           <p className="muted">No committed sales yet — serve customers or complete a contract.</p>
         )}
         <ul className="upgrade-list">
+          {dash.dailyGoals.map((g) => (
+            <li key={g.objectiveId}>
+              <div className="grow">
+                <strong>{g.name}</strong>
+                <div className="small">{g.description}</div>
+                <div className="small muted">{g.progress}/{g.target} · reward {formatCoins(g.rewardCoins)}</div>
+              </div>
+              <span className={g.claimed ? "owned" : g.complete ? "num" : "muted"}>
+                {g.claimed ? "Claimed" : g.complete ? "Ready" : "Daily"}
+              </span>
+            </li>
+          ))}
+          {offlineLines.length > 0 && offlineLines.map((line) => (
+            <li key={line}>
+              <div className="grow"><div className="small">{line}</div></div>
+            </li>
+          ))}
           {!dash.empty && (
             <>
               <li>
@@ -1566,52 +1760,132 @@ function BusinessDashboardPanel({ dash, onClose }: { dash: BusinessDashboardView
 
 function SpeciesBookPanel({ book, onClose }: { book: SpeciesBookView; onClose: () => void }) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [filter, setFilter] = useState<"all" | "logged" | "hidden" | string>("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   useEffect(() => closeRef.current?.focus(), []);
+  const selected = selectedId ? book.entries.find((e) => e.speciesId === selectedId) ?? null : null;
+  const filtered = book.entries.filter((e) => {
+    if (filter === "all") return true;
+    if (filter === "logged") return e.discovered;
+    if (filter === "hidden") return !e.discovered;
+    return e.family === filter;
+  });
+  if (selected) {
+    return (
+      <div className="scrim" onClick={onClose}>
+        <div className="panel sheet" role="dialog" aria-modal="true" aria-label={`${t("codex.detail")}: ${selected.name}`} onClick={(e) => e.stopPropagation()}>
+          <div className="sheet-header">
+            <h2>{selected.name}</h2>
+            <button ref={closeRef} className="button ghost" onClick={() => setSelectedId(null)}>{t("common.back")}</button>
+          </div>
+          <div className="small muted" style={{ marginBottom: 8 }}>
+            {selected.family} · {selected.rarityBand}
+            {selected.discovered ? ` · base ${formatCoins(selected.baseValue)}` : ""}
+          </div>
+          {selected.discovered ? (
+            <>
+              {selected.lore && <p className="small">{selected.lore}</p>}
+              {selected.journalTip && <p className="small reward">{selected.journalTip}</p>}
+              <div className="small muted" style={{ marginTop: 6 }}>
+                Mastery Lv {selected.masteryLevel}
+                {selected.masteryXpToNext != null
+                  ? ` · ${selected.masteryXp} XP · ${selected.masteryXpToNext} to next`
+                  : ` · ${selected.masteryXp} XP · max`}
+              </div>
+              <div className="small num" style={{ marginTop: 8 }}>
+                {selected.catches} caught
+                {selected.catchValueEstimate > 0 ? ` · ~${formatCoins(selected.catchValueEstimate)} dock value` : ""}
+                {selected.trophyBestSizePermille != null
+                  ? ` · best ${selected.trophyBestSizePermille}% · ${formatCoins(selected.trophyBestValueCoins ?? 0)}`
+                  : ""}
+              </div>
+              {selected.harborNames.length > 0 && (
+                <div className="small muted" style={{ marginTop: 6 }}>Harbors: {selected.harborNames.join(" · ")}</div>
+              )}
+              {selected.recipeNames.length > 0 && (
+                <div className="small muted" style={{ marginTop: 6 }}>
+                  Recipes: {selected.recipeNames.join(" · ")}
+                </div>
+              )}
+              {selected.baseSpeciesId && (
+                <div className="small reward" style={{ marginTop: 6 }}>Rare upgrade form</div>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="small muted">Not discovered yet.</p>
+              {selected.habitatHint && (
+                <p className="small">Hint: {selected.habitatHint}</p>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Species book" onClick={(e) => e.stopPropagation()}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={t("panels.codex")} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-header">
-          <h2>Species book</h2>
-          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+          <h2>{t("panels.codex")}</h2>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>{t("common.close")}</button>
         </div>
         <div className="small muted num">
           {book.discovered}/{book.total} discovered
         </div>
+        <div className="quality-row" style={{ marginTop: 8, flexWrap: "wrap" }} role="group" aria-label={t("panels.codex")}>
+          {(["all", "logged", "hidden"] as const).map((f) => (
+            <button
+              key={f}
+              className={filter === f ? "button" : "button ghost"}
+              aria-pressed={filter === f}
+              onClick={() => setFilter(f)}
+            >
+              {f === "all" ? t("a11y.filterAll") : f === "logged" ? t("a11y.filterLogged") : t("a11y.filterHidden")}
+            </button>
+          ))}
+          {book.families.map((fam) => (
+            <button
+              key={fam}
+              className={filter === fam ? "button" : "button ghost"}
+              aria-pressed={filter === fam}
+              onClick={() => setFilter(fam)}
+            >
+              {fam}
+            </button>
+          ))}
+        </div>
         {book.empty ? (
-          <p className="muted">No catches yet — cast from a pier to fill the book.</p>
+          <p className="muted">No catches yet — cast from a pier to fill the journal.</p>
         ) : null}
-        <ul className="upgrade-list">
-          {book.entries.map((entry) => (
+        <ul className="upgrade-list" style={{ marginTop: 8, maxHeight: "50vh", overflow: "auto" }}>
+          {filtered.map((entry) => (
             <li key={entry.speciesId}>
-              <div className="grow">
+              <button
+                className="grow"
+                style={{ textAlign: "left", background: "transparent", border: 0, padding: 0, color: "inherit", cursor: "pointer" }}
+                onClick={() => setSelectedId(entry.speciesId)}
+              >
                 <strong>{entry.name}</strong>
                 {entry.discovered ? (
                   <>
                     <div className="small num">
-                      {entry.catches} caught
+                      {entry.catches} caught · {entry.rarityBand}
                       {entry.trophyBestSizePermille != null
-                        ? ` · best ${entry.trophyBestSizePermille}% · ${formatCoins(entry.trophyBestValueCoins ?? 0)}`
+                        ? ` · best ${entry.trophyBestSizePermille}%`
                         : ""}
                     </div>
-                    {entry.harborNames.length > 0 && (
-                      <div className="small muted">Zones: {entry.harborNames.join(" · ")}</div>
-                    )}
-                    {entry.recipeNames.length > 0 && (
-                      <div className="small muted">
-                        Recipes: {entry.recipeNames.slice(0, 3).join(" · ")}
-                        {entry.recipeNames.length > 3 ? ` · +${entry.recipeNames.length - 3} more` : ""}
-                      </div>
-                    )}
-                    {entry.baseSpeciesId && (
-                      <div className="small reward">Rare upgrade form</div>
-                    )}
+                    {entry.lore && <div className="small muted">{entry.lore}</div>}
                   </>
                 ) : (
-                  <div className="small muted">Not discovered</div>
+                  <>
+                    <div className="small muted">Not discovered · {entry.family}</div>
+                    {entry.habitatHint && <div className="small">Hint: {entry.habitatHint}</div>}
+                  </>
                 )}
-              </div>
+              </button>
               <span className={entry.discovered ? "owned" : "num"}>
-                {entry.discovered ? "Logged" : "—"}
+                {entry.discovered ? "Open" : "—"}
               </span>
             </li>
           ))}
@@ -1713,6 +1987,7 @@ function OfflineSummaryPanel({ report, onContinue }: { report: OfflineReport; on
   if (report.sales > 0) lines.push(`${report.sales} sales`);
   if (report.workerFishCaught > 0) lines.push(`${report.workerFishCaught} fish caught by staff`);
   if (report.workerItemsMoved > 0) lines.push(`${report.workerItemsMoved} items moved by staff`);
+  if (report.journalLines?.length) lines.push(...report.journalLines);
   if (lines.length === 0 && !report.hadActivity) lines.push("Quiet shift — hire staff to earn while away");
   return (
     <div className="scrim">
@@ -1839,6 +2114,9 @@ function QuestLogPanel({
   onTakeLoan,
   onRepayLoan,
   onSetCoinGoal,
+  dailyLoginStreak,
+  dailyGoals,
+  onClaimDailyGoal,
   onClose,
 }: {
   quests: QuestView[];
@@ -1870,26 +2148,74 @@ function QuestLogPanel({
   onTakeLoan: () => void;
   onRepayLoan: () => void;
   onSetCoinGoal: (amount: number) => void;
+  dailyLoginStreak: number;
+  dailyGoals: DailyGoalView[];
+  onClaimDailyGoal: (objectiveId: string) => void;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => closeRef.current?.focus(), []);
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Goals" onClick={(e) => e.stopPropagation()}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={t("nav.goals")} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-header">
-          <h2>Goals</h2>
-          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+          <h2>{t("nav.goals")}</h2>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>{t("common.close")}</button>
         </div>
         <ul className="upgrade-list">
-          {seasonalEvent && (
+          <li>
+            <div className="grow">
+              <strong>{t("a11y.dailyGoalsSection")}</strong>
+              <div className="small">
+                {dailyLoginStreak > 0
+                  ? `Login streak: ${dailyLoginStreak} day${dailyLoginStreak === 1 ? "" : "s"}`
+                  : "Open each day to build a streak"}
+              </div>
+            </div>
+            <span className="num">{dailyLoginStreak > 0 ? dailyLoginStreak : "—"}</span>
+          </li>
+          {dailyGoals.length === 0 ? (
             <li>
               <div className="grow">
+                <div className="small muted">Sync your clock to roll today&apos;s objectives.</div>
+              </div>
+            </li>
+          ) : (
+            dailyGoals.map((g) => (
+              <li key={g.objectiveId}>
+                <div className="grow">
+                  <strong>{g.name}</strong>
+                  <div className="small">{g.description}</div>
+                  <div className="small reward">Reward: {formatCoins(g.rewardCoins)}</div>
+                  {!g.claimed && (
+                    <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={g.target} aria-valuenow={g.progress}>
+                      <div style={{ width: `${Math.min(100, Math.max(0, (g.progress / Math.max(1, g.target)) * 100))}%` }} />
+                    </div>
+                  )}
+                </div>
+                {g.claimed ? (
+                  <span className="owned">Claimed</span>
+                ) : g.claimEnabled ? (
+                  <button className="button" onClick={() => onClaimDailyGoal(g.objectiveId)}>
+                    Claim
+                  </button>
+                ) : (
+                  <span className="num">{g.progress}/{g.target}</span>
+                )}
+              </li>
+            ))
+          )}
+          {seasonalEvent && (
+            <li aria-label={t("a11y.festivalSection")}>
+              <div className="grow">
                 <strong>{seasonalEvent.name}</strong>
+                <div className="small muted">{t("a11y.festivalSection")}</div>
                 <div className="small">{seasonalEvent.description}</div>
                 <div className="small reward">
                   {formatRushSeconds(seasonalEvent.ticksRemaining)}s left
                   {seasonalEvent.banner ? ` · ${seasonalEvent.banner}` : ""}
+                  {` · Crowd ×${(seasonalEvent.customerSpawnMultPermille / 1000).toFixed(2)}`}
+                  {` · Prices ×${(seasonalEvent.priceMultPermille / 1000).toFixed(2)}`}
                 </div>
               </div>
               <span className="num">Event</span>
@@ -1970,10 +2296,10 @@ function QuestLogPanel({
           </li>
           <li>
             <div className="grow">
-              <strong>Species book</strong>
+              <strong>Species journal</strong>
               <div className="small">{speciesDiscovered}/{speciesTotal} discovered</div>
               <button className="button" onClick={onOpenSpeciesBook}>
-                Open book <kbd>B</kbd>
+                Open journal <kbd>B</kbd>
               </button>
             </div>
             <span className="num">{speciesDiscovered}/{speciesTotal}</span>
@@ -2160,12 +2486,14 @@ function QuestLogPanel({
   );
 }
 
-function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLeft, onAccept, onDeliver, onClose }: {
+function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLeft, failStreak, failStreakThreshold, onAccept, onDeliver, onClose }: {
   unlocked: boolean;
   lockedReason: string | null;
   offers: ContractOfferView[];
   active: ActiveContractView[];
   refreshTicksLeft: number;
+  failStreak: number;
+  failStreakThreshold: number;
   onAccept: (offerId: string) => void;
   onDeliver: (contractId: string) => void;
   onClose: () => void;
@@ -2174,15 +2502,25 @@ function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLe
   useEffect(() => closeRef.current?.focus(), []);
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Jobs" onClick={(e) => e.stopPropagation()}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={t("nav.jobs")} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-header">
           <div className="grow">
-            <h2>Jobs</h2>
+            <h2>{t("nav.jobs")}</h2>
             {unlocked && refreshTicksLeft > 0 && (
               <div className="small muted">Board refreshes in {formatRushSeconds(refreshTicksLeft)}s</div>
             )}
+            {unlocked && failStreak > 0 && (
+              <div
+                className={`small ${failStreak >= failStreakThreshold ? "danger" : "muted"}`}
+                role="status"
+                aria-label={t("a11y.failStreak", { count: failStreak })}
+              >
+                {t("a11y.failStreak", { count: failStreak })}
+                {failStreak >= failStreakThreshold ? " · board pressure on" : ""}
+              </div>
+            )}
           </div>
-          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>{t("common.close")}</button>
         </div>
         {!unlocked ? (
           <p className="danger">{lockedReason ?? "Locked"}</p>
@@ -2197,6 +2535,9 @@ function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLe
                   <strong>{job.name}</strong>
                   {job.standing && (
                     <div className="small muted">Standing · streak {job.standingStreak}</div>
+                  )}
+                  {job.chainId && (
+                    <div className="small muted">Chain step {job.chainStep}/{job.chainLength}</div>
                   )}
                   <div className="small">{job.delivered}/{job.quantity} {job.itemName} · {formatRushSeconds(job.ticksRemaining)}s left</div>
                   <div className="small reward">Pay {formatCoins(job.payout)} · fail −{formatCoins(job.penalty)}</div>
@@ -2217,6 +2558,12 @@ function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLe
                       Standing{offer.standingStreak > 0 ? ` · streak ${offer.standingStreak}` : ""}
                     </div>
                   )}
+                  {offer.chainId && (
+                    <div className="small muted">Delivery chain · {offer.chainLength} steps</div>
+                  )}
+                  {offer.requiresReputationBand != null && (
+                    <div className="small muted">Needs reputation band {offer.requiresReputationBand}+</div>
+                  )}
                   <div className="small">{offer.description}</div>
                   <div className="small">{offer.quantity}× {offer.itemName} · {formatRushSeconds(offer.durationTicks)}s</div>
                   <div className="small reward">+{formatCoins(offer.payout)} / −{formatCoins(offer.penalty)}</div>
@@ -2232,12 +2579,15 @@ function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLe
   );
 }
 
-function StaffPanel({ staff, workers, staffGear, automationIssues, stations, onShiftCount, freeOnShiftSlots, overtimeOnShiftCount, wagePerWorkerPerHour, maintenanceCoinsPerStation, economyUnlocked, bagFishSpoilActive, coins, onOpenDashboard, onHire, onSetShift, onAssignGear, onUnequipGear, onRepair, onClose }: {
+function StaffPanel({ staff, workers, staffGear, automationIssues, stations, onShiftCount, freeOnShiftSlots, overtimeOnShiftCount, wagePerWorkerPerHour, maintenanceCoinsPerStation, economyUnlocked, bagFishSpoilActive, coins, onOpenDashboard, onHire, onSetShift, onAssignGear, onUnequipGear, onTrainBranch, onSelectBranch, onSetSchedule, onRepair, onClose }: {
   staff: StaffHireView[]; workers: WorkerView[]; staffGear: StaffGearView[]; automationIssues: AutomationIssueView[]; stations: StationView[]; onShiftCount: number; freeOnShiftSlots: number; overtimeOnShiftCount: number;
   onOpenDashboard: () => void;
   wagePerWorkerPerHour: number; maintenanceCoinsPerStation: number; economyUnlocked: boolean; bagFishSpoilActive: boolean;
   coins: number; onHire: (roleId: string) => void; onSetShift: (workerId: string, onShift: boolean) => void;
   onAssignGear: (workerId: string, upgradeId: string) => void; onUnequipGear: (workerId: string, slotId: string) => void;
+  onTrainBranch: (workerId: string, branchId: string) => void;
+  onSelectBranch: (workerId: string, branchId: string | null) => void;
+  onSetSchedule: (workerId: string, scheduleId: string | null) => void;
   onRepair: (stationId: string) => void; onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -2245,10 +2595,10 @@ function StaffPanel({ staff, workers, staffGear, automationIssues, stations, onS
   const freeGear = staffGear.filter((g) => !g.equippedOnWorkerId);
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Staff" onClick={(e) => e.stopPropagation()}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={t("nav.staff")} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-header">
           <div className="grow">
-            <h2>Staff</h2>
+            <h2>{t("nav.staff")}</h2>
             <div className="small muted">
               {onShiftCount} on shift · {freeOnShiftSlots} free slots
               {overtimeOnShiftCount > 0 ? ` · ${overtimeOnShiftCount} overtime` : ""}
@@ -2303,6 +2653,46 @@ function StaffPanel({ staff, workers, staffGear, automationIssues, stations, onS
                           Equip {g.slotName}
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {w.branches.length > 0 && (
+                    <div className="small" style={{ marginTop: 4 }}>
+                      Branch{w.activeBranchName ? `: ${w.activeBranchName}` : ""}
+                      <div>
+                        {w.branches.map((b) => (
+                          <button
+                            key={b.id}
+                            className="button ghost"
+                            style={{ marginRight: 4, marginTop: 4 }}
+                            disabled={b.active || (!b.unlocked && !b.canTrain)}
+                            title={b.trainReason ?? b.description}
+                            onClick={() => {
+                              if (b.unlocked) onSelectBranch(w.id, b.active ? null : b.id);
+                              else onTrainBranch(w.id, b.id);
+                            }}
+                          >
+                            {b.active ? `Using ${b.name}` : b.unlocked ? `Use ${b.name}` : `Train ${b.name} · ${formatCoins(b.trainingCostCoins)}`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {w.schedules.length > 0 && (
+                    <div className="small" style={{ marginTop: 4 }}>
+                      Schedule{w.scheduleName ? `: ${w.scheduleName}` : ""}
+                      <div>
+                        {w.schedules.map((sch) => (
+                          <button
+                            key={sch.id}
+                            className="button ghost"
+                            style={{ marginRight: 4, marginTop: 4 }}
+                            onClick={() => onSetSchedule(w.id, sch.active ? null : sch.id)}
+                            title={sch.description}
+                          >
+                            {sch.active ? `Using ${sch.name}` : sch.name}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

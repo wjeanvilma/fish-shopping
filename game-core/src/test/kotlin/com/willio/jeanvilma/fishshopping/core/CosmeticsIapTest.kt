@@ -38,7 +38,7 @@ class CosmeticsIapTest {
                 Shared.content.decor.items.none { it.requiresCosmetic == grants },
             )
         }
-        assertEquals(3, simViewOffers())
+        assertEquals(CosmeticsIapSystem.CATALOG.size, simViewOffers())
     }
 
     @Test

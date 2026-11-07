@@ -1,0 +1,18 @@
+{
+  "schema": "fish.fixture.parity_contracts_2_0.v1",
+  "description": "Finish 2.0 Phase 17: accept morning market chain head, deliver step 1→2, assert fail streak + rep gate.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1,
+  "chainHeadId": "contract.chain_morning_catch",
+  "chainStep2Id": "contract.chain_morning_cut",
+  "chainId": "chain.morning_market",
+  "chainLength": 3,
+  "repGatedId": "contract.vip_crate",
+  "repGatedBand": 3,
+  "expect": {
+    "failStreakThreshold": 3,
+    "failStreakBoardSlotPenalty": 1,
+    "reputationPayoutBand0": 1000,
+    "reputationPayoutBand4": 1200
+  }
+}

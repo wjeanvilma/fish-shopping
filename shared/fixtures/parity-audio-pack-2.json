@@ -1,0 +1,37 @@
+{
+  "schema": "fish.fixture.parity_audio_pack_2.v1",
+  "description": "Finish 2.0 Phase 21: pack-2 stingers + beds; ducking frozen.",
+  "newStingerMin": 7,
+  "newBedMin": 2,
+  "audioPackMarker": "authored-finish-2.0-phase-21",
+  "expect": {
+    "stingers": [
+      "achievement",
+      "festival",
+      "contract_done",
+      "contract_fail",
+      "goal_claim",
+      "mastery_up",
+      "quest_done"
+    ],
+    "beds": ["festival", "storm"],
+    "ducking": {
+      "sfxDuckFactor": 0.35,
+      "sfxDuckRecoveryMs": 280,
+      "focusLossSilence": true,
+      "focusTransientCanDuckFactor": 0.25,
+      "webHiddenSuspendsContext": true,
+      "respectMute": true,
+      "respectMusicVolume": true
+    },
+    "eventMap": {
+      "achievement_unlocked": "achievement",
+      "seasonal_event_started": "festival",
+      "contract_completed": "contract_done",
+      "contract_failed": "contract_fail",
+      "daily_goal_claimed": "goal_claim",
+      "mastery_level_up": "mastery_up",
+      "quest_completed": "quest_done"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schema": "fish.fixture.parity_content_authoring_cli.v1",
+  "description": "Finish 2.0 Phase 27: content authoring CLI scaffold kinds + example files.",
+  "contentCliMarker": "authored-finish-2.0-phase-27",
+  "scaffoldKindMin": 3,
+  "exampleFileMin": 3,
+  "expect": {
+    "kinds": ["species", "quest", "harbor"],
+    "exampleFiles": [
+      "shared/content/scaffolds/examples/species.scaffold_tide_perch.json",
+      "shared/content/scaffolds/examples/quest.scaffold_morning_haul.json",
+      "shared/content/scaffolds/examples/harbor.scaffold_mist_cove.json"
+    ],
+    "exampleIds": [
+      "species.scaffold_tide_perch",
+      "quest.scaffold_morning_haul",
+      "harbor.scaffold_mist_cove"
+    ],
+    "moduleFiles": [
+      "shared/tools/content_cli/ids.ts",
+      "shared/tools/content_cli/scaffolds.ts",
+      "shared/tools/content_cli/validateFragment.ts",
+      "shared/tools/content_cli/cli.ts",
+      "shared/tools/content_scaffold.py",
+      "web/scripts/content-scaffold.ts"
+    ]
+  }
+}

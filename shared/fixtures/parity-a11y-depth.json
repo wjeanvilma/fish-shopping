@@ -1,0 +1,49 @@
+{
+  "schema": "fish.fixture.parity_a11y_depth.v1",
+  "description": "Finish 2.0 Phase 24: a11y depth surfaces, contrast, live regions.",
+  "a11yDepthMarker": "authored-finish-2.0-phase-24",
+  "screenSurfaceMin": 9,
+  "contrastPairMin": 4,
+  "uiA11yStringKeyMin": 12,
+  "liveRegionMin": 3,
+  "simHzInvariant": 20,
+  "expect": {
+    "screenIds": [
+      "achievements",
+      "species_journal",
+      "species_detail",
+      "goals_daily_festival",
+      "contracts_jobs",
+      "staff_branches",
+      "bag_mastery",
+      "settings_language",
+      "hud_weather_tide"
+    ],
+    "contrastPairIds": [
+      "seasonal_banner_text",
+      "balance_strip_text",
+      "muted_ink_on_surface",
+      "reward_text_on_surface",
+      "action_eyebrow_on_surface"
+    ],
+    "requiredUiKeys": [
+      "panels.codex",
+      "codex.detail",
+      "panels.bag",
+      "hud.weatherTide",
+      "a11y.failStreak",
+      "a11y.filterAll",
+      "a11y.filterLogged",
+      "a11y.filterHidden",
+      "a11y.achievementUnlocked",
+      "a11y.achievementLocked",
+      "nav.goals",
+      "nav.jobs"
+    ],
+    "liveRegions": [
+      "achievement_toast",
+      "weather_tide",
+      "festival_hud"
+    ]
+  }
+}

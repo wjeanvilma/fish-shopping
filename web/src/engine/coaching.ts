@@ -4,7 +4,7 @@
  */
 import type { ContentPack } from "./content";
 import { Stats, type GameState } from "./state";
-import { CustomerSystem, EconomySystem, ProgressionSystem, ReputationSystem } from "./systems";
+import { CustomerSystem, EconomySystem, MasterySystem, ProgressionSystem, ReputationSystem } from "./systems";
 
 export interface ObjectiveView {
   /** Short label: NEXT / GOAL / TIP */
@@ -146,6 +146,12 @@ export function emptyStateTip(content: ContentPack, state: GameState): string | 
     ReputationSystem.scorePermille(content, state) >= rep.coachingPraiseScorePermille
   ) {
     return "Harbor reviews are glowing — keep preferred stock filled";
+  }
+
+  // Mastery tips coach growth; once the player is at max global mastery they stay quiet.
+  const masteryTip = MasterySystem.coachingTip(content, state);
+  if (masteryTip && MasterySystem.globalLevel(content, state) < content.fishingMastery.maxLevel) {
+    return masteryTip;
   }
   return null;
 }

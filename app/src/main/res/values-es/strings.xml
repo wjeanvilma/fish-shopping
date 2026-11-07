@@ -1,0 +1,7 @@
+<resources>
+    <!-- Finish 2.0 Phase 23 — Spanish store listing copy. Source: shared/store/locales/es.json -->
+    <string name="app_name">Fish Shopping</string>
+    <string name="store_short_description">Pesca, corta y vende pescado en un acogedor mercado 3D del puerto.</string>
+    <string name="store_tagline">Pesca, corta, vende — dirige tu mercado del puerto</string>
+    <string name="store_whats_new">Congelación 2.0.0 — ocho puertos, cincuenta especies, veinte misiones, doce cosméticos neutrales al poder, festivales, maestría, bloqueo de paridad 2.0 y checkout web. Esquema 23; las partidas anteriores siguen cargando.</string>
+</resources>

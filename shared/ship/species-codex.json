@@ -1,0 +1,41 @@
+{
+  "phase": 12,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.species_codex.v1",
+  "description": "Finish 2.0 Phase 12 — species codex / journal: lore blurbs, habitat hints, family filters, catch stats, and book UI depth beyond a flat list.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 21,
+  "speciesCount": 50,
+  "codexEntryCount": 50,
+  "familyCount": 9,
+  "families": [
+    "cove",
+    "ember",
+    "jetty",
+    "marina",
+    "pier",
+    "polar",
+    "reef",
+    "storm",
+    "trophy"
+  ],
+  "parityFixture": "shared/fixtures/parity-species-codex.json",
+  "definitionOfDoneCodexEntries": 50,
+  "validateScript": "npm run codex:validate",
+  "checklist": [
+    "content-pack.codex has one entry per species with lore/habitat/family",
+    "SpeciesBook exposes lore, hints, rarityBand, catchValueEstimate, families",
+    "Web + Android journal UI: filters + detail drill-in",
+    "Habitat hints visible before discovery",
+    "parity-species-codex fixture + codex:validate green",
+    "CI runs codex:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/species-codex.json",
+    "shared/fixtures/parity-species-codex.json",
+    "web/src/ship/speciesCodex.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/SpeciesCodex.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/inventory/SpeciesBook.kt",
+    "web/src/engine/speciesBook.ts"
+  ]
+}

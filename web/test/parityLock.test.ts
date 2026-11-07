@@ -18,14 +18,19 @@ describe("Parity lock (post-1.0 Phase 27)", () => {
   it("locks suite catalog for economy/tutorial/entitlements/migrations", () => {
     expect(PARITY_LOCK_PHASE).toBe(27);
     expect(PARITY_LOCK_SCHEMA).toBe("fish.fixtures.parity_lock.v1");
-    expect(PARITY_LOCK.contentVersion).toBe("1.0.1");
-    expect(PARITY_LOCK.schemaVersion).toBe(20);
+    expect(PARITY_LOCK.contentVersion).toBe("2.0.0");
+    expect(PARITY_LOCK.schemaVersion).toBe(23);
     expect(PARITY_LOCK.suites.map((s) => s.id)).toEqual([
       "prng",
       "starter_line",
       "entitlements_unlock",
       "legacy_migrations",
+      "achievements",
+      "weather_tide",
+      "fishing_mastery",
+      "festival_weekends",
     ]);
+    expect(PARITY_LOCK.finish2ParityLockPhase).toBe(29);
     for (const field of [
       "harborId",
       "fullHarborUnlock",

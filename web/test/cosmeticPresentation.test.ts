@@ -18,7 +18,7 @@ describe("Cosmetic presentation (post-1.0 Phase 24)", () => {
   it("locks equip/preview contracts as power-neutral presentation", () => {
     expect(COSMETIC_PRESENTATION_PHASE).toBe(24);
     expect(COSMETIC_PRESENTATION_SCHEMA).toBe("fish.content.cosmetic_presentation.v1");
-    expect(cosmeticPresentation.schemaVersion).toBe(20);
+    expect(cosmeticPresentation.schemaVersion).toBe(21);
     expect(cosmeticPresentation.constraints.powerNeutral).toBe(true);
     expect(cosmeticPresentation.constraints.equipInSettingsNotSave).toBe(true);
     expect(cosmeticPresentation.slot.maxEquipped).toBe(1);

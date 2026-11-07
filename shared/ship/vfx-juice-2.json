@@ -1,0 +1,85 @@
+{
+  "phase": 22,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.vfx_juice_2.v1",
+  "description": "Finish 2.0 Phase 22 — weather/festival/achievement (and aligned 2.0 event) visual juice under budget-gate; extends post-1.0 vfx-juice; presentation-only; sim 20 Hz. Distinct from post-1.0 Phase 22 tutorial-friction.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "extendsCatalog": "shared/perf/vfx-juice.json",
+  "budgetGateCatalog": "shared/perf/budget-gate.json",
+  "simHzInvariant": 20,
+  "vfxJuice2Marker": "authored-finish-2.0-phase-22",
+  "eventBurstMin": 4,
+  "eventShakeMin": 2,
+  "weatherAmbientMin": 5,
+  "eventBursts": {
+    "kinds": ["achievement", "festival", "contract_done", "goal_claim"],
+    "durationSec": {
+      "achievement": 0.55,
+      "festival": 0.6,
+      "contract_done": 0.4,
+      "goal_claim": 0.35
+    },
+    "sharesBurstPool": true,
+    "note": "New kinds reuse VfxBurst_* slots under existing presenterCaps.burst; ambient weather does not consume the pool."
+  },
+  "eventShake": {
+    "kinds": ["achievement", "festival"],
+    "durationSec": 0.18,
+    "maxAmplitudeM": 0.12,
+    "amplitudeM": {
+      "achievement": 0.06,
+      "festival": 0.05
+    },
+    "scaleByQuality": { "low": 0.5, "medium": 0.85, "high": 1.0 },
+    "disabledWhenReducedMotion": true
+  },
+  "ambientWeather": {
+    "patterns": [
+      "weather.clear",
+      "weather.overcast",
+      "weather.rain",
+      "weather.fog",
+      "weather.gale"
+    ],
+    "qualityScaled": true,
+    "disabledWhenReducedMotionBob": true,
+    "festivalWarmSkyMix": true,
+    "consumesBurstPool": false
+  },
+  "eventMap": {
+    "achievement_unlocked": { "burst": "achievement", "shake": "achievement" },
+    "seasonal_event_started": { "burst": "festival", "shake": "festival" },
+    "contract_completed": { "burst": "contract_done" },
+    "daily_goal_claimed": { "burst": "goal_claim" }
+  },
+  "parityFixture": "shared/fixtures/parity-vfx-juice-2.json",
+  "validateScript": "npm run vfx2:validate",
+  "checklist": [
+    "≥4 new event burst kinds (achievement/festival/contract_done/goal_claim)",
+    "≥2 new shake kinds (achievement/festival) under maxShakeAmplitudeM",
+    "≥5 weather ambient patterns driving sky/water (not burst pool)",
+    "presenterCaps.burst/fly/crowd unchanged; post-1.0 vfx:validate still green",
+    "GameHost + GameViewModel wire 2.0 events",
+    "HarborScene + HarborRenderer apply weather ambient",
+    "parity-vfx-juice-2 + vfx2:validate green",
+    "CI runs vfx2:validate",
+    "schema stays 23 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/vfx-juice-2.json",
+    "shared/fixtures/parity-vfx-juice-2.json",
+    "shared/perf/budget-gate.json",
+    "shared/perf/vfx-juice.json",
+    "web/src/ship/vfxJuice2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/VfxJuice2.kt",
+    "web/src/render/presenters.ts",
+    "web/src/render/weatherAmbient.ts",
+    "web/src/render/HarborScene.ts",
+    "web/src/game/GameHost.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/Presenters.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/WeatherAmbient.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRenderer.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt"
+  ]
+}

@@ -1,5 +1,5 @@
 /**
- * Phase 30 (post-1.0) — Definition of Done 100% closeout readiness.
+ * Phase 30 — Definition of Done closeout (post-1.0 archived + Finish 2.0 freeze).
  *
  * Usage:
  *   npm run dod:validate
@@ -15,6 +15,7 @@ import {
   dodPhaseGateCatalogs,
   dodRequiredChecks,
   isCloseoutReady,
+  isFinish2FreezeReady,
 } from "../src/engine/definitionOfDone";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
@@ -51,21 +52,23 @@ function validate(): string[] {
 
   if (dod.phase !== 30) errors.push(`phase expected 30, got ${dod.phase}`);
   if (dod.schema !== DOD_SCHEMA) errors.push("bad schema");
-  if (dod.completeTag !== "v1.0-complete") errors.push("completeTag must be v1.0-complete");
+  if (dod.completeTag !== "v1.0-complete") errors.push("completeTag must stay v1.0-complete");
   if (dod.releaseTag !== pin.releaseTag) errors.push("releaseTag ≠ RELEASE_PIN");
   if (dod.contentVersion !== pin.contentVersion) errors.push("contentVersion ≠ RELEASE_PIN");
-  if (dod.schemaVersion !== 20) errors.push("schemaVersion must stay 20");
-  if (pin.schemaVersion !== 20) errors.push("RELEASE_PIN schemaVersion must stay 20");
+  if (dod.schemaVersion !== 23) errors.push("schemaVersion must be 23");
+  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN schemaVersion must be 23");
+  if (pin.contentVersion !== "2.0.0") errors.push("RELEASE_PIN contentVersion must be 2.0.0");
+  if (pin.releaseTag !== "v2.0.0") errors.push("RELEASE_PIN releaseTag must be v2.0.0");
   if (pin.definitionOfDone !== "shared/ship/definition-of-done.json") {
     errors.push("RELEASE_PIN.definitionOfDone path");
   }
-  if (pin.completeTag !== "v1.0-complete") errors.push("RELEASE_PIN.completeTag must be v1.0-complete");
+  if (pin.completeTag !== "v1.0-complete") errors.push("RELEASE_PIN.completeTag must stay v1.0-complete");
 
   if (listing.dodCloseoutPhase !== 30) errors.push("listing.dodCloseoutPhase must be 30");
   if (listing.dodCloseoutCatalog !== "shared/ship/definition-of-done.json") {
     errors.push("listing.dodCloseoutCatalog mismatch");
   }
-  if (listing.completeTag !== "v1.0-complete") errors.push("listing.completeTag must be v1.0-complete");
+  if (listing.completeTag !== "v1.0-complete") errors.push("listing.completeTag must stay v1.0-complete");
 
   const closeout = dod.closeout;
   if (!closeout) {
@@ -78,6 +81,20 @@ function validate(): string[] {
   if ((closeout.checklist as string[]).length < 8) errors.push("closeout.checklist too short");
   if ((closeout.phaseGates as any[]).length !== 29) {
     errors.push(`phaseGates expected 29, got ${(closeout.phaseGates as any[]).length}`);
+  }
+
+  const freeze = dod.finish2Freeze;
+  if (!freeze) errors.push("missing finish2Freeze block");
+  else {
+    if (!isFinish2FreezeReady(freeze.status)) {
+      errors.push(`finish2Freeze.status not ready: ${freeze.status}`);
+    }
+    if (freeze.releaseTag !== "v2.0.0") errors.push("finish2Freeze.releaseTag must be v2.0.0");
+    if (freeze.contentVersion !== "2.0.0") errors.push("finish2Freeze.contentVersion must be 2.0.0");
+    if (freeze.schemaVersion !== 23) errors.push("finish2Freeze.schemaVersion must be 23");
+    if (freeze.catalog !== "shared/ship/freeze-2.0.0.json") errors.push("finish2Freeze.catalog mismatch");
+    if (freeze.versionCode !== 3) errors.push("finish2Freeze.versionCode must be 3");
+    if (!existsSync(resolve(root, freeze.catalog))) errors.push("missing freeze-2.0.0 catalog");
   }
 
   for (const check of dodRequiredChecks()) {
@@ -95,21 +112,18 @@ function validate(): string[] {
     }
   }
 
-  // Real IAP
   if (playBilling.releaseBackend !== "play") errors.push("play-billing releaseBackend must be play");
   if (webBilling.productionBackend !== "web") errors.push("web-billing productionBackend must be web");
   if (!entitlements.fullUnlock?.sku) errors.push("entitlements.fullUnlock.sku required");
-  if (!Array.isArray(entitlements.cosmetics) || entitlements.cosmetics.length < 1) {
-    errors.push("entitlements.cosmetics required");
+  if (!Array.isArray(entitlements.cosmetics) || entitlements.cosmetics.length < 12) {
+    errors.push("entitlements.cosmetics need ≥12 for Finish 2.0 freeze");
   }
 
-  // Real screenshots
   if ((shots.files as string[]).length < 14) errors.push("screenshot captures need ≥14 PNGs");
   for (const rel of shots.files as string[]) {
     if (!existsSync(resolve(root, rel))) errors.push(`missing screenshot ${rel}`);
   }
 
-  // Authored audio
   const sfxDir = resolve(root, sfx.sourceDir ?? "shared/audio/sfx");
   if (!existsSync(sfxDir)) errors.push("sfx sourceDir missing");
   else {
@@ -119,7 +133,6 @@ function validate(): string[] {
   const musicSource = music.sourceDir ?? music.bedsDir ?? "shared/audio/music";
   const musicDir = resolve(root, musicSource);
   if (!existsSync(musicDir)) {
-    // beds may be listed with explicit paths
     const bedFiles = (music.beds as any[] | undefined)?.map((b) => b.file || b.path).filter(Boolean) ?? [];
     if (bedFiles.length === 0) {
       const clips = (music.clips as any[] | undefined) ?? [];
@@ -136,7 +149,6 @@ function validate(): string[] {
     if (beds.length < 1) errors.push("authored music beds directory empty");
   }
 
-  // Closed-test signoff path
   if (closed.signoff?.productionPromotion !== "Phase 18") {
     errors.push("closed-testing must promote to Phase 18");
   }
@@ -147,11 +159,9 @@ function validate(): string[] {
     errors.push("public-ship must require closed testing phase 17");
   }
 
-  // Hotfix lane
   if (hotfix.phase !== 29) errors.push("hotfix-lane phase must be 29");
   if (hotfix.schemaVersion !== 20) errors.push("hotfix-lane schemaVersion must stay 20");
 
-  // Legal pages pipeline — Finish 2.0 Phase 1 verifies live HTTP 200 via pages:live
   const urls = [
     listing.privacyPolicyUrl,
     listing.supportUrl,
@@ -194,13 +204,16 @@ function validate(): string[] {
 
   if (DOD_PHASE !== 30) errors.push("DOD_PHASE mirror mismatch");
   if (!web.includes("DOD_COMPLETE_TAG")) errors.push("web definitionOfDone missing DOD_COMPLETE_TAG");
+  if (!web.includes("isFinish2FreezeReady")) errors.push("web definitionOfDone missing isFinish2FreezeReady");
   if (!kotlin.includes("COMPLETE_TAG")) errors.push("Kotlin DefinitionOfDone missing COMPLETE_TAG");
   if (!kotlin.includes("PHASE_GATE_CATALOGS")) errors.push("Kotlin missing PHASE_GATE_CATALOGS");
+  if (!kotlin.includes("isFinish2FreezeReady")) errors.push("Kotlin missing isFinish2FreezeReady");
 
   if (!ci.includes("dod:validate")) errors.push("ci.yml missing dod:validate");
   if (!ci.includes("Definition of Done 100%")) {
     errors.push("ci.yml missing Definition of Done 100% closeout step");
   }
+  if (!ci.includes("freeze2:validate")) errors.push("ci.yml missing freeze2:validate");
 
   for (const rel of Object.values(closeout.evidence as Record<string, string>)) {
     if (!existsSync(resolve(root, rel))) errors.push(`missing evidence ${rel}`);
@@ -215,4 +228,4 @@ if (errors.length) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
-console.log("OK dod:validate — Definition of Done 100% closeout ready (tag v1.0-complete)");
+console.log("OK dod:validate — post-1.0 closeout archived + Finish 2.0 freeze ready (tag v2.0.0 manual)");

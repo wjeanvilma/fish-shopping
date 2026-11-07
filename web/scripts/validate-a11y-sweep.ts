@@ -81,7 +81,9 @@ function validate(): string[] {
     && !app.includes("aria-label=\"Harbor\"")) {
     errors.push("Harbor canvas missing aria-label");
   }
-  if (!app.includes("Harbor actions")) errors.push("toolbar missing Harbor actions aria-label");
+  if (!app.includes("Harbor actions") && !app.includes('t("hud.toolbar")')) {
+    errors.push("toolbar missing Harbor actions aria-label");
+  }
 
   const tokens = JSON.parse(readFileSync(resolve(root, "shared/tokens/design-tokens.json"), "utf8"));
   if (tokens.size.minTouchTargetDp !== 48) errors.push("design-tokens minTouchTargetDp ≠ 48");

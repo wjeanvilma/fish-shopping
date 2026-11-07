@@ -44,7 +44,15 @@ class CoachingTest {
         state.bumpStat(Stats.CONTRACTS_COMPLETED, 1)
         state.ownedUpgrades += "upgrade.display_case_ice"
         state.primaryCounterStock().stock.add("product.smoked_fillet", 1)
-        assertNull(Coaching.emptyStateTip(Shared.content, state))
+        val tip = Coaching.emptyStateTip(Shared.content, state)
+        // Mastery coaching may still surface; other empty-state loop tips must stay quiet.
+        assertTrue(
+            tip == null ||
+                tip == com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.coachingTip(
+                    Shared.content,
+                    state,
+                ),
+        )
     }
 
     @Test

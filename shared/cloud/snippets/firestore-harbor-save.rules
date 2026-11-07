@@ -1,0 +1,23 @@
+rules_version = '2';
+// Finish 2.0 Phase 26 — REVIEWED SNIPPET ONLY.
+// Do NOT treat this file as a deployable repo-root firestore.rules.
+// Operator applies manually in Firebase Console / emulator (deploy remains manual).
+// Path contract: shared/cloud/production-path.json → users/{uid}/saves/harbor
+// Fields: snapshot (string), savedAtEpochMs (number), checksum (string)
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/saves/{docId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId
+        && docId == 'harbor'
+        && request.resource.data.keys().hasOnly(['snapshot', 'savedAtEpochMs', 'checksum'])
+        && request.resource.data.snapshot is string
+        && request.resource.data.savedAtEpochMs is number
+        && request.resource.data.checksum is string;
+
+      allow delete: if request.auth != null
+        && request.auth.uid == userId
+        && docId == 'harbor';
+    }
+  }
+}

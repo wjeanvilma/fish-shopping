@@ -210,6 +210,24 @@ object ContentLoader {
                 summaryMinSeconds = o["summaryMinSeconds"].int(min = 0),
             )
         },
+        dailyGoals = r["dailyGoals"].let { d ->
+            DailyGoalsCatalog(
+                dayLengthMs = d["dayLengthMs"].long(min = 1),
+                boardSlots = d["boardSlots"].int(min = 1),
+                streakBonusCoinsPerDay = d["streakBonusCoinsPerDay"].long(min = 0),
+                maxStreakBonusDays = d["maxStreakBonusDays"].int(min = 1),
+                objectives = d["objectives"].list { o ->
+                    DailyObjectiveDef(
+                        id = o["id"].string(),
+                        name = o["name"].string(),
+                        description = o["description"].string(),
+                        goal = statGoal(o["goal"]),
+                        rewardCoins = o["rewardCoins"].long(min = 0),
+                        weight = o["weight"].int(min = 1),
+                    )
+                },
+            )
+        },
         economy = r["economy"].let { e ->
             EconomyDef(
                 requires = e["requires"].list { it.string() },
@@ -286,6 +304,135 @@ object ContentLoader {
                 },
             )
         },
+        achievements = r["achievements"].let { a ->
+            AchievementsCatalog(
+                entries = a["entries"].list { e ->
+                    AchievementDef(
+                        id = e["id"].string(),
+                        name = e["name"].string(),
+                        description = e["description"].string(),
+                        category = e["category"].string(),
+                        goal = statGoal(e["goal"]),
+                        rewardCoins = e["rewardCoins"].long(min = 0),
+                    )
+                },
+            )
+        },
+        codex = r["codex"].let { c ->
+            SpeciesCodexCatalog(
+                families = c["families"].list { it.string() },
+                entries = c["entries"].list { e ->
+                    SpeciesCodexEntryDef(
+                        speciesId = e["speciesId"].string(),
+                        family = e["family"].string(),
+                        lore = e["lore"].string(),
+                        habitatHint = e["habitatHint"].string(),
+                        journalTip = e["journalTip"].string(),
+                    )
+                },
+            )
+        },
+        weather = r["weather"].let { w ->
+            WeatherCatalog(
+                patterns = w["patterns"].list { p ->
+                    WeatherPatternDef(
+                        id = p["id"].string(),
+                        name = p["name"].string(),
+                        description = p["description"].string(),
+                        durationTicks = p["durationTicks"].int(min = 1),
+                        catchSpeedMultPermille = p["catchSpeedMultPermille"].int(min = 1),
+                        regenMultPermille = p["regenMultPermille"].int(min = 1),
+                        customerSpawnMultPermille = p["customerSpawnMultPermille"].int(min = 1),
+                        rareChanceBonusPermille = p["rareChanceBonusPermille"].int(min = 0, max = 1000),
+                    )
+                },
+                tide = w["tide"].let { t ->
+                    TideCatalog(
+                        periodTicks = t["periodTicks"].int(min = 1),
+                        phases = t["phases"].list { p ->
+                            TidePhaseDef(
+                                id = p["id"].string(),
+                                name = p["name"].string(),
+                                endPermille = p["endPermille"].int(min = 1, max = 1000),
+                                catchSpeedMultPermille = p["catchSpeedMultPermille"].int(min = 1),
+                                regenMultPermille = p["regenMultPermille"].int(min = 1),
+                                customerSpawnMultPermille = p["customerSpawnMultPermille"].int(min = 1),
+                            )
+                        },
+                        chartCatchBonusPermille = t["chartCatchBonusPermille"].int(min = 0, max = 1000),
+                        chartRegenEasePermille = t["chartRegenEasePermille"].int(min = 0, max = 1000),
+                        chartCrowdBonusPermille = t["chartCrowdBonusPermille"].int(min = 0, max = 1000),
+                    )
+                },
+            )
+        },
+        staffTrees = r["staffTrees"].let { st ->
+            StaffTreesCatalog(
+                branches = st["branches"].list { b ->
+                    StaffBranchDef(
+                        id = b["id"].string(),
+                        role = b["role"].string(),
+                        name = b["name"].string(),
+                        description = b["description"].string(),
+                        parentId = b.optional("parentId")?.string(),
+                        requiresWorkerLevel = b["requiresWorkerLevel"].int(min = 1),
+                        trainingCostCoins = b["trainingCostCoins"].int(min = 0),
+                        trainingXpRequired = b["trainingXpRequired"].int(min = 1),
+                        catchSpeedMultPermille = b["catchSpeedMultPermille"].int(min = 1),
+                        moveSpeedMultPermille = b["moveSpeedMultPermille"].int(min = 1),
+                        carryBonus = b["carryBonus"].int(min = 0),
+                        transferIntervalMultPermille = b["transferIntervalMultPermille"].int(min = 1),
+                        wageMultPermille = b["wageMultPermille"].int(min = 1),
+                    )
+                },
+                schedules = st["schedules"].list { sch ->
+                    StaffScheduleDef(
+                        id = sch["id"].string(),
+                        name = sch["name"].string(),
+                        description = sch["description"].string(),
+                        dayParts = sch["dayParts"].list { it.string() },
+                        autoOnShift = sch["autoOnShift"].bool(),
+                        wageMultPermille = sch["wageMultPermille"].int(min = 1),
+                    )
+                },
+            )
+        },
+        fishingMastery = r["fishingMastery"].let { m ->
+            FishingMasteryCatalog(
+                maxLevel = m["maxLevel"].int(min = 1),
+                xpThresholds = m["xpThresholds"].list { it.int(min = 0) },
+                xpCatch = m["xpCatch"].int(min = 0),
+                xpGoodReel = m["xpGoodReel"].int(min = 0),
+                xpPerfectReel = m["xpPerfectReel"].int(min = 0),
+                xpRareCatch = m["xpRareCatch"].int(min = 0),
+                catchSpeedPermillePerLevel = m["catchSpeedPermillePerLevel"].int(min = 0),
+                rareChanceBonusPermillePerLevel = m["rareChanceBonusPermillePerLevel"].int(min = 0, max = 1000),
+                techniques = m["techniques"].list { t ->
+                    MasteryTechniqueDef(
+                        id = t["id"].string(),
+                        name = t["name"].string(),
+                        description = t["description"].string(),
+                        requiresMasteryLevel = t["requiresMasteryLevel"].int(min = 0),
+                        windowStartDeltaPermille = t["windowStartDeltaPermille"].int(),
+                        windowEndDeltaPermille = t["windowEndDeltaPermille"].int(),
+                        perfectStartDeltaPermille = t["perfectStartDeltaPermille"].int(),
+                        perfectEndDeltaPermille = t["perfectEndDeltaPermille"].int(),
+                        catchSpeedMultPermille = t["catchSpeedMultPermille"].int(min = 1),
+                        perfectBonusPermille = t["perfectBonusPermille"].int(min = 0),
+                        rareChanceBonusPermille = t["rareChanceBonusPermille"].int(min = 0, max = 1000),
+                    )
+                },
+                coachingTips = m["coachingTips"].list { tip ->
+                    MasteryCoachingTipDef(
+                        id = tip["id"].string(),
+                        minGlobalLevel = tip["minGlobalLevel"].int(min = 0),
+                        maxGlobalLevel = tip["maxGlobalLevel"].int(min = 0),
+                        minSpeciesLevel = tip["minSpeciesLevel"].int(min = 0),
+                        text = tip["text"].string(),
+                    )
+                },
+            )
+        },
         reputation = r["reputation"].let { rep ->
             ReputationDef(
                 minSample = rep["minSample"].int(min = 1),
@@ -323,8 +470,18 @@ object ContentLoader {
                         maxStreak = t.optional("maxStreak")?.int(min = 1) ?: 1,
                         failCooldownTicks = t.optional("failCooldownTicks")?.int(min = 1) ?: 1,
                         requiresSeasonalEvent = t.optional("requiresSeasonalEvent")?.string(),
+                        chainId = t.optional("chainId")?.string(),
+                        chainStep = t.optional("chainStep")?.int(min = 1) ?: 1,
+                        requiresReputationBand = t.optional("requiresReputationBand")?.int(min = 0),
                     )
                 },
+                failStreakThreshold = c.optional("failStreakThreshold")?.int(min = 1) ?: 3,
+                failStreakBoardSlotPenalty = c.optional("failStreakBoardSlotPenalty")?.int(min = 0) ?: 1,
+                failStreakOfferWeightMultPermille =
+                    c.optional("failStreakOfferWeightMultPermille")?.int(min = 1) ?: 700,
+                reputationPayoutMultPermille = c.optional("reputationPayoutMultPermille")?.list {
+                    it.int(min = 1)
+                } ?: emptyList(),
             )
         },
         customers = r["customers"].list { c ->
@@ -341,6 +498,7 @@ object ContentLoader {
                 unmetPriceMultPermille = c["unmetPriceMultPermille"].int(min = 1, max = 1000),
                 unmetPatienceDrainPermille = c["unmetPatienceDrainPermille"].int(min = 1),
                 dayPartSpawnMultPermille = c.optional("dayPartSpawnMultPermille")?.stringIntMap() ?: emptyMap(),
+                requiresSeasonalEvent = c.optional("requiresSeasonalEvent")?.string(),
             )
         },
         tutorial = r["tutorial"].list { t ->
@@ -379,6 +537,9 @@ object ContentLoader {
                         banner = e.optional("banner")?.string(),
                         speciesWeightMultPermille = e.optional("speciesWeightMultPermille")?.stringIntMap()
                             ?: emptyMap(),
+                        customerSpawnMultPermille = e.optional("customerSpawnMultPermille")?.int(min = 1) ?: 1000,
+                        priceMultPermille = e.optional("priceMultPermille")?.int(min = 1) ?: 1000,
+                        festivalCustomerIds = e.optional("festivalCustomerIds")?.list { it.string() } ?: emptyList(),
                     )
                 },
             )

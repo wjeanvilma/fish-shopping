@@ -4,6 +4,7 @@
  * and optional cloud sync are client-local.
  */
 import { clampVolume, type VolumeStep } from "../audio/audioBus";
+import { isAppLocale, resolveLocale, setLocale, type AppLocale } from "../i18n/strings";
 import { clampHudTextScale, type HudTextScale } from "../presenters/accessibility";
 
 export type QualityPreset = "low" | "medium" | "high";
@@ -11,6 +12,7 @@ export type JoystickSide = "left" | "right";
 /** Multiplier on the 140px design-token diameter. */
 export type JoystickScale = 0.75 | 1 | 1.25;
 export type { VolumeStep, HudTextScale };
+export type { AppLocale };
 
 export interface GameSettings {
   muted: boolean;
@@ -50,6 +52,8 @@ export interface GameSettings {
   cloudRefreshToken: string | null;
   /** Phase 24: equipped harbor banner cosmetic id (presentation-only). */
   equippedCosmeticId: string | null;
+  /** Finish 2.0 Phase 23: UI chrome locale (en | es). */
+  locale: AppLocale;
 }
 
 /** Presentation-only save / cloud status for the Settings panel. */
@@ -85,6 +89,7 @@ const DEFAULTS: GameSettings = {
   cloudAccountId: null,
   cloudRefreshToken: null,
   equippedCosmeticId: null,
+  locale: resolveLocale(null),
 };
 
 function parseScale(v: unknown): JoystickScale {
@@ -130,6 +135,7 @@ export function loadSettings(): GameSettings {
       equippedCosmeticId: typeof parsed.equippedCosmeticId === "string" && parsed.equippedCosmeticId.length > 0
         ? parsed.equippedCosmeticId
         : null,
+      locale: isAppLocale(parsed.locale) ? parsed.locale : resolveLocale(null),
     };
   } catch {
     return { ...DEFAULTS };
@@ -138,10 +144,16 @@ export function loadSettings(): GameSettings {
 
 export function saveSettings(settings: GameSettings): void {
   try {
+    setLocale(settings.locale);
     localStorage.setItem(KEY, JSON.stringify(settings));
   } catch {
     // private mode / quota — ignore
   }
+}
+
+/** Apply persisted locale to the active i18n resolver (call once at boot). */
+export function applyLocaleFromSettings(settings: GameSettings): void {
+  setLocale(settings.locale);
 }
 
 /** Design-token base diameter (px / dp). */

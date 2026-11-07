@@ -33,7 +33,7 @@ describe("Balance patch 1.0.1 (post-1.0 Phase 23)", () => {
     expect(BALANCE_PATCH_TO).toBe("1.0.1");
     expect(balancePatch101.schemaVersion).toBe(20);
     expect(balancePatch101.constraints.noSchemaBreak).toBe(true);
-    expect(content.contentVersion).toBe("1.0.1");
+    expect(content.contentVersion).toBe("2.0.0");
   });
 
   it("applies closed-test economy/XP tweaks in the live pack", () => {

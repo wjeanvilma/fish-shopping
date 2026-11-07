@@ -1,0 +1,29 @@
+{
+  "schema": "fish.fixture.parity_harbor_art_pass.v1",
+  "description": "Finish 2.0 Phase 19: authored harbor art markers, themes, and byte budgets.",
+  "authoredHarborMin": 3,
+  "harborArtMarker": "authored-phase-19",
+  "maxBytesPerHarbor": 200000,
+  "expect": {
+    "harbors": [
+      {
+        "harborId": "harbor.sunrise_pier",
+        "theme": "sunrise",
+        "asset": "sunrise_pier_blockout.glb",
+        "minHarborArtNodes": 6
+      },
+      {
+        "harborId": "harbor.coral_lagoon",
+        "theme": "coral",
+        "asset": "coral_lagoon_blockout.glb",
+        "minHarborArtNodes": 7
+      },
+      {
+        "harborId": "harbor.storm_quay",
+        "theme": "storm",
+        "asset": "storm_quay_blockout.glb",
+        "minHarborArtNodes": 7
+      }
+    ]
+  }
+}

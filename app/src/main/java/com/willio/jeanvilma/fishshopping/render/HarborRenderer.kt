@@ -677,8 +677,21 @@ class HarborRenderer(private val context: Context) {
             }
         }
 
+        // Finish 2.0 Phase 22 — weather/festival ambient (not burst-pool; quality/reduced-motion scaled).
+        val ambient = weatherAmbientProfile(
+            weatherId = sim.weatherId,
+            festivalActive = sim.seasonalEvent != null,
+            quality = FrameTiming.toPresenterQuality(sessionQuality),
+            reducedMotion = reducedMotion,
+        )
+        try {
+            skybox.setColor(floatArrayOf(ambient.skyR, ambient.skyG, ambient.skyB, 1f))
+        } catch (_: Throwable) {
+            // Older Filament builds may lack setColor; water tint still applies.
+        }
         if (waterEntity != 0) {
-            val waterY = if (reducedMotion) WATER_REST_Y else WATER_REST_Y + sin(elapsed * 0.7) * 0.02
+            val bobAmp = 0.02 * ambient.bobScale
+            val waterY = if (bobAmp <= 0.0) WATER_REST_Y else WATER_REST_Y + sin(elapsed * 0.7) * bobAmp
             tm.setTransform(
                 tm.getInstance(waterEntity),
                 scaleTranslation(WATER_REST_X, waterY, WATER_REST_Z, WATER_SX, WATER_SY, WATER_SZ),
@@ -689,9 +702,9 @@ class HarborRenderer(private val context: Context) {
             if (ri != 0) {
                 val mi = rm.getMaterialInstanceAt(ri, 0)
                 val pulse = (0.5 + 0.5 * sin(elapsed * 1.1)).toFloat()
-                val r = 0.12f + 0.10f * pulse
-                val g = 0.40f + 0.15f * pulse
-                val b = 0.55f + 0.20f * pulse
+                val r = ambient.waterDeepR * 0.75f + ambient.waterShallowR * 0.25f * pulse
+                val g = ambient.waterDeepG * 0.75f + ambient.waterShallowG * 0.25f * pulse
+                val b = ambient.waterDeepB * 0.75f + ambient.waterShallowB * 0.25f * pulse
                 try {
                     mi.setParameter("baseColorFactor", r, g, b, 0.92f)
                 } catch (_: Throwable) {

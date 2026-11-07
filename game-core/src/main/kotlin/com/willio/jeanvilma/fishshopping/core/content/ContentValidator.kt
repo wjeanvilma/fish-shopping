@@ -52,6 +52,11 @@ object ContentValidator {
             p.machines.map { it.id } + p.upgrades.map { it.id } + p.quests.map { it.id } +
                 p.workers.map { it.id } + p.staffProgression.traits.map { it.id } +
                 p.trophies.sets.map { it.id } + p.prestige.milestones.map { it.id } +
+                p.achievements.entries.map { it.id } +
+                p.fishingMastery.techniques.map { it.id } +
+                p.fishingMastery.coachingTips.map { it.id } +
+                p.staffTrees.branches.map { it.id } +
+                p.staffTrees.schedules.map { it.id } +
                 p.contracts.templates.map { it.id } +
                 p.customers.map { it.id } + p.tutorial.map { it.id } + p.decor.items.map { it.id } +
                 p.seasonalEvents.events.map { it.id } +
@@ -145,6 +150,26 @@ object ContentValidator {
         }
         check(p.offline.capHours >= 1) { "offline.capHours must be >= 1" }
         check(p.offline.summaryMinSeconds >= 0) { "offline.summaryMinSeconds must be >= 0" }
+        check(p.dailyGoals.dayLengthMs >= 1L) { "dailyGoals.dayLengthMs must be >= 1" }
+        check(p.dailyGoals.boardSlots >= 1) { "dailyGoals.boardSlots must be >= 1" }
+        check(p.dailyGoals.streakBonusCoinsPerDay >= 0L) {
+            "dailyGoals.streakBonusCoinsPerDay must be >= 0"
+        }
+        check(p.dailyGoals.maxStreakBonusDays >= 1) { "dailyGoals.maxStreakBonusDays must be >= 1" }
+        check(p.dailyGoals.objectives.size >= p.dailyGoals.boardSlots) {
+            "dailyGoals.objectives must cover boardSlots"
+        }
+        val dailyIds = mutableSetOf<String>()
+        for (o in p.dailyGoals.objectives) {
+            check(o.id.startsWith("daily.")) { "${o.id}: daily objective id must start with 'daily.'" }
+            check(dailyIds.add(o.id)) { "${o.id}: duplicate daily objective id" }
+            check(o.name.isNotBlank()) { "${o.id}: name must not be blank" }
+            check(o.description.isNotBlank()) { "${o.id}: description must not be blank" }
+            check(o.goal.atLeast >= 1L) { "${o.id}: goal.atLeast must be >= 1" }
+            check(o.goal.stat.isNotBlank()) { "${o.id}: goal.stat must not be blank" }
+            check(o.rewardCoins >= 0L) { "${o.id}: rewardCoins must be >= 0" }
+            check(o.weight >= 1) { "${o.id}: weight must be >= 1" }
+        }
         check(p.economy.maintenancePeriodTicks >= 1) { "economy.maintenancePeriodTicks must be >= 1" }
         check(p.economy.maintenanceCoinsPerStation >= 0) { "economy.maintenanceCoinsPerStation must be >= 0" }
         check(p.economy.counterSpoilPeriodTicks >= 1) { "economy.counterSpoilPeriodTicks must be >= 1" }
@@ -234,6 +259,172 @@ object ContentValidator {
                 "prestige.ratingThresholds must be non-decreasing"
             }
         }
+        val achievementCategories = setOf("fishing", "kitchen", "commerce", "exploration", "mastery")
+        check(p.achievements.entries.isNotEmpty()) { "achievements.entries must not be empty" }
+        check(p.achievements.entries.map { it.id }.toSet().size == p.achievements.entries.size) {
+            "achievements.entries ids must be unique"
+        }
+        for (a in p.achievements.entries) {
+            check(a.id.startsWith("achievement.")) { "${a.id}: id must start with 'achievement.'" }
+            check(a.name.isNotBlank()) { "${a.id}: name must not be blank" }
+            check(a.description.isNotBlank()) { "${a.id}: description must not be blank" }
+            check(a.category in achievementCategories) {
+                "${a.id}: category must be one of ${achievementCategories.joinToString()}"
+            }
+            check(a.goal.stat.startsWith("stat.")) { "${a.id}: goal.stat must start with 'stat.'" }
+            check(a.goal.atLeast >= 1) { "${a.id}: goal.atLeast must be >= 1" }
+            check(a.rewardCoins >= 0) { "${a.id}: rewardCoins must be >= 0" }
+        }
+        val codexFamilies = setOf("pier", "cove", "jetty", "polar", "marina", "reef", "storm", "ember", "trophy")
+        check(p.codex.families.isNotEmpty()) { "codex.families must not be empty" }
+        check(p.codex.families.toSet().size == p.codex.families.size) { "codex.families must be unique" }
+        for (f in p.codex.families) {
+            check(f in codexFamilies) { "codex.families: unknown family '$f'" }
+        }
+        check(p.codex.entries.isNotEmpty()) { "codex.entries must not be empty" }
+        check(p.codex.entries.map { it.speciesId }.toSet().size == p.codex.entries.size) {
+            "codex.entries speciesId must be unique"
+        }
+        check(p.codex.entries.size == p.species.size) {
+            "codex.entries size ${p.codex.entries.size} must match species ${p.species.size}"
+        }
+        for (e in p.codex.entries) {
+            check(e.speciesId in p.speciesById) { "codex: unknown species '${e.speciesId}'" }
+            check(e.family in codexFamilies) { "${e.speciesId}: unknown family '${e.family}'" }
+            check(e.family in p.codex.families) { "${e.speciesId}: family '${e.family}' not listed in codex.families" }
+            check(e.lore.isNotBlank()) { "${e.speciesId}: lore must not be blank" }
+            check(e.habitatHint.isNotBlank()) { "${e.speciesId}: habitatHint must not be blank" }
+            check(e.journalTip.isNotBlank()) { "${e.speciesId}: journalTip must not be blank" }
+        }
+        for (sp in p.species) {
+            check(sp.id in p.codexBySpeciesId) { "${sp.id}: missing codex entry" }
+        }
+        check(p.weather.patterns.size >= 2) { "weather.patterns needs at least 2 patterns" }
+        check(p.weather.patterns.map { it.id }.toSet().size == p.weather.patterns.size) {
+            "weather.patterns ids must be unique"
+        }
+        for (pat in p.weather.patterns) {
+            check(pat.id.startsWith("weather.")) { "${pat.id}: id must start with 'weather.'" }
+            check(pat.name.isNotBlank()) { "${pat.id}: name must not be blank" }
+            check(pat.description.isNotBlank()) { "${pat.id}: description must not be blank" }
+            check(pat.durationTicks >= 1) { "${pat.id}: durationTicks must be >= 1" }
+            check(pat.catchSpeedMultPermille >= 1) { "${pat.id}: catchSpeedMultPermille must be >= 1" }
+            check(pat.regenMultPermille >= 1) { "${pat.id}: regenMultPermille must be >= 1" }
+            check(pat.customerSpawnMultPermille >= 1) { "${pat.id}: customerSpawnMultPermille must be >= 1" }
+            check(pat.rareChanceBonusPermille in 0..1000) {
+                "${pat.id}: rareChanceBonusPermille must be 0..1000"
+            }
+        }
+        val tide = p.weather.tide
+        check(tide.periodTicks >= 1) { "weather.tide.periodTicks must be >= 1" }
+        check(tide.phases.size >= 2) { "weather.tide.phases needs at least 2 phases" }
+        check(tide.phases.map { it.id }.toSet().size == tide.phases.size) {
+            "weather.tide.phases ids must be unique"
+        }
+        var prevTideEnd = 0
+        for (phase in tide.phases) {
+            check(phase.id.startsWith("tide.")) { "${phase.id}: id must start with 'tide.'" }
+            check(phase.name.isNotBlank()) { "${phase.id}: name must not be blank" }
+            check(phase.endPermille > prevTideEnd) {
+                "weather.tide.${phase.id}: endPermille must increase (was $prevTideEnd → ${phase.endPermille})"
+            }
+            check(phase.catchSpeedMultPermille >= 1) { "${phase.id}: catchSpeedMultPermille must be >= 1" }
+            check(phase.regenMultPermille >= 1) { "${phase.id}: regenMultPermille must be >= 1" }
+            check(phase.customerSpawnMultPermille >= 1) { "${phase.id}: customerSpawnMultPermille must be >= 1" }
+            prevTideEnd = phase.endPermille
+        }
+        check(tide.phases.last().endPermille == 1000) { "weather.tide.phases must end at endPermille 1000" }
+        check(tide.chartCatchBonusPermille in 0..1000) {
+            "weather.tide.chartCatchBonusPermille must be 0..1000"
+        }
+        check(tide.chartRegenEasePermille in 0..1000) {
+            "weather.tide.chartRegenEasePermille must be 0..1000"
+        }
+        check(tide.chartCrowdBonusPermille in 0..1000) {
+            "weather.tide.chartCrowdBonusPermille must be 0..1000"
+        }
+
+        val mastery = p.fishingMastery
+        check(mastery.maxLevel >= 1) { "fishingMastery.maxLevel must be >= 1" }
+        check(mastery.xpThresholds.size == mastery.maxLevel) {
+            "fishingMastery.xpThresholds must have maxLevel (${mastery.maxLevel}) entries"
+        }
+        check(mastery.xpThresholds.first() == 0) { "fishingMastery.xpThresholds[0] must be 0" }
+        for (i in 1 until mastery.xpThresholds.size) {
+            check(mastery.xpThresholds[i] > mastery.xpThresholds[i - 1]) {
+                "fishingMastery.xpThresholds must be strictly increasing"
+            }
+        }
+        check(mastery.techniques.isNotEmpty()) { "fishingMastery.techniques must not be empty" }
+        check(mastery.techniques.map { it.id }.toSet().size == mastery.techniques.size) {
+            "fishingMastery.techniques ids must be unique"
+        }
+        check(mastery.techniques.any { it.requiresMasteryLevel == 0 }) {
+            "fishingMastery.techniques needs at least one technique with requiresMasteryLevel 0"
+        }
+        for (t in mastery.techniques) {
+            check(t.id.startsWith("technique.")) { "${t.id}: id must start with 'technique.'" }
+            check(t.requiresMasteryLevel in 0..mastery.maxLevel) {
+                "${t.id}: requiresMasteryLevel must be 0..maxLevel"
+            }
+            check(t.catchSpeedMultPermille >= 1) { "${t.id}: catchSpeedMultPermille must be >= 1" }
+            check(t.perfectBonusPermille >= 0) { "${t.id}: perfectBonusPermille must be >= 0" }
+            check(t.rareChanceBonusPermille in 0..1000) {
+                "${t.id}: rareChanceBonusPermille must be 0..1000"
+            }
+        }
+        check(mastery.coachingTips.isNotEmpty()) { "fishingMastery.coachingTips must not be empty" }
+        check(mastery.coachingTips.map { it.id }.toSet().size == mastery.coachingTips.size) {
+            "fishingMastery.coachingTips ids must be unique"
+        }
+        for (tip in mastery.coachingTips) {
+            check(tip.id.startsWith("tip.mastery.")) { "${tip.id}: id must start with 'tip.mastery.'" }
+            check(tip.minGlobalLevel <= tip.maxGlobalLevel) {
+                "${tip.id}: minGlobalLevel must be <= maxGlobalLevel"
+            }
+            check(tip.text.isNotBlank()) { "${tip.id}: text must not be blank" }
+        }
+
+        val trees = p.staffTrees
+        check(trees.branches.isNotEmpty()) { "staffTrees.branches must not be empty" }
+        check(trees.branches.map { it.id }.toSet().size == trees.branches.size) {
+            "staffTrees.branches ids must be unique"
+        }
+        check(trees.branches.count { it.parentId == null } >= 1) {
+            "staffTrees.branches needs at least one root"
+        }
+        val roleWires = p.workers.map { it.role.wire }.toSet()
+        val dayParts = p.ecology.parts.map { it.id }.toSet()
+        for (b in trees.branches) {
+            check(b.id.startsWith("branch.")) { "${b.id}: id must start with 'branch.'" }
+            check(b.role in roleWires) { "${b.id}: unknown role '${b.role}'" }
+            check(b.requiresWorkerLevel >= 1) { "${b.id}: requiresWorkerLevel must be >= 1" }
+            check(b.trainingXpRequired >= 1) { "${b.id}: trainingXpRequired must be >= 1" }
+            check(b.catchSpeedMultPermille >= 1) { "${b.id}: catchSpeedMultPermille must be >= 1" }
+            check(b.moveSpeedMultPermille >= 1) { "${b.id}: moveSpeedMultPermille must be >= 1" }
+            check(b.transferIntervalMultPermille >= 1) { "${b.id}: transferIntervalMultPermille must be >= 1" }
+            check(b.wageMultPermille >= 1) { "${b.id}: wageMultPermille must be >= 1" }
+            val parent = b.parentId
+            if (parent != null) {
+                check(parent in p.staffBranchesById) { "${b.id}: unknown parent '$parent'" }
+                check(p.staffBranchesById.getValue(parent).role == b.role) {
+                    "${b.id}: parent role must match"
+                }
+            }
+        }
+        check(trees.schedules.isNotEmpty()) { "staffTrees.schedules must not be empty" }
+        check(trees.schedules.map { it.id }.toSet().size == trees.schedules.size) {
+            "staffTrees.schedules ids must be unique"
+        }
+        for (sch in trees.schedules) {
+            check(sch.id.startsWith("schedule.")) { "${sch.id}: id must start with 'schedule.'" }
+            check(sch.dayParts.isNotEmpty()) { "${sch.id}: dayParts must not be empty" }
+            for (part in sch.dayParts) {
+                check(part in dayParts) { "${sch.id}: unknown day part '$part'" }
+            }
+            check(sch.wageMultPermille >= 1) { "${sch.id}: wageMultPermille must be >= 1" }
+        }
+
         val rep = p.reputation
         check(rep.minSample >= 1) { "reputation.minSample must be >= 1" }
         check(rep.neutralScorePermille >= 1) { "reputation.neutralScorePermille must be >= 1" }
@@ -275,10 +466,22 @@ object ContentValidator {
         check(p.contracts.maxActive >= 1) { "contracts.maxActive must be >= 1" }
         check(p.contracts.refreshPeriodTicks >= 1) { "contracts.refreshPeriodTicks must be >= 1" }
         check(p.contracts.templates.isNotEmpty()) { "contracts.templates must not be empty" }
+        check(p.contracts.failStreakThreshold >= 1) { "contracts.failStreakThreshold must be >= 1" }
+        check(p.contracts.failStreakBoardSlotPenalty >= 0) {
+            "contracts.failStreakBoardSlotPenalty must be >= 0"
+        }
+        check(p.contracts.failStreakOfferWeightMultPermille >= 1) {
+            "contracts.failStreakOfferWeightMultPermille must be >= 1"
+        }
+        for ((i, mult) in p.contracts.reputationPayoutMultPermille.withIndex()) {
+            check(mult >= 1) { "contracts.reputationPayoutMultPermille[$i] must be >= 1" }
+        }
         val contractRequirable = p.upgradesById.keys + p.questsById.keys
         p.contracts.requires.forEach { req ->
             check(req in contractRequirable) { "contracts: unknown requirement '$req'" }
         }
+        val maxRepBand = p.reputation.scoreBandThresholdsPermille.size
+        val chainSteps = mutableMapOf<String, MutableSet<Int>>()
         for (t in p.contracts.templates) {
             check(p.isKnownItem(t.item)) { "${t.id}: unknown item '${t.item}'" }
             check(t.quantity >= 1) { "${t.id}: quantity must be >= 1" }
@@ -296,12 +499,35 @@ object ContentValidator {
                 check(t.penaltyEscalatePermille >= 1000) {
                     "${t.id}: standing penaltyEscalatePermille must be >= 1000"
                 }
+                check(t.chainId == null) { "${t.id}: standing contracts cannot be chain steps" }
             }
             check(t.weight >= 1) { "${t.id}: weight must be >= 1" }
             t.requiresSeasonalEvent?.let { eventId ->
                 check(eventId in p.seasonalEventsById) {
                     "${t.id}: unknown requiresSeasonalEvent '$eventId'"
                 }
+            }
+            t.requiresReputationBand?.let { band ->
+                check(band in 0..maxRepBand) {
+                    "${t.id}: requiresReputationBand must be 0..$maxRepBand"
+                }
+            }
+            t.chainId?.let { chainId ->
+                check(chainId.isNotBlank()) { "${t.id}: chainId must not be blank" }
+                check(t.chainStep >= 1) { "${t.id}: chainStep must be >= 1" }
+                val steps = chainSteps.getOrPut(chainId) { mutableSetOf() }
+                check(t.chainStep !in steps) {
+                    "${t.id}: duplicate chainStep ${t.chainStep} in chain '$chainId'"
+                }
+                steps += t.chainStep
+            }
+        }
+        for ((chainId, steps) in chainSteps) {
+            check(steps.isNotEmpty()) { "chain '$chainId' has no steps" }
+            val maxStep = steps.maxOrNull()!!
+            check(steps.size >= 2) { "chain '$chainId' needs at least 2 steps" }
+            for (step in 1..maxStep) {
+                check(step in steps) { "chain '$chainId' missing chainStep $step" }
             }
         }
 
@@ -516,6 +742,17 @@ object ContentValidator {
                 check(sp in p.speciesById) { "${e.id}: unknown species '$sp'" }
                 check(mult >= 1) { "${e.id}: speciesWeightMultPermille.$sp must be >= 1" }
             }
+            check(e.customerSpawnMultPermille >= 1) {
+                "${e.id}: customerSpawnMultPermille must be >= 1"
+            }
+            check(e.priceMultPermille >= 1) { "${e.id}: priceMultPermille must be >= 1" }
+            for (cid in e.festivalCustomerIds) {
+                check(cid in p.customersById) { "${e.id}: unknown festivalCustomerId '$cid'" }
+                val guest = p.customersById.getValue(cid)
+                check(guest.requiresSeasonalEvent == e.id) {
+                    "${e.id}: festivalCustomerId '$cid' must require this seasonal event"
+                }
+            }
             for ((period, otherStart, otherEnd) in seasonalWindows) {
                 if (period != e.periodTicks) continue
                 check(e.endTick <= otherStart || otherEnd <= e.startTick) {
@@ -571,6 +808,11 @@ object ContentValidator {
                 val sellable = p.harbors.flatMap { h -> h.counters.flatMap { it.products } }.toSet()
                 c.preferredProducts.forEach { pw ->
                     check(pw.item in sellable) { "${c.id}: preferred '${pw.item}' is not sold at any counter" }
+                }
+            }
+            c.requiresSeasonalEvent?.let { eventId ->
+                check(eventId in p.seasonalEventsById) {
+                    "${c.id}: unknown requiresSeasonalEvent '$eventId'"
                 }
             }
         }

@@ -1,0 +1,32 @@
+{
+  "schema": "fish.fixture.parity_i18n_scaffold.v1",
+  "description": "Finish 2.0 Phase 23: en + es UI + listing locale scaffold.",
+  "defaultLocale": "en",
+  "secondLocale": "es",
+  "supportedLocales": ["en", "es"],
+  "uiStringKeyMin": 48,
+  "localeFileMin": 2,
+  "i18nMarker": "authored-finish-2.0-phase-23",
+  "expect": {
+    "requiredUiKeys": [
+      "nav.pause",
+      "nav.settings",
+      "pause.title",
+      "settings.language",
+      "lifecycle.webgl2Gate",
+      "achievements.title",
+      "landing.ctaPlay"
+    ],
+    "listingLocaleFiles": [
+      "shared/store/locales/en.json",
+      "shared/store/locales/es.json"
+    ],
+    "listingKeys": [
+      "title",
+      "shortDescription",
+      "fullDescription",
+      "whatsNew",
+      "webLanding"
+    ]
+  }
+}

@@ -2,7 +2,8 @@ package com.willio.jeanvilma.fishshopping.cloud
 
 /**
  * Phase 25 (post-1.0) — cloud save production cutover catalog
- * (mirrors shared/cloud/production-path.json). Firestore rules stay out of repo.
+ * (mirrors shared/cloud/production-path.json).
+ * Finish 2.0 Phase 26: reviewed rules snippet path only — never deployable firestore.rules.
  */
 object CloudProductionPath {
     const val PHASE = 25
@@ -12,7 +13,10 @@ object CloudProductionPath {
     const val DOCUMENT_PATH = "users/{uid}/saves/harbor"
     val DOCUMENT_FIELDS = listOf("snapshot", "savedAtEpochMs", "checksum")
     const val CONFLICT_UI = "phase11_dual_snapshot_choice"
-    const val FIRESTORE_RULES = "not_shipped_ask_for_snippet"
+    const val FIRESTORE_RULES = "shared/cloud/snippets/firestore-harbor-save.rules"
+    const val FIRESTORE_RULES_SNIPPET = "shared/cloud/snippets/firestore-harbor-save.rules"
+    const val FIRESTORE_RULES_MODE = "snippet_only_not_deployed"
+    const val FINISH2_FIRESTORE_SNIPPET_PHASE = 26
     const val OFFLINE_QUEUE_POLICY = "latest_snapshot_wins"
     const val OFFLINE_QUEUE_PREFS = "fish_shopping_cloud_offline_queue"
 
@@ -37,19 +41,27 @@ object CloudProductionPath {
         val conflictUiShipped: Boolean,
         val authMode: String,
         val documentPath: String,
+        /** Always false — deployable firestore.rules are never committed. */
         val firestoreRulesInRepo: Boolean,
+        /** Finish 2.0 Phase 26: reviewed snippet path is present. */
+        val firestoreRulesSnippetShipped: Boolean,
         val offlineQueueEnabled: Boolean,
     )
 
     fun readiness(apiKey: String?, projectId: String?): Readiness {
         val missing = missingAndroidKeys(apiKey, projectId)
+        val snippetShipped =
+            FIRESTORE_RULES != "not_shipped_ask_for_snippet" &&
+                FIRESTORE_RULES.contains("shared/cloud/snippets/") &&
+                FIRESTORE_RULES_MODE == "snippet_only_not_deployed"
         return Readiness(
             keysConfigured = missing.isEmpty(),
             missingKeys = missing,
             conflictUiShipped = CONFLICT_UI.contains("phase11"),
             authMode = AUTH_MODE,
             documentPath = DOCUMENT_PATH,
-            firestoreRulesInRepo = FIRESTORE_RULES != "not_shipped_ask_for_snippet",
+            firestoreRulesInRepo = false,
+            firestoreRulesSnippetShipped = snippetShipped,
             offlineQueueEnabled = true,
         )
     }

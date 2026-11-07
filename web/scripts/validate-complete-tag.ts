@@ -62,12 +62,17 @@ function validate(): string[] {
     if (cr.hashes?.algorithm !== "sha256") errors.push("completeRelease hash algorithm");
     if (cr.hashes?.policy !== "pinned_at_complete_tag") errors.push("completeRelease policy");
     const arts = cr.hashes?.artifacts ?? {};
+    const mainlinePastComplete =
+      pin.contentVersion !== cr.contentVersion || pin.releaseTag !== cr.releaseTag;
     for (const [slot, rel] of Object.entries(catalog.artifactSlots as Record<string, string>)) {
       const pinned = arts[slot];
       if (!pinned) {
         errors.push(`completeRelease missing artifact hash ${slot}`);
         continue;
       }
+      // Finish 2.0 Phase 30 freezes mainline at 2.0.0; the v1.0-complete archive keeps its
+      // pinned hashes without requiring local rebuild of dist-legal/play artifacts.
+      if (mainlinePastComplete) continue;
       const abs = resolve(root, rel);
       if (!existsSync(abs)) {
         errors.push(`artifact missing on disk ${rel} (pin present)`);

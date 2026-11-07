@@ -228,6 +228,74 @@ def build_glb(
     }
     if extras:
         gltf["extras"] = extras
+    return encode_glb(gltf, blob)
+
+
+def build_multi_mesh_glb(
+    *,
+    name: str,
+    generator: str,
+    parts: list[dict],
+    scale: list[float] | None = None,
+    extras: dict | None = None,
+) -> bytes:
+    """
+    Multi-node glTF for authored fish art.
+    each part: {name, color, pos, nrm, idx, bounds, translation?, part_scale?}
+    """
+    geom_parts = [(p["pos"], p["nrm"], p["idx"], p["bounds"]) for p in parts]
+    blob, buffer_views, accessors = pack_geometry(geom_parts)
+    materials = []
+    meshes = []
+    nodes = []
+    children = []
+    for i, p in enumerate(parts):
+        materials.append({
+            "name": p["name"],
+            "pbrMetallicRoughness": {
+                "baseColorFactor": srgb_to_linear(p["color"]),
+                "metallicFactor": 0.05,
+                "roughnessFactor": 0.55,
+            },
+        })
+        meshes.append({
+            "name": p["name"],
+            "primitives": [{
+                "attributes": {"POSITION": i * 3, "NORMAL": i * 3 + 1},
+                "indices": i * 3 + 2,
+                "material": i,
+            }],
+        })
+        node = {"name": p["name"], "mesh": i}
+        if p.get("translation"):
+            node["translation"] = [round(v, 4) for v in p["translation"]]
+        if p.get("part_scale"):
+            node["scale"] = [round(v, 4) for v in p["part_scale"]]
+        nodes.append(node)
+        children.append(i)
+    root = {"name": name, "children": children}
+    if scale:
+        root["scale"] = [round(v, 4) for v in scale]
+    nodes.append(root)
+    root_i = len(nodes) - 1
+    gltf = {
+        "asset": {"version": "2.0", "generator": generator},
+        "buffers": [{"byteLength": len(blob)}],
+        "bufferViews": buffer_views,
+        "accessors": accessors,
+        "materials": materials,
+        "meshes": meshes,
+        "nodes": nodes,
+        "scenes": [{"name": name, "nodes": [root_i]}],
+        "scene": 0,
+    }
+    if extras:
+        gltf["extras"] = extras
+    return encode_glb(gltf, blob)
+
+
+def encode_glb(gltf: dict, blob: bytes) -> bytes:
+    gltf["buffers"][0]["byteLength"] = len(blob)
     js = json.dumps(gltf, separators=(",", ":")).encode()
     js += b" " * ((4 - len(js) % 4) % 4)
     total = 12 + 8 + len(js) + 8 + len(blob)

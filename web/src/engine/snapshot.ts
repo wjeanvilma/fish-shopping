@@ -106,6 +106,7 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
       traits: [...w.traits],
       onShift: w.onShift,
       equipment: encodeEquipment(w.equipment),
+      ...encodeWorkerStaffTrees(w),
     })),
     contractBoardRefreshAt: s.contractBoardRefreshAt,
     contractOffers: s.contractOffers.map((o) => ({
@@ -124,6 +125,16 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
     unlockedCosmetics: [...s.unlockedCosmetics].sort(compareStrings),
     ownedDecor: [...s.ownedDecor].sort(compareStrings),
     fullHarborUnlock: s.fullHarborUnlock,
+    unlockedAchievements: [...s.unlockedAchievements].sort(compareStrings),
+    speciesMasteryXp: (() => {
+      const o: Record<string, number> = {};
+      for (const id of sortedKeys(s.speciesMasteryXp)) {
+        const xp = s.speciesMasteryXp.get(id)!;
+        if (xp > 0) o[id] = xp;
+      }
+      return o;
+    })(),
+    activeTechniqueId: s.activeTechniqueId,
     loanOwed: s.loanOwed,
     loanDueTick: s.loanDueTick,
     coinGoal: s.coinGoal,
@@ -215,6 +226,9 @@ export function decodeSnapshotEnvelope(content: ContentPack, text: string): Deco
  *  - v17 -> v18: loanOwed / loanDueTick / coinGoal / coinGoalCelebrated (Phase 26 bank).
  *  - v18 -> v19: speciesCatches map (Phase 27 telemetry v2).
  *  - v19 -> v20: fullHarborUnlock (Phase 23 one-time IAP entitlement).
+ *  - v20 -> v21: unlockedAchievements (Finish 2.0 Phase 7 achievements scaffold).
+ *  - v21 -> v22: speciesMasteryXp + activeTechniqueId (Finish 2.0 Phase 14 fishing mastery).
+ *  - v22 -> v23: worker activeBranchId / unlockedBranchIds / branchTrainingXp / scheduleId (Phase 15).
  */
 function readState(content: ContentPack, n: Reader, version: number): GameState {
   const harborId = n.get("harborId").string();
@@ -364,6 +378,7 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
       }
       w.onShift = version >= 14 ? wn.get("onShift").bool() : true;
       if (version >= 15) readWorkerEquipment(content, wn, w);
+      if (version >= 23) readWorkerStaffTrees(content, wn, w);
       s.workers.push(w);
     }
   }
@@ -412,6 +427,21 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
   }
   if (version >= 20) {
     s.fullHarborUnlock = n.optional("fullHarborUnlock")?.bool() ?? false;
+  }
+  if (version >= 21) {
+    n.get("unlockedAchievements").list().forEach((x) => s.unlockedAchievements.add(x.string()));
+  }
+  if (version >= 22) {
+    const masteryNode = n.optional("speciesMasteryXp");
+    if (masteryNode) {
+      for (const [speciesId, node] of masteryNode.entries()) {
+        if (!content.speciesById.has(speciesId)) continue;
+        const xp = node.int(0);
+        if (xp > 0) s.speciesMasteryXp.set(speciesId, xp);
+      }
+    }
+    const tech = n.optional("activeTechniqueId")?.string() ?? null;
+    if (tech && content.techniquesById.has(tech)) s.activeTechniqueId = tech;
   }
   if (version >= 18) {
     s.loanOwed = n.optional("loanOwed")?.int(0) ?? 0;
@@ -497,6 +527,52 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
     }
   }
   return s;
+}
+
+function encodeWorkerStaffTrees(w: WorkerState): {
+  activeBranchId: string | null;
+  unlockedBranchIds: string[];
+  branchTrainingXp: Record<string, number>;
+  scheduleId: string | null;
+} {
+  const branchTrainingXp: Record<string, number> = {};
+  for (const id of sortedKeys(w.branchTrainingXp)) {
+    const xp = w.branchTrainingXp.get(id)!;
+    if (xp > 0) branchTrainingXp[id] = xp;
+  }
+  return {
+    activeBranchId: w.activeBranchId,
+    unlockedBranchIds: [...w.unlockedBranchIds].sort(compareStrings),
+    branchTrainingXp,
+    scheduleId: w.scheduleId,
+  };
+}
+
+function readWorkerStaffTrees(content: ContentPack, wn: Reader, w: WorkerState): void {
+  const active = wn.optional("activeBranchId")?.string() ?? null;
+  if (active !== null && content.staffBranchesById.has(active)) w.activeBranchId = active;
+  const unlocked = wn.optional("unlockedBranchIds");
+  if (unlocked) {
+    for (const node of unlocked.list()) {
+      const id = node.string();
+      if (content.staffBranchesById.has(id) && !w.unlockedBranchIds.includes(id)) {
+        w.unlockedBranchIds.push(id);
+      }
+    }
+  }
+  const xpNode = wn.optional("branchTrainingXp");
+  if (xpNode) {
+    for (const [branchId, node] of xpNode.entries()) {
+      if (!content.staffBranchesById.has(branchId)) continue;
+      const xp = node.int(0);
+      if (xp > 0) w.branchTrainingXp.set(branchId, xp);
+    }
+  }
+  const schedule = wn.optional("scheduleId")?.string() ?? null;
+  if (schedule !== null && content.staffSchedulesById.has(schedule)) w.scheduleId = schedule;
+  if (w.activeBranchId !== null && !w.unlockedBranchIds.includes(w.activeBranchId)) {
+    w.activeBranchId = null;
+  }
 }
 
 function encodeEquipment(equipment: Record<string, string>): Record<string, string> {
@@ -596,6 +672,7 @@ function encodeStash(stash: HarborWorldStash): Json {
       traits: [...w.traits],
       onShift: w.onShift,
       equipment: encodeEquipment(w.equipment),
+      ...encodeWorkerStaffTrees(w),
     })),
     customerSpawnProgress: stash.customerSpawnProgress,
     playerX: stash.playerX,
@@ -716,6 +793,7 @@ function readStash(content: ContentPack, harborId: string, n: Reader, version: n
     }
     w.onShift = version >= 14 ? wn.get("onShift").bool() : true;
     if (version >= 15) readWorkerEquipment(content, wn, w);
+    if (version >= 23) readWorkerStaffTrees(content, wn, w);
     workers.push(w);
   }
   return {

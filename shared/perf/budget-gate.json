@@ -28,6 +28,8 @@
   },
   "vfxJuicePhase": 21,
   "vfxJuiceCatalog": "shared/perf/vfx-juice.json",
+  "vfxJuice2Phase": 22,
+  "vfxJuice2Catalog": "shared/ship/vfx-juice-2.json",
   "shakeScale": { "low": 0.5, "medium": 0.85, "high": 1.0 },
   "maxShakeAmplitudeM": 0.12,
   "harborCacheLimit": 2,

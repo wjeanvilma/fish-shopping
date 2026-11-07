@@ -1,0 +1,61 @@
+{
+  "phase": 7,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.schema_21.v1",
+  "description": "Finish 2.0 Phase 7 — save schema 21 kickoff: unlockedAchievements field, migrate from schema 20, re-pin fixtures/lifecycle, content-pack.saveSchemaVersion=21.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 21,
+  "fromSchema": 20,
+  "toSchema": 21,
+  "migration": {
+    "field": "unlockedAchievements",
+    "type": "string[]",
+    "default": [],
+    "note": "Empty on migrate from ≤20; Phase 11 achievements engine grants ids into this set."
+  },
+  "engines": {
+    "kotlinSchemaConstant": "game-core/.../sim/Foundations.kt SimConstants.SCHEMA_VERSION",
+    "webSchemaConstant": "web/src/engine/foundations.ts SCHEMA_VERSION",
+    "kotlinCodec": "game-core/.../persistence/SnapshotCodec.kt",
+    "webCodec": "web/src/engine/snapshot.ts"
+  },
+  "contentPack": {
+    "path": "shared/content/content-pack.json",
+    "schemaPath": "shared/schema/content-pack.schema.json",
+    "saveSchemaVersionKey": "saveSchemaVersion",
+    "saveSchemaVersion": 21
+  },
+  "lifecycle": {
+    "catalog": "shared/lifecycle/browser-lifecycle.json",
+    "currentSchema": 21,
+    "migrateThroughSchema": 20,
+    "newLegacyFixture": "shared/fixtures/legacy/snapshot-v20-starter-line-t2500.json"
+  },
+  "releasePin": "shared/fixtures/RELEASE_PIN.json",
+  "parityLock": "shared/fixtures/parity-lock.json",
+  "historicalFrozen": {
+    "storeReleaseSchema": 20,
+    "completeReleaseSchema": 20,
+    "hotfixLaneSchemaMustStay": 20,
+    "balancePatchKeepSchemaVersion": 20
+  },
+  "validateScript": "npm run schema21:validate",
+  "checklist": [
+    "SimConstants / SCHEMA_VERSION = 21 (Kotlin + TS)",
+    "Snapshot codecs encode/decode unlockedAchievements; v20→v21 defaults empty",
+    "legacy/snapshot-v20-starter-line-t2500.json frozen; current starter-line re-recorded at 21",
+    "lifecycle currentSchema=21 migrateThroughSchema=20; requiredLegacyVersions includes 20",
+    "RELEASE_PIN.schemaVersion=21; storeRelease/completeRelease stay schema 20",
+    "content-pack.saveSchemaVersion=21 + schema const",
+    "CI runs schema21:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/schema-21.json",
+    "shared/fixtures/legacy/snapshot-v20-starter-line-t2500.json",
+    "shared/fixtures/snapshot-starter-line-t2500.json",
+    "shared/content/content-pack.json",
+    "shared/schema/content-pack.schema.json",
+    "web/src/ship/schema21.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Schema21.kt"
+  ]
+}

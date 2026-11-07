@@ -4,7 +4,8 @@
  * anonymous Identity Toolkit account to `users/{uid}/saves/harbor`.
  *
  * Phase 22: anonymous uid is restored across sessions via Secure Token refresh_token.
- * Firestore security rules are not shipped in-repo (ask for a snippet if you need them).
+ * Finish 2.0 Phase 26: reviewed rules snippet at shared/cloud/snippets/firestore-harbor-save.rules
+ * (snippet-only; no deployable firestore.rules in repo).
  */
 
 import { cloudDocumentPathFor, readWebFirebaseEnv } from "./cloudProductionPath";

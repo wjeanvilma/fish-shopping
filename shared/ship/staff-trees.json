@@ -1,0 +1,47 @@
+{
+  "phase": 15,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.staff_trees.v1",
+  "description": "Finish 2.0 Phase 15 — staff specialization trees: role branches with training costs, automation schedules, Kotlin↔web parity.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "branchCount": 5,
+  "scheduleCount": 2,
+  "rootBranchCount": 3,
+  "branches": [
+    "branch.fisher.line_pro",
+    "branch.fisher.trophy_cast",
+    "branch.porter.cargo_sprint",
+    "branch.porter.dock_relay",
+    "branch.cashier.quick_till"
+  ],
+  "schedules": [
+    "schedule.dawn_crew",
+    "schedule.night_watch"
+  ],
+  "parityFixture": "shared/fixtures/parity-staff-trees.json",
+  "definitionOfDoneStaffBranches": 5,
+  "definitionOfDoneStaffSchedules": 2,
+  "validateScript": "npm run stafftrees:validate",
+  "checklist": [
+    "content-pack.staffTrees has ≥5 branches and ≥2 schedules",
+    "StaffTreesSystem trains/selects branches; schedules auto-shift by day-part",
+    "Worker move/catch/carry/wage apply active branch effects",
+    "SimView + Staff panel show branches/schedules; toasts on unlock",
+    "schema 23 worker branch/schedule fields migrate",
+    "parity-staff-trees fixture + stafftrees:validate green",
+    "CI runs stafftrees:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/staff-trees.json",
+    "shared/ship/schema-23.json",
+    "shared/fixtures/parity-staff-trees.json",
+    "shared/fixtures/legacy/snapshot-v22-starter-line-t2500.json",
+    "web/src/ship/staffTrees.ts",
+    "web/src/ship/schema23.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/StaffTrees.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Schema23.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/StaffTreesSystem.kt",
+    "web/src/engine/systems.ts"
+  ]
+}

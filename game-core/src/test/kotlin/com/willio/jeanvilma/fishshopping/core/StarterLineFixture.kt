@@ -104,13 +104,31 @@ object StarterLineFixture {
                     } else {
                         val job = s.activeContracts.firstOrNull()
                         if (job == null) {
-                            val pick = s.contractOffers.firstOrNull { it.itemId == portion || it.itemId == fillet }
-                                ?: s.contractOffers.firstOrNull { it.itemId.startsWith("species.") }
-                                ?: s.contractOffers.firstOrNull { bag.available(it.itemId) >= it.quantity }
-                            if (pick != null) {
-                                issue(Command.AcceptContract(pick.id, "fixture-acc-${++requestSerial}"))
-                            } else {
-                                pilot.tick(Command.Move(0, 0))
+                            // Only accept when the bag already holds the goods — festival offers
+                            // and short standing timers otherwise expire before a fish/cut cycle.
+                            val easyProducts = setOf(portion, fillet)
+                            val easySpecies = setOf(
+                                "species.silver_sprat",
+                                "species.harbor_herring",
+                                "species.dawn_anchovy",
+                                "species.blue_mackerel",
+                                "species.silver_dawn_anchovy",
+                            )
+                            fun ready(itemId: String, qty: Int): Boolean =
+                                bag.available(itemId) >= qty && when {
+                                    itemId in easyProducts && qty <= 4 -> true
+                                    itemId in easySpecies && qty <= 6 -> true
+                                    else -> false
+                                }
+                            val pick = s.contractOffers.firstOrNull { it.itemId == portion && ready(it.itemId, it.quantity) }
+                                ?: s.contractOffers.firstOrNull { it.itemId == fillet && ready(it.itemId, it.quantity) }
+                                ?: s.contractOffers.firstOrNull { ready(it.itemId, it.quantity) }
+                            when {
+                                pick != null ->
+                                    issue(Command.AcceptContract(pick.id, "fixture-acc-${++requestSerial}"))
+                                bag.available(portion) < 2 && bag.available(fillet) < 2 ->
+                                    fishCutStockOnce(stockCounter = false)
+                                else -> pilot.tick(Command.Move(0, 0))
                             }
                         } else {
                             val need = job.quantity - job.delivered
@@ -249,6 +267,15 @@ object StarterLineFixture {
                 put("contractId", c.contractId)
                 put("requestId", c.requestId)
             }
+            is Command.SyncWallClock -> {
+                put("type", "sync_wall_clock")
+                put("epochMs", c.epochMs)
+            }
+            is Command.ClaimDailyGoal -> {
+                put("type", "claim_daily_goal")
+                put("objectiveId", c.objectiveId)
+                put("requestId", c.requestId)
+            }
             is Command.TravelToHarbor -> {
                 put("type", "travel_to_harbor")
                 put("harborId", c.harborId)
@@ -262,6 +289,26 @@ object StarterLineFixture {
             is Command.SelectBait -> {
                 put("type", "select_bait")
                 put("baitId", c.baitId)
+            }
+            is Command.SelectTechnique -> {
+                put("type", "select_technique")
+                put("techniqueId", c.techniqueId)
+            }
+            is Command.TrainWorkerBranch -> {
+                put("type", "train_worker_branch")
+                put("workerId", c.workerId)
+                put("branchId", c.branchId)
+                put("requestId", c.requestId)
+            }
+            is Command.SelectWorkerBranch -> {
+                put("type", "select_worker_branch")
+                put("workerId", c.workerId)
+                put("branchId", c.branchId)
+            }
+            is Command.SetWorkerSchedule -> {
+                put("type", "set_worker_schedule")
+                put("workerId", c.workerId)
+                put("scheduleId", c.scheduleId)
             }
             is Command.PurchaseDecor -> {
                 put("type", "purchase_decor")
@@ -322,10 +369,31 @@ object StarterLineFixture {
         )
         "accept_contract" -> Command.AcceptContract(o["offerId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "deliver_contract" -> Command.DeliverContract(o["contractId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "sync_wall_clock" -> Command.SyncWallClock(o["epochMs"]!!.jsonPrimitive.long)
+        "claim_daily_goal" -> Command.ClaimDailyGoal(
+            o["objectiveId"]!!.jsonPrimitive.content,
+            o["requestId"]!!.jsonPrimitive.content,
+        )
         "travel_to_harbor" -> Command.TravelToHarbor(o["harborId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "buy_bait" -> Command.BuyBait(o["baitId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "select_bait" -> Command.SelectBait(
             o["baitId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
+        )
+        "select_technique" -> Command.SelectTechnique(
+            o["techniqueId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
+        )
+        "train_worker_branch" -> Command.TrainWorkerBranch(
+            o["workerId"]!!.jsonPrimitive.content,
+            o["branchId"]!!.jsonPrimitive.content,
+            o["requestId"]!!.jsonPrimitive.content,
+        )
+        "select_worker_branch" -> Command.SelectWorkerBranch(
+            o["workerId"]!!.jsonPrimitive.content,
+            o["branchId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
+        )
+        "set_worker_schedule" -> Command.SetWorkerSchedule(
+            o["workerId"]!!.jsonPrimitive.content,
+            o["scheduleId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
         )
         "purchase_decor" -> Command.PurchaseDecor(o["decorId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "grant_full_harbor_unlock" -> Command.GrantFullHarborUnlock(o["requestId"]!!.jsonPrimitive.content)
@@ -368,6 +436,16 @@ object StarterLineFixture {
         put("tutorialIndex", s.tutorialIndex)
         put("fullHarborUnlock", s.fullHarborUnlock)
         put("unlockedCosmetics", buildJsonArray { s.unlockedCosmetics.forEach { add(JsonPrimitive(it)) } })
+        put("unlockedAchievements", buildJsonArray { s.unlockedAchievements.forEach { add(JsonPrimitive(it)) } })
+        put(
+            "speciesMasteryXp",
+            buildJsonObject {
+                for ((id, xp) in s.speciesMasteryXp) {
+                    if (xp > 0) put(id, xp)
+                }
+            },
+        )
+        put("activeTechniqueId", s.activeTechniqueId)
         put("ownedDecor", buildJsonArray { s.ownedDecor.forEach { add(JsonPrimitive(it)) } })
         put("loanOwed", s.loanOwed)
         put("coinGoal", s.coinGoal)

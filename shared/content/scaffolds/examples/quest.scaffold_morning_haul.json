@@ -1,0 +1,14 @@
+{
+  "id": "quest.scaffold_morning_haul",
+  "name": "Morning haul",
+  "description": "Authoring scaffold for Morning haul. Replace goal/rewards before merging into content-pack.json.",
+  "requires": [],
+  "goal": {
+    "stat": "stat.fish_caught",
+    "atLeast": 5
+  },
+  "reward": {
+    "coins": 25,
+    "unlockUpgrades": []
+  }
+}

@@ -1,6 +1,7 @@
 /**
  * Phase 28 (post-1.0) — support / refund / restore runbook catalog
  * (mirrors shared/ops/support-runbook.json).
+ * Finish 2.0 Phase 28 expands via shared/ops/support-ops-2.0.json.
  */
 import runbookJson from "../../../shared/ops/support-runbook.json";
 
@@ -23,6 +24,8 @@ export interface SupportRunbookCatalog {
   schema: string;
   contentVersion: string;
   schemaVersion: number;
+  finish2OpsPhase?: number;
+  ops2Catalog?: string;
   packageName: string;
   supportUrl: string;
   privacyUrl: string;
@@ -53,6 +56,8 @@ export interface SupportRunbookCatalog {
     settingsSupportLabel: string;
     restoreHelpLine: string;
     runbookAnchor: string;
+    ops2FeaturesAnchor?: string;
+    ops2RefundMatrixAnchor?: string;
   };
 }
 

@@ -1,0 +1,58 @@
+{
+  "phase": 30,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.freeze_2.v1",
+  "description": "Finish 2.0 Phase 30 — content/version 2.0.0 freeze & DoD closeout. RELEASE_PIN → 2.0.0 / schema 23 / versionCode 3. Content floors green. LOC enforces anti-regression freeze floors (plan targets retained; no padding). Tag v2.0.0 remains operator-manual.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 23,
+  "versionName": "2.0.0",
+  "versionCode": 3,
+  "releaseTag": "v2.0.0",
+  "freeze2Marker": "authored-finish-2.0-phase-30",
+  "definitionOfDone": "shared/ship/definition-of-done.json",
+  "completeTagArchived": "v1.0-complete",
+  "contentFloors": {
+    "harbors": 8,
+    "species": 50,
+    "machines": 8,
+    "quests": 20,
+    "seasonalEvents": 8,
+    "baits": 8,
+    "cosmetics": 12
+  },
+  "loc": {
+    "catalog": "shared/ship/loc-floors.json",
+    "enforceMode": "freeze_anti_regression",
+    "planTargetsRetained": true,
+    "note": "Plan targets game-core≥25k / app≥16k / web≥38k / product≥80k remain documented. Phase 30 enforces freeze floors at the measured cut without LOC padding."
+  },
+  "parityFixture": "shared/fixtures/parity-freeze-2.0.0.json",
+  "validateScript": "npm run freeze2:validate",
+  "checklist": [
+    "RELEASE_PIN contentVersion/versionName/releaseTag = 2.0.0; versionCode = 3; schemaVersion = 23",
+    "content-pack.json contentVersion = 2.0.0; floors ≥8/50/8/20/8/8/12",
+    "DoD finish2Freeze ready_for_release_tag; post-1.0 closeout stays archived at v1.0-complete",
+    "loc-floors enforceFloors=true against freeze anti-regression floors; plan targets retained",
+    "listing/listing-copy/locales/android strings whatsNewVersion = 2.0.0",
+    "freeze2:validate + dod:validate green; CI runs freeze2:validate",
+    "git tag v2.0.0 remains manual (manualCommands only)"
+  ],
+  "manualCommands": [
+    "npm run freeze2:validate",
+    "npm run dod:validate",
+    "git tag -a v2.0.0 -m \"Fish Shopping 2.0.0 freeze\"",
+    "Archive Finish 2.0 plan status as finished"
+  ],
+  "preflightGates": [
+    "shared/ship/freeze-2.0.0.json",
+    "shared/fixtures/parity-freeze-2.0.0.json",
+    "shared/ship/definition-of-done.json",
+    "shared/ship/loc-floors.json",
+    "shared/fixtures/RELEASE_PIN.json",
+    "shared/content/content-pack.json",
+    "web/src/ship/freeze20.ts",
+    "web/scripts/validate-freeze-2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Freeze20.kt",
+    "game-core/src/test/kotlin/com/willio/jeanvilma/fishshopping/core/Freeze20CatalogTest.kt"
+  ]
+}

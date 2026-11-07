@@ -11,7 +11,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** Phase 11 (post-1.0) — frozen listing copy + en locale. */
+/** Phase 11 (post-1.0) listing copy freeze; Finish 2.0 Phase 23 adds es locale files. */
 class ListingCopyTest {
     private val root: File = File(".").canonicalFile.let { dir ->
         generateSequence(dir) { it.parentFile }.first { File(it, ListingCopy.CATALOG).isFile }
@@ -55,17 +55,23 @@ class ListingCopyTest {
     }
 
     @Test
-    fun enLocaleIsOnlyLocaleAndAndroidStringsSynced() {
+    fun enAndEsLocalesAndAndroidStringsSynced() {
         val catalog = Json.parseToJsonElement(File(root, ListingCopy.CATALOG).readText()).jsonObject
         val locales = catalog.getValue("locales").jsonArray.map { it.jsonPrimitive.content }
         assertEquals(ListingCopy.LOCALES, locales)
-        assertEquals(listOf("en"), locales)
+        assertEquals(listOf("en", "es"), locales)
 
         val en = Json.parseToJsonElement(File(root, ListingCopy.EN_LOCALE_PATH).readText()).jsonObject
         assertEquals("en", en.getValue("locale").jsonPrimitive.content)
         assertTrue(en.getValue("frozen").jsonPrimitive.content.toBoolean())
         assertEquals(ListingCopy.WHATS_NEW, en.getValue("whatsNew").jsonPrimitive.content)
         assertEquals(ListingCopy.SHORT_DESCRIPTION, en.getValue("shortDescription").jsonPrimitive.content)
+
+        val es = Json.parseToJsonElement(File(root, ListingCopy.ES_LOCALE_PATH).readText()).jsonObject
+        assertEquals("es", es.getValue("locale").jsonPrimitive.content)
+        assertTrue(es.getValue("frozen").jsonPrimitive.content.toBoolean())
+        assertTrue(es.getValue("shortDescription").jsonPrimitive.content.isNotBlank())
+        assertTrue(es.getValue("webLanding").jsonObject.getValue("ctaPlay").jsonPrimitive.content.isNotBlank())
 
         val strings = File(root, ListingCopy.ANDROID_STRINGS).readText()
         assertTrue(strings.contains(ListingCopy.TITLE))
@@ -74,5 +80,9 @@ class ListingCopyTest {
         assertTrue(strings.contains("store_whats_new"))
         assertTrue(strings.contains(ListingCopy.WHATS_NEW))
         assertTrue(strings.contains(ListingCopy.WEB_TAGLINE))
+
+        val esStrings = File(root, ListingCopy.ANDROID_STRINGS_ES).readText()
+        assertTrue(esStrings.contains("store_short_description"))
+        assertTrue(esStrings.contains(es.getValue("shortDescription").jsonPrimitive.content))
     }
 }

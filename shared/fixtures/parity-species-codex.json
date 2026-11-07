@@ -1,0 +1,33 @@
+{
+  "schema": "fish.fixture.parity_species_codex.v1",
+  "description": "Finish 2.0 Phase 12: discover silver sprat; assert journal lore, habitat hint on hidden entry, family filters, and catch value estimate.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1201,
+  "setup": {
+    "speciesCatches": {
+      "species.silver_sprat": 3
+    }
+  },
+  "expect": {
+    "discovered": 1,
+    "total": 50,
+    "familyCount": 9,
+    "sprat": {
+      "speciesId": "species.silver_sprat",
+      "discovered": true,
+      "family": "pier",
+      "rarityBand": "common",
+      "catches": 3,
+      "catchValueEstimate": 6,
+      "hasLore": true,
+      "hasJournalTip": true
+    },
+    "hiddenSample": {
+      "speciesId": "species.king_grouper",
+      "discovered": false,
+      "name": "???",
+      "hasHabitatHint": true,
+      "loreNull": true
+    }
+  }
+}

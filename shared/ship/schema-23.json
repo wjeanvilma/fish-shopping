@@ -1,0 +1,79 @@
+{
+  "phase": 15,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.schema_23.v1",
+  "description": "Finish 2.0 Phase 15 — save schema 23: per-worker specialization branch + schedule fields; migrate from schema 22.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "fromSchema": 22,
+  "toSchema": 23,
+  "migration": {
+    "fields": [
+      {
+        "field": "workers[].activeBranchId",
+        "type": "string|null",
+        "default": null
+      },
+      {
+        "field": "workers[].unlockedBranchIds",
+        "type": "string[]",
+        "default": []
+      },
+      {
+        "field": "workers[].branchTrainingXp",
+        "type": "map<string,int>",
+        "default": {}
+      },
+      {
+        "field": "workers[].scheduleId",
+        "type": "string|null",
+        "default": null
+      }
+    ]
+  },
+  "engines": {
+    "kotlinSchemaConstant": "game-core/.../sim/Foundations.kt SimConstants.SCHEMA_VERSION",
+    "webSchemaConstant": "web/src/engine/foundations.ts SCHEMA_VERSION",
+    "kotlinCodec": "game-core/.../persistence/SnapshotCodec.kt",
+    "webCodec": "web/src/engine/snapshot.ts"
+  },
+  "contentPack": {
+    "path": "shared/content/content-pack.json",
+    "schemaPath": "shared/schema/content-pack.schema.json",
+    "saveSchemaVersionKey": "saveSchemaVersion",
+    "saveSchemaVersion": 23
+  },
+  "lifecycle": {
+    "catalog": "shared/lifecycle/browser-lifecycle.json",
+    "currentSchema": 23,
+    "migrateThroughSchema": 22,
+    "newLegacyFixture": "shared/fixtures/legacy/snapshot-v22-starter-line-t2500.json"
+  },
+  "releasePin": "shared/fixtures/RELEASE_PIN.json",
+  "parityLock": "shared/fixtures/parity-lock.json",
+  "historicalFrozen": {
+    "storeReleaseSchema": 20,
+    "completeReleaseSchema": 20,
+    "hotfixLaneSchemaMustStay": 20,
+    "schema22Kickoff": 22
+  },
+  "validateScript": "npm run schema23:validate",
+  "checklist": [
+    "SimConstants / SCHEMA_VERSION = 23 (Kotlin + TS)",
+    "Snapshot codecs encode/decode worker branch/schedule fields; v22→v23 defaults empty/null",
+    "legacy/snapshot-v22-starter-line-t2500.json frozen; current starter-line re-recorded at 23",
+    "lifecycle currentSchema=23 migrateThroughSchema=22; requiredLegacyVersions includes 20–22",
+    "RELEASE_PIN.schemaVersion=23; storeRelease/completeRelease stay schema 20",
+    "content-pack.saveSchemaVersion=23 + schema const",
+    "CI runs schema23:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/schema-23.json",
+    "shared/fixtures/legacy/snapshot-v22-starter-line-t2500.json",
+    "shared/fixtures/snapshot-starter-line-t2500.json",
+    "shared/content/content-pack.json",
+    "shared/schema/content-pack.schema.json",
+    "web/src/ship/schema23.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Schema23.kt"
+  ]
+}

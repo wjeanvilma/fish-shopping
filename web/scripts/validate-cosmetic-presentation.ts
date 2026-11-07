@@ -39,7 +39,7 @@ function validate(): string[] {
 
   if (catalog.phase !== 24) errors.push(`phase expected 24, got ${catalog.phase}`);
   if (catalog.schema !== "fish.content.cosmetic_presentation.v1") errors.push("bad schema");
-  if (catalog.schemaVersion !== 20) errors.push("schemaVersion must stay 20");
+  if (catalog.schemaVersion !== 21) errors.push("schemaVersion must stay 21");
   if (catalog.constraints?.powerNeutral !== true) errors.push("powerNeutral required");
   if (catalog.constraints?.noSchemaBreak !== true) errors.push("noSchemaBreak required");
   if (catalog.constraints?.equipInSettingsNotSave !== true) {

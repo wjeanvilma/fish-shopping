@@ -34,6 +34,12 @@ describe("coaching", () => {
     state.bumpStat(Stats.CONTRACTS_COMPLETED, 1);
     state.ownedUpgrades.add("upgrade.display_case_ice");
     state.counters[0]!.stock.add("product.smoked_fillet", 1);
+    // Push mastery past authored coaching tip bands (0–5) so the healthy-loop tip stays quiet.
+    const thresholds = content.fishingMastery?.xpThresholds ?? [0, 10, 40, 90, 160, 250];
+    const topXp = thresholds[thresholds.length - 1]! + 50;
+    for (const species of content.raw.species.slice(0, 8)) {
+      state.speciesMasteryXp.set(species.id, topXp);
+    }
     expect(emptyStateTip(content, state)).toBeNull();
   });
 

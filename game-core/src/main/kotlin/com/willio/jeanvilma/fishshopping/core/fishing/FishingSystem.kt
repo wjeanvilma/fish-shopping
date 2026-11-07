@@ -67,7 +67,7 @@ object FishingSystem {
             val pick = candidates[ctx.state.rng.pickWeighted(weights)]
             p.fishingSpecies = pick.id
             p.fishingProgress = 0
-            p.fishingCatchTicks = catchTicksFor(effectiveCatchSpeed(ctx.content, ctx.state), pick.catchTicks)
+            p.fishingCatchTicks = catchTicksFor(effectiveCatchSpeed(ctx.content, ctx.state, pick.id), pick.catchTicks)
             p.reelAttemptedThisCast = false
         }
 
@@ -75,7 +75,7 @@ object FishingSystem {
         val duration = if (p.fishingCatchTicks > 0) {
             p.fishingCatchTicks
         } else {
-            catchTicksFor(effectiveCatchSpeed(ctx.content, ctx.state), species.catchTicks)
+            catchTicksFor(effectiveCatchSpeed(ctx.content, ctx.state, species.id), species.catchTicks)
         }
         p.fishingCatchTicks = duration
 
@@ -84,7 +84,7 @@ object FishingSystem {
             p.reelRequested = false
             if (!p.reelAttemptedThisCast) {
                 p.reelAttemptedThisCast = true
-                reelTier = timingTierAt(p, p.fishingProgress, duration)
+                reelTier = timingTierAt(ctx.content, ctx.state, p.fishingProgress, duration)
                 if (reelTier != TimingTier.MISS) {
                     // Finish the cast immediately on a Good or Perfect reel.
                     p.fishingProgress = duration
@@ -124,12 +124,22 @@ object FishingSystem {
         return mult.coerceAtLeast(1)
     }
 
-    /** Player upgrades, prestige floors, and (with tide chart) day-part catch bonuses. */
-    fun effectiveCatchSpeed(content: ContentPack, state: GameState): Int {
-        val base = maxOf(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille)
-        if (!hasTideChart(state)) return base
-        val part = dayPartAt(content, state.tick)
-        return ((base.toLong() * part.catchSpeedMultPermille) / 1000L).toInt().coerceAtLeast(1)
+    /**
+     * Player upgrades, prestige floors, (with tide chart) day-part catch bonuses,
+     * Finish 2.0 Phase 13 weather + tide, and Phase 14 mastery / technique multipliers.
+     */
+    fun effectiveCatchSpeed(content: ContentPack, state: GameState, speciesId: String? = null): Int {
+        var speed = maxOf(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille).toLong()
+        if (hasTideChart(state)) {
+            val part = dayPartAt(content, state.tick)
+            speed = (speed * part.catchSpeedMultPermille) / 1000L
+        }
+        val weatherTide = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem
+            .catchSpeedMultPermille(content, state)
+        speed = (speed * weatherTide) / 1000L
+        val mastery = MasterySystem.catchSpeedMultPermille(content, state, speciesId)
+        speed = (speed * mastery) / 1000L
+        return speed.toInt().coerceAtLeast(1)
     }
 
     fun catchTicksFor(catchSpeedPermille: Int, baseCatchTicks: Int): Int {
@@ -144,7 +154,20 @@ object FishingSystem {
         return permille >= startPermille && permille < endPermille
     }
 
-    /** Perfect > Good > Miss using the player's live (upgrade-widened) windows. */
+    /** Perfect > Good > Miss using upgrade + technique windows. */
+    fun timingTierAt(content: ContentPack, state: GameState, progress: Int, duration: Int): TimingTier {
+        if (duration <= 0) return TimingTier.MISS
+        val windows = MasterySystem.timingWindows(content, state)
+        if (inTimingWindow(progress, duration, windows.perfectStart, windows.perfectEnd)) {
+            return TimingTier.PERFECT
+        }
+        if (inTimingWindow(progress, duration, windows.goodStart, windows.goodEnd)) {
+            return TimingTier.GOOD
+        }
+        return TimingTier.MISS
+    }
+
+    /** @deprecated Prefer [timingTierAt] with content/state for technique windows. */
     fun timingTierAt(player: PlayerState, progress: Int, duration: Int): TimingTier {
         if (duration <= 0) return TimingTier.MISS
         if (inTimingWindow(progress, duration, player.timingPerfectStartPermille, player.timingPerfectEndPermille)) {
@@ -180,7 +203,10 @@ object FishingSystem {
     fun regenTicksFor(content: ContentPack, state: GameState, def: FishingSpotDef, stock: Int): Int {
         val part = dayPartAt(content, state.tick)
         val dayMult = effectiveDayPartRegenMult(content, state, def, part)
-        return regenTicksFor(def, stock, state.player.fishRegenPermille, dayMult)
+        val weatherTide = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem
+            .regenMultPermille(content, state)
+        val combined = ((dayMult.toLong() * weatherTide) / 1000L).toInt().coerceAtLeast(1)
+        return regenTicksFor(def, stock, state.player.fishRegenPermille, combined)
     }
 
     fun curveMultPermille(curve: List<Int>, stock: Int, stockMax: Int): Int {
@@ -217,7 +243,12 @@ object FishingSystem {
         var rare = false
         rolled.rareUpgrade?.let { ru ->
             val harborBonus = ctx.harbor.specialization?.rareChanceBonusPermille ?: 0
-            val chance = BaitSystem.rareChancePermille(ru.chancePermille, activeBait, harborBonus)
+            val weatherBonus = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem
+                .rareChanceBonusPermille(ctx.content, s.tick)
+            val masteryBonus = MasterySystem.rareChanceBonusPermille(ctx.content, s, rolledSpeciesId)
+            val chance = BaitSystem.rareChancePermille(
+                ru.chancePermille, activeBait, harborBonus + weatherBonus + masteryBonus,
+            )
             if (s.rng.nextBelow(1000) < chance) {
                 finalId = ru.to
                 rare = true
@@ -235,7 +266,7 @@ object FishingSystem {
                 p.bag.remove(activeBait.id, 1)
                 s.bumpStat(Stats.BAIT_USED)
             }
-            val bonusMult = timingBonusPermille(ctx.content, timingTier)
+            val bonusMult = MasterySystem.timingBonusPermille(ctx.content, s, timingTier)
             var bonusCoins = 0L
             if (bonusMult > 0) {
                 bonusCoins = (finalSpecies.baseValue * bonusMult.toLong()) / 1000L
@@ -252,6 +283,7 @@ object FishingSystem {
             }
             val timingBonus = timingTier != TimingTier.MISS
             val (size, value, personalBest) = TrophySystem.record(ctx, finalSpecies.id, timingTier)
+            MasterySystem.grantCatchXp(ctx, finalSpecies.id, timingTier, rare)
             ctx.emit(
                 GameEvent.FishCaught(
                     s.tick, finalSpecies.id, zoneId,

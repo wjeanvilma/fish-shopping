@@ -1,6 +1,7 @@
 package com.willio.jeanvilma.fishshopping.persistence
 
 import android.content.Context
+import com.willio.jeanvilma.fishshopping.core.i18n.UiStrings
 
 /**
  * Presentation-only settings (not part of the parity save). Mute gates music+SFX;
@@ -50,6 +51,8 @@ data class GameSettings(
     val cloudRefreshToken: String? = null,
     /** Phase 24: equipped harbor banner cosmetic id (presentation-only). */
     val equippedCosmeticId: String? = null,
+    /** Finish 2.0 Phase 23: UI chrome locale (en | es). */
+    val locale: String = UiStrings.DEFAULT_LOCALE,
 ) {
     companion object {
         val SCALE_OPTIONS = listOf(0.75f, 1f, 1.25f)
@@ -121,9 +124,11 @@ class SettingsStore(context: Context) {
         cloudAccountId = prefs.getString(KEY_CLOUD_ACCOUNT, null),
         cloudRefreshToken = prefs.getString(KEY_CLOUD_REFRESH, null),
         equippedCosmeticId = prefs.getString(KEY_EQUIPPED_COSMETIC, null),
-    )
+        locale = UiStrings.resolveLocale(prefs.getString(KEY_LOCALE, UiStrings.DEFAULT_LOCALE)),
+    ).also { UiStrings.setLocale(it.locale) }
 
     fun save(settings: GameSettings) {
+        UiStrings.setLocale(settings.locale)
         prefs.edit()
             .putBoolean(KEY_MUTED, settings.muted)
             .putFloat(KEY_MUSIC_VOLUME, GameSettings.clampVolume(settings.musicVolume))
@@ -162,6 +167,7 @@ class SettingsStore(context: Context) {
                 if (refresh.isNullOrBlank()) remove(KEY_CLOUD_REFRESH) else putString(KEY_CLOUD_REFRESH, refresh)
                 val cosmetic = settings.equippedCosmeticId
                 if (cosmetic.isNullOrBlank()) remove(KEY_EQUIPPED_COSMETIC) else putString(KEY_EQUIPPED_COSMETIC, cosmetic)
+                putString(KEY_LOCALE, UiStrings.resolveLocale(settings.locale))
             }
             .apply()
     }
@@ -188,5 +194,6 @@ class SettingsStore(context: Context) {
         const val KEY_CLOUD_ACCOUNT = "cloud_account_id"
         const val KEY_CLOUD_REFRESH = "cloud_refresh_token"
         const val KEY_EQUIPPED_COSMETIC = "equipped_cosmetic_id"
+        const val KEY_LOCALE = "locale"
     }
 }

@@ -56,7 +56,9 @@ describe("stackVisibility", () => {
 describe("CustomerCrowd", () => {
   it("walks departing customers back to the entry, then frees the model", () => {
     const sim = newSim();
-    sim.run(160 + 120); // one customer spawned and arrived
+    sim.run(160 + 120); // at least one customer spawned and arrived (festival may spawn more)
+    // Keep a single customer so the crowd pool exercise stays deterministic.
+    if (sim.state.customers.length > 1) sim.state.customers.splice(1);
     const crowd = new CustomerCrowd(3);
     let frame = crowd.update(buildView(sim), 0.016);
     expect(frame.filter(Boolean)).toHaveLength(1);

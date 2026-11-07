@@ -1,0 +1,165 @@
+{
+  "phase": 24,
+  "plan": "30_finish_2.0",
+  "schema": "fish.a11y.accessibility_depth.v1",
+  "description": "Finish 2.0 Phase 24 — a11y depth for 2.0 screens: TalkBack/keyboard coverage + contrast expansion. Extends post-1.0 Phase 16 accessibility-sweep. Distinct from post-1.0 Phase 24 cosmetic-presentation.",
+  "extendsCatalog": "shared/a11y/accessibility-sweep.json",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 23,
+  "simHzInvariant": 20,
+  "wcag": {
+    "normalTextMin": 4.5,
+    "largeOrUiMin": 3.0
+  },
+  "screenSurfaceMin": 9,
+  "contrastPairMin": 4,
+  "uiA11yStringKeyMin": 12,
+  "liveRegionMin": 3,
+  "screenSurfaces": [
+    {
+      "id": "achievements",
+      "webDialogLabelKey": "achievements.title",
+      "androidPaneTitleKey": "achievements.title",
+      "initialFocus": "close",
+      "keyboardPath": "Settings → Achievements; Esc unwinds"
+    },
+    {
+      "id": "species_journal",
+      "webDialogLabelKey": "panels.codex",
+      "androidPaneTitleKey": "panels.codex",
+      "initialFocus": "close",
+      "keyboardPath": "KeyB Species book"
+    },
+    {
+      "id": "species_detail",
+      "webDialogLabelKey": "codex.detail",
+      "androidPaneTitleKey": "codex.detail",
+      "initialFocus": "back",
+      "keyboardPath": "From species journal"
+    },
+    {
+      "id": "goals_daily_festival",
+      "webDialogLabelKey": "nav.goals",
+      "androidPaneTitleKey": "nav.goals",
+      "initialFocus": "close",
+      "keyboardPath": "KeyG Goals"
+    },
+    {
+      "id": "contracts_jobs",
+      "webDialogLabelKey": "nav.jobs",
+      "androidPaneTitleKey": "nav.jobs",
+      "initialFocus": "close",
+      "keyboardPath": "KeyJ Jobs"
+    },
+    {
+      "id": "staff_branches",
+      "webDialogLabelKey": "nav.staff",
+      "androidPaneTitleKey": "nav.staff",
+      "initialFocus": "close",
+      "keyboardPath": "KeyH Staff"
+    },
+    {
+      "id": "bag_mastery",
+      "webDialogLabelKey": "panels.bag",
+      "androidPaneTitleKey": "panels.bag",
+      "initialFocus": "close",
+      "keyboardPath": "Bag button / carry"
+    },
+    {
+      "id": "settings_language",
+      "webDialogLabelKey": "settings.language",
+      "androidPaneTitleKey": "settings.language",
+      "initialFocus": "close",
+      "keyboardPath": "Pause → Settings"
+    },
+    {
+      "id": "hud_weather_tide",
+      "webDialogLabelKey": "hud.weatherTide",
+      "androidPaneTitleKey": "hud.weatherTide",
+      "initialFocus": "n/a",
+      "keyboardPath": "HUD live region"
+    }
+  ],
+  "contrastPairs": [
+    {
+      "id": "seasonal_banner_text",
+      "fg": "#F4FFFE",
+      "bg": "#2D6E6B",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Festival seasonal banner text on teal mix"
+    },
+    {
+      "id": "balance_strip_text",
+      "fg": "#E8F0F8",
+      "bg": "#2A3A4A",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Balance telemetry strip"
+    },
+    {
+      "id": "muted_ink_on_surface",
+      "fg": "#4A5D68",
+      "bg": "#FBF7EF",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Muted / secondary panel copy (Phase 24 token)"
+    },
+    {
+      "id": "reward_text_on_surface",
+      "fg": "#8A5A10",
+      "bg": "#FBF7EF",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Reward / tip text on panels (darker than fill gold)"
+    },
+    {
+      "id": "action_eyebrow_on_surface",
+      "fg": "#008F95",
+      "bg": "#FBF7EF",
+      "role": "large_or_ui",
+      "minRatio": 3.0,
+      "use": "Action / specialty eyebrow accents"
+    }
+  ],
+  "liveRegions": [
+    "achievement_toast",
+    "weather_tide",
+    "festival_hud"
+  ],
+  "talkBack": {
+    "android": {
+      "requirePaneTitleOnManagementSheets": true,
+      "achievementProgressSemantics": true,
+      "filterChipTogglePattern": true
+    },
+    "web": {
+      "weatherTideAriaLive": "polite",
+      "dialogRoleOnSheets": true,
+      "initialFocusClose": true
+    }
+  },
+  "reducedMotion": {
+    "honorsSettingsToggle": true,
+    "crossRef": "shared/ship/vfx-juice-2.json"
+  },
+  "keyboardDocumentedSurfaces": [
+    "Goals (G)",
+    "Jobs (J)",
+    "Staff (H)",
+    "Species book (B)",
+    "Settings → Achievements (Esc unwind)"
+  ],
+  "sourcePins": {
+    "sweep": "shared/a11y/accessibility-sweep.json",
+    "webApp": "web/src/ui/App.tsx",
+    "androidGameScreen": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt",
+    "webCss": "web/src/ui/styles.css"
+  },
+  "manualChecklist": [
+    "TalkBack: Settings → Language → Achievements → Back",
+    "Keyboard: G/J/H/B + Esc stack; Settings → Achievements",
+    "Reduced motion on with festival/achievement VFX",
+    "Contrast: seasonal banner, balance strip, muted + reward panel text"
+  ]
+}

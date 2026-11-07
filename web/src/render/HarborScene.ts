@@ -54,6 +54,7 @@ import {
   type WorldBurstCue,
 } from "./presenters";
 import { createWaterMaterial } from "./waterMaterial";
+import { weatherAmbientProfile } from "./weatherAmbient";
 
 interface HarborCacheEntry {
   root: THREE.Object3D;
@@ -701,8 +702,24 @@ export class HarborScene {
       }
     }
 
-    if (this.waterMat) this.waterMat.uniforms.uTime!.value = this.elapsed;
-    if (this.water) this.water.position.y = -0.65 + Math.sin(this.elapsed * 0.7) * 0.02;
+    // Finish 2.0 Phase 22 — weather/festival ambient (not burst-pool; quality/reduced-motion scaled).
+    const ambient = weatherAmbientProfile(
+      v.weatherId,
+      !!v.seasonalEvent,
+      this.sessionQuality,
+      reducedMotion,
+    );
+    this.scene.background = new THREE.Color(ambient.skyHex);
+    if (this.waterMat) {
+      this.waterMat.uniforms.uTime!.value = this.elapsed;
+      (this.waterMat.uniforms.uDeep!.value as THREE.Color).set(ambient.waterDeepHex);
+      (this.waterMat.uniforms.uShallow!.value as THREE.Color).set(ambient.waterShallowHex);
+      (this.waterMat.uniforms.uSparkle!.value as THREE.Color).set(ambient.waterSparkleHex);
+    }
+    const bobAmp = 0.02 * ambient.bobScale;
+    if (this.water) {
+      this.water.position.y = -0.65 + (bobAmp <= 0 ? 0 : Math.sin(this.elapsed * 0.7) * bobAmp);
+    }
 
     // Phase 31 harbor crossfade + Zone_* distance occlusion.
     if (this.transition < 1) {

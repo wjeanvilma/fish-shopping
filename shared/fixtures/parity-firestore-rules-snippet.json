@@ -1,0 +1,35 @@
+{
+  "schema": "fish.fixture.parity_firestore_rules_snippet.v1",
+  "description": "Finish 2.0 Phase 26: Firestore rules snippet + cloud QA harness vectors.",
+  "firestoreSnippetMarker": "authored-finish-2.0-phase-26",
+  "qaScenarioMin": 4,
+  "snippetPath": "shared/cloud/snippets/firestore-harbor-save.rules",
+  "documentPath": "users/{uid}/saves/harbor",
+  "expect": {
+    "snippetMustContain": [
+      "rules_version = '2'",
+      "users/{userId}/saves/{docId}",
+      "request.auth.uid == userId",
+      "docId == 'harbor'",
+      "snapshot",
+      "savedAtEpochMs",
+      "checksum",
+      "REVIEWED SNIPPET ONLY"
+    ],
+    "forbiddenPaths": [
+      "firestore.rules",
+      "firebase/firestore.rules"
+    ],
+    "qaScenarioIds": [
+      "conflict_dual_valid_differs",
+      "conflict_identical_no_offer",
+      "offline_enqueue_latest_wins",
+      "offline_flush_uploads"
+    ],
+    "productionPathKeys": [
+      "firestoreRules",
+      "firestoreRulesMode",
+      "firestoreRulesSnippet"
+    ]
+  }
+}

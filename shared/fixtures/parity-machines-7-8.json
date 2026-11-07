@@ -1,0 +1,27 @@
+{
+  "schema": "fish.fixture.parity_machines_7_8.v1",
+  "description": "Finish 2.0 Phase 10: unlock harbor steamer via sunrise plot, process fillet → steamed_fillet; assert 8 machine classes and warehouse reconcile.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1010,
+  "setup": {
+    "coins": 500,
+    "completedQuests": ["quest.specialty_kitchen"]
+  },
+  "build": {
+    "plotId": "plot.sunrise_steamer",
+    "requestId": "p10-steam-build",
+    "expectUpgrade": "upgrade.harbor_steamer",
+    "stationId": "station.steamer_1"
+  },
+  "process": {
+    "walkTo": { "x": 10700, "z": -7500, "expectZone": "zone.steamer_in" },
+    "bagAfterUnlock": { "product.fillet": 1 },
+    "preferredRecipeId": "recipe.steam_fillet",
+    "expectOutput": { "item": "product.steamed_fillet", "quantity": 1 }
+  },
+  "expectFinal": {
+    "machineCount": 8,
+    "ownedUpgrade": "upgrade.harbor_steamer",
+    "reconcileOk": true
+  }
+}

@@ -10,7 +10,7 @@ import { isOcclusionFadeName, isStackSlotName } from "../src/render/presenters";
 const root = resolve(__dirname, "../..");
 const MODULES = [
   "pier", "ground", "zone", "counter",
-  "cutter", "smoker", "grill", "chiller", "fryer", "packer",
+  "cutter", "smoker", "grill", "chiller", "fryer", "packer", "steamer", "kiln",
 ] as const;
 
 function parseGlbJson(buf: Buffer): Record<string, unknown> {
@@ -40,13 +40,17 @@ describe("Phase 14 environment art", () => {
   it("embeds modular env art in every harbor blockout and keeps presenter sockets", () => {
     const harbors = [
       "sunrise_pier", "moon_cove", "obsidian_jetty", "northlight_harbor", "grand_marina",
+      "coral_lagoon", "storm_quay", "ember_wharf",
     ];
     for (const harbor of harbors) {
       const path = resolve(root, `shared/assets/models/${harbor}_blockout.glb`);
       const gltf = parseGlbJson(readFileSync(path));
-      const extras = gltf.extras as { envArt?: string; itemArt?: string };
-      expect(extras.envArt, harbor).toBe("modular-phase-14");
+      const extras = gltf.extras as { envArt?: string; itemArt?: string; harborArt?: string };
+      expect(extras.envArt ?? "", harbor).toMatch(/^modular-phase-14/);
       expect(extras.itemArt, harbor).toBe("stylized-phase-13");
+      if (["sunrise_pier", "coral_lagoon", "storm_quay"].includes(harbor)) {
+        expect(extras.harborArt, harbor).toBe("authored-phase-19");
+      }
 
       const nodes = (gltf.nodes as { name: string }[]).map((n) => n.name);
       const nameSet = new Set(nodes);

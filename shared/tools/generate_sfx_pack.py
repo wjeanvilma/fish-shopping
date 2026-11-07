@@ -155,6 +155,113 @@ def rush_clip(sr: int) -> list[float]:
     return synth(sr, 340, render)
 
 
+def achievement_clip(sr: int) -> list[float]:
+    notes = [(784.0, 0.0), (988.0, 0.05), (1175.0, 0.10), (1568.0, 0.16)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.12:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.12 * rate)), 0.05, 0.2, 0.35, 0.45)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.35
+            total += math.sin(2 * math.pi * freq * 2 * local) * e * 0.08
+        return total
+
+    return synth(sr, 320, render)
+
+
+def festival_clip(sr: int) -> list[float]:
+    notes = [(523.25, 0.0), (659.25, 0.04), (783.99, 0.08), (1046.5, 0.12)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.14:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.14 * rate)), 0.04, 0.18, 0.4, 0.4)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.32
+        sparkle = math.sin(2 * math.pi * 2093 * t) * env_adsr(i, n, 0.1, 0.3, 0.2, 0.5) * 0.1
+        return total + sparkle
+
+    return synth(sr, 300, render)
+
+
+def contract_done_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        stamp = math.sin(2 * math.pi * 180 * t) * env_adsr(i, n, 0.02, 0.15, 0.2, 0.7) * 0.7
+        settle = 0.0
+        if t > 0.06:
+            j = int((t - 0.06) * rate)
+            e = env_adsr(j, max(1, n - int(0.06 * rate)), 0.04, 0.2, 0.35, 0.5)
+            settle = math.sin(2 * math.pi * 880 * (t - 0.06)) * e * 0.4
+        return stamp + settle
+
+    return synth(sr, 240, render)
+
+
+def contract_fail_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        e = env_adsr(i, n, 0.06, 0.25, 0.4, 0.4)
+        freq = 280 - 90 * (i / max(1, n - 1))
+        thud = math.sin(2 * math.pi * 90 * t) * math.exp(-t * 18) * 0.55
+        return math.sin(2 * math.pi * freq * t) * e * 0.55 + thud
+
+    return synth(sr, 280, render)
+
+
+def goal_claim_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        e = env_adsr(i, n, 0.04, 0.2, 0.25, 0.55)
+        return (
+            math.sin(2 * math.pi * 880 * t) * e * 0.5
+            + math.sin(2 * math.pi * 1320 * t) * e * 0.22
+        )
+
+    return synth(sr, 140, render)
+
+
+def mastery_up_clip(sr: int) -> list[float]:
+    notes = [(440.0, 0.0), (554.37, 0.07), (659.25, 0.14)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.15:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.15 * rate)), 0.06, 0.22, 0.4, 0.4)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.4
+        return total
+
+    return synth(sr, 300, render)
+
+
+def quest_done_clip(sr: int) -> list[float]:
+    notes = [(392.0, 0.0), (523.25, 0.08), (659.25, 0.16)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.16:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.16 * rate)), 0.05, 0.2, 0.45, 0.4)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.38
+        return total
+
+    return synth(sr, 340, render)
+
+
 RENDERERS = {
     "catch": catch_clip,
     "machine_done": machine_done_clip,
@@ -163,6 +270,13 @@ RENDERERS = {
     "abandon": abandon_clip,
     "upgrade": upgrade_clip,
     "rush": rush_clip,
+    "achievement": achievement_clip,
+    "festival": festival_clip,
+    "contract_done": contract_done_clip,
+    "contract_fail": contract_fail_clip,
+    "goal_claim": goal_claim_clip,
+    "mastery_up": mastery_up_clip,
+    "quest_done": quest_done_clip,
 }
 
 

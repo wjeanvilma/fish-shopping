@@ -1,0 +1,71 @@
+{
+  "schema": "fish.fixture.parity_fish_art_pass.v1",
+  "description": "Finish 2.0 Phase 20: authored fish mesh markers, themes, and byte budgets.",
+  "authoredSpeciesMin": 10,
+  "fishArtMarker": "authored-phase-20",
+  "maxBytesPerFish": 32000,
+  "expect": {
+    "species": [
+      {
+        "speciesId": "species.dawn_anchovy",
+        "theme": "pier_slender",
+        "asset": "fish_dawn_anchovy.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.silver_sprat",
+        "theme": "pier_silver",
+        "asset": "fish_silver_sprat.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.harbor_herring",
+        "theme": "pier_herring",
+        "asset": "fish_harbor_herring.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.sail_needlefish",
+        "theme": "pier_needle",
+        "asset": "fish_sail_needlefish.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.blue_mackerel",
+        "theme": "pier_mackerel",
+        "asset": "fish_blue_mackerel.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.copper_mullet",
+        "theme": "pier_copper",
+        "asset": "fish_copper_mullet.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.tide_bass",
+        "theme": "pier_bass",
+        "asset": "fish_tide_bass.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.amber_snapper",
+        "theme": "pier_snapper",
+        "asset": "fish_amber_snapper.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.king_grouper",
+        "theme": "pier_grouper",
+        "asset": "fish_king_grouper.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.reef_perch",
+        "theme": "pier_reef",
+        "asset": "fish_reef_perch.glb",
+        "minFishArtNodes": 6
+      }
+    ]
+  }
+}
