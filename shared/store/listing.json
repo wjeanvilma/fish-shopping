@@ -45,6 +45,8 @@
   "dodCloseoutPhase": 30,
   "dodCloseoutCatalog": "shared/ship/definition-of-done.json",
   "completeTag": "v1.0-complete",
+  "completeTagPhase": 4,
+  "completeTagCatalog": "shared/ship/complete-tag.json",
   "pagesLegalLivePhase": 1,
   "pagesLegalLiveCatalog": "shared/ship/pages-legal-live.json",
   "landingPlayCtaPhase": 2,

@@ -45,7 +45,7 @@
     "local_recovery"
   ],
   "closeout": {
-    "status": "ready_for_complete_tag",
+    "status": "archived",
     "statusValues": [
       "ready_for_complete_tag",
       "tag_cut",
@@ -67,7 +67,7 @@
       "Closed-testing catalog ready (signoff path to Phase 18 production)",
       "Public ship + hotfix lane catalogs green; RELEASE_PIN schema 20",
       "All post-1.0 phase gate catalogs present (Phases 1–29)",
-      "Operator: cut annotated git tag v1.0-complete when ready (legal URLs already live)"
+      "Annotated git tag v1.0-complete cut — Finish 2.0 Phase 4 archived"
     ],
     "operatorGates": [
       {
@@ -89,35 +89,151 @@
       }
     ],
     "phaseGates": [
-      { "phase": 1, "catalog": "shared/billing/play-billing.json", "validate": "billing:validate" },
-      { "phase": 2, "catalog": "shared/billing/web-billing.json", "validate": "billing:validate" },
-      { "phase": 3, "catalog": "shared/billing/entitlement-reconcile.json", "validate": "billing:validate" },
-      { "phase": 4, "catalog": "shared/android/release-signing.json", "validate": null },
-      { "phase": 5, "catalog": "shared/android/aab-ci.json", "validate": null },
-      { "phase": 6, "catalog": "shared/billing/store-catalog-sync.json", "validate": "billing:validate" },
-      { "phase": 7, "catalog": "shared/store/legal-pages.json", "validate": null },
-      { "phase": 8, "catalog": "shared/store/data-safety.json", "validate": "data-safety:validate" },
-      { "phase": 9, "catalog": "shared/store/screenshot-capture.json", "validate": "screenshots:validate" },
-      { "phase": 10, "catalog": "shared/store/icon-pack.json", "validate": "icons:validate" },
-      { "phase": 11, "catalog": "shared/store/listing-copy.json", "validate": "listing-copy:validate" },
-      { "phase": 12, "catalog": "shared/store/licenses.json", "validate": "licenses:validate" },
-      { "phase": 13, "catalog": "shared/lifecycle/android-device-matrix.json", "validate": "lifecycle:android:validate" },
-      { "phase": 14, "catalog": "shared/lifecycle/browser-matrix.json", "validate": "lifecycle:browser:validate" },
-      { "phase": 15, "catalog": "shared/perf/budget-gate.json", "validate": null },
-      { "phase": 16, "catalog": "shared/a11y/accessibility-sweep.json", "validate": "a11y:validate" },
-      { "phase": 17, "catalog": "shared/android/closed-testing.json", "validate": "closed-test:validate" },
-      { "phase": 18, "catalog": "shared/ship/public-ship.json", "validate": "public-ship:validate" },
-      { "phase": 19, "catalog": "shared/audio/sfx-pack.json", "validate": "sfx:validate" },
-      { "phase": 20, "catalog": "shared/audio/music-pack.json", "validate": "music:validate" },
-      { "phase": 21, "catalog": "shared/perf/vfx-juice.json", "validate": "vfx:validate" },
-      { "phase": 22, "catalog": "shared/content/tutorial-friction.json", "validate": "tutorial:validate" },
-      { "phase": 23, "catalog": "shared/content/balance-patch-1.0.1.json", "validate": "balance:validate" },
-      { "phase": 24, "catalog": "shared/content/cosmetic-presentation.json", "validate": "cosmetics:validate" },
-      { "phase": 25, "catalog": "shared/cloud/production-path.json", "validate": "cloud:validate" },
-      { "phase": 26, "catalog": "shared/ops/analytics-dashboard.json", "validate": "analytics:validate" },
-      { "phase": 27, "catalog": "shared/fixtures/parity-lock.json", "validate": "parity:validate" },
-      { "phase": 28, "catalog": "shared/ops/support-runbook.json", "validate": "support:validate" },
-      { "phase": 29, "catalog": "shared/ship/hotfix-lane.json", "validate": "hotfix:validate" }
+      {
+        "phase": 1,
+        "catalog": "shared/billing/play-billing.json",
+        "validate": "billing:validate"
+      },
+      {
+        "phase": 2,
+        "catalog": "shared/billing/web-billing.json",
+        "validate": "billing:validate"
+      },
+      {
+        "phase": 3,
+        "catalog": "shared/billing/entitlement-reconcile.json",
+        "validate": "billing:validate"
+      },
+      {
+        "phase": 4,
+        "catalog": "shared/android/release-signing.json",
+        "validate": null
+      },
+      {
+        "phase": 5,
+        "catalog": "shared/android/aab-ci.json",
+        "validate": null
+      },
+      {
+        "phase": 6,
+        "catalog": "shared/billing/store-catalog-sync.json",
+        "validate": "billing:validate"
+      },
+      {
+        "phase": 7,
+        "catalog": "shared/store/legal-pages.json",
+        "validate": null
+      },
+      {
+        "phase": 8,
+        "catalog": "shared/store/data-safety.json",
+        "validate": "data-safety:validate"
+      },
+      {
+        "phase": 9,
+        "catalog": "shared/store/screenshot-capture.json",
+        "validate": "screenshots:validate"
+      },
+      {
+        "phase": 10,
+        "catalog": "shared/store/icon-pack.json",
+        "validate": "icons:validate"
+      },
+      {
+        "phase": 11,
+        "catalog": "shared/store/listing-copy.json",
+        "validate": "listing-copy:validate"
+      },
+      {
+        "phase": 12,
+        "catalog": "shared/store/licenses.json",
+        "validate": "licenses:validate"
+      },
+      {
+        "phase": 13,
+        "catalog": "shared/lifecycle/android-device-matrix.json",
+        "validate": "lifecycle:android:validate"
+      },
+      {
+        "phase": 14,
+        "catalog": "shared/lifecycle/browser-matrix.json",
+        "validate": "lifecycle:browser:validate"
+      },
+      {
+        "phase": 15,
+        "catalog": "shared/perf/budget-gate.json",
+        "validate": null
+      },
+      {
+        "phase": 16,
+        "catalog": "shared/a11y/accessibility-sweep.json",
+        "validate": "a11y:validate"
+      },
+      {
+        "phase": 17,
+        "catalog": "shared/android/closed-testing.json",
+        "validate": "closed-test:validate"
+      },
+      {
+        "phase": 18,
+        "catalog": "shared/ship/public-ship.json",
+        "validate": "public-ship:validate"
+      },
+      {
+        "phase": 19,
+        "catalog": "shared/audio/sfx-pack.json",
+        "validate": "sfx:validate"
+      },
+      {
+        "phase": 20,
+        "catalog": "shared/audio/music-pack.json",
+        "validate": "music:validate"
+      },
+      {
+        "phase": 21,
+        "catalog": "shared/perf/vfx-juice.json",
+        "validate": "vfx:validate"
+      },
+      {
+        "phase": 22,
+        "catalog": "shared/content/tutorial-friction.json",
+        "validate": "tutorial:validate"
+      },
+      {
+        "phase": 23,
+        "catalog": "shared/content/balance-patch-1.0.1.json",
+        "validate": "balance:validate"
+      },
+      {
+        "phase": 24,
+        "catalog": "shared/content/cosmetic-presentation.json",
+        "validate": "cosmetics:validate"
+      },
+      {
+        "phase": 25,
+        "catalog": "shared/cloud/production-path.json",
+        "validate": "cloud:validate"
+      },
+      {
+        "phase": 26,
+        "catalog": "shared/ops/analytics-dashboard.json",
+        "validate": "analytics:validate"
+      },
+      {
+        "phase": 27,
+        "catalog": "shared/fixtures/parity-lock.json",
+        "validate": "parity:validate"
+      },
+      {
+        "phase": 28,
+        "catalog": "shared/ops/support-runbook.json",
+        "validate": "support:validate"
+      },
+      {
+        "phase": 29,
+        "catalog": "shared/ship/hotfix-lane.json",
+        "validate": "hotfix:validate"
+      }
     ],
     "evidence": {
       "listing": "shared/store/listing.json",
@@ -139,7 +255,15 @@
       "Confirm Play production listing + legal URLs live",
       "git tag -a v1.0-complete -m \"Fish Shopping post-1.0 Definition of Done 100% closeout\"",
       "Archive post-1.0 finish plan status as finished"
-    ]
+    ],
+    "completeTagCut": {
+      "tag": "v1.0-complete",
+      "status": "archived",
+      "pinnedAt": "2026-11-07",
+      "gitHeadAtPin": "2cd9a93b24897e0e356eccb40f917f5738eb8f8e",
+      "finish2Phase": 4,
+      "catalog": "shared/ship/complete-tag.json"
+    }
   },
   "notes": "Phase 30 post-1.0 closeout: blueprint quotas + screens stay green at content 1.0.1 / schema 20; closeout gates Phases 1–29 and the v1.0-complete tag. Deploy/tag remain manual."
 }

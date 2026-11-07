@@ -52,6 +52,8 @@ export interface StoreListing {
   dodCloseoutPhase?: number;
   dodCloseoutCatalog?: string;
   completeTag?: string;
+  completeTagPhase?: number;
+  completeTagCatalog?: string;
   pagesLegalLivePhase?: number;
   pagesLegalLiveCatalog?: string;
   landingPlayCtaPhase?: number;

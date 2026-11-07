@@ -12,7 +12,7 @@ object DefinitionOfDone {
     const val COMPLETE_TAG = "v1.0-complete"
     const val CONTENT_VERSION = "1.0.1"
     const val SCHEMA_VERSION = 20
-    const val CLOSEOUT_STATUS = "ready_for_complete_tag"
+    const val CLOSEOUT_STATUS = "archived"
     const val HARBOR_QUOTA = 5
     const val SPECIES_MIN = 20
     const val MACHINE_CLASSES = 6

@@ -1,0 +1,54 @@
+{
+  "phase": 4,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.complete_tag.v1",
+  "description": "Finish 2.0 Phase 4 — cut annotated git tag v1.0-complete, pin built artifact hashes into RELEASE_PIN.completeRelease, archive post-1.0 DoD closeout.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 20,
+  "completeTag": "v1.0-complete",
+  "completeTagMessage": "Fish Shopping post-1.0 Definition of Done 100% closeout",
+  "releasePin": "shared/fixtures/RELEASE_PIN.json",
+  "definitionOfDone": "shared/ship/definition-of-done.json",
+  "publicShip": "shared/ship/public-ship.json",
+  "prerequisitePhases": [
+    { "phase": 1, "catalog": "shared/ship/pages-legal-live.json" },
+    { "phase": 2, "catalog": "shared/ship/landing-play-cta.json" },
+    { "phase": 3, "catalog": "shared/ship/spa-host.json" }
+  ],
+  "closeoutStatusAfter": "archived",
+  "artifactSlots": {
+    "androidAab": "app/build/outputs/bundle/release/app-release.aab",
+    "androidMapping": "app/build/outputs/mapping/release/mapping.txt",
+    "webDistIndex": "web/dist/index.html",
+    "pagesPlayIndex": "web/dist-legal/play/index.html"
+  },
+  "hashAlgorithm": "sha256",
+  "npmScripts": {
+    "pin": "complete:pin",
+    "validate": "complete:validate"
+  },
+  "checklist": [
+    "Finish 2.0 Phases 1–3 green (pages:live, landing:validate, spa:validate)",
+    "dod:validate green before cut",
+    "Pin sha256 of AAB, mapping, web dist index, pages play index into RELEASE_PIN.completeRelease",
+    "DoD closeout.status → archived; completeTagCut recorded",
+    "Annotated git tag v1.0-complete pushed to origin",
+    "Play Console production listing remains operator-owned (not blocking tag)"
+  ],
+  "manualCommands": [
+    "npm run complete:pin",
+    "npm run complete:validate",
+    "git tag -a v1.0-complete -m \"Fish Shopping post-1.0 Definition of Done 100% closeout\"",
+    "git push origin v1.0-complete"
+  ],
+  "preflightGates": [
+    "shared/ship/complete-tag.json",
+    "shared/ship/definition-of-done.json",
+    "shared/fixtures/RELEASE_PIN.json",
+    "shared/ship/pages-legal-live.json",
+    "shared/ship/landing-play-cta.json",
+    "shared/ship/spa-host.json",
+    "web/src/ship/completeTag.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/CompleteTag.kt"
+  ]
+}

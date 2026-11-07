@@ -160,6 +160,10 @@ jobs:
         working-directory: web
         run: npm run spa:validate
 
+      - name: v1.0-complete tag cut
+        working-directory: web
+        run: npm run complete:validate
+
       - name: Validate content (Kotlin ContentLoader)
         run: ./gradlew :game-core:validateContent --no-daemon
 

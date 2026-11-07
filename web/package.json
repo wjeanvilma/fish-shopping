@@ -17,6 +17,8 @@
     "pages:site": "vite-node scripts/build-pages-site.ts",
     "landing:validate": "vite-node scripts/validate-landing-play-cta.ts",
     "spa:validate": "vite-node scripts/validate-spa-host.ts",
+    "complete:pin": "vite-node scripts/pin-complete-release.ts",
+    "complete:validate": "vite-node scripts/validate-complete-tag.ts",
     "data-safety:validate": "vite-node scripts/validate-data-safety.ts",
     "screenshots:capture": "python3 ../shared/tools/capture_store_screenshots.py",
     "screenshots:validate": "vite-node scripts/validate-screenshot-capture.ts",

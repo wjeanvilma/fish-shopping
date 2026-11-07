@@ -21,7 +21,7 @@ describe("DoD closeout (post-1.0 Phase 30)", () => {
     expect(DOD_PHASE).toBe(30);
     expect(DOD_SCHEMA).toBe("fish.ship.definition_of_done.v1");
     expect(DOD_COMPLETE_TAG).toBe("v1.0-complete");
-    expect(DOD_CLOSEOUT_STATUS).toBe("ready_for_complete_tag");
+    expect(DOD_CLOSEOUT_STATUS).toBe("archived");
     expect(isCloseoutReady()).toBe(true);
     expect(DEFINITION_OF_DONE.schemaVersion).toBe(20);
     expect(DEFINITION_OF_DONE.closeout.phaseGates).toHaveLength(29);
