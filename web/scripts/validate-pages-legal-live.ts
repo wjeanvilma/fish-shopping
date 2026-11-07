@@ -67,7 +67,9 @@ async function validate(): Promise<string[]> {
   if (catalog.pages.buildType !== "workflow") errors.push("pages.buildType must be workflow");
   if (catalog.pages.requirePublicRepo !== true) errors.push("requirePublicRepo must be true");
   if (!pagesWf.includes("deploy-pages")) errors.push("pages.yml missing deploy-pages");
-  if (!pagesWf.includes("npm run pages:legal")) errors.push("pages.yml missing pages:legal");
+  if (!pagesWf.includes("pages:site") && !pagesWf.includes("pages:legal")) {
+    errors.push("pages.yml missing pages:site (or pages:legal)");
+  }
 
   for (const gate of catalog.preflightGates as string[]) {
     if (!existsSync(resolve(root, gate))) errors.push(`missing preflight ${gate}`);

@@ -48,7 +48,7 @@
       "algorithm": "sha256",
       "inputs": {
         "billing__entitlements": "ae2917a9a4f610941be656ca60399a934f2beece6e82bd5e846cd09a906994b6",
-        "store__listing": "629177488604d7dcdc0b192e6231a64ca262db4037f0de3b2588c2ad433c63eb",
+        "store__listing": "979e1c45005f8387701e1db0d3d93caae7e7b193271686b284758a183de814b8",
         "store__listing-copy": "697590403850084d79e44c1587954915bc6a6efc8e9c6f9e5d48d840d7d8afdb",
         "store__data-safety": "5ad28573222bd40e0830c5042af69522bc2cb0dd88cbddffdd61f1fdd5b994c7",
         "store__legal-pages": "860f50361728ada0906bc9dc81fd06b5a16744b7febfdb865a364116e7c16609",
