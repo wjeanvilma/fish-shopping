@@ -1,0 +1,90 @@
+{
+  "phase": 26,
+  "schema": "fish.ops.analytics_dashboard.v1",
+  "description": "Post-1.0 Phase 26 — consent-gated analytics dashboard + crash-free session alert. Local rolling counters (no remote deploy). Events stay fish.analytics.v1; schema 20 unchanged.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 20,
+  "analyticsSchema": "fish.analytics.v1",
+  "consentRequired": true,
+  "constraints": {
+    "noPii": true,
+    "noRemoteDeployRequired": true,
+    "consentGated": true,
+    "schemaFrozen": true
+  },
+  "session": {
+    "startEvent": "session_start",
+    "crashFreeEvent": "crash_free_session",
+    "webDirtyKey": "fish-shopping-analytics-session-dirty",
+    "androidPrefsName": "fish_shopping_analytics_dashboard",
+    "androidDirtyKey": "session_dirty",
+    "startProps": ["platform"],
+    "crashFreeProps": ["clean", "platform"]
+  },
+  "storage": {
+    "webKey": "fish-shopping-analytics-dashboard",
+    "androidPrefsName": "fish_shopping_analytics_dashboard",
+    "androidCountersKey": "counters_json",
+    "androidCrashFreeKey": "crash_free_rolling",
+    "maxCrashFreeSamples": 50
+  },
+  "panels": [
+    {
+      "id": "funnel",
+      "title": "Funnel",
+      "metrics": [
+        { "id": "tutorial_steps", "event": "tutorial_step_completed", "aggregation": "count" },
+        { "id": "first_sales", "event": "first_sale", "aggregation": "count" },
+        { "id": "harbors", "event": "harbor_unlocked", "aggregation": "count" }
+      ]
+    },
+    {
+      "id": "recovery",
+      "title": "Recovery",
+      "metrics": [
+        { "id": "offline_claims", "event": "offline_claimed", "aggregation": "count" },
+        { "id": "save_recoveries", "event": "save_recovery", "aggregation": "count" }
+      ]
+    },
+    {
+      "id": "performance",
+      "title": "Performance",
+      "metrics": [
+        { "id": "frame_summaries", "event": "frame_time_summary", "aggregation": "count" }
+      ]
+    },
+    {
+      "id": "stability",
+      "title": "Stability",
+      "metrics": [
+        { "id": "sessions", "event": "session_start", "aggregation": "count" },
+        { "id": "crash_free_reports", "event": "crash_free_session", "aggregation": "count" },
+        { "id": "crash_free_rate_permille", "event": "crash_free_session", "aggregation": "clean_rate_permille" }
+      ]
+    }
+  ],
+  "alerts": [
+    {
+      "id": "crash_free_session_rate",
+      "metricId": "crash_free_rate_permille",
+      "comparator": "lt",
+      "thresholdPermille": 990,
+      "minSamples": 5,
+      "severity": "warn",
+      "message": "Crash-free session rate below 99%"
+    }
+  ],
+  "ui": {
+    "exportLabel": "Copy analytics dashboard",
+    "alertActiveLabel": "Stability alert",
+    "consentOffNote": "Turn analytics on to collect dashboard metrics."
+  },
+  "preflightGates": [
+    "shared/ops/analytics-dashboard.json",
+    "shared/store/data-safety.json",
+    "web/src/engine/analyticsDashboard.ts",
+    "web/src/analytics/analyticsDashboardLedger.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/AnalyticsDashboard.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/analytics/AnalyticsDashboardLedger.kt"
+  ]
+}

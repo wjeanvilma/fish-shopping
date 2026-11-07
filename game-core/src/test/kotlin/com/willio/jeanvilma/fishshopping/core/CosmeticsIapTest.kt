@@ -31,6 +31,9 @@ class CosmeticsIapTest {
             assertTrue(o.getValue("powerNeutral").jsonPrimitive.content.toBoolean())
             val grants = o.getValue("grantsCosmetic").jsonPrimitive.content
             assertTrue(grants in CosmeticsIapSystem.GRANTED_COSMETICS)
+            val sku = CosmeticsIapSystem.BY_SKU.getValue(o.getValue("sku").jsonPrimitive.content)
+            assertEquals(sku.androidProductId, o.getValue("androidProductId").jsonPrimitive.content)
+            assertEquals(sku.webProductId, o.getValue("webProductId").jsonPrimitive.content)
             assertTrue(
                 Shared.content.decor.items.none { it.requiresCosmetic == grants },
             )

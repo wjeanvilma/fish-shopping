@@ -1,0 +1,126 @@
+{
+  "phase": 16,
+  "schema": "fish.a11y.accessibility_sweep.v1",
+  "description": "Post-1.0 Phase 16 — accessibility & controls sweep: 48dp targets, keyboard/TalkBack contracts, HUD color contrast (WCAG AA).",
+  "designTokens": "shared/tokens/design-tokens.json",
+  "minTouchTargetDp": 48,
+  "wcag": {
+    "normalTextMin": 4.5,
+    "largeOrUiMin": 3.0
+  },
+  "contrastPairs": [
+    {
+      "id": "ink_on_surface",
+      "fg": "#153449",
+      "bg": "#FBF7EF",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Primary HUD / panel body text"
+    },
+    {
+      "id": "ink_on_surface_muted",
+      "fg": "#153449",
+      "bg": "#EFE8DA",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Text on muted panel fills"
+    },
+    {
+      "id": "danger_on_surface",
+      "fg": "#B3412E",
+      "bg": "#FBF7EF",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Error / blocked copy"
+    },
+    {
+      "id": "on_action_on_action",
+      "fg": "#FFFFFF",
+      "bg": "#008F95",
+      "role": "large_or_ui",
+      "minRatio": 3.0,
+      "use": "Filled primary button label (large/UI)"
+    },
+    {
+      "id": "ghost_ink_on_surface",
+      "fg": "#153449",
+      "bg": "#FBF7EF",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Ghost / secondary button text on panels (Phase 16: ink, not action)"
+    },
+    {
+      "id": "reward_on_ink",
+      "fg": "#E8AF4A",
+      "bg": "#153449",
+      "role": "large_or_ui",
+      "minRatio": 3.0,
+      "use": "Reward accents on ink tiles"
+    }
+  ],
+  "controls": {
+    "minTouchTargetDp": 48,
+    "joystickMinDiameterDp": 48,
+    "keyboardShortcutsSource": {
+      "android": "app/.../ControlQa.kt KEYBOARD_SHORTCUTS",
+      "web": "web/src/presenters/controlQa.ts KEYBOARD_SHORTCUTS"
+    },
+    "requiredActions": [
+      "Move",
+      "Reel",
+      "Pause",
+      "Close panel / pause",
+      "Map",
+      "Upgrades",
+      "Staff",
+      "Goals",
+      "Jobs",
+      "Warehouse",
+      "Dashboard",
+      "Species book",
+      "Cycle recipe"
+    ]
+  },
+  "talkBack": {
+    "android": {
+      "joystickContentDescription": "Movement joystick",
+      "requireComposeTextOnButtons": true,
+      "decorativeContentDescriptionNull": true
+    },
+    "web": {
+      "harborCanvasAriaLabel": "Harbor",
+      "toolbarAriaLabel": "Harbor actions",
+      "focusVisibleOutline": true,
+      "liveRegions": ["coins", "rush", "context-loss"]
+    }
+  },
+  "accessibilityPreset": {
+    "reducedMotion": true,
+    "captionsEnabled": true,
+    "hudTextScale": 1.15,
+    "shapeCues": true,
+    "timingAssist": true
+  },
+  "sourcePins": {
+    "tokens": "shared/tokens/design-tokens.json",
+    "androidColors": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/theme/Color.kt",
+    "androidControlQa": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/ControlQa.kt",
+    "androidAccessibility": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/Accessibility.kt",
+    "webCss": "web/src/ui/styles.css",
+    "webControlQa": "web/src/presenters/controlQa.ts",
+    "webAccessibility": "web/src/presenters/accessibility.ts"
+  },
+  "manualChecklist": [
+    "TalkBack: open Settings — every switch/button announced; joystick says Movement joystick",
+    "Keyboard: WASD move, F/Space reel, Esc closes panel, letter shortcuts open sheets",
+    "Touch: all HUD actions ≥48×48 dp; joystick diameter ≥48 at smallest scale",
+    "Contrast: panel body text readable; filled Action buttons use white label; ghost buttons use ink"
+  ],
+  "failCriteria": [
+    "minTouchTargetDp ≠ 48 in tokens or ControlQa",
+    "HUD contrast pair below its WCAG minRatio",
+    "Keyboard shortcut catalog missing a required action on either client",
+    "Ghost button text uses Action-on-surface (fails AA normal text)",
+    "Missing joystick contentDescription / Harbor canvas aria-label"
+  ]
+}

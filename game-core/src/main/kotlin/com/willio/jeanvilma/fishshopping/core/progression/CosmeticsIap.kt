@@ -13,6 +13,10 @@ object CosmeticsIapSystem {
     data class Sku(
         val id: String,
         val sku: String,
+        /** Play Console product id; mirrors shared/billing/entitlements.json androidProductId. */
+        val androidProductId: String,
+        /** Web checkout product id; mirrors shared/billing/entitlements.json webProductId. */
+        val webProductId: String,
         val grantsCosmetic: String,
         val title: String,
         val description: String,
@@ -22,6 +26,8 @@ object CosmeticsIapSystem {
         Sku(
             id = "entitlement.cosmetic.sunset_bunting",
             sku = "fish.cosmetic.sunset_bunting",
+            androidProductId = "fish_cosmetic_sunset_bunting",
+            webProductId = "fish.cosmetic.sunset_bunting",
             grantsCosmetic = "banner.iap_sunset_bunting",
             title = "Sunset bunting",
             description = "Warm dusk bunting for the pier. Visual only — never changes rates, wages, or sale prices.",
@@ -29,6 +35,8 @@ object CosmeticsIapSystem {
         Sku(
             id = "entitlement.cosmetic.pearl_string",
             sku = "fish.cosmetic.pearl_string",
+            androidProductId = "fish_cosmetic_pearl_string",
+            webProductId = "fish.cosmetic.pearl_string",
             grantsCosmetic = "banner.iap_pearl_string",
             title = "Pearl string lights",
             description = "Pearl-white string lights. Visual only — never changes rates, wages, or sale prices.",
@@ -36,6 +44,8 @@ object CosmeticsIapSystem {
         Sku(
             id = "entitlement.cosmetic.captain_crest",
             sku = "fish.cosmetic.captain_crest",
+            androidProductId = "fish_cosmetic_captain_crest",
+            webProductId = "fish.cosmetic.captain_crest",
             grantsCosmetic = "banner.iap_captain_crest",
             title = "Captain's crest",
             description = "A harbor crest plaque. Visual only — never changes rates, wages, or sale prices.",

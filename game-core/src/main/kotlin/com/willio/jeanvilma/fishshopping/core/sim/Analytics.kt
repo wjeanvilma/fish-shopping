@@ -1,10 +1,11 @@
 package com.willio.jeanvilma.fishshopping.core.sim
 
 /**
- * Phase 25 — privacy-safe analytics events (blueprint live-ops).
+ * Phase 25/26 — privacy-safe analytics events (blueprint live-ops).
  *
  * Consent is enforced by presentation clients. This module only validates
  * allowlisted event names/props and refuses PII / full-save keys.
+ * Phase 26 adds session_start + crash_free_session for the ops dashboard.
  */
 object Analytics {
     const val SCHEMA = "fish.analytics.v1"
@@ -16,6 +17,8 @@ object Analytics {
         "offline_claimed",
         "save_recovery",
         "frame_time_summary",
+        "session_start",
+        "crash_free_session",
     )
 
     /** Keys that must never appear in an analytics payload. */
@@ -32,6 +35,8 @@ object Analytics {
         "offline_claimed" to setOf("elapsedMillis", "ticksCredited", "coinsDelta", "capped"),
         "save_recovery" to setOf("source"),
         "frame_time_summary" to setOf("emaMs", "quality", "samples", "platform"),
+        "session_start" to setOf("platform"),
+        "crash_free_session" to setOf("clean", "platform"),
     )
 
     data class Event(
@@ -96,6 +101,14 @@ object Analytics {
                 "platform" to platform,
             ),
         )!!
+
+    /** Phase 26: consent-gated session open (platform only). */
+    fun sessionStart(platform: String): Event =
+        sanitize("session_start", mapOf("platform" to platform))!!
+
+    /** Phase 26: clean=true when the prior/current session ended without unclean exit. */
+    fun crashFreeSession(clean: Boolean, platform: String): Event =
+        sanitize("crash_free_session", mapOf("clean" to clean, "platform" to platform))!!
 }
 
 /** In-memory sink for unit tests / local inspection. */

@@ -1,0 +1,60 @@
+{
+  "phase": 21,
+  "schema": "fish.perf.vfx_juice.v1",
+  "description": "Post-1.0 Phase 21 — catch/cut/sale juice: catch bursts, screen-shake caps, particle (= burst/fly) budgets under the Phase 15 perf gate. Presentation-only; never changes 20 Hz sim.",
+  "budgetGateCatalog": "shared/perf/budget-gate.json",
+  "simHzInvariant": 20,
+  "bursts": {
+    "kinds": ["catch", "pay", "celebrate", "machine_done"],
+    "pool": 8,
+    "poolByQuality": { "low": 2, "medium": 4, "high": 8 },
+    "durationSec": {
+      "catch": 0.32,
+      "pay": 0.45,
+      "celebrate": 0.7,
+      "machine_done": 0.4
+    },
+    "note": "Burst pool is the particle budget; quality caps match budget-gate presenterCaps.burst"
+  },
+  "fly": {
+    "pool": 12,
+    "poolByQuality": { "low": 4, "medium": 8, "high": 12 },
+    "note": "Flying transfers stay under budget-gate presenterCaps.fly"
+  },
+  "shake": {
+    "durationSec": 0.18,
+    "maxAmplitudeM": 0.12,
+    "amplitudeM": {
+      "catch": 0.04,
+      "cut": 0.03,
+      "sale": 0.05,
+      "celebrate": 0.08
+    },
+    "scaleByQuality": { "low": 0.5, "medium": 0.85, "high": 1.0 },
+    "disabledWhenReducedMotion": true,
+    "eventMap": {
+      "fish_caught": "catch",
+      "batch_completed": "cut",
+      "sale_committed": "sale",
+      "celebrate": "celebrate"
+    }
+  },
+  "feedback": {
+    "catchBurstOnEveryCatch": true,
+    "cutBurstIsMachineDone": true,
+    "saleBurstIsPay": true,
+    "celebrateStillForPerfectRareRush": true
+  },
+  "sourcePins": {
+    "webPresenters": "web/src/render/presenters.ts",
+    "androidPresenters": "app/src/main/java/com/willio/jeanvilma/fishshopping/render/Presenters.kt",
+    "webHarborScene": "web/src/render/HarborScene.ts",
+    "androidHarborRenderer": "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRenderer.kt"
+  },
+  "preflightGates": [
+    "shared/perf/vfx-juice.json",
+    "shared/perf/budget-gate.json",
+    "web/src/render/presenters.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/Presenters.kt"
+  ]
+}

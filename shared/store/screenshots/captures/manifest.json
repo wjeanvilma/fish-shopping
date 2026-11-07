@@ -1,0 +1,21 @@
+{
+  "phase": 9,
+  "generatedBy": "shared/tools/capture_store_screenshots.py",
+  "count": 14,
+  "files": [
+    "shared/store/screenshots/captures/phone/title.png",
+    "shared/store/screenshots/captures/tablet/title.png",
+    "shared/store/screenshots/captures/phone/pier_cast.png",
+    "shared/store/screenshots/captures/tablet/pier_cast.png",
+    "shared/store/screenshots/captures/phone/cutter_transfers.png",
+    "shared/store/screenshots/captures/tablet/cutter_transfers.png",
+    "shared/store/screenshots/captures/phone/counter_service.png",
+    "shared/store/screenshots/captures/tablet/counter_service.png",
+    "shared/store/screenshots/captures/phone/panels.png",
+    "shared/store/screenshots/captures/tablet/panels.png",
+    "shared/store/screenshots/captures/phone/map_travel.png",
+    "shared/store/screenshots/captures/tablet/map_travel.png",
+    "shared/store/screenshots/captures/phone/rush_hour.png",
+    "shared/store/screenshots/captures/tablet/rush_hour.png"
+  ]
+}

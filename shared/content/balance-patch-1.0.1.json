@@ -1,0 +1,113 @@
+{
+  "phase": 23,
+  "schema": "fish.content.balance_patch.v1",
+  "description": "Post-1.0 Phase 23 — closed-test economy/XP balance patch. Bumps contentVersion 1.0.0 → 1.0.1; schema 20 unchanged. Snapshot schema stays compatible with 1.0.0 saves.",
+  "fromContentVersion": "1.0.0",
+  "toContentVersion": "1.0.1",
+  "schemaVersion": 20,
+  "contentPack": "shared/content/content-pack.json",
+  "releasePin": "shared/fixtures/RELEASE_PIN.json",
+  "constraints": {
+    "noSchemaBreak": true,
+    "keepSchemaVersion": 20,
+    "patchBumpOnly": true,
+    "note": "No new fields, ids, or advanceOn changes. Economy/XP numeric knobs only."
+  },
+  "closedTestDrivers": [
+    {
+      "source": "Phase 22 funnel / closed-test early drop",
+      "stepId": "tutorial.buy_upgrade",
+      "finding": "First bag upgrade felt expensive after early sales"
+    },
+    {
+      "source": "Phase 22 funnel / closed-test early drop",
+      "stepId": "tutorial.hire_staff",
+      "finding": "First hire cost gated progress after Make 10 sales"
+    },
+    {
+      "source": "closed-test mid-session feedback",
+      "finding": "Staff XP leveling felt slow; early portion margin thin vs upkeep"
+    },
+    {
+      "source": "closed-test mid-session feedback",
+      "finding": "Wear repair sting after first busy-harbor unlock"
+    }
+  ],
+  "tweaks": [
+    {
+      "path": "upgrades[upgrade.bag_capacity_2].cost",
+      "from": 40,
+      "to": 30,
+      "why": "Reach first upgrade sooner after early sales"
+    },
+    {
+      "path": "products[product.basic_portion].unitPrice",
+      "from": 5,
+      "to": 6,
+      "why": "Slightly stronger early sale margin"
+    },
+    {
+      "path": "products[product.fillet].unitPrice",
+      "from": 12,
+      "to": 13,
+      "why": "Mild mid-loop revenue lift"
+    },
+    {
+      "path": "workers[worker.porter].hireCost",
+      "from": 100,
+      "to": 85,
+      "why": "Cheaper first hire (porter)"
+    },
+    {
+      "path": "workers[worker.fisher].hireCost",
+      "from": 120,
+      "to": 105,
+      "why": "Cheaper first hire (fisher)"
+    },
+    {
+      "path": "staffProgression.xpFishCaught",
+      "from": 4,
+      "to": 5,
+      "why": "Faster staff XP from fishing"
+    },
+    {
+      "path": "staffProgression.xpSaleAssisted",
+      "from": 3,
+      "to": 4,
+      "why": "Faster staff XP from assisted sales"
+    },
+    {
+      "path": "staffProgression.xpThresholds",
+      "from": [0, 40, 100, 180, 280],
+      "to": [0, 35, 90, 160, 250],
+      "why": "Slightly earlier level-ups"
+    },
+    {
+      "path": "economy.wear.repairCoins",
+      "from": 40,
+      "to": 35,
+      "why": "Softer repair after wear unlocks"
+    }
+  ],
+  "unchanged": {
+    "schemaVersion": 20,
+    "ticksPerSecond": 20,
+    "tutorialStepIds": true,
+    "tutorialAdvanceOn": true,
+    "entitlementIds": true,
+    "harborIds": true
+  },
+  "fixtureReplay": {
+    "command": "./gradlew :game-core:test --tests StarterLineFixtureTest -PrecordFixtures=true",
+    "fixtures": [
+      "shared/fixtures/starter-line.json",
+      "shared/fixtures/snapshot-starter-line-t2500.json"
+    ]
+  },
+  "preflightGates": [
+    "shared/content/balance-patch-1.0.1.json",
+    "shared/content/content-pack.json",
+    "shared/fixtures/RELEASE_PIN.json",
+    "shared/ship/definition-of-done.json"
+  ]
+}

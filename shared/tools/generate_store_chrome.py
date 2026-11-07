@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
-"""Phase 18 — rasterize brand mark into Android mipmaps + web apple-touch-icon."""
+"""Phase 10 (post-1.0) — final icon pack + Play feature graphic generator.
+
+Rasterizes the Fish Shopping brand mark into:
+  - Android legacy mipmaps (mdpi→xxxhdpi) + keeps adaptive XML vectors
+  - Web favicon sync, apple-touch, PWA 192/512 + maskable 512
+  - Play hi-res 512 icon + 1024×500 feature graphic PNG
+
+Usage:
+  python3 shared/tools/generate_store_chrome.py
+  npm run icons:generate
+"""
 from __future__ import annotations
 
-import math
+import json
+import shutil
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -12,6 +23,7 @@ INK = (0x15, 0x34, 0x49, 255)
 SKY = (0x9F, 0xD3, 0xEA, 255)
 REWARD = (0xE8, 0xAF, 0x4A, 255)
 ACTION = (0x00, 0x8F, 0x95, 255)
+CATALOG = ROOT / "shared/store/icon-pack.json"
 
 
 def draw_mark(size: int, *, rounded: bool = True, pad_ratio: float = 0.0) -> Image.Image:
@@ -26,7 +38,6 @@ def draw_mark(size: int, *, rounded: bool = True, pad_ratio: float = 0.0) -> Ima
     else:
         draw.rectangle(box, fill=INK)
 
-    # Coordinate helpers in 0..64 brand space → pixels.
     def p(x: float, y: float) -> tuple[float, float]:
         span = size - 2 * pad
         return pad + x / 64.0 * span, pad + y / 64.0 * span
@@ -44,13 +55,10 @@ def draw_mark(size: int, *, rounded: bool = True, pad_ratio: float = 0.0) -> Ima
         p(18, 44),
     ]
     draw.polygon(body, fill=SKY)
-    # Tail fin
     draw.polygon([p(8, 34), p(2.5, 29.8), p(2.5, 38.2)], fill=REWARD)
-    # Eye
     ex, ey = p(42, 30)
     er = max(1.5, size * 0.04)
     draw.ellipse([ex - er, ey - er, ex + er, ey + er], fill=INK)
-    # Belly shade
     shade = [
         p(18, 38),
         p(28, 42),
@@ -77,10 +85,8 @@ def write_android_mipmaps() -> None:
     for folder, size in sizes.items():
         out_dir = res / folder
         out_dir.mkdir(parents=True, exist_ok=True)
-        # Legacy launcher bitmaps (pre-API 26). Adaptive XML covers newer devices.
         square = draw_mark(size, rounded=True)
         round_img = draw_mark(size, rounded=True)
-        # Soft circular mask for round icon.
         mask = Image.new("L", (size, size), 0)
         ImageDraw.Draw(mask).ellipse([0, 0, size - 1, size - 1], fill=255)
         round_out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
@@ -94,16 +100,7 @@ def write_android_mipmaps() -> None:
         print(f"wrote {folder}/ic_launcher.png ({size})")
 
 
-def write_web_icons() -> None:
-    public = ROOT / "web/public"
-    public.mkdir(parents=True, exist_ok=True)
-    # Favicon SVG is authored separately; apple-touch wants a raster.
-    touch = draw_mark(180, rounded=True)
-    touch.save(public / "apple-touch-icon.png", "PNG")
-    # PWA-ish 512 mark for store / install sheets.
-    mark512 = draw_mark(512, rounded=True)
-    mark512.save(public / "icon-512.png", "PNG")
-    # Feature graphic raster for listing prep.
+def write_feature_graphic() -> None:
     fg = Image.new("RGBA", (1024, 500), (0x9F, 0xD3, 0xEA, 255))
     d = ImageDraw.Draw(fg)
     for y in range(500):
@@ -148,16 +145,62 @@ def write_web_icons() -> None:
         font=font_sub,
     )
     out = ROOT / "shared/store/feature-graphic.png"
-    fg.convert("RGB").save(out, "PNG")
-    print(f"wrote {out.relative_to(ROOT)}")
-    print("wrote web/public/apple-touch-icon.png")
-    print("wrote web/public/icon-512.png")
+    fg.convert("RGB").save(out, "PNG", optimize=True)
+    print(f"wrote {out.relative_to(ROOT)} (1024x500)")
 
 
-def main() -> None:
+def write_web_and_play_icons() -> None:
+    public = ROOT / "web/public"
+    store = ROOT / "shared/store"
+    public.mkdir(parents=True, exist_ok=True)
+
+    # Keep favicon.svg byte-identical to brand-mark.svg (source of truth).
+    brand = store / "brand-mark.svg"
+    favicon = public / "favicon.svg"
+    shutil.copyfile(brand, favicon)
+    print(f"synced {favicon.relative_to(ROOT)} ← brand-mark.svg")
+
+    touch = draw_mark(180, rounded=True)
+    touch.save(public / "apple-touch-icon.png", "PNG")
+    print("wrote web/public/apple-touch-icon.png (180)")
+
+    icon192 = draw_mark(192, rounded=True)
+    icon192.save(public / "icon-192.png", "PNG")
+    print("wrote web/public/icon-192.png (192)")
+
+    mark512 = draw_mark(512, rounded=True)
+    mark512.save(public / "icon-512.png", "PNG")
+    print("wrote web/public/icon-512.png (512)")
+
+    # Maskable: full-bleed ink plate + inset mark (≈10% pad ≈ 80% safe zone).
+    maskable = Image.new("RGBA", (512, 512), INK)
+    inset = draw_mark(512, rounded=False, pad_ratio=0.12)
+    maskable = Image.alpha_composite(maskable, inset)
+    maskable.save(public / "icon-512-maskable.png", "PNG")
+    print("wrote web/public/icon-512-maskable.png (512 maskable)")
+
+    play = draw_mark(512, rounded=True).convert("RGB")
+    play_path = store / "play-icon-512.png"
+    play.save(play_path, "PNG", optimize=True)
+    print(f"wrote {play_path.relative_to(ROOT)} (512 Play hi-res)")
+
+
+def write_manifest_icons_note() -> None:
+    """Ensure catalog phase stamp is present (manifest edited separately)."""
+    if CATALOG.is_file():
+        data = json.loads(CATALOG.read_text(encoding="utf-8"))
+        if data.get("phase") != 10:
+            raise SystemExit(f"icon-pack.json phase expected 10, got {data.get('phase')}")
+
+
+def main() -> int:
+    write_manifest_icons_note()
     write_android_mipmaps()
-    write_web_icons()
+    write_web_and_play_icons()
+    write_feature_graphic()
+    print("OK icons:generate — Phase 10 icon pack + feature graphic")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

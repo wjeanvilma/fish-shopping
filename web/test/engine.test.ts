@@ -182,7 +182,7 @@ describe("simulation", () => {
   });
 
   it("species roster is harbor-gated with rare upgrade chains", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(content.raw.species.length).toBe(36);
     const sunrise = content.harborsById.get("harbor.sunrise_pier")!.fishingSpots
       .flatMap((s) => s.species);
@@ -265,7 +265,7 @@ describe("simulation", () => {
     const retry = checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.bag_capacity_2", requestId: "r1" }]);
     expect(first.find((e) => e.type === "upgrade_purchased")).toMatchObject({ replayed: false });
     expect(retry.find((e) => e.type === "upgrade_purchased")).toMatchObject({ replayed: true });
-    expect(sim.state.coins).toBe(60);
+    expect(sim.state.coins).toBe(70);
     expect(sim.state.player.bag.capacityUnits).toBe(8);
   });
 
@@ -327,7 +327,7 @@ describe("simulation", () => {
     const events = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
     const sales = events.filter((e) => e.type === "sale_committed");
     expect(sales).toHaveLength(1);
-    expect(sales[0]).toMatchObject({ priceMultPermille: type.priceMultPermille, coins: 7 });
+    expect(sales[0]).toMatchObject({ priceMultPermille: type.priceMultPermille, coins: 9 });
     expect(sim.state.stat("stat.premium_sales")).toBe(1);
   });
 
@@ -432,7 +432,7 @@ describe("simulation", () => {
     expect(sales).toHaveLength(1);
     expect(sales[0]).toMatchObject({
       preferenceMet: true, preferredProductId: fillet,
-      priceMultPermille: type.priceMultPermille, coins: 12,
+      priceMultPermille: type.priceMultPermille, coins: 13,
     });
     expect(sim.state.stat("stat.unmet_preference_sales")).toBe(0);
   });
@@ -456,13 +456,13 @@ describe("simulation", () => {
     expect(sales).toHaveLength(1);
     expect(sales[0]).toMatchObject({
       preferenceMet: false, preferredProductId: preferred,
-      priceMultPermille: 900, coins: 4,
+      priceMultPermille: 900, coins: 5,
     });
     expect(sim.state.stat("stat.unmet_preference_sales")).toBe(1);
   });
 
   it("reputation score biases spawn mix and shows in the view", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(content.reputation.minSample).toBeGreaterThanOrEqual(1);
     expect(content.reputation.kindSpawnMultPermille).toHaveLength(
       content.reputation.scoreBandThresholdsPermille.length + 1,
@@ -498,7 +498,7 @@ describe("simulation", () => {
   });
 
   it("dynamic pricing stacks scarcity rush and rating into sale mult", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(content.economy.scarcityPriceCurvePermille).toHaveLength(5);
     expect(content.prestige.ratingPriceMultPermille).toHaveLength(6);
     const lunch = content.harborsById.get(HARBOR)!.rushes.find((r) => r.id === "rush.lunch")!;
@@ -520,7 +520,7 @@ describe("simulation", () => {
     sim.state.customers.push(new CustomerState("customer.test_scarce", type.id, counter.counterId, 1, 9999, 0));
     const scarceEvents = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
     const scarceSale = scarceEvents.filter((e) => e.type === "sale_committed")[0]!;
-    expect(scarceSale).toMatchObject({ priceMultPermille: 1150, coins: 5 });
+    expect(scarceSale).toMatchObject({ priceMultPermille: 1150, coins: 6 });
 
     sim.state.customers.length = 0;
     counter.stock.restore({}, {});
@@ -538,7 +538,7 @@ describe("simulation", () => {
     sim.state.customers.push(new CustomerState("customer.test_demand", type.id, counter.counterId, 1, 9999, 0));
     const events = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
     const sale = events.filter((e) => e.type === "sale_committed")[0]!;
-    expect(sale).toMatchObject({ priceMultPermille: 1265, coins: 6 });
+    expect(sale).toMatchObject({ priceMultPermille: 1265, coins: 7 });
   });
 
   it("unmet preference drains patience faster while preferred is out", () => {
@@ -601,7 +601,7 @@ describe("simulation", () => {
     const sim = newSim();
     const h = sim.harbor;
     expect(h.customerPathWaypoints.length).toBeGreaterThan(0);
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     const slot = { x: h.counters[0]!.queueAnchor.x, z: h.counters[0]!.queueAnchor.z };
     const path = CustomerSystem.approachPath(h, slot);
     const routed = CustomerSystem.pathWalkTicks(path, h.customerWalkMmPerTick);
@@ -636,7 +636,7 @@ describe("simulation", () => {
   });
 
   it("harbor grill unlocks as a second production line", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(content.machinesById.has("machine.harbor_grill")).toBe(true);
     expect(content.upgradesById.get("upgrade.harbor_grill")!.effect).toEqual({
       kind: "unlock_machine", machine: "machine.harbor_grill",
@@ -680,7 +680,7 @@ describe("simulation", () => {
   });
 
   it("harbor fryer unlocks prep line on all harbors", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(content.machinesById.has("machine.harbor_fryer")).toBe(true);
     expect(content.upgradesById.get("upgrade.harbor_fryer")!.effect).toEqual({
       kind: "unlock_machine", machine: "machine.harbor_fryer",
@@ -726,7 +726,7 @@ describe("simulation", () => {
   });
 
   it("harbor packer unlocks carton line for wholesale", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(content.raw.machines).toHaveLength(6);
     expect(content.machinesById.has("machine.harbor_packer")).toBe(true);
     expect(content.upgradesById.get("upgrade.harbor_packer")!.effect).toEqual({
@@ -779,7 +779,7 @@ describe("simulation", () => {
   });
 
   it("harbor chiller unlocks cold storage on advanced harbors", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(content.machinesById.has("machine.harbor_chiller")).toBe(true);
     expect(content.upgradesById.get("upgrade.harbor_chiller")!.effect).toEqual({
       kind: "unlock_machine", machine: "machine.harbor_chiller",
@@ -831,7 +831,7 @@ describe("simulation", () => {
   });
 
   it("product recipe tree supports multi-input and intermediate crafts", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(content.raw.products.map((p) => p.id)).toEqual(expect.arrayContaining([
       "product.diced_fish", "product.skewer", "product.soup_stock",
       "product.ice_packed_crate", "product.fillet_crate",
@@ -1238,7 +1238,7 @@ describe("simulation", () => {
 
   it("hire fisher and porter is idempotent and shows staff", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.fisher")).toBe(true);
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.operator")).toBe(true);
     expect(buildView(sim).staff.some((row) => row.roleId === "worker.cashier")).toBe(true);
@@ -1280,7 +1280,7 @@ describe("simulation", () => {
 
   it("specialized roles hire and apply buffs", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     unlockStaffHiring(sim);
     sim.state.completedQuests.add("quest.first_hire");
     sim.state.completedQuests.add("quest.specialty_kitchen");
@@ -1316,7 +1316,7 @@ describe("simulation", () => {
 
   it("worker gains xp levels and persists traits", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     unlockStaffHiring(sim);
     sim.state.coins = 200;
     checkedStep(sim, [{ type: "hire_worker", roleId: "worker.fisher", requestId: "hf-xp" }]);
@@ -1366,7 +1366,7 @@ describe("simulation", () => {
 
   it("worker shift toggle and overtime wages", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     unlockStaffHiring(sim);
     sim.state.coins = 500;
     sim.state.workerWagePerWorkerPerHour = 10;
@@ -1581,7 +1581,7 @@ describe("simulation", () => {
 
   it("staff gear assign unequip and persists", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     unlockStaffHiring(sim);
     sim.state.coins = 10_000;
     checkedStep(sim, [{ type: "purchase_upgrade", upgradeId: "upgrade.staff_boots", requestId: "ub" }]);
@@ -1608,7 +1608,7 @@ describe("simulation", () => {
 
   it("automation issues and rush idle alert", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(content.automationAlerts.machineIdleTicksDuringRush).toBe(60);
     const cutterM = cutter(sim);
     cutterM.output.add(PORTION, 19);
@@ -1768,7 +1768,7 @@ describe("simulation", () => {
   });
 
   it("standing orders refresh escalate and cool down after fail", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     const standing = content.contractTemplatesById.get("contract.portion_order")!;
     expect(standing.kind).toBe("standing");
     expect(standing.payoutEscalatePermille).toBeGreaterThanOrEqual(1000);
@@ -2033,10 +2033,10 @@ describe("simulation", () => {
   });
 
   it("machine wear breaks and repairs with coins", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     const wear = content.economy.wear;
     expect(wear.requires).toEqual(["quest.busy_harbor"]);
-    expect(wear.repairCoins).toBe(40);
+    expect(wear.repairCoins).toBe(35);
     expect(wear.slowProcessMultPermille).toBeGreaterThan(1000);
 
     const sim = newSim();
@@ -2050,7 +2050,7 @@ describe("simulation", () => {
     expect(cutter.status).toBe("NEEDS_REPAIR");
     const view = buildView(sim).stations.find((s) => s.stationId === cutter.stationId)!;
     expect(view.needsRepair).toBe(true);
-    expect(view.repairCost).toBe(40);
+    expect(view.repairCost).toBe(35);
     expect(view.statusText).toBe("Needs repair");
 
     sim.state.coins = 10;
@@ -2063,9 +2063,9 @@ describe("simulation", () => {
     expect(fixed.some((e) => e.type === "machine_repaired" && !e.replayed)).toBe(true);
     expect(cutter.broken).toBe(false);
     expect(cutter.slowUntilTick).toBe(0);
-    expect(sim.state.coins).toBe(60);
+    expect(sim.state.coins).toBe(65);
     expect(sim.state.stat("stat.machines_repaired")).toBe(1);
-    expect(sim.state.stat("stat.repair_spent")).toBe(40);
+    expect(sim.state.stat("stat.repair_spent")).toBe(35);
 
     cutter.slowUntilTick = sim.state.tick + 500;
     expect(EconomySystem.isSlowed(cutter, sim.state.tick)).toBe(true);
@@ -2083,7 +2083,7 @@ describe("simulation", () => {
   });
 
   it("seasonal events boost weights, gate contracts, and unlock banners", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     const silver = content.seasonalEventsById.get("event.silver_tide")!;
     expect(content.seasonalEvents.events).toHaveLength(4);
     expect(silver.banner).toBe("banner.silver_tide");
@@ -2128,7 +2128,7 @@ describe("simulation", () => {
   });
 
   it("shop decor buys with coins or banners and buffs customer patience", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(content.decor.items).toHaveLength(7);
     const lantern = content.decorById.get("decor.lantern_string")!;
     const pennant = content.decorById.get("decor.rising_tide_pennant")!;
@@ -2171,7 +2171,7 @@ describe("simulation", () => {
   });
 
   it("harbor specializations apply maintenance, rare chance, and tourist demand", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     const sunrise = content.harborsById.get("harbor.sunrise_pier")!.specialization!;
     const moon = content.harborsById.get("harbor.moon_cove")!.specialization!;
     const jetty = content.harborsById.get("harbor.obsidian_jetty")!.specialization!;
@@ -2280,7 +2280,7 @@ describe("simulation", () => {
   });
 
   it("spoil tiers prefer fragile counter stock and separate case ice", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(content.productsById.get("product.basic_portion")!.spoilTier).toBe(3);
     expect(content.productsById.get("product.smoked_fillet")!.spoilTier).toBe(1);
     expect(content.speciesById.get(SPRAT)!.spoilTier).toBe(3);
@@ -2314,7 +2314,7 @@ describe("simulation", () => {
 
   it("prestige stays locked until busy harbor, then grants bonuses and cosmetics", () => {
     const sim = newSim();
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     const locked = buildView(sim);
     expect(locked.prestigeUnlocked).toBe(false);
     expect(locked.prestigeLockedReason).toBe("Requires: Busy harbor");
@@ -2411,7 +2411,7 @@ describe("simulation", () => {
   });
 
   it("bank loans repay collect and coin goals", () => {
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(content.contentVersion).toBe("1.0.1");
     const bank = content.bank;
     expect(bank.requires).toEqual(["quest.first_ten_sales"]);
     expect(bank.loanPrincipal).toBe(80);

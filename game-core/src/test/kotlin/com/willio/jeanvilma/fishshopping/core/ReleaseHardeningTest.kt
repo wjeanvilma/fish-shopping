@@ -23,7 +23,15 @@ class ReleaseHardeningTest {
         assertEquals("2.4.0", json.getValue("kotlin").jsonPrimitive.content)
         assertEquals("1.77.3", json.getValue("filament").jsonPrimitive.content)
         assertTrue(json.getValue("minify").jsonObject.getValue("enabled").jsonPrimitive.content.toBoolean())
-        assertEquals(":app:assembleRelease", json.getValue("ci").jsonObject.getValue("task").jsonPrimitive.content)
+        assertEquals(":app:bundleRelease", json.getValue("ci").jsonObject.getValue("task").jsonPrimitive.content)
+        assertEquals(
+            "app/build/outputs/bundle/release/app-release.aab",
+            json.getValue("ci").jsonObject.getValue("artifacts").jsonObject.getValue("aab").jsonPrimitive.content,
+        )
+        assertEquals(
+            "app/build/outputs/mapping/release/mapping.txt",
+            json.getValue("ci").jsonObject.getValue("artifacts").jsonObject.getValue("mapping").jsonPrimitive.content,
+        )
 
         val files = json.getValue("backupExcludes").jsonObject.getValue("files").jsonArray.map {
             it.jsonPrimitive.content
@@ -43,6 +51,7 @@ class ReleaseHardeningTest {
             "harbor_save_latest.json.new",
             "harbor_save_previous.json.new",
             "fish_shopping_entitlements.xml",
+            "fish_shopping_pending_entitlements.xml",
         )) {
             assertTrue("missing exclude $path in data_extraction_rules", extraction.contains(path))
             assertTrue("missing exclude $path in backup_rules", backup.contains(path))

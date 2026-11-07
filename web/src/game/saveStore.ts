@@ -3,6 +3,7 @@
  * Same policy as the Android SnapshotStore: a latest and a previous snapshot; the latest is
  * rotated into previous before each write, except right after recovering from the backup.
  * Falls back to memory when storage is unavailable (private windows, blocked site data).
+ * Phase 14: QuotaExceededError on write also degrades to memory-only.
  */
 const DB_NAME = "fish-shopping";
 const STORE = "saves";
@@ -17,12 +18,21 @@ export interface SaveStore {
   clear(): Promise<void>;
 }
 
+export function isQuotaExceededError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const name = (err as { name?: string }).name ?? "";
+  if (name === "QuotaExceededError" || name === "NS_ERROR_DOM_QUOTA_REACHED") return true;
+  const code = (err as { code?: number }).code;
+  // Legacy DOMException.QUOTA_EXCEEDED_ERR
+  return code === 22;
+}
+
 class MemoryStore implements SaveStore {
   readonly persistent = false;
   private latest: string | null = null;
   private previous: string | null = null;
   async readCandidates() {
-    const out: [ "latest" | "previous", string][] = [];
+    const out: ["latest" | "previous", string][] = [];
     if (this.latest) out.push(["latest", this.latest]);
     if (this.previous) out.push(["previous", this.previous]);
     return out;
@@ -73,7 +83,7 @@ class IndexedDbStore implements SaveStore {
       }
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error("IndexedDB abort"));
     });
   }
 
@@ -90,6 +100,45 @@ class IndexedDbStore implements SaveStore {
   }
 }
 
+/** Phase 14: wrap a persistent store so QuotaExceededError degrades to memory-only. */
+export function withQuotaFallback(inner: SaveStore): SaveStore {
+  let active = inner;
+  return {
+    get persistent() {
+      return active.persistent;
+    },
+    readCandidates: () => active.readCandidates(),
+    clear: () => active.clear(),
+    async write(snapshot: string, rotate: boolean) {
+      try {
+        await active.write(snapshot, rotate);
+      } catch (err) {
+        if (!isQuotaExceededError(err) || !active.persistent) throw err;
+        const mem = new MemoryStore();
+        await mem.write(snapshot, false);
+        active = mem;
+      }
+    },
+  };
+}
+
+/** Optional StorageManager estimate for diagnostics (Chrome / Firefox; Safari may omit). */
+export async function probeStorageEstimate(): Promise<{
+  usage: number | null;
+  quota: number | null;
+} | null> {
+  try {
+    const est = await navigator.storage?.estimate?.();
+    if (!est) return null;
+    return {
+      usage: typeof est.usage === "number" ? est.usage : null,
+      quota: typeof est.quota === "number" ? est.quota : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function openSaveStore(): Promise<SaveStore> {
   try {
     if (typeof indexedDB === "undefined") return new MemoryStore();
@@ -100,8 +149,13 @@ export async function openSaveStore(): Promise<SaveStore> {
       req.onerror = () => reject(req.error);
       req.onblocked = () => reject(new Error("IndexedDB blocked"));
     });
-    return new IndexedDbStore(db);
+    return withQuotaFallback(new IndexedDbStore(db));
   } catch {
     return new MemoryStore();
   }
+}
+
+/** Test helper — memory store without IndexedDB. */
+export function openMemorySaveStore(): SaveStore {
+  return new MemoryStore();
 }

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const root = resolve(__dirname, "../..");
 
 describe("release hardening (Phase 27)", () => {
-  it("documents R8, backup excludes, and CI assembleRelease", () => {
+  it("documents R8, backup excludes, and CI bundleRelease", () => {
     const catalog = JSON.parse(
       readFileSync(resolve(root, "shared/android/release-hardening.json"), "utf8"),
     );
@@ -15,7 +15,8 @@ describe("release hardening (Phase 27)", () => {
     expect(catalog.kotlin).toBe("2.4.0");
     expect(catalog.filament).toBe("1.77.3");
     expect(catalog.minify.enabled).toBe(true);
-    expect(catalog.ci.task).toBe(":app:assembleRelease");
+    expect(catalog.ci.task).toBe(":app:bundleRelease");
+    expect(catalog.ci.assembleTask).toBe(":app:assembleRelease");
     expect(catalog.backupExcludes.files).toEqual(
       expect.arrayContaining([
         "harbor_save_latest.json",
@@ -44,6 +45,6 @@ describe("release hardening (Phase 27)", () => {
     expect(existsSync(resolve(root, "app/proguard-rules.pro"))).toBe(true);
 
     const ci = readFileSync(resolve(root, ".github/workflows/ci.yml"), "utf8");
-    expect(ci).toContain(":app:assembleRelease");
+    expect(ci).toContain(":app:bundleRelease");
   });
 });

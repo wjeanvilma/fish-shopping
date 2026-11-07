@@ -4,7 +4,8 @@
  *
  * Phase 11: when both local and remote are valid but differ, [CloudPullResult.conflict]
  * is set so the host can ask before applying.
- * Phase 22: persists anonymous refresh tokens for guest cloud recovery.
+ * Phase 22/25: persists anonymous refresh tokens for guest cloud recovery.
+ * Phase 25: failed pushes enqueue an offline queue (latest snapshot wins) and flush later.
  */
 import {
   chooseCloudSnapshot,
@@ -14,12 +15,24 @@ import {
 } from "../engine/cloudSync";
 import type { GameSettings } from "../game/settingsStore";
 import { createCloudBackend, type CloudBackend } from "./cloudBackend";
+import {
+  clearCloudOfflineQueue,
+  cloudOfflineQueuePending,
+  enqueueCloudOfflineSnapshot,
+  loadCloudOfflineQueue,
+} from "./cloudOfflineQueue";
 
 export interface CloudPullResult {
   settings: GameSettings;
   decision: SyncDecision;
   /** Dual-snapshot choice when both sides are valid and differ; null = auto-apply decision. */
   conflict: CloudConflictOffer | null;
+}
+
+export interface CloudPushResult {
+  settings: GameSettings;
+  uploaded: boolean;
+  queued: boolean;
 }
 
 function withSession(settings: GameSettings, uid: string, refreshToken: string | null): GameSettings {
@@ -32,6 +45,10 @@ export class CloudSyncCoordinator {
 
   get available(): boolean { return this.backend.available; }
   get kind(): string { return this.backend.kind; }
+
+  hasPendingOfflinePush(): boolean {
+    return cloudOfflineQueuePending();
+  }
 
   async ensureAccount(settings: GameSettings): Promise<{ settings: GameSettings; uid: string }> {
     const session = await this.backend.ensureAccount(settings.cloudAccountId, settings.cloudRefreshToken);
@@ -71,14 +88,42 @@ export class CloudSyncCoordinator {
     }
   }
 
-  async push(settings: GameSettings, snapshot: string): Promise<GameSettings> {
-    if (!settings.cloudSyncEnabled) return settings;
+  async push(settings: GameSettings, snapshot: string): Promise<CloudPushResult> {
+    if (!settings.cloudSyncEnabled) {
+      return { settings, uploaded: false, queued: false };
+    }
+    if (!this.backend.available) {
+      enqueueCloudOfflineSnapshot(snapshot, settings.cloudAccountId);
+      return { settings, uploaded: false, queued: true };
+    }
     try {
       const { settings: next, uid } = await this.ensureAccount(settings);
       await this.backend.put(uid, snapshot);
-      return next;
+      clearCloudOfflineQueue();
+      return { settings: next, uploaded: true, queued: false };
     } catch {
-      return settings;
+      enqueueCloudOfflineSnapshot(snapshot, settings.cloudAccountId);
+      return { settings, uploaded: false, queued: true };
+    }
+  }
+
+  /** Attempt to upload any queued offline snapshot. */
+  async flushOfflineQueue(settings: GameSettings): Promise<CloudPushResult> {
+    if (!settings.cloudSyncEnabled) {
+      return { settings, uploaded: false, queued: false };
+    }
+    const pending = loadCloudOfflineQueue();
+    if (!pending) return { settings, uploaded: false, queued: false };
+    if (!this.backend.available) {
+      return { settings, uploaded: false, queued: true };
+    }
+    try {
+      const { settings: next, uid } = await this.ensureAccount(settings);
+      await this.backend.put(uid, pending.snapshot);
+      clearCloudOfflineQueue();
+      return { settings: next, uploaded: true, queued: false };
+    } catch {
+      return { settings, uploaded: false, queued: true };
     }
   }
 

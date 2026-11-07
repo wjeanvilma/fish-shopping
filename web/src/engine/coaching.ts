@@ -12,6 +12,8 @@ export interface ObjectiveView {
   text: string;
   /** Optional progress like "2/7" for tutorial steps. */
   detail?: string | null;
+  /** Phase 22: scripted tutorial step id while NEXT coaching is active. */
+  tutorialStepId?: string | null;
 }
 
 export function coachingObjective(content: ContentPack, state: GameState): ObjectiveView | null {
@@ -22,6 +24,7 @@ export function coachingObjective(content: ContentPack, state: GameState): Objec
       eyebrow: "NEXT",
       text: step.text,
       detail: `${state.tutorialIndex + 1}/${tutorial.length}`,
+      tutorialStepId: step.id,
     };
   }
 

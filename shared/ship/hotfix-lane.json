@@ -1,0 +1,84 @@
+{
+  "phase": 29,
+  "schema": "fish.ship.hotfix_lane.v1",
+  "description": "Post-1.0 Phase 29 — 1.0.x hotfix lane: versioning policy, CI hotfix job, Play staged rollout %. Schema 20 stays frozen; deploy/tag remain manual.",
+  "contentVersionLine": "1.0.x",
+  "schemaVersion": 20,
+  "releasePin": "shared/fixtures/RELEASE_PIN.json",
+  "publicShipCatalog": "shared/ship/public-ship.json",
+  "aabCi": "shared/android/aab-ci.json",
+  "packageName": "com.willio.jeanvilma.fishshopping",
+  "versioning": {
+    "scheme": "semver_patch",
+    "versionNameMatchesContentVersion": true,
+    "versionCodeStrictlyIncreases": true,
+    "allowedMajor": 1,
+    "allowedMinor": 0,
+    "minPatch": 1,
+    "schemaMustStay": 20,
+    "forbidSchemaBump": true,
+    "forbidMajorMinorBump": true,
+    "tagPattern": "v1.0.{patch}",
+    "notes": [
+      "Hotfix = bump patch only (1.0.1 → 1.0.2) and always +1 versionCode",
+      "Keep schemaVersion 20; do not change tutorial advanceOn / entitlement ids",
+      "Re-record starter-line fixtures only when sim/content behavior changes",
+      "storeRelease (v1.0.0-store) stays the Phase 18 public cut baseline"
+    ]
+  },
+  "stagedRollout": {
+    "track": "production",
+    "steps": [
+      { "percent": 10, "minSoakHours": 24, "label": "canary" },
+      { "percent": 50, "minSoakHours": 24, "label": "expand" },
+      { "percent": 100, "minSoakHours": 0, "label": "full" }
+    ],
+    "haltCriteria": [
+      "Startup crash rate above Play bad-behavior threshold",
+      "ANR spike on onStop checkpoint / low-memory path",
+      "IAP purchase or restore failure rate for license testers",
+      "Widespread save corruption reports (AtomicFile / Recover previous surge)"
+    ],
+    "consolePath": "Play Console → Fish Shopping → Production → Release → Staged rollout",
+    "note": "Hotfixes start at 10% (tighter than Phase 18's 20% first public cut)."
+  },
+  "ci": {
+    "workflow": ".github/workflows/ci.yml",
+    "job": "android-hotfix",
+    "trigger": "workflow_dispatch",
+    "inputs": ["confirm_pin_bumped", "rollout_step"],
+    "reusesJob": "android-release",
+    "artifactName": "android-hotfix-aab",
+    "gradleTask": ":app:bundleRelease",
+    "requirePinValidation": true,
+    "validateScript": "npm run hotfix:validate",
+    "note": "workflow_dispatch only — bump RELEASE_PIN first, then run hotfix job to cut AAB + mapping."
+  },
+  "checklist": [
+    "Identify hotfix scope (crash/ANR/IAP/save) — no schema break",
+    "Bump RELEASE_PIN versionName patch + versionCode; keep schemaVersion 20",
+    "Update listing-copy whatsNew / whatsNewVersion to match pin",
+    "npm run hotfix:validate && full CI content-and-parity green",
+    "Run workflow_dispatch android-hotfix (or android-release) for AAB + mapping",
+    "Upload to Play production staged rollout at 10%",
+    "Soak ≥24h against haltCriteria; expand 50% → 100%",
+    "Cut tag v1.0.{patch} when full rollout is healthy"
+  ],
+  "manualCommands": [
+    "Edit shared/fixtures/RELEASE_PIN.json versionName/versionCode (+ listing-copy whatsNew)",
+    "npm run hotfix:validate",
+    "gh workflow run CI -f confirm_pin_bumped=true -f rollout_step=canary",
+    "gh run download <run_id> -n android-hotfix-aab",
+    "Play Console → Production → staged rollout 10%",
+    "git tag -a v1.0.x -m \"Fish Shopping 1.0.x hotfix\""
+  ],
+  "preflightGates": [
+    "shared/ship/hotfix-lane.json",
+    "shared/fixtures/RELEASE_PIN.json",
+    "shared/ship/public-ship.json",
+    "shared/android/aab-ci.json",
+    "web/src/engine/hotfixLane.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/HotfixLane.kt",
+    ".github/workflows/ci.yml"
+  ]
+}

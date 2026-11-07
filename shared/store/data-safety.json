@@ -1,0 +1,195 @@
+{
+  "phase": 8,
+  "schema": "fish.store.data_safety.v1",
+  "description": "Play Console Data safety form answers aligned with analytics consent, optional cloud sync, Autobackup excludes, and privacy.html. No PII claims.",
+  "packageName": "com.willio.jeanvilma.fishshopping",
+  "privacyPolicyUrl": "https://wjeanvilma.github.io/fish-shopping/privacy.html",
+  "sourcesOfTruth": {
+    "analytics": "game-core Analytics.kt / web engine/analytics.ts",
+    "privacyPage": "web/public/privacy.html",
+    "backupRules": "app/src/main/res/xml/backup_rules.xml",
+    "dataExtractionRules": "app/src/main/res/xml/data_extraction_rules.xml",
+    "releaseHardening": "shared/android/release-hardening.json",
+    "cloud": "shared/cloud/production-path.json"
+  },
+  "overview": {
+    "collectsOrSharesUserData": true,
+    "collectsNote": "Only after optional opt-in: privacy-safe analytics events and/or anonymous cloud save sync. Core play works fully offline with both off.",
+    "encryptedInTransit": true,
+    "usersCanRequestDeletion": true,
+    "deletionHow": "Turn analytics/cloud off in Settings; clear app storage / uninstall. Optional cloud snapshots are tied to an anonymous Firebase uid — disable cloud sync and clear app data; contact via Support for account-linked snapshot removal when Firebase is configured.",
+    "independentSecurityReview": false,
+    "committedToPlayFamiliesPolicy": false,
+    "familiesNote": "Content rating Everyone; not enrolled in Designed for Families."
+  },
+  "dataNotCollected": [
+    "name",
+    "email_address",
+    "user_ids_account",
+    "address",
+    "phone_number",
+    "race_ethnicity",
+    "political_or_religious",
+    "sexual_orientation",
+    "other_info",
+    "user_payment_info",
+    "purchase_history_by_developer",
+    "credit_score",
+    "other_financial",
+    "health_info",
+    "fitness_info",
+    "emails",
+    "sms_or_mms",
+    "other_in_app_messages",
+    "photos",
+    "videos",
+    "voice_or_sound",
+    "music_files",
+    "other_files",
+    "calendar_events",
+    "contacts",
+    "precise_location",
+    "approximate_location",
+    "web_browsing_history",
+    "search_history",
+    "installed_apps",
+    "user_generated_content",
+    "other_user_activity",
+    "advertising_id_for_advertising"
+  ],
+  "dataCollected": [
+    {
+      "category": "App activity",
+      "type": "App interactions",
+      "playTypeId": "app_interactions",
+      "collected": true,
+      "shared": false,
+      "ephemeral": false,
+      "required": false,
+      "purposes": ["Analytics"],
+      "notes": "Allowlisted events only after analytics consent: tutorial_step_completed, first_sale, harbor_unlocked, offline_claimed, save_recovery, session_start, crash_free_session. No bag contents, positions, or full saves."
+    },
+    {
+      "category": "App info and performance",
+      "type": "Crash logs",
+      "playTypeId": "crash_logs",
+      "collected": false,
+      "shared": false,
+      "ephemeral": false,
+      "required": false,
+      "purposes": [],
+      "notes": "No first-party crash reporter shipped in 1.0; platform store crash reports may still apply outside this form's developer collection."
+    },
+    {
+      "category": "App info and performance",
+      "type": "Diagnostics",
+      "playTypeId": "diagnostics",
+      "collected": true,
+      "shared": false,
+      "ephemeral": false,
+      "required": false,
+      "purposes": ["Analytics"],
+      "notes": "frame_time_summary (emaMs, quality, samples, platform) only with analytics consent. No device id / IP / uid props."
+    },
+    {
+      "category": "App info and performance",
+      "type": "Other app performance data",
+      "playTypeId": "other_performance",
+      "collected": false,
+      "shared": false,
+      "ephemeral": false,
+      "required": false,
+      "purposes": [],
+      "notes": "Not declared beyond diagnostics above."
+    },
+    {
+      "category": "Device or other IDs",
+      "type": "Device or other IDs",
+      "playTypeId": "device_or_other_ids",
+      "collected": true,
+      "shared": false,
+      "ephemeral": false,
+      "required": false,
+      "purposes": ["App functionality"],
+      "notes": "Optional cloud sync mints/restores an anonymous Firebase Identity Toolkit uid locally; not used for advertising. Analytics payloads forbid uid/userId/deviceId/ip."
+    },
+    {
+      "category": "App activity",
+      "type": "Other user-generated content / in-game progress",
+      "playTypeId": "other_actions",
+      "collected": true,
+      "shared": false,
+      "ephemeral": false,
+      "required": false,
+      "purposes": ["App functionality"],
+      "notes": "Optional cloud sync uploads a checksummed save snapshot (game progress). Local saves stay on-device; Autobackup excludes harbor_save_*.json and entitlement prefs."
+    }
+  ],
+  "analytics": {
+    "consentDefault": false,
+    "consentRequiredBeforeTrack": true,
+    "schema": "fish.analytics.v1",
+    "eventNames": [
+      "tutorial_step_completed",
+      "first_sale",
+      "harbor_unlocked",
+      "offline_claimed",
+      "save_recovery",
+      "frame_time_summary",
+      "session_start",
+      "crash_free_session"
+    ],
+    "dashboardCatalog": "shared/ops/analytics-dashboard.json",
+    "forbiddenKeysInclude": [
+      "uid",
+      "userId",
+      "displayName",
+      "phone",
+      "deviceId",
+      "ip",
+      "ipAddress",
+      "snapshot",
+      "save",
+      "bagContents"
+    ],
+    "noPiiClaim": true
+  },
+  "cloudSync": {
+    "optional": true,
+    "defaultOff": true,
+    "authMode": "identity_toolkit_anonymous",
+    "storesEmailOrDisplayName": false,
+    "storesPaymentCard": false
+  },
+  "purchases": {
+    "processedBy": "Google Play Billing / web checkout API",
+    "developerReceivesCardDetails": false,
+    "playFormDeclaresUserPaymentInfo": false,
+    "note": "Platform processes IAP; Restore purchases recovers entitlements. Developer form does not claim user payment info collection."
+  },
+  "androidBackup": {
+    "autobackupEnabled": true,
+    "excludesSaves": true,
+    "excludesEntitlementPrefs": true,
+    "excludedSharedPreferences": [
+      "fish_shopping_entitlements.xml",
+      "fish_shopping_pending_entitlements.xml"
+    ],
+    "excludedFiles": [
+      "harbor_save_latest.json",
+      "harbor_save_previous.json",
+      "harbor_save_latest.json.new",
+      "harbor_save_previous.json.new"
+    ],
+    "reason": "Save slots are AtomicFile-rotated and recovered in-app; Autobackup of a mid-write latest can corrupt both slots. Entitlements restore via Play Billing."
+  },
+  "playConsoleChecklist": [
+    "Data safety → Overview: Yes, collects/shares limited optional data; encryption in transit; deletion available",
+    "Declare App interactions + Diagnostics as optional, not shared, Analytics purpose, consent",
+    "Declare Device or other IDs only for optional anonymous cloud sync (App functionality)",
+    "Declare optional cloud save snapshot under App activity / other in-game progress",
+    "Do NOT declare name, email, phone, precise location, advertising ID for ads, or payment card info",
+    "Link privacy policy URL from listing.json",
+    "Confirm Autobackup excludes match release-hardening backupExcludes"
+  ]
+}

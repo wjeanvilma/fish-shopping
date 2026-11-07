@@ -1,20 +1,25 @@
 package com.willio.jeanvilma.fishshopping.cloud
 
 /**
- * Phase 22 — cloud production path catalog (mirrors shared/cloud/production-path.json).
- * Firestore security rules are not shipped in-repo — ask for a snippet when needed.
+ * Phase 25 (post-1.0) — cloud save production cutover catalog
+ * (mirrors shared/cloud/production-path.json). Firestore rules stay out of repo.
  */
 object CloudProductionPath {
-    const val PHASE = 22
+    const val PHASE = 25
+    const val SCHEMA = "fish.cloud.production_path.v1"
+    const val CATALOG = "shared/cloud/production-path.json"
     const val AUTH_MODE = "identity_toolkit_anonymous"
     const val DOCUMENT_PATH = "users/{uid}/saves/harbor"
     val DOCUMENT_FIELDS = listOf("snapshot", "savedAtEpochMs", "checksum")
     const val CONFLICT_UI = "phase11_dual_snapshot_choice"
     const val FIRESTORE_RULES = "not_shipped_ask_for_snippet"
+    const val OFFLINE_QUEUE_POLICY = "latest_snapshot_wins"
+    const val OFFLINE_QUEUE_PREFS = "fish_shopping_cloud_offline_queue"
 
     val WEB_ENV_KEYS = listOf("VITE_FIREBASE_API_KEY", "VITE_FIREBASE_PROJECT_ID")
     val ANDROID_PROP_KEYS = listOf("fish.firebase.apiKey", "fish.firebase.projectId")
     val GUEST_RECOVERY_PERSISTED = listOf("cloudAccountId", "cloudRefreshToken")
+    val FLUSH_ON = listOf("save_retry", "app_resume", "online_event", "settings_enable")
 
     fun documentPathFor(uid: String): String = DOCUMENT_PATH.replace("{uid}", uid)
 
@@ -33,6 +38,7 @@ object CloudProductionPath {
         val authMode: String,
         val documentPath: String,
         val firestoreRulesInRepo: Boolean,
+        val offlineQueueEnabled: Boolean,
     )
 
     fun readiness(apiKey: String?, projectId: String?): Readiness {
@@ -44,6 +50,7 @@ object CloudProductionPath {
             authMode = AUTH_MODE,
             documentPath = DOCUMENT_PATH,
             firestoreRulesInRepo = FIRESTORE_RULES != "not_shipped_ask_for_snippet",
+            offlineQueueEnabled = true,
         )
     }
 }

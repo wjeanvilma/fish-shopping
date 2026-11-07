@@ -30,10 +30,11 @@ describe("sfxFromEvent", () => {
     expect(sfxFromEvent({ type: "checkpoint_requested" })).toBeNull();
   });
 
-  it("marks catch and sale for haptics", () => {
+  it("marks catch and sale for haptics; panel_opened → ui", () => {
     expect(HAPTIC_CUES.has("catch")).toBe(true);
     expect(HAPTIC_CUES.has("sale")).toBe(true);
     expect(HAPTIC_CUES.has("rush")).toBe(false);
+    expect(sfxFromEvent({ type: "panel_opened" })).toBe("ui");
   });
 });
 
@@ -53,12 +54,12 @@ describe("Phase 17 audio levels + voice cap", () => {
     expect(effectiveMusicGain(false, 0)).toBe(0);
   });
 
-  it("caps concurrent SFX voices", () => {
-    expect(voicesForCue("upgrade")).toBe(3);
-    expect(voicesForCue("catch")).toBe(2);
-    expect(canSpawnVoices(0, 2)).toBe(true);
+  it("caps concurrent SFX voices (1 voice per authored clip)", () => {
+    expect(voicesForCue("upgrade")).toBe(1);
+    expect(voicesForCue("catch")).toBe(1);
+    expect(canSpawnVoices(0, 1)).toBe(true);
     expect(canSpawnVoices(MAX_SFX_VOICES - 1, 2)).toBe(false);
     expect(canSpawnVoices(MAX_SFX_VOICES, 1)).toBe(false);
-    expect(canSpawnVoices(4, 2, MAX_SFX_VOICES)).toBe(true);
+    expect(canSpawnVoices(5, 1, MAX_SFX_VOICES)).toBe(true);
   });
 });

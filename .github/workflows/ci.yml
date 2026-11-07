@@ -1,9 +1,25 @@
-# Content validate, Kotlin/web parity, and Phase 27 Android release assemble.
+# Content validate, Kotlin/web parity, and Android signed AAB + mapping (Phase 5).
 name: CI
 
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      confirm_pin_bumped:
+        description: "Confirm RELEASE_PIN versionName patch + versionCode were bumped for this 1.0.x hotfix"
+        required: true
+        type: boolean
+        default: false
+      rollout_step:
+        description: "Play staged rollout step (canary=10%, expand=50%, full=100%)"
+        required: true
+        type: choice
+        options:
+          - canary
+          - expand
+          - full
+        default: canary
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -36,6 +52,102 @@ jobs:
         working-directory: web
         run: npm run content:validate
 
+      - name: Validate store product catalogs
+        working-directory: web
+        run: npm run billing:validate
+
+      - name: Validate Play Data safety catalog
+        working-directory: web
+        run: npm run data-safety:validate
+
+      - name: Validate screenshot captures
+        working-directory: web
+        run: npm run screenshots:validate
+
+      - name: Validate icon pack + feature graphic
+        working-directory: web
+        run: npm run icons:validate
+
+      - name: Validate frozen listing copy
+        working-directory: web
+        run: npm run listing-copy:validate
+
+      - name: Validate OSS licenses notices
+        working-directory: web
+        run: npm run licenses:validate
+
+      - name: Validate Android device lifecycle matrix
+        working-directory: web
+        run: npm run lifecycle:android:validate
+
+      - name: Validate browser WebGL/storage/audio matrix
+        working-directory: web
+        run: npm run lifecycle:browser:validate
+
+      - name: Enforce Phase 26 perf budgets (CI smoke)
+        working-directory: web
+        run: npm run perf:budget
+
+      - name: Accessibility & controls sweep
+        working-directory: web
+        run: npm run a11y:validate
+
+      - name: Closed testing track readiness
+        working-directory: web
+        run: npm run closed-test:validate
+
+      - name: Public store + web 1.0 ship readiness
+        working-directory: web
+        run: npm run public-ship:validate
+
+      - name: Authored SFX pack
+        working-directory: web
+        run: npm run sfx:validate
+
+      - name: Authored music beds + ducking
+        working-directory: web
+        run: npm run music:validate
+
+      - name: VFX juice under perf gate
+        working-directory: web
+        run: npm run vfx:validate
+
+      - name: Tutorial friction copy + dwell nudges
+        working-directory: web
+        run: npm run tutorial:validate
+
+      - name: Balance patch 1.0.1
+        working-directory: web
+        run: npm run balance:validate
+
+      - name: Cosmetic equip/preview presentation
+        working-directory: web
+        run: npm run cosmetics:validate
+
+      - name: Cloud save production cutover
+        working-directory: web
+        run: npm run cloud:validate
+
+      - name: Analytics dashboard & crash-free alerts
+        working-directory: web
+        run: npm run analytics:validate
+
+      - name: Expanded Kotlin↔web parity lock
+        working-directory: web
+        run: npm run parity:validate
+
+      - name: Support refund/restore runbook
+        working-directory: web
+        run: npm run support:validate
+
+      - name: Hotfix lane 1.0.x versioning + staged rollout
+        working-directory: web
+        run: npm run hotfix:validate
+
+      - name: Definition of Done 100% closeout
+        working-directory: web
+        run: npm run dod:validate
+
       - name: Validate content (Kotlin ContentLoader)
         run: ./gradlew :game-core:validateContent --no-daemon
 
@@ -47,8 +159,13 @@ jobs:
         run: npm test
 
   android-release:
-    name: Android assembleRelease
+    name: Android bundleRelease AAB
     runs-on: ubuntu-latest
+    env:
+      FISH_UPLOAD_KEYSTORE_BASE64: ${{ secrets.FISH_UPLOAD_KEYSTORE_BASE64 }}
+      FISH_UPLOAD_STORE_PASSWORD: ${{ secrets.FISH_UPLOAD_STORE_PASSWORD }}
+      FISH_UPLOAD_KEY_ALIAS: ${{ secrets.FISH_UPLOAD_KEY_ALIAS }}
+      FISH_UPLOAD_KEY_PASSWORD: ${{ secrets.FISH_UPLOAD_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -58,11 +175,222 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: Assemble release (R8 + debug-signed CI keystore)
-        run: ./gradlew :app:assembleRelease --no-daemon
+      - name: Prepare upload keystore (secrets or ephemeral CI key)
+        run: |
+          set -euo pipefail
+          KEYSTORE_PATH="$RUNNER_TEMP/fish-upload-keystore.jks"
+          if [ -n "${FISH_UPLOAD_KEYSTORE_BASE64:-}" ] \
+            && [ -n "${FISH_UPLOAD_STORE_PASSWORD:-}" ] \
+            && [ -n "${FISH_UPLOAD_KEY_ALIAS:-}" ] \
+            && [ -n "${FISH_UPLOAD_KEY_PASSWORD:-}" ]; then
+            echo "$FISH_UPLOAD_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+            echo "Using Play upload keystore from CI secrets"
+          else
+            echo "::warning::Upload keystore secrets missing — generating ephemeral CI keystore (not for Play upload)"
+            # PKCS12 stores require the same store/key password.
+            FISH_UPLOAD_STORE_PASSWORD="ci-ephemeral"
+            FISH_UPLOAD_KEY_ALIAS="fishshopping"
+            FISH_UPLOAD_KEY_PASSWORD="ci-ephemeral"
+            keytool -genkeypair \
+              -keystore "$KEYSTORE_PATH" \
+              -storetype JKS \
+              -storepass "$FISH_UPLOAD_STORE_PASSWORD" \
+              -keypass "$FISH_UPLOAD_KEY_PASSWORD" \
+              -alias "$FISH_UPLOAD_KEY_ALIAS" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 30 \
+              -dname "CN=FishShopping CI,OU=CI,O=FishShopping,L=Local,ST=NA,C=US"
+            echo "FISH_UPLOAD_STORE_PASSWORD=$FISH_UPLOAD_STORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "FISH_UPLOAD_KEY_ALIAS=$FISH_UPLOAD_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "FISH_UPLOAD_KEY_PASSWORD=$FISH_UPLOAD_KEY_PASSWORD" >> "$GITHUB_ENV"
+          fi
+          echo "FISH_UPLOAD_STORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Read version from RELEASE_PIN
+        id: pin
+        run: |
+          set -euo pipefail
+          VERSION_NAME=$(python3 -c "import json; print(json.load(open('shared/fixtures/RELEASE_PIN.json'))['versionName'])")
+          VERSION_CODE=$(python3 -c "import json; print(json.load(open('shared/fixtures/RELEASE_PIN.json'))['versionCode'])")
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "Pin versionName=$VERSION_NAME versionCode=$VERSION_CODE"
+
+      - name: Bundle release (R8 + upload-signed AAB)
+        run: ./gradlew :app:bundleRelease --no-daemon
+
+      - name: Verify AAB + mapping artifacts
+        run: |
+          set -euo pipefail
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          MAP="app/build/outputs/mapping/release/mapping.txt"
+          test -f "$AAB"
+          test -f "$MAP"
+          test -s "$AAB"
+          test -s "$MAP"
+          ls -lh "$AAB" "$MAP"
+
+      - name: Upload AAB + mapping.txt
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-aab
+          path: |
+            app/build/outputs/bundle/release/app-release.aab
+            app/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: error
 
       - name: Fallback assembleDebug if release blocked
         if: failure()
         run: |
-          echo "::warning::assembleRelease failed — falling back to assembleDebug gate"
+          echo "::warning::bundleRelease failed — falling back to assembleDebug gate"
+          ./gradlew :app:assembleDebug --no-daemon
+
+  web-release:
+    name: Web Vite production dist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Build production dist
+        working-directory: web
+        run: npm run build
+
+      - name: Upload web release dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-release-dist
+          path: web/dist
+          if-no-files-found: error
+
+  android-hotfix:
+    name: Android 1.0.x hotfix AAB
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      FISH_UPLOAD_KEYSTORE_BASE64: ${{ secrets.FISH_UPLOAD_KEYSTORE_BASE64 }}
+      FISH_UPLOAD_STORE_PASSWORD: ${{ secrets.FISH_UPLOAD_STORE_PASSWORD }}
+      FISH_UPLOAD_KEY_ALIAS: ${{ secrets.FISH_UPLOAD_KEY_ALIAS }}
+      FISH_UPLOAD_KEY_PASSWORD: ${{ secrets.FISH_UPLOAD_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Require confirm_pin_bumped
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.confirm_pin_bumped }}" != "true" ]; then
+            echo "::error::confirm_pin_bumped must be true after bumping RELEASE_PIN for the hotfix"
+            exit 1
+          fi
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Validate hotfix lane + RELEASE_PIN
+        working-directory: web
+        run: npm run hotfix:validate
+
+      - name: Resolve staged rollout step
+        id: rollout
+        run: |
+          set -euo pipefail
+          STEP="${{ inputs.rollout_step }}"
+          PERCENT=$(STEP="$STEP" python3 -c 'import json,os; step=os.environ["STEP"]; cat=json.load(open("shared/ship/hotfix-lane.json"));
+matches=[s["percent"] for s in cat["stagedRollout"]["steps"] if s["label"]==step];
+assert matches, f"unknown rollout_step {step}"; print(matches[0])')
+          echo "step=$STEP" >> "$GITHUB_OUTPUT"
+          echo "percent=$PERCENT" >> "$GITHUB_OUTPUT"
+          echo "Hotfix staged rollout step=$STEP percent=$PERCENT"
+
+      - name: Prepare upload keystore (secrets or ephemeral CI key)
+        run: |
+          set -euo pipefail
+          KEYSTORE_PATH="$RUNNER_TEMP/fish-upload-keystore.jks"
+          if [ -n "${FISH_UPLOAD_KEYSTORE_BASE64:-}" ] \
+            && [ -n "${FISH_UPLOAD_STORE_PASSWORD:-}" ] \
+            && [ -n "${FISH_UPLOAD_KEY_ALIAS:-}" ] \
+            && [ -n "${FISH_UPLOAD_KEY_PASSWORD:-}" ]; then
+            echo "$FISH_UPLOAD_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+            echo "Using Play upload keystore from CI secrets"
+          else
+            echo "::warning::Upload keystore secrets missing — generating ephemeral CI keystore (not for Play upload)"
+            FISH_UPLOAD_STORE_PASSWORD="ci-ephemeral"
+            FISH_UPLOAD_KEY_ALIAS="fishshopping"
+            FISH_UPLOAD_KEY_PASSWORD="ci-ephemeral"
+            keytool -genkeypair \
+              -keystore "$KEYSTORE_PATH" \
+              -storetype JKS \
+              -storepass "$FISH_UPLOAD_STORE_PASSWORD" \
+              -keypass "$FISH_UPLOAD_KEY_PASSWORD" \
+              -alias "$FISH_UPLOAD_KEY_ALIAS" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 30 \
+              -dname "CN=FishShopping CI Hotfix,OU=CI,O=FishShopping,L=Local,ST=NA,C=US"
+            echo "FISH_UPLOAD_STORE_PASSWORD=$FISH_UPLOAD_STORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "FISH_UPLOAD_KEY_ALIAS=$FISH_UPLOAD_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "FISH_UPLOAD_KEY_PASSWORD=$FISH_UPLOAD_KEY_PASSWORD" >> "$GITHUB_ENV"
+          fi
+          echo "FISH_UPLOAD_STORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Read version from RELEASE_PIN
+        id: pin
+        run: |
+          set -euo pipefail
+          VERSION_NAME=$(python3 -c "import json; print(json.load(open('shared/fixtures/RELEASE_PIN.json'))['versionName'])")
+          VERSION_CODE=$(python3 -c "import json; print(json.load(open('shared/fixtures/RELEASE_PIN.json'))['versionCode'])")
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "Hotfix pin versionName=$VERSION_NAME versionCode=$VERSION_CODE rollout=${{ steps.rollout.outputs.percent }}%"
+
+      - name: Bundle release (R8 + upload-signed AAB)
+        run: ./gradlew :app:bundleRelease --no-daemon
+
+      - name: Verify AAB + mapping artifacts
+        run: |
+          set -euo pipefail
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          MAP="app/build/outputs/mapping/release/mapping.txt"
+          test -f "$AAB"
+          test -f "$MAP"
+          test -s "$AAB"
+          test -s "$MAP"
+          ls -lh "$AAB" "$MAP"
+
+      - name: Upload hotfix AAB + mapping.txt
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-hotfix-aab
+          path: |
+            app/build/outputs/bundle/release/app-release.aab
+            app/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: error
+
+      - name: Fallback assembleDebug if release blocked
+        if: failure()
+        run: |
+          echo "::warning::hotfix bundleRelease failed — falling back to assembleDebug gate"
           ./gradlew :app:assembleDebug --no-daemon

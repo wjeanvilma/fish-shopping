@@ -17,9 +17,12 @@
       "settingsLabel": "Memory-only (storage unavailable)."
     },
     "audioGesture": {
-      "unlockEvents": ["pointerdown", "keydown"],
-      "resumeSuspendedContext": true
+      "unlockEvents": ["pointerdown", "keydown", "touchstart"],
+      "resumeSuspendedContext": true,
+      "note": "Phase 14: touchstart required for Safari / iOS AudioContext unlock."
     },
+    "browserMatrixPhase": 14,
+    "browserMatrixCatalog": "shared/lifecycle/browser-matrix.json",
     "tabLifecycle": {
       "pauseOnVisibilityHidden": true,
       "checkpointOnPageHide": true,
@@ -41,7 +44,10 @@
     "processDeath": {
       "restoreFrom": ["harbor_save_latest.json", "harbor_save_previous.json"],
       "note": "ViewModel onCleared + onStop checkpoint; cold start reloads AtomicFile slots."
-    }
+    },
+    "deviceMatrixPhase": 13,
+    "deviceMatrixCatalog": "shared/lifecycle/android-device-matrix.json",
+    "trimMemoryCheckpoint": true
   },
   "fixtures": {
     "legacyDir": "shared/fixtures/legacy",

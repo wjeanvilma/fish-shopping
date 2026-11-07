@@ -16,6 +16,7 @@ import type { SimView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
 import type { QualityPreset } from "../game/settingsStore";
 import { sharedAnalyticsBus } from "../analytics/analyticsBus";
+import { cosmeticPresentation, cosmeticSwatchRgb } from "../engine/cosmeticPresentation";
 import {
   downgradeQuality,
   FRAME_TARGET_MS,
@@ -41,6 +42,7 @@ import {
   PLAYER_ROD_REST_Y,
   PLAYER_ROD_REST_Z,
   PlayerSmoother,
+  ScreenShake,
   stackVisibility,
   VFX_BURST_POOL,
   WORKER_BODY_REST_Y,
@@ -48,6 +50,7 @@ import {
   WorldBursts,
   worldBurstPoolForQuality,
   type FlyingTransferCue,
+  type ShakeKind,
   type WorldBurstCue,
 } from "./presenters";
 import { createWaterMaterial } from "./waterMaterial";
@@ -105,8 +108,10 @@ export class HarborScene {
   private bursts: THREE.Object3D[] = [];
   private flying = new FlyingTransfers(FLYING_TRANSFER_POOL);
   private worldBursts = new WorldBursts(VFX_BURST_POOL);
+  private readonly screenShake = new ScreenShake();
   private pendingCues: FlyingTransferCue[] = [];
   private pendingBursts: WorldBurstCue[] = [];
+  private pendingShakes: ShakeKind[] = [];
   private water: THREE.Object3D | null = null;
   private waterMat: THREE.ShaderMaterial | null = null;
   private fadeZones: { obj: THREE.Object3D; x: number; z: number }[] = [];
@@ -132,6 +137,9 @@ export class HarborScene {
   private loadGen = 0;
   /** URL to reload after WebGL context restore (Phase 28). */
   private restoreUrl: string | null = null;
+  /** Phase 24: pier-side banner mesh for equipped/preview cosmetics. */
+  private cosmeticBanner: THREE.Mesh | null = null;
+  private cosmeticBannerId: string | null = null;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
@@ -185,10 +193,16 @@ export class HarborScene {
     this.pendingCues.push(...cues);
   }
 
-  /** Queue Phase 16 pay / celebrate / machine_done bursts. */
+  /** Queue Phase 16/21 catch / pay / celebrate / machine_done bursts. */
   enqueueBursts(cues: readonly WorldBurstCue[]): void {
     if (cues.length === 0) return;
     this.pendingBursts.push(...cues);
+  }
+
+  /** Queue Phase 21 screen-shake kinds. */
+  enqueueShakes(kinds: readonly ShakeKind[]): void {
+    if (kinds.length === 0) return;
+    this.pendingShakes.push(...kinds);
   }
 
   async load(url: string): Promise<void> {
@@ -489,6 +503,7 @@ export class HarborScene {
     this.crowd?.setDrawCap(crowdDrawCapForQuality(quality, this.customers.length));
     this.flying.setBudget(Math.min(this.flying.poolSize, flyingTransferPoolForQuality(quality)));
     this.worldBursts.setBudget(Math.min(this.worldBursts.poolSize, worldBurstPoolForQuality(quality)));
+    this.screenShake.setQuality(quality);
   }
 
   /** Effective quality after session soft-downgrade (presentation-only). */
@@ -501,6 +516,7 @@ export class HarborScene {
     view: SimView | null,
     quality: QualityPreset = "medium",
     reducedMotion = false,
+    cosmeticBannerId: string | null = null,
   ): void {
     if (this.contextLost) return;
     if (quality !== this.requestedQuality) {
@@ -510,8 +526,44 @@ export class HarborScene {
       this.appliedKey = "";
     }
     this.applyQuality(this.sessionQuality);
+    this.syncCosmeticBanner(cosmeticBannerId);
     if (view) this.update(nowMs, view, reducedMotion);
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /** Phase 24: show/hide a power-neutral pier banner from settings/preview. */
+  private syncCosmeticBanner(cosmeticId: string | null): void {
+    if (cosmeticId === this.cosmeticBannerId) return;
+    this.cosmeticBannerId = cosmeticId;
+    if (!cosmeticId) {
+      if (this.cosmeticBanner) {
+        this.scene.remove(this.cosmeticBanner);
+        this.cosmeticBanner.geometry.dispose();
+        (this.cosmeticBanner.material as THREE.Material).dispose();
+        this.cosmeticBanner = null;
+      }
+      return;
+    }
+    const [r, g, b] = cosmeticSwatchRgb(cosmeticId);
+    const color = new THREE.Color(r / 255, g / 255, b / 255);
+    if (!this.cosmeticBanner) {
+      const geo = new THREE.PlaneGeometry(1.2, cosmeticPresentation.anchor.heightM);
+      const mat = new THREE.MeshStandardMaterial({
+        color,
+        side: THREE.DoubleSide,
+        roughness: 0.85,
+        metalness: 0.05,
+      });
+      this.cosmeticBanner = new THREE.Mesh(geo, mat);
+      this.cosmeticBanner.castShadow = true;
+      this.scene.add(this.cosmeticBanner);
+    } else {
+      (this.cosmeticBanner.material as THREE.MeshStandardMaterial).color.copy(color);
+    }
+    const x = cosmeticPresentation.anchor.xMm / 1000;
+    const z = cosmeticPresentation.anchor.zMm / 1000;
+    this.cosmeticBanner.position.set(x, cosmeticPresentation.anchor.heightM * 0.5, z);
+    this.cosmeticBanner.visible = true;
   }
 
   private update(nowMs: number, v: SimView, reducedMotion: boolean): void {
@@ -586,8 +638,10 @@ export class HarborScene {
     if (reducedMotion) {
       this.pendingCues.length = 0;
       this.pendingBursts.length = 0;
+      this.pendingShakes.length = 0;
       this.flying.clear();
       this.worldBursts.clear();
+      this.screenShake.clear();
     } else {
       if (this.pendingCues.length > 0) {
         for (const cue of this.pendingCues) this.flying.spawn(cue);
@@ -596,6 +650,10 @@ export class HarborScene {
       if (this.pendingBursts.length > 0) {
         for (const cue of this.pendingBursts) this.worldBursts.spawn(cue);
         this.pendingBursts.length = 0;
+      }
+      if (this.pendingShakes.length > 0) {
+        for (const kind of this.pendingShakes) this.screenShake.trigger(kind);
+        this.pendingShakes.length = 0;
       }
     }
     const poses = reducedMotion ? [] : this.flying.update(dt);
@@ -661,8 +719,12 @@ export class HarborScene {
       }
     }
 
-    this.camera.position.set(pose.x, CameraRig.HEIGHT_M, pose.z - CameraRig.BACK_M);
-    this.camera.lookAt(pose.x, 0, pose.z + CameraRig.LOOK_AHEAD_M);
+    const shake = reducedMotion ? { x: 0, y: 0 } : this.screenShake.update(dt);
+    const camX = pose.x + shake.x;
+    const camY = CameraRig.HEIGHT_M + shake.y;
+    const camZ = pose.z - CameraRig.BACK_M;
+    this.camera.position.set(camX, camY, camZ);
+    this.camera.lookAt(pose.x + shake.x, 0, pose.z + CameraRig.LOOK_AHEAD_M);
     this.sun.target.position.set(pose.x, 0, pose.z);
     this.sun.position.set(pose.x - 10.5, 30, pose.z - 16.5);
   }

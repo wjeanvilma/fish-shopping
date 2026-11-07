@@ -1,0 +1,32 @@
+{
+  "phase": 7,
+  "schema": "fish.store.legal_pages.v1",
+  "description": "Publish privacy, support, and landing HTML on GitHub Pages. Canonical HTTPS URLs are what Play Console and in-app Settings open.",
+  "host": "github_pages",
+  "github": {
+    "owner": "wjeanvilma",
+    "repo": "fish-shopping",
+    "pagesBranch": "gh-pages",
+    "workflow": ".github/workflows/pages.yml",
+    "buildScript": "web/scripts/build-legal-pages.ts",
+    "npmScript": "pages:legal"
+  },
+  "canonicalHost": "https://wjeanvilma.github.io/fish-shopping",
+  "urls": {
+    "landing": "https://wjeanvilma.github.io/fish-shopping/",
+    "support": "https://wjeanvilma.github.io/fish-shopping/support.html",
+    "privacy": "https://wjeanvilma.github.io/fish-shopping/privacy.html"
+  },
+  "sources": {
+    "landing": "web/public/landing.html",
+    "support": "web/public/support.html",
+    "privacy": "web/public/privacy.html",
+    "favicon": "web/public/favicon.svg",
+    "appleTouchIcon": "web/public/apple-touch-icon.png",
+    "icon512": "web/public/icon-512.png"
+  },
+  "publishRoot": "web/dist-legal",
+  "indexFrom": "landing.html",
+  "pathStyle": "relative",
+  "listingFields": ["canonicalHost", "supportUrl", "privacyPolicyUrl", "landingUrl"]
+}

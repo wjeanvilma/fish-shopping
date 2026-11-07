@@ -1,8 +1,9 @@
 {
   "phase": 30,
   "schema": "fish.ship.definition_of_done.v1",
-  "releaseTag": "v1.0.0",
-  "contentVersion": "1.0.0",
+  "releaseTag": "v1.0.1",
+  "completeTag": "v1.0-complete",
+  "contentVersion": "1.0.1",
   "schemaVersion": 20,
   "quotas": {
     "harbors": 5,
@@ -16,7 +17,14 @@
     "rewards_idempotent",
     "latest_and_previous_restore",
     "store_urls_filled",
-    "release_pin_matches"
+    "release_pin_matches",
+    "post_1_0_phase_gates",
+    "real_iap_catalogs",
+    "real_screenshots",
+    "authored_audio",
+    "legal_urls_pages_ready",
+    "closed_test_signoff_path",
+    "hotfix_lane_ready"
   ],
   "screensPresent": [
     "title",
@@ -36,5 +44,98 @@
     "cloud_conflict",
     "local_recovery"
   ],
-  "notes": "Audit gates for the blueprint Complete product + Release hardening Definition of Done."
+  "closeout": {
+    "status": "ready_for_complete_tag",
+    "statusValues": [
+      "ready_for_complete_tag",
+      "tag_cut",
+      "archived"
+    ],
+    "plan": "post-1.0_finish_plan",
+    "planPhases": 30,
+    "validateScript": "npm run dod:validate",
+    "ciStep": "Definition of Done 100% closeout",
+    "completeTag": "v1.0-complete",
+    "completeTagMessage": "Fish Shopping post-1.0 Definition of Done 100% closeout",
+    "checklist": [
+      "Live store listing catalog + copy frozen (listing.json / listing-copy.json)",
+      "Live web legal/landing on canonicalHost (privacy/support/landing HTTPS)",
+      "Real IAP paths: Play Billing production + web checkout catalogs wired to entitlements",
+      "Real screenshots: phone + tablet captures under shared/store/screenshots/captures",
+      "Authored audio: SFX pack + music beds present and validated",
+      "Legal pages pipeline ready (local HTML + pages.yml + pages:legal); confirm HTTP 200 on canonicalHost after Pages publish",
+      "Closed-testing catalog ready (signoff path to Phase 18 production)",
+      "Public ship + hotfix lane catalogs green; RELEASE_PIN schema 20",
+      "All post-1.0 phase gate catalogs present (Phases 1–29)",
+      "Operator: publish GitHub Pages legal/landing if URLs 404, then cut annotated git tag v1.0-complete"
+    ],
+    "operatorGates": [
+      {
+        "id": "legal_urls_http_200",
+        "urls": [
+          "https://wjeanvilma.github.io/fish-shopping/",
+          "https://wjeanvilma.github.io/fish-shopping/support.html",
+          "https://wjeanvilma.github.io/fish-shopping/privacy.html"
+        ],
+        "note": "Deploy remains manual (pages.yml / npm run pages:legal). Confirm 200 before cutting v1.0-complete."
+      },
+      {
+        "id": "play_production_listing_live",
+        "note": "Play Console production listing + staged rollout are operator-owned (Phases 18/29)."
+      }
+    ],
+    "phaseGates": [
+      { "phase": 1, "catalog": "shared/billing/play-billing.json", "validate": "billing:validate" },
+      { "phase": 2, "catalog": "shared/billing/web-billing.json", "validate": "billing:validate" },
+      { "phase": 3, "catalog": "shared/billing/entitlement-reconcile.json", "validate": "billing:validate" },
+      { "phase": 4, "catalog": "shared/android/release-signing.json", "validate": null },
+      { "phase": 5, "catalog": "shared/android/aab-ci.json", "validate": null },
+      { "phase": 6, "catalog": "shared/billing/store-catalog-sync.json", "validate": "billing:validate" },
+      { "phase": 7, "catalog": "shared/store/legal-pages.json", "validate": null },
+      { "phase": 8, "catalog": "shared/store/data-safety.json", "validate": "data-safety:validate" },
+      { "phase": 9, "catalog": "shared/store/screenshot-capture.json", "validate": "screenshots:validate" },
+      { "phase": 10, "catalog": "shared/store/icon-pack.json", "validate": "icons:validate" },
+      { "phase": 11, "catalog": "shared/store/listing-copy.json", "validate": "listing-copy:validate" },
+      { "phase": 12, "catalog": "shared/store/licenses.json", "validate": "licenses:validate" },
+      { "phase": 13, "catalog": "shared/lifecycle/android-device-matrix.json", "validate": "lifecycle:android:validate" },
+      { "phase": 14, "catalog": "shared/lifecycle/browser-matrix.json", "validate": "lifecycle:browser:validate" },
+      { "phase": 15, "catalog": "shared/perf/budget-gate.json", "validate": null },
+      { "phase": 16, "catalog": "shared/a11y/accessibility-sweep.json", "validate": "a11y:validate" },
+      { "phase": 17, "catalog": "shared/android/closed-testing.json", "validate": "closed-test:validate" },
+      { "phase": 18, "catalog": "shared/ship/public-ship.json", "validate": "public-ship:validate" },
+      { "phase": 19, "catalog": "shared/audio/sfx-pack.json", "validate": "sfx:validate" },
+      { "phase": 20, "catalog": "shared/audio/music-pack.json", "validate": "music:validate" },
+      { "phase": 21, "catalog": "shared/perf/vfx-juice.json", "validate": "vfx:validate" },
+      { "phase": 22, "catalog": "shared/content/tutorial-friction.json", "validate": "tutorial:validate" },
+      { "phase": 23, "catalog": "shared/content/balance-patch-1.0.1.json", "validate": "balance:validate" },
+      { "phase": 24, "catalog": "shared/content/cosmetic-presentation.json", "validate": "cosmetics:validate" },
+      { "phase": 25, "catalog": "shared/cloud/production-path.json", "validate": "cloud:validate" },
+      { "phase": 26, "catalog": "shared/ops/analytics-dashboard.json", "validate": "analytics:validate" },
+      { "phase": 27, "catalog": "shared/fixtures/parity-lock.json", "validate": "parity:validate" },
+      { "phase": 28, "catalog": "shared/ops/support-runbook.json", "validate": "support:validate" },
+      { "phase": 29, "catalog": "shared/ship/hotfix-lane.json", "validate": "hotfix:validate" }
+    ],
+    "evidence": {
+      "listing": "shared/store/listing.json",
+      "listingCopy": "shared/store/listing-copy.json",
+      "legalPages": "shared/store/legal-pages.json",
+      "playBilling": "shared/billing/play-billing.json",
+      "webBilling": "shared/billing/web-billing.json",
+      "entitlements": "shared/billing/entitlements.json",
+      "screenshotManifest": "shared/store/screenshots/captures/manifest.json",
+      "sfxPack": "shared/audio/sfx-pack.json",
+      "musicPack": "shared/audio/music-pack.json",
+      "closedTesting": "shared/android/closed-testing.json",
+      "publicShip": "shared/ship/public-ship.json",
+      "hotfixLane": "shared/ship/hotfix-lane.json",
+      "releasePin": "shared/fixtures/RELEASE_PIN.json"
+    },
+    "manualCommands": [
+      "npm run dod:validate",
+      "Confirm Play production listing + legal URLs live",
+      "git tag -a v1.0-complete -m \"Fish Shopping post-1.0 Definition of Done 100% closeout\"",
+      "Archive post-1.0 finish plan status as finished"
+    ]
+  },
+  "notes": "Phase 30 post-1.0 closeout: blueprint quotas + screens stay green at content 1.0.1 / schema 20; closeout gates Phases 1–29 and the v1.0-complete tag. Deploy/tag remain manual."
 }

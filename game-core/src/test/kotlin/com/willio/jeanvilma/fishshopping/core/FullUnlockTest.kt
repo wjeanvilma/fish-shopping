@@ -27,6 +27,14 @@ class FullUnlockTest {
         assertEquals(FullUnlockSystem.FREE_HARBOR_ID, json.getValue("freeHarborId").jsonPrimitive.content)
         val full = json.getValue("fullUnlock").jsonObject
         assertEquals(FullUnlockSystem.SKU, full.getValue("sku").jsonPrimitive.content)
+        assertEquals(
+            FullUnlockSystem.ANDROID_PRODUCT_ID,
+            full.getValue("androidProductId").jsonPrimitive.content,
+        )
+        assertEquals(
+            FullUnlockSystem.WEB_PRODUCT_ID,
+            full.getValue("webProductId").jsonPrimitive.content,
+        )
         assertTrue(full.getValue("powerNeutral").jsonPrimitive.content.toBoolean())
         assertTrue(Shared.content.harborsById.getValue(FullUnlockSystem.FREE_HARBOR_ID).requires.isEmpty())
         assertEquals(20, SimConstants.SCHEMA_VERSION)

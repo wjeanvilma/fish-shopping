@@ -1,10 +1,26 @@
 /**
- * Phase 23–24 — full-harbor unlock + optional cosmetics billing.
- * Web uses a local stub (restore via localStorage). Production stores can swap the backend.
- * Android mirrors this with Play Billing stub in app/.../billing.
+ * Phase 23–24 stubs + Phase 2 (post-1.0) web production IAP path.
+ * Local stub when checkout API env is unset; production uses ProductionWebEntitlementBilling.
+ * Android mirrors this with Play Billing in app/.../billing.
  */
 import entitlements from "../../../shared/billing/entitlements.json";
 import { CosmeticsIapSystem, FullUnlockSystem } from "../engine";
+import type {
+  EntitlementBilling,
+  EntitlementRecord,
+  PurchaseOutcome,
+  RestoredEntitlement,
+} from "./billingTypes";
+import { ProductionWebEntitlementBilling } from "./productionWebEntitlementBilling";
+import { readWebBillingEnv, webBillingReadiness } from "./webBillingPath";
+import { HttpWebStoreBridge } from "./webStoreBridge";
+
+export type {
+  EntitlementBilling,
+  EntitlementRecord,
+  PurchaseOutcome,
+  RestoredEntitlement,
+} from "./billingTypes";
 
 export const FULL_UNLOCK_SKU = entitlements.fullUnlock.sku as string;
 export const FREE_HARBOR_ID = entitlements.freeHarborId as string;
@@ -22,37 +38,6 @@ export const COSMETIC_CATALOG = entitlements.cosmetics as Array<{
 }>;
 
 const STORAGE_KEY = "fish-shopping-entitlements";
-
-export interface EntitlementRecord {
-  sku: string;
-  purchaseToken: string;
-  /** Optional cloud / guest account association for recovery. */
-  cloudAccountId: string | null;
-  purchasedAtEpochMs: number;
-}
-
-export type PurchaseOutcome =
-  | { ok: true; purchaseToken: string; alreadyOwned: boolean }
-  | { ok: false; reason: string };
-
-export interface RestoredEntitlement {
-  sku: string;
-  purchaseToken: string;
-  grantsCosmetic: string | null;
-}
-
-export interface EntitlementBilling {
-  readonly kind: "stub" | "memory";
-  purchaseFullUnlock(cloudAccountId: string | null): Promise<PurchaseOutcome>;
-  purchaseCosmetic(sku: string, cloudAccountId: string | null): Promise<PurchaseOutcome>;
-  restore(cloudAccountId: string | null): Promise<{ owned: boolean; purchaseToken: string | null }>;
-  /** Phase 24: restore every owned entitlement (full unlock + cosmetics). */
-  restoreAll(cloudAccountId: string | null): Promise<RestoredEntitlement[]>;
-  owned(): boolean;
-  ownedCosmetic(sku: string): boolean;
-  purchaseToken(): string | null;
-  purchaseTokenForSku(sku: string): string | null;
-}
 
 function loadRecords(): EntitlementRecord[] {
   try {
@@ -266,6 +251,40 @@ export function cosmeticGrantRequestId(sku: string, purchaseToken: string): stri
   return CosmeticsIapSystem.requestIdForPurchaseToken(sku, purchaseToken);
 }
 
+/** Force production web path even without env (tests). */
+let forceWebProduction = false;
+export function setForceWebProduction(value: boolean): void {
+  forceWebProduction = value;
+}
+
+function readRuntimeBillingEnv(): ReturnType<typeof readWebBillingEnv> {
+  const meta = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
+  const fromMeta = readWebBillingEnv(meta);
+  if (fromMeta.apiBase || fromMeta.forceStub) return fromMeta;
+  if (typeof process !== "undefined") {
+    return readWebBillingEnv({
+      VITE_BILLING_API_BASE: process.env?.VITE_BILLING_API_BASE,
+      VITE_STRIPE_PUBLISHABLE_KEY: process.env?.VITE_STRIPE_PUBLISHABLE_KEY,
+      VITE_BILLING_FORCE_STUB: process.env?.VITE_BILLING_FORCE_STUB,
+    });
+  }
+  return fromMeta;
+}
+
 export function createEntitlementBilling(override?: EntitlementBilling): EntitlementBilling {
-  return override ?? new StubEntitlementBilling();
+  if (override) return override;
+  const env = readRuntimeBillingEnv();
+  const ready = webBillingReadiness(env);
+  if ((ready.productionReady || forceWebProduction) && env.apiBase) {
+    return new ProductionWebEntitlementBilling(new HttpWebStoreBridge(env.apiBase));
+  }
+  if (forceWebProduction && !env.apiBase) {
+    // Tests may inject bridge via override; without base stay on stub.
+    return new StubEntitlementBilling();
+  }
+  return new StubEntitlementBilling();
+}
+
+export function isProductionWebBilling(billing: EntitlementBilling): billing is ProductionWebEntitlementBilling {
+  return billing.kind === "web";
 }

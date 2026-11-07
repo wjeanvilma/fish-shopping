@@ -1,6 +1,6 @@
 /**
- * Phase 22 — cloud production path catalog (mirrors shared/cloud/production-path.json).
- * Firestore security rules are not shipped in-repo — ask for a snippet when needed.
+ * Phase 25 (post-1.0) — cloud save production cutover catalog
+ * (mirrors shared/cloud/production-path.json). Firestore rules stay out of repo.
  */
 import productionPath from "../../../shared/cloud/production-path.json";
 
@@ -13,11 +13,14 @@ export interface CloudEnvKeyDef {
 
 export interface CloudProductionPathCatalog {
   phase: number;
+  schema: string;
   authMode: string;
   documentPath: string;
   documentFields: string[];
   conflictUi: string;
   firestoreRules: string;
+  contentVersion: string;
+  schemaVersion: number;
   envKeys: {
     web: CloudEnvKeyDef[];
     android: CloudEnvKeyDef[];
@@ -26,9 +29,20 @@ export interface CloudProductionPathCatalog {
     persisted: string[];
     note: string;
   };
+  offlineQueue: {
+    enabled: boolean;
+    policy: string;
+    webStorageKey: string;
+    androidPrefsName: string;
+    androidPrefsKey: string;
+    flushOn: string[];
+  };
+  cutoverChecklist: string[];
 }
 
-export const CLOUD_PRODUCTION_PATH = productionPath as CloudProductionPathCatalog;
+export const CLOUD_PRODUCTION_PATH = productionPath as unknown as CloudProductionPathCatalog;
+export const CLOUD_PRODUCTION_PHASE = CLOUD_PRODUCTION_PATH.phase;
+export const CLOUD_PRODUCTION_SCHEMA = CLOUD_PRODUCTION_PATH.schema;
 
 export const WEB_FIREBASE_ENV_KEYS = CLOUD_PRODUCTION_PATH.envKeys.web.map((k) => k.name);
 export const ANDROID_FIREBASE_PROP_KEYS = CLOUD_PRODUCTION_PATH.envKeys.android.map((k) => k.name);
@@ -60,6 +74,8 @@ export interface CloudProductionReadiness {
   authMode: string;
   documentPath: string;
   firestoreRulesInRepo: boolean;
+  offlineQueueEnabled: boolean;
+  cutoverChecklistCount: number;
 }
 
 export function cloudProductionReadiness(
@@ -72,8 +88,8 @@ export function cloudProductionReadiness(
     conflictUiShipped: CLOUD_PRODUCTION_PATH.conflictUi.includes("phase11"),
     authMode: CLOUD_PRODUCTION_PATH.authMode,
     documentPath: CLOUD_PRODUCTION_PATH.documentPath,
-    firestoreRulesInRepo: CLOUD_PRODUCTION_PATH.firestoreRules !== "not_shipped_ask_for_snippet"
-      ? true
-      : false,
+    firestoreRulesInRepo: CLOUD_PRODUCTION_PATH.firestoreRules !== "not_shipped_ask_for_snippet",
+    offlineQueueEnabled: CLOUD_PRODUCTION_PATH.offlineQueue.enabled === true,
+    cutoverChecklistCount: CLOUD_PRODUCTION_PATH.cutoverChecklist.length,
   };
 }

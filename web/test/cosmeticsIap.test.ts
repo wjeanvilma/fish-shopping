@@ -33,6 +33,9 @@ describe("cosmeticsIap (Phase 24)", () => {
     for (const row of catalog.cosmetics) {
       expect(row.powerNeutral).toBe(true);
       expect(CosmeticsIapSystem.GRANTED_COSMETICS.has(row.grantsCosmetic)).toBe(true);
+      const engine = CosmeticsIapSystem.BY_SKU.get(row.sku)!;
+      expect(engine.webProductId).toBe(row.webProductId);
+      expect(engine.androidProductId).toBe(row.androidProductId);
       expect(content.decor.items.some((d) => d.requiresCosmetic === row.grantsCosmetic)).toBe(false);
     }
   });

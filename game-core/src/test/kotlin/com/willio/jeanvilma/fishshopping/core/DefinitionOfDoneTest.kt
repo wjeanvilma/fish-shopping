@@ -32,9 +32,9 @@ class DefinitionOfDoneTest {
         val dod = Json.parseToJsonElement(File(root, "shared/ship/definition-of-done.json").readText()).jsonObject
         assertEquals(30, dod.getValue("phase").jsonPrimitive.content.toInt())
         assertEquals("fish.ship.definition_of_done.v1", dod.getValue("schema").jsonPrimitive.content)
-        assertEquals("1.0.0", dod.getValue("contentVersion").jsonPrimitive.content)
+        assertEquals("1.0.1", dod.getValue("contentVersion").jsonPrimitive.content)
         assertEquals(20, dod.getValue("schemaVersion").jsonPrimitive.content.toInt())
-        assertEquals("v1.0.0", dod.getValue("releaseTag").jsonPrimitive.content)
+        assertEquals("v1.0.1", dod.getValue("releaseTag").jsonPrimitive.content)
 
         val quotas = dod.getValue("quotas").jsonObject
         assertEquals(5, quotas.getValue("harbors").jsonPrimitive.int)
@@ -44,12 +44,12 @@ class DefinitionOfDoneTest {
         assertEquals(5, Shared.content.harbors.size)
         assertTrue(Shared.content.species.size >= 20)
         assertEquals(6, Shared.content.machines.size)
-        assertEquals("1.0.0", Shared.content.contentVersion)
+        assertEquals("1.0.1", Shared.content.contentVersion)
         assertEquals(SimConstants.SCHEMA_VERSION, 20)
 
         val pin = Json.parseToJsonElement(File(root, "shared/fixtures/RELEASE_PIN.json").readText()).jsonObject
-        assertEquals("1.0.0", pin.getValue("contentVersion").jsonPrimitive.content)
-        assertEquals("v1.0.0", pin.getValue("releaseTag").jsonPrimitive.content)
+        assertEquals("1.0.1", pin.getValue("contentVersion").jsonPrimitive.content)
+        assertEquals("v1.0.1", pin.getValue("releaseTag").jsonPrimitive.content)
         assertEquals("shared/ship/definition-of-done.json", pin.getValue("definitionOfDone").jsonPrimitive.content)
     }
 

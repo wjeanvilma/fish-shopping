@@ -6,6 +6,8 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   LANDING_PAGE_PATH,
+  LANDING_URL,
+  LEGAL_PAGES_PHASE,
   PRIVACY_PAGE_PATH,
   PRIVACY_POLICY_URL,
   STORE_APP_NAME,
@@ -27,8 +29,11 @@ describe("store listing & legal (Phase 29)", () => {
     expect(STORE_SHORT_DESCRIPTION.length).toBeGreaterThan(20);
     expect(isHttpsAbsoluteUrl(SUPPORT_URL)).toBe(true);
     expect(isHttpsAbsoluteUrl(PRIVACY_POLICY_URL)).toBe(true);
+    expect(isHttpsAbsoluteUrl(LANDING_URL)).toBe(true);
     expect(SUPPORT_URL).toContain("support.html");
     expect(PRIVACY_POLICY_URL).toContain("privacy.html");
+    expect(LANDING_URL).toContain("wjeanvilma.github.io/fish-shopping");
+    expect(LEGAL_PAGES_PHASE).toBe(7);
     expect(storeListing.playListing.title).toBe("Fish Shopping");
     expect(storeListing.playListing.fullDescription.length).toBeGreaterThan(storeListing.shortDescription.length);
     expect(storeListing.playListing.featureGraphic).toBe("shared/store/feature-graphic.png");
@@ -44,21 +49,25 @@ describe("store listing & legal (Phase 29)", () => {
       "shared/store/feature-graphic.png",
       "shared/store/feature-graphic.svg",
       "shared/store/licenses.json",
+      "shared/store/legal-pages.json",
     ]) {
       expect(existsSync(resolve(root, rel)), rel).toBe(true);
     }
     const privacy = readFileSync(resolve(root, "web/public/privacy.html"), "utf8");
     expect(privacy.toLowerCase()).toContain("privacy");
     expect(privacy).toContain("analytics");
+    expect(privacy).not.toContain('href="/');
     const support = readFileSync(resolve(root, "web/public/support.html"), "utf8");
     expect(support.toLowerCase()).toContain("support");
     expect(support).toContain("Restore purchases");
+    expect(support).not.toContain('href="/');
     const landing = readFileSync(resolve(root, "web/public/landing.html"), "utf8");
     expect(landing).toContain(WEB_LANDING.tagline);
-    expect(landing).toContain('href="/"');
-    expect(PRIVACY_PAGE_PATH).toBe("/privacy.html");
-    expect(SUPPORT_PAGE_PATH).toBe("/support.html");
-    expect(LANDING_PAGE_PATH).toBe("/landing.html");
+    expect(landing).toContain("privacy.html");
+    expect(landing).not.toContain('href="/');
+    expect(PRIVACY_PAGE_PATH).toBe("privacy.html");
+    expect(SUPPORT_PAGE_PATH).toBe("support.html");
+    expect(LANDING_PAGE_PATH).toBe("landing.html");
   });
 
   it("keeps screenshot storyboards for every listing shot", () => {
@@ -86,7 +95,8 @@ describe("store listing & legal (Phase 29)", () => {
         "harbor-blockouts",
         "store-chrome",
         "screenshot-storyboards",
-        "procedural-audio",
+        "authored-sfx",
+        "authored-music",
         "third-party-runtime",
       ]),
     );

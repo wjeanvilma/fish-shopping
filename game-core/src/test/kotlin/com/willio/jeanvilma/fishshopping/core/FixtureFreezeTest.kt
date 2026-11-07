@@ -27,8 +27,14 @@ class FixtureFreezeTest {
             "tutorial must still finish inside the starter-line window",
             Shared.content.tutorial.isNotEmpty(),
         )
-        assertEquals("1.0.0", pin["contentVersion"]!!.jsonPrimitive.content)
-        assertEquals("v1.0.0", pin["releaseTag"]!!.jsonPrimitive.content)
+        assertEquals("1.0.1", pin["contentVersion"]!!.jsonPrimitive.content)
+        assertEquals("v1.0.1", pin["releaseTag"]!!.jsonPrimitive.content)
+        assertEquals(pin["contentVersion"]!!.jsonPrimitive.content, pin["versionName"]!!.jsonPrimitive.content)
+        assertTrue(pin["versionCode"]!!.jsonPrimitive.int >= 1)
+        val android = pin["android"]!!.jsonObject
+        assertEquals(":app:bundleRelease", android["ciTask"]!!.jsonPrimitive.content)
+        assertTrue(android["aabArtifact"]!!.jsonPrimitive.content.endsWith(".aab"))
+        assertTrue(android["mappingArtifact"]!!.jsonPrimitive.content.endsWith("mapping.txt"))
         assertEquals("shared/ship/definition-of-done.json", pin["definitionOfDone"]!!.jsonPrimitive.content)
         assertTrue(File(Shared.root, "ship/definition-of-done.json").isFile)
     }

@@ -5,3 +5,13 @@
 # Leave blank for local-only play. Never commit real keys.
 fish.firebase.apiKey=
 fish.firebase.projectId=
+
+# Phase 4 (post-1.0) — Play upload keystore for :app:assembleRelease.
+# Never commit the keystore or passwords. Prefer env vars FISH_UPLOAD_* in CI.
+# fish.upload.storeFile=/absolute/or/repo-relative/path/to/upload-keystore.jks
+# fish.upload.storePassword=
+# fish.upload.keyAlias=upload
+# fish.upload.keyPassword=
+#
+# Local R8 smoke only (do NOT upload to Play):
+# fish.upload.allowDebugFallback=true

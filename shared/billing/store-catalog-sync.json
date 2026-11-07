@@ -1,0 +1,25 @@
+{
+  "phase": 6,
+  "schema": "fish.billing.store_catalog_sync.v1",
+  "description": "Cross-check Play Console + web checkout product catalogs against entitlements.json and the Play/web billing SKU tables. Source of truth for logical SKUs is entitlements.json.",
+  "sourceOfTruth": "shared/billing/entitlements.json",
+  "packageName": "com.willio.jeanvilma.fishshopping",
+  "inputs": {
+    "entitlements": "shared/billing/entitlements.json",
+    "playBilling": "shared/billing/play-billing.json",
+    "webBilling": "shared/billing/web-billing.json",
+    "playConsole": "shared/billing/play-console-products.json",
+    "webCheckout": "shared/billing/web-checkout-products.json"
+  },
+  "checks": [
+    "entitlements_to_play_billing",
+    "entitlements_to_web_billing",
+    "entitlements_to_play_console",
+    "entitlements_to_web_checkout",
+    "play_console_package_name",
+    "android_web_product_id_parity",
+    "no_orphan_store_products"
+  ],
+  "npmScript": "billing:validate",
+  "ciStep": "Validate store product catalogs"
+}

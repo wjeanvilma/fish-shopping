@@ -1,6 +1,7 @@
 /**
- * Phase 25 — consent-gated analytics bus for the web client.
+ * Phase 25/26 — consent-gated analytics bus for the web client.
  * Drops events when consent is off; never attaches PII or save blobs.
+ * Phase 26: session lifecycle + dashboard ledger.
  */
 import {
   Analytics,
@@ -11,6 +12,10 @@ import {
 import type { GameEvent, GameState } from "../engine/state";
 import type { OfflineReport } from "../engine/foundations";
 import type { QualityPreset } from "../game/settingsStore";
+import {
+  sharedAnalyticsDashboardLedger,
+  type AnalyticsDashboardLedger,
+} from "./analyticsDashboardLedger";
 
 export type AnalyticsTrackSink = { track(event: AnalyticsEvent | null): void };
 
@@ -24,13 +29,20 @@ export class AnalyticsBus {
   private frameSamples = 0;
   private lastEmaMs = 0;
   private lastQuality: QualityPreset = "medium";
+  private ledger: AnalyticsDashboardLedger;
 
-  constructor(sink: AnalyticsTrackSink = new MemoryAnalyticsSink()) {
+  constructor(
+    sink: AnalyticsTrackSink = new MemoryAnalyticsSink(),
+    ledger: AnalyticsDashboardLedger = sharedAnalyticsDashboardLedger,
+  ) {
     this.sink = sink;
+    this.ledger = ledger;
+    this.ledger.bindEmitter((event) => this.track(event));
   }
 
   setConsent(consent: boolean): void {
     this.consent = consent;
+    this.ledger.setConsent(consent);
   }
 
   getConsent(): boolean {
@@ -50,7 +62,9 @@ export class AnalyticsBus {
     if (!this.consent || !event) return;
     // Re-sanitize at the edge in case callers pass crafted props.
     const clean = sanitizeAnalytics(event.name, event.props);
+    if (!clean) return;
     this.sink.track(clean);
+    this.ledger.onTracked(clean);
   }
 
   onGameEvents(events: readonly GameEvent[], state: GameState): void {
@@ -104,6 +118,24 @@ export class AnalyticsBus {
       this.track(Analytics.frameTimeSummary(this.lastEmaMs, this.lastQuality, this.frameSamples, "web"));
       this.frameSamples = 0;
     }
+  }
+
+  /** Phase 26: start a consent-gated analytics session (crash-free bookkeeping). */
+  onSessionStart(): void {
+    this.ledger.onSessionStart();
+  }
+
+  /** Phase 26: mark a clean session end for crash-free rate. */
+  onSessionEndClean(): void {
+    this.ledger.onSessionEndClean();
+  }
+
+  exportDashboardJson(): string {
+    return this.ledger.exportJson();
+  }
+
+  hasDashboardAlerts(): boolean {
+    return this.ledger.hasActiveAlerts();
   }
 
   resetSessionFlags(): void {

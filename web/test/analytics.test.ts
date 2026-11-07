@@ -7,6 +7,7 @@ import {
   sanitizeAnalytics,
 } from "../src/engine/analytics";
 import { AnalyticsBus } from "../src/analytics/analyticsBus";
+import { AnalyticsDashboardLedger } from "../src/analytics/analyticsDashboardLedger";
 import { GameState, loadContent } from "../src/engine";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -15,7 +16,21 @@ const content = loadContent(
   JSON.parse(readFileSync(resolve(__dirname, "../../shared/content/content-pack.json"), "utf8")),
 );
 
-describe("analytics (Phase 25)", () => {
+const memory = new Map<string, string>();
+
+beforeEach(() => {
+  memory.clear();
+  (globalThis as { localStorage?: Storage }).localStorage = {
+    getItem: (k) => memory.get(k) ?? null,
+    setItem: (k, v) => { memory.set(k, v); },
+    removeItem: (k) => { memory.delete(k); },
+    clear: () => memory.clear(),
+    key: () => null,
+    get length() { return memory.size; },
+  };
+});
+
+describe("analytics (Phase 25/26)", () => {
   it("documents blueprint events and strips forbidden keys", () => {
     expect(ANALYTICS_SCHEMA).toBe("fish.analytics.v1");
     expect(ANALYTICS_FORBIDDEN_KEYS.has("cloudAccountId")).toBe(true);
@@ -29,11 +44,13 @@ describe("analytics (Phase 25)", () => {
     expect(cleaned.props).toEqual({ coins: 12 });
     expect(Analytics.tutorialStepCompleted(2).props).toEqual({ stepIndex: 2 });
     expect(Analytics.harborUnlockedFull().props).toEqual({ mode: "full" });
+    expect(Analytics.sessionStart("web").name).toBe("session_start");
+    expect(Analytics.crashFreeSession(false, "web").props).toEqual({ clean: false, platform: "web" });
   });
 
   it("consent gate drops events until opt-in", () => {
     const sink = new MemoryAnalyticsSink();
-    const bus = new AnalyticsBus(sink);
+    const bus = new AnalyticsBus(sink, new AnalyticsDashboardLedger("web"));
     const state = GameState.newGame(content, "harbor.sunrise_pier", 1);
     bus.onGameEvents([{ type: "tutorial_advanced", tick: 1, stepIndex: 0 }], state);
     expect(sink.events).toHaveLength(0);
@@ -44,7 +61,7 @@ describe("analytics (Phase 25)", () => {
 
   it("tracks blueprint events without PII", () => {
     const sink = new MemoryAnalyticsSink();
-    const bus = new AnalyticsBus(sink);
+    const bus = new AnalyticsBus(sink, new AnalyticsDashboardLedger("web"));
     bus.setConsent(true);
     const state = GameState.newGame(content, "harbor.sunrise_pier", 2);
     state.bumpStat("stat.sales", 1);

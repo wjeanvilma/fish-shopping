@@ -26,12 +26,18 @@ class StoreListingTest {
 
         val support = listing.getValue("supportUrl").jsonPrimitive.content
         val privacy = listing.getValue("privacyPolicyUrl").jsonPrimitive.content
+        val landingUrl = listing.getValue("landingUrl").jsonPrimitive.content
         assertTrue(StoreListing.isHttpsAbsoluteUrl(support))
         assertTrue(StoreListing.isHttpsAbsoluteUrl(privacy))
+        assertTrue(StoreListing.isHttpsAbsoluteUrl(landingUrl))
         assertEquals(StoreListing.SUPPORT_URL, support)
         assertEquals(StoreListing.PRIVACY_POLICY_URL, privacy)
+        assertEquals(StoreListing.LANDING_URL, landingUrl)
+        assertEquals(StoreListing.CANONICAL_HOST, listing.getValue("canonicalHost").jsonPrimitive.content)
+        assertEquals(StoreListing.LEGAL_PAGES_PHASE, listing.getValue("legalPagesPhase").jsonPrimitive.content.toInt())
         assertTrue(support.contains("support.html"))
         assertTrue(privacy.contains("privacy.html"))
+        assertTrue(landingUrl.contains("wjeanvilma.github.io/fish-shopping"))
 
         val play = listing.getValue("playListing").jsonObject
         assertEquals(StoreListing.APP_NAME, play.getValue("title").jsonPrimitive.content)
@@ -65,13 +71,23 @@ class StoreListingTest {
             "web/public/landing.html",
             "shared/store/feature-graphic.png",
             StoreListing.LICENSES_PATH,
+            StoreListing.LEGAL_PAGES_CATALOG,
+            ".github/workflows/pages.yml",
         )) {
             assertTrue("missing $rel", File(root, rel).isFile)
         }
         val privacyHtml = File(root, "web/public/privacy.html").readText()
         assertTrue(privacyHtml.contains("analytics", ignoreCase = true))
+        assertTrue(!privacyHtml.contains("href=\"/"))
         val supportHtml = File(root, "web/public/support.html").readText()
         assertTrue(supportHtml.contains("Restore purchases"))
+        assertTrue(!supportHtml.contains("href=\"/"))
+        val legal = Json.parseToJsonElement(File(root, StoreListing.LEGAL_PAGES_CATALOG).readText()).jsonObject
+        assertEquals(StoreListing.LEGAL_PAGES_PHASE, legal.getValue("phase").jsonPrimitive.content.toInt())
+        assertEquals(StoreListing.CANONICAL_HOST, legal.getValue("canonicalHost").jsonPrimitive.content)
+        assertEquals(StoreListing.PRIVACY_POLICY_URL, legal.getValue("urls").jsonObject.getValue("privacy").jsonPrimitive.content)
+        assertEquals(StoreListing.SUPPORT_URL, legal.getValue("urls").jsonObject.getValue("support").jsonPrimitive.content)
+        assertEquals(StoreListing.LANDING_URL, legal.getValue("urls").jsonObject.getValue("landing").jsonPrimitive.content)
     }
 
     @Test
@@ -83,7 +99,8 @@ class StoreListingTest {
         assertTrue(ids.contains("harbor-blockouts"))
         assertTrue(ids.contains("store-chrome"))
         assertTrue(ids.contains("screenshot-storyboards"))
-        assertTrue(ids.contains("procedural-audio"))
+        assertTrue(ids.contains("authored-sfx"))
+        assertTrue(ids.contains("authored-music"))
         assertTrue(ids.contains("third-party-runtime"))
     }
 }

@@ -1,0 +1,57 @@
+{
+  "phase": 20,
+  "schema": "fish.audio.music_pack.v1",
+  "description": "Post-1.0 Phase 20 — authored harbor/shop loop beds with mute, SFX duck, and focus-loss duck/silence. Replaces Phase 19 procedural ambience; size-budgeted for mobile.",
+  "sampleRate": 22050,
+  "channels": 1,
+  "encoding": "pcm_s16le",
+  "format": "wav",
+  "generator": "shared/tools/generate_music_pack.py",
+  "npmScript": "music:generate",
+  "validateScript": "music:validate",
+  "sourceDir": "shared/audio/music",
+  "webPublicDir": "web/public/music",
+  "androidRawDir": "app/src/main/res/raw",
+  "androidRawPrefix": "music_",
+  "loopDurationSec": 4,
+  "maxBytesPerBed": 190000,
+  "maxTotalBytes": 400000,
+  "masterMusicScale": 0.42,
+  "beds": [
+    {
+      "id": "harbor",
+      "file": "harbor.wav",
+      "androidRaw": "music_harbor",
+      "role": "harbor",
+      "design": "soft water wash + low fifth pad for pier / outdoors"
+    },
+    {
+      "id": "shop",
+      "file": "shop.wav",
+      "androidRaw": "music_shop",
+      "role": "shop",
+      "design": "warm major pad with light pulse for counter / station"
+    }
+  ],
+  "defaultBed": "harbor",
+  "bedSwitch": {
+    "shopWhen": ["station_open"],
+    "harborOtherwise": true
+  },
+  "ducking": {
+    "sfxDuckFactor": 0.35,
+    "sfxDuckRecoveryMs": 280,
+    "focusLossSilence": true,
+    "focusTransientCanDuckFactor": 0.25,
+    "webHiddenSuspendsContext": true,
+    "respectMute": true,
+    "respectMusicVolume": true
+  },
+  "replacesProceduralAmbience": true,
+  "preflightGates": [
+    "shared/audio/music-pack.json",
+    "shared/audio/sfx-pack.json",
+    "web/src/audio/audioBus.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/audio/AudioBus.kt"
+  ]
+}

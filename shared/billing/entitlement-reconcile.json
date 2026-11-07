@@ -1,0 +1,35 @@
+{
+  "phase": 3,
+  "schema": "fish.billing.entitlement_reconcile.v1",
+  "description": "Idempotent entitlement grant and restore hardening. The store (Play / web checkout) is the source of truth for paid SKUs; save state is reconciled upward (union) and never stripped of prestige cosmetics. Pending grants survive process death until a checkpoint records the purchase receipt.",
+  "sourceOfTruth": {
+    "paidSkus": "store",
+    "saveFlags": "union_with_store",
+    "prestigeCosmetics": "save_only_never_revoked"
+  },
+  "crashSafety": {
+    "pendingLedger": true,
+    "ackAfter": "purchase_receipt_in_checkpoint",
+    "androidPrefs": "fish_shopping_pending_entitlements",
+    "webStorageKey": "fish-shopping-pending-entitlements"
+  },
+  "cloudConflict": {
+    "policy": "after_local_or_remote_choice_reapply_store_owned",
+    "note": "Choosing an older cloud save cannot revoke a Play/web purchase; reconcile re-grants missing flags/receipts."
+  },
+  "requestIds": {
+    "fullUnlock": "full-unlock:{purchaseToken}",
+    "cosmetic": "iap-cosmetic:{sku}:{purchaseToken}"
+  },
+  "grantWhen": [
+    "store_owned_and_save_flag_missing",
+    "store_owned_and_receipt_missing",
+    "pending_ledger_unacked"
+  ],
+  "skus": [
+    "fish.full_harbor_unlock",
+    "fish.cosmetic.sunset_bunting",
+    "fish.cosmetic.pearl_string",
+    "fish.cosmetic.captain_crest"
+  ]
+}

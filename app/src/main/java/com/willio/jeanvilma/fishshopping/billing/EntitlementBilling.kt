@@ -1,6 +1,7 @@
 package com.willio.jeanvilma.fishshopping.billing
 
 import android.content.Context
+import com.willio.jeanvilma.fishshopping.BuildConfig
 import com.willio.jeanvilma.fishshopping.core.progression.CosmeticsIapSystem
 import com.willio.jeanvilma.fishshopping.core.progression.FullUnlockSystem
 import org.json.JSONArray
@@ -9,8 +10,8 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Phase 23–24 — full-harbor unlock + optional cosmetics billing.
- * Stub stores non-consumables locally; swap for Play Billing BillingClient in release.
+ * Phase 23–24 stubs + Phase 1 (post-1.0) Play Billing production path.
+ * Release builds use [PlayEntitlementBilling]; debug keeps the local stub unless overridden.
  */
 data class EntitlementRecord(
     val sku: String,
@@ -32,17 +33,17 @@ sealed class PurchaseOutcome {
 
 interface EntitlementBilling {
     val kind: String
-    fun purchaseFullUnlock(cloudAccountId: String?): PurchaseOutcome
-    fun purchaseCosmetic(sku: String, cloudAccountId: String?): PurchaseOutcome
-    fun restore(cloudAccountId: String?): Pair<Boolean, String?>
-    fun restoreAll(cloudAccountId: String?): List<RestoredEntitlement>
+    suspend fun purchaseFullUnlock(cloudAccountId: String?): PurchaseOutcome
+    suspend fun purchaseCosmetic(sku: String, cloudAccountId: String?): PurchaseOutcome
+    suspend fun restore(cloudAccountId: String?): Pair<Boolean, String?>
+    suspend fun restoreAll(cloudAccountId: String?): List<RestoredEntitlement>
     fun owned(): Boolean
     fun ownedCosmetic(sku: String): Boolean
     fun purchaseToken(): String?
     fun purchaseTokenForSku(sku: String): String?
 }
 
-private fun findSku(
+internal fun findSku(
     records: List<EntitlementRecord>,
     sku: String,
     cloudAccountId: String?,
@@ -54,10 +55,10 @@ private fun findSku(
     return matches.find { it.cloudAccountId.isNullOrBlank() } ?: matches.firstOrNull()
 }
 
-private fun cosmeticGrant(sku: String): String? =
+internal fun cosmeticGrant(sku: String): String? =
     CosmeticsIapSystem.BY_SKU[sku]?.grantsCosmetic
 
-private fun associateCloud(
+internal fun associateCloud(
     records: MutableList<EntitlementRecord>,
     purchaseToken: String,
     cloudAccountId: String,
@@ -74,17 +75,17 @@ class MemoryEntitlementBilling : EntitlementBilling {
     override val kind = "memory"
     private val records = mutableListOf<EntitlementRecord>()
 
-    override fun purchaseFullUnlock(cloudAccountId: String?): PurchaseOutcome =
+    override suspend fun purchaseFullUnlock(cloudAccountId: String?): PurchaseOutcome =
         purchaseSku(FullUnlockSystem.SKU, cloudAccountId)
 
-    override fun purchaseCosmetic(sku: String, cloudAccountId: String?): PurchaseOutcome {
+    override suspend fun purchaseCosmetic(sku: String, cloudAccountId: String?): PurchaseOutcome {
         if (sku !in CosmeticsIapSystem.BY_SKU) {
             return PurchaseOutcome.Err("Unknown cosmetic SKU")
         }
         return purchaseSku(sku, cloudAccountId)
     }
 
-    override fun restore(cloudAccountId: String?): Pair<Boolean, String?> {
+    override suspend fun restore(cloudAccountId: String?): Pair<Boolean, String?> {
         val hit = findSku(records, FullUnlockSystem.SKU, cloudAccountId) ?: return false to null
         if (cloudAccountId != null && hit.cloudAccountId.isNullOrBlank()) {
             associateCloud(records, hit.purchaseToken, cloudAccountId)
@@ -92,7 +93,7 @@ class MemoryEntitlementBilling : EntitlementBilling {
         return true to hit.purchaseToken
     }
 
-    override fun restoreAll(cloudAccountId: String?): List<RestoredEntitlement> {
+    override suspend fun restoreAll(cloudAccountId: String?): List<RestoredEntitlement> {
         val skus = listOf(FullUnlockSystem.SKU) + CosmeticsIapSystem.CATALOG.map { it.sku }
         return skus.mapNotNull { sku ->
             val hit = findSku(records, sku, cloudAccountId) ?: records.find { it.sku == sku }
@@ -129,22 +130,22 @@ class MemoryEntitlementBilling : EntitlementBilling {
     }
 }
 
-/** SharedPreferences-backed stub (production: Play Billing). */
+/** SharedPreferences-backed stub for debug / offline local play. */
 class StubEntitlementBilling(context: Context) : EntitlementBilling {
     override val kind = "stub"
     private val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    override fun purchaseFullUnlock(cloudAccountId: String?): PurchaseOutcome =
+    override suspend fun purchaseFullUnlock(cloudAccountId: String?): PurchaseOutcome =
         purchaseSku(FullUnlockSystem.SKU, cloudAccountId)
 
-    override fun purchaseCosmetic(sku: String, cloudAccountId: String?): PurchaseOutcome {
+    override suspend fun purchaseCosmetic(sku: String, cloudAccountId: String?): PurchaseOutcome {
         if (sku !in CosmeticsIapSystem.BY_SKU) {
             return PurchaseOutcome.Err("Unknown cosmetic SKU")
         }
         return purchaseSku(sku, cloudAccountId)
     }
 
-    override fun restore(cloudAccountId: String?): Pair<Boolean, String?> {
+    override suspend fun restore(cloudAccountId: String?): Pair<Boolean, String?> {
         val records = readAll().toMutableList()
         val hit = findSku(records, FullUnlockSystem.SKU, cloudAccountId)
             ?: records.find { it.sku == FullUnlockSystem.SKU }
@@ -156,7 +157,7 @@ class StubEntitlementBilling(context: Context) : EntitlementBilling {
         return true to hit.purchaseToken
     }
 
-    override fun restoreAll(cloudAccountId: String?): List<RestoredEntitlement> {
+    override suspend fun restoreAll(cloudAccountId: String?): List<RestoredEntitlement> {
         val records = readAll().toMutableList()
         val skus = listOf(FullUnlockSystem.SKU) + CosmeticsIapSystem.CATALOG.map { it.sku }
         val out = mutableListOf<RestoredEntitlement>()
@@ -268,8 +269,21 @@ object EntitlementBillings {
     @Volatile
     var override: EntitlementBilling? = null
 
-    fun create(context: Context): EntitlementBilling =
-        override ?: StubEntitlementBilling(context)
+    /** Force Play path even on debug (license-tester sandbox). */
+    @Volatile
+    var forcePlay: Boolean = false
+
+    fun create(context: Context): EntitlementBilling {
+        override?.let { return it }
+        return if (!BuildConfig.DEBUG || forcePlay) {
+            PlayEntitlementBilling(
+                context = context,
+                bridge = BillingClientPlayStoreBridge(context),
+            )
+        } else {
+            StubEntitlementBilling(context)
+        }
+    }
 
     fun requestIdForToken(purchaseToken: String): String =
         FullUnlockSystem.requestIdForPurchaseToken(purchaseToken)

@@ -1,7 +1,11 @@
 {
   "phase": 29,
+  "licensesUiPhase": 12,
   "schema": "fish.store.asset_licenses.v1",
-  "description": "Asset rights records for Play / web ship — all Fish Shopping art, audio, and chrome are first-party unless noted.",
+  "description": "Asset rights + Phase 12 in-app OSS notices for Play / web ship.",
+  "screenTitle": "Licenses & notices",
+  "screenIntro": "Fish Shopping art, audio, and content are first-party. Runtime engines and libraries keep their upstream licenses.",
+  "catalogPath": "shared/store/licenses.json",
   "defaultLicense": {
     "holder": "Fish Shopping project (Willio / Jeanvilma)",
     "spdx": "LicenseRef-FishShopping-Proprietary-Ship",
@@ -46,9 +50,12 @@
         "shared/store/brand-mark.svg",
         "shared/store/feature-graphic.svg",
         "shared/store/feature-graphic.png",
+        "shared/store/play-icon-512.png",
         "web/public/favicon.svg",
         "web/public/apple-touch-icon.png",
+        "web/public/icon-192.png",
         "web/public/icon-512.png",
+        "web/public/icon-512-maskable.png",
         "app/src/main/res/mipmap-*/ic_launcher*.png",
         "app/src/main/res/drawable/ic_launcher_*.xml",
         "app/src/main/res/drawable/ic_brand_mark.xml"
@@ -56,7 +63,8 @@
       "kind": "2d",
       "origin": "first_party_authored",
       "tool": "shared/tools/generate_store_chrome.py",
-      "rights": "original"
+      "rights": "original",
+      "note": "Phase 10 final icon pack + Play feature graphic."
     },
     {
       "id": "screenshot-storyboards",
@@ -64,18 +72,45 @@
       "kind": "2d",
       "origin": "first_party_authored",
       "rights": "original",
-      "note": "Storyboard placeholders for Play Console capture; replace with device PNGs before store submit."
+      "note": "Storyboard placeholders for Play Console capture; feed shared/tools/capture_store_screenshots.py."
     },
     {
-      "id": "procedural-audio",
+      "id": "screenshot-captures",
       "paths": [
-        "web/src/audio/audioBus.ts",
-        "app/src/main/java/com/willio/jeanvilma/fishshopping/audio/AudioBus.kt"
+        "shared/store/screenshots/captures/phone/*.png",
+        "shared/store/screenshots/captures/tablet/*.png"
+      ],
+      "kind": "2d",
+      "origin": "first_party_authored",
+      "tool": "shared/tools/capture_store_screenshots.py",
+      "rights": "original",
+      "note": "Phase 9 phone + tablet Play-sized PNGs rasterized from storyboards; swap for live device captures before public submit if desired."
+    },
+    {
+      "id": "authored-sfx",
+      "paths": [
+        "shared/audio/sfx/*.wav",
+        "web/public/sfx/*.wav",
+        "app/src/main/res/raw/sfx_*.wav"
       ],
       "kind": "audio",
-      "origin": "first_party_procedural",
+      "origin": "first_party_authored",
+      "tool": "shared/tools/generate_sfx_pack.py",
       "rights": "original",
-      "note": "Runtime-synthesized ambience and SFX tones — no third-party sample packs."
+      "note": "Phase 19 mono WAV stingers for catch/cut/sell/UI (plus abandon, upgrade, rush). Baked offline; no third-party sample packs."
+    },
+    {
+      "id": "authored-music",
+      "paths": [
+        "shared/audio/music/*.wav",
+        "web/public/music/*.wav",
+        "app/src/main/res/raw/music_*.wav"
+      ],
+      "kind": "audio",
+      "origin": "first_party_authored",
+      "tool": "shared/tools/generate_music_pack.py",
+      "rights": "original",
+      "note": "Phase 20 harbor/shop loop beds with mute, SFX duck, and focus-loss duck/silence. No third-party sample packs."
     },
     {
       "id": "content-pack",
@@ -90,7 +125,89 @@
       "kind": "runtime",
       "origin": "third_party_dependency",
       "rights": "dependency_licenses",
-      "note": "Filament, Three.js, Kotlin, AndroidX, React, and other build/runtime deps keep their upstream SPDX licenses via package managers — not redistributed as game art."
+      "note": "See ossNotices for Filament, Three.js, React, Kotlin, AndroidX/Compose, and related SPDX attributions shown in Settings → Licenses."
     }
+  ],
+  "ossNotices": [
+    {
+      "id": "filament",
+      "name": "Filament",
+      "version": "1.77.3",
+      "spdx": "Apache-2.0",
+      "url": "https://github.com/google/filament",
+      "platforms": ["android"],
+      "notice": "Copyright Google LLC. Licensed under the Apache License, Version 2.0."
+    },
+    {
+      "id": "three",
+      "name": "three.js",
+      "version": "0.170.0",
+      "spdx": "MIT",
+      "url": "https://github.com/mrdoob/three.js",
+      "platforms": ["web"],
+      "notice": "Copyright © 2010-2024 three.js authors. MIT License."
+    },
+    {
+      "id": "react",
+      "name": "React",
+      "version": "18.3.1",
+      "spdx": "MIT",
+      "url": "https://github.com/facebook/react",
+      "platforms": ["web"],
+      "notice": "Copyright Meta Platforms, Inc. and affiliates. MIT License."
+    },
+    {
+      "id": "kotlin",
+      "name": "Kotlin",
+      "version": "2.4.0",
+      "spdx": "Apache-2.0",
+      "url": "https://github.com/JetBrains/kotlin",
+      "platforms": ["android"],
+      "notice": "Copyright JetBrains s.r.o. Licensed under the Apache License, Version 2.0."
+    },
+    {
+      "id": "kotlinx-serialization",
+      "name": "kotlinx.serialization",
+      "version": "1.9.0",
+      "spdx": "Apache-2.0",
+      "url": "https://github.com/Kotlin/kotlinx.serialization",
+      "platforms": ["android"],
+      "notice": "Copyright JetBrains s.r.o. Licensed under the Apache License, Version 2.0."
+    },
+    {
+      "id": "androidx-compose",
+      "name": "AndroidX / Jetpack Compose",
+      "version": "BOM",
+      "spdx": "Apache-2.0",
+      "url": "https://developer.android.com/jetpack",
+      "platforms": ["android"],
+      "notice": "Copyright The Android Open Source Project. Licensed under the Apache License, Version 2.0."
+    },
+    {
+      "id": "vite",
+      "name": "Vite",
+      "version": "5.4.21",
+      "spdx": "MIT",
+      "url": "https://github.com/vitejs/vite",
+      "platforms": ["web"],
+      "notice": "Copyright Evan You and Vite contributors. MIT License. Used for the web client build."
+    },
+    {
+      "id": "ajv",
+      "name": "Ajv",
+      "version": "8.17.1",
+      "spdx": "MIT",
+      "url": "https://github.com/ajv-validator/ajv",
+      "platforms": ["web"],
+      "notice": "Copyright 2015-2024 Evgeny Poberezkin. MIT License."
+    }
+  ],
+  "requiredOssIds": [
+    "filament",
+    "three",
+    "react",
+    "kotlin",
+    "kotlinx-serialization",
+    "androidx-compose"
   ]
 }

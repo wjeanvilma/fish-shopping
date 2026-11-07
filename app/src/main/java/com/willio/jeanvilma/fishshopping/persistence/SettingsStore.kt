@@ -13,7 +13,7 @@ enum class JoystickSide { LEFT, RIGHT }
 
 data class GameSettings(
     val muted: Boolean = false,
-    /** Phase 17: harbor ambience gain (0 / 0.35 / 0.7 / 1). */
+    /** Phase 17/20: music bed gain (0 / 0.35 / 0.7 / 1). */
     val musicVolume: Float = 0.7f,
     /** Phase 17: SFX stinger gain (0 / 0.35 / 0.7 / 1). */
     val sfxVolume: Float = 1f,
@@ -48,6 +48,8 @@ data class GameSettings(
     val cloudAccountId: String? = null,
     /** Phase 22: Identity Toolkit refresh token for guest uid recovery. */
     val cloudRefreshToken: String? = null,
+    /** Phase 24: equipped harbor banner cosmetic id (presentation-only). */
+    val equippedCosmeticId: String? = null,
 ) {
     companion object {
         val SCALE_OPTIONS = listOf(0.75f, 1f, 1.25f)
@@ -84,6 +86,8 @@ data class SaveStatusView(
     val cloudEnabled: Boolean,
     val cloudAvailable: Boolean,
     val cloudLinked: Boolean,
+    /** Phase 25: offline push queue has a pending snapshot. */
+    val cloudPendingUpload: Boolean = false,
 )
 
 class SettingsStore(context: Context) {
@@ -116,6 +120,7 @@ class SettingsStore(context: Context) {
         analyticsConsentDecided = prefs.getBoolean(KEY_ANALYTICS_DECIDED, false),
         cloudAccountId = prefs.getString(KEY_CLOUD_ACCOUNT, null),
         cloudRefreshToken = prefs.getString(KEY_CLOUD_REFRESH, null),
+        equippedCosmeticId = prefs.getString(KEY_EQUIPPED_COSMETIC, null),
     )
 
     fun save(settings: GameSettings) {
@@ -155,6 +160,8 @@ class SettingsStore(context: Context) {
                 if (id.isNullOrBlank()) remove(KEY_CLOUD_ACCOUNT) else putString(KEY_CLOUD_ACCOUNT, id)
                 val refresh = settings.cloudRefreshToken
                 if (refresh.isNullOrBlank()) remove(KEY_CLOUD_REFRESH) else putString(KEY_CLOUD_REFRESH, refresh)
+                val cosmetic = settings.equippedCosmeticId
+                if (cosmetic.isNullOrBlank()) remove(KEY_EQUIPPED_COSMETIC) else putString(KEY_EQUIPPED_COSMETIC, cosmetic)
             }
             .apply()
     }
@@ -180,5 +187,6 @@ class SettingsStore(context: Context) {
         const val KEY_ANALYTICS_DECIDED = "analytics_consent_decided"
         const val KEY_CLOUD_ACCOUNT = "cloud_account_id"
         const val KEY_CLOUD_REFRESH = "cloud_refresh_token"
+        const val KEY_EQUIPPED_COSMETIC = "equipped_cosmetic_id"
     }
 }

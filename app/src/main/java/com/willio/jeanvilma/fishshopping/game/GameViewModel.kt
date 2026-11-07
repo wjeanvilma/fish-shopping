@@ -1,14 +1,24 @@
 package com.willio.jeanvilma.fishshopping.game
 
 import android.app.Application
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.willio.jeanvilma.fishshopping.analytics.AnalyticsBus
 import com.willio.jeanvilma.fishshopping.audio.AudioBus
+import com.willio.jeanvilma.fishshopping.audio.SfxCue
 import com.willio.jeanvilma.fishshopping.audio.sfxFromEvent
 import com.willio.jeanvilma.fishshopping.billing.EntitlementBillings
+import com.willio.jeanvilma.fishshopping.billing.PendingEntitlementLedger
 import com.willio.jeanvilma.fishshopping.billing.PurchaseOutcome
+import com.willio.jeanvilma.fishshopping.billing.RestoredEntitlement
+import com.willio.jeanvilma.fishshopping.core.lifecycle.AndroidDeviceLifecycle
+import com.willio.jeanvilma.fishshopping.core.progression.EntitlementReconcile
 import com.willio.jeanvilma.fishshopping.cloud.CloudSyncCoordinator
 import com.willio.jeanvilma.fishshopping.core.content.BalanceExport
 import com.willio.jeanvilma.fishshopping.core.content.ContentLoader
@@ -36,7 +46,9 @@ import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 import com.willio.jeanvilma.fishshopping.persistence.SettingsStore
 import com.willio.jeanvilma.fishshopping.persistence.SnapshotStore
 import com.willio.jeanvilma.fishshopping.render.FlyingTransferCue
+import com.willio.jeanvilma.fishshopping.render.ShakeKind
 import com.willio.jeanvilma.fishshopping.render.WorldBurstCue
+import com.willio.jeanvilma.fishshopping.render.resolveCatchBurst
 import com.willio.jeanvilma.fishshopping.render.resolveCelebrateBurst
 import com.willio.jeanvilma.fishshopping.render.resolveFlyingTransfer
 import com.willio.jeanvilma.fishshopping.render.resolveMachineDoneBurst
@@ -106,8 +118,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val store = SnapshotStore(app.filesDir)
     private val settingsStore = SettingsStore(app)
     private val audio = AudioBus(app)
-    private val cloud = CloudSyncCoordinator()
+    private val cloud = CloudSyncCoordinator(app)
     private val billing = EntitlementBillings.create(app)
+    private val pendingEntitlements = PendingEntitlementLedger(app)
 
     private val _ui = MutableStateFlow<GameUiState>(GameUiState.Loading)
     val ui: StateFlow<GameUiState> = _ui
@@ -121,8 +134,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Presentation-only flying transfer cues for the harbor renderer (drained each frame). */
     private val flyingTransfers = ConcurrentLinkedQueue<FlyingTransferCue>()
-    /** Phase 16 world bursts (pay / celebrate / machine_done). */
+    /** Phase 16/21 world bursts (catch / pay / celebrate / machine_done). */
     private val worldBursts = ConcurrentLinkedQueue<WorldBurstCue>()
+    /** Phase 21 screen-shake kinds (drained each frame by the renderer). */
+    private val pendingShakes = ConcurrentLinkedQueue<ShakeKind>()
 
     private val commands = ConcurrentLinkedQueue<Command>()
 
@@ -137,12 +152,23 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         return out
     }
 
-    /** Drain Phase 16 world burst cues for the renderer (main thread). */
+    /** Drain Phase 16/21 world burst cues for the renderer (main thread). */
     fun drainWorldBursts(): List<WorldBurstCue> {
         if (worldBursts.isEmpty()) return emptyList()
         val out = ArrayList<WorldBurstCue>()
         while (true) {
             val next = worldBursts.poll() ?: break
+            out += next
+        }
+        return out
+    }
+
+    /** Drain Phase 21 shake cues for the renderer (main thread). */
+    fun drainShakes(): List<ShakeKind> {
+        if (pendingShakes.isEmpty()) return emptyList()
+        val out = ArrayList<ShakeKind>()
+        while (true) {
+            val next = pendingShakes.poll() ?: break
             out += next
         }
         return out
@@ -165,6 +191,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             cloudEnabled = settings.cloudSyncEnabled,
             cloudAvailable = cloud.available,
             cloudLinked = !settings.cloudAccountId.isNullOrBlank(),
+            cloudPendingUpload = cloud.hasPendingOfflinePush(),
         )
 
     // Owned by the sim thread only.
@@ -224,8 +251,28 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         || warehouseOpen || speciesBookOpen || dashboardOpen || pauseOpen || settingsOpen || bagOpen || stationOpen
         || pendingOfflineReport != null
 
+    /** Phase 25: flush offline cloud queue when connectivity returns (online_event). */
+    private val connectivityManager =
+        app.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            flushCloudOfflineQueue()
+        }
+    }
+
     init {
+        // Phase 26: attach local analytics dashboard ledger once per process.
+        AnalyticsBus.install(app)
         applyAudioSettings()
+        applyAnalyticsConsent()
+        runCatching {
+            connectivityManager.registerNetworkCallback(
+                NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build(),
+                networkCallback,
+            )
+        }
         viewModelScope.launch(simDispatcher) { load() }
     }
 
@@ -259,6 +306,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val restored = restoreOrCreate(pack) ?: return@launch // parked for choice/recovery UI
                 bootSim(restored.state, restored.savedAtEpochMs)
+                reconcileEntitlementsFromStore()
             } catch (e: NewerSaveException) {
                 allowSaving = false
                 _ui.value = GameUiState.Failed(e.message ?: "This save needs a newer version of the app.")
@@ -289,6 +337,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 )
                 _messages.tryEmit(if (source == SyncSource.REMOTE) "Restored cloud save" else "Kept this device's save")
                 bootSim(decoded.state, decoded.savedAtEpochMs)
+                // Phase 3: store IAP remains SoT after local/remote choice.
+                reconcileEntitlementsFromStore()
             } catch (e: NewerSaveException) {
                 allowSaving = false
                 clearSaveChoiceUi()
@@ -317,6 +367,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 AnalyticsBus.shared.onSaveRecovery("local_previous")
                 _messages.tryEmit("Recovered your previous save")
                 bootSim(decoded.state, decoded.savedAtEpochMs)
+                reconcileEntitlementsFromStore()
             } catch (e: NewerSaveException) {
                 allowSaving = false
                 clearSaveChoiceUi()
@@ -360,6 +411,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 rotateOnNextSave = true
                 val state = GameState.newGame(pack, START_HARBOR, Random.nextInt())
                 bootSim(state, null)
+                // Phase 3: paid unlocks survive new-game wipe of harbor progress.
+                reconcileEntitlementsFromStore()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start a new game", e)
                 _ui.value = GameUiState.Failed(e.message ?: "Could not start a new game.")
@@ -493,6 +546,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     fun resume() {
         // Phase 28: reclaim USAGE_GAME focus when returning to the foreground.
         audio.requestFocus()
+        // Phase 25: flush offline cloud queue on app resume.
+        flushCloudOfflineQueue()
+        // Phase 26: resume consent-gated analytics session.
+        if (settings.analyticsConsent) AnalyticsBus.shared.onSessionStart()
         if (loopJob?.isActive == true) return
         loopJob = viewModelScope.launch(simDispatcher) {
             if (sim != null && _ui.value is GameUiState.Ready) {
@@ -520,8 +577,20 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         loopJob?.cancel()
         loopJob = null
         enqueueMove(0f, 0f)
+        // Phase 26: clean analytics session end (crash-free bookkeeping).
+        AnalyticsBus.shared.onSessionEndClean()
         // Phase 28: abandon focus + AtomicFile checkpoint (survives process death).
         audio.abandonFocus()
+        simExecutor.execute { save() }
+    }
+
+    /**
+     * Phase 13: low-memory pressure while Activity may still be visible.
+     * Checkpoint AtomicFile slots without tearing down the sim loop (onStop still owns pause).
+     */
+    fun onTrimMemory(level: Int) {
+        if (!AndroidDeviceLifecycle.shouldCheckpointForTrimLevel(level)) return
+        Log.i(TAG, "onTrimMemory level=$level → AtomicFile checkpoint")
         simExecutor.execute { save() }
     }
 
@@ -624,6 +693,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         tapTarget = null
         stickActive = false
         enqueueMove(0f, 0f)
+        // Phase 19: authored UI click when a management panel opens.
+        audio.play(SfxCue.UI)
+        audio.syncMusicBedFromPanels(stationOpen)
     }
 
     private fun closePanel(which: Panel) {
@@ -641,6 +713,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             Panel.BAG -> bagOpen = false
             Panel.STATION -> stationOpen = false
         }
+        audio.syncMusicBedFromPanels(stationOpen)
     }
 
     private fun closeAllPanels() {
@@ -656,6 +729,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         settingsOpen = false
         bagOpen = false
         stationOpen = false
+        audio.syncMusicBedFromPanels(stationOpen)
     }
 
     /** Presentation settings (mute, quality, a11y, cloud). Not part of the parity save. */
@@ -677,6 +751,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         timingAssist: Boolean = settings.timingAssist,
         analyticsConsent: Boolean = settings.analyticsConsent,
         analyticsConsentDecided: Boolean = settings.analyticsConsentDecided,
+        equippedCosmeticId: String? = settings.equippedCosmeticId,
     ) {
         var next = GameSettings(
             muted = muted,
@@ -698,7 +773,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             analyticsConsentDecided = analyticsConsentDecided,
             cloudAccountId = settings.cloudAccountId,
             cloudRefreshToken = settings.cloudRefreshToken,
+            equippedCosmeticId = equippedCosmeticId?.takeIf { it.isNotBlank() },
         )
+        val enablingCloud = next.cloudSyncEnabled && !settings.cloudSyncEnabled
         if (next.cloudSyncEnabled && !cloud.available) {
             // Still allow the opt-in flag; pushes no-op until Firebase keys are configured.
             _messages.tryEmit("Cloud sync on — configure Firebase keys to link a remote save")
@@ -712,6 +789,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         applyAudioSettings()
         applyAnalyticsConsent()
         settingsStore.save(next)
+        if (enablingCloud) flushCloudOfflineQueue()
         viewModelScope.launch(simDispatcher) {
             if (_ui.value is GameUiState.Title) {
                 val hasSave = (_ui.value as GameUiState.Title).hasSave
@@ -729,7 +807,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun applyAnalyticsConsent() {
         AnalyticsBus.shared.setConsent(settings.analyticsConsent)
+        if (settings.analyticsConsent) AnalyticsBus.shared.onSessionStart()
     }
+
+    /** Phase 26: consent-gated analytics dashboard JSON (local rolling counters). */
+    fun exportAnalyticsDashboardJson(): String = AnalyticsBus.shared.exportDashboardJson()
+
+    fun hasAnalyticsDashboardAlerts(): Boolean = AnalyticsBus.shared.hasDashboardAlerts()
 
     /** Phase 19: one-tap Accessibility preset (reduced motion, captions, larger HUD, shapes, timing meter). */
     fun applyAccessibilityPreset() {
@@ -761,6 +845,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             sfxVolume = settings.sfxVolume,
             hapticsEnabled = settings.hapticsEnabled,
         )
+        // Phase 20: harbor vs shop bed from station panel.
+        audio.syncMusicBedFromPanels(stationOpen)
     }
 
     /** Whether a remote backend is configured (Firebase keys). Local play never needs this. */
@@ -808,75 +894,152 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Phase 23: one-time full-harbor unlock via platform billing stub. */
+    /** Phase 23 / post-1.0 Phase 1: one-time full-harbor unlock via Play Billing (stub on debug). */
     fun purchaseFullHarborUnlock() {
-        when (val result = billing.purchaseFullUnlock(settings.cloudAccountId)) {
-            is PurchaseOutcome.Err -> _messages.tryEmit(result.reason)
-            is PurchaseOutcome.Ok -> applyFullUnlockGrant(result.purchaseToken, result.alreadyOwned)
+        viewModelScope.launch {
+            when (val result = billing.purchaseFullUnlock(settings.cloudAccountId)) {
+                is PurchaseOutcome.Err -> _messages.tryEmit(result.reason)
+                is PurchaseOutcome.Ok -> {
+                    pendingEntitlements.enqueue(
+                        sku = com.willio.jeanvilma.fishshopping.core.progression.FullUnlockSystem.SKU,
+                        purchaseToken = result.purchaseToken,
+                        grantsCosmetic = null,
+                    )
+                    viewModelScope.launch(simDispatcher) {
+                        applyStoreOwned(
+                            listOf(
+                                RestoredEntitlement(
+                                    sku = com.willio.jeanvilma.fishshopping.core.progression.FullUnlockSystem.SKU,
+                                    purchaseToken = result.purchaseToken,
+                                    grantsCosmetic = null,
+                                ),
+                            ),
+                            announceRestore = false,
+                        )
+                    }
+                }
+            }
         }
     }
 
     /** Phase 23: restore purchases and grant if the store says owned. */
     fun restoreFullHarborUnlock() {
-        val (owned, token) = billing.restore(settings.cloudAccountId)
-        if (!owned || token.isNullOrBlank()) {
-            _messages.tryEmit("No harbor unlock to restore")
-            return
+        viewModelScope.launch {
+            val (owned, token) = billing.restore(settings.cloudAccountId)
+            if (!owned || token.isNullOrBlank()) {
+                _messages.tryEmit("No harbor unlock to restore")
+                return@launch
+            }
+            pendingEntitlements.enqueue(
+                sku = com.willio.jeanvilma.fishshopping.core.progression.FullUnlockSystem.SKU,
+                purchaseToken = token,
+                grantsCosmetic = null,
+            )
+            viewModelScope.launch(simDispatcher) {
+                applyStoreOwned(
+                    listOf(
+                        RestoredEntitlement(
+                            sku = com.willio.jeanvilma.fishshopping.core.progression.FullUnlockSystem.SKU,
+                            purchaseToken = token,
+                            grantsCosmetic = null,
+                        ),
+                    ),
+                    announceRestore = true,
+                )
+            }
         }
-        applyFullUnlockGrant(token, fromRestore = true)
     }
 
     /** Phase 24: purchase a power-neutral cosmetic SKU. */
     fun purchaseIapCosmetic(sku: String) {
-        when (val result = billing.purchaseCosmetic(sku, settings.cloudAccountId)) {
-            is PurchaseOutcome.Err -> _messages.tryEmit(result.reason)
-            is PurchaseOutcome.Ok -> applyCosmeticGrant(sku, result.purchaseToken)
+        viewModelScope.launch {
+            when (val result = billing.purchaseCosmetic(sku, settings.cloudAccountId)) {
+                is PurchaseOutcome.Err -> _messages.tryEmit(result.reason)
+                is PurchaseOutcome.Ok -> {
+                    val cosmeticId =
+                        com.willio.jeanvilma.fishshopping.core.progression.CosmeticsIapSystem.BY_SKU[sku]?.grantsCosmetic
+                    if (cosmeticId == null) {
+                        _messages.tryEmit("Unknown cosmetic SKU")
+                        return@launch
+                    }
+                    pendingEntitlements.enqueue(sku, result.purchaseToken, cosmeticId)
+                    viewModelScope.launch(simDispatcher) {
+                        applyStoreOwned(
+                            listOf(RestoredEntitlement(sku, result.purchaseToken, cosmeticId)),
+                            announceRestore = false,
+                        )
+                    }
+                }
+            }
         }
     }
 
-    /** Phase 24: restore all entitlements (full unlock + cosmetics). */
+    /** Phase 24 / post-1.0 Phase 1+3: restore all entitlements (full unlock + cosmetics). */
     fun restorePurchases() {
-        val owned = billing.restoreAll(settings.cloudAccountId)
-        if (owned.isEmpty()) {
-            _messages.tryEmit("No purchases to restore")
+        viewModelScope.launch {
+            val owned = billing.restoreAll(settings.cloudAccountId)
+            if (owned.isEmpty() && pendingEntitlements.all().isEmpty()) {
+                _messages.tryEmit("No purchases to restore")
+                return@launch
+            }
+            for (row in owned) {
+                pendingEntitlements.enqueue(row.sku, row.purchaseToken, row.grantsCosmetic)
+            }
+            viewModelScope.launch(simDispatcher) {
+                applyStoreOwned(owned, announceRestore = true)
+            }
+        }
+    }
+
+    /**
+     * Phase 3: store is SoT for paid SKUs — merge restore + pending ledger into the live save,
+     * apply only missing flags/receipts, checkpoint, then ack the ledger.
+     */
+    private suspend fun reconcileEntitlementsFromStore() {
+        val owned = runCatching { billing.restoreAll(settings.cloudAccountId) }.getOrDefault(emptyList())
+        applyStoreOwned(owned, announceRestore = false)
+    }
+
+    private fun applyStoreOwned(owned: List<RestoredEntitlement>, announceRestore: Boolean) {
+        val s = sim ?: return
+        val storeRows = owned.map {
+            EntitlementReconcile.StoreOwned(it.sku, it.purchaseToken, it.grantsCosmetic)
+        }
+        val merged = EntitlementReconcile.mergeStoreAndPending(storeRows, pendingEntitlements.all())
+        val needs = EntitlementReconcile.neededGrants(merged, EntitlementReconcile.snapshotOf(s.state))
+        if (needs.isEmpty()) {
+            ackSatisfiedPending(s.state.purchaseReceipts.keys)
+            if (announceRestore) {
+                val n = merged.size
+                _messages.tryEmit(
+                    if (n == 0) "No purchases to restore"
+                    else "Restored $n purchase${if (n == 1) "" else "s"}",
+                )
+            }
             return
         }
-        for (row in owned) {
-            val cosmetic = row.grantsCosmetic
-            if (cosmetic != null) {
-                applyCosmeticGrant(row.sku, row.purchaseToken)
+        for (need in needs) {
+            pendingEntitlements.enqueue(need.sku, need.purchaseToken, need.cosmeticId)
+            val cosmeticId = need.cosmeticId
+            if (cosmeticId != null) {
+                commands += Command.GrantIapCosmetic(cosmeticId, need.requestId)
             } else {
-                applyFullUnlockGrant(row.purchaseToken, fromRestore = false)
+                commands += Command.GrantFullHarborUnlock(need.requestId)
             }
         }
-        _messages.tryEmit("Restored ${owned.size} purchase${if (owned.size == 1) "" else "s"}")
-    }
-
-    private fun applyFullUnlockGrant(purchaseToken: String, fromRestore: Boolean) {
-        commands += Command.GrantFullHarborUnlock(EntitlementBillings.requestIdForToken(purchaseToken))
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-            if (fromRestore && sim?.state?.fullHarborUnlock == true) {
-                _messages.tryEmit("Harbor unlock restored")
-            }
-        } else if (fromRestore) {
+        step(s)
+        publish(force = true)
+        save()
+        ackSatisfiedPending(s.state.purchaseReceipts.keys)
+        if (announceRestore) {
+            _messages.tryEmit("Restored ${merged.size} purchase${if (merged.size == 1) "" else "s"}")
+        } else if (needs.any { it.cosmeticId == null && it.reason.contains("flag") } && s.state.fullHarborUnlock) {
             _messages.tryEmit("Harbor unlock restored")
         }
     }
 
-    private fun applyCosmeticGrant(sku: String, purchaseToken: String) {
-        val cosmeticId = com.willio.jeanvilma.fishshopping.core.progression.CosmeticsIapSystem.BY_SKU[sku]?.grantsCosmetic
-        if (cosmeticId == null) {
-            _messages.tryEmit("Unknown cosmetic SKU")
-            return
-        }
-        commands += Command.GrantIapCosmetic(
-            cosmeticId,
-            EntitlementBillings.cosmeticRequestId(sku, purchaseToken),
-        )
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
+    private fun ackSatisfiedPending(receiptIds: Set<String>) {
+        pendingEntitlements.ackRequestIds(receiptIds)
     }
 
     fun repairMachine(stationId: String) {
@@ -1003,11 +1166,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val payCustomers = ArrayList<String>()
         val machineDone = ArrayList<String>()
         var celebrate = false
+        var catchCount = 0
         for (e in events) {
             sfxFromEvent(e)?.let { audio.play(it) }
             when (e) {
                 is GameEvent.ItemsTransferred -> transferred += e
-                is GameEvent.BatchCompleted -> machineDone += e.stationId
+                is GameEvent.BatchCompleted -> {
+                    machineDone += e.stationId
+                    pendingShakes.offer(ShakeKind.CUT)
+                }
                 is GameEvent.SaleCommitted -> {
                     val tip = when {
                         e.tipped && e.preferenceMet -> " Premium tip!"
@@ -1016,9 +1183,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     }
                     _messages.tryEmit("+${e.coins} coins$tip")
                     payCustomers += e.customerId
+                    pendingShakes.offer(ShakeKind.SALE)
                     transaction = true
                 }
                 is GameEvent.FishCaught -> {
+                    catchCount += 1
+                    pendingShakes.offer(ShakeKind.CATCH)
                     if (e.personalBest) {
                         val name = s.content.itemName(e.speciesId)
                         _messages.tryEmit("New trophy: $name · ${e.sizePermille}%")
@@ -1133,6 +1303,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     _messages.tryEmit("Traveled to $name")
                     mapOpen = false
                     flyingTransfers.clear()
+                    worldBursts.clear()
+                    pendingShakes.clear()
                     transaction = true
                 }
                 is GameEvent.TravelRejected -> { _messages.tryEmit(e.reason); transaction = true }
@@ -1156,11 +1328,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             for (e in transferred) {
                 resolveFlyingTransfer(view, e.from, e.to, e.itemId)?.let { flyingTransfers.offer(it) }
             }
+            repeat(catchCount) { worldBursts.offer(resolveCatchBurst(view)) }
             for (customerId in payCustomers) worldBursts.offer(resolvePayBurst(view, customerId))
             for (stationId in machineDone) {
                 resolveMachineDoneBurst(view, stationId)?.let { worldBursts.offer(it) }
             }
-            if (celebrate) worldBursts.offer(resolveCelebrateBurst(view))
+            if (celebrate) {
+                worldBursts.offer(resolveCelebrateBurst(view))
+                pendingShakes.offer(ShakeKind.CELEBRATE)
+            }
         }
         if (transaction) publish(force = true)
     }
@@ -1178,13 +1354,32 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         ioExecutor.execute {
             runCatching { store.write(text, rotate) }.onFailure { Log.e(TAG, "Save failed", it) }
             val pushed = cloud.push(syncSettings, text)
-            if (
-                pushed.cloudAccountId != syncSettings.cloudAccountId ||
-                pushed.cloudRefreshToken != syncSettings.cloudRefreshToken
-            ) {
-                settings = pushed
-                settingsStore.save(pushed)
+            applyCloudPushResult(pushed)
+            if (pushed.queued || cloud.hasPendingOfflinePush()) {
+                val flushed = cloud.flushOfflineQueue(settings)
+                applyCloudPushResult(flushed)
             }
+        }
+    }
+
+    /** Phase 25: apply auth session updates from a cloud push/flush. */
+    private fun applyCloudPushResult(pushed: com.willio.jeanvilma.fishshopping.cloud.CloudPushResult) {
+        val next = pushed.settings
+        if (
+            next.cloudAccountId != settings.cloudAccountId ||
+            next.cloudRefreshToken != settings.cloudRefreshToken
+        ) {
+            settings = next
+            settingsStore.save(next)
+        }
+    }
+
+    /** Phase 25: flush offline cloud queue (resume / settings enable). */
+    fun flushCloudOfflineQueue() {
+        if (!settings.cloudSyncEnabled) return
+        ioExecutor.execute {
+            val flushed = cloud.flushOfflineQueue(settings)
+            applyCloudPushResult(flushed)
         }
     }
 
@@ -1214,6 +1409,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        runCatching { connectivityManager.unregisterNetworkCallback(networkCallback) }
+        AnalyticsBus.shared.onSessionEndClean()
         // Phase 28 process death / Activity finish: release focus, then flush final save.
         audio.abandonFocus()
         // shutdown() lets queued work (the final save) finish; no new work is accepted.

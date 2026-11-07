@@ -1,5 +1,9 @@
 {
   "phase": 24,
+  "androidPlayBillingPhase": 1,
+  "webBillingPhase": 2,
+  "entitlementReconcilePhase": 3,
+  "storeCatalogSyncPhase": 6,
   "freeHarborId": "harbor.sunrise_pier",
   "fullUnlock": {
     "id": "entitlement.full_harbor_unlock",

@@ -44,20 +44,20 @@ describe("definition of done (Phase 30)", () => {
     fixtures: string[];
   };
 
-  it("pins 1.0.0 content + schema 20 against quotas", () => {
+  it("pins 1.0.1 content + schema 20 against quotas", () => {
     expect(dod.phase).toBe(30);
     expect(dod.schema).toBe("fish.ship.definition_of_done.v1");
-    expect(dod.contentVersion).toBe("1.0.0");
-    expect(dod.releaseTag).toBe("v1.0.0");
-    expect(content.contentVersion).toBe("1.0.0");
+    expect(dod.contentVersion).toBe("1.0.1");
+    expect(dod.releaseTag).toBe("v1.0.1");
+    expect(content.contentVersion).toBe("1.0.1");
     expect(SCHEMA_VERSION).toBe(20);
     expect(content.harbors.length).toBe(dod.quotas.harbors);
     expect(content.harbors.length).toBe(5);
     expect(content.raw.species.length).toBeGreaterThanOrEqual(dod.quotas.speciesMin);
     expect(content.raw.machines.length).toBe(dod.quotas.machineClasses);
-    expect(pin.contentVersion).toBe("1.0.0");
+    expect(pin.contentVersion).toBe("1.0.1");
     expect(pin.schemaVersion).toBe(20);
-    expect(pin.releaseTag).toBe("v1.0.0");
+    expect(pin.releaseTag).toBe("v1.0.1");
     expect(pin.definitionOfDone).toBe("shared/ship/definition-of-done.json");
     for (const name of pin.fixtures) {
       expect(existsSync(resolve(root, "shared/fixtures", name)), name).toBe(true);

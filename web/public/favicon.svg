@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Fish Shopping">
+  <!-- Brand mark: ink harbor tile + sky fish + reward fin. Source for favicon / adaptive icon. -->
   <rect width="64" height="64" rx="14" fill="#153449"/>
   <path fill="#9fd3ea" d="M10 34c8-12 22-16 34-10 4 2 8 6 10 10-2 4-6 8-10 10-12 6-26 2-34-10z"/>
   <circle cx="42" cy="30" r="2.6" fill="#153449"/>

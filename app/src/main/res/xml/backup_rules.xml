@@ -8,6 +8,7 @@
     <include domain="sharedpref" path="." />
     <include domain="file" path="." />
     <exclude domain="sharedpref" path="fish_shopping_entitlements.xml" />
+    <exclude domain="sharedpref" path="fish_shopping_pending_entitlements.xml" />
     <exclude domain="file" path="harbor_save_latest.json" />
     <exclude domain="file" path="harbor_save_previous.json" />
     <exclude domain="file" path="harbor_save_latest.json.new" />

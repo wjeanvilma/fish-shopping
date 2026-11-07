@@ -1,0 +1,84 @@
+{
+  "phase": 17,
+  "schema": "fish.android.closed_testing.v1",
+  "description": "Post-1.0 Phase 17 — Play internal/closed testing track: upload signed AAB from CI, invite testers, triage crashes/ANRs via Play Console Android Vitals (no first-party Crashlytics SDK).",
+  "packageName": "com.willio.jeanvilma.fishshopping",
+  "releasePin": "shared/fixtures/RELEASE_PIN.json",
+  "aabCi": "shared/android/aab-ci.json",
+  "signing": "shared/android/release-signing.json",
+  "playBilling": "shared/billing/play-billing.json",
+  "playConsoleProducts": "shared/billing/play-console-products.json",
+  "tracks": {
+    "primary": "internal",
+    "secondary": "closed",
+    "note": "Start on internal (fast), promote the same AAB to closed when the tester list grows."
+  },
+  "artifacts": {
+    "aab": "app/build/outputs/bundle/release/app-release.aab",
+    "mapping": "app/build/outputs/mapping/release/mapping.txt",
+    "ciArtifactName": "android-release-aab",
+    "ciJob": "android-release"
+  },
+  "upload": {
+    "consolePath": "Play Console → Fish Shopping → Testing → Internal testing → Create new release",
+    "requireSignedUploadKey": true,
+    "requireMappingUpload": true,
+    "whatsNewSource": "shared/store/listing-copy.json#copy.whatsNew",
+    "versionNameFromPin": true,
+    "versionCodeFromPin": true
+  },
+  "testers": {
+    "licenseTesters": "Play Console → Setup → License testing (for IAP sandbox)",
+    "emailList": "Internal testing → Testers → email list or Google Group",
+    "minInvites": 1,
+    "inviteNote": "Share the opt-in link; testers need the Play Store account that was invited."
+  },
+  "crashTriage": {
+    "provider": "play_console_android_vitals",
+    "sdk": null,
+    "note": "No Crashlytics/Firebase Crash SDK in 1.0. Use Play Console → Quality → Android Vitals (crashes & ANRs) plus uploaded mapping.txt for deobfuscation.",
+    "triageSteps": [
+      "Upload mapping.txt with the AAB (or via App bundle explorer) so stacks deobfuscate",
+      "After 24–48h of tester traffic, open Android Vitals → Crashes & ANRs",
+      "Reproduce top issues against Phase 13 device matrix (background/rotate/low-memory)",
+      "File blockers before promoting to production (Phase 18)"
+    ],
+    "blockerCriteria": [
+      "Startup crash rate above Play bad-behavior threshold for the track",
+      "ANR on cold start or onStop checkpoint path",
+      "IAP purchase/restore failures for license testers on internal track",
+      "Data loss after process death (AtomicFile slots empty)"
+    ]
+  },
+  "preflightGates": [
+    "shared/android/aab-ci.json",
+    "shared/android/release-signing.json",
+    "shared/fixtures/RELEASE_PIN.json",
+    "shared/store/listing-copy.json",
+    "shared/store/data-safety.json",
+    "shared/store/licenses.json",
+    "shared/billing/play-console-products.json",
+    "shared/lifecycle/android-device-matrix.json",
+    "shared/a11y/accessibility-sweep.json",
+    "shared/perf/budget-gate.json"
+  ],
+  "signoff": {
+    "status": "ready_for_upload",
+    "statusValues": ["ready_for_upload", "uploaded_internal", "testers_invited", "vitals_triaged", "signed_off"],
+    "productionPromotion": "Phase 18",
+    "checklist": [
+      "CI android-release job produced AAB + mapping artifacts",
+      "Upload keystore secrets (not ephemeral CI key) used for the Play build",
+      "Internal track release created with pin versionName/versionCode",
+      "License testers configured; smoke IAP purchase + Restore",
+      "≥1 closed/internal tester installed via opt-in link",
+      "Android Vitals reviewed; no blockerCriteria open",
+      "Sign off before Phase 18 public production track"
+    ]
+  },
+  "manualUploadCommands": [
+    "gh run download <run_id> -n android-release-aab",
+    "Or: ./gradlew :app:bundleRelease  # with FISH_UPLOAD_* set to the Play upload keystore",
+    "Play Console → Internal testing → upload app-release.aab + ensure mapping attached"
+  ]
+}

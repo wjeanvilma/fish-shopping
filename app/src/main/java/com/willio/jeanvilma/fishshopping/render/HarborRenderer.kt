@@ -103,8 +103,10 @@ class HarborRenderer(private val context: Context) {
     private var burstEntities = IntArray(0)
     private var flying = FlyingTransfers(FLYING_TRANSFER_POOL)
     private var worldBursts = WorldBursts(VFX_BURST_POOL)
+    private val screenShake = ScreenShake()
     private val pendingTransfers = ConcurrentLinkedQueue<FlyingTransferCue>()
     private val pendingBursts = ConcurrentLinkedQueue<WorldBurstCue>()
+    private val pendingShakes = ConcurrentLinkedQueue<ShakeKind>()
     private val footprints = HashMap<String, Int>()
     private var waterEntity = 0
     /** Zone pads for Phase 31 distance occlusion (entity + ground x/z meters). */
@@ -176,9 +178,14 @@ class HarborRenderer(private val context: Context) {
         pendingTransfers.addAll(cues)
     }
 
-    /** Queue Phase 16 world bursts (drained on the next frame). */
+    /** Queue Phase 16/21 world bursts (drained on the next frame). */
     fun enqueueBursts(cues: Collection<WorldBurstCue>) {
         pendingBursts.addAll(cues)
+    }
+
+    /** Queue Phase 21 screen-shake kinds (drained on the next frame). */
+    fun enqueueShakes(kinds: Collection<ShakeKind>) {
+        pendingShakes.addAll(kinds)
     }
 
     /**
@@ -487,6 +494,7 @@ class HarborRenderer(private val context: Context) {
         crowd.setDrawCap(crowdDrawCapForQuality(pq, customerRoots.size))
         flying.setBudget(minOf(flying.poolSize, flyingTransferPoolForQuality(pq)))
         worldBursts.setBudget(minOf(worldBursts.poolSize, worldBurstPoolForQuality(pq)))
+        screenShake.setQuality(pq)
     }
 
     private fun updateScene(frameTimeNanos: Long, sim: SimView, reducedMotion: Boolean) {
@@ -594,8 +602,10 @@ class HarborRenderer(private val context: Context) {
         if (reducedMotion) {
             while (pendingTransfers.poll() != null) Unit
             while (pendingBursts.poll() != null) Unit
+            while (pendingShakes.poll() != null) Unit
             flying.clear()
             worldBursts.clear()
+            screenShake.clear()
             for (i in flyFish.indices) setVisible(flyFish[i], false)
             for (i in flyPortion.indices) setVisible(flyPortion[i], false)
             for (i in burstEntities.indices) setVisible(burstEntities[i], false)
@@ -607,6 +617,10 @@ class HarborRenderer(private val context: Context) {
             while (true) {
                 val cue = pendingBursts.poll() ?: break
                 worldBursts.spawn(cue)
+            }
+            while (true) {
+                val kind = pendingShakes.poll() ?: break
+                screenShake.trigger(kind)
             }
             flying.update(dt).forEachIndexed { i, flyPose ->
                 setVisible(flyFish.getOrElse(i) { 0 }, false)
@@ -692,9 +706,10 @@ class HarborRenderer(private val context: Context) {
             setVisible(z.entity, occlusionOpacity(d) > 0.05)
         }
 
+        val shake = if (reducedMotion) ShakeOffset(0.0, 0.0) else screenShake.update(dt)
         camera.lookAt(
-            pose.x, CameraRig.HEIGHT_M, pose.z - CameraRig.BACK_M,
-            pose.x, 0.0, pose.z + CameraRig.LOOK_AHEAD_M,
+            pose.x + shake.x, CameraRig.HEIGHT_M + shake.y, pose.z - CameraRig.BACK_M,
+            pose.x + shake.x, 0.0, pose.z + CameraRig.LOOK_AHEAD_M,
             0.0, 1.0, 0.0,
         )
     }

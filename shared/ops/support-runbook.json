@@ -1,0 +1,141 @@
+{
+  "phase": 28,
+  "schema": "fish.ops.support_runbook.v1",
+  "description": "Post-1.0 Phase 28 — support/refund/restore runbook: triage channels, refund steps, restore purchases, known issues. Linked from support.html and in-app Settings.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 20,
+  "packageName": "com.willio.jeanvilma.fishshopping",
+  "supportUrl": "https://wjeanvilma.github.io/fish-shopping/support.html",
+  "privacyUrl": "https://wjeanvilma.github.io/fish-shopping/privacy.html",
+  "triage": {
+    "primaryChannel": "github_issues",
+    "issuesUrl": "https://github.com/wjeanvilma/fish-shopping/issues/new",
+    "email": "fish-shopping-support@jeanvilma.com",
+    "mailto": "mailto:fish-shopping-support@jeanvilma.com?subject=%5BFish%20Shopping%5D%20Support",
+    "subjectPrefix": "[Fish Shopping]",
+    "requiredFields": [
+      "platform",
+      "appVersion",
+      "packageName",
+      "shortDescription",
+      "purchaseOrderIdIfAny"
+    ],
+    "note": "Prefer GitHub issues for bugs/crashes. Use email when attaching Play/web order ids for refunds."
+  },
+  "restore": {
+    "inAppLabel": "Restore purchases",
+    "androidPath": "Goals / Cosmetics → Restore purchases",
+    "webPath": "Goals / Cosmetics → Restore purchases",
+    "steps": [
+      "Sign in to the same Play Store or web checkout account used for the purchase",
+      "Open the harbor, then Goals (or Cosmetics)",
+      "Tap Restore purchases",
+      "Wait for the toast — entitlements grant idempotently (full harbor unlock + owned cosmetics)",
+      "If nothing restores, confirm the SKU is owned in Play → Payments & subscriptions (or web receipt email)"
+    ],
+    "skus": [
+      "fish.full_harbor_unlock",
+      "fish.cosmetic.sunset_bunting",
+      "fish.cosmetic.pearl_string",
+      "fish.cosmetic.captain_crest"
+    ],
+    "idempotent": true,
+    "powerNeutralCosmetics": true
+  },
+  "refund": {
+    "play": {
+      "playerSelfServe": "Play Store → profile → Payments & subscriptions → Budget & history → request a refund",
+      "consolePath": "Play Console → Order management → find order → Refund",
+      "windowNote": "Google may auto-approve recent refunds; otherwise handle via Order management within Play policy windows.",
+      "afterRefund": [
+        "Entitlement remains on-device until the player clears app data or you revoke via Play (restore will no longer re-grant if ownership is gone)",
+        "Do not manually edit harbor_save_*.json to strip unlocks — use restore + store SoT"
+      ]
+    },
+    "web": {
+      "playerPath": "Reply to the checkout receipt or email support with the order id",
+      "opsPath": "Refund in the checkout provider dashboard, then confirm restore no longer returns the SKU",
+      "afterRefund": [
+        "Clear pending entitlement ledger if a token was queued",
+        "Ask the player to Restore purchases once to sync owned=false"
+      ]
+    }
+  },
+  "knownIssues": [
+    {
+      "id": "storage_private_mode",
+      "title": "Private / blocked browser storage",
+      "symptom": "Progress disappears after refresh",
+      "workaround": "Allow site storage or leave private mode; local slots need persistent storage.",
+      "severity": "info"
+    },
+    {
+      "id": "corrupt_latest_slot",
+      "title": "Corrupt latest save slot",
+      "symptom": "Continue fails or title shows recovery",
+      "workaround": "Choose Recover previous on the title screen; AtomicFile keeps a previous backup.",
+      "severity": "warn"
+    },
+    {
+      "id": "cloud_keys_missing",
+      "title": "Cloud sync on without Firebase keys",
+      "symptom": "Cloud on, keys missing in Settings",
+      "workaround": "Local play is fine. Set VITE_FIREBASE_* / fish.firebase.* to link remote saves; rules stay out of repo.",
+      "severity": "info"
+    },
+    {
+      "id": "restore_wrong_account",
+      "title": "Restore finds nothing",
+      "symptom": "Restore purchases toast says no purchases",
+      "workaround": "Switch to the purchase account on Play / web checkout, then Restore again.",
+      "severity": "warn"
+    },
+    {
+      "id": "perf_stutter",
+      "title": "Frame stutter on mid devices",
+      "symptom": "Harbor feels choppy",
+      "workaround": "Settings → Quality → Low/Medium. Sim stays 20 Hz; quality only changes presentation cost.",
+      "severity": "info"
+    }
+  ],
+  "faq": [
+    {
+      "id": "first_session",
+      "title": "First session",
+      "body": "Fish → cut → stock → sell. Coaching advances on state events, not animation timing."
+    },
+    {
+      "id": "saves",
+      "title": "Saves & recovery",
+      "body": "Local slots keep a latest and previous backup. If latest is corrupt, choose Recover previous on the title screen. Private / blocked browser storage falls back to memory-only."
+    },
+    {
+      "id": "purchases",
+      "title": "Purchases & restore",
+      "body": "Use Restore purchases in Goals after reinstalling. The one-time harbor unlock is idempotent; cosmetics are power-neutral banners."
+    },
+    {
+      "id": "refunds",
+      "title": "Refunds",
+      "body": "Android: request via Play Store Payments & subscriptions, or contact support with the order id. Web: reply to the checkout receipt with the order id."
+    },
+    {
+      "id": "performance",
+      "title": "Performance",
+      "body": "Lower Quality in Settings if frames stutter. The simulation stays fixed at 20 Hz; quality only changes presentation cost."
+    }
+  ],
+  "ui": {
+    "settingsSupportLabel": "Support",
+    "restoreHelpLine": "Lost an unlock? Restore purchases in Goals, or open Support for refund steps.",
+    "runbookAnchor": "#refunds"
+  },
+  "preflightGates": [
+    "shared/ops/support-runbook.json",
+    "web/public/support.html",
+    "shared/store/listing.json",
+    "shared/store/legal-pages.json",
+    "web/src/engine/supportRunbook.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/store/SupportRunbook.kt"
+  ]
+}

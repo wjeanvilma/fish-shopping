@@ -10,9 +10,13 @@ import com.willio.jeanvilma.fishshopping.render.LocomotionOpts
 import com.willio.jeanvilma.fishshopping.render.PresenterQuality
 import com.willio.jeanvilma.fishshopping.render.VFX_BURST_POOL
 import com.willio.jeanvilma.fishshopping.render.WALK_SPEED_REF_M_PER_S
+import com.willio.jeanvilma.fishshopping.render.MAX_SHAKE_AMPLITUDE_M
+import com.willio.jeanvilma.fishshopping.render.ScreenShake
+import com.willio.jeanvilma.fishshopping.render.ShakeKind
 import com.willio.jeanvilma.fishshopping.render.WorldBurstCue
 import com.willio.jeanvilma.fishshopping.render.WorldBurstKind
 import com.willio.jeanvilma.fishshopping.render.WorldBursts
+import com.willio.jeanvilma.fishshopping.render.cappedShakeAmplitudeM
 import com.willio.jeanvilma.fishshopping.render.crowdDrawCapForQuality
 import com.willio.jeanvilma.fishshopping.render.flyingTransferPoolForQuality
 import com.willio.jeanvilma.fishshopping.render.locomoteFromMotion
@@ -22,6 +26,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.hypot
 
 class PresentersBudgetTest {
     @Test
@@ -57,10 +62,11 @@ class PresentersBudgetTest {
     fun frameTimingSuggestsDowngradeAfterSustainedMiss() {
         val timing = FrameTiming(emaAlpha = 1.0, downgradeStreak = 3)
         val target = FrameTiming.targetMs(QualityPreset.MEDIUM)
+        // Over-budget is targetMs * 1.15 (~38.3ms at medium); use 50ms misses.
         assertFalse(timing.sample(0.010, target))
-        assertFalse(timing.sample(0.030, target))
-        assertFalse(timing.sample(0.030, target))
-        assertTrue(timing.sample(0.030, target))
+        assertFalse(timing.sample(0.050, target))
+        assertFalse(timing.sample(0.050, target))
+        assertTrue(timing.sample(0.050, target))
         assertEquals(QualityPreset.LOW, FrameTiming.downgrade(QualityPreset.MEDIUM))
     }
 
@@ -94,5 +100,25 @@ class PresentersBudgetTest {
         assertTrue(bursts.spawn(cue))
         assertTrue(bursts.spawn(cue))
         assertFalse(bursts.spawn(cue))
+        bursts.clear()
+        bursts.setBudget(1)
+        assertTrue(bursts.spawn(WorldBurstCue(0, 0, WorldBurstKind.CATCH)))
+        assertFalse(bursts.spawn(WorldBurstCue(0, 0, WorldBurstKind.CATCH)))
+    }
+
+    @Test
+    fun phase21ShakeCapsAndDecay() {
+        assertEquals(0.04, cappedShakeAmplitudeM(ShakeKind.CATCH, PresenterQuality.HIGH), 1e-9)
+        assertEquals(0.02, cappedShakeAmplitudeM(ShakeKind.CATCH, PresenterQuality.LOW), 1e-9)
+        assertTrue(cappedShakeAmplitudeM(ShakeKind.CELEBRATE, PresenterQuality.HIGH) <= MAX_SHAKE_AMPLITUDE_M)
+        val shake = ScreenShake()
+        shake.setQuality(PresenterQuality.HIGH)
+        shake.trigger(ShakeKind.SALE)
+        val mid = shake.update(0.05)
+        assertTrue(hypot(mid.x, mid.y) > 0.0)
+        repeat(20) { shake.update(0.05) }
+        val done = shake.update(0.05)
+        assertEquals(0.0, done.x, 1e-9)
+        assertEquals(0.0, done.y, 1e-9)
     }
 }

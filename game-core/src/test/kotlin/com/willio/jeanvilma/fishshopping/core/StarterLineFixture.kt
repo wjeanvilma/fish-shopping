@@ -340,11 +340,15 @@ object StarterLineFixture {
         else -> error("unknown command ${o["type"]}")
     }
 
-    /** The canonical economy/task state both clients must match. */
+    /**
+     * The canonical economy / unlock / tutorial / entitlement state both clients must match.
+     * Phase 27 expands polish-era fields (harbor, IAP unlocks, bank, cosmetics, workers).
+     */
     fun expectedState(s: GameState): JsonObject = buildJsonObject {
         put("tick", s.tick)
         put("coins", s.coins)
         put("rngState", s.rng.state)
+        put("harborId", s.harborId)
         put("playerX", s.player.x)
         put("playerZ", s.player.z)
         put("bag", JsonObject(s.player.bag.contents().mapValues { JsonPrimitive(it.value) }))
@@ -362,6 +366,12 @@ object StarterLineFixture {
         put("ownedUpgrades", buildJsonArray { s.ownedUpgrades.forEach { add(JsonPrimitive(it)) } })
         put("completedQuests", buildJsonArray { s.completedQuests.forEach { add(JsonPrimitive(it)) } })
         put("tutorialIndex", s.tutorialIndex)
+        put("fullHarborUnlock", s.fullHarborUnlock)
+        put("unlockedCosmetics", buildJsonArray { s.unlockedCosmetics.forEach { add(JsonPrimitive(it)) } })
+        put("ownedDecor", buildJsonArray { s.ownedDecor.forEach { add(JsonPrimitive(it)) } })
+        put("loanOwed", s.loanOwed)
+        put("coinGoal", s.coinGoal)
+        put("workers", s.workers.size)
         put("stats", JsonObject(s.stats.mapValues { JsonPrimitive(it.value) }))
     }
 }

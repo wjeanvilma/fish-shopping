@@ -12,6 +12,10 @@ object FullUnlockSystem {
     const val ENTITLEMENT_ID = "entitlement.full_harbor_unlock"
     const val FREE_HARBOR_ID = "harbor.sunrise_pier"
     const val SKU = "fish.full_harbor_unlock"
+    /** Play Console product id (underscores); mirrors shared/billing/entitlements.json. */
+    const val ANDROID_PRODUCT_ID = "fish_full_harbor_unlock"
+    /** Web checkout product id; mirrors shared/billing/entitlements.json webProductId. */
+    const val WEB_PRODUCT_ID = "fish.full_harbor_unlock"
 
     /** Stable request id for a store purchase token — retries replay without double-grant side effects. */
     fun requestIdForPurchaseToken(purchaseToken: String): String = "full-unlock:$purchaseToken"

@@ -2,6 +2,8 @@
   "phase": 26,
   "schema": "fish.perf.device_matrix.v1",
   "description": "Blueprint device budgets for quality presets and soft auto-downgrade. Presentation-only — never changes the 20 Hz sim.",
+  "budgetGatePhase": 15,
+  "budgetGateCatalog": "shared/perf/budget-gate.json",
   "harborCacheLimit": 2,
   "platforms": {
     "android": {

@@ -25,6 +25,11 @@
 -keep class com.willio.jeanvilma.fishshopping.MainActivity { *; }
 -keep class com.willio.jeanvilma.fishshopping.BuildConfig { *; }
 
+# Phase 1 (post-1.0) Play Billing.
+-keep class com.android.vending.billing.** { *; }
+-dontwarn com.android.billingclient.**
+-keep class com.android.billingclient.** { *; }
+
 # Compose / coroutines noise.
 -dontwarn org.jetbrains.kotlin.**
 -dontwarn androidx.compose.**

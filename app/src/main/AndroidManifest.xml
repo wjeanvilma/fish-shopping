@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Optional cloud sync. Local play works offline without this path. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Phase 25: flush offline cloud queue when connectivity returns. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"

@@ -13,6 +13,9 @@ composeBom = "2026.02.01"
 filament = "1.77.3"
 # Runtime JSON only (no compiler plugin); 1.9.x is the line built against Kotlin 2.2.
 kotlinxSerialization = "1.9.0"
+# Phase 1 (post-1.0): Google Play Billing for non-consumable entitlements.
+playBilling = "7.1.1"
+orgJson = "20250517"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,6 +37,8 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 filament-android = { group = "com.google.android.filament", name = "filament-android", version.ref = "filament" }
 filament-gltfio-android = { group = "com.google.android.filament", name = "gltfio-android", version.ref = "filament" }
 filament-utils-android = { group = "com.google.android.filament", name = "filament-utils-android", version.ref = "filament" }
+play-billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "playBilling" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -1,0 +1,74 @@
+{
+  "phase": 4,
+  "schema": "fish.android.release_signing.v1",
+  "description": "Play upload keystore for assembleRelease. Credentials come from env / CI secrets or local.properties — never committed. Debug keystore is not the default release path.",
+  "signingConfigName": "upload",
+  "storeFileNeverCommitted": true,
+  "envKeys": [
+    {
+      "name": "FISH_UPLOAD_STORE_FILE",
+      "required": true,
+      "description": "Absolute path to the upload keystore (.jks / .keystore)"
+    },
+    {
+      "name": "FISH_UPLOAD_STORE_PASSWORD",
+      "required": true,
+      "description": "Keystore password"
+    },
+    {
+      "name": "FISH_UPLOAD_KEY_ALIAS",
+      "required": true,
+      "description": "Key alias inside the keystore"
+    },
+    {
+      "name": "FISH_UPLOAD_KEY_PASSWORD",
+      "required": true,
+      "description": "Key password (often same as store password)"
+    },
+    {
+      "name": "FISH_UPLOAD_KEYSTORE_BASE64",
+      "required": false,
+      "description": "CI-only: base64 of the keystore file written to FISH_UPLOAD_STORE_FILE before Gradle"
+    },
+    {
+      "name": "FISH_UPLOAD_ALLOW_DEBUG_FALLBACK",
+      "required": false,
+      "description": "Set true only for local R8 smoke tests; never for Play uploads"
+    }
+  ],
+  "localPropertiesKeys": [
+    {
+      "name": "fish.upload.storeFile",
+      "required": true,
+      "description": "Path to upload keystore (repo-relative or absolute)"
+    },
+    {
+      "name": "fish.upload.storePassword",
+      "required": true
+    },
+    {
+      "name": "fish.upload.keyAlias",
+      "required": true
+    },
+    {
+      "name": "fish.upload.keyPassword",
+      "required": true
+    },
+    {
+      "name": "fish.upload.allowDebugFallback",
+      "required": false,
+      "description": "true = sign release with debug keystore for local smoke only"
+    }
+  ],
+  "ciSecrets": [
+    "FISH_UPLOAD_KEYSTORE_BASE64",
+    "FISH_UPLOAD_STORE_PASSWORD",
+    "FISH_UPLOAD_KEY_ALIAS",
+    "FISH_UPLOAD_KEY_PASSWORD"
+  ],
+  "ciEphemeralWhenSecretsMissing": true,
+  "gitignore": ["*.jks", "*.keystore", "upload-keystore.jks"],
+  "resolutionOrder": ["env", "local.properties"],
+  "releaseDefault": "upload_or_fail",
+  "debugFallback": "explicit_opt_in_only"
+}

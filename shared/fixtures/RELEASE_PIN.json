@@ -1,12 +1,24 @@
 {
-  "label": "Phase 30 final freeze — content 1.0.0 / schema 20",
-  "contentVersion": "1.0.0",
+  "label": "Phase 23 balance patch — content 1.0.1 / schema 20",
+  "contentVersion": "1.0.1",
   "schemaVersion": 20,
   "ticksPerSecond": 20,
-  "releaseTag": "v1.0.0",
+  "releaseTag": "v1.0.1",
+  "completeTag": "v1.0-complete",
+  "versionName": "1.0.1",
+  "versionCode": 2,
+  "android": {
+    "versionNameFrom": "versionName",
+    "versionCodeFrom": "versionCode",
+    "aabArtifact": "app/build/outputs/bundle/release/app-release.aab",
+    "mappingArtifact": "app/build/outputs/mapping/release/mapping.txt",
+    "ciTask": ":app:bundleRelease"
+  },
   "fixtures": [
     "prng-vectors.json",
+    "parity-lock.json",
     "starter-line.json",
+    "parity-entitlements.json",
     "snapshot-starter-line-t2500.json",
     "legacy/snapshot-v1-starter-line-t2500.json",
     "legacy/snapshot-v12-starter-line-t2500.json",
@@ -18,6 +30,41 @@
     "legacy/snapshot-v18-starter-line-t2500.json",
     "legacy/snapshot-v19-starter-line-t2500.json"
   ],
+  "parityLock": "shared/fixtures/parity-lock.json",
   "definitionOfDone": "shared/ship/definition-of-done.json",
-  "notes": "1.0.0 ship pin. Re-record only with intentional rule/content changes: ./gradlew :game-core:test --tests StarterLineFixtureTest -PrecordFixtures=true"
+  "balancePatch": "shared/content/balance-patch-1.0.1.json",
+  "hotfixLane": "shared/ship/hotfix-lane.json",
+  "notes": "1.0.1 balance pin (schema 20). storeRelease remains the Phase 18 v1.0.0-store cut. Phase 29 hotfix lane: bump patch + versionCode only; staged rollout 10→50→100. Re-record fixtures after balance edits: ./gradlew :game-core:test --tests StarterLineFixtureTest -PrecordFixtures=true",
+  "storeRelease": {
+    "phase": 18,
+    "releaseTag": "v1.0.0-store",
+    "catalog": "shared/ship/public-ship.json",
+    "androidTrack": "production",
+    "contentVersion": "1.0.0",
+    "schemaVersion": 20,
+    "versionName": "1.0.0",
+    "versionCode": 1,
+    "hashes": {
+      "algorithm": "sha256",
+      "inputs": {
+        "billing__entitlements": "ae2917a9a4f610941be656ca60399a934f2beece6e82bd5e846cd09a906994b6",
+        "store__listing": "0e0e7386ce67003a10ba31013fad470cf33efbfba738858f1f6111c42f1015a9",
+        "store__listing-copy": "697590403850084d79e44c1587954915bc6a6efc8e9c6f9e5d48d840d7d8afdb",
+        "store__data-safety": "5ad28573222bd40e0830c5042af69522bc2cb0dd88cbddffdd61f1fdd5b994c7",
+        "store__legal-pages": "34b145b75ebc4a387b3b76a1d617016419be6e377324c6da11098575f4b31e5a",
+        "android__closed-testing": "316b4af98030cb407a8e64d4b4a78c21e9b02d98a2e9fd69d31c4951f0867de9",
+        "android__aab-ci": "d93699e814cd81f3525dfeb3523e0839f5bdbbe66f24f13e696e7c39e7b42590",
+        "android__release-signing": "2c9eabbb5e0228ce81d9566d7c4d1490438566c99e1262fdfb22f816d476b4e9",
+        "ship__public-ship": "3c4f0139d8ccaf78edcef97e99a85ac20a9d1b0b2e7dc76f12bf8e19f8b60244",
+        "ship__definition-of-done": "910c7a19190752c0abc60363f8359fb760b733549ee3677a1d7acd4de58d0de3"
+      },
+      "artifacts": {
+        "androidAab": null,
+        "androidMapping": null,
+        "webDistIndex": null
+      },
+      "artifactHashPolicy": "null_until_built",
+      "pinnedAt": "public-ship:hash"
+    }
+  }
 }

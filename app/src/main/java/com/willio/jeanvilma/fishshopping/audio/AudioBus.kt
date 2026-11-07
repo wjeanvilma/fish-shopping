@@ -3,27 +3,22 @@ package com.willio.jeanvilma.fishshopping.audio
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
-import android.media.AudioFormat
 import android.media.AudioManager
-import android.media.AudioTrack
+import android.media.MediaPlayer
+import android.media.SoundPool
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import kotlin.math.PI
+import com.willio.jeanvilma.fishshopping.core.audio.MusicPack
 import kotlin.math.abs
-import kotlin.math.sin
-import kotlin.random.Random
 
 /**
- * Phase 17 — layered AudioTrack bus: harbor ambience + SFX stingers, independent
- * music/SFX gains, optional haptics, and a concurrent-voice cap. Mute is a master
- * audio gate (music + SFX); haptics stay independent. Safe to call from the sim
- * thread — work is posted to the main looper.
- *
- * Phase 28 — USAGE_GAME audio focus: silence on LOSS / LOSS_TRANSIENT, restore on GAIN.
+ * Phase 17 levels + Phase 19 authored SFX (SoundPool) + Phase 20 harbor/shop
+ * music beds (MediaPlayer loops). Mute gates music+SFX; SFX duck dips the bed;
+ * focus LOSS silences, TRANSIENT_CAN_DUCK ducks. Safe to call from the sim thread.
  */
 class AudioBus(context: Context) {
     private val app = context.applicationContext
@@ -34,62 +29,42 @@ class AudioBus(context: Context) {
     @Volatile private var sfxVolume = 1f
     @Volatile private var hapticsEnabled = true
     @Volatile private var activeVoices = 0
-    /** Phase 28: silenced by system audio-focus loss (independent of Settings mute). */
     @Volatile private var focusHeld = false
-    @Volatile private var silencedByFocusLoss = false
+    /** 1 = full, 0 = silence (LOSS), duck factor for TRANSIENT_CAN_DUCK. */
+    @Volatile private var focusScale = 1f
+    @Volatile private var sfxDucking = false
+    @Volatile private var currentBed = MusicPack.DEFAULT_BED
     private var focusRequest: AudioFocusRequest? = null
 
-    private var ambienceTrack: AudioTrack? = null
+    private var musicPlayer: MediaPlayer? = null
+    private var soundPool: SoundPool? = null
+    private val soundIds = mutableMapOf<SfxCue, Int>()
+    private val streamDurationsMs = mutableMapOf<SfxCue, Long>()
 
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
         when (change) {
             AudioManager.AUDIOFOCUS_GAIN -> {
-                silencedByFocusLoss = false
+                focusScale = MusicPack.focusMusicScale("gain")
                 main.post {
-                    if (effectiveMusic() > 0f) ensureAmbience()
-                    refreshAmbienceVolume()
+                    if (effectiveMusicBase() > 0f) ensureMusic()
+                    refreshMusicVolume()
                 }
             }
             AudioManager.AUDIOFOCUS_LOSS,
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK,
             -> {
-                silencedByFocusLoss = true
-                main.post { stopAmbience() }
+                focusScale = MusicPack.focusMusicScale("loss")
+                main.post {
+                    refreshMusicVolume()
+                    if (focusScale <= 0f) stopMusic()
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                focusScale = MusicPack.focusMusicScale("duck")
+                main.post { refreshMusicVolume() }
             }
         }
     }
-
-    private data class Tone(val freq: Double, val durMs: Int, val gain: Double = 0.22, val delayMs: Int = 0)
-
-    private val cues: Map<SfxCue, List<Tone>> = mapOf(
-        SfxCue.CATCH to listOf(
-            Tone(520.0, 60, 0.28),
-            Tone(780.0, 90, 0.24, delayMs = 50),
-        ),
-        SfxCue.MACHINE_DONE to listOf(
-            Tone(340.0, 50, 0.18),
-            Tone(340.0, 50, 0.18, delayMs = 80),
-        ),
-        SfxCue.SALE to listOf(
-            Tone(880.0, 50, 0.26),
-            Tone(1320.0, 120, 0.2, delayMs = 40),
-        ),
-        SfxCue.ABANDON to listOf(
-            Tone(420.0, 100, 0.16),
-            Tone(260.0, 160, 0.14, delayMs = 80),
-        ),
-        SfxCue.UPGRADE to listOf(
-            Tone(523.0, 70, 0.22),
-            Tone(659.0, 70, 0.22, delayMs = 60),
-            Tone(784.0, 120, 0.24, delayMs = 120),
-        ),
-        SfxCue.RUSH to listOf(
-            Tone(392.0, 100, 0.2),
-            Tone(494.0, 100, 0.2, delayMs = 80),
-            Tone(587.0, 180, 0.22, delayMs = 160),
-        ),
-    )
 
     fun applyLevels(
         muted: Boolean = this.muted,
@@ -102,8 +77,8 @@ class AudioBus(context: Context) {
         this.sfxVolume = clampVolume(sfxVolume)
         this.hapticsEnabled = hapticsEnabled
         main.post {
-            if (effectiveMusic() > 0f) ensureAmbience() else stopAmbience()
-            refreshAmbienceVolume()
+            if (effectiveMusicBase() > 0f) ensureMusic() else stopMusic()
+            refreshMusicVolume()
         }
     }
 
@@ -117,13 +92,31 @@ class AudioBus(context: Context) {
         hapticsEnabled = enabled
     }
 
-    /**
-     * Phase 28: request USAGE_GAME focus while the Activity is started.
-     * Returns true when focus is granted (or AudioManager is unavailable).
-     */
+    /** Phase 20: switch harbor ↔ shop bed. */
+    fun setMusicBed(bedId: String) {
+        val bed = if (bedId == "shop") "shop" else "harbor"
+        main.post {
+            if (currentBed == bed && musicPlayer != null) return@post
+            currentBed = bed
+            if (effectiveMusicBase() <= 0f) return@post
+            stopMusic()
+            ensureMusic()
+        }
+    }
+
+    fun syncMusicBedFromPanels(stationOpen: Boolean) {
+        setMusicBed(MusicPack.bedForStationOpen(stationOpen))
+    }
+
+    fun currentMusicBed(): String = currentBed
+
+    fun isSilencedByFocusLoss(): Boolean = focusScale <= 0f
+
+    fun isSfxDucking(): Boolean = sfxDucking
+
     fun requestFocus(): Boolean {
         val mgr = audioManager ?: return true
-        if (focusHeld) return !silencedByFocusLoss
+        if (focusHeld) return focusScale > 0f
         val attrs = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_GAME)
             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
@@ -131,50 +124,91 @@ class AudioBus(context: Context) {
         val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
             .setAudioAttributes(attrs)
             .setOnAudioFocusChangeListener(focusListener, main)
-            .setWillPauseWhenDucked(true)
+            .setWillPauseWhenDucked(false)
             .build()
         focusRequest = request
         val result = mgr.requestAudioFocus(request)
         focusHeld = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-        silencedByFocusLoss = !focusHeld
-        if (focusHeld && effectiveMusic() > 0f) {
-            main.post { ensureAmbience() }
+        focusScale = if (focusHeld) 1f else 0f
+        if (focusHeld && effectiveMusicBase() > 0f) {
+            main.post { ensureMusic() }
         }
+        main.post { ensureSoundPool() }
         return focusHeld
     }
 
-    /** Phase 28: abandon focus on Activity stop / ViewModel clear. */
     fun abandonFocus() {
         val mgr = audioManager ?: return
         val request = focusRequest ?: return
         mgr.abandonAudioFocusRequest(request)
         focusRequest = null
         focusHeld = false
-        silencedByFocusLoss = false
-        main.post { stopAmbience() }
+        focusScale = 1f
+        main.post { stopMusic() }
     }
 
-    /** Test seam: true while silenced by focus loss. */
-    fun isSilencedByFocusLoss(): Boolean = silencedByFocusLoss
-
     fun play(cue: SfxCue) {
-        val tones = cues[cue] ?: return
         val sfxGain = effectiveSfx()
         main.post {
             if (sfxGain > 0f) {
-                val needed = tones.size
+                val needed = VOICE_COST
                 if (!canSpawnVoices(activeVoices, needed)) return@post
+                ensureSoundPool()
+                val pool = soundPool ?: return@post
+                val soundId = soundIds[cue] ?: return@post
+                beginSfxDuck()
                 activeVoices += needed
-                for (tone in tones) {
-                    main.postDelayed({
-                        if (effectiveSfx() > 0f) playTone(tone, effectiveSfx().toDouble())
-                        activeVoices = (activeVoices - 1).coerceAtLeast(0)
-                    }, tone.delayMs.toLong())
-                }
+                pool.play(soundId, sfxGain, sfxGain, 1, 0, 1f)
+                val dur = streamDurationsMs[cue] ?: 220L
+                main.postDelayed({
+                    activeVoices = (activeVoices - needed).coerceAtLeast(0)
+                }, dur + 20L)
             }
             if (cue.wantsHaptic()) pulseHaptic(cue)
-            if (effectiveMusic() > 0f) ensureAmbience()
+            if (effectiveMusicBase() > 0f) ensureMusic()
         }
+    }
+
+    private fun beginSfxDuck() {
+        sfxDucking = true
+        refreshMusicVolume()
+        main.removeCallbacks(endDuckRunnable)
+        main.postDelayed(endDuckRunnable, MusicPack.SFX_DUCK_RECOVERY_MS.toLong())
+    }
+
+    private val endDuckRunnable = Runnable {
+        sfxDucking = false
+        refreshMusicVolume()
+    }
+
+    private fun ensureSoundPool() {
+        if (soundPool != null) return
+        val attrs = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_GAME)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+        val pool = SoundPool.Builder()
+            .setMaxStreams(MAX_SFX_VOICES)
+            .setAudioAttributes(attrs)
+            .build()
+        for (cue in SfxCue.entries) {
+            val resId = app.resources.getIdentifier(cue.androidRawName(), "raw", app.packageName)
+            if (resId == 0) continue
+            val soundId = pool.load(app, resId, 1)
+            soundIds[cue] = soundId
+            streamDurationsMs[cue] = estimatedDurationMs(cue)
+        }
+        soundPool = pool
+    }
+
+    private fun estimatedDurationMs(cue: SfxCue): Long = when (cue) {
+        SfxCue.CATCH -> 180L
+        SfxCue.MACHINE_DONE -> 200L
+        SfxCue.SALE -> 220L
+        SfxCue.UI -> 90L
+        SfxCue.ABANDON -> 260L
+        SfxCue.UPGRADE -> 280L
+        SfxCue.RUSH -> 340L
     }
 
     private fun pulseHaptic(cue: SfxCue) {
@@ -200,112 +234,61 @@ class AudioBus(context: Context) {
     }
 
     private fun effectiveSfx(): Float =
-        if (muted || silencedByFocusLoss) 0f else sfxVolume.coerceIn(0f, 1f)
+        if (muted || focusScale <= 0f) 0f else sfxVolume.coerceIn(0f, 1f)
 
-    private fun effectiveMusic(): Float =
-        if (muted || silencedByFocusLoss) 0f else musicVolume.coerceIn(0f, 1f)
+    /** Music gain before SFX duck (mute + settings + focus scale). */
+    private fun effectiveMusicBase(): Float {
+        if (muted) return 0f
+        return musicVolume.coerceIn(0f, 1f) * focusScale
+    }
 
-    private fun ensureAmbience() {
-        if (ambienceTrack != null) return
-        val sampleRate = 22_050
-        val seconds = 2
-        val samples = sampleRate * seconds
-        val buf = ShortArray(samples)
-        var last = 0.0
-        val rnd = Random(17)
-        val twoPiHum = 2.0 * PI * 78.0 / sampleRate
-        for (i in 0 until samples) {
-            val white = rnd.nextDouble() * 2.0 - 1.0
-            last = (last + 0.02 * white) / 1.02
-            val hum = sin(twoPiHum * i) * 0.18
-            buf[i] = ((last * 0.55 + hum) * 0.35 * Short.MAX_VALUE).toInt()
-                .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
-                .toShort()
+    private fun ensureMusic() {
+        if (musicPlayer != null) return
+        val raw = MusicPack.androidRawName(currentBed)
+        val resId = app.resources.getIdentifier(raw, "raw", app.packageName)
+        if (resId == 0) return
+        val player = MediaPlayer.create(app, resId) ?: return
+        player.isLooping = true
+        player.setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build(),
+        )
+        val vol = outputMusicVolume()
+        player.setVolume(vol, vol)
+        player.start()
+        musicPlayer = player
+    }
+
+    private fun refreshMusicVolume() {
+        val player = musicPlayer ?: return
+        val vol = outputMusicVolume()
+        player.setVolume(vol, vol)
+        if (vol <= 0f && !player.isPlaying) return
+        if (vol <= 0f && player.isPlaying) {
+            // Keep looping but silent while ducked to 0 / muted mid-session.
+            player.setVolume(0f, 0f)
         }
-        val track = AudioTrack.Builder()
-            .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_GAME)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build(),
-            )
-            .setAudioFormat(
-                AudioFormat.Builder()
-                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                    .setSampleRate(sampleRate)
-                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                    .build(),
-            )
-            .setBufferSizeInBytes(buf.size * 2)
-            .setTransferMode(AudioTrack.MODE_STATIC)
-            .build()
-        track.write(buf, 0, buf.size)
-        track.setLoopPoints(0, buf.size, -1)
-        val vol = (effectiveMusic() * 0.45f).coerceIn(0f, 1f)
-        track.setVolume(vol)
-        track.play()
-        ambienceTrack = track
     }
 
-    private fun refreshAmbienceVolume() {
-        val track = ambienceTrack ?: return
-        val vol = (effectiveMusic() * 0.45f).coerceIn(0f, 1f)
-        track.setVolume(vol)
+    private fun outputMusicVolume(): Float {
+        val base = effectiveMusicBase() * MusicPack.MASTER_MUSIC_SCALE
+        return MusicPack.duckedMusicGain(base, sfxDucking).coerceIn(0f, 1f)
     }
 
-    private fun stopAmbience() {
-        val track = ambienceTrack ?: return
-        ambienceTrack = null
+    private fun stopMusic() {
+        val player = musicPlayer ?: return
+        musicPlayer = null
         runCatching {
-            track.stop()
-            track.release()
+            player.stop()
+            player.release()
         }
-    }
-
-    private fun playTone(tone: Tone, volumeScale: Double) {
-        val sampleRate = 22_050
-        val samples = (sampleRate * tone.durMs / 1000.0).toInt().coerceAtLeast(1)
-        val buf = ShortArray(samples)
-        val twoPiF = 2.0 * PI * tone.freq / sampleRate
-        val peak = tone.gain * volumeScale
-        for (i in 0 until samples) {
-            val env = when {
-                i < samples / 10 -> i.toDouble() / (samples / 10.0)
-                else -> 1.0 - (i - samples / 10.0) / (samples * 0.9)
-            }.coerceIn(0.0, 1.0)
-            buf[i] = (sin(twoPiF * i) * peak * env * Short.MAX_VALUE).toInt()
-                .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
-                .toShort()
-        }
-        val track = AudioTrack.Builder()
-            .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_GAME)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build(),
-            )
-            .setAudioFormat(
-                AudioFormat.Builder()
-                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                    .setSampleRate(sampleRate)
-                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                    .build(),
-            )
-            .setBufferSizeInBytes(buf.size * 2)
-            .setTransferMode(AudioTrack.MODE_STATIC)
-            .build()
-        track.write(buf, 0, buf.size)
-        track.play()
-        main.postDelayed({
-            runCatching {
-                track.stop()
-                track.release()
-            }
-        }, tone.durMs + 40L)
     }
 
     companion object {
         const val MAX_SFX_VOICES = 6
+        const val VOICE_COST = 1
         val VOLUME_STEPS = floatArrayOf(0f, 0.35f, 0.7f, 1f)
 
         fun clampVolume(v: Float): Float =

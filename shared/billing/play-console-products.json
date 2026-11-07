@@ -1,0 +1,33 @@
+{
+  "phase": 6,
+  "schema": "fish.billing.play_console_catalog.v1",
+  "description": "Expected Google Play Console in-app products. Keep this file in lockstep with Play Console; validate-store-catalog fails if it drifts from entitlements.json.",
+  "packageName": "com.willio.jeanvilma.fishshopping",
+  "productType": "inapp",
+  "products": [
+    {
+      "productId": "fish_full_harbor_unlock",
+      "sku": "fish.full_harbor_unlock",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_sunset_bunting",
+      "sku": "fish.cosmetic.sunset_bunting",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_pearl_string",
+      "sku": "fish.cosmetic.pearl_string",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_captain_crest",
+      "sku": "fish.cosmetic.captain_crest",
+      "status": "active",
+      "type": "non_consumable"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "phase": 6,
+  "schema": "fish.billing.web_checkout_catalog.v1",
+  "description": "Expected web checkout API product ids. Keep in lockstep with the billing API / Stripe catalog; validate-store-catalog fails if it drifts from entitlements.json.",
+  "provider": "checkout_api",
+  "productType": "non_consumable",
+  "products": [
+    {
+      "webProductId": "fish.full_harbor_unlock",
+      "sku": "fish.full_harbor_unlock",
+      "androidProductId": "fish_full_harbor_unlock",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.sunset_bunting",
+      "sku": "fish.cosmetic.sunset_bunting",
+      "androidProductId": "fish_cosmetic_sunset_bunting",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.pearl_string",
+      "sku": "fish.cosmetic.pearl_string",
+      "androidProductId": "fish_cosmetic_pearl_string",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "webProductId": "fish.cosmetic.captain_crest",
+      "sku": "fish.cosmetic.captain_crest",
+      "androidProductId": "fish_cosmetic_captain_crest",
+      "status": "active",
+      "type": "non_consumable"
+    }
+  ]
+}

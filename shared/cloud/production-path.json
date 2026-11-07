@@ -1,10 +1,14 @@
 {
-  "phase": 22,
+  "phase": 25,
+  "schema": "fish.cloud.production_path.v1",
+  "description": "Post-1.0 Phase 25 — cloud save production cutover. Env keys, Identity Toolkit anonymous auth + refresh recovery, Phase 11 conflict UI, and offline push queue (last snapshot wins). Firestore rules stay out of repo (snippet on request).",
   "authMode": "identity_toolkit_anonymous",
   "documentPath": "users/{uid}/saves/harbor",
   "documentFields": ["snapshot", "savedAtEpochMs", "checksum"],
   "conflictUi": "phase11_dual_snapshot_choice",
   "firestoreRules": "not_shipped_ask_for_snippet",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 20,
   "envKeys": {
     "web": [
       {
@@ -36,5 +40,33 @@
   "guestRecovery": {
     "persisted": ["cloudAccountId", "cloudRefreshToken"],
     "note": "Anonymous uid restored via Secure Token refresh_token grant"
-  }
+  },
+  "offlineQueue": {
+    "enabled": true,
+    "policy": "latest_snapshot_wins",
+    "webStorageKey": "fish-shopping-cloud-offline-queue",
+    "androidPrefsName": "fish_shopping_cloud_offline_queue",
+    "androidPrefsKey": "pending_snapshot",
+    "flushOn": ["save_retry", "app_resume", "online_event", "settings_enable"],
+    "note": "Failed cloud.push enqueues the latest encoded snapshot; flush clears on successful put."
+  },
+  "cutoverChecklist": [
+    "Set web VITE_FIREBASE_* and Android fish.firebase.* from Firebase console",
+    "Confirm Identity Toolkit Anonymous sign-in enabled",
+    "Confirm Firestore database (default) exists in the project",
+    "Apply owner-only rules for users/{uid}/saves/harbor (ask for snippet; not in repo)",
+    "Enable cloud sync in Settings; grant guest; verify conflict UI with two devices",
+    "Toggle airplane mode, checkpoint, restore network — offline queue flushes"
+  ],
+  "preflightGates": [
+    "shared/cloud/production-path.json",
+    "web/.env.example",
+    "local.properties.example",
+    "web/src/cloud/cloudProductionPath.ts",
+    "web/src/cloud/cloudOfflineQueue.ts",
+    "web/src/cloud/cloudSyncCoordinator.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/cloud/CloudProductionPath.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/cloud/CloudOfflineQueue.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/cloud/CloudSyncCoordinator.kt"
+  ]
 }

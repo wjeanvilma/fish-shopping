@@ -36,9 +36,9 @@ export function shouldSuspendAudioWhenHidden(hidden: boolean): boolean {
   return hidden;
 }
 
-/** Audio unlock requires a user gesture before Web Audio can start. */
-export function audioUnlockEvents(): readonly ("pointerdown" | "keydown")[] {
-  return ["pointerdown", "keydown"];
+/** Audio unlock requires a user gesture before Web Audio can start (Safari needs touchstart). */
+export function audioUnlockEvents(): readonly ("pointerdown" | "keydown" | "touchstart")[] {
+  return ["pointerdown", "keydown", "touchstart"];
 }
 
 /** Android configChanges handled without Activity recreate (rotation QA). */

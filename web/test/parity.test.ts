@@ -1,6 +1,7 @@
 /**
  * Cross-platform parity: the TypeScript engine must reproduce the shared fixtures that
  * the Kotlin game-core tests also check (blueprint "Fixtures" and "Android/web same fixture").
+ * Phase 27 expands economy / unlock / tutorial / entitlement expect fields.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -8,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import {
   type Command, GameState, Prng, Simulation, decodeSnapshot, encodeSnapshot, loadContent,
 } from "../src/engine";
+import { parityExpectedState } from "../src/engine/parityLock";
 
 const shared = (p: string) => readFileSync(resolve(__dirname, "../../shared", p), "utf8");
 const content = loadContent(JSON.parse(shared("content/content-pack.json")));
@@ -22,10 +24,10 @@ interface Fixture {
 }
 const fixture: Fixture = JSON.parse(shared("fixtures/starter-line.json"));
 
-function replay(untilTick: number): Simulation {
-  const sim = new Simulation(content, GameState.newGame(content, fixture.harborId, fixture.seed));
+function replayFixture(fx: Fixture, untilTick: number): Simulation {
+  const sim = new Simulation(content, GameState.newGame(content, fx.harborId, fx.seed));
   const byTick = new Map<number, Command[]>();
-  for (const { tick, ...cmd } of fixture.commands) {
+  for (const { tick, ...cmd } of fx.commands) {
     byTick.set(tick, [...(byTick.get(tick) ?? []), cmd as Command]);
   }
   while (sim.state.tick < untilTick) {
@@ -36,29 +38,13 @@ function replay(untilTick: number): Simulation {
   return sim;
 }
 
+function replay(untilTick: number): Simulation {
+  return replayFixture(fixture, untilTick);
+}
+
 /** Same fields and ordering as StarterLineFixture.expectedState in Kotlin. */
 function expectedState(s: GameState) {
-  const rec = (entries: [string, number][]) => Object.fromEntries(entries);
-  const m = s.machines.find((mm) => mm.stationId === "station.cutter_1")!;
-  return {
-    tick: s.tick,
-    coins: s.coins,
-    rngState: s.rng.state,
-    playerX: s.player.x,
-    playerZ: s.player.z,
-    bag: rec(s.player.bag.contents()),
-    bagCapacityUnits: s.player.bag.capacityUnits,
-    machineInput: rec(m.input.contents()),
-    machineOutput: rec(m.output.contents()),
-    activeBatchRemaining: m.activeBatch?.remainingTicks ?? -1,
-    counterStock: rec(s.counters[0]!.stock.contents()),
-    customers: s.customers.length,
-    fishingStock: Object.fromEntries(s.fishingSpots.map((f) => [f.zoneId, f.stock])),
-    ownedUpgrades: [...s.ownedUpgrades].sort(),
-    completedQuests: [...s.completedQuests].sort(),
-    tutorialIndex: s.tutorialIndex,
-    stats: Object.fromEntries([...s.stats].sort(([a], [b]) => (a < b ? -1 : 1))),
-  };
+  return parityExpectedState(s);
 }
 
 describe("shared fixtures", () => {
@@ -79,6 +65,17 @@ describe("shared fixtures", () => {
   it("replaying the starter line reproduces the Kotlin end state", () => {
     const sim = replay(fixture.ticks);
     expect(expectedState(sim.state)).toEqual(fixture.expect);
+    expect(sim.state.tutorialIndex).toBeGreaterThanOrEqual(content.tutorial.length);
+    expect(expectedState(sim.state).workers).toBeGreaterThanOrEqual(1);
+    expect(expectedState(sim.state).fullHarborUnlock).toBe(false);
+  });
+
+  it("replaying the entitlements unlock fixture matches Kotlin", () => {
+    const entitlements: Fixture = JSON.parse(shared("fixtures/parity-entitlements.json"));
+    const sim = replayFixture(entitlements, entitlements.ticks);
+    expect(expectedState(sim.state)).toEqual(entitlements.expect);
+    expect(sim.state.fullHarborUnlock).toBe(true);
+    expect([...sim.state.unlockedCosmetics]).toContain("banner.iap_sunset_bunting");
   });
 
   it("mid-run save snapshot is byte-identical to the Kotlin one", () => {

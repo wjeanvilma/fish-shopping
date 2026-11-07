@@ -1,0 +1,108 @@
+{
+  "phase": 14,
+  "schema": "fish.lifecycle.browser_matrix.v1",
+  "description": "Post-1.0 Phase 14 — browser QA matrix for Chrome / Safari / Firefox: WebGL2 gate, context loss recovery, IndexedDB storage quota fallback, and gesture audio unlock.",
+  "phase28Catalog": "shared/lifecycle/browser-lifecycle.json",
+  "browsers": [
+    {
+      "id": "chrome",
+      "label": "Chrome / Chromium / Edge",
+      "engines": ["Blink"],
+      "minNotes": "Current stable; hardware acceleration on",
+      "webgl2": "required",
+      "indexedDb": "persistent",
+      "audioUnlock": ["pointerdown", "keydown", "touchstart"]
+    },
+    {
+      "id": "firefox",
+      "label": "Firefox",
+      "engines": ["Gecko"],
+      "minNotes": "Current stable; WebGL2 enabled",
+      "webgl2": "required",
+      "indexedDb": "persistent",
+      "audioUnlock": ["pointerdown", "keydown", "touchstart"]
+    },
+    {
+      "id": "safari",
+      "label": "Safari (macOS / iOS)",
+      "engines": ["WebKit"],
+      "minNotes": "Safari 15+ WebGL2; iOS needs touchstart for AudioContext",
+      "webgl2": "required",
+      "indexedDb": "persistent_or_private_memory",
+      "audioUnlock": ["pointerdown", "keydown", "touchstart"],
+      "notes": [
+        "Private / ITP windows may force memory-only saves",
+        "Autoplay policy requires a user gesture before Web Audio"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "webgl2_gate",
+      "title": "WebGL 2 availability gate",
+      "trigger": "hasWebGL2() false on boot",
+      "expects": ["showGateCopy", "noHarborScene"],
+      "hostHooks": ["web/src/ui/App.tsx", "web/src/render/HarborScene.ts#hasWebGL2"],
+      "phase28Keys": ["web.webgl2Required", "web.webgl2GateCopy"]
+    },
+    {
+      "id": "context_loss",
+      "title": "WebGL context lost / restored",
+      "trigger": "webglcontextlost then webglcontextrestored",
+      "expects": [
+        "preventDefaultOnLost",
+        "pauseRenderWhileLost",
+        "bannerCopy",
+        "reloadHarborOnRestore"
+      ],
+      "hostHooks": ["HarborScene.onContextLost", "HarborScene.onContextRestored", "App context banner"],
+      "phase28Keys": ["web.contextLoss"]
+    },
+    {
+      "id": "storage_quota",
+      "title": "IndexedDB unavailable or QuotaExceeded",
+      "trigger": "indexedDB missing / blocked / QuotaExceededError on write",
+      "expects": [
+        "fallbackMemoryStore",
+        "persistentFalse",
+        "titleToastWhenMemoryOnly",
+        "settingsLabel"
+      ],
+      "hostHooks": ["web/src/game/saveStore.ts", "openSaveStore", "quotaAwareWrite"],
+      "phase28Keys": ["web.storageUnavailable"]
+    },
+    {
+      "id": "audio_unlock",
+      "title": "Web Audio unlock on gesture",
+      "trigger": "pointerdown / keydown / touchstart before first tone",
+      "expects": [
+        "unlockOnGesture",
+        "resumeSuspendedContext",
+        "suspendOnVisibilityHidden",
+        "keepUnlockAcrossSuspend"
+      ],
+      "hostHooks": ["App audioUnlockEvents", "GameHost.unlockAudio", "AudioBus"],
+      "phase28Keys": ["web.audioGesture", "web.tabLifecycle.suspendAudioWhenHidden"]
+    }
+  ],
+  "audioUnlockEvents": ["pointerdown", "keydown", "touchstart"],
+  "webgl2Required": true,
+  "storageQuota": {
+    "fallback": "memory",
+    "detectNames": ["QuotaExceededError", "NS_ERROR_DOM_QUOTA_REACHED"],
+    "probeEstimate": true
+  },
+  "manualChecklist": [
+    "Chrome: load game, confirm harbor renders; DevTools → Sensors → lose WebGL context",
+    "Firefox: same WebGL2 + tab hide/show audio mute/unmute",
+    "Safari macOS: first click unlocks audio; private window shows memory-only save label",
+    "Safari iOS: touchstart unlocks audio; rotate portrait/landscape HUD reflows",
+    "Fill storage / block site data → title toast + Settings memory-only label; play still works"
+  ],
+  "failCriteria": [
+    "Blank screen with no WebGL2 gate copy",
+    "Context loss without preventDefault (no restore)",
+    "QuotaExceededError crashes the tab or blocks title Play",
+    "Safari iOS never unlocks AudioContext after first tap"
+  ]
+}

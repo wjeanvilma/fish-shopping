@@ -221,7 +221,8 @@ a.button { text-decoration: none; display: inline-flex; align-items: center; jus
 }
 .button:disabled { background: var(--surface-muted); color: rgb(21 52 73 / 0.5); cursor: not-allowed; }
 .button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
-.button.ghost { background: transparent; color: var(--action); }
+/* Phase 16: ghost/secondary labels use ink on surface for WCAG AA normal text (Action fill stays for primary). */
+.button.ghost { background: transparent; color: var(--ink); }
 
 .progress { height: 6px; border-radius: 3px; background: var(--surface-muted); margin-top: 8px; overflow: hidden; }
 .progress > div { height: 100%; background: var(--action); }

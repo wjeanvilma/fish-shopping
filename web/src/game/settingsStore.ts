@@ -14,7 +14,7 @@ export type { VolumeStep, HudTextScale };
 
 export interface GameSettings {
   muted: boolean;
-  /** Phase 17: harbor ambience gain (0 / 0.35 / 0.7 / 1). */
+  /** Phase 17/20: music bed gain (0 / 0.35 / 0.7 / 1). */
   musicVolume: VolumeStep;
   /** Phase 17: SFX stinger gain (0 / 0.35 / 0.7 / 1). */
   sfxVolume: VolumeStep;
@@ -48,6 +48,8 @@ export interface GameSettings {
   cloudAccountId: string | null;
   /** Phase 22: Identity Toolkit refresh token for guest uid recovery. */
   cloudRefreshToken: string | null;
+  /** Phase 24: equipped harbor banner cosmetic id (presentation-only). */
+  equippedCosmeticId: string | null;
 }
 
 /** Presentation-only save / cloud status for the Settings panel. */
@@ -57,6 +59,8 @@ export interface SaveStatusView {
   cloudEnabled: boolean;
   cloudAvailable: boolean;
   cloudLinked: boolean;
+  /** Phase 25: offline push queue has a pending snapshot. */
+  cloudPendingUpload: boolean;
 }
 
 const KEY = "fish-shopping-settings";
@@ -80,6 +84,7 @@ const DEFAULTS: GameSettings = {
   analyticsConsentDecided: false,
   cloudAccountId: null,
   cloudRefreshToken: null,
+  equippedCosmeticId: null,
 };
 
 function parseScale(v: unknown): JoystickScale {
@@ -121,6 +126,9 @@ export function loadSettings(): GameSettings {
         : null,
       cloudRefreshToken: typeof parsed.cloudRefreshToken === "string" && parsed.cloudRefreshToken.length > 0
         ? parsed.cloudRefreshToken
+        : null,
+      equippedCosmeticId: typeof parsed.equippedCosmeticId === "string" && parsed.equippedCosmeticId.length > 0
+        ? parsed.equippedCosmeticId
         : null,
     };
   } catch {

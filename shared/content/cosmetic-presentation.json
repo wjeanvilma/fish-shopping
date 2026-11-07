@@ -1,0 +1,75 @@
+{
+  "phase": 24,
+  "schema": "fish.content.cosmetic_presentation.v1",
+  "description": "Post-1.0 Phase 24 — equip/preview UX for power-neutral harbor banners. Presentation-only: equipped id lives in client settings (not sim schema). Preview is ephemeral UI state.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 20,
+  "entitlements": "shared/billing/entitlements.json",
+  "constraints": {
+    "powerNeutral": true,
+    "noSchemaBreak": true,
+    "equipInSettingsNotSave": true,
+    "previewEphemeral": true,
+    "note": "Equip never changes rates, wages, sale prices, patience, or XP. IAP grant remains CosmeticsIapSystem; this phase only presents owned banners."
+  },
+  "slot": {
+    "id": "harbor_banner",
+    "maxEquipped": 1,
+    "unequipAllowed": true,
+    "previewUnownedAllowed": true
+  },
+  "anchor": {
+    "description": "Pier-side banner flag (presentation mesh)",
+    "xMm": -9000,
+    "zMm": 1800,
+    "heightM": 2.4
+  },
+  "items": [
+    {
+      "cosmeticId": "banner.iap_sunset_bunting",
+      "sku": "fish.cosmetic.sunset_bunting",
+      "title": "Sunset bunting",
+      "swatchRgb": [232, 120, 64],
+      "source": "iap",
+      "powerNeutral": true
+    },
+    {
+      "cosmeticId": "banner.iap_pearl_string",
+      "sku": "fish.cosmetic.pearl_string",
+      "title": "Pearl string lights",
+      "swatchRgb": [236, 236, 245],
+      "source": "iap",
+      "powerNeutral": true
+    },
+    {
+      "cosmeticId": "banner.iap_captain_crest",
+      "sku": "fish.cosmetic.captain_crest",
+      "title": "Captain's crest",
+      "swatchRgb": [48, 96, 168],
+      "source": "iap",
+      "powerNeutral": true
+    }
+  ],
+  "fallback": {
+    "titleFromId": true,
+    "swatchRgb": [120, 160, 140],
+    "powerNeutral": true,
+    "note": "Prestige/seasonal unlocked banners use fallback swatch when not listed in items."
+  },
+  "ui": {
+    "equipLabel": "Equip",
+    "unequipLabel": "Unequip",
+    "previewLabel": "Preview",
+    "clearPreviewLabel": "Clear preview",
+    "ownedBadge": "Owned",
+    "equippedBadge": "Equipped",
+    "previewBadge": "Preview",
+    "powerNeutralHint": "Visual only — never changes rates, wages, or sale prices"
+  },
+  "preflightGates": [
+    "shared/content/cosmetic-presentation.json",
+    "shared/billing/entitlements.json",
+    "web/src/engine/cosmeticPresentation.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/CosmeticPresentation.kt"
+  ]
+}

@@ -57,6 +57,7 @@ describe("settingsStore Phase 10 a11y fields", () => {
       analyticsConsentDecided: false,
       cloudAccountId: null,
       cloudRefreshToken: null,
+      equippedCosmeticId: null,
     });
     const s = loadSettings();
     expect(s.reducedMotion).toBe(true);
@@ -84,6 +85,7 @@ describe("settingsStore Phase 10 a11y fields", () => {
       analyticsConsentDecided: false,
       cloudAccountId: null,
       cloudRefreshToken: null,
+      equippedCosmeticId: null,
     });
     const s = loadSettings();
     expect(s.musicVolume).toBe(0.35);
@@ -115,10 +117,19 @@ describe("settingsStore Phase 10 a11y fields", () => {
       analyticsConsentDecided: false,
       cloudAccountId: "uid-guest",
       cloudRefreshToken: "refresh-guest",
+      equippedCosmeticId: "banner.iap_sunset_bunting",
     });
     const s = loadSettings();
     expect(s.cloudAccountId).toBe("uid-guest");
     expect(s.cloudRefreshToken).toBe("refresh-guest");
+    expect(s.equippedCosmeticId).toBe("banner.iap_sunset_bunting");
+  });
+
+  it("defaults and persists Phase 24 equipped cosmetic", () => {
+    const s = loadSettings();
+    expect(s.equippedCosmeticId).toBeNull();
+    saveSettings({ ...s, equippedCosmeticId: "banner.iap_pearl_string" });
+    expect(loadSettings().equippedCosmeticId).toBe("banner.iap_pearl_string");
   });
 
   it("defaults and persists Phase 25 analytics consent", () => {

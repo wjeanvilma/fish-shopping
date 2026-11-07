@@ -2226,6 +2226,10 @@ export const FullUnlockSystem = {
   ENTITLEMENT_ID: "entitlement.full_harbor_unlock",
   FREE_HARBOR_ID: "harbor.sunrise_pier",
   SKU: "fish.full_harbor_unlock",
+  /** Web checkout product id; mirrors shared/billing/entitlements.json webProductId. */
+  WEB_PRODUCT_ID: "fish.full_harbor_unlock",
+  /** Play Console product id (Android parity). */
+  ANDROID_PRODUCT_ID: "fish_full_harbor_unlock",
 
   requestIdForPurchaseToken(purchaseToken: string): string {
     return `full-unlock:${purchaseToken}`;
@@ -2269,6 +2273,8 @@ export const CosmeticsIapSystem = {
     {
       id: "entitlement.cosmetic.sunset_bunting",
       sku: "fish.cosmetic.sunset_bunting",
+      webProductId: "fish.cosmetic.sunset_bunting",
+      androidProductId: "fish_cosmetic_sunset_bunting",
       grantsCosmetic: "banner.iap_sunset_bunting",
       title: "Sunset bunting",
       description: "Warm dusk bunting for the pier. Visual only — never changes rates, wages, or sale prices.",
@@ -2276,6 +2282,8 @@ export const CosmeticsIapSystem = {
     {
       id: "entitlement.cosmetic.pearl_string",
       sku: "fish.cosmetic.pearl_string",
+      webProductId: "fish.cosmetic.pearl_string",
+      androidProductId: "fish_cosmetic_pearl_string",
       grantsCosmetic: "banner.iap_pearl_string",
       title: "Pearl string lights",
       description: "Pearl-white string lights. Visual only — never changes rates, wages, or sale prices.",
@@ -2283,6 +2291,8 @@ export const CosmeticsIapSystem = {
     {
       id: "entitlement.cosmetic.captain_crest",
       sku: "fish.cosmetic.captain_crest",
+      webProductId: "fish.cosmetic.captain_crest",
+      androidProductId: "fish_cosmetic_captain_crest",
       grantsCosmetic: "banner.iap_captain_crest",
       title: "Captain's crest",
       description: "A harbor crest plaque. Visual only — never changes rates, wages, or sale prices.",
@@ -2290,10 +2300,22 @@ export const CosmeticsIapSystem = {
   ] as const,
 
   BY_SKU: new Map<string, {
-    id: string; sku: string; grantsCosmetic: string; title: string; description: string;
+    id: string;
+    sku: string;
+    webProductId: string;
+    androidProductId: string;
+    grantsCosmetic: string;
+    title: string;
+    description: string;
   }>(),
   BY_COSMETIC: new Map<string, {
-    id: string; sku: string; grantsCosmetic: string; title: string; description: string;
+    id: string;
+    sku: string;
+    webProductId: string;
+    androidProductId: string;
+    grantsCosmetic: string;
+    title: string;
+    description: string;
   }>(),
   GRANTED_COSMETICS: new Set<string>(),
 

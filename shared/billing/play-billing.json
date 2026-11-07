@@ -1,0 +1,40 @@
+{
+  "phase": 1,
+  "schema": "fish.billing.play_production.v1",
+  "description": "Android Play Billing production path for non-consumable full-harbor unlock and cosmetics. Debug builds keep the local stub; release (or forcePlay) uses BillingClient.",
+  "billingLibrary": "7.1.1",
+  "productType": "inapp",
+  "acknowledge": true,
+  "debugBackend": "stub",
+  "releaseBackend": "play",
+  "forcePlayFlag": "EntitlementBillings.forcePlay",
+  "activityHost": "BillingActivityHost",
+  "catalog": "shared/billing/entitlements.json",
+  "skus": [
+    {
+      "sku": "fish.full_harbor_unlock",
+      "androidProductId": "fish_full_harbor_unlock",
+      "grantsCosmetic": null
+    },
+    {
+      "sku": "fish.cosmetic.sunset_bunting",
+      "androidProductId": "fish_cosmetic_sunset_bunting",
+      "grantsCosmetic": "banner.iap_sunset_bunting"
+    },
+    {
+      "sku": "fish.cosmetic.pearl_string",
+      "androidProductId": "fish_cosmetic_pearl_string",
+      "grantsCosmetic": "banner.iap_pearl_string"
+    },
+    {
+      "sku": "fish.cosmetic.captain_crest",
+      "androidProductId": "fish_cosmetic_captain_crest",
+      "grantsCosmetic": "banner.iap_captain_crest"
+    }
+  ],
+  "sandbox": {
+    "note": "Use Play Console license testers + internal track; set EntitlementBillings.forcePlay=true on debug to exercise the Play path locally.",
+    "closedTestingCatalog": "shared/android/closed-testing.json",
+    "closedTestingPhase": 17
+  }
+}

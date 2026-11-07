@@ -1,7 +1,7 @@
 {
     "name": "starter-line",
     "description": "Five minutes of the Sunrise Pier loop: fish, cut, stock, serve, hire, contract, grill, bag upgrades.",
-    "contentVersion": "1.0.0",
+    "contentVersion": "1.0.1",
     "harborId": "harbor.sunrise_pier",
     "seed": 20261105,
     "ticks": 6000,
@@ -2307,8 +2307,9 @@
     ],
     "expect": {
         "tick": 6000,
-        "coins": 190,
+        "coins": 235,
         "rngState": 1765156821,
+        "harborId": "harbor.sunrise_pier",
         "playerX": 1200,
         "playerZ": -4000,
         "bag": {
@@ -2344,6 +2345,14 @@
             "quest.specialty_kitchen"
         ],
         "tutorialIndex": 11,
+        "fullHarborUnlock": false,
+        "unlockedCosmetics": [
+            "banner.northlight_freeze"
+        ],
+        "ownedDecor": [],
+        "loanOwed": 0,
+        "coinGoal": 0,
+        "workers": 1,
         "stats": {
             "stat.contract_items_delivered": 2,
             "stat.contract_revenue": 40,
@@ -2359,7 +2368,7 @@
             "stat.outputs_collected": 43,
             "stat.quests_completed": 6,
             "stat.rare_catches": 1,
-            "stat.revenue": 153,
+            "stat.revenue": 173,
             "stat.sales": 11,
             "stat.tourist_sales": 2,
             "stat.trophy_records": 19,

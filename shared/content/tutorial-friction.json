@@ -1,0 +1,149 @@
+{
+  "phase": 22,
+  "schema": "fish.content.tutorial_friction.v1",
+  "description": "Post-1.0 Phase 22 — telemetry-informed tutorial friction fixes. Copy + presentation timing/nudges only; advanceOn triggers, step ids, and schema 20 stay frozen. Funnel uses Phase 25 tutorial_step_completed stepIndex.",
+  "contentPack": "shared/content/content-pack.json",
+  "schemaVersion": 20,
+  "contentVersion": "1.0.0",
+  "analyticsEvent": "tutorial_step_completed",
+  "analyticsProp": "stepIndex",
+  "constraints": {
+    "noSchemaBreak": true,
+    "noAdvanceOnChanges": true,
+    "noStepIdChanges": true,
+    "noContentVersionBump": true,
+    "note": "Phase 23 owns balance/contentVersion 1.0.1; this phase only retunes teaching copy and HUD nudge timing."
+  },
+  "funnel": {
+    "source": "Phase 25 consent-gated tutorial_step_completed; closed-test + first-session drop hypotheses",
+    "highFrictionStepIds": [
+      "tutorial.catch_three",
+      "tutorial.deliver_cutter",
+      "tutorial.buy_upgrade",
+      "tutorial.first_contract",
+      "tutorial.hire_staff"
+    ],
+    "dropHypotheses": [
+      {
+        "stepId": "tutorial.catch_three",
+        "reason": "Cast/reel timing window unclear; players mash Reel early or never hold Cast"
+      },
+      {
+        "stepId": "tutorial.deliver_cutter",
+        "reason": "Teal In pad vs Out pad confusion; bag full without walking onto pad"
+      },
+      {
+        "stepId": "tutorial.buy_upgrade",
+        "reason": "Upgrades panel undiscovered; players keep fishing without spending"
+      },
+      {
+        "stepId": "tutorial.first_contract",
+        "reason": "Jobs panel + deliver destination opaque after first sale"
+      },
+      {
+        "stepId": "tutorial.hire_staff",
+        "reason": "Hire gated behind Make 10 sales; copy did not name the unlock"
+      }
+    ]
+  },
+  "copyPatches": [
+    {
+      "stepId": "tutorial.walk_to_pier",
+      "text": "Walk to the pier tip — stand where the boards meet the water"
+    },
+    {
+      "stepId": "tutorial.catch_three",
+      "text": "Catch 3 fish: hold Cast, then tap Reel while the meter is green"
+    },
+    {
+      "stepId": "tutorial.deliver_cutter",
+      "text": "Carry fish onto the teal In pad on the cutter's left"
+    },
+    {
+      "stepId": "tutorial.collect_output",
+      "text": "Pick up portions from the Out pad on the cutter's right"
+    },
+    {
+      "stepId": "tutorial.stock_counter",
+      "text": "Stock the counter pad so waiting customers can buy"
+    },
+    {
+      "stepId": "tutorial.serve_customer",
+      "text": "Stay at the counter — sales ring up when the pad has stock"
+    },
+    {
+      "stepId": "tutorial.buy_upgrade",
+      "text": "Open Upgrades and buy a bigger bag with your sale coins"
+    },
+    {
+      "stepId": "tutorial.first_contract",
+      "text": "Open Jobs, accept a harbor contract, then deliver the listed goods"
+    },
+    {
+      "stepId": "tutorial.hire_staff",
+      "text": "After Make 10 sales unlocks hiring, open Staff and hire your first hand"
+    },
+    {
+      "stepId": "tutorial.grill_line",
+      "text": "When the grill unlocks, deliver fish to the charcoal In pad"
+    },
+    {
+      "stepId": "tutorial.plot_marker",
+      "text": "Stand on an expansion marker and confirm spend to place a new pad"
+    }
+  ],
+  "timing": {
+    "defaultHintAfterMs": 10000,
+    "nudges": [
+      {
+        "stepId": "tutorial.catch_three",
+        "hintAfterMs": 8000,
+        "nudge": "Tip: hold Cast to charge, release timing into the green Reel window"
+      },
+      {
+        "stepId": "tutorial.deliver_cutter",
+        "hintAfterMs": 9000,
+        "nudge": "Tip: walk onto the left teal pad — dropping nearby is not enough"
+      },
+      {
+        "stepId": "tutorial.buy_upgrade",
+        "hintAfterMs": 10000,
+        "nudge": "Tip: tap Upgrades (or press U) — Bag capacity is the first buy"
+      },
+      {
+        "stepId": "tutorial.first_contract",
+        "hintAfterMs": 12000,
+        "nudge": "Tip: Jobs lists contracts; accept one, then carry the goods to the drop"
+      },
+      {
+        "stepId": "tutorial.hire_staff",
+        "hintAfterMs": 12000,
+        "nudge": "Tip: keep selling until Make 10 sales, then Staff unlocks Hire"
+      }
+    ]
+  },
+  "frozenAdvanceOn": {
+    "tutorial.walk_to_pier": { "kind": "enter_zone", "zone": "zone.pier_end" },
+    "tutorial.catch_three": { "kind": "stat", "stat": "stat.fish_caught", "atLeast": 3 },
+    "tutorial.deliver_cutter": { "kind": "stat", "stat": "stat.machine_inputs", "atLeast": 1 },
+    "tutorial.collect_output": { "kind": "stat", "stat": "stat.outputs_collected", "atLeast": 1 },
+    "tutorial.stock_counter": { "kind": "stat", "stat": "stat.counter_stocked", "atLeast": 1 },
+    "tutorial.serve_customer": { "kind": "stat", "stat": "stat.sales", "atLeast": 1 },
+    "tutorial.buy_upgrade": { "kind": "stat", "stat": "stat.upgrades_bought", "atLeast": 1 },
+    "tutorial.first_contract": { "kind": "stat", "stat": "stat.contracts_completed", "atLeast": 1 },
+    "tutorial.hire_staff": { "kind": "stat", "stat": "stat.workers_hired", "atLeast": 1 },
+    "tutorial.grill_line": { "kind": "enter_zone", "zone": "zone.grill_in" },
+    "tutorial.plot_marker": { "kind": "enter_zone", "zone": "zone.plot_grill" }
+  },
+  "sourcePins": {
+    "tutorialScriptWeb": "web/src/engine/tutorialScript.ts",
+    "tutorialScriptKotlin": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/TutorialScript.kt",
+    "analytics": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/Analytics.kt"
+  },
+  "preflightGates": [
+    "shared/content/tutorial-friction.json",
+    "shared/content/content-pack.json",
+    "web/src/engine/tutorialScript.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/TutorialScript.kt"
+  ]
+}

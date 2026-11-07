@@ -1,6 +1,8 @@
 package com.willio.jeanvilma.fishshopping.analytics
 
+import android.app.Application
 import com.willio.jeanvilma.fishshopping.core.sim.Analytics
+import com.willio.jeanvilma.fishshopping.core.sim.AnalyticsDashboard
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
 import com.willio.jeanvilma.fishshopping.core.sim.GameState
 import com.willio.jeanvilma.fishshopping.core.sim.MemoryAnalyticsSink
@@ -9,8 +11,9 @@ import com.willio.jeanvilma.fishshopping.core.sim.Stats
 import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 
 /**
- * Phase 25 — consent-gated analytics bus for Android.
+ * Phase 25/26 — consent-gated analytics bus for Android.
  * Drops events when consent is off; never attaches PII or save blobs.
+ * Phase 26: session lifecycle + dashboard ledger.
  */
 fun interface AnalyticsTrackSink {
     fun track(event: Analytics.Event?)
@@ -18,6 +21,7 @@ fun interface AnalyticsTrackSink {
 
 class AnalyticsBus(
     private var sink: AnalyticsTrackSink = NOOP,
+    private var ledger: AnalyticsDashboardLedger? = null,
 ) {
     @Volatile
     var consent: Boolean = false
@@ -29,18 +33,26 @@ class AnalyticsBus(
     private var lastEmaMs = 0.0
     private var lastQuality = QualityPreset.MEDIUM
 
+    fun attachLedger(ledger: AnalyticsDashboardLedger) {
+        this.ledger = ledger
+        ledger.bindEmitter { track(it) }
+        ledger.setConsent(consent)
+    }
+
     fun setSink(sink: AnalyticsTrackSink) {
         this.sink = sink
     }
 
     fun setConsent(consent: Boolean) {
         this.consent = consent
+        ledger?.setConsent(consent)
     }
 
     fun track(event: Analytics.Event?) {
         if (!consent || event == null) return
         val clean = Analytics.sanitize(event.name, event.props) ?: return
         sink.track(clean)
+        ledger?.onTracked(clean)
     }
 
     fun onGameEvents(events: List<GameEvent>, state: GameState) {
@@ -104,6 +116,27 @@ class AnalyticsBus(
         }
     }
 
+    /** Phase 26: start a consent-gated analytics session (crash-free bookkeeping). */
+    fun onSessionStart() {
+        ledger?.onSessionStart()
+    }
+
+    /** Phase 26: mark a clean session end for crash-free rate. */
+    fun onSessionEndClean() {
+        ledger?.onSessionEndClean()
+    }
+
+    fun exportDashboardJson(): String = ledger?.exportJson()
+        ?: AnalyticsDashboard.encodeSnapshot(
+            AnalyticsDashboard.buildSnapshot(
+                consent = consent,
+                counters = emptyMap(),
+                crashFreeSamples = emptyList(),
+            ),
+        )
+
+    fun hasDashboardAlerts(): Boolean = ledger?.hasActiveAlerts() == true
+
     fun resetSessionFlags() {
         firstSaleSent = false
         unlockedHarbors.clear()
@@ -115,9 +148,14 @@ class AnalyticsBus(
         private val NOOP = AnalyticsTrackSink { }
         val shared = AnalyticsBus()
 
+        fun install(app: Application): AnalyticsBus {
+            val ledger = AnalyticsDashboardLedger(app)
+            shared.attachLedger(ledger)
+            return shared
+        }
+
         fun recording(memory: MemoryAnalyticsSink = MemoryAnalyticsSink()): AnalyticsBus {
-            val bus = AnalyticsBus { memory.track(it) }
-            return bus
+            return AnalyticsBus(sink = AnalyticsTrackSink { memory.track(it) })
         }
     }
 }

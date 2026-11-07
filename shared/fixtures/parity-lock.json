@@ -1,0 +1,78 @@
+{
+  "phase": 27,
+  "schema": "fish.fixtures.parity_lock.v1",
+  "description": "Post-1.0 Phase 27 — expanded Kotlin↔web golden parity suite for economy, unlocks, tutorial, and entitlements after polish. Schema 20 / content 1.0.1 frozen.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 20,
+  "constraints": {
+    "byteIdenticalSnapshots": true,
+    "sharedFixturesOnly": true,
+    "noSchemaBreak": true
+  },
+  "suites": [
+    {
+      "id": "prng",
+      "title": "Mulberry32 vectors",
+      "fixture": "shared/fixtures/prng-vectors.json",
+      "covers": ["rng"]
+    },
+    {
+      "id": "starter_line",
+      "title": "Starter-line economy + tutorial",
+      "fixture": "shared/fixtures/starter-line.json",
+      "snapshot": "shared/fixtures/snapshot-starter-line-t2500.json",
+      "snapshotTick": 2500,
+      "covers": ["economy", "tutorial", "upgrades", "quests", "contracts", "workers"]
+    },
+    {
+      "id": "entitlements_unlock",
+      "title": "Full-harbor unlock + cosmetic (travel unlocked)",
+      "fixture": "shared/fixtures/parity-entitlements.json",
+      "covers": ["entitlements", "unlocks", "cosmetics"]
+    },
+    {
+      "id": "legacy_migrations",
+      "title": "Legacy snapshot migrations → schema 20",
+      "fixtures": [
+        "shared/fixtures/legacy/snapshot-v1-starter-line-t2500.json",
+        "shared/fixtures/legacy/snapshot-v12-starter-line-t2500.json",
+        "shared/fixtures/legacy/snapshot-v13-starter-line-t2500.json",
+        "shared/fixtures/legacy/snapshot-v14-starter-line-t2500.json",
+        "shared/fixtures/legacy/snapshot-v15-starter-line-t2500.json",
+        "shared/fixtures/legacy/snapshot-v16-starter-line-t2500.json",
+        "shared/fixtures/legacy/snapshot-v17-starter-line-t2500.json",
+        "shared/fixtures/legacy/snapshot-v18-starter-line-t2500.json",
+        "shared/fixtures/legacy/snapshot-v19-starter-line-t2500.json"
+      ],
+      "covers": ["persistence", "migrations"]
+    }
+  ],
+  "expandedExpectFields": [
+    "harborId",
+    "fullHarborUnlock",
+    "unlockedCosmetics",
+    "ownedDecor",
+    "loanOwed",
+    "coinGoal",
+    "workers",
+    "tutorialIndex",
+    "coins",
+    "ownedUpgrades",
+    "completedQuests",
+    "stats"
+  ],
+  "gates": {
+    "tutorialFinishedInStarterLine": true,
+    "entitlementGrantsIdempotent": true,
+    "midRunSnapshotByteIdentical": true
+  },
+  "recordCommand": "./gradlew :game-core:test --tests '*ParityLock*' --tests StarterLineFixtureTest -PrecordFixtures=true",
+  "preflightGates": [
+    "shared/fixtures/parity-lock.json",
+    "shared/fixtures/starter-line.json",
+    "shared/fixtures/parity-entitlements.json",
+    "shared/fixtures/snapshot-starter-line-t2500.json",
+    "web/src/engine/parityLock.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/ParityLock.kt"
+  ]
+}

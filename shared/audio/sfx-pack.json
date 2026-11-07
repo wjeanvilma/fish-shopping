@@ -1,0 +1,103 @@
+{
+  "phase": 19,
+  "schema": "fish.audio.sfx_pack.v1",
+  "description": "Post-1.0 Phase 19 — authored mono WAV stingers for catch / cut / sell / UI (plus abandon, upgrade, rush). Buses keep mute, SFX gain, voice cap, and Android/Web focus-lifecycle policy. Phase 20 replaces procedural ambience with authored music beds.",
+  "sampleRate": 22050,
+  "channels": 1,
+  "encoding": "pcm_s16le",
+  "format": "wav",
+  "generator": "shared/tools/generate_sfx_pack.py",
+  "npmScript": "sfx:generate",
+  "validateScript": "sfx:validate",
+  "sourceDir": "shared/audio/sfx",
+  "webPublicDir": "web/public/sfx",
+  "androidRawDir": "app/src/main/res/raw",
+  "androidRawPrefix": "sfx_",
+  "maxBytesPerClip": 24576,
+  "maxTotalBytes": 160000,
+  "maxDurationMs": 420,
+  "voiceCostPerClip": 1,
+  "maxSfxVoices": 6,
+  "busPolicy": {
+    "respectMute": true,
+    "respectSfxVolume": true,
+    "androidFocusSilence": true,
+    "webLifecycleSuspend": true,
+    "proceduralFallback": false,
+    "ambienceRemainsProceduralUntilPhase": 20
+  },
+  "cues": [
+    {
+      "id": "catch",
+      "file": "catch.wav",
+      "androidRaw": "sfx_catch",
+      "role": "catch",
+      "haptic": true,
+      "design": "bright splash chirp + soft water tick"
+    },
+    {
+      "id": "machine_done",
+      "file": "machine_done.wav",
+      "androidRaw": "sfx_machine_done",
+      "role": "cut",
+      "haptic": false,
+      "design": "two short wooden knife thunks"
+    },
+    {
+      "id": "sale",
+      "file": "sale.wav",
+      "androidRaw": "sfx_sale",
+      "role": "sell",
+      "haptic": true,
+      "design": "coin chime ascending fifth"
+    },
+    {
+      "id": "ui",
+      "file": "ui.wav",
+      "androidRaw": "sfx_ui",
+      "role": "ui",
+      "haptic": false,
+      "design": "soft panel open click"
+    },
+    {
+      "id": "abandon",
+      "file": "abandon.wav",
+      "androidRaw": "sfx_abandon",
+      "role": "feedback",
+      "haptic": false,
+      "design": "descending disappointed sigh"
+    },
+    {
+      "id": "upgrade",
+      "file": "upgrade.wav",
+      "androidRaw": "sfx_upgrade",
+      "role": "ui",
+      "haptic": false,
+      "design": "three-note harbor fanfare"
+    },
+    {
+      "id": "rush",
+      "file": "rush.wav",
+      "androidRaw": "sfx_rush",
+      "role": "feedback",
+      "haptic": false,
+      "design": "urgent brass-ish sting"
+    }
+  ],
+  "eventMap": {
+    "fish_caught": "catch",
+    "batch_completed": "machine_done",
+    "sale_committed": "sale",
+    "customer_left_unpaid": "abandon",
+    "upgrade_purchased": "upgrade",
+    "rush_started": "rush",
+    "panel_opened": "ui"
+  },
+  "preflightGates": [
+    "shared/audio/sfx-pack.json",
+    "web/src/audio/audioBus.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/audio/AudioBus.kt",
+    "web/src/audio/sfxCues.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/audio/SfxCues.kt"
+  ]
+}

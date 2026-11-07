@@ -1,6 +1,7 @@
 /**
- * Phase 25 — privacy-safe analytics events (blueprint live-ops).
+ * Phase 25/26 — privacy-safe analytics events (blueprint live-ops).
  * Mirrors game-core Analytics.kt. Consent is enforced by presentation clients.
+ * Phase 26 adds session_start + crash_free_session for the ops dashboard.
  */
 import { TELEMETRY_FORBIDDEN_KEYS } from "./telemetry";
 
@@ -13,6 +14,8 @@ export const ANALYTICS_EVENT_NAMES = [
   "offline_claimed",
   "save_recovery",
   "frame_time_summary",
+  "session_start",
+  "crash_free_session",
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENT_NAMES)[number];
@@ -30,6 +33,8 @@ export const ANALYTICS_ALLOWED_PROPS: Record<AnalyticsEventName, ReadonlySet<str
   offline_claimed: new Set(["elapsedMillis", "ticksCredited", "coinsDelta", "capped"]),
   save_recovery: new Set(["source"]),
   frame_time_summary: new Set(["emaMs", "quality", "samples", "platform"]),
+  session_start: new Set(["platform"]),
+  crash_free_session: new Set(["clean", "platform"]),
 };
 
 export type AnalyticsPropValue = boolean | number | string;
@@ -97,6 +102,16 @@ export const Analytics = {
       samples,
       platform,
     })!;
+  },
+
+  /** Phase 26: consent-gated session open (platform only). */
+  sessionStart(platform: string): AnalyticsEvent {
+    return sanitizeAnalytics("session_start", { platform })!;
+  },
+
+  /** Phase 26: clean=true when the prior/current session ended without unclean exit. */
+  crashFreeSession(clean: boolean, platform: string): AnalyticsEvent {
+    return sanitizeAnalytics("crash_free_session", { clean, platform })!;
   },
 };
 

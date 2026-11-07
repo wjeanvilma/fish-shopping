@@ -15,6 +15,8 @@ data class ObjectiveView(
     val text: String,
     /** Optional progress like "2/7" for tutorial steps. */
     val detail: String? = null,
+    /** Phase 22: scripted tutorial step id while NEXT coaching is active. */
+    val tutorialStepId: String? = null,
 )
 
 object Coaching {
@@ -26,6 +28,7 @@ object Coaching {
                 eyebrow = "NEXT",
                 text = step.text,
                 detail = "${state.tutorialIndex + 1}/${tutorial.size}",
+                tutorialStepId = step.id,
             )
         }
 

@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#153449" />
-    <meta name="description" content="Support for Fish Shopping." />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="description" content="Support for Fish Shopping — restore purchases, refunds, known issues." />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <title>Support · Fish Shopping</title>
     <style>
       :root { color-scheme: light; --ink: #153449; --sky: #9fd3ea; --surface: #f4f8fb; --action: #008f95; --reward: #e8af4a; }
@@ -13,52 +13,97 @@
       main { max-width: 40rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
       h1 { font-size: 1.75rem; margin: 0 0 0.35rem; }
       h2 { font-size: 1.1rem; margin: 1.6rem 0 0.4rem; }
+      h3 { font-size: 1rem; margin: 0.9rem 0 0.25rem; }
       p, li { font-size: 0.98rem; }
       a { color: var(--action); }
       .muted { opacity: 0.75; font-size: 0.9rem; }
       .card { background: color-mix(in srgb, #fff 88%, transparent); border-radius: 14px; padding: 1rem 1.1rem; margin: 1rem 0; box-shadow: 0 2px 10px rgb(21 52 73 / 0.1); }
       nav { margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+      code { font-size: 0.88em; }
+      ol, ul { padding-left: 1.2rem; }
     </style>
   </head>
   <body>
     <main>
       <h1>Support</h1>
-      <p class="muted">Fish Shopping help · saves, unlocks, and common issues.</p>
-      <div class="card">
+      <p class="muted">Fish Shopping help · saves, restore purchases, refunds, and known issues.</p>
+
+      <div class="card" id="first-session">
         <h2>First session</h2>
         <p>Fish → cut → stock → sell. Coaching advances on state events, not animation timing.</p>
       </div>
-      <div class="card">
+
+      <div class="card" id="saves">
         <h2>Saves &amp; recovery</h2>
         <ul>
           <li>Local slots keep a latest and previous backup.</li>
           <li>If latest is corrupt, choose Recover previous on the title screen.</li>
-          <li>Private / blocked browser storage falls back to memory-only — export is not durable until storage works.</li>
+          <li>Private / blocked browser storage falls back to memory-only — progress is not durable until storage works.</li>
         </ul>
       </div>
-      <div class="card">
-        <h2>Purchases</h2>
-        <p>
-          Use Restore purchases in Goals after reinstalling. The one-time harbor unlock and cosmetics
-          are power-neutral for cosmetics and idempotent for the unlock grant.
-        </p>
+
+      <div class="card" id="restore">
+        <h2>Restore purchases</h2>
+        <p>Lost a harbor unlock or cosmetic after reinstall? Use <strong>Restore purchases</strong> in Goals (or Cosmetics).</p>
+        <ol>
+          <li>Sign in to the same Play Store or web checkout account used for the purchase.</li>
+          <li>Open the harbor, then Goals (or Cosmetics).</li>
+          <li>Tap Restore purchases.</li>
+          <li>Wait for the toast — entitlements grant idempotently (full harbor unlock + owned cosmetics).</li>
+          <li>If nothing restores, confirm the SKU is owned in Play → Payments &amp; subscriptions (or your web receipt email).</li>
+        </ol>
+        <p class="muted">Covered SKUs: <code>fish.full_harbor_unlock</code>, cosmetics <code>fish.cosmetic.*</code>. Cosmetics are power-neutral.</p>
       </div>
-      <div class="card">
+
+      <div class="card" id="refunds">
+        <h2>Refunds</h2>
+        <h3>Android (Play)</h3>
+        <p>
+          Player self-serve: Play Store → profile → Payments &amp; subscriptions → Budget &amp; history → request a refund.
+          Ops: Play Console → Order management → find order → Refund.
+        </p>
+        <p class="muted">Google may auto-approve recent refunds; otherwise handle within Play policy windows.</p>
+        <h3>Web checkout</h3>
+        <p>Reply to the checkout receipt or email support with the order id. Ops refund in the checkout provider dashboard, then confirm Restore no longer returns the SKU.</p>
+        <p class="muted">After a refund, do not hand-edit save files — rely on store ownership + Restore.</p>
+      </div>
+
+      <div class="card" id="known-issues">
+        <h2>Known issues</h2>
+        <h3>Private / blocked browser storage</h3>
+        <p>Symptom: progress disappears after refresh. Workaround: allow site storage or leave private mode.</p>
+        <h3>Corrupt latest save slot</h3>
+        <p>Symptom: Continue fails or title shows recovery. Workaround: Recover previous on the title screen.</p>
+        <h3>Cloud sync without Firebase keys</h3>
+        <p>Symptom: Settings shows Cloud on, keys missing. Workaround: local play is fine; configure Firebase keys only if you need remote saves.</p>
+        <h3>Restore finds nothing</h3>
+        <p>Symptom: toast says no purchases. Workaround: switch to the purchase account, then Restore again.</p>
+        <h3>Frame stutter</h3>
+        <p>Symptom: harbor feels choppy. Workaround: Settings → Quality → Low/Medium. Sim stays 20 Hz.</p>
+      </div>
+
+      <div class="card" id="performance">
         <h2>Performance</h2>
         <p>
           Lower Quality in Settings if frames stutter. The simulation stays fixed at 20 Hz; quality only
           changes presentation cost.
         </p>
       </div>
-      <h2>Contact</h2>
+
+      <h2 id="contact">Contact</h2>
       <p>
-        Package id <code>com.willio.jeanvilma.fishshopping</code>. For privacy questions see
-        <a href="/privacy.html">Privacy</a>. Open a GitHub issue on the Fish Shopping repository for bugs.
+        Package id <code>com.willio.jeanvilma.fishshopping</code>.
+        Prefer <a href="https://github.com/wjeanvilma/fish-shopping/issues/new">GitHub issues</a> for bugs.
+        For purchase / refund order ids, email
+        <a href="mailto:fish-shopping-support@jeanvilma.com?subject=%5BFish%20Shopping%5D%20Support">fish-shopping-support@jeanvilma.com</a>
+        and include platform, app version, package id, and order id.
       </p>
+      <p>Privacy questions: <a href="privacy.html">Privacy</a>.</p>
+
       <nav>
-        <a href="/landing.html">Landing</a>
-        <a href="/">Play</a>
-        <a href="/privacy.html">Privacy</a>
+        <a href="landing.html">Landing</a>
+        <a href="index.html">Home</a>
+        <a href="privacy.html">Privacy</a>
       </nav>
     </main>
   </body>

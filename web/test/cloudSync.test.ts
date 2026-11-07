@@ -96,6 +96,7 @@ describe("CloudSyncCoordinator + MemoryCloudBackend", () => {
       hudTextScale: 1 as const, shapeCues: false, timingAssist: false,
       analyticsConsent: false, analyticsConsentDecided: false,
       cloudAccountId: "user-test", cloudRefreshToken: null,
+      equippedCosmeticId: null,
     };
     await backend.put("user-test", newer);
     const pull = await coord.pullMerge(settings, older);
@@ -118,6 +119,7 @@ describe("CloudSyncCoordinator + MemoryCloudBackend", () => {
       hudTextScale: 1, shapeCues: false, timingAssist: false,
       analyticsConsent: false, analyticsConsentDecided: false,
       cloudAccountId: "user-test", cloudRefreshToken: null,
+      equippedCosmeticId: null,
     }, local);
     expect(pull.decision.source).toBe("local");
     expect(pull.decision.reason).toContain("off");

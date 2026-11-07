@@ -46,11 +46,15 @@ class SfxCuesTest {
     }
 
     @Test
-    fun phase17VoiceCapAndGains() {
+    fun phase19VoiceCapAndGains() {
         assertEquals(0.35f, AudioBus.clampVolume(0.4f), 1e-6f)
         assertEquals(0f, AudioBus.effectiveSfxGain(muted = true, sfxVolume = 1f), 1e-6f)
         assertEquals(0.7f, AudioBus.effectiveMusicGain(muted = false, musicVolume = 0.7f), 1e-6f)
-        assertTrue(AudioBus.canSpawnVoices(0, 2))
-        assertFalse(AudioBus.canSpawnVoices(AudioBus.MAX_SFX_VOICES - 1, 2))
+        assertEquals(1, AudioBus.VOICE_COST)
+        assertTrue(AudioBus.canSpawnVoices(0, AudioBus.VOICE_COST))
+        assertFalse(AudioBus.canSpawnVoices(AudioBus.MAX_SFX_VOICES, AudioBus.VOICE_COST))
+        // panel UI is host-driven; enum + raw name stay aligned with the pack
+        assertEquals("sfx_ui", SfxCue.UI.androidRawName())
+        assertEquals("ui", SfxCue.UI.catalogId())
     }
 }

@@ -6,6 +6,7 @@ import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.hypot
 import kotlin.math.max
@@ -554,7 +555,7 @@ class FlyingTransfers(poolSize: Int = FLYING_TRANSFER_POOL) {
     }
 }
 
-/** Phase 16 — pooled world bursts (pay / celebrate / machine_done). */
+/** Phase 16/21 — pooled world bursts (catch / pay / celebrate / machine_done). */
 const val VFX_BURST_POOL = 8
 
 fun worldBurstPoolForQuality(quality: PresenterQuality): Int = when (quality) {
@@ -563,7 +564,7 @@ fun worldBurstPoolForQuality(quality: PresenterQuality): Int = when (quality) {
     PresenterQuality.HIGH -> VFX_BURST_POOL
 }
 
-enum class WorldBurstKind { PAY, CELEBRATE, MACHINE_DONE }
+enum class WorldBurstKind { CATCH, PAY, CELEBRATE, MACHINE_DONE }
 
 data class WorldBurstCue(
     val xMm: Int,
@@ -586,9 +587,80 @@ data class MachineOperatePulse(
 )
 
 private fun burstDurationS(kind: WorldBurstKind): Double = when (kind) {
+    WorldBurstKind.CATCH -> 0.32
     WorldBurstKind.PAY -> 0.45
     WorldBurstKind.CELEBRATE -> 0.7
     WorldBurstKind.MACHINE_DONE -> 0.4
+}
+
+/** Phase 21 — screen-shake kinds for catch / cut / sale / celebrate. */
+enum class ShakeKind { CATCH, CUT, SALE, CELEBRATE }
+
+const val SHAKE_DURATION_S = 0.18
+const val MAX_SHAKE_AMPLITUDE_M = 0.12
+
+fun shakeAmplitudeM(kind: ShakeKind): Double = when (kind) {
+    ShakeKind.CATCH -> 0.04
+    ShakeKind.CUT -> 0.03
+    ShakeKind.SALE -> 0.05
+    ShakeKind.CELEBRATE -> 0.08
+}
+
+fun shakeScaleForQuality(quality: PresenterQuality): Double = when (quality) {
+    PresenterQuality.LOW -> 0.5
+    PresenterQuality.MEDIUM -> 0.85
+    PresenterQuality.HIGH -> 1.0
+}
+
+fun cappedShakeAmplitudeM(kind: ShakeKind, quality: PresenterQuality): Double =
+    min(MAX_SHAKE_AMPLITUDE_M, max(0.0, shakeAmplitudeM(kind) * shakeScaleForQuality(quality)))
+
+data class ShakeOffset(val x: Double, val y: Double)
+
+/**
+ * Decaying camera shake. Presentation-only; reduced-motion hosts skip [update].
+ * Concurrent triggers take the stronger remaining amplitude.
+ */
+class ScreenShake {
+    private var amp = 0.0
+    private var age = 0.0
+    private var duration = SHAKE_DURATION_S
+    private var quality = PresenterQuality.MEDIUM
+    private var phase = 0.0
+
+    fun setQuality(q: PresenterQuality) {
+        quality = q
+    }
+
+    fun clear() {
+        amp = 0.0
+        age = 0.0
+    }
+
+    fun trigger(kind: ShakeKind) {
+        val next = cappedShakeAmplitudeM(kind, quality)
+        val remaining = amp * max(0.0, 1.0 - age / duration)
+        if (next >= remaining) {
+            amp = next
+            age = 0.0
+            duration = SHAKE_DURATION_S
+            phase += 1.7
+        }
+    }
+
+    fun update(dt: Double): ShakeOffset {
+        if (amp <= 0.0) return ShakeOffset(0.0, 0.0)
+        age += dt
+        val t = min(1.0, age / duration)
+        if (t >= 1.0) {
+            amp = 0.0
+            return ShakeOffset(0.0, 0.0)
+        }
+        val envelope = (1.0 - t) * (1.0 - t)
+        val a = amp * envelope
+        val w = age * 62.0 + phase
+        return ShakeOffset(sin(w) * a, cos(w * 1.3) * a * 0.55)
+    }
 }
 
 /** Footprint socket for a station id (`station.cutter_1` → `Footprint_cutter_1`). */
@@ -608,6 +680,10 @@ fun machineOperatePulses(v: SimView, elapsed: Double): List<MachineOperatePulse>
     }
     return out
 }
+
+/** Catch splash at the player (every fish_caught — Phase 21 juice). */
+fun resolveCatchBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.CATCH)
 
 /** Pay burst at the selling customer, else first counter pad. */
 fun resolvePayBurst(v: SimView, customerId: String): WorldBurstCue {
@@ -675,9 +751,19 @@ class WorldBursts(poolSize: Int = VFX_BURST_POOL) {
             s.age += dt
             val t = min(1.0, s.age / s.duration)
             val rise = t * (2.0 - t)
-            val scale = (if (s.kind == WorldBurstKind.CELEBRATE) 1.4 else 1.0) * (0.35 + 1.1 * rise)
+            val kindScale = when (s.kind) {
+                WorldBurstKind.CELEBRATE -> 1.4
+                WorldBurstKind.CATCH -> 0.85
+                else -> 1.0
+            }
+            val scale = kindScale * (0.35 + 1.1 * rise)
             val opacity = 1.0 - t * t
-            val y = 0.35 + (if (s.kind == WorldBurstKind.CELEBRATE) 1.1 else 0.7) * rise
+            val yRise = when (s.kind) {
+                WorldBurstKind.CELEBRATE -> 1.1
+                WorldBurstKind.CATCH -> 0.55
+                else -> 0.7
+            }
+            val y = 0.35 + yRise * rise
             if (t >= 1.0) {
                 slots[i] = null
                 return@mapIndexed null

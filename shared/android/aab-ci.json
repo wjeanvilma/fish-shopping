@@ -1,0 +1,26 @@
+{
+  "phase": 5,
+  "schema": "fish.android.aab_ci.v1",
+  "description": "CI produces a signed Play App Bundle plus R8 mapping.txt. versionCode/versionName are read from shared/fixtures/RELEASE_PIN.json.",
+  "releasePin": "shared/fixtures/RELEASE_PIN.json",
+  "gradleTask": ":app:bundleRelease",
+  "artifacts": {
+    "aab": "app/build/outputs/bundle/release/app-release.aab",
+    "mapping": "app/build/outputs/mapping/release/mapping.txt"
+  },
+  "artifactUploadName": "android-release-aab",
+  "version": {
+    "versionNameField": "versionName",
+    "versionCodeField": "versionCode",
+    "mustMatchContentVersion": true
+  },
+  "signing": {
+    "catalog": "shared/android/release-signing.json",
+    "required": true
+  },
+  "ciJob": "android-release",
+  "hotfixJob": "android-hotfix",
+  "hotfixArtifactUploadName": "android-hotfix-aab",
+  "hotfixLaneCatalog": "shared/ship/hotfix-lane.json",
+  "fallbackTask": ":app:assembleDebug"
+}

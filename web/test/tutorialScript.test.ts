@@ -63,6 +63,7 @@ describe("tutorialScript (Phase 21)", () => {
       const obj = coachingObjective(content, state);
       expect(obj?.eyebrow).toBe("NEXT");
       expect(obj?.text).toBe(step.text);
+      expect(obj?.tutorialStepId).toBe(step.id);
       expect(obj?.detail).toBe(`${state.tutorialIndex + 1}/${content.tutorial.length}`);
 
       if ((CORE_LOOP_MILESTONE_IDS as readonly string[]).includes(step.id)) seen.push(step.id);

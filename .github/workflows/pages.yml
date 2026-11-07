@@ -1,0 +1,65 @@
+# Phase 7 (post-1.0) — publish privacy / support / landing to GitHub Pages.
+name: Pages legal
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master, dev]
+    paths:
+      - "web/public/privacy.html"
+      - "web/public/support.html"
+      - "web/public/landing.html"
+      - "web/public/favicon.svg"
+      - "web/public/apple-touch-icon.png"
+      - "web/public/icon-512.png"
+      - "web/scripts/build-legal-pages.ts"
+      - "shared/store/legal-pages.json"
+      - "shared/store/listing.json"
+      - ".github/workflows/pages.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-legal
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Stage legal pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Build legal pages site
+        working-directory: web
+        run: npm run pages:legal
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist-legal
+
+  deploy:
+    name: Deploy GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

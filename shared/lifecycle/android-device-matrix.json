@@ -1,0 +1,111 @@
+{
+  "phase": 13,
+  "schema": "fish.lifecycle.android_device_matrix.v1",
+  "description": "Post-1.0 Phase 13 — Android device lifecycle QA matrix against Phase 28 browser-lifecycle catalog. Covers background, resume, rotate (no recreate), process-death restore, and low-memory checkpoint.",
+  "phase28Catalog": "shared/lifecycle/browser-lifecycle.json",
+  "packageName": "com.willio.jeanvilma.fishshopping",
+  "activity": "com.willio.jeanvilma.fishshopping.MainActivity",
+  "deviceClasses": [
+    {
+      "id": "phone",
+      "minWidthDp": 320,
+      "maxWidthDp": 599,
+      "orientations": ["portrait", "landscape"],
+      "note": "Primary Play phone screenshots + fullSensor HUD reflow."
+    },
+    {
+      "id": "tablet7",
+      "minWidthDp": 600,
+      "maxWidthDp": 839,
+      "orientations": ["portrait", "landscape"],
+      "note": "7-inch tablet class; same Activity + configChanges."
+    },
+    {
+      "id": "tablet10",
+      "minWidthDp": 840,
+      "maxWidthDp": 10000,
+      "orientations": ["portrait", "landscape"],
+      "note": "10-inch+ tablet class; same lifecycle contracts."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "background",
+      "title": "Background / onStop",
+      "trigger": "Home / app switch / screen off → Activity.onStop",
+      "expects": [
+        "pauseSimOnStop",
+        "checkpointOnStop",
+        "abandonAudioFocus"
+      ],
+      "hostHooks": ["MainActivity.onStop", "GameViewModel.pause"],
+      "phase28Keys": ["android.pauseSimOnStop", "android.checkpointOnStop"]
+    },
+    {
+      "id": "resume",
+      "title": "Foreground resume / onStart",
+      "trigger": "Return to app → Activity.onStart",
+      "expects": [
+        "resumeSimLoop",
+        "requestAudioFocus",
+        "offlineCatchUp"
+      ],
+      "hostHooks": ["MainActivity.onStart", "GameViewModel.resume"],
+      "phase28Keys": ["android.audioFocus.restoreOnGain"]
+    },
+    {
+      "id": "rotate",
+      "title": "Rotate / size change without recreate",
+      "trigger": "Device rotation or foldable size change",
+      "expects": [
+        "noActivityRecreate",
+        "configChangesHandled",
+        "hudReflow",
+        "glContextRetained"
+      ],
+      "hostHooks": ["AndroidManifest.configChanges", "MainActivity.onConfigurationChanged"],
+      "phase28Keys": ["android.configChangesHandled", "android.screenOrientation"]
+    },
+    {
+      "id": "process_death",
+      "title": "Process death / cold start restore",
+      "trigger": "System kills process after onStop; user relaunches",
+      "expects": [
+        "restoreFromAtomicFileSlots",
+        "migrateSchemaIfNeeded",
+        "noDuplicateOfflineCredit"
+      ],
+      "hostHooks": ["GameViewModel.pause", "GameViewModel.onCleared", "AtomicFile slots"],
+      "phase28Keys": ["android.processDeath.restoreFrom"]
+    },
+    {
+      "id": "low_memory",
+      "title": "Low memory / onTrimMemory",
+      "trigger": "TRIM_MEMORY_RUNNING_LOW or more severe while Activity alive",
+      "expects": [
+        "checkpointWithoutDestroy",
+        "keepSimStateInMemoryIfPossible"
+      ],
+      "hostHooks": ["MainActivity.onTrimMemory", "GameViewModel.onTrimMemory"],
+      "phase28Keys": ["android.checkpointOnStop"]
+    }
+  ],
+  "trimMemoryCheckpointFrom": "TRIM_MEMORY_RUNNING_LOW",
+  "restoreSlots": [
+    "harbor_save_latest.json",
+    "harbor_save_previous.json"
+  ],
+  "manualChecklist": [
+    "Phone: Play → Home → Recent → resume; coins/tick unchanged except offline catch-up",
+    "Phone: rotate portrait↔landscape mid-sale; no title reload",
+    "Tablet: same rotate + background matrix",
+    "Developer options → Don't keep activities: leave and return restores from AtomicFile",
+    "Low memory: adb shell am send-trim-memory <pkg> RUNNING_LOW → no crash; save slots updated"
+  ],
+  "failCriteria": [
+    "Activity recreate on rotate (loses Filament / billing host)",
+    "Missing checkpoint on background (empty save after process death)",
+    "Crash or ANR on TRIM_MEMORY_RUNNING_CRITICAL",
+    "Double offline credit after pause/resume"
+  ]
+}

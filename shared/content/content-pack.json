@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/content-pack.schema.json",
-  "contentVersion": "1.0.0",
+  "contentVersion": "1.0.1",
   "ticksPerSecond": 20,
   "units": {
     "distance": "millimetres (integer); x/z ground plane, y is up",
@@ -444,7 +444,7 @@
       "id": "product.basic_portion",
       "name": "Basic portion",
       "carryUnits": 1,
-      "unitPrice": 5,
+      "unitPrice": 6,
       "asset": "models/product_basic_portion.glb",
       "spoilTier": 3
     },
@@ -452,7 +452,7 @@
       "id": "product.fillet",
       "name": "Fillet",
       "carryUnits": 1,
-      "unitPrice": 12,
+      "unitPrice": 13,
       "asset": "models/product_fillet.glb",
       "spoilTier": 2
     },
@@ -1884,7 +1884,7 @@
       "id": "upgrade.bag_capacity_2",
       "name": "Bigger bag",
       "description": "Carry 8 units instead of 5.",
-      "cost": 40,
+      "cost": 30,
       "requires": [],
       "effect": {
         "kind": "carry_capacity",
@@ -2304,7 +2304,7 @@
     {
       "id": "quest.specialty_kitchen",
       "name": "Specialty kitchen",
-      "description": "Collect 12 finished products from station pads \u2014 smoke, grill, or cut specialty stock.",
+      "description": "Collect 12 finished products from station pads — smoke, grill, or cut specialty stock.",
       "requires": [
         "quest.fill_the_hold"
       ],
@@ -2409,7 +2409,7 @@
       "id": "worker.fisher",
       "name": "Fisher",
       "role": "fisher",
-      "hireCost": 120,
+      "hireCost": 105,
       "maxHired": 2,
       "carryCapacityUnits": 3,
       "moveSpeedMmPerTick": 160,
@@ -2424,7 +2424,7 @@
       "id": "worker.porter",
       "name": "Porter",
       "role": "porter",
-      "hireCost": 100,
+      "hireCost": 85,
       "maxHired": 2,
       "carryCapacityUnits": 4,
       "moveSpeedMmPerTick": 180,
@@ -2532,17 +2532,17 @@
     "maxLevel": 5,
     "xpThresholds": [
       0,
-      40,
-      100,
-      180,
-      280
+      35,
+      90,
+      160,
+      250
     ],
     "moveSpeedPermillePerLevel": 40,
     "catchSpeedPermillePerLevel": 50,
     "carryBonusEveryLevels": 2,
-    "xpFishCaught": 4,
+    "xpFishCaught": 5,
     "xpItemMoved": 2,
-    "xpSaleAssisted": 3,
+    "xpSaleAssisted": 4,
     "traitsOnHire": 1,
     "shifts": {
       "baseOnShiftSlots": 2,
@@ -2680,7 +2680,7 @@
       "breakChancePermille": 280,
       "slowDurationTicks": 1200,
       "slowProcessMultPermille": 1600,
-      "repairCoins": 40
+      "repairCoins": 35
     }
   },
   "trophies": {
@@ -3038,7 +3038,7 @@
       {
         "id": "contract.silver_tide_crate",
         "name": "Festival sprat crate",
-        "description": "Silver Tide buyers want a heavy sprat delivery \u2014 only during the festival.",
+        "description": "Silver Tide buyers want a heavy sprat delivery — only during the festival.",
         "item": "species.silver_sprat",
         "quantity": 8,
         "durationTicks": 1600,
@@ -3599,7 +3599,7 @@
   "tutorial": [
     {
       "id": "tutorial.walk_to_pier",
-      "text": "Walk to the pier end \u2014 cast where the water meets the boards",
+      "text": "Walk to the pier tip — stand where the boards meet the water",
       "advanceOn": {
         "kind": "enter_zone",
         "zone": "zone.pier_end"
@@ -3607,7 +3607,7 @@
     },
     {
       "id": "tutorial.catch_three",
-      "text": "Catch 3 fish (hold to cast, tap Reel in the green window)",
+      "text": "Catch 3 fish: hold Cast, then tap Reel while the meter is green",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.fish_caught",
@@ -3616,7 +3616,7 @@
     },
     {
       "id": "tutorial.deliver_cutter",
-      "text": "Carry fish to the teal pad left of the cutter",
+      "text": "Carry fish onto the teal In pad on the cutter's left",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.machine_inputs",
@@ -3625,7 +3625,7 @@
     },
     {
       "id": "tutorial.collect_output",
-      "text": "Pick up portions from the pad on the cutter's right",
+      "text": "Pick up portions from the Out pad on the cutter's right",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.outputs_collected",
@@ -3634,7 +3634,7 @@
     },
     {
       "id": "tutorial.stock_counter",
-      "text": "Stock the counter so customers can buy",
+      "text": "Stock the counter pad so waiting customers can buy",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.counter_stocked",
@@ -3643,7 +3643,7 @@
     },
     {
       "id": "tutorial.serve_customer",
-      "text": "Stand at the counter until a sale rings up",
+      "text": "Stay at the counter — sales ring up when the pad has stock",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.sales",
@@ -3652,7 +3652,7 @@
     },
     {
       "id": "tutorial.buy_upgrade",
-      "text": "Open Upgrades and buy a bigger bag",
+      "text": "Open Upgrades and buy a bigger bag with your sale coins",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.upgrades_bought",
@@ -3661,7 +3661,7 @@
     },
     {
       "id": "tutorial.first_contract",
-      "text": "Open Jobs, accept a harbor contract, and deliver it",
+      "text": "Open Jobs, accept a harbor contract, then deliver the listed goods",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.contracts_completed",
@@ -3670,7 +3670,7 @@
     },
     {
       "id": "tutorial.hire_staff",
-      "text": "Open Staff and hire your first hand once Make 10 sales unlocks hiring",
+      "text": "After Make 10 sales unlocks hiring, open Staff and hire your first hand",
       "advanceOn": {
         "kind": "stat",
         "stat": "stat.workers_hired",
@@ -3679,7 +3679,7 @@
     },
     {
       "id": "tutorial.grill_line",
-      "text": "After Fill the hold unlocks the grill, deliver fish to the charcoal grill pad",
+      "text": "When the grill unlocks, deliver fish to the charcoal In pad",
       "advanceOn": {
         "kind": "enter_zone",
         "zone": "zone.grill_in"
@@ -3687,7 +3687,7 @@
     },
     {
       "id": "tutorial.plot_marker",
-      "text": "Walk to an expansion marker and confirm spend to register a new station pad",
+      "text": "Stand on an expansion marker and confirm spend to place a new pad",
       "advanceOn": {
         "kind": "enter_zone",
         "zone": "zone.plot_grill"
@@ -5107,7 +5107,7 @@
       "specialization": {
         "id": "spec.tourist_strip",
         "name": "Tourist strip",
-        "description": "Sightseers flock the jetty \u2014 tourist customers spawn more often.",
+        "description": "Sightseers flock the jetty — tourist customers spawn more often.",
         "maintenanceDiscountPerStation": 0,
         "rareChanceBonusPermille": 0,
         "kindSpawnMultPermille": {
@@ -6179,7 +6179,7 @@
       "specialization": {
         "id": "spec.premium_marina",
         "name": "Premium marina",
-        "description": "Yacht crowds tip well \u2014 premium visitors spawn more often.",
+        "description": "Yacht crowds tip well — premium visitors spawn more often.",
         "maintenanceDiscountPerStation": 0,
         "rareChanceBonusPermille": 40,
         "kindSpawnMultPermille": {
@@ -6394,7 +6394,7 @@
       {
         "id": "event.silver_tide",
         "name": "Silver Tide Festival",
-        "description": "Sprats run thick \u2014 festival buyers post special crates.",
+        "description": "Sprats run thick — festival buyers post special crates.",
         "periodTicks": 12000,
         "startTick": 6200,
         "durationTicks": 2000,

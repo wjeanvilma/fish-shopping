@@ -13,22 +13,33 @@
     "includeDefaultOptimize": true
   },
   "signing": {
-    "ciReleaseUsesDebugKeystore": true,
-    "note": "CI and local assembleRelease sign with the debug keystore until a Play upload key is configured."
+    "ciReleaseUsesDebugKeystore": false,
+    "catalog": "shared/android/release-signing.json",
+    "signingConfigName": "upload",
+    "note": "Phase 4: assembleRelease uses the upload keystore from FISH_UPLOAD_* / fish.upload.*. Debug fallback is explicit opt-in only."
   },
   "backupExcludes": {
-    "sharedPreferences": ["fish_shopping_entitlements.xml"],
+    "sharedPreferences": [
+      "fish_shopping_entitlements.xml",
+      "fish_shopping_pending_entitlements.xml"
+    ],
     "files": [
       "harbor_save_latest.json",
       "harbor_save_previous.json",
       "harbor_save_latest.json.new",
       "harbor_save_previous.json.new"
     ],
-    "reason": "Save slots are AtomicFile-rotated and recovered in-app; Autobackup of a mid-write latest can corrupt both slots. Entitlements restore via billing stub/Play."
+    "reason": "Save slots are AtomicFile-rotated and recovered in-app; Autobackup of a mid-write latest can corrupt both slots. Entitlements restore via Play Billing (release) or stub (debug)."
   },
   "ci": {
-    "task": ":app:assembleRelease",
-    "fallback": ":app:assembleDebug"
+    "task": ":app:bundleRelease",
+    "assembleTask": ":app:assembleRelease",
+    "fallback": ":app:assembleDebug",
+    "aabCatalog": "shared/android/aab-ci.json",
+    "artifacts": {
+      "aab": "app/build/outputs/bundle/release/app-release.aab",
+      "mapping": "app/build/outputs/mapping/release/mapping.txt"
+    }
   },
   "dataExtractionRules": "app/src/main/res/xml/data_extraction_rules.xml",
   "fullBackupContent": "app/src/main/res/xml/backup_rules.xml"

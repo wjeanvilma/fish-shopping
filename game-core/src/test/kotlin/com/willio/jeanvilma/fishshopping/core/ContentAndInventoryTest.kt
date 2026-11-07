@@ -16,8 +16,8 @@ class ContentAndInventoryTest {
     fun sharedContentPackIsValid() {
         val c = Shared.content
         assertEquals(20, c.ticksPerSecond)
-        assertEquals(5L, c.productsById.getValue("product.basic_portion").unitPrice)
-        assertEquals(12L, c.productsById.getValue("product.fillet").unitPrice)
+        assertEquals(6L, c.productsById.getValue("product.basic_portion").unitPrice)
+        assertEquals(13L, c.productsById.getValue("product.fillet").unitPrice)
         assertEquals(20L, c.productsById.getValue("product.premium_portion").unitPrice)
         assertEquals(5, c.harbors.size)
         assertEquals(listOf("quest.first_ten_sales"), c.economy.requires)

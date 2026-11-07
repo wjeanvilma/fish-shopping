@@ -24,6 +24,7 @@ fun HarborView(
     viewProvider: () -> SimView?,
     transferProvider: () -> List<FlyingTransferCue> = { emptyList() },
     burstProvider: () -> List<WorldBurstCue> = { emptyList() },
+    shakeProvider: () -> List<ShakeKind> = { emptyList() },
     qualityProvider: () -> QualityPreset = { QualityPreset.MEDIUM },
     reducedMotionProvider: () -> Boolean = { false },
     modifier: Modifier = Modifier,
@@ -33,6 +34,7 @@ fun HarborView(
     val currentProvider = rememberUpdatedState(viewProvider)
     val currentTransfers = rememberUpdatedState(transferProvider)
     val currentBursts = rememberUpdatedState(burstProvider)
+    val currentShakes = rememberUpdatedState(shakeProvider)
     val currentQuality = rememberUpdatedState(qualityProvider)
     val currentReducedMotion = rememberUpdatedState(reducedMotionProvider)
     val renderer = remember { HarborRenderer(context.applicationContext) }
@@ -55,6 +57,7 @@ fun HarborView(
                 choreographer.postFrameCallback(this)
                 renderer.enqueueTransfers(currentTransfers.value())
                 renderer.enqueueBursts(currentBursts.value())
+                renderer.enqueueShakes(currentShakes.value())
                 renderer.render(
                     frameTimeNanos,
                     currentProvider.value(),

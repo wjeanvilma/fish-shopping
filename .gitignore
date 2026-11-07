@@ -12,3 +12,11 @@ local.properties
 **/__pycache__/
 *.pyc
 .kotlin/
+
+# Phase 4 (post-1.0) — never commit upload / release keystores.
+*.jks
+*.keystore
+upload-keystore.jks
+
+# Phase 7 (post-1.0) — staged GitHub Pages legal site (built by npm run pages:legal).
+web/dist-legal/

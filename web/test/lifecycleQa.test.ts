@@ -61,7 +61,7 @@ describe("lifecycle QA (Phase 28)", () => {
     expect(shouldCheckpointOnPageHide()).toBe(true);
     expect(shouldSuspendAudioWhenHidden(true)).toBe(true);
     expect(shouldSuspendAudioWhenHidden(false)).toBe(false);
-    expect(audioUnlockEvents()).toEqual(["pointerdown", "keydown"]);
+    expect(audioUnlockEvents()).toEqual(["pointerdown", "keydown", "touchstart"]);
   });
 
   it("falls back to memory save store when IndexedDB is unavailable", async () => {

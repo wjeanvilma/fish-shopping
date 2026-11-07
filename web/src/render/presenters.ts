@@ -572,7 +572,7 @@ export class FlyingTransfers {
   }
 }
 
-/** Phase 16 — pooled world bursts (pay / celebrate / machine_done). */
+/** Phase 16/21 — pooled world bursts (catch / pay / celebrate / machine_done). */
 export const VFX_BURST_POOL = 8;
 export const VFX_BURST_POOL_BY_QUALITY = {
   low: 2,
@@ -584,7 +584,7 @@ export function worldBurstPoolForQuality(quality: PresenterQuality): number {
   return VFX_BURST_POOL_BY_QUALITY[quality];
 }
 
-export type WorldBurstKind = "pay" | "celebrate" | "machine_done";
+export type WorldBurstKind = "catch" | "pay" | "celebrate" | "machine_done";
 
 export interface WorldBurstCue {
   xMm: number;
@@ -609,10 +609,89 @@ export interface MachineOperatePulse {
 }
 
 const BURST_DURATION_S: Record<WorldBurstKind, number> = {
+  catch: 0.32,
   pay: 0.45,
   celebrate: 0.7,
   machine_done: 0.4,
 };
+
+/** Phase 21 — screen-shake kinds for catch / cut / sale / celebrate. */
+export type ShakeKind = "catch" | "cut" | "sale" | "celebrate";
+
+export const SHAKE_DURATION_S = 0.18;
+/** Hard cap after quality scale (meters). */
+export const MAX_SHAKE_AMPLITUDE_M = 0.12;
+export const SHAKE_AMPLITUDE_M: Record<ShakeKind, number> = {
+  catch: 0.04,
+  cut: 0.03,
+  sale: 0.05,
+  celebrate: 0.08,
+};
+export const SHAKE_SCALE_BY_QUALITY = {
+  low: 0.5,
+  medium: 0.85,
+  high: 1.0,
+} as const;
+
+export function shakeScaleForQuality(quality: PresenterQuality): number {
+  return SHAKE_SCALE_BY_QUALITY[quality];
+}
+
+export function cappedShakeAmplitudeM(kind: ShakeKind, quality: PresenterQuality): number {
+  const raw = SHAKE_AMPLITUDE_M[kind] * shakeScaleForQuality(quality);
+  return Math.min(MAX_SHAKE_AMPLITUDE_M, Math.max(0, raw));
+}
+
+export interface ShakeOffset {
+  x: number;
+  y: number;
+}
+
+/**
+ * Decaying camera shake. Presentation-only; reduced-motion hosts skip update.
+ * Concurrent triggers take the stronger remaining amplitude.
+ */
+export class ScreenShake {
+  private amp = 0;
+  private age = 0;
+  private duration = SHAKE_DURATION_S;
+  private quality: PresenterQuality = "medium";
+  private phase = 0;
+
+  setQuality(quality: PresenterQuality): void {
+    this.quality = quality;
+  }
+
+  clear(): void {
+    this.amp = 0;
+    this.age = 0;
+  }
+
+  trigger(kind: ShakeKind): void {
+    const next = cappedShakeAmplitudeM(kind, this.quality);
+    const remaining = this.amp * Math.max(0, 1 - this.age / this.duration);
+    if (next >= remaining) {
+      this.amp = next;
+      this.age = 0;
+      this.duration = SHAKE_DURATION_S;
+      this.phase += 1.7;
+    }
+  }
+
+  update(dt: number): ShakeOffset {
+    if (this.amp <= 0) return { x: 0, y: 0 };
+    this.age += dt;
+    const t = Math.min(1, this.age / this.duration);
+    if (t >= 1) {
+      this.amp = 0;
+      return { x: 0, y: 0 };
+    }
+    const envelope = (1 - t) * (1 - t);
+    const a = this.amp * envelope;
+    const w = this.age * 62 + this.phase;
+    return { x: Math.sin(w) * a, y: Math.cos(w * 1.3) * a * 0.55 };
+  }
+}
 
 /** Footprint socket for a station id (`station.cutter_1` → `Footprint_cutter_1`). */
 export function footprintNameForStation(stationId: string): string {
@@ -632,6 +711,11 @@ export function machineOperatePulses(v: SimView, elapsed: number): MachineOperat
     });
   }
   return out;
+}
+
+/** Catch splash at the player (every fish_caught — Phase 21 juice). */
+export function resolveCatchBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "catch" };
 }
 
 /** Pay burst at the selling customer, else first counter pad. */
@@ -705,9 +789,10 @@ export class WorldBursts {
       s.age += dt;
       const t = Math.min(1, s.age / s.duration);
       const rise = t * (2 - t);
-      const scale = (s.kind === "celebrate" ? 1.4 : 1.0) * (0.35 + 1.1 * rise);
+      const kindScale = s.kind === "celebrate" ? 1.4 : s.kind === "catch" ? 0.85 : 1.0;
+      const scale = kindScale * (0.35 + 1.1 * rise);
       const opacity = 1 - t * t;
-      const y = 0.35 + (s.kind === "celebrate" ? 1.1 : 0.7) * rise;
+      const y = 0.35 + (s.kind === "celebrate" ? 1.1 : s.kind === "catch" ? 0.55 : 0.7) * rise;
       if (t >= 1) {
         this.slots[i] = null;
         return null;

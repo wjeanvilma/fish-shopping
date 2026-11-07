@@ -1,0 +1,43 @@
+{
+  "phase": 9,
+  "schema": "fish.store.screenshot_capture.v1",
+  "description": "Scripted capture from listing storyboard scenes into Play-ready phone + tablet PNGs. Replace PNGs with live device captures before public submit when available; sizes and ids stay fixed.",
+  "packageName": "com.willio.jeanvilma.fishshopping",
+  "sourceOfTruth": "shared/store/listing.json#screenshotShots",
+  "storyboardDir": "shared/store/screenshots",
+  "outputDir": "shared/store/screenshots/captures",
+  "tool": "shared/tools/capture_store_screenshots.py",
+  "npmScript": "screenshots:capture",
+  "validateScript": "screenshots:validate",
+  "formats": {
+    "phone": {
+      "label": "Phone",
+      "playSlot": "phone",
+      "portrait": { "width": 1080, "height": 1920, "aspect": "9:16" },
+      "landscape": { "width": 1920, "height": 1080, "aspect": "16:9" }
+    },
+    "tablet": {
+      "label": "7-inch tablet",
+      "playSlot": "sevenInch",
+      "portrait": { "width": 1200, "height": 1920, "aspect": "5:8" },
+      "landscape": { "width": 1920, "height": 1200, "aspect": "16:10" }
+    }
+  },
+  "minShots": 7,
+  "filePattern": "{outputDir}/{formFactor}/{id}.png",
+  "shots": [
+    { "id": "title", "orientation": "portrait", "storyboard": "shared/store/screenshots/title.svg" },
+    { "id": "pier_cast", "orientation": "portrait", "storyboard": "shared/store/screenshots/pier_cast.svg" },
+    { "id": "cutter_transfers", "orientation": "landscape", "storyboard": "shared/store/screenshots/cutter_transfers.svg" },
+    { "id": "counter_service", "orientation": "landscape", "storyboard": "shared/store/screenshots/counter_service.svg" },
+    { "id": "panels", "orientation": "portrait", "storyboard": "shared/store/screenshots/panels.svg" },
+    { "id": "map_travel", "orientation": "portrait", "storyboard": "shared/store/screenshots/map_travel.svg" },
+    { "id": "rush_hour", "orientation": "landscape", "storyboard": "shared/store/screenshots/rush_hour.svg" }
+  ],
+  "playNotes": [
+    "Upload phone/*.png to Phone screenshots (match orientation per shot).",
+    "Upload tablet/*.png to 7-inch tablet screenshots.",
+    "PNG is 24-bit RGB, no alpha; within Play 320–3840px bounds.",
+    "Storyboard SVGs remain the authoring reference; captures are the Console upload set."
+  ]
+}

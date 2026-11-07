@@ -29,6 +29,19 @@ import {
   shouldSuspendAudioWhenHidden,
 } from "../game/lifecyclePolicy";
 import { PRIVACY_PAGE_PATH, SUPPORT_PAGE_PATH, STORE_SHORT_DESCRIPTION } from "../store/listing";
+import { SUPPORT_RESTORE_HELP } from "../engine/supportRunbook";
+import {
+  LICENSES_SCREEN_INTRO,
+  LICENSES_SCREEN_TITLE,
+  licensesCatalog,
+  ossHeadline,
+} from "../store/licenses";
+import { frictionNudgeText } from "../engine/tutorialFriction";
+import {
+  cosmeticTitle,
+  resolveVisibleCosmetic,
+  sanitizeEquippedCosmetic,
+} from "../engine/cosmeticPresentation";
 import { HarborScene, hasWebGL2 } from "../render/HarborScene";
 import { Joystick } from "./Joystick";
 import {
@@ -286,11 +299,14 @@ function World({ host }: { host: GameHost }) {
       if (!host.settingsReducedMotion()) {
         scene.enqueueTransfers(host.drainFlyingTransfers());
         scene.enqueueBursts(host.drainWorldBursts());
+        scene.enqueueShakes(host.drainShakes());
       } else {
         host.drainFlyingTransfers();
         host.drainWorldBursts();
+        host.drainShakes();
       }
-      scene.render(now, view, host.renderQuality(), host.settingsReducedMotion());
+      const bannerId = host.visibleCosmeticBannerId(view?.unlockedCosmetics ?? []);
+      scene.render(now, view, host.renderQuality(), host.settingsReducedMotion(), bannerId);
       raf = requestAnimationFrame(loop);
     };
     const onVisibility = () => {
@@ -340,8 +356,12 @@ function World({ host }: { host: GameHost }) {
       if (disposed) return;
       raf = requestAnimationFrame(loop);
     })();
+    const onOnline = () => {
+      void host.flushCloudOfflineQueue();
+    };
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("online", onOnline);
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointerup", onPointerUp);
 
@@ -352,6 +372,7 @@ function World({ host }: { host: GameHost }) {
       observer.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("online", onOnline);
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointerup", onPointerUp);
       scene.onContextStateChange = null;
@@ -396,6 +417,8 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
   const stationOpen = state.status === "ready" && state.stationOpen;
   const offlineReport = state.status === "ready" ? state.offlineReport : null;
   const [touch, setTouch] = useState(() => window.matchMedia?.("(pointer: coarse)").matches ?? false);
+  /** Phase 22: dwell ms on the current tutorial step for friction nudges. */
+  const [tutorialDwellMs, setTutorialDwellMs] = useState(0);
 
   // Keyboard: WASD / arrows move, U/H/G/J/M/I panels, Escape closes the panel.
   useEffect(() => {
@@ -464,11 +487,24 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
     return () => window.removeEventListener("touchstart", onTouch);
   }, []);
 
+  const tutorialStepId =
+    state.status === "ready" ? state.view.objective?.tutorialStepId ?? null : null;
+  useEffect(() => {
+    setTutorialDwellMs(0);
+    if (!tutorialStepId) return;
+    const started = performance.now();
+    const id = window.setInterval(() => {
+      setTutorialDwellMs(performance.now() - started);
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [tutorialStepId]);
+
   if (state.status === "loading") return <CenterCard title="Loading harbor...">Preparing Sunrise Pier.</CenterCard>;
   if (state.status === "failed") return <CenterCard title="Something went wrong" danger>{state.message}</CenterCard>;
   if (state.status !== "ready") return null;
 
   const v = state.view;
+  const frictionNudge = frictionNudgeText(v.objective?.tutorialStepId, tutorialDwellMs);
   const hudScale = state.settings.hudTextScale;
   return (
     <div
@@ -501,6 +537,20 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           {v.seasonalEvent.name} · {formatRushSeconds(v.seasonalEvent.ticksRemaining)}s
         </div>
       )}
+      {(() => {
+        const bannerId = resolveVisibleCosmetic(
+          host.equippedCosmeticId(),
+          host.previewCosmeticIdValue(),
+          v.unlockedCosmetics,
+        );
+        if (!bannerId) return null;
+        const previewing = !!host.previewCosmeticIdValue();
+        return (
+          <div className="pill cosmetic-banner" aria-live="polite">
+            {previewing ? "Preview" : "Banner"} · {cosmeticTitle(bannerId)}
+          </div>
+        );
+      })()}
       {v.supervisorOnDuty && (
         <div className="pill supervisor-banner" aria-live="polite">Supervisor on duty</div>
       )}
@@ -546,6 +596,7 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
             {v.objective.detail ? <span className="objective-detail"> {v.objective.detail}</span> : null}
           </div>
           <div>{v.objective.text}</div>
+          {frictionNudge ? <div className="small muted" style={{ marginTop: 6 }}>{frictionNudge}</div> : null}
         </div>
       )}
       {touch ? (
@@ -653,10 +704,22 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           onPurchaseDecor={(id) => host.purchaseDecor(id)}
           onPurchaseIapCosmetic={(sku) => host.purchaseIapCosmetic(sku)}
           onRestorePurchases={() => host.restorePurchases()}
+          equippedCosmeticId={host.equippedCosmeticId()}
+          previewCosmeticId={host.previewCosmeticIdValue()}
+          onEquipCosmetic={(id) => {
+            host.setPreviewCosmeticId(null);
+            host.setEquippedCosmeticId(id);
+          }}
+          onUnequipCosmetic={() => host.setEquippedCosmeticId(null)}
+          onPreviewCosmetic={(id) => host.setPreviewCosmeticId(id)}
+          onClearPreview={() => host.setPreviewCosmeticId(null)}
           onTakeLoan={() => host.takeLoan()}
           onRepayLoan={() => host.repayLoan()}
           onSetCoinGoal={(amount) => host.setCoinGoal(amount)}
-          onClose={() => host.setQuestsOpen(false)}
+          onClose={() => {
+            host.setPreviewCosmeticId(null);
+            host.setQuestsOpen(false);
+          }}
         />
       )}
       {speciesBookOpen && (
@@ -697,9 +760,11 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           cloudAvailable={host.cloudAvailable()}
           saveStatus={host.saveStatus()}
           telemetryRates={v.telemetryRates}
+          analyticsAlertActive={host.hasAnalyticsDashboardAlerts()}
           onChange={(partial) => host.updateSettings(partial)}
           onExportTelemetry={() => host.exportTelemetryJson()}
           onExportBalance={() => host.exportBalanceJson()}
+          onExportAnalyticsDashboard={() => host.exportAnalyticsDashboardJson()}
           onClose={() => host.setSettingsOpen(false)}
         />
       )}
@@ -845,19 +910,22 @@ function PausePanel({ onResume, onSettings, onTitle }: {
   );
 }
 
-function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, onChange, onExportTelemetry, onExportBalance, onClose }: {
+function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, analyticsAlertActive, onChange, onExportTelemetry, onExportBalance, onExportAnalyticsDashboard, onClose }: {
   settings: GameSettings;
   cloudAvailable: boolean;
   saveStatus: SaveStatusView;
   telemetryRates: SimView["telemetryRates"];
+  analyticsAlertActive: boolean;
   onChange: (partial: Partial<GameSettings>) => void;
   onExportTelemetry: () => string | null;
   onExportBalance: () => string | null;
+  onExportAnalyticsDashboard: () => string;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [exportNote, setExportNote] = useState<string | null>(null);
-  useEffect(() => closeRef.current?.focus(), []);
+  const [showLicenses, setShowLicenses] = useState(false);
+  useEffect(() => closeRef.current?.focus(), [showLicenses]);
   const scales: JoystickScale[] = [0.75, 1, 1.25];
   const copyJson = async (label: string, json: string | null, emptyMsg: string) => {
     if (!json) { setExportNote(emptyMsg); return; }
@@ -868,6 +936,36 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, o
       setExportNote(`Could not copy ${label.toLowerCase()}`);
     }
   };
+  if (showLicenses) {
+    return (
+      <div className="scrim" onClick={onClose}>
+        <div
+          className="panel sheet settings-sheet"
+          role="dialog"
+          aria-modal="true"
+          aria-label={LICENSES_SCREEN_TITLE}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="sheet-header">
+            <h2>{LICENSES_SCREEN_TITLE}</h2>
+            <button ref={closeRef} className="button ghost" onClick={() => setShowLicenses(false)}>Close</button>
+          </div>
+          <div className="small muted" style={{ marginBottom: 12 }}>{LICENSES_SCREEN_INTRO}</div>
+          <div className="small" style={{ marginBottom: 8 }}><strong>First-party assets</strong></div>
+          <div className="small muted" style={{ marginBottom: 16 }}>{licensesCatalog.defaultLicense.spdx}</div>
+          <div style={{ display: "grid", gap: 12, maxHeight: "50vh", overflow: "auto" }}>
+            {licensesCatalog.ossNotices.map((n) => (
+              <div key={n.id}>
+                <div className="small"><strong>{ossHeadline(n)}</strong></div>
+                <div className="small muted">{n.notice}</div>
+                <a className="small" href={n.url} target="_blank" rel="noreferrer">{n.url}</a>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="scrim" onClick={onClose}>
       <div className="panel sheet settings-sheet" role="dialog" aria-modal="true" aria-label="Settings" onClick={(e) => e.stopPropagation()}>
@@ -879,7 +977,7 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, o
           <li>
             <div className="grow">
               <strong>Mute</strong>
-              <div className="small muted">Master silence for ambience and stingers. Haptics stay independent.</div>
+              <div className="small muted">Master silence for music beds and stingers. Haptics stay independent.</div>
             </div>
             <button className="button" aria-pressed={settings.muted} onClick={() => onChange({ muted: !settings.muted })}>
               {settings.muted ? "On" : "Off"}
@@ -888,7 +986,7 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, o
           <li>
             <div className="grow">
               <strong>Music</strong>
-              <div className="small muted">Harbor ambience bed under gameplay.</div>
+              <div className="small muted">Harbor / shop music beds under gameplay.</div>
             </div>
             <div className="quality-row">
               {VOLUME_STEPS.map((step) => (
@@ -950,6 +1048,7 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, o
                 {cloudAvailable
                   ? "Optional anonymous link. Newest checksummed save wins; local play works with this off."
                   : "Optional. Set VITE_FIREBASE_API_KEY + VITE_FIREBASE_PROJECT_ID (see web/.env.example). Local saves still work offline."}
+                {saveStatus.cloudPendingUpload ? " Pending upload will retry when online." : ""}
               </div>
             </div>
             <button
@@ -957,15 +1056,22 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, o
               aria-pressed={settings.cloudSyncEnabled}
               onClick={() => onChange({ cloudSyncEnabled: !settings.cloudSyncEnabled })}
             >
-              {settings.cloudSyncEnabled ? "On" : "Off"}
+              {settings.cloudSyncEnabled
+                ? saveStatus.cloudPendingUpload
+                  ? "On · pending"
+                  : "On"
+                : "Off"}
             </button>
           </li>
           <li>
             <div className="grow">
               <strong>Analytics</strong>
               <div className="small muted">
-                Privacy-safe events only (tutorial, first sale, harbors, offline, save recovery, frame timing).
+                Privacy-safe events only (tutorial, first sale, harbors, offline, save recovery, frame timing, sessions).
                 Never includes account ids, bag contents, or full saves.
+                {settings.analyticsConsent && analyticsAlertActive
+                  ? " Stability alert: crash-free session rate below 99%."
+                  : ""}
               </div>
             </div>
             <button
@@ -976,7 +1082,11 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, o
                 analyticsConsentDecided: true,
               })}
             >
-              {settings.analyticsConsent ? "On" : "Off"}
+              {settings.analyticsConsent
+                ? analyticsAlertActive
+                  ? "On · alert"
+                  : "On"
+                : "Off"}
             </button>
           </li>
           <li>
@@ -1088,7 +1198,9 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, o
                 {saveStatus.cloudEnabled
                   ? saveStatus.cloudAvailable
                     ? saveStatus.cloudLinked
-                      ? " · Cloud linked"
+                      ? saveStatus.cloudPendingUpload
+                        ? " · Cloud linked · pending upload"
+                        : " · Cloud linked"
                       : " · Cloud on, linking…"
                     : " · Cloud on, keys missing"
                   : " · Cloud off"}
@@ -1120,6 +1232,16 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, o
             onClick={() => void copyJson("Balance knobs", onExportBalance(), "Balance export unavailable")}
           >
             Copy balance
+          </button>
+          <button
+            className="button ghost"
+            onClick={() => void copyJson(
+              "Analytics dashboard",
+              onExportAnalyticsDashboard(),
+              "Analytics dashboard unavailable",
+            )}
+          >
+            Copy analytics
           </button>
         </div>
         {exportNote && <div className="small" style={{ marginTop: 8 }}>{exportNote}</div>}
@@ -1168,10 +1290,18 @@ function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, o
         </div>
         <div className="small" style={{ marginTop: 12 }}>Legal</div>
         <div className="small muted">{STORE_SHORT_DESCRIPTION}</div>
+        <div className="small muted" style={{ marginTop: 6 }}>{SUPPORT_RESTORE_HELP}</div>
         <div className="quality-row" style={{ marginTop: 8 }}>
           <a className="button" href={PRIVACY_PAGE_PATH} target="_blank" rel="noreferrer">Privacy</a>
-          <a className="button ghost" href={SUPPORT_PAGE_PATH} target="_blank" rel="noreferrer">Support</a>
+          <a className="button ghost" href={`${SUPPORT_PAGE_PATH}#restore`} target="_blank" rel="noreferrer">Support</a>
         </div>
+        <button
+          className="button ghost"
+          style={{ marginTop: 8, width: "100%", minHeight: 48 }}
+          onClick={() => setShowLicenses(true)}
+        >
+          Licenses
+        </button>
       </div>
     </div>
   );
@@ -1700,6 +1830,12 @@ function QuestLogPanel({
   onPurchaseDecor,
   onPurchaseIapCosmetic,
   onRestorePurchases,
+  equippedCosmeticId,
+  previewCosmeticId,
+  onEquipCosmetic,
+  onUnequipCosmetic,
+  onPreviewCosmetic,
+  onClearPreview,
   onTakeLoan,
   onRepayLoan,
   onSetCoinGoal,
@@ -1725,6 +1861,12 @@ function QuestLogPanel({
   onPurchaseDecor: (decorId: string) => void;
   onPurchaseIapCosmetic: (sku: string) => void;
   onRestorePurchases: () => void;
+  equippedCosmeticId: string | null;
+  previewCosmeticId: string | null;
+  onEquipCosmetic: (cosmeticId: string) => void;
+  onUnequipCosmetic: () => void;
+  onPreviewCosmetic: (cosmeticId: string) => void;
+  onClearPreview: () => void;
   onTakeLoan: () => void;
   onRepayLoan: () => void;
   onSetCoinGoal: (amount: number) => void;
@@ -1947,27 +2089,71 @@ function QuestLogPanel({
             <div className="grow">
               <strong>Harbor cosmetics</strong>
               <div className="small muted">Optional paid banners · visual only · never change rates</div>
+              <div className="small muted">Equip one banner · Preview before buy · power-neutral</div>
               <button className="button ghost" onClick={onRestorePurchases} style={{ marginTop: 6 }}>
                 Restore purchases
               </button>
             </div>
             <span className="num">IAP</span>
           </li>
-          {cosmeticIapOffers.map((c) => (
-            <li key={c.id}>
-              <div className="grow">
-                <strong>{c.title}</strong>
-                <div className="small">{c.description}</div>
-              </div>
-              {c.status === "owned" ? (
-                <span className="owned">Owned</span>
-              ) : (
-                <button className="button" onClick={() => onPurchaseIapCosmetic(c.sku)}>
-                  Buy
-                </button>
-              )}
-            </li>
-          ))}
+          {cosmeticIapOffers.map((c) => {
+            const owned = c.status === "owned";
+            const equipped = equippedCosmeticId === c.grantsCosmetic;
+            const previewing = previewCosmeticId === c.grantsCosmetic;
+            return (
+              <li key={c.id}>
+                <div className="grow">
+                  <strong>{c.title}</strong>
+                  <div className="small">{c.description}</div>
+                  {equipped && <div className="small reward">Equipped</div>}
+                  {previewing && !equipped && <div className="small reward">Preview</div>}
+                  <div className="quality-row" style={{ marginTop: 6, flexWrap: "wrap", gap: 6 }}>
+                    <button className="button ghost" onClick={() => (previewing ? onClearPreview() : onPreviewCosmetic(c.grantsCosmetic))}>
+                      {previewing ? "Clear preview" : "Preview"}
+                    </button>
+                    {owned ? (
+                      <button
+                        className="button"
+                        onClick={() => (equipped ? onUnequipCosmetic() : onEquipCosmetic(c.grantsCosmetic))}
+                      >
+                        {equipped ? "Unequip" : "Equip"}
+                      </button>
+                    ) : (
+                      <button className="button" onClick={() => onPurchaseIapCosmetic(c.sku)}>
+                        Buy
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <span className={owned ? "owned" : "num"}>{owned ? "Owned" : "IAP"}</span>
+              </li>
+            );
+          })}
+          {unlockedCosmetics
+            .filter((id) => !cosmeticIapOffers.some((c) => c.grantsCosmetic === id))
+            .map((id) => {
+              const equipped = equippedCosmeticId === id;
+              const previewing = previewCosmeticId === id;
+              return (
+                <li key={id}>
+                  <div className="grow">
+                    <strong>{cosmeticTitle(id)}</strong>
+                    <div className="small muted">Unlocked banner · visual only</div>
+                    {equipped && <div className="small reward">Equipped</div>}
+                    {previewing && !equipped && <div className="small reward">Preview</div>}
+                    <div className="quality-row" style={{ marginTop: 6, flexWrap: "wrap", gap: 6 }}>
+                      <button className="button ghost" onClick={() => (previewing ? onClearPreview() : onPreviewCosmetic(id))}>
+                        {previewing ? "Clear preview" : "Preview"}
+                      </button>
+                      <button className="button" onClick={() => (equipped ? onUnequipCosmetic() : onEquipCosmetic(id))}>
+                        {equipped ? "Unequip" : "Equip"}
+                      </button>
+                    </div>
+                  </div>
+                  <span className="owned">Owned</span>
+                </li>
+              );
+            })}
         </ul>
       </div>
     </div>

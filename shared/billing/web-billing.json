@@ -1,0 +1,85 @@
+{
+  "phase": 2,
+  "schema": "fish.billing.web_production.v1",
+  "description": "Web production IAP path for non-consumable full-harbor unlock and cosmetics. Uses the same logical SKUs as Android; maps via webProductId. Local stub when VITE_BILLING_API_BASE is unset.",
+  "provider": "checkout_api",
+  "productType": "non_consumable",
+  "localBackend": "stub",
+  "productionBackend": "web",
+  "forceStubEnv": "VITE_BILLING_FORCE_STUB",
+  "catalog": "shared/billing/entitlements.json",
+  "envKeys": [
+    {
+      "name": "VITE_BILLING_API_BASE",
+      "required": true,
+      "description": "HTTPS base for checkout + entitlement restore (no trailing slash)"
+    },
+    {
+      "name": "VITE_STRIPE_PUBLISHABLE_KEY",
+      "required": false,
+      "description": "Optional Stripe publishable key when the checkout API uses Stripe Checkout/Elements"
+    },
+    {
+      "name": "VITE_BILLING_FORCE_STUB",
+      "required": false,
+      "description": "Set to true to force local stub even when API base is configured"
+    }
+  ],
+  "api": {
+    "checkout": {
+      "method": "POST",
+      "path": "/v1/checkout",
+      "body": ["webProductId", "cloudAccountId", "successUrl", "cancelUrl"],
+      "responses": [
+        { "status": "completed", "fields": ["webProductId", "purchaseToken"] },
+        { "status": "owned", "fields": ["webProductId", "purchaseToken"] },
+        { "status": "checkout", "fields": ["url"] }
+      ]
+    },
+    "entitlements": {
+      "method": "GET",
+      "path": "/v1/entitlements",
+      "query": ["cloudAccountId"],
+      "response": { "entitlements": ["webProductId", "purchaseToken"] }
+    },
+    "fulfill": {
+      "method": "POST",
+      "path": "/v1/fulfill",
+      "body": ["sessionId", "cloudAccountId"],
+      "response": { "entitlements": ["webProductId", "purchaseToken"] }
+    }
+  },
+  "returnQuery": {
+    "billing": "success|cancel",
+    "session_id": "Stripe/Checkout session id when billing=success"
+  },
+  "skus": [
+    {
+      "sku": "fish.full_harbor_unlock",
+      "webProductId": "fish.full_harbor_unlock",
+      "androidProductId": "fish_full_harbor_unlock",
+      "grantsCosmetic": null
+    },
+    {
+      "sku": "fish.cosmetic.sunset_bunting",
+      "webProductId": "fish.cosmetic.sunset_bunting",
+      "androidProductId": "fish_cosmetic_sunset_bunting",
+      "grantsCosmetic": "banner.iap_sunset_bunting"
+    },
+    {
+      "sku": "fish.cosmetic.pearl_string",
+      "webProductId": "fish.cosmetic.pearl_string",
+      "androidProductId": "fish_cosmetic_pearl_string",
+      "grantsCosmetic": "banner.iap_pearl_string"
+    },
+    {
+      "sku": "fish.cosmetic.captain_crest",
+      "webProductId": "fish.cosmetic.captain_crest",
+      "androidProductId": "fish_cosmetic_captain_crest",
+      "grantsCosmetic": "banner.iap_captain_crest"
+    }
+  ],
+  "sandbox": {
+    "note": "Point VITE_BILLING_API_BASE at a test checkout API; FakeWebStoreBridge covers unit tests without network."
+  }
+}

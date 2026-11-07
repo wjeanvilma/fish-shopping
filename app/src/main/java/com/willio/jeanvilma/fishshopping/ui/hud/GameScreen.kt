@@ -70,6 +70,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.willio.jeanvilma.fishshopping.core.store.LicensesNotice
 import com.willio.jeanvilma.fishshopping.core.store.StoreListing
 import com.willio.jeanvilma.fishshopping.core.sim.ContextCard
 import com.willio.jeanvilma.fishshopping.core.sim.MachineStatus
@@ -86,6 +87,8 @@ import com.willio.jeanvilma.fishshopping.core.sim.QuestView
 import com.willio.jeanvilma.fishshopping.core.sim.SeasonalEventBannerView
 import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
+import com.willio.jeanvilma.fishshopping.core.sim.CosmeticPresentation
+import com.willio.jeanvilma.fishshopping.core.sim.TutorialFriction
 import com.willio.jeanvilma.fishshopping.core.sim.StaffHireView
 import com.willio.jeanvilma.fishshopping.core.sim.WorkerView
 import com.willio.jeanvilma.fishshopping.core.sim.StationView
@@ -142,6 +145,10 @@ fun GameScreen(vm: GameViewModel) {
                 val cues = vm.drainWorldBursts()
                 if (vm.settingsReducedMotion()) emptyList() else cues
             },
+            shakeProvider = {
+                val cues = vm.drainShakes()
+                if (vm.settingsReducedMotion()) emptyList() else cues
+            },
             qualityProvider = { vm.renderQuality() },
             reducedMotionProvider = { vm.settingsReducedMotion() },
             modifier = Modifier.fillMaxSize(),
@@ -168,6 +175,18 @@ fun GameScreen(vm: GameViewModel) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
+    val tutorialStepId = state.view.objective?.tutorialStepId
+    var tutorialDwellMs by remember(tutorialStepId) { mutableStateOf(0L) }
+    LaunchedEffect(tutorialStepId) {
+        tutorialDwellMs = 0L
+        if (tutorialStepId == null) return@LaunchedEffect
+        val started = System.currentTimeMillis()
+        while (true) {
+            delay(500)
+            tutorialDwellMs = System.currentTimeMillis() - started
+        }
+    }
+    val frictionNudge = TutorialFriction.nudgeText(tutorialStepId, tutorialDwellMs)
     val v = state.view
     val focus = remember { FocusRequester() }
     val keys = remember { mutableStateListOf<Key>() }
@@ -175,6 +194,22 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
     var harborOrigin by remember { mutableStateOf(Offset.Zero) }
     var tapZoneOrigin by remember { mutableStateOf(Offset.Zero) }
     val settings = state.settings
+    var previewCosmeticId by remember { mutableStateOf<String?>(null) }
+    val unlockedCosmeticSet = remember(v.unlockedCosmetics) { v.unlockedCosmetics.toSet() }
+    val equippedCosmeticId = CosmeticPresentation.sanitizeEquipped(
+        settings.equippedCosmeticId,
+        unlockedCosmeticSet,
+    )
+    LaunchedEffect(equippedCosmeticId, settings.equippedCosmeticId) {
+        if (equippedCosmeticId != settings.equippedCosmeticId) {
+            vm.updateSettings(equippedCosmeticId = equippedCosmeticId)
+        }
+    }
+    val visibleCosmeticId = CosmeticPresentation.resolveVisible(
+        equippedCosmeticId,
+        previewCosmeticId,
+        unlockedCosmeticSet,
+    )
     val anyPanel = state.offlineReport != null || state.pauseOpen || state.settingsOpen
         || state.bagOpen || state.stationOpen || state.upgradesOpen || state.staffOpen
         || state.questsOpen || state.contractsOpen || state.mapOpen || state.warehouseOpen
@@ -388,8 +423,32 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 )
             }
         }
+        visibleCosmeticId?.let { cosmeticId ->
+            val bannerTop = when {
+                v.rush != null && v.seasonalEvent != null -> 140.dp
+                v.rush != null || v.seasonalEvent != null -> 96.dp
+                else -> 52.dp
+            }
+            Pill(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = bannerTop),
+                background = Color(0xFF4A3A2A),
+            ) {
+                val label = if (previewCosmeticId != null) "Preview" else "Banner"
+                Text(
+                    "$label · ${CosmeticPresentation.titleFor(cosmeticId)}",
+                    style = Tabular,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFFFF6EA),
+                )
+            }
+        }
         if (v.supervisorOnDuty) {
             val supervisorTop = when {
+                visibleCosmeticId != null && v.rush != null && v.seasonalEvent != null -> 184.dp
+                visibleCosmeticId != null && (v.rush != null || v.seasonalEvent != null) -> 140.dp
+                visibleCosmeticId != null -> 96.dp
                 v.rush != null && v.seasonalEvent != null -> 140.dp
                 v.rush != null || v.seasonalEvent != null -> 96.dp
                 else -> 52.dp
@@ -485,6 +544,10 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                         }
                     }
                     Text(obj.text, fontWeight = FontWeight.Medium)
+                    frictionNudge?.let { tip ->
+                        Spacer(Modifier.height(6.dp))
+                        Text(tip, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
                 }
             }
         }
@@ -642,10 +705,22 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 onPurchaseDecor = vm::purchaseDecor,
                 onPurchaseIapCosmetic = vm::purchaseIapCosmetic,
                 onRestorePurchases = vm::restorePurchases,
+                equippedCosmeticId = equippedCosmeticId,
+                previewCosmeticId = previewCosmeticId,
+                onEquipCosmetic = { id ->
+                    previewCosmeticId = null
+                    vm.updateSettings(equippedCosmeticId = id)
+                },
+                onUnequipCosmetic = { vm.updateSettings(equippedCosmeticId = null) },
+                onPreviewCosmetic = { id -> previewCosmeticId = id },
+                onClearPreview = { previewCosmeticId = null },
                 onTakeLoan = vm::takeLoan,
                 onRepayLoan = vm::repayLoan,
                 onSetCoinGoal = vm::setCoinGoal,
-                onClose = { vm.setQuestsOpen(false) },
+                onClose = {
+                    previewCosmeticId = null
+                    vm.setQuestsOpen(false)
+                },
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -721,8 +796,10 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                     onTimingAssist = { vm.updateSettings(timingAssist = it) },
                     onAccessibilityPreset = { vm.applyAccessibilityPreset() },
                     telemetryRates = v.telemetryRates,
+                    analyticsAlertActive = vm.hasAnalyticsDashboardAlerts(),
                     onExportTelemetry = { vm.exportTelemetryJson() },
                     onExportBalance = { vm.exportBalanceJson() },
+                    onExportAnalyticsDashboard = { vm.exportAnalyticsDashboardJson() },
                     onClose = { vm.setSettingsOpen(false) },
                 )
             }
@@ -1133,12 +1210,19 @@ private fun SettingsPanel(
     onTimingAssist: (Boolean) -> Unit,
     onAccessibilityPreset: () -> Unit,
     telemetryRates: com.willio.jeanvilma.fishshopping.core.sim.TelemetryRatesView,
+    analyticsAlertActive: Boolean,
     onExportTelemetry: () -> String?,
     onExportBalance: () -> String?,
+    onExportAnalyticsDashboard: () -> String,
     onClose: () -> Unit,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var exportNote by remember { mutableStateOf<String?>(null) }
+    var showLicenses by remember { mutableStateOf(false) }
+    if (showLicenses) {
+        LicensesPanel(onClose = { showLicenses = false })
+        return
+    }
     Surface(
         Modifier.managementSheet(maxWidth = 400.dp, maxHeight = 520.dp).then(rememberSheetClicks()),
         shape = PanelShape,
@@ -1154,7 +1238,7 @@ private fun SettingsPanel(
                 Column(Modifier.weight(1f)) {
                     Text("Mute", fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Master silence for ambience and stingers. Haptics stay independent.",
+                        "Master silence for music beds and stingers. Haptics stay independent.",
                         style = MaterialTheme.typography.bodySmall,
                         color = Ink.copy(alpha = 0.7f),
                     )
@@ -1290,12 +1374,22 @@ private fun SettingsPanel(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Cloud sync", fontWeight = FontWeight.SemiBold)
                     Text(
-                        if (cloudAvailable) {
-                            "Optional anonymous link. Newest checksummed save wins; local play works with this off."
-                        } else {
-                            "Optional. Add fish.firebase.* to local.properties (see local.properties.example). Local saves still work offline."
+                        if (saveStatus.cloudPendingUpload) "Cloud sync · pending" else "Cloud sync",
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        buildString {
+                            append(
+                                if (cloudAvailable) {
+                                    "Optional anonymous link. Newest checksummed save wins; local play works with this off."
+                                } else {
+                                    "Optional. Add fish.firebase.* to local.properties (see local.properties.example). Local saves still work offline."
+                                },
+                            )
+                            if (saveStatus.cloudPendingUpload) {
+                                append(" Pending upload will retry when online.")
+                            }
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = Ink.copy(alpha = 0.7f),
@@ -1305,9 +1399,23 @@ private fun SettingsPanel(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Analytics", fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Privacy-safe events only (tutorial, first sale, harbors, offline, save recovery, frame timing). Never includes account ids, bag contents, or full saves.",
+                        if (settings.analyticsConsent && analyticsAlertActive) {
+                            "Analytics · alert"
+                        } else {
+                            "Analytics"
+                        },
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        buildString {
+                            append(
+                                "Privacy-safe events only (tutorial, first sale, harbors, offline, save recovery, frame timing, sessions). Never includes account ids, bag contents, or full saves.",
+                            )
+                            if (settings.analyticsConsent && analyticsAlertActive) {
+                                append(" Stability alert: crash-free session rate below 99%.")
+                            }
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = Ink.copy(alpha = 0.7f),
                     )
@@ -1410,6 +1518,8 @@ private fun SettingsPanel(
                         when {
                             !saveStatus.cloudEnabled -> " · Cloud off"
                             !saveStatus.cloudAvailable -> " · Cloud on, keys missing"
+                            saveStatus.cloudLinked && saveStatus.cloudPendingUpload ->
+                                " · Cloud linked · pending upload"
                             saveStatus.cloudLinked -> " · Cloud linked"
                             else -> " · Cloud on, linking…"
                         },
@@ -1467,10 +1577,23 @@ private fun SettingsPanel(
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                 ) { Text("Copy balance") }
             }
+            OutlinedButton(
+                onClick = {
+                    val json = onExportAnalyticsDashboard()
+                    copyTextToClipboard(context, "Fish Shopping analytics dashboard", json)
+                    exportNote = "Analytics dashboard copied"
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) { Text("Copy analytics") }
             exportNote?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Action) }
             Text("Legal", fontWeight = FontWeight.SemiBold)
             Text(
                 StoreListing.SHORT_DESCRIPTION,
+                style = MaterialTheme.typography.bodySmall,
+                color = Ink.copy(alpha = 0.7f),
+            )
+            Text(
+                com.willio.jeanvilma.fishshopping.core.store.SupportRunbook.RESTORE_HELP_LINE,
                 style = MaterialTheme.typography.bodySmall,
                 color = Ink.copy(alpha = 0.7f),
             )
@@ -1480,9 +1603,72 @@ private fun SettingsPanel(
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                 ) { Text("Privacy") }
                 OutlinedButton(
-                    onClick = { openHttpUrl(context, StoreListing.SUPPORT_URL) },
+                    onClick = {
+                        openHttpUrl(
+                            context,
+                            com.willio.jeanvilma.fishshopping.core.store.SupportRunbook.SUPPORT_RESTORE_URL,
+                        )
+                    },
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                ) { Text("Support") }
+                ) {
+                    Text(com.willio.jeanvilma.fishshopping.core.store.SupportRunbook.SETTINGS_SUPPORT_LABEL)
+                }
+            }
+            OutlinedButton(
+                onClick = { showLicenses = true },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) { Text("Licenses") }
+        }
+    }
+}
+
+@Composable
+private fun LicensesPanel(onClose: () -> Unit) {
+    Surface(
+        Modifier.managementSheet(maxWidth = 400.dp, maxHeight = 520.dp).then(rememberSheetClicks()),
+        shape = PanelShape,
+        color = PanelSurface,
+        shadowElevation = 8.dp,
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    LicensesNotice.SCREEN_TITLE,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                item {
+                    Text(
+                        LicensesNotice.SCREEN_INTRO,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.75f),
+                    )
+                }
+                item {
+                    Text("First-party assets", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "LicenseRef-FishShopping-Proprietary-Ship",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.7f),
+                    )
+                }
+                items(LicensesNotice.OSS_NOTICES, key = { it.id }) { notice ->
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(notice.headline(), fontWeight = FontWeight.SemiBold)
+                        Text(notice.notice, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            notice.url,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Action,
+                        )
+                    }
+                }
             }
         }
     }
@@ -2389,6 +2575,12 @@ private fun QuestLogPanel(
     onPurchaseDecor: (String) -> Unit,
     onPurchaseIapCosmetic: (String) -> Unit,
     onRestorePurchases: () -> Unit,
+    equippedCosmeticId: String?,
+    previewCosmeticId: String?,
+    onEquipCosmetic: (String) -> Unit,
+    onUnequipCosmetic: () -> Unit,
+    onPreviewCosmetic: (String) -> Unit,
+    onClearPreview: () -> Unit,
     onTakeLoan: () -> Unit,
     onRepayLoan: () -> Unit,
     onSetCoinGoal: (Long) -> Unit,
@@ -2663,6 +2855,11 @@ private fun QuestLogPanel(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Ink.copy(alpha = 0.7f),
                             )
+                            Text(
+                                "Equip one banner · Preview before buy · power-neutral",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Ink.copy(alpha = 0.7f),
+                            )
                             TextButton(
                                 onClick = onRestorePurchases,
                                 modifier = Modifier.padding(top = 4.dp).heightIn(min = 48.dp),
@@ -2672,18 +2869,85 @@ private fun QuestLogPanel(
                     }
                 }
                 items(cosmeticIapOffers, key = { it.id }) { c ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(c.title, fontWeight = FontWeight.SemiBold)
-                            Text(c.description, style = MaterialTheme.typography.bodySmall)
+                    val owned = c.status == "owned"
+                    val equipped = equippedCosmeticId == c.grantsCosmetic
+                    val previewing = previewCosmeticId == c.grantsCosmetic
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(c.title, fontWeight = FontWeight.SemiBold)
+                                Text(c.description, style = MaterialTheme.typography.bodySmall)
+                                if (equipped) {
+                                    Text("Equipped", style = MaterialTheme.typography.bodySmall, color = Reward)
+                                } else if (previewing) {
+                                    Text("Preview", style = MaterialTheme.typography.bodySmall, color = Reward)
+                                }
+                            }
+                            Text(
+                                if (owned) "Owned" else "IAP",
+                                style = Tabular,
+                                color = Action,
+                            )
                         }
-                        if (c.status == "owned") {
-                            Text("Owned", style = Tabular, color = Action)
-                        } else {
-                            Button(
-                                onClick = { onPurchaseIapCosmetic(c.sku) },
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = {
+                                    if (previewing) onClearPreview() else onPreviewCosmetic(c.grantsCosmetic)
+                                },
                                 modifier = Modifier.heightIn(min = 48.dp),
-                            ) { Text("Buy") }
+                            ) { Text(if (previewing) "Clear preview" else "Preview") }
+                            if (owned) {
+                                Button(
+                                    onClick = {
+                                        if (equipped) onUnequipCosmetic() else onEquipCosmetic(c.grantsCosmetic)
+                                    },
+                                    modifier = Modifier.heightIn(min = 48.dp),
+                                ) { Text(if (equipped) "Unequip" else "Equip") }
+                            } else {
+                                Button(
+                                    onClick = { onPurchaseIapCosmetic(c.sku) },
+                                    modifier = Modifier.heightIn(min = 48.dp),
+                                ) { Text("Buy") }
+                            }
+                        }
+                    }
+                }
+                items(
+                    unlockedCosmetics.filter { id -> cosmeticIapOffers.none { it.grantsCosmetic == id } },
+                    key = { it },
+                ) { id ->
+                    val equipped = equippedCosmeticId == id
+                    val previewing = previewCosmeticId == id
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(CosmeticPresentation.titleFor(id), fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "Unlocked banner · visual only",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Ink.copy(alpha = 0.7f),
+                                )
+                                if (equipped) {
+                                    Text("Equipped", style = MaterialTheme.typography.bodySmall, color = Reward)
+                                } else if (previewing) {
+                                    Text("Preview", style = MaterialTheme.typography.bodySmall, color = Reward)
+                                }
+                            }
+                            Text("Owned", style = Tabular, color = Action)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = {
+                                    if (previewing) onClearPreview() else onPreviewCosmetic(id)
+                                },
+                                modifier = Modifier.heightIn(min = 48.dp),
+                            ) { Text(if (previewing) "Clear preview" else "Preview") }
+                            Button(
+                                onClick = {
+                                    if (equipped) onUnequipCosmetic() else onEquipCosmetic(id)
+                                },
+                                modifier = Modifier.heightIn(min = 48.dp),
+                            ) { Text(if (equipped) "Unequip" else "Equip") }
                         }
                     }
                 }

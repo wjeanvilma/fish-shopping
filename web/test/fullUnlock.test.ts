@@ -33,6 +33,8 @@ describe("fullUnlock (Phase 23)", () => {
     );
     expect(catalog.freeHarborId).toBe(FREE_HARBOR_ID);
     expect(catalog.fullUnlock.sku).toBe(FULL_UNLOCK_SKU);
+    expect(catalog.fullUnlock.webProductId).toBe(FullUnlockSystem.WEB_PRODUCT_ID);
+    expect(catalog.fullUnlock.androidProductId).toBe(FullUnlockSystem.ANDROID_PRODUCT_ID);
     expect(catalog.fullUnlock.powerNeutral).toBe(true);
     expect(content.harborsById.get(FREE_HARBOR_ID)!.requires).toEqual([]);
     expect(FullUnlockSystem.FREE_HARBOR_ID).toBe(FREE_HARBOR_ID);
