@@ -5,10 +5,9 @@ plugins {
 
 android {
     namespace = "com.willio.jeanvilma.fishshopping"
+    // Phase 27: Filament 1.77.3 + current AndroidX require compileSdk 37+.
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     // Optional Firebase REST keys from local.properties (never required for local play).
@@ -29,7 +28,7 @@ android {
         minSdk = 24
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "FIREBASE_API_KEY", "\"${localProp("fish.firebase.apiKey")}\"")
         buildConfigField("String", "FIREBASE_PROJECT_ID", "\"${localProp("fish.firebase.projectId")}\"")
@@ -37,8 +36,16 @@ android {
 
     buildTypes {
         release {
+            // Phase 27: R8 minify/shrink for ship builds. Signed with the debug
+            // keystore until a Play upload key is configured (CI assembleRelease gate).
+            signingConfig = signingConfigs.getByName("debug")
             optimization {
-                enable = false
+                enable = true
+                keepRules {
+                    includeDefault = true
+                    @Suppress("DEPRECATION")
+                    files.add(file("proguard-rules.pro"))
+                }
             }
         }
     }

@@ -88,7 +88,7 @@ object StarterLineFixture {
             }
         }
 
-        // Act I: core loop until the buy-upgrade tutorial step is done (index 7).
+        // Act I: core loop until buy-upgrade completes (tutorialIndex becomes 7 = first_contract).
         while (!done() && s.tutorialIndex < 7) {
             fishCutStockOnce(stockCounter = true)
             if (done()) break
@@ -162,11 +162,16 @@ object StarterLineFixture {
                 else -> {
                     if ("upgrade.harbor_grill" !in s.ownedUpgrades) {
                         fishCutStockOnce(stockCounter = true)
-                    } else if (s.player.zoneId != "zone.grill_in") {
+                    } else if (s.player.zoneId != "zone.grill_in" && s.tutorialIndex < sim.content.tutorial.size - 1) {
                         // Stay on the land strip (z≈0) then drop south to the grill pad.
                         pilot.walkTo(s.player.x, 0)
                         if (!done()) pilot.walkTo(10700, 0)
                         if (!done()) pilot.walkTo(10700, -4000)
+                    } else if (s.player.zoneId != "zone.plot_grill") {
+                        // Phase 6: finish tutorial on the expansion marker (route around machine footprints).
+                        pilot.walkTo(9000, -4000)
+                        if (!done()) pilot.walkTo(9000, -2500)
+                        if (!done()) pilot.walkTo(12200, -2500)
                     } else {
                         pilot.tick(Command.Move(0, 0))
                     }
@@ -206,6 +211,7 @@ object StarterLineFixture {
         when (c) {
             is Command.Move -> { put("type", "move"); put("x", c.x); put("z", c.z) }
             is Command.PurchaseUpgrade -> { put("type", "purchase_upgrade"); put("upgradeId", c.upgradeId); put("requestId", c.requestId) }
+            is Command.BuildPlot -> { put("type", "build_plot"); put("plotId", c.plotId); put("requestId", c.requestId) }
             is Command.SetMachinePaused -> { put("type", "set_machine_paused"); put("stationId", c.stationId); put("paused", c.paused) }
             is Command.Reel -> put("type", "reel")
             is Command.SelectMachineRecipe -> {
@@ -262,6 +268,15 @@ object StarterLineFixture {
                 put("decorId", c.decorId)
                 put("requestId", c.requestId)
             }
+            is Command.GrantFullHarborUnlock -> {
+                put("type", "grant_full_harbor_unlock")
+                put("requestId", c.requestId)
+            }
+            is Command.GrantIapCosmetic -> {
+                put("type", "grant_iap_cosmetic")
+                put("cosmeticId", c.cosmeticId)
+                put("requestId", c.requestId)
+            }
             is Command.RepairMachine -> {
                 put("type", "repair_machine")
                 put("stationId", c.stationId)
@@ -285,6 +300,7 @@ object StarterLineFixture {
     fun parseCommand(o: JsonObject): Command = when (o["type"]!!.jsonPrimitive.content) {
         "move" -> Command.Move(o["x"]!!.jsonPrimitive.int, o["z"]!!.jsonPrimitive.int)
         "purchase_upgrade" -> Command.PurchaseUpgrade(o["upgradeId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "build_plot" -> Command.BuildPlot(o["plotId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "set_machine_paused" -> Command.SetMachinePaused(o["stationId"]!!.jsonPrimitive.content, o["paused"]!!.jsonPrimitive.content == "true")
         "reel" -> Command.Reel
         "select_machine_recipe" -> Command.SelectMachineRecipe(
@@ -312,6 +328,11 @@ object StarterLineFixture {
             o["baitId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
         )
         "purchase_decor" -> Command.PurchaseDecor(o["decorId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "grant_full_harbor_unlock" -> Command.GrantFullHarborUnlock(o["requestId"]!!.jsonPrimitive.content)
+        "grant_iap_cosmetic" -> Command.GrantIapCosmetic(
+            o["cosmeticId"]!!.jsonPrimitive.content,
+            o["requestId"]!!.jsonPrimitive.content,
+        )
         "repair_machine" -> Command.RepairMachine(o["stationId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "take_loan" -> Command.TakeLoan(o["requestId"]!!.jsonPrimitive.content)
         "repay_loan" -> Command.RepayLoan(o["requestId"]!!.jsonPrimitive.content)

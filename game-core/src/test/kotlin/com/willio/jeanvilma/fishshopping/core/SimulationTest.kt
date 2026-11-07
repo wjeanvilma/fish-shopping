@@ -34,6 +34,14 @@ class SimulationTest {
         sim.state.ownedUpgrades += "upgrade.staff_boots"
     }
 
+    /** Walk onto a Phase 6 expansion marker (plot zone center). */
+    private fun walkToPlot(pilot: Autopilot, sim: Simulation, plotId: String) {
+        val plot = sim.harbor.plotsById.getValue(plotId)
+        val zone = sim.harbor.zonesById.getValue(plot.zone)
+        pilot.walkTo(zone.rect.centerX, zone.rect.centerZ)
+        assertEquals(plot.zone, sim.state.player.zoneId)
+    }
+
     @Test
     fun walkingToPierFillsBagThenStops() {
         val sim = newSim()
@@ -87,10 +95,12 @@ class SimulationTest {
     @Test
     fun speciesRosterIsHarborGatedWithRareUpgradeChains() {
         val c = Shared.content
-        assertEquals("0.50.0", c.contentVersion)
-        assertEquals(24, c.species.size)
+        assertEquals("1.0.0", c.contentVersion)
+        assertEquals(36, c.species.size)
         val sunrise = c.harborsById.getValue("harbor.sunrise_pier").fishingSpots.flatMap { it.species }
         val moon = c.harborsById.getValue("harbor.moon_cove").fishingSpots.flatMap { it.species }
+        val northlight = c.harborsById.getValue("harbor.northlight_harbor").fishingSpots.flatMap { it.species }
+        val marina = c.harborsById.getValue("harbor.grand_marina").fishingSpots.flatMap { it.species }
         for (id in listOf(
             "species.dawn_anchovy", "species.sail_needlefish", "species.tide_bass", "species.reef_perch",
         )) {
@@ -103,12 +113,34 @@ class SimulationTest {
             assertTrue(id in moon)
             assertTrue(id !in sunrise)
         }
+        for (id in listOf(
+            "species.frost_smelt", "species.arctic_cod", "species.ice_char", "species.polar_herring",
+        )) {
+            assertTrue(id in northlight)
+            assertTrue(id !in sunrise)
+            assertTrue(id !in moon)
+        }
+        for (id in listOf(
+            "species.marina_tuna", "species.saffron_sole", "species.pearl_grouper", "species.harbor_pompano",
+        )) {
+            assertTrue(id in marina)
+            assertTrue(id !in sunrise)
+            assertTrue(id !in moon)
+            assertTrue(id !in northlight)
+        }
         assertEquals("species.bronze_mullet", c.speciesById.getValue("species.copper_mullet").rareUpgrade!!.to)
         assertEquals("species.ruby_snapper", c.speciesById.getValue("species.amber_snapper").rareUpgrade!!.to)
         assertEquals("species.silver_dawn_anchovy", c.speciesById.getValue("species.dawn_anchovy").rareUpgrade!!.to)
         assertEquals("species.prism_lanternfish", c.speciesById.getValue("species.ghost_lanternfish").rareUpgrade!!.to)
+        assertEquals("species.crystal_smelt", c.speciesById.getValue("species.frost_smelt").rareUpgrade!!.to)
+        assertEquals("species.aurora_cod", c.speciesById.getValue("species.arctic_cod").rareUpgrade!!.to)
+        assertEquals("species.gilt_tuna", c.speciesById.getValue("species.marina_tuna").rareUpgrade!!.to)
+        assertEquals("species.gilt_sole", c.speciesById.getValue("species.saffron_sole").rareUpgrade!!.to)
         c.species.forEach { sp ->
-            assertTrue("${sp.id} missing asset stub", sp.asset!!.matches(Regex("""^models/fish_.+\.glb$""")))
+            assertTrue("${sp.id} missing asset path", sp.asset!!.matches(Regex("""^models/fish_.+\.glb$""")))
+        }
+        c.products.forEach { prod ->
+            assertTrue("${prod.id} missing asset path", prod.asset!!.matches(Regex("""^models/product_.+\.glb$""")))
         }
     }
 
@@ -219,7 +251,7 @@ class SimulationTest {
             assertTrue(e.message!!.contains("Checksum"))
         }
         try {
-            SnapshotCodec.decode(sim.content, saved.replace("\"schemaVersion\":19", "\"schemaVersion\":99"))
+            SnapshotCodec.decode(sim.content, saved.replace("\"schemaVersion\":20", "\"schemaVersion\":99"))
             fail("newer schema should be refused")
         } catch (e: SnapshotException) {
             assertTrue(e.message!!.contains("newer"))
@@ -462,7 +494,7 @@ class SimulationTest {
     @Test
     fun reputationScoreBiasesSpawnMixAndShowsInTheView() {
         val c = Shared.content
-        assertEquals("0.50.0", c.contentVersion)
+        assertEquals("1.0.0", c.contentVersion)
         assertTrue(c.reputation.minSample >= 1)
         assertEquals(c.reputation.scoreBandThresholdsPermille.size + 1, c.reputation.kindSpawnMultPermille.size)
 
@@ -499,7 +531,7 @@ class SimulationTest {
     @Test
     fun dynamicPricingStacksScarcityRushAndRatingIntoSaleMult() {
         val c = Shared.content
-        assertEquals("0.50.0", c.contentVersion)
+        assertEquals("1.0.0", c.contentVersion)
         assertEquals(5, c.economy.scarcityPriceCurvePermille.size)
         assertEquals(6, c.prestige.ratingPriceMultPermille.size)
         val lunch = c.harborsById.getValue(HARBOR).rushes.first { it.id == "rush.lunch" }
@@ -720,7 +752,7 @@ class SimulationTest {
         assertTrue(s.customers.isNotEmpty())
         assertTrue(s.customers.all { it.arrived && it.walkTicksTotal == 0 })
         val reencoded = SnapshotCodec.encode(Shared.content, s)
-        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":20,"))
         val sim = Simulation(Shared.content, SnapshotCodec.decode(Shared.content, reencoded))
         repeat(200) { sim.checkedStep() }
     }
@@ -755,7 +787,7 @@ class SimulationTest {
     @Test
     fun smokerTurnsFilletsIntoSmokedFillets() {
         val sim = newSim()
-        assertEquals(3, sim.state.machines.size)
+        assertEquals(5, sim.state.machines.size)
         val s = smoker(sim)
         s.input.add("product.fillet", 1)
         val events = (1..200).flatMap { sim.checkedStep() }
@@ -772,7 +804,7 @@ class SimulationTest {
     @Test
     fun harborGrillUnlocksAsSecondProductionLine() {
         val c = Shared.content
-        assertEquals("0.50.0", c.contentVersion)
+        assertEquals("1.0.0", c.contentVersion)
         assertTrue(c.machinesById.containsKey("machine.harbor_grill"))
         val effect = c.upgradesById.getValue("upgrade.harbor_grill").effect
         assertTrue(effect is com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine)
@@ -780,7 +812,10 @@ class SimulationTest {
             "machine.harbor_grill",
             (effect as com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine).machine,
         )
-        for (harborId in listOf("harbor.sunrise_pier", "harbor.moon_cove", "harbor.obsidian_jetty")) {
+        for (harborId in listOf(
+            "harbor.sunrise_pier", "harbor.moon_cove", "harbor.obsidian_jetty",
+            "harbor.northlight_harbor", "harbor.grand_marina",
+        )) {
             val grill = c.harborsById.getValue(harborId).stations.first { it.machine == "machine.harbor_grill" }
             assertEquals("upgrade.harbor_grill", grill.requiresUpgrade)
         }
@@ -799,8 +834,14 @@ class SimulationTest {
 
         sim.state.completedQuests += "quest.fill_the_hold"
         sim.state.coins = 200
-        val bought = sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.harbor_grill", "grill-1")))
+        val offPlot = sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.harbor_grill", "grill-off")))
+        assertTrue(offPlot.filterIsInstance<GameEvent.PurchaseRejected>().any { it.reason.contains("expansion marker") })
+        walkToPlot(pilot, sim, "plot.sunrise_grill")
+        val bought = sim.checkedStep(listOf(Command.BuildPlot("plot.sunrise_grill", "grill-1")))
+        assertTrue(bought.filterIsInstance<GameEvent.PlotBuilt>().any { !it.replayed })
         assertTrue(bought.filterIsInstance<GameEvent.UpgradePurchased>().any { !it.replayed })
+        pilot.walkTo(10700, -4000)
+        assertEquals("zone.grill_in", sim.state.player.zoneId)
         repeat(30) { sim.checkedStep() }
         assertEquals(0, sim.state.player.bag.quantity("species.copper_mullet"))
         grill.preferredRecipeId = "recipe.grill_mullet"
@@ -809,24 +850,207 @@ class SimulationTest {
     }
 
     @Test
+    fun harborFryerUnlocksPrepLineOnAllHarbors() {
+        val c = Shared.content
+        assertEquals("1.0.0", c.contentVersion)
+        assertTrue(c.machinesById.containsKey("machine.harbor_fryer"))
+        val effect = c.upgradesById.getValue("upgrade.harbor_fryer").effect
+        assertTrue(effect is com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine)
+        assertEquals(
+            "machine.harbor_fryer",
+            (effect as com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine).machine,
+        )
+        assertEquals(listOf("quest.specialty_kitchen"), c.upgradesById.getValue("upgrade.harbor_fryer").requires)
+        for (harborId in listOf(
+            "harbor.sunrise_pier", "harbor.moon_cove", "harbor.obsidian_jetty",
+            "harbor.northlight_harbor", "harbor.grand_marina",
+        )) {
+            val fryer = c.harborsById.getValue(harborId).stations.first { it.machine == "machine.harbor_fryer" }
+            assertEquals("upgrade.harbor_fryer", fryer.requiresUpgrade)
+        }
+        assertTrue(c.productsById.containsKey("product.fried_portion"))
+        assertTrue(c.productsById.containsKey("product.fish_and_chips"))
+        assertTrue(c.productsById.containsKey("product.crispy_skewer"))
+
+        val sim = newSim()
+        val fryer = sim.state.machines.first { it.stationId == "station.fryer_1" }
+        sim.checkedStep()
+        assertEquals(MachineStatus.LOCKED, fryer.status)
+        val pilot = Autopilot(sim)
+        pilot.walkTo(10700, -1000)
+        assertEquals("zone.fryer_in", sim.state.player.zoneId)
+        sim.state.player.bag.add("species.silver_sprat", 1)
+        repeat(20) { sim.checkedStep() }
+        assertTrue(fryer.input.isEmpty())
+        assertEquals(1, sim.state.player.bag.quantity("species.silver_sprat"))
+
+        walkToPlot(pilot, sim, "plot.sunrise_fryer")
+        val rejected = sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.harbor_fryer", "fry-locked")))
+        assertTrue(rejected.filterIsInstance<GameEvent.PurchaseRejected>().any { it.reason.contains("Specialty kitchen") })
+
+        sim.state.completedQuests += "quest.specialty_kitchen"
+        sim.state.coins = 200
+        val bought = sim.checkedStep(listOf(Command.BuildPlot("plot.sunrise_fryer", "fry-1")))
+        assertTrue(bought.filterIsInstance<GameEvent.PlotBuilt>().any { !it.replayed })
+        pilot.walkTo(10700, -1000)
+        assertEquals("zone.fryer_in", sim.state.player.zoneId)
+        repeat(30) { sim.checkedStep() }
+        assertEquals(0, sim.state.player.bag.quantity("species.silver_sprat"))
+        fryer.preferredRecipeId = "recipe.fry_sprat"
+        repeat(100) { sim.checkedStep() }
+        assertEquals(2, fryer.output.quantity("product.fried_portion"))
+    }
+
+    @Test
+    fun harborPackerUnlocksCartonLineForWholesale() {
+        val c = Shared.content
+        assertEquals("1.0.0", c.contentVersion)
+        assertEquals(6, c.machines.size)
+        assertTrue(c.machinesById.containsKey("machine.harbor_packer"))
+        val effect = c.upgradesById.getValue("upgrade.harbor_packer").effect
+        assertTrue(effect is com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine)
+        assertEquals(
+            "machine.harbor_packer",
+            (effect as com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine).machine,
+        )
+        assertEquals(
+            listOf("upgrade.wholesale_pad", "quest.specialty_kitchen"),
+            c.upgradesById.getValue("upgrade.harbor_packer").requires,
+        )
+        for (harborId in listOf(
+            "harbor.sunrise_pier", "harbor.moon_cove", "harbor.obsidian_jetty",
+            "harbor.northlight_harbor", "harbor.grand_marina",
+        )) {
+            val packer = c.harborsById.getValue(harborId).stations.first { it.machine == "machine.harbor_packer" }
+            assertEquals("upgrade.harbor_packer", packer.requiresUpgrade)
+            val wholesale = c.harborsById.getValue(harborId).counters.first { it.kind.wire == "wholesale" }
+            assertTrue(wholesale.products.containsAll(listOf(
+                "product.fried_carton", "product.chips_carton",
+                "product.grill_carton", "product.skewer_carton",
+            )))
+        }
+
+        val sim = newSim()
+        val packer = sim.state.machines.first { it.stationId == "station.packer_1" }
+        sim.checkedStep()
+        assertEquals(MachineStatus.LOCKED, packer.status)
+        val pilot = Autopilot(sim)
+        pilot.walkTo(10700, 2500)
+        assertEquals("zone.packer_in", sim.state.player.zoneId)
+
+        sim.state.completedQuests += "quest.specialty_kitchen"
+        sim.state.coins = 250
+        walkToPlot(pilot, sim, "plot.sunrise_packer")
+        val needPad = sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.harbor_packer", "pack-locked")))
+        assertTrue(needPad.filterIsInstance<GameEvent.PurchaseRejected>().any { it.reason.contains("Wholesale pad") })
+
+        sim.state.completedQuests += "quest.first_ten_sales"
+        walkToPlot(pilot, sim, "plot.sunrise_wholesale")
+        sim.checkedStep(listOf(Command.BuildPlot("plot.sunrise_wholesale", "pad-1")))
+        sim.state.coins = 250
+        walkToPlot(pilot, sim, "plot.sunrise_packer")
+        val bought = sim.checkedStep(listOf(Command.BuildPlot("plot.sunrise_packer", "pack-1")))
+        assertTrue(bought.filterIsInstance<GameEvent.PlotBuilt>().any { !it.replayed })
+
+        pilot.walkTo(10700, 2500)
+        assertEquals("zone.packer_in", sim.state.player.zoneId)
+        sim.state.player.bag.add("product.fried_portion", 4)
+        repeat(40) { sim.checkedStep() }
+        assertEquals(0, sim.state.player.bag.quantity("product.fried_portion"))
+        packer.preferredRecipeId = "recipe.pack_fried_carton"
+        repeat(160) { sim.checkedStep() }
+        assertEquals(1, packer.output.quantity("product.fried_carton"))
+    }
+
+    @Test
+    fun harborChillerUnlocksColdStorageOnAdvancedHarbors() {
+        val c = Shared.content
+        assertEquals("1.0.0", c.contentVersion)
+        assertTrue(c.machinesById.containsKey("machine.harbor_chiller"))
+        val effect = c.upgradesById.getValue("upgrade.harbor_chiller").effect
+        assertTrue(effect is com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine)
+        assertEquals(
+            "machine.harbor_chiller",
+            (effect as com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine).machine,
+        )
+        assertEquals(listOf("quest.obsidian_landing"), c.upgradesById.getValue("upgrade.harbor_chiller").requires)
+        for (harborId in listOf("harbor.sunrise_pier", "harbor.moon_cove")) {
+            assertTrue(c.harborsById.getValue(harborId).stations.none { it.machine == "machine.harbor_chiller" })
+        }
+        for (harborId in listOf("harbor.obsidian_jetty", "harbor.northlight_harbor", "harbor.grand_marina")) {
+            val chiller = c.harborsById.getValue(harborId).stations.first { it.machine == "machine.harbor_chiller" }
+            assertEquals("upgrade.harbor_chiller", chiller.requiresUpgrade)
+        }
+        assertTrue(c.productsById.containsKey("product.chilled_fillet"))
+        assertTrue(c.productsById.containsKey("product.chilled_premium"))
+        assertTrue(c.productsById.containsKey("product.chilled_crate"))
+
+        val sim = newSim()
+        sim.state.completedQuests += "quest.busy_harbor"
+        sim.state.completedQuests += "quest.moon_crossing"
+        sim.state.completedPrestige += "prestige.twin_harbors"
+        val traveled = sim.checkedStep(listOf(Command.TravelToHarbor("harbor.obsidian_jetty", "chill-travel")))
+        assertTrue(traveled.filterIsInstance<GameEvent.HarborTraveled>().any { it.toHarborId == "harbor.obsidian_jetty" })
+        val chiller = sim.state.machines.first { it.stationId == "station.jetty_chiller" }
+        sim.checkedStep()
+        assertEquals(MachineStatus.LOCKED, chiller.status)
+
+        val pilot = Autopilot(sim)
+        pilot.walkTo(-2200, -16700)
+        assertEquals("zone.jetty_chiller_in", sim.state.player.zoneId)
+        sim.state.player.bag.add("product.fillet", 1)
+        repeat(20) { sim.checkedStep() }
+        assertTrue(chiller.input.isEmpty())
+        assertEquals(1, sim.state.player.bag.quantity("product.fillet"))
+
+        walkToPlot(pilot, sim, "plot.jetty_chiller")
+        val rejected = sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.harbor_chiller", "chill-locked")))
+        assertTrue(rejected.filterIsInstance<GameEvent.PurchaseRejected>().any { it.reason.contains("Obsidian landing") })
+
+        sim.state.completedQuests += "quest.obsidian_landing"
+        sim.state.coins = 250
+        val bought = sim.checkedStep(listOf(Command.BuildPlot("plot.jetty_chiller", "chill-1")))
+        assertTrue(bought.filterIsInstance<GameEvent.PlotBuilt>().any { !it.replayed })
+        pilot.walkTo(-2200, -16700)
+        assertEquals("zone.jetty_chiller_in", sim.state.player.zoneId)
+        repeat(30) { sim.checkedStep() }
+        assertEquals(0, sim.state.player.bag.quantity("product.fillet"))
+        chiller.preferredRecipeId = "recipe.chill_fillet"
+        repeat(120) { sim.checkedStep() }
+        assertEquals(1, chiller.output.quantity("product.chilled_fillet"))
+    }
+
+    @Test
     fun productRecipeTreeSupportsMultiInputAndIntermediateCrafts() {
         val c = Shared.content
-        assertEquals("0.50.0", c.contentVersion)
+        assertEquals("1.0.0", c.contentVersion)
         val productIds = c.products.map { it.id }.toSet()
         assertTrue(productIds.containsAll(listOf(
             "product.diced_fish", "product.skewer", "product.soup_stock",
             "product.ice_packed_crate", "product.fillet_crate",
+            "product.chilled_fillet", "product.chilled_premium", "product.chilled_crate",
+            "product.fried_portion", "product.fish_and_chips", "product.crispy_skewer",
+            "product.fried_carton", "product.chips_carton", "product.grill_carton", "product.skewer_carton",
         )))
         c.harbors.forEach { harbor ->
             val retail = harbor.counters.first { it.requiresUpgrade == null }
             assertTrue(retail.products.containsAll(listOf(
                 "product.skewer", "product.soup_stock", "product.diced_fish",
+                "product.fried_portion", "product.fish_and_chips", "product.crispy_skewer",
             )))
             val wholesale = harbor.counters.first { it.kind.wire == "wholesale" }
             assertTrue(wholesale.products.containsAll(listOf(
                 "product.ice_packed_crate", "product.fillet_crate",
+                "product.fried_carton", "product.chips_carton",
+                "product.grill_carton", "product.skewer_carton",
             )))
             assertEquals("upgrade.wholesale_pad", wholesale.requiresUpgrade)
+            if (harbor.id in setOf("harbor.obsidian_jetty", "harbor.northlight_harbor", "harbor.grand_marina")) {
+                assertTrue(retail.products.containsAll(listOf(
+                    "product.chilled_fillet", "product.chilled_premium",
+                )))
+                assertTrue(wholesale.products.contains("product.chilled_crate"))
+            }
         }
 
         val sim = newSim()
@@ -1073,7 +1297,7 @@ class SimulationTest {
         assertTrue(sim.view().trophySets.first { it.id == "gallery.moon_cove" }.completed)
 
         val saved = SnapshotCodec.encode(sim.content, sim.state)
-        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":20,"))
         val restored = SnapshotCodec.decode(sim.content, saved)
         assertEquals(sim.state.trophies.size, restored.trophies.size)
         assertEquals(1L, restored.stat("stat.trophy_set_moon_cove"))
@@ -1252,7 +1476,7 @@ class SimulationTest {
     @Test
     fun hireFisherAndPorterIsIdempotentAndShowsStaffPanel() {
         val sim = newSim()
-        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals("1.0.0", Shared.content.contentVersion)
         assertTrue(sim.view().staff.any { it.roleId == "worker.fisher" })
         assertTrue(sim.view().staff.any { it.roleId == "worker.operator" })
         assertTrue(sim.view().staff.any { it.roleId == "worker.cashier" })
@@ -1292,7 +1516,7 @@ class SimulationTest {
     @Test
     fun specializedRolesHireAndApplyBuffs() {
         val sim = newSim()
-        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals("1.0.0", Shared.content.contentVersion)
         unlockStaffHiring(sim)
         sim.state.completedQuests += "quest.first_hire"
         sim.state.completedQuests += "quest.specialty_kitchen"
@@ -1342,7 +1566,7 @@ class SimulationTest {
     @Test
     fun workerGainsXpLevelsAndPersistsTraits() {
         val sim = newSim()
-        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals("1.0.0", Shared.content.contentVersion)
         unlockStaffHiring(sim)
         sim.state.coins = 200
         sim.checkedStep(listOf(Command.HireWorker("worker.fisher", "hf-xp")))
@@ -1363,7 +1587,7 @@ class SimulationTest {
         assertEquals(fisher.xp, view.xp)
         assertEquals(traits.map { Shared.content.workerTraitsById.getValue(it).name }, view.traitNames)
         val saved = SnapshotCodec.encode(sim.content, sim.state)
-        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":20,"))
         val loaded = SnapshotCodec.decode(sim.content, saved)
         val w = loaded.workers.single()
         assertEquals(fisher.xp, w.xp)
@@ -1378,7 +1602,7 @@ class SimulationTest {
         assertEquals(2500L, s.tick)
         assertTrue(s.workers.all { it.xp == 0 && it.level == 1 && it.traits.isEmpty() && it.onShift })
         val reencoded = SnapshotCodec.encode(Shared.content, s)
-        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":20,"))
         val again = SnapshotCodec.decode(Shared.content, reencoded)
         assertTrue(again.workers.all { it.xp == 0 && it.level == 1 && it.onShift })
     }
@@ -1390,7 +1614,7 @@ class SimulationTest {
         assertEquals(2500L, s.tick)
         assertTrue(s.workers.all { it.onShift })
         val reencoded = SnapshotCodec.encode(Shared.content, s)
-        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":20,"))
     }
 
     @Test
@@ -1402,7 +1626,7 @@ class SimulationTest {
         // No staff gear owned in the frozen starter-line mid-save — equipment stays empty.
         assertTrue(s.workers.all { it.equipment.isEmpty() })
         val reencoded = SnapshotCodec.encode(Shared.content, s)
-        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":20,"))
     }
 
     @Test
@@ -1412,7 +1636,7 @@ class SimulationTest {
         assertEquals(2500L, s.tick)
         assertTrue(s.machines.all { !it.broken && it.slowUntilTick == 0L })
         val reencoded = SnapshotCodec.encode(Shared.content, s)
-        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":20,"))
         assertTrue(reencoded.contains("\"broken\":false"))
         assertTrue(reencoded.contains("\"slowUntilTick\":0"))
     }
@@ -1427,7 +1651,7 @@ class SimulationTest {
         assertEquals(0L, s.coinGoal)
         assertFalse(s.coinGoalCelebrated)
         val reencoded = SnapshotCodec.encode(Shared.content, s)
-        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":20,"))
         assertTrue(reencoded.contains("\"loanOwed\":0"))
         assertTrue(reencoded.contains("\"coinGoal\":0"))
     }
@@ -1440,7 +1664,7 @@ class SimulationTest {
         assertTrue(s.speciesCatches.isEmpty())
         s.recordSpeciesCatch("species.silver_sprat", 4)
         val reencoded = SnapshotCodec.encode(Shared.content, s)
-        assertTrue(reencoded.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":20,"))
         assertTrue(reencoded.contains("\"species.silver_sprat\":4"))
         val restored = SnapshotCodec.decode(Shared.content, reencoded)
         assertEquals(4L, restored.speciesCatches["species.silver_sprat"])
@@ -1450,9 +1674,35 @@ class SimulationTest {
     }
 
     @Test
+    fun schemaFifteenSaveMigratesOwnedDecorDefault() {
+        val v15 = Shared.text("fixtures/legacy/snapshot-v15-starter-line-t2500.json").trimEnd()
+        val s = SnapshotCodec.decode(Shared.content, v15)
+        assertEquals(2500L, s.tick)
+        assertTrue(s.ownedDecor.isEmpty())
+        assertFalse(s.fullHarborUnlock)
+        val reencoded = SnapshotCodec.encode(Shared.content, s)
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":20,"))
+    }
+
+    @Test
+    fun schemaNineteenSaveMigratesFullHarborUnlockDefault() {
+        val v19 = Shared.text("fixtures/legacy/snapshot-v19-starter-line-t2500.json").trimEnd()
+        val s = SnapshotCodec.decode(Shared.content, v19)
+        assertEquals(2500L, s.tick)
+        assertTrue(s.speciesCatches.isNotEmpty())
+        assertFalse(s.fullHarborUnlock)
+        val reencoded = SnapshotCodec.encode(Shared.content, s)
+        assertTrue(reencoded.startsWith("{\"schemaVersion\":20,"))
+        assertTrue(reencoded.contains("\"fullHarborUnlock\":false"))
+        val restored = SnapshotCodec.decode(Shared.content, reencoded)
+        assertFalse(restored.fullHarborUnlock)
+        assertEquals(3L, restored.speciesCatches["species.silver_sprat"])
+    }
+
+    @Test
     fun workerShiftToggleAndOvertimeWages() {
         val sim = newSim()
-        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals("1.0.0", Shared.content.contentVersion)
         unlockStaffHiring(sim)
         sim.state.coins = 500
         sim.state.workerWagePerWorkerPerHour = 10
@@ -1726,7 +1976,7 @@ class SimulationTest {
     @Test
     fun staffGearAssignUnequipAndPersists() {
         val sim = newSim()
-        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals("1.0.0", Shared.content.contentVersion)
         unlockStaffHiring(sim)
         sim.state.coins = 10_000
         sim.checkedStep(listOf(Command.PurchaseUpgrade("upgrade.staff_boots", "ub")))
@@ -1755,7 +2005,7 @@ class SimulationTest {
         // Re-equip and persist through snapshot.
         sim.checkedStep(listOf(Command.AssignWorkerGear(fisher.id, "upgrade.staff_boots")))
         val saved = SnapshotCodec.encode(sim.content, sim.state)
-        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":20,"))
         val loaded = SnapshotCodec.decode(sim.content, saved)
         assertEquals("upgrade.staff_boots", loaded.workers.first { it.id == fisher.id }.equipment["boots"])
     }
@@ -1763,7 +2013,7 @@ class SimulationTest {
     @Test
     fun automationIssuesAndRushIdleAlert() {
         val sim = newSim()
-        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals("1.0.0", Shared.content.contentVersion)
         assertEquals(60, Shared.content.automationAlerts.machineIdleTicksDuringRush)
         // Force OUTPUT_FULL: ready inputs exist but output cannot fit the batch.
         val cutter = cutter(sim)
@@ -1796,7 +2046,7 @@ class SimulationTest {
     fun questChainLocksRewardsAndShowsLog() {
         val sim = newSim()
         val log = sim.view().quests
-        assertEquals(9, log.size)
+        assertEquals(11, log.size)
         assertEquals("active", log.first { it.id == "quest.first_cast" }.status)
         assertTrue(log.filter { it.id != "quest.first_cast" }.all { it.status == "locked" })
 
@@ -1923,7 +2173,7 @@ class SimulationTest {
     @Test
     fun standingOrdersRefreshEscalateAndCoolDownAfterFail() {
         val c = Shared.content
-        assertEquals("0.50.0", c.contentVersion)
+        assertEquals("1.0.0", c.contentVersion)
         val standing = c.contractTemplatesById.getValue("contract.portion_order")
         assertTrue(standing.isStanding)
         assertTrue(standing.payoutEscalatePermille >= 1000)
@@ -1984,7 +2234,7 @@ class SimulationTest {
     fun moonCoveUnlocksAfterBusyHarborAndTravelStashesWorld() {
         val sim = newSim()
         val map = sim.view().harbors
-        assertEquals(3, map.size)
+        assertEquals(5, map.size)
         assertEquals("harbor.sunrise_pier", map[0].harborId)
         assertTrue(map[0].current)
         assertTrue(map[0].unlocked)
@@ -1997,6 +2247,14 @@ class SimulationTest {
         assertFalse(map[2].unlocked)
         assertEquals("Requires: Twin Harbors", map[2].reason)
         assertEquals("obsidian_jetty_blockout.glb", map[2].blockoutAsset)
+        assertEquals("harbor.northlight_harbor", map[3].harborId)
+        assertFalse(map[3].unlocked)
+        assertEquals("Requires: Triple Harbors", map[3].reason)
+        assertEquals("northlight_harbor_blockout.glb", map[3].blockoutAsset)
+        assertEquals("harbor.grand_marina", map[4].harborId)
+        assertFalse(map[4].unlocked)
+        assertEquals("Requires: Quad Harbors", map[4].reason)
+        assertEquals("grand_marina_blockout.glb", map[4].blockoutAsset)
 
         val rejected = sim.checkedStep(listOf(Command.TravelToHarbor("harbor.moon_cove", "go-1")))
         assertTrue(rejected.filterIsInstance<GameEvent.TravelRejected>().any {
@@ -2042,7 +2300,7 @@ class SimulationTest {
         assertEquals(2L, sim.state.stat(Stats.HARBORS_TRAVELED))
 
         val saved = SnapshotCodec.encode(sim.content, sim.state)
-        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":20,"))
         val restored = SnapshotCodec.decode(sim.content, saved)
         assertEquals(HARBOR, restored.harborId)
         assertTrue(restored.harborStashes.containsKey("harbor.moon_cove"))
@@ -2089,16 +2347,113 @@ class SimulationTest {
     }
 
     @Test
+    fun northlightHarborUnlocksAfterTripleHarborsPrestigeAndCompletesLandingQuest() {
+        val northDef = Shared.content.harborsById.getValue("harbor.northlight_harbor")
+        assertEquals(listOf("rush.nl_aurora", "rush.nl_frost_market"), northDef.rushes.map { it.id })
+        assertEquals(
+            listOf("species.frost_smelt", "species.arctic_cod", "species.ice_char", "species.polar_herring"),
+            Shared.content.trophySetsById.getValue("gallery.northlight_harbor").species,
+        )
+
+        val sim = newSim()
+        fun north() = sim.view().harbors.first { it.harborId == "harbor.northlight_harbor" }
+        assertFalse(north().unlocked)
+        assertEquals("Requires: Triple Harbors", north().reason)
+
+        sim.state.completedQuests += "quest.busy_harbor"
+        sim.state.completedQuests += "quest.moon_crossing"
+        sim.state.completedQuests += "quest.obsidian_landing"
+        sim.state.completedPrestige += "prestige.twin_harbors"
+        assertFalse(north().unlocked)
+
+        val rejected = sim.checkedStep(listOf(Command.TravelToHarbor("harbor.northlight_harbor", "nl-1")))
+        assertTrue(rejected.filterIsInstance<GameEvent.TravelRejected>().any { it.reason.contains("Triple Harbors") })
+
+        sim.state.completedPrestige += "prestige.triple_harbors"
+        assertTrue(north().travelEnabled)
+
+        val traveled = sim.checkedStep(listOf(Command.TravelToHarbor("harbor.northlight_harbor", "nl-2")))
+        assertTrue(traveled.filterIsInstance<GameEvent.HarborTraveled>().any {
+            !it.replayed && it.toHarborId == "harbor.northlight_harbor"
+        })
+        assertEquals("harbor.northlight_harbor", sim.state.harborId)
+        assertEquals("Northlight Harbor", sim.view().harborName)
+        assertEquals("northlight_harbor_blockout.glb", sim.view().blockoutAsset)
+        assertEquals("Cold current", sim.view().harborSpecializationName)
+        assertTrue(sim.state.fishingSpots.any { it.zoneId == "zone.nl_end" })
+        assertEquals(1L, sim.state.stat(Stats.HARBORS_TRAVELED))
+
+        sim.state.bumpStat(Stats.HARBORS_TRAVELED, 3)
+        val after = sim.checkedStep()
+        assertTrue(after.filterIsInstance<GameEvent.QuestCompleted>().any { it.questId == "quest.northlight_landing" })
+        assertTrue(after.filterIsInstance<GameEvent.PrestigeUnlocked>().any { it.prestigeId == "prestige.quad_harbors" })
+        assertTrue("quest.northlight_landing" in sim.state.completedQuests)
+        assertTrue("prestige.quad_harbors" in sim.state.completedPrestige)
+        assertTrue("banner.quad_harbors" in sim.state.unlockedCosmetics)
+    }
+
+    @Test
+    fun grandMarinaUnlocksAfterQuadHarborsPrestigeAndCompletesLandingQuest() {
+        val marinaDef = Shared.content.harborsById.getValue("harbor.grand_marina")
+        assertEquals(listOf("rush.gm_regatta", "rush.gm_tasting"), marinaDef.rushes.map { it.id })
+        assertEquals(3, marinaDef.fishingSpots.size)
+        assertEquals(
+            listOf("species.marina_tuna", "species.saffron_sole", "species.pearl_grouper", "species.harbor_pompano"),
+            Shared.content.trophySetsById.getValue("gallery.grand_marina").species,
+        )
+
+        val sim = newSim()
+        fun marina() = sim.view().harbors.first { it.harborId == "harbor.grand_marina" }
+        assertFalse(marina().unlocked)
+        assertEquals("Requires: Quad Harbors", marina().reason)
+
+        sim.state.completedQuests += "quest.busy_harbor"
+        sim.state.completedQuests += "quest.moon_crossing"
+        sim.state.completedQuests += "quest.obsidian_landing"
+        sim.state.completedQuests += "quest.northlight_landing"
+        sim.state.completedPrestige += "prestige.twin_harbors"
+        sim.state.completedPrestige += "prestige.triple_harbors"
+        assertFalse(marina().unlocked)
+
+        val rejected = sim.checkedStep(listOf(Command.TravelToHarbor("harbor.grand_marina", "gm-1")))
+        assertTrue(rejected.filterIsInstance<GameEvent.TravelRejected>().any { it.reason.contains("Quad Harbors") })
+
+        sim.state.completedPrestige += "prestige.quad_harbors"
+        assertTrue(marina().travelEnabled)
+
+        val traveled = sim.checkedStep(listOf(Command.TravelToHarbor("harbor.grand_marina", "gm-2")))
+        assertTrue(traveled.filterIsInstance<GameEvent.HarborTraveled>().any {
+            !it.replayed && it.toHarborId == "harbor.grand_marina"
+        })
+        assertEquals("harbor.grand_marina", sim.state.harborId)
+        assertEquals("Grand Marina", sim.view().harborName)
+        assertEquals("grand_marina_blockout.glb", sim.view().blockoutAsset)
+        assertEquals("Premium marina", sim.view().harborSpecializationName)
+        assertTrue(sim.state.fishingSpots.any { it.zoneId == "zone.gm_end" })
+        assertTrue(sim.state.fishingSpots.any { it.zoneId == "zone.gm_east" })
+        assertTrue(sim.state.fishingSpots.any { it.zoneId == "zone.gm_west" })
+        assertEquals(1L, sim.state.stat(Stats.HARBORS_TRAVELED))
+
+        sim.state.bumpStat(Stats.HARBORS_TRAVELED, 4)
+        val after = sim.checkedStep()
+        assertTrue(after.filterIsInstance<GameEvent.QuestCompleted>().any { it.questId == "quest.grand_marina_landing" })
+        assertTrue(after.filterIsInstance<GameEvent.PrestigeUnlocked>().any { it.prestigeId == "prestige.five_harbors" })
+        assertTrue("quest.grand_marina_landing" in sim.state.completedQuests)
+        assertTrue("prestige.five_harbors" in sim.state.completedPrestige)
+        assertTrue("banner.five_harbors" in sim.state.unlockedCosmetics)
+    }
+
+    @Test
     fun shopDecorBuysWithCoinsOrBannersAndBuffsCustomerPatience() {
-        assertEquals("0.50.0", Shared.content.contentVersion)
-        assertEquals(5, Shared.content.decor.items.size)
+        assertEquals("1.0.0", Shared.content.contentVersion)
+        assertEquals(7, Shared.content.decor.items.size)
         val lantern = Shared.content.decorById.getValue("decor.lantern_string")
         val pennant = Shared.content.decorById.getValue("decor.rising_tide_pennant")
         assertEquals(20, lantern.patienceBonusTicks)
         assertEquals("banner.rising_tide", pennant.requiresCosmetic)
 
         val sim = newSim()
-        assertEquals(5, sim.view().decorOffers.size)
+        assertEquals(7, sim.view().decorOffers.size)
         assertEquals(0, sim.view().decorPatienceBonusTicks)
         val locked = sim.checkedStep(listOf(Command.PurchaseDecor(pennant.id, "decor-pennant")))
         assertTrue(locked.filterIsInstance<GameEvent.DecorPurchaseRejected>().any { it.reason.contains("Rising Tide") })
@@ -2126,14 +2481,14 @@ class SimulationTest {
         assertEquals(type.patienceTicks + 50, spawned.patienceLeft)
 
         val saved = SnapshotCodec.encode(sim.content, sim.state)
-        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":20,"))
         val restored = SnapshotCodec.decode(sim.content, saved)
         assertEquals(setOf(lantern.id, pennant.id), restored.ownedDecor)
     }
 
     @Test
     fun machineWearBreaksAndRepairsWithCoins() {
-        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals("1.0.0", Shared.content.contentVersion)
         val wear = Shared.content.economy.wear
         assertEquals(listOf("quest.busy_harbor"), wear.requires)
         assertEquals(40L, wear.repairCoins)
@@ -2174,7 +2529,7 @@ class SimulationTest {
         assertEquals("Running slow", slowView.statusText)
 
         val saved = SnapshotCodec.encode(sim.content, sim.state)
-        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":20,"))
         assertTrue(saved.contains("\"slowUntilTick\":"))
         val restored = SnapshotCodec.decode(sim.content, saved)
         val restoredCutter = restored.machines.first { it.stationId == "station.cutter_1" }
@@ -2184,10 +2539,10 @@ class SimulationTest {
 
     @Test
     fun seasonalEventsBoostWeightsGateContractsAndUnlockBanners() {
-        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals("1.0.0", Shared.content.contentVersion)
         val SE = com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem
         val silver = Shared.content.seasonalEventsById.getValue("event.silver_tide")
-        assertEquals(2, Shared.content.seasonalEvents.events.size)
+        assertEquals(4, Shared.content.seasonalEvents.events.size)
         assertEquals("banner.silver_tide", silver.banner)
         assertEquals(2200, silver.speciesWeightMultPermille.getValue("species.silver_sprat"))
         assertNotNull(Shared.content.contractTemplatesById["contract.silver_tide_crate"])
@@ -2238,16 +2593,24 @@ class SimulationTest {
 
     @Test
     fun harborSpecializationsApplyMaintenanceRareChanceAndTouristDemand() {
-        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals("1.0.0", Shared.content.contentVersion)
         val sunrise = Shared.content.harborsById.getValue("harbor.sunrise_pier").specialization!!
         val moon = Shared.content.harborsById.getValue("harbor.moon_cove").specialization!!
         val jetty = Shared.content.harborsById.getValue("harbor.obsidian_jetty").specialization!!
+        val northlight = Shared.content.harborsById.getValue("harbor.northlight_harbor").specialization!!
+        val marina = Shared.content.harborsById.getValue("harbor.grand_marina").specialization!!
         assertEquals("spec.efficient_docks", sunrise.id)
         assertEquals(1, sunrise.maintenanceDiscountPerStation)
         assertEquals("spec.rare_waters", moon.id)
         assertEquals(80, moon.rareChanceBonusPermille)
         assertEquals("spec.tourist_strip", jetty.id)
         assertEquals(1300, jetty.kindSpawnMultPermille.getValue("tourist"))
+        assertEquals("spec.cold_current", northlight.id)
+        assertEquals(80, northlight.rareChanceBonusPermille)
+        assertEquals(1250, northlight.kindSpawnMultPermille.getValue("critic"))
+        assertEquals("spec.premium_marina", marina.id)
+        assertEquals(40, marina.rareChanceBonusPermille)
+        assertEquals(1350, marina.kindSpawnMultPermille.getValue("premium"))
 
         val sim = newSim()
         assertEquals("Efficient docks", sim.view().harborSpecializationName)
@@ -2348,7 +2711,7 @@ class SimulationTest {
     @Test
     fun spoilTiersPreferFragileCounterStockAndSeparateCaseIce() {
         val c = Shared.content
-        assertEquals("0.50.0", c.contentVersion)
+        assertEquals("1.0.0", c.contentVersion)
         assertEquals(3, c.productsById.getValue("product.basic_portion").spoilTier)
         assertEquals(1, c.productsById.getValue("product.smoked_fillet").spoilTier)
         assertEquals(3, c.speciesById.getValue("species.silver_sprat").spoilTier)
@@ -2384,12 +2747,12 @@ class SimulationTest {
     @Test
     fun prestigeStaysLockedUntilBusyHarborThenGrantsBonusesAndCosmetics() {
         val sim = newSim()
-        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals("1.0.0", Shared.content.contentVersion)
         val locked = sim.view()
         assertFalse(locked.prestigeUnlocked)
         assertEquals("Requires: Busy harbor", locked.prestigeLockedReason)
         assertEquals(1, locked.harborRating) // revenue 0 meets the first threshold
-        assertEquals(8, locked.prestige.size)
+        assertEquals(12, locked.prestige.size)
         assertTrue(locked.prestige.all { it.status == "locked" })
         // Board is locked: milestones should not complete even if goals are met.
         sim.state.bumpStat(Stats.REVENUE, 1000)
@@ -2402,7 +2765,7 @@ class SimulationTest {
         val board = sim.view()
         assertTrue(board.prestigeUnlocked)
         assertNull(board.prestigeLockedReason)
-        assertEquals(8, board.prestige.size)
+        assertEquals(12, board.prestige.size)
         assertEquals("active", board.prestige.first { it.id == "prestige.rising_tide" }.status)
         assertEquals("locked", board.prestige.first { it.id == "prestige.harbor_star" }.status)
         assertEquals("active", board.prestige.first { it.id == "prestige.twin_harbors" }.status)
@@ -2437,7 +2800,7 @@ class SimulationTest {
 
         // Snapshot round-trip rebuilds permanent floors from completedPrestige.
         val saved = SnapshotCodec.encode(sim.content, sim.state)
-        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":20,"))
         val restored = SnapshotCodec.decode(sim.content, saved)
         assertEquals(setOf("prestige.rising_tide", "prestige.harbor_star", "prestige.twin_harbors"), restored.completedPrestige)
         assertEquals(1050, restored.prestigeCatchSpeedPermille)
@@ -2463,12 +2826,15 @@ class SimulationTest {
 
         sim.state.completedQuests += "quest.first_ten_sales"
         sim.state.coins = 400
+        walkToPlot(pilot, sim, "plot.sunrise_wholesale")
         val bought = sim.checkedStep(
-            listOf(Command.PurchaseUpgrade("upgrade.wholesale_pad", "ws-1")),
+            listOf(Command.BuildPlot("plot.sunrise_wholesale", "ws-1")),
         )
-        assertTrue(bought.any { it is GameEvent.UpgradePurchased })
+        assertTrue(bought.any { it is GameEvent.PlotBuilt })
         assertTrue(CS.isUnlocked(wholesaleDef, sim.state))
 
+        pilot.walkTo(7000, 2750)
+        assertEquals(wholesaleDef.zone, sim.state.player.zoneId)
         val wholesale = sim.state.counters.first { it.counterId == wholesaleDef.id }
         // Unlock tick may already stock one crate from the bag while standing on the pad.
         if (sim.state.player.bag.quantity("product.ice_packed_crate") > 0) {
@@ -2506,7 +2872,7 @@ class SimulationTest {
 
     @Test
     fun bankLoanRepayCollectAndCoinGoals() {
-        assertEquals("0.50.0", Shared.content.contentVersion)
+        assertEquals("1.0.0", Shared.content.contentVersion)
         val bank = Shared.content.bank
         assertEquals(listOf("quest.first_ten_sales"), bank.requires)
         assertEquals(80L, bank.loanPrincipal)
@@ -2581,12 +2947,131 @@ class SimulationTest {
         assertFalse(sim.state.coinGoalCelebrated)
 
         val saved = SnapshotCodec.encode(sim.content, sim.state)
-        assertTrue(saved.startsWith("{\"schemaVersion\":19,"))
+        assertTrue(saved.startsWith("{\"schemaVersion\":20,"))
         assertTrue(saved.contains("\"loanOwed\":"))
         assertTrue(saved.contains("\"coinGoal\":"))
         val restored = SnapshotCodec.decode(sim.content, saved)
         assertEquals(sim.state.loanOwed, restored.loanOwed)
         assertEquals(sim.state.loanDueTick, restored.loanDueTick)
         assertEquals(0L, restored.coinGoal)
+    }
+
+    @Test
+    fun warehouseRollsUpAvailableVsReservedAcrossLocations() {
+        val sim = newSim()
+        val empty = sim.view().warehouse
+        assertTrue(empty.empty)
+        assertTrue(empty.reconcileOk)
+        assertNull(empty.reconcileError)
+        assertEquals(0, empty.quantity)
+
+        sim.state.player.bag.add(sprat, 3)
+        assertTrue(sim.state.player.bag.reserve(sprat, 1))
+        cutter(sim).input.add(sprat, 2)
+        assertTrue(cutter(sim).input.reserve(sprat, 1))
+        cutter(sim).output.add(portion, 4)
+        sim.state.counters.first().stock.add(portion, 5)
+        assertTrue(sim.state.counters.first().stock.reserve(portion, 2))
+
+        val wh = sim.view().warehouse
+        assertFalse(wh.empty)
+        assertTrue(wh.reconcileOk)
+        assertNull(wh.reconcileError)
+        assertEquals(3 + 2 + 4 + 5, wh.quantity)
+        assertEquals(1 + 1 + 2, wh.reserved)
+        assertEquals(wh.quantity - wh.reserved, wh.available)
+
+        val spratLine = wh.lines.first { it.itemId == sprat }
+        assertEquals(5, spratLine.quantity)
+        assertEquals(2, spratLine.reserved)
+        assertEquals(3, spratLine.available)
+        assertTrue(spratLine.locations.any { it.label == "Bag" && it.quantity == 3 && it.reserved == 1 })
+        assertTrue(spratLine.locations.any { it.label.endsWith(" in") && it.quantity == 2 && it.reserved == 1 })
+
+        val portionLine = wh.lines.first { it.itemId == portion }
+        assertEquals(9, portionLine.quantity)
+        assertEquals(2, portionLine.reserved)
+        assertEquals(7, portionLine.available)
+        assertTrue(portionLine.locations.any { it.label.endsWith(" out") && it.quantity == 4 })
+        assertTrue(portionLine.locations.any { it.label == "Retail counter" && it.reserved == 2 })
+    }
+
+    @Test
+    fun speciesBookTracksDiscoveryZonesRecipesAndTrophies() {
+        val sim = newSim()
+        val empty = sim.view().speciesBook
+        assertTrue(empty.empty)
+        assertEquals(0, empty.discovered)
+        assertEquals(sim.content.species.size, empty.total)
+        assertTrue(empty.entries.all { !it.discovered && it.name == "???" })
+
+        sim.state.recordSpeciesCatch(sprat, 2)
+        sim.state.trophies[sprat] = com.willio.jeanvilma.fishshopping.core.sim.TrophyRecord(
+            sizePermille = 1120,
+            valueCoins = 3,
+            tick = 10,
+        )
+
+        val book = sim.view().speciesBook
+        assertFalse(book.empty)
+        assertEquals(1, book.discovered)
+        val entry = book.entries.first { it.speciesId == sprat }
+        assertTrue(entry.discovered)
+        assertEquals("Silver sprat", entry.name)
+        assertEquals(2L, entry.catches)
+        assertTrue(entry.harborNames.contains("Sunrise Pier"))
+        assertTrue(entry.recipeNames.any { it.contains("→") })
+        assertEquals(1120, entry.trophyBestSizePermille)
+        assertEquals(3L, entry.trophyBestValueCoins)
+
+        val rare = book.entries.first { it.speciesId == "species.golden_sprat" }
+        assertFalse(rare.discovered)
+        assertEquals("species.silver_sprat", rare.baseSpeciesId)
+    }
+
+    @Test
+    fun businessDashboardUsesCommittedSalesAndIntervalLabels() {
+        val sim = newSim()
+        val empty = sim.view().businessDashboard
+        assertTrue(empty.empty)
+        assertEquals("0s", empty.sessionLabel)
+        assertEquals("awaiting 1m", empty.rateIntervalLabel)
+        assertEquals(0L, empty.committedRevenue)
+
+        // One minute of session time without simulating customers.
+        sim.state.tick = 20L * 60L
+        sim.state.stats[Stats.SALES] = 10L
+        sim.state.stats[Stats.ITEMS_SOLD] = 14L
+        sim.state.stats[Stats.REVENUE] = 200L
+        sim.state.stats[Stats.CONTRACT_REVENUE] = 50L
+        sim.state.stats[Stats.LOST_CUSTOMERS] = 2L
+        sim.state.stats[Stats.WAGES_PAID] = 40L
+        sim.state.stats[Stats.FISH_CAUGHT] = 5L
+        sim.state.speciesCatches.clear()
+        sim.state.recordSpeciesCatch(sprat, 5)
+        // Force OUTPUT_FULL bottleneck (same setup as automationIssues test).
+        val cutter = cutter(sim)
+        cutter.output.add(portion, 19)
+        cutter.input.add(sprat, 3)
+        sim.checkedStep()
+        assertEquals(MachineStatus.OUTPUT_FULL, cutter.status)
+
+        val dash = sim.view().businessDashboard
+        assertFalse(dash.empty)
+        assertEquals("1m 0s", dash.sessionLabel)
+        assertEquals("per min", dash.rateIntervalLabel)
+        assertEquals(200L, dash.committedRevenue)
+        assertEquals(50L, dash.contractRevenue)
+        assertEquals(10L, dash.salesCount)
+        assertEquals(14L, dash.itemsSold)
+        assertEquals(200L, dash.revenuePerMinute)
+        assertEquals(10L, dash.salesPerMinute)
+        assertEquals((2L * 1000L) / 12L, dash.abandonPermille)
+        assertEquals((40L * 1000L) / 200L, dash.wageRatioPermille)
+        // Wallet coins are not committed revenue.
+        assertTrue(dash.committedRevenue == 200L)
+        assertTrue(sim.state.coins != dash.committedRevenue + dash.contractRevenue)
+        assertTrue(dash.bottlenecks.any { it.kind == "machine" && it.reason == "Output full" })
+        assertTrue(dash.topSpecies.any { it.speciesId == sprat })
     }
 }

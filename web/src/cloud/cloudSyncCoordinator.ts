@@ -1,14 +1,30 @@
 /**
  * Pull/push helper around CloudBackend + chooseCloudSnapshot. Failures are soft —
  * local slots remain authoritative when the network or backend is unavailable.
+ *
+ * Phase 11: when both local and remote are valid but differ, [CloudPullResult.conflict]
+ * is set so the host can ask before applying.
+ * Phase 22: persists anonymous refresh tokens for guest cloud recovery.
  */
-import { chooseCloudSnapshot, type SyncDecision } from "../engine/cloudSync";
+import {
+  chooseCloudSnapshot,
+  cloudConflictOffer,
+  type CloudConflictOffer,
+  type SyncDecision,
+} from "../engine/cloudSync";
 import type { GameSettings } from "../game/settingsStore";
 import { createCloudBackend, type CloudBackend } from "./cloudBackend";
 
 export interface CloudPullResult {
   settings: GameSettings;
   decision: SyncDecision;
+  /** Dual-snapshot choice when both sides are valid and differ; null = auto-apply decision. */
+  conflict: CloudConflictOffer | null;
+}
+
+function withSession(settings: GameSettings, uid: string, refreshToken: string | null): GameSettings {
+  if (settings.cloudAccountId === uid && settings.cloudRefreshToken === refreshToken) return settings;
+  return { ...settings, cloudAccountId: uid, cloudRefreshToken: refreshToken };
 }
 
 export class CloudSyncCoordinator {
@@ -18,9 +34,8 @@ export class CloudSyncCoordinator {
   get kind(): string { return this.backend.kind; }
 
   async ensureAccount(settings: GameSettings): Promise<{ settings: GameSettings; uid: string }> {
-    const uid = await this.backend.ensureAccount(settings.cloudAccountId);
-    const next = settings.cloudAccountId === uid ? settings : { ...settings, cloudAccountId: uid };
-    return { settings: next, uid };
+    const session = await this.backend.ensureAccount(settings.cloudAccountId, settings.cloudRefreshToken);
+    return { settings: withSession(settings, session.uid, session.refreshToken), uid: session.uid };
   }
 
   async pullMerge(settings: GameSettings, localLatest: string | null): Promise<CloudPullResult> {
@@ -32,12 +47,17 @@ export class CloudSyncCoordinator {
           source: localLatest ? "local" : "none",
           reason: "cloud sync off",
         },
+        conflict: null,
       };
     }
     try {
       const { settings: next, uid } = await this.ensureAccount(settings);
       const remote = await this.backend.get(uid);
-      return { settings: next, decision: chooseCloudSnapshot(localLatest, remote) };
+      return {
+        settings: next,
+        decision: chooseCloudSnapshot(localLatest, remote),
+        conflict: cloudConflictOffer(localLatest, remote),
+      };
     } catch {
       return {
         settings,
@@ -46,6 +66,7 @@ export class CloudSyncCoordinator {
           source: localLatest ? "local" : "none",
           reason: "cloud pull failed; keep local",
         },
+        conflict: null,
       };
     }
   }

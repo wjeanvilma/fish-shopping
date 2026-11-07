@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#153449" />
+    <meta name="description" content="Support for Fish Shopping." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Support · Fish Shopping</title>
+    <style>
+      :root { color-scheme: light; --ink: #153449; --sky: #9fd3ea; --surface: #f4f8fb; --action: #008f95; --reward: #e8af4a; }
+      body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: linear-gradient(180deg, var(--sky), var(--surface) 42%); color: var(--ink); line-height: 1.55; }
+      main { max-width: 40rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+      h1 { font-size: 1.75rem; margin: 0 0 0.35rem; }
+      h2 { font-size: 1.1rem; margin: 1.6rem 0 0.4rem; }
+      p, li { font-size: 0.98rem; }
+      a { color: var(--action); }
+      .muted { opacity: 0.75; font-size: 0.9rem; }
+      .card { background: color-mix(in srgb, #fff 88%, transparent); border-radius: 14px; padding: 1rem 1.1rem; margin: 1rem 0; box-shadow: 0 2px 10px rgb(21 52 73 / 0.1); }
+      nav { margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Support</h1>
+      <p class="muted">Fish Shopping help · saves, unlocks, and common issues.</p>
+      <div class="card">
+        <h2>First session</h2>
+        <p>Fish → cut → stock → sell. Coaching advances on state events, not animation timing.</p>
+      </div>
+      <div class="card">
+        <h2>Saves &amp; recovery</h2>
+        <ul>
+          <li>Local slots keep a latest and previous backup.</li>
+          <li>If latest is corrupt, choose Recover previous on the title screen.</li>
+          <li>Private / blocked browser storage falls back to memory-only — export is not durable until storage works.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Purchases</h2>
+        <p>
+          Use Restore purchases in Goals after reinstalling. The one-time harbor unlock and cosmetics
+          are power-neutral for cosmetics and idempotent for the unlock grant.
+        </p>
+      </div>
+      <div class="card">
+        <h2>Performance</h2>
+        <p>
+          Lower Quality in Settings if frames stutter. The simulation stays fixed at 20 Hz; quality only
+          changes presentation cost.
+        </p>
+      </div>
+      <h2>Contact</h2>
+      <p>
+        Package id <code>com.willio.jeanvilma.fishshopping</code>. For privacy questions see
+        <a href="/privacy.html">Privacy</a>. Open a GitHub issue on the Fish Shopping repository for bugs.
+      </p>
+      <nav>
+        <a href="/landing.html">Landing</a>
+        <a href="/">Play</a>
+        <a href="/privacy.html">Privacy</a>
+      </nav>
+    </main>
+  </body>
+</html>

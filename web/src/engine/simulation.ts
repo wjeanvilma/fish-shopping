@@ -3,7 +3,7 @@ import type { ContentPack, HarborDef } from "./content";
 import { CHECKPOINT_INTERVAL_TICKS, INPUT_SCALE } from "./foundations";
 import type { Command, GameEvent, GameState } from "./state";
 import {
-  AutomationSystem, BaitSystem, BankSystem, ContractSystem, CustomerSystem, DecorSystem, EconomySystem, FishingSystem, HarborTravelSystem, MovementSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, SeasonalEventSystem,
+  AutomationSystem, BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DecorSystem, EconomySystem, FishingSystem, FullUnlockSystem, HarborTravelSystem, MovementSystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, SeasonalEventSystem,
   StepContext, TransferSystem, UpgradeSystem, WorkerSystem, invariantProblems,
 } from "./systems";
 
@@ -62,8 +62,17 @@ export class Simulation {
       case "purchase_upgrade":
         UpgradeSystem.purchase(ctx, c.upgradeId, c.requestId);
         break;
+      case "build_plot":
+        PlotSystem.build(ctx, c.plotId, c.requestId);
+        break;
       case "purchase_decor":
         DecorSystem.purchase(ctx, c.decorId, c.requestId);
+        break;
+      case "grant_full_harbor_unlock":
+        FullUnlockSystem.grant(ctx, c.requestId);
+        break;
+      case "grant_iap_cosmetic":
+        CosmeticsIapSystem.grant(ctx, c.cosmeticId, c.requestId);
         break;
       case "repair_machine":
         EconomySystem.repair(ctx, c.stationId, c.requestId);

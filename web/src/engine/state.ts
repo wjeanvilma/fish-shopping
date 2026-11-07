@@ -308,6 +308,11 @@ export class GameState {
   readonly unlockedCosmetics = new Set<string>();
   /** Phase 23 owned shop decor (placable cosmetics). */
   readonly ownedDecor = new Set<string>();
+  /**
+   * Phase 23 one-time IAP: unlocks travel to every harbor (power-neutral access).
+   * Sunrise Pier stays free; grant is idempotent via purchase receipts.
+   */
+  fullHarborUnlock = false;
   /** Best catch per species id (museum / trophy board). */
   readonly trophies = new Map<string, TrophyRecord>();
   /** Phase 27 lifetime catches per species id (telemetry v2). */
@@ -415,7 +420,13 @@ export class GameState {
 export type Command =
   | { type: "move"; x: number; z: number }
   | { type: "purchase_upgrade"; upgradeId: string; requestId: string }
+  /** Phase 6: confirm spend while standing on an expansion plot marker. */
+  | { type: "build_plot"; plotId: string; requestId: string }
   | { type: "purchase_decor"; decorId: string; requestId: string }
+  /** Phase 23: grant one-time full-harbor unlock; requestId stable per purchase token. */
+  | { type: "grant_full_harbor_unlock"; requestId: string }
+  /** Phase 24: grant power-neutral IAP cosmetic; requestId stable per purchase token. */
+  | { type: "grant_iap_cosmetic"; cosmeticId: string; requestId: string }
   | { type: "repair_machine"; stationId: string; requestId: string }
   | { type: "take_loan"; requestId: string }
   | { type: "repay_loan"; requestId: string }
@@ -458,8 +469,13 @@ export type GameEvent =
   | { type: "sale_committed"; tick: number; saleId: string; customerId: string; items: { item: string; quantity: number }[]; coins: number; customerTypeId?: string; priceMultPermille?: number; preferenceMet?: boolean; preferredProductId?: string | null }
   | { type: "upgrade_purchased"; tick: number; upgradeId: string; receipt: Receipt; replayed: boolean }
   | { type: "purchase_rejected"; tick: number; upgradeId: string; requestId: string; reason: string }
+  | { type: "plot_built"; tick: number; plotId: string; upgradeId: string; receipt: Receipt; replayed: boolean }
+  | { type: "plot_build_rejected"; tick: number; plotId: string; requestId: string; reason: string }
   | { type: "decor_purchased"; tick: number; decorId: string; receipt: Receipt; replayed: boolean }
   | { type: "decor_purchase_rejected"; tick: number; decorId: string; requestId: string; reason: string }
+  | { type: "full_harbor_unlock_granted"; tick: number; receipt: Receipt; replayed: boolean }
+  | { type: "iap_cosmetic_granted"; tick: number; cosmeticId: string; receipt: Receipt; replayed: boolean }
+  | { type: "iap_cosmetic_rejected"; tick: number; cosmeticId: string; requestId: string; reason: string }
   | { type: "machine_broke"; tick: number; stationId: string; machineId: string }
   | { type: "machine_slowed"; tick: number; stationId: string; machineId: string; untilTick: number }
   | { type: "machine_repaired"; tick: number; stationId: string; machineId: string; receipt: Receipt; replayed: boolean }

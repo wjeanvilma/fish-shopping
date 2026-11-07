@@ -697,6 +697,56 @@ object ContentValidator {
                     }
                 }
             }
+            val plotIds = mutableSetOf<String>()
+            val plotZones = mutableSetOf<String>()
+            val plotUpgrades = mutableSetOf<String>()
+            for (plot in h.plots) {
+                check(plotIds.add(plot.id)) { "${h.id}: duplicate plot '${plot.id}'" }
+                check(plotZones.add(plot.zone)) { "${h.id}: duplicate plot zone '${plot.zone}'" }
+                check(plotUpgrades.add(plot.grantsUpgrade)) {
+                    "${h.id}: duplicate plot grantsUpgrade '${plot.grantsUpgrade}'"
+                }
+                val z = h.zonesById[plot.zone]
+                check(z != null) { "${plot.id}: unknown zone '${plot.zone}'" }
+                check(z!!.kind == ZoneKind.PLOT) { "${plot.id}: zone must be kind plot" }
+                check(open(z.rect.centerX, z.rect.centerZ)) {
+                    "${plot.id}: plot zone center is not on open walkable ground"
+                }
+                val u = p.upgradesById[plot.grantsUpgrade]
+                check(u != null) { "${plot.id}: grantsUpgrade unknown '${plot.grantsUpgrade}'" }
+                when (val e = u!!.effect) {
+                    is UpgradeEffect.UnlockMachine -> {
+                        check(h.stations.any { it.machine == e.machine && it.requiresUpgrade == u.id }) {
+                            "${plot.id}: harbor has no station for unlock_machine '${e.machine}' gated by '${u.id}'"
+                        }
+                    }
+                    is UpgradeEffect.UnlockCounter -> {
+                        check(h.counters.any { it.requiresUpgrade == u.id }) {
+                            "${plot.id}: harbor has no counter gated by '${u.id}'"
+                        }
+                    }
+                    is UpgradeEffect.UnlockFishingSpot -> {
+                        check(h.fishingSpots.any { it.requiresUpgrade == u.id }) {
+                            "${plot.id}: harbor has no fishing spot gated by '${u.id}'"
+                        }
+                    }
+                    else -> check(false) {
+                        "${plot.id}: grantsUpgrade must unlock a machine, counter, or fishing spot"
+                    }
+                }
+            }
+            for (s in h.stations) {
+                val req = s.requiresUpgrade ?: continue
+                check(h.plotsByUpgrade.containsKey(req)) {
+                    "${s.id}: locked station upgrade '$req' needs a plot on ${h.id}"
+                }
+            }
+            for (c in h.counters) {
+                val req = c.requiresUpgrade ?: continue
+                check(h.plotsByUpgrade.containsKey(req)) {
+                    "${c.id}: locked counter upgrade '$req' needs a plot on ${h.id}"
+                }
+            }
             // Every zone must be reachable: its centre lies on walkable, unobstructed ground.
             for (z in h.zones) {
                 val cx = z.rect.centerX

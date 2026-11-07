@@ -2,6 +2,9 @@
  * Optional cloud sync conflict policy (Phase 26). Mirrors game-core CloudSync.kt:
  * among checksum-valid snapshots, the newest savedAtEpochMs wins. Local play never
  * requires a remote.
+ *
+ * Phase 11 surfaces a dual-snapshot choice when both sides are valid and differ;
+ * chooseCloudSnapshot still names the recommended side.
  */
 import { crc32Hex } from "./snapshot";
 
@@ -12,12 +15,35 @@ export interface SyncCandidate {
   checksum: string;
   savedAtEpochMs: number;
   schemaVersion: number;
+  harborId: string;
+  coins: number;
+  tick: number;
 }
 
 export interface SyncDecision {
   text: string | null;
   source: SyncSource;
   reason: string;
+}
+
+/** Phase 11 dual-snapshot choice row (coins / harbor / playtime / timestamp). */
+export interface SnapshotSummary {
+  source: SyncSource;
+  harborId: string;
+  coins: number;
+  tick: number;
+  savedAtEpochMs: number;
+  checksum: string;
+}
+
+/** When both local and remote are valid but differ, UI must ask before applying. */
+export interface CloudConflictOffer {
+  local: SnapshotSummary;
+  remote: SnapshotSummary;
+  recommended: SyncSource;
+  reason: string;
+  localText: string;
+  remoteText: string;
 }
 
 /**
@@ -37,13 +63,28 @@ export function peekSnapshot(text: string): SyncCandidate | null {
   if (typeof schemaVersion !== "number" || schemaVersion < 1) return null;
   const stateValue = env.state;
   if (typeof stateValue !== "object" || stateValue === null) return null;
+  const state = stateValue as Record<string, unknown>;
   const checksum = env.checksum;
   if (typeof checksum !== "string") return null;
   const actual = crc32Hex(JSON.stringify(stateValue));
   if (checksum !== actual) return null;
   const savedRaw = env.savedAtEpochMs;
   const savedAtEpochMs = typeof savedRaw === "number" && savedRaw >= 0 ? savedRaw : 0;
-  return { text, checksum, savedAtEpochMs, schemaVersion };
+  const harborId = typeof state.harborId === "string" ? state.harborId : "";
+  const coins = typeof state.coins === "number" && state.coins >= 0 ? Math.trunc(state.coins) : 0;
+  const tick = typeof state.tick === "number" && state.tick >= 0 ? Math.trunc(state.tick) : 0;
+  return { text, checksum, savedAtEpochMs, schemaVersion, harborId, coins, tick };
+}
+
+export function summaryOf(candidate: SyncCandidate, source: SyncSource): SnapshotSummary {
+  return {
+    source,
+    harborId: candidate.harborId,
+    coins: candidate.coins,
+    tick: candidate.tick,
+    savedAtEpochMs: candidate.savedAtEpochMs,
+    checksum: candidate.checksum,
+  };
 }
 
 /**
@@ -66,4 +107,28 @@ export function chooseCloudSnapshot(localText: string | null | undefined, remote
     return { text: local.text, source: "local", reason: "local newer" };
   }
   return { text: local.text, source: "local", reason: "equal age; keep local" };
+}
+
+/**
+ * Phase 11: when both sides are checksum-valid and differ, return a dual-choice
+ * offer. Recommended side follows chooseCloudSnapshot. Null means auto-apply is fine.
+ */
+export function cloudConflictOffer(
+  localText: string | null | undefined,
+  remoteText: string | null | undefined,
+): CloudConflictOffer | null {
+  const local = localText ? peekSnapshot(localText) : null;
+  const remote = remoteText ? peekSnapshot(remoteText) : null;
+  if (!local || !remote) return null;
+  if (local.checksum === remote.checksum) return null;
+  const decision = chooseCloudSnapshot(localText, remoteText);
+  const recommended: SyncSource = decision.source === "remote" ? "remote" : "local";
+  return {
+    local: summaryOf(local, "local"),
+    remote: summaryOf(remote, "remote"),
+    recommended,
+    reason: decision.reason,
+    localText: local.text,
+    remoteText: remote.text,
+  };
 }

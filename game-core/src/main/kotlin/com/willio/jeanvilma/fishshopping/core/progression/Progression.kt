@@ -47,6 +47,11 @@ object UpgradeSystem {
             ctx.emit(GameEvent.PurchaseRejected(s.tick, upgradeId, requestId, "Unknown upgrade"))
             return
         }
+        // Phase 6: construction upgrades that have a harbor plot must be confirmed at the marker.
+        if (!com.willio.jeanvilma.fishshopping.core.world.PlotSystem.standingOnUpgradePlot(ctx.harbor, s, upgradeId)) {
+            ctx.emit(GameEvent.PurchaseRejected(s.tick, upgradeId, requestId, "Stand on the expansion marker"))
+            return
+        }
         when (val a = availability(ctx.content, s, u)) {
             Availability.Owned -> ctx.emit(GameEvent.PurchaseRejected(s.tick, upgradeId, requestId, "Already owned"))
             is Availability.Locked -> ctx.emit(GameEvent.PurchaseRejected(s.tick, upgradeId, requestId, a.reason))

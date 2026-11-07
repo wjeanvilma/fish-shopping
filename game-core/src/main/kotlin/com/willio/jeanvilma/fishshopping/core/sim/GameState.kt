@@ -339,6 +339,11 @@ class GameState(
     val unlockedCosmetics = TreeSet<String>()
     /** Phase 23 owned shop decor (placable cosmetics). */
     val ownedDecor = TreeSet<String>()
+    /**
+     * Phase 23 one-time IAP: unlocks travel to every harbor (power-neutral access).
+     * Sunrise Pier stays free; grant is idempotent via purchase receipts.
+     */
+    var fullHarborUnlock = false
     /** Best catch per species id (museum / trophy board). */
     val trophies = TreeMap<String, TrophyRecord>()
     /** Phase 27 lifetime catches per species id (telemetry v2). */
@@ -461,6 +466,8 @@ sealed interface Command {
     /** Joystick / keyboard direction, each axis in -INPUT_SCALE..INPUT_SCALE. Persists until changed. */
     data class Move(val x: Int, val z: Int) : Command
     data class PurchaseUpgrade(val upgradeId: String, val requestId: String) : Command
+    /** Phase 6: confirm spend while standing on an expansion plot marker. */
+    data class BuildPlot(val plotId: String, val requestId: String) : Command
     data class SetMachinePaused(val stationId: String, val paused: Boolean) : Command
     /** Attempt a timing-bonus reel while casting. */
     data object Reel : Command
@@ -490,6 +497,16 @@ sealed interface Command {
     data class SelectBait(val baitId: String?) : Command
     /** Buy shop decor; [requestId] makes retries idempotent (Phase 23). */
     data class PurchaseDecor(val decorId: String, val requestId: String) : Command
+    /**
+     * Phase 23: grant the one-time full-harbor unlock entitlement.
+     * [requestId] should be stable per store purchase token (`full-unlock:{token}`).
+     */
+    data class GrantFullHarborUnlock(val requestId: String) : Command
+    /**
+     * Phase 24: grant a power-neutral IAP cosmetic banner id.
+     * [requestId] should be stable per store purchase (`iap-cosmetic:{sku}:{token}`).
+     */
+    data class GrantIapCosmetic(val cosmeticId: String, val requestId: String) : Command
     /** Pay to clear machine wear (Phase 25); [requestId] makes retries idempotent. */
     data class RepairMachine(val stationId: String, val requestId: String) : Command
     /** Take the content bank loan (Phase 26); [requestId] makes retries idempotent. */
@@ -560,7 +577,35 @@ sealed interface GameEvent {
     }
     data class UpgradePurchased(override val tick: Long, val upgradeId: String, val receipt: Receipt, val replayed: Boolean) : GameEvent
     data class PurchaseRejected(override val tick: Long, val upgradeId: String, val requestId: String, val reason: String) : GameEvent
+    data class PlotBuilt(
+        override val tick: Long,
+        val plotId: String,
+        val upgradeId: String,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class PlotBuildRejected(
+        override val tick: Long,
+        val plotId: String,
+        val requestId: String,
+        val reason: String,
+    ) : GameEvent
     data class DecorPurchased(override val tick: Long, val decorId: String, val receipt: Receipt, val replayed: Boolean) : GameEvent
+    /** Phase 23 one-time full-harbor unlock (power-neutral). */
+    data class FullHarborUnlockGranted(override val tick: Long, val receipt: Receipt, val replayed: Boolean) : GameEvent
+    /** Phase 24 optional paid cosmetic (power-neutral banner). */
+    data class IapCosmeticGranted(
+        override val tick: Long,
+        val cosmeticId: String,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class IapCosmeticRejected(
+        override val tick: Long,
+        val cosmeticId: String,
+        val requestId: String,
+        val reason: String,
+    ) : GameEvent
     data class DecorPurchaseRejected(override val tick: Long, val decorId: String, val requestId: String, val reason: String) : GameEvent
     data class MachineBroke(override val tick: Long, val stationId: String, val machineId: String) : GameEvent
     data class MachineSlowed(override val tick: Long, val stationId: String, val machineId: String, val untilTick: Long) : GameEvent

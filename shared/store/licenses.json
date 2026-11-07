@@ -1,0 +1,96 @@
+{
+  "phase": 29,
+  "schema": "fish.store.asset_licenses.v1",
+  "description": "Asset rights records for Play / web ship — all Fish Shopping art, audio, and chrome are first-party unless noted.",
+  "defaultLicense": {
+    "holder": "Fish Shopping project (Willio / Jeanvilma)",
+    "spdx": "LicenseRef-FishShopping-Proprietary-Ship",
+    "note": "Created for Fish Shopping. May be redistributed with the game clients. Third-party reuse outside the game requires written permission."
+  },
+  "records": [
+    {
+      "id": "harbor-blockouts",
+      "paths": ["shared/assets/models/*_blockout.glb"],
+      "kind": "3d",
+      "origin": "first_party_generated",
+      "tool": "shared/tools/generate_blockout.py",
+      "rights": "original"
+    },
+    {
+      "id": "env-modules",
+      "paths": ["shared/assets/models/modules/*.glb"],
+      "kind": "3d",
+      "origin": "first_party_generated",
+      "tool": "shared/tools/generate_env_modules.py",
+      "rights": "original"
+    },
+    {
+      "id": "character-modules",
+      "paths": ["shared/assets/models/characters/*.glb"],
+      "kind": "3d",
+      "origin": "first_party_generated",
+      "tool": "shared/tools/generate_character_modules.py",
+      "rights": "original"
+    },
+    {
+      "id": "item-art",
+      "paths": ["shared/assets/models/fish_*.glb", "shared/assets/models/product_*.glb"],
+      "kind": "3d",
+      "origin": "first_party_generated",
+      "tool": "shared/tools/generate_fish_stubs.py",
+      "rights": "original"
+    },
+    {
+      "id": "store-chrome",
+      "paths": [
+        "shared/store/brand-mark.svg",
+        "shared/store/feature-graphic.svg",
+        "shared/store/feature-graphic.png",
+        "web/public/favicon.svg",
+        "web/public/apple-touch-icon.png",
+        "web/public/icon-512.png",
+        "app/src/main/res/mipmap-*/ic_launcher*.png",
+        "app/src/main/res/drawable/ic_launcher_*.xml",
+        "app/src/main/res/drawable/ic_brand_mark.xml"
+      ],
+      "kind": "2d",
+      "origin": "first_party_authored",
+      "tool": "shared/tools/generate_store_chrome.py",
+      "rights": "original"
+    },
+    {
+      "id": "screenshot-storyboards",
+      "paths": ["shared/store/screenshots/*.svg"],
+      "kind": "2d",
+      "origin": "first_party_authored",
+      "rights": "original",
+      "note": "Storyboard placeholders for Play Console capture; replace with device PNGs before store submit."
+    },
+    {
+      "id": "procedural-audio",
+      "paths": [
+        "web/src/audio/audioBus.ts",
+        "app/src/main/java/com/willio/jeanvilma/fishshopping/audio/AudioBus.kt"
+      ],
+      "kind": "audio",
+      "origin": "first_party_procedural",
+      "rights": "original",
+      "note": "Runtime-synthesized ambience and SFX tones — no third-party sample packs."
+    },
+    {
+      "id": "content-pack",
+      "paths": ["shared/content/content-pack.json"],
+      "kind": "data",
+      "origin": "first_party_authored",
+      "rights": "original"
+    },
+    {
+      "id": "third-party-runtime",
+      "paths": [],
+      "kind": "runtime",
+      "origin": "third_party_dependency",
+      "rights": "dependency_licenses",
+      "note": "Filament, Three.js, Kotlin, AndroidX, React, and other build/runtime deps keep their upstream SPDX licenses via package managers — not redistributed as game art."
+    }
+  ]
+}

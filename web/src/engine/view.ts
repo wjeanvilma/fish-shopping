@@ -5,7 +5,13 @@ import { compareStrings } from "./foundations";
 import type { MachineStatus } from "./state";
 import type { Simulation } from "./simulation";
 import { abandonPermille, topSpeciesCatchShare, wageRatioPermille } from "./telemetry";
-import { BaitSystem, BankSystem, ContractSystem, CustomerSystem, DecorSystem, EconomySystem, FishingSystem, HarborTravelSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, ReputationSystem, SeasonalEventSystem, UpgradeSystem, WorkerSystem } from "./systems";
+import { BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DecorSystem, EconomySystem, FishingSystem, HarborTravelSystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, ReputationSystem, SeasonalEventSystem, UpgradeSystem, WorkerSystem } from "./systems";
+import { Warehouse, type WarehouseView } from "./warehouse";
+export type { WarehouseView, WarehouseLineView, WarehouseLocationView } from "./warehouse";
+import { SpeciesBook, type SpeciesBookView } from "./speciesBook";
+export type { SpeciesBookView, SpeciesBookEntryView } from "./speciesBook";
+import { BusinessDashboard, type BusinessDashboardView } from "./businessDashboard";
+export type { BusinessDashboardView } from "./businessDashboard";
 
 export interface ItemCount { itemId: string; name: string; count: number }
 export interface ContextCard {
@@ -14,6 +20,12 @@ export interface ContextCard {
   progress: number | null;
   stationId?: string | null;
   recipeModeLabel?: string | null;
+  /** Phase 6 expansion marker underfoot. */
+  plotId?: string | null;
+  /** Confirm-spend cost when plotId is set and not yet built. */
+  plotCost?: number | null;
+  /** True when the player can afford and unlock the plot's upgrade. */
+  plotBuildable?: boolean;
 }
 export interface StationView {
   stationId: string;
@@ -145,6 +157,16 @@ export interface DecorOfferView {
   canAfford: boolean;
 }
 
+/** Phase 24 optional IAP cosmetic row (power-neutral). */
+export interface CosmeticIapOfferView {
+  id: string;
+  sku: string;
+  grantsCosmetic: string;
+  title: string;
+  description: string;
+  status: string;
+}
+
 /** completed | active | locked */
 export interface PrestigeView {
   id: string;
@@ -250,6 +272,8 @@ export interface SimView {
   /** GLB under models/ for the active harbor blockout. */
   blockoutAsset: string;
   harbors: HarborMapEntryView[];
+  /** Phase 23: one-time IAP unlocked every harbor (power-neutral). */
+  fullHarborUnlock: boolean;
   player: { xMm: number; zMm: number; facingX: number; facingZ: number; zoneId: string | null };
   bag: ItemCount[];
   bagUsedUnits: number;
@@ -257,6 +281,12 @@ export interface SimView {
   fishingProgress: number | null;
   fishingTimingWindow: boolean;
   fishingTimingTier: "perfect" | "good" | null;
+  /** Phase 19: Good reel window as 0..1 of cast duration (presentation). */
+  timingGoodStart01: number;
+  timingGoodEnd01: number;
+  /** Phase 19: Perfect reel window as 0..1 of cast duration (presentation). */
+  timingPerfectStart01: number;
+  timingPerfectEnd01: number;
   fishingCanReel: boolean;
   fishingSpotEmpty: boolean;
   fishingRegenProgress: number | null;
@@ -325,6 +355,8 @@ export interface SimView {
   unlockedCosmetics: string[];
   /** Phase 23 shop decor offers for the Goals panel. */
   decorOffers: DecorOfferView[];
+  /** Phase 24 optional IAP cosmetics (power-neutral). */
+  cosmeticIapOffers: CosmeticIapOfferView[];
   /** Summed patience bonus from owned decor. */
   decorPatienceBonusTicks: number;
   /** Museum personal bests (sorted by species id). */
@@ -336,6 +368,12 @@ export interface SimView {
    * (items_transferred from/to). Presentation only.
    */
   transferAnchors: TransferAnchorView[];
+  /** Phase 7 warehouse: available vs reserved across bag/stations/counters/workers. */
+  warehouse: WarehouseView;
+  /** Phase 8 species collection book (linked from Goals). */
+  speciesBook: SpeciesBookView;
+  /** Phase 9 business dashboard (committed sales + rates + bottlenecks). */
+  businessDashboard: BusinessDashboardView;
 }
 
 /** Inventory id → ground position for bag ↔ pad ↔ counter arcs. */
@@ -383,6 +421,36 @@ export function buildView(sim: Simulation): SimView {
       slowTicksRemaining: slowed ? Math.max(0, m.slowUntilTick - s.tick) : 0,
     };
   });
+  const topSpeciesViews = topSpeciesCatchShare(s, 3).map((row) => ({
+    speciesId: row.speciesId,
+    name: c.itemName(row.speciesId),
+    sharePermille: row.sharePermille,
+    catches: row.catches,
+  }));
+  const automationIssueViews: AutomationIssueView[] = [];
+  for (const st of stations) {
+    const reason = st.needsRepair && st.status === "NEEDS_REPAIR"
+      ? "Needs repair"
+      : st.needsRepair && st.slowed
+        ? "Running slow"
+        : st.status === "OUTPUT_FULL"
+          ? "Output full"
+          : st.status === "WAITING_FOR_INPUT"
+            ? "No input"
+            : null;
+    if (!reason) continue;
+    const pad = h.stations.find((x) => x.id === st.stationId);
+    const name = pad
+      ? (c.machinesById.get(pad.machine)?.name ?? st.stationId)
+      : st.stationId;
+    automationIssueViews.push({ id: st.stationId, kind: "machine", label: name, reason });
+  }
+  for (const w of s.workers) {
+    const reason = WorkerSystem.blockedReason(c, s, h, w);
+    if (!reason || reason === "Off shift") continue;
+    const def = c.workersById.get(w.roleId);
+    automationIssueViews.push({ id: w.id, kind: "worker", label: def?.name ?? w.roleId, reason });
+  }
 
   let context: ContextCard | null = null;
   if (zone?.kind === "fishing") {
@@ -500,6 +568,23 @@ export function buildView(sim: Simulation): SimView {
       ],
       progress: null,
     };
+  } else if (zone?.kind === "plot") {
+    const plot = h.plots.find((pp) => pp.zone === zone.id)!;
+    const u = c.upgradesById.get(plot.grantsUpgrade)!;
+    const owned = s.ownedUpgrades.has(plot.grantsUpgrade);
+    const avail = UpgradeSystem.availability(c, s, u);
+    const reqLine = avail.kind === "owned" ? "Built — station registered"
+      : avail.kind === "locked" ? avail.reason
+        : avail.kind === "too_expensive" ? `Need ${avail.missing} more coins`
+          : "Confirm spend to register";
+    context = {
+      title: plot.name,
+      lines: [plot.description, `Cost: ${u.cost}`, reqLine],
+      progress: null,
+      plotId: plot.id,
+      plotCost: owned ? null : u.cost,
+      plotBuildable: avail.kind === "purchasable",
+    };
   }
 
   const atKiosk = zone?.kind === "kiosk";
@@ -556,6 +641,7 @@ export function buildView(sim: Simulation): SimView {
         specializationDescription: harbor.specialization?.description ?? null,
       };
     }),
+    fullHarborUnlock: s.fullHarborUnlock,
     player: { xMm: p.x, zMm: p.z, facingX: p.facingX, facingZ: p.facingZ, zoneId: p.zoneId },
     bag: p.bag.contents().map(([id, n]) => ({ itemId: id, name: c.itemName(id), count: n })),
     bagUsedUnits: p.bag.usedUnits(),
@@ -573,6 +659,10 @@ export function buildView(sim: Simulation): SimView {
       const tier = FishingSystem.timingTierAt(p, p.fishingProgress, p.fishingCatchTicks);
       return tier === "miss" ? null : tier;
     })(),
+    timingGoodStart01: p.timingWindowStartPermille / 1000,
+    timingGoodEnd01: p.timingWindowEndPermille / 1000,
+    timingPerfectStart01: p.timingPerfectStartPermille / 1000,
+    timingPerfectEnd01: p.timingPerfectEndPermille / 1000,
     fishingCanReel: p.fishingSpecies !== null && !p.reelAttemptedThisCast,
     preferredBaitId: p.preferredBaitId,
     activeBaitId: p.activeBaitId,
@@ -629,11 +719,17 @@ export function buildView(sim: Simulation): SimView {
     objective: coachingObjective(c, s),
     upgrades: c.upgrades.map((u) => {
       const a = UpgradeSystem.availability(c, s, u);
+      const needsPlot = PlotSystem.requiresPlotPresence(h, u.id);
+      const onPlot = PlotSystem.standingOnUpgradePlot(h, s, u.id);
+      const plotReady = a.kind === "purchasable" && (!needsPlot || onPlot);
       return {
         id: u.id, name: u.name, description: u.description, cost: u.cost,
         owned: a.kind === "owned",
-        purchasable: a.kind === "purchasable",
-        reason: a.kind === "locked" ? a.reason : a.kind === "too_expensive" ? `Need ${a.missing} more coins` : null,
+        purchasable: plotReady,
+        reason: a.kind === "locked" ? a.reason
+          : a.kind === "too_expensive" ? `Need ${a.missing} more coins`
+            : a.kind === "purchasable" && needsPlot && !onPlot ? "Stand on the expansion marker"
+              : null,
       };
     }),
     rush: (() => {
@@ -677,12 +773,7 @@ export function buildView(sim: Simulation): SimView {
     telemetryRates: {
       abandonPermille: abandonPermille(s),
       wageRatioPermille: wageRatioPermille(s),
-      topSpecies: topSpeciesCatchShare(s, 3).map((row) => ({
-        speciesId: row.speciesId,
-        name: c.itemName(row.speciesId),
-        sharePermille: row.sharePermille,
-        catches: row.catches,
-      })),
+      topSpecies: topSpeciesViews,
     },
     supervisorOnDuty: WorkerSystem.supervisorOnDuty(c, s),
     workerWagePerWorkerPerHour: s.workerWagePerWorkerPerHour,
@@ -747,33 +838,7 @@ export function buildView(sim: Simulation): SimView {
         }];
       }),
     ),
-    automationIssues: (() => {
-      const issues: AutomationIssueView[] = [];
-      for (const st of stations) {
-        const reason = st.needsRepair && st.status === "NEEDS_REPAIR"
-          ? "Needs repair"
-          : st.needsRepair && st.slowed
-            ? "Running slow"
-            : st.status === "OUTPUT_FULL"
-              ? "Output full"
-              : st.status === "WAITING_FOR_INPUT"
-                ? "No input"
-                : null;
-        if (!reason) continue;
-        const pad = h.stations.find((x) => x.id === st.stationId);
-        const name = pad
-          ? (c.machinesById.get(pad.machine)?.name ?? st.stationId)
-          : st.stationId;
-        issues.push({ id: st.stationId, kind: "machine", label: name, reason });
-      }
-      for (const w of s.workers) {
-        const reason = WorkerSystem.blockedReason(c, s, h, w);
-        if (!reason || reason === "Off shift") continue;
-        const def = c.workersById.get(w.roleId);
-        issues.push({ id: w.id, kind: "worker", label: def?.name ?? w.roleId, reason });
-      }
-      return issues;
-    })(),
+    automationIssues: automationIssueViews,
     quests: c.quests.map((q) => {
       const completed = s.completedQuests.has(q.id);
       const locked = !completed && !ProgressionSystem.requirementsMet(s, q);
@@ -896,6 +961,14 @@ export function buildView(sim: Simulation): SimView {
         canAfford: !owned && !miss && s.coins >= d.cost,
       };
     }),
+    cosmeticIapOffers: CosmeticsIapSystem.CATALOG.map((sku) => ({
+      id: sku.id,
+      sku: sku.sku,
+      grantsCosmetic: sku.grantsCosmetic,
+      title: sku.title,
+      description: sku.description,
+      status: s.unlockedCosmetics.has(sku.grantsCosmetic) ? "owned" : "available",
+    })),
     decorPatienceBonusTicks: DecorSystem.patienceBonusTicks(c, s),
     trophies: [...s.trophies.entries()]
       .sort(([a], [b]) => compareStrings(a, b))
@@ -918,6 +991,9 @@ export function buildView(sim: Simulation): SimView {
       };
     }),
     transferAnchors: buildTransferAnchors(sim),
+    warehouse: Warehouse.build(c, s, h),
+    speciesBook: SpeciesBook.build(c, s),
+    businessDashboard: BusinessDashboard.build(c, s, automationIssueViews, topSpeciesViews),
   };
 }
 

@@ -1,5 +1,6 @@
 package com.willio.jeanvilma.fishshopping
 
+import com.willio.jeanvilma.fishshopping.audio.AudioBus
 import com.willio.jeanvilma.fishshopping.audio.SfxCue
 import com.willio.jeanvilma.fishshopping.audio.sfxFromEvent
 import com.willio.jeanvilma.fishshopping.audio.wantsHaptic
@@ -42,5 +43,14 @@ class SfxCuesTest {
         assertTrue(SfxCue.CATCH.wantsHaptic())
         assertTrue(SfxCue.SALE.wantsHaptic())
         assertFalse(SfxCue.RUSH.wantsHaptic())
+    }
+
+    @Test
+    fun phase17VoiceCapAndGains() {
+        assertEquals(0.35f, AudioBus.clampVolume(0.4f), 1e-6f)
+        assertEquals(0f, AudioBus.effectiveSfxGain(muted = true, sfxVolume = 1f), 1e-6f)
+        assertEquals(0.7f, AudioBus.effectiveMusicGain(muted = false, musicVolume = 0.7f), 1e-6f)
+        assertTrue(AudioBus.canSpawnVoices(0, 2))
+        assertFalse(AudioBus.canSpawnVoices(AudioBus.MAX_SFX_VOICES - 1, 2))
     }
 }

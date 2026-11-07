@@ -1,0 +1,35 @@
+{
+  "phase": 27,
+  "schema": "fish.android.release_hardening.v1",
+  "description": "Android release build gates: R8 minify, Autobackup excludes for corruptible save slots, CI assembleRelease.",
+  "compileSdk": 37,
+  "kotlin": "2.4.0",
+  "filament": "1.77.3",
+  "minify": {
+    "enabled": true,
+    "dsl": "android.buildTypes.release.optimization.enable",
+    "gradleProperty": "android.r8.gradual.support=true",
+    "keepRulesFile": "app/proguard-rules.pro",
+    "includeDefaultOptimize": true
+  },
+  "signing": {
+    "ciReleaseUsesDebugKeystore": true,
+    "note": "CI and local assembleRelease sign with the debug keystore until a Play upload key is configured."
+  },
+  "backupExcludes": {
+    "sharedPreferences": ["fish_shopping_entitlements.xml"],
+    "files": [
+      "harbor_save_latest.json",
+      "harbor_save_previous.json",
+      "harbor_save_latest.json.new",
+      "harbor_save_previous.json.new"
+    ],
+    "reason": "Save slots are AtomicFile-rotated and recovered in-app; Autobackup of a mid-write latest can corrupt both slots. Entitlements restore via billing stub/Play."
+  },
+  "ci": {
+    "task": ":app:assembleRelease",
+    "fallback": ":app:assembleDebug"
+  },
+  "dataExtractionRules": "app/src/main/res/xml/data_extraction_rules.xml",
+  "fullBackupContent": "app/src/main/res/xml/backup_rules.xml"
+}

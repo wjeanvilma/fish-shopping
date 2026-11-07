@@ -110,6 +110,7 @@ object SnapshotCodec {
             put("completedPrestige", JsonArray(s.completedPrestige.map { JsonPrimitive(it) }))
             put("unlockedCosmetics", JsonArray(s.unlockedCosmetics.map { JsonPrimitive(it) }))
             put("ownedDecor", JsonArray(s.ownedDecor.map { JsonPrimitive(it) }))
+            put("fullHarborUnlock", s.fullHarborUnlock)
             put("loanOwed", s.loanOwed)
             put("loanDueTick", s.loanDueTick)
             put("coinGoal", s.coinGoal)
@@ -200,6 +201,7 @@ object SnapshotCodec {
      *  - v16 -> v17: machine broken + slowUntilTick (Phase 25 wear).
      *  - v17 -> v18: loanOwed / loanDueTick / coinGoal / coinGoalCelebrated (Phase 26 bank).
      *  - v18 -> v19: speciesCatches map (Phase 27 telemetry v2).
+     *  - v19 -> v20: fullHarborUnlock (Phase 23 one-time IAP entitlement).
      */
     private fun readState(content: ContentPack, n: Node, version: Int): GameState {
         val harborId = n["harborId"].string()
@@ -381,6 +383,9 @@ object SnapshotCodec {
             n["ownedDecor"].list { it.string() }
                 .filter { it in content.decorById }
                 .forEach { s.ownedDecor += it }
+        }
+        if (version >= 20) {
+            s.fullHarborUnlock = n.optional("fullHarborUnlock")?.bool() ?: false
         }
         if (version >= 18) {
             s.loanOwed = n.optional("loanOwed")?.long(min = 0) ?: 0L

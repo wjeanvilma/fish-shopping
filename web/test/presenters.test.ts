@@ -13,11 +13,20 @@ import {
   FlyingTransfers,
   IDLE_SPEED_M_PER_S,
   isOcclusionFadeName,
+  machineOperatePulses,
   occlusionOpacity,
   OCCLUSION_FAR_M,
   OCCLUSION_NEAR_M,
+  pickLocomotionClip,
   PlayerSmoother,
+  resolveCelebrateBurst,
+  resolveMachineDoneBurst,
+  resolvePayBurst,
+  VFX_BURST_POOL,
   WALK_SPEED_REF_M_PER_S,
+  WorkerCrowd,
+  WorldBursts,
+  worldBurstPoolForQuality,
   locomoteFromMotion,
   resolveFlyingTransfer,
   stackVisibility,
@@ -74,14 +83,38 @@ describe("locomotion", () => {
   it("advances walk phase while moving and breathes while idle", () => {
     const walk = locomoteFromMotion(0, 0, WALK_SPEED_REF_M_PER_S * 0.1, 0, 0, 0, 0, 0.1);
     expect(walk.pose.idle).toBe(false);
+    expect(walk.pose.clip).toBe("walk");
     expect(walk.pose.speed01).toBeGreaterThan(0.5);
     expect(walk.walkPhase).toBeGreaterThan(0);
     expect(walk.pose.bobY).toBeGreaterThanOrEqual(0);
 
     const idle = locomoteFromMotion(0, 0, 0, 0, 0, walk.walkPhase, 0, 0.1, true);
     expect(idle.pose.idle).toBe(true);
+    expect(idle.pose.clip).toBe("idle");
     expect(idle.pose.speed01).toBe(0);
     expect(idle.idlePhase).toBeGreaterThan(0);
+  });
+
+  it("picks carry and cast clips from bag and fishing", () => {
+    expect(pickLocomotionClip({ moving: true, carrying: true, casting: false })).toBe("carry");
+    expect(pickLocomotionClip({ moving: false, carrying: false, casting: true })).toBe("cast");
+    const carry = locomoteFromMotion(0, 0, 0.2, 0, 0, 0, 0, 0.1, false, { carrying: true });
+    expect(carry.pose.clip).toBe("carry");
+    expect(carry.pose.leanRad).toBeGreaterThan(0);
+    const cast = locomoteFromMotion(0, 0, 0, 0, 0, 0, 0, 0.1, false, { casting: true, cast01: 0.6 });
+    expect(cast.pose.clip).toBe("cast");
+    expect(cast.pose.cast01).toBeCloseTo(0.6);
+    expect(cast.pose.leanRad).toBeLessThan(0);
+  });
+
+  it("PlayerSmoother snaps without bob when reduced motion is on", () => {
+    const smooth = new PlayerSmoother();
+    const pose = smooth.update({ xMm: 2000, zMm: -1500, facingX: 0, facingZ: 1000, zoneId: null }, 0.05, true);
+    expect(pose.x).toBe(2);
+    expect(pose.z).toBe(-1.5);
+    expect(pose.bobY).toBe(0);
+    expect(pose.swayRad).toBe(0);
+    expect(pose.leanRad).toBe(0);
   });
 
   it("PlayerSmoother eases toward the sim and settles idle", () => {
@@ -103,6 +136,35 @@ describe("locomotion", () => {
       pose = smooth.update({ xMm: settledAt, zMm: 0, facingX: 1000, facingZ: 0, zoneId: null }, 0.05);
     }
     expect(pose.idle).toBe(true);
+  });
+
+  it("PlayerSmoother casts while fishingProgress is set", () => {
+    const smooth = new PlayerSmoother();
+    const pose = smooth.update(
+      { xMm: 0, zMm: 0, facingX: 0, facingZ: 1000, zoneId: null },
+      0.05,
+      false,
+      { bagUsedUnits: 0, fishingProgress: 0.4 },
+    );
+    expect(pose.clip).toBe("cast");
+    expect(pose.cast01).toBeCloseTo(0.4);
+  });
+});
+
+describe("WorkerCrowd", () => {
+  it("draws on-shift workers and frees them when they leave the shift", () => {
+    const sim = newSim();
+    sim.state.completedQuests.add("quest.first_ten_sales");
+    sim.state.coins = 500;
+    const events = sim.step([{ type: "hire_worker", roleId: "worker.porter", requestId: "wc-hire" }]);
+    expect(events.some((e) => e.type === "worker_hired")).toBe(true);
+    expect(sim.state.workers.length).toBeGreaterThan(0);
+    const crowd = new WorkerCrowd(4);
+    let frame = crowd.update(buildView(sim), 0.016);
+    expect(frame.filter(Boolean).length).toBeGreaterThan(0);
+    for (const w of sim.state.workers) w.onShift = false;
+    frame = crowd.update(buildView(sim), 0.016);
+    expect(frame.every((m) => m === null)).toBe(true);
   });
 });
 
@@ -154,6 +216,8 @@ describe("FlyingTransfers", () => {
     expect(mid.filter(Boolean)).toHaveLength(1);
     expect(mid[0]!.kind).toBe("fish");
     expect(mid[0]!.y).toBeGreaterThan(0.25);
+    expect(mid[0]!.yaw).toBeGreaterThan(0);
+    expect(mid[0]!.scale).toBeGreaterThan(1);
     const done = flies.update(FLYING_TRANSFER_DURATION_S);
     expect(done.every((p) => p === null)).toBe(true);
   });
@@ -190,6 +254,50 @@ describe("CustomerCrowd quality draw cap", () => {
     const crowd = new CustomerCrowd(6);
     crowd.setDrawCap(crowdDrawCapForQuality("low", 6));
     expect(crowd.poolSize).toBe(6);
+  });
+});
+
+describe("Phase 16 world VFX", () => {
+  it("pulses Footprint sockets while a station is PROCESSING", () => {
+    const sim = newSim();
+    const v = buildView(sim);
+    const pulses = machineOperatePulses({
+      ...v,
+      stations: v.stations.map((s, i) =>
+        i === 0 ? { ...s, status: "PROCESSING", progress: 0.4 } : s,
+      ),
+    }, 0.2);
+    expect(pulses).toHaveLength(1);
+    expect(pulses[0]!.footprintName).toMatch(/^Footprint_/);
+    expect(pulses[0]!.pulse01).toBeGreaterThan(0);
+    expect(pulses[0]!.pulse01).toBeLessThanOrEqual(1);
+  });
+
+  it("resolves pay / machine_done / celebrate burst anchors", () => {
+    const sim = newSim();
+    const v = buildView(sim);
+    const pay = resolvePayBurst(v, "missing");
+    expect(pay.kind).toBe("pay");
+    expect(pay.xMm).toBeDefined();
+    const done = resolveMachineDoneBurst(v, "station.cutter_1");
+    expect(done).not.toBeNull();
+    expect(done!.kind).toBe("machine_done");
+    const celeb = resolveCelebrateBurst(v);
+    expect(celeb.kind).toBe("celebrate");
+    expect(celeb.xMm).toBe(v.player.xMm);
+  });
+
+  it("honors world-burst quality budgets", () => {
+    expect(worldBurstPoolForQuality("low")).toBe(2);
+    expect(worldBurstPoolForQuality("high")).toBe(VFX_BURST_POOL);
+    const bursts = new WorldBursts(8);
+    bursts.setBudget(worldBurstPoolForQuality("low"));
+    const cue = { xMm: 0, zMm: 0, kind: "pay" as const };
+    expect(bursts.spawn(cue)).toBe(true);
+    expect(bursts.spawn(cue)).toBe(true);
+    expect(bursts.spawn(cue)).toBe(false);
+    const mid = bursts.update(0.2);
+    expect(mid.filter(Boolean).length).toBeGreaterThan(0);
   });
 });
 

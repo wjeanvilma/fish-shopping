@@ -1,6 +1,9 @@
 package com.willio.jeanvilma.fishshopping.ui.hud
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -21,8 +24,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.res.painterResource
+import com.willio.jeanvilma.fishshopping.R
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
@@ -64,12 +70,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.willio.jeanvilma.fishshopping.core.store.StoreListing
 import com.willio.jeanvilma.fishshopping.core.sim.ContextCard
 import com.willio.jeanvilma.fishshopping.core.sim.MachineStatus
 import com.willio.jeanvilma.fishshopping.core.sim.ActiveContractView
 import com.willio.jeanvilma.fishshopping.core.sim.BankView
 import com.willio.jeanvilma.fishshopping.core.sim.BaitOfferView
 import com.willio.jeanvilma.fishshopping.core.sim.ContractOfferView
+import com.willio.jeanvilma.fishshopping.core.sim.CosmeticIapOfferView
 import com.willio.jeanvilma.fishshopping.core.sim.DecorOfferView
 import com.willio.jeanvilma.fishshopping.core.sim.HarborMapEntryView
 import com.willio.jeanvilma.fishshopping.core.sim.OfflineReport
@@ -83,13 +91,21 @@ import com.willio.jeanvilma.fishshopping.core.sim.WorkerView
 import com.willio.jeanvilma.fishshopping.core.sim.StationView
 import com.willio.jeanvilma.fishshopping.core.sim.TrophySetView
 import com.willio.jeanvilma.fishshopping.core.sim.UpgradeView
+import com.willio.jeanvilma.fishshopping.core.sim.BusinessDashboardView
+import com.willio.jeanvilma.fishshopping.core.sim.SpeciesBookView
+import com.willio.jeanvilma.fishshopping.core.sim.WarehouseView
+import com.willio.jeanvilma.fishshopping.core.persistence.SyncSource
 import com.willio.jeanvilma.fishshopping.game.CameraRig
+import com.willio.jeanvilma.fishshopping.game.CloudConflictView
 import com.willio.jeanvilma.fishshopping.game.GameUiState
 import com.willio.jeanvilma.fishshopping.game.GameViewModel
+import com.willio.jeanvilma.fishshopping.game.LocalRecoveryView
+import com.willio.jeanvilma.fishshopping.game.SnapshotChoiceRow
 import com.willio.jeanvilma.fishshopping.persistence.GameSettings
 import com.willio.jeanvilma.fishshopping.persistence.JoystickSide
 import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 import com.willio.jeanvilma.fishshopping.render.HarborView
+import com.willio.jeanvilma.fishshopping.ui.ControlQa
 import com.willio.jeanvilma.fishshopping.ui.theme.Action
 import com.willio.jeanvilma.fishshopping.ui.theme.Danger
 import com.willio.jeanvilma.fishshopping.ui.theme.Ink
@@ -118,8 +134,16 @@ fun GameScreen(vm: GameViewModel) {
     Box(Modifier.fillMaxSize().background(Color(0xFF9FD3EA))) {
         HarborView(
             viewProvider = { vm.latestView },
-            transferProvider = { vm.drainFlyingTransfers() },
+            transferProvider = {
+                val cues = vm.drainFlyingTransfers()
+                if (vm.settingsReducedMotion()) emptyList() else cues
+            },
+            burstProvider = {
+                val cues = vm.drainWorldBursts()
+                if (vm.settingsReducedMotion()) emptyList() else cues
+            },
             qualityProvider = { vm.renderQuality() },
+            reducedMotionProvider = { vm.settingsReducedMotion() },
             modifier = Modifier.fillMaxSize(),
             sceneAsset = sceneAsset,
         )
@@ -134,7 +158,7 @@ fun GameScreen(vm: GameViewModel) {
                 Spacer(Modifier.height(8.dp))
                 Text(s.message)
             }
-            is GameUiState.Title -> TitleScreen(s.hasSave, vm)
+            is GameUiState.Title -> TitleScreen(s, vm)
             is GameUiState.Ready -> Hud(s, vm)
         }
         MessageTicker(vm)
@@ -153,7 +177,8 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
     val settings = state.settings
     val anyPanel = state.offlineReport != null || state.pauseOpen || state.settingsOpen
         || state.bagOpen || state.stationOpen || state.upgradesOpen || state.staffOpen
-        || state.questsOpen || state.contractsOpen || state.mapOpen
+        || state.questsOpen || state.contractsOpen || state.mapOpen || state.warehouseOpen
+        || state.speciesBookOpen || state.dashboardOpen
 
     BackHandler {
         when {
@@ -167,11 +192,37 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
             state.questsOpen -> vm.setQuestsOpen(false)
             state.contractsOpen -> vm.setContractsOpen(false)
             state.mapOpen -> vm.setMapOpen(false)
+            state.warehouseOpen -> vm.setWarehouseOpen(false)
+            state.speciesBookOpen -> vm.setSpeciesBookOpen(false)
+            state.dashboardOpen -> vm.setDashboardOpen(false)
             else -> vm.setPauseOpen(true)
         }
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
+    val hudScale = settings.hudTextScale.coerceIn(1f, 1.3f)
+    val scaledTypography = MaterialTheme.typography.copy(
+        bodyLarge = MaterialTheme.typography.bodyLarge.copy(
+            fontSize = MaterialTheme.typography.bodyLarge.fontSize * hudScale,
+        ),
+        bodyMedium = MaterialTheme.typography.bodyMedium.copy(
+            fontSize = MaterialTheme.typography.bodyMedium.fontSize * hudScale,
+        ),
+        bodySmall = MaterialTheme.typography.bodySmall.copy(
+            fontSize = MaterialTheme.typography.bodySmall.fontSize * hudScale,
+        ),
+        titleLarge = MaterialTheme.typography.titleLarge.copy(
+            fontSize = MaterialTheme.typography.titleLarge.fontSize * hudScale,
+        ),
+        titleMedium = MaterialTheme.typography.titleMedium.copy(
+            fontSize = MaterialTheme.typography.titleMedium.fontSize * hudScale,
+        ),
+        labelLarge = MaterialTheme.typography.labelLarge.copy(
+            fontSize = MaterialTheme.typography.labelLarge.fontSize * hudScale,
+        ),
+    )
+
+    MaterialTheme(colorScheme = MaterialTheme.colorScheme, typography = scaledTypography) {
     Box(
         Modifier
             .fillMaxSize()
@@ -194,6 +245,18 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                     vm.reel()
                     return@onKeyEvent true
                 }
+                if (e.type == KeyEventType.KeyDown && k == Key.I && e.nativeKeyEvent.repeatCount == 0) {
+                    vm.setWarehouseOpen(!state.warehouseOpen)
+                    return@onKeyEvent true
+                }
+                if (e.type == KeyEventType.KeyDown && k == Key.B && e.nativeKeyEvent.repeatCount == 0) {
+                    vm.setSpeciesBookOpen(!state.speciesBookOpen)
+                    return@onKeyEvent true
+                }
+                if (e.type == KeyEventType.KeyDown && k == Key.Y && e.nativeKeyEvent.repeatCount == 0) {
+                    vm.setDashboardOpen(!state.dashboardOpen)
+                    return@onKeyEvent true
+                }
                 if (k !in MOVE_KEYS) return@onKeyEvent false
                 if (e.type == KeyEventType.KeyDown && k !in keys) keys += k
                 if (e.type == KeyEventType.KeyUp) keys -= k
@@ -206,7 +269,8 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
             },
     ) {
         val portrait = maxWidth < maxHeight
-        val actionMinHeight = if (portrait) 44.dp else 48.dp
+        // Phase 20: always meet design-token minTouchTargetDp (48).
+        val actionMinHeight = 48.dp
         val stickWidthFraction = if (portrait) 0.56f else 0.42f
         val stickHeightFraction = if (portrait) 0.36f else 0.48f
         val harborMetaMax = if (portrait) maxWidth * 0.46f else maxWidth * 0.42f
@@ -379,6 +443,9 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
             Button(onClick = { vm.setMapOpen(true) }, modifier = Modifier.heightIn(min = actionMinHeight)) {
                 Text("Map")
             }
+            Button(onClick = { vm.setWarehouseOpen(true) }, modifier = Modifier.heightIn(min = actionMinHeight)) {
+                Text("Warehouse")
+            }
             Button(onClick = { vm.setQuestsOpen(true) }, modifier = Modifier.heightIn(min = actionMinHeight)) {
                 Text("Goals")
             }
@@ -387,6 +454,9 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
             }
             Button(onClick = { vm.setStaffOpen(true) }, modifier = Modifier.heightIn(min = actionMinHeight)) {
                 Text("Staff")
+            }
+            Button(onClick = { vm.setDashboardOpen(true) }, modifier = Modifier.heightIn(min = actionMinHeight)) {
+                Text("Dash")
             }
             Button(onClick = { vm.setUpgradesOpen(true) }, modifier = Modifier.heightIn(min = actionMinHeight)) {
                 Text("Upgrades")
@@ -432,10 +502,33 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 .fillMaxWidth(stickWidthFraction)
                 .fillMaxHeight(stickHeightFraction),
         )
+        // Phase 20: HUD tap-to-move tip (never a world texture).
+        if (settings.tapToMove && !anyPanel) {
+            val tipAlign = if (settings.joystickSide == JoystickSide.LEFT) {
+                Alignment.BottomEnd
+            } else {
+                Alignment.BottomStart
+            }
+            Surface(
+                Modifier
+                    .align(tipAlign)
+                    .padding(12.dp),
+                shape = PanelShape,
+                color = PanelSurface.copy(alpha = 0.92f),
+            ) {
+                Text(
+                    ControlQa.tapToMoveHint(),
+                    Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        }
         // Bottom centre: station card, only in range.
         v.context?.let { card ->
             StationCard(
                 card,
+                stations = v.stations,
+                shapeCues = settings.shapeCues,
                 onOpen = { vm.setStationOpen(true) },
                 onCycleRecipe = card.stationId?.let { id -> { vm.cycleStationRecipe(id) } },
                 modifier = Modifier
@@ -444,21 +537,45 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
             )
         }
         if (v.fishingCanReel) {
-            Button(
-                onClick = vm::reel,
+            Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = if (portrait) maxHeight * stickHeightFraction else 120.dp)
-                    .heightIn(min = actionMinHeight),
-                enabled = true,
+                    .padding(bottom = if (portrait) maxHeight * stickHeightFraction else 120.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    when (v.fishingTimingTier) {
-                        "perfect" -> "Perfect!"
-                        "good" -> "Good!"
-                        else -> if (v.fishingTimingWindow) "Reel!" else "Reel"
-                    },
-                )
+                if (settings.timingAssist) {
+                    TimingMeter(
+                        progress01 = v.fishingProgress ?: 0f,
+                        goodStart = v.timingGoodStart01,
+                        goodEnd = v.timingGoodEnd01,
+                        perfectStart = v.timingPerfectStart01,
+                        perfectEnd = v.timingPerfectEnd01,
+                        tier = v.fishingTimingTier,
+                        modifier = Modifier
+                            .padding(bottom = 8.dp)
+                            .widthIn(min = 180.dp, max = 240.dp)
+                            .fillMaxWidth(0.55f)
+                            .height(14.dp),
+                    )
+                }
+                Button(
+                    onClick = vm::reel,
+                    modifier = Modifier.heightIn(min = actionMinHeight),
+                    enabled = true,
+                ) {
+                    val prefix = when {
+                        settings.shapeCues && v.fishingTimingTier == "perfect" -> "★ "
+                        settings.shapeCues && v.fishingTimingTier == "good" -> "● "
+                        else -> ""
+                    }
+                    Text(
+                        prefix + when (v.fishingTimingTier) {
+                            "perfect" -> "Perfect!"
+                            "good" -> "Good!"
+                            else -> if (v.fishingTimingWindow) "Reel!" else "Reel"
+                        },
+                    )
+                }
             }
         }
         // Bottom right: carry indicator.
@@ -487,11 +604,19 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 economyUnlocked = v.economyUnlocked,
                 bagFishSpoilActive = v.bagFishSpoilActive,
                 coins = v.coins,
+                onOpenDashboard = { vm.setDashboardOpen(true) },
                 onHire = vm::hire,
                 onSetShift = vm::setWorkerShift,
                 onAssignGear = vm::assignWorkerGear,
                 onUnequipGear = vm::unequipWorkerGear,
                 onClose = { vm.setStaffOpen(false) },
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        if (state.dashboardOpen) {
+            BusinessDashboardPanel(
+                dash = v.businessDashboard,
+                onClose = { vm.setDashboardOpen(false) },
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -507,14 +632,27 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 bank = v.bank,
                 coins = v.coins,
                 decorOffers = v.decorOffers,
+                cosmeticIapOffers = v.cosmeticIapOffers,
                 decorPatienceBonusTicks = v.decorPatienceBonusTicks,
                 trophySets = v.trophySets,
                 trophiesCount = v.trophies.size,
+                speciesDiscovered = v.speciesBook.discovered,
+                speciesTotal = v.speciesBook.total,
+                onOpenSpeciesBook = { vm.setSpeciesBookOpen(true) },
                 onPurchaseDecor = vm::purchaseDecor,
+                onPurchaseIapCosmetic = vm::purchaseIapCosmetic,
+                onRestorePurchases = vm::restorePurchases,
                 onTakeLoan = vm::takeLoan,
                 onRepayLoan = vm::repayLoan,
                 onSetCoinGoal = vm::setCoinGoal,
                 onClose = { vm.setQuestsOpen(false) },
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        if (state.speciesBookOpen) {
+            SpeciesBookPanel(
+                book = v.speciesBook,
+                onClose = { vm.setSpeciesBookOpen(false) },
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -534,8 +672,18 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
         if (state.mapOpen) {
             HarborMapPanel(
                 harbors = v.harbors,
+                fullHarborUnlock = v.fullHarborUnlock,
                 onTravel = vm::travelToHarbor,
+                onUnlockAll = vm::purchaseFullHarborUnlock,
+                onRestoreUnlock = vm::restoreFullHarborUnlock,
                 onClose = { vm.setMapOpen(false) },
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        if (state.warehouseOpen) {
+            WarehousePanel(
+                warehouse = v.warehouse,
+                onClose = { vm.setWarehouseOpen(false) },
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -554,13 +702,24 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 SettingsPanel(
                     settings = state.settings,
                     cloudAvailable = vm.cloudAvailable(),
+                    saveStatus = vm.saveStatus(),
                     onMuted = { vm.updateSettings(muted = it) },
+                    onMusicVolume = { vm.updateSettings(musicVolume = it) },
+                    onSfxVolume = { vm.updateSettings(sfxVolume = it) },
+                    onHaptics = { vm.updateSettings(hapticsEnabled = it) },
                     onQuality = { vm.updateSettings(quality = it) },
                     onJoystickSide = { vm.updateSettings(joystickSide = it) },
                     onJoystickScale = { vm.updateSettings(joystickScale = it) },
                     onTapToMove = { vm.updateSettings(tapToMove = it) },
                     onCloudSync = { vm.updateSettings(cloudSyncEnabled = it) },
+                    onAnalyticsConsent = { vm.setAnalyticsConsent(it) },
                     onBalanceStrip = { vm.updateSettings(showBalanceStrip = it) },
+                    onReducedMotion = { vm.updateSettings(reducedMotion = it) },
+                    onCaptions = { vm.updateSettings(captionsEnabled = it) },
+                    onHudTextScale = { vm.updateSettings(hudTextScale = it) },
+                    onShapeCues = { vm.updateSettings(shapeCues = it) },
+                    onTimingAssist = { vm.updateSettings(timingAssist = it) },
+                    onAccessibilityPreset = { vm.applyAccessibilityPreset() },
                     telemetryRates = v.telemetryRates,
                     onExportTelemetry = { vm.exportTelemetryJson() },
                     onExportBalance = { vm.exportBalanceJson() },
@@ -598,6 +757,7 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                     onCycleRecipe = stationCard.stationId?.let { id -> { vm.cycleStationRecipe(id) } },
                     onSetPaused = vm::setMachinePaused,
                     onRepair = vm::repairMachine,
+                    onBuildPlot = stationCard.plotId?.let { { vm.buildPlot(it) } },
                     onClose = { vm.setStationOpen(false) },
                 )
             }
@@ -610,6 +770,7 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
             )
         }
     }
+    }
 }
 
 private val MOVE_KEYS = setOf(
@@ -619,17 +780,37 @@ private val MOVE_KEYS = setOf(
 @Composable
 private fun StationCard(
     card: ContextCard,
+    stations: List<com.willio.jeanvilma.fishshopping.core.sim.StationView>,
+    shapeCues: Boolean,
     onOpen: () -> Unit,
     onCycleRecipe: (() -> Unit)?,
     modifier: Modifier,
 ) {
+    val station = card.stationId?.let { id -> stations.firstOrNull { it.stationId == id } }
+    val shape = if (shapeCues && station != null) {
+        com.willio.jeanvilma.fishshopping.ui.statusShapeGlyph(
+            com.willio.jeanvilma.fishshopping.ui.statusShapeFor(station.status),
+        )
+    } else {
+        null
+    }
     Surface(
         modifier.widthIn(min = 220.dp, max = 320.dp).clickable(onClick = onOpen),
         shape = PanelShape,
         color = PanelSurface.copy(alpha = 0.95f),
     ) {
         Column(Modifier.padding(12.dp)) {
-            Text(card.title, fontWeight = FontWeight.Bold)
+            Text(
+                if (shape != null) "$shape ${card.title}" else card.title,
+                fontWeight = FontWeight.Bold,
+            )
+            if (shapeCues && station != null) {
+                Text(
+                    "${com.willio.jeanvilma.fishshopping.ui.statusShapeGlyph(com.willio.jeanvilma.fishshopping.ui.statusShapeFor(station.status))} ${station.statusText}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Ink.copy(alpha = 0.75f),
+                )
+            }
             card.lines.forEach { Text(it, style = Tabular) }
             card.progress?.let {
                 Spacer(Modifier.height(6.dp))
@@ -642,6 +823,56 @@ private fun StationCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TimingMeter(
+    progress01: Float,
+    goodStart: Float,
+    goodEnd: Float,
+    perfectStart: Float,
+    perfectEnd: Float,
+    tier: String?,
+    modifier: Modifier = Modifier,
+) {
+    val border = when (tier) {
+        "perfect" -> Reward
+        "good" -> Action
+        else -> Ink.copy(alpha = 0.25f)
+    }
+    androidx.compose.foundation.Canvas(
+        modifier = modifier.background(Ink.copy(alpha = 0.18f), RoundedCornerShape(999.dp)),
+    ) {
+        val w = size.width
+        val h = size.height
+        val goodL = goodStart.coerceIn(0f, 1f) * w
+        val goodR = goodEnd.coerceIn(0f, 1f) * w
+        val perfectL = perfectStart.coerceIn(0f, 1f) * w
+        val perfectR = perfectEnd.coerceIn(0f, 1f) * w
+        drawRect(
+            color = Action.copy(alpha = 0.45f),
+            topLeft = androidx.compose.ui.geometry.Offset(goodL, 0f),
+            size = androidx.compose.ui.geometry.Size((goodR - goodL).coerceAtLeast(0f), h),
+        )
+        drawRect(
+            color = Reward.copy(alpha = 0.7f),
+            topLeft = androidx.compose.ui.geometry.Offset(perfectL, 0f),
+            size = androidx.compose.ui.geometry.Size((perfectR - perfectL).coerceAtLeast(0f), h),
+        )
+        val needleX = progress01.coerceIn(0f, 1f) * w
+        drawRect(
+            color = Ink,
+            topLeft = androidx.compose.ui.geometry.Offset(needleX - 1.5f, -2f),
+            size = androidx.compose.ui.geometry.Size(3f, h + 4f),
+        )
+        drawRoundRect(
+            color = border,
+            topLeft = androidx.compose.ui.geometry.Offset.Zero,
+            size = size,
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(h / 2f, h / 2f),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()),
+        )
     }
 }
 
@@ -661,43 +892,88 @@ private fun CarryIndicator(v: SimView, onOpen: () -> Unit, modifier: Modifier) {
 }
 
 @Composable
-private fun TitleScreen(hasSave: Boolean, vm: GameViewModel) {
+private fun TitleScreen(state: GameUiState.Title, vm: GameViewModel) {
     var confirmNew by remember { mutableStateOf(false) }
-    CenterCard {
-        Column(Modifier.widthIn(min = 280.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Fish Shopping", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Catch, cut, sell — run your harbor market",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-            )
-            Spacer(Modifier.height(16.dp))
-            if (hasSave) {
-                Button(
-                    onClick = vm::continueGame,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) { Text("Continue") }
-                Spacer(Modifier.height(8.dp))
-                OutlinedButton(
-                    onClick = { confirmNew = true },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) { Text("New Game") }
-            } else {
-                Button(
-                    onClick = vm::newGame,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) { Text("Play") }
-                Spacer(Modifier.height(10.dp))
+    val conflict = state.cloudConflict
+    val recovery = state.localRecovery
+    when {
+        conflict != null -> CloudConflictPanel(conflict, vm)
+        recovery != null -> LocalRecoveryPanel(recovery, vm)
+        !state.settings.analyticsConsentDecided -> CenterCard {
+            Column(Modifier.widthIn(min = 280.dp, max = 400.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_brand_mark),
+                    contentDescription = null,
+                    modifier = Modifier.size(72.dp),
+                )
+                Spacer(Modifier.height(12.dp))
+                Text("Fish Shopping", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(6.dp))
                 Text(
-                    "First session: fish → cut → stock → sell",
-                    style = MaterialTheme.typography.bodySmall,
+                    "Help improve the game with privacy-safe analytics?",
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                 )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Events cover tutorial steps, first sale, harbor unlocks, offline claims, save recovery, and frame timing. No account ids, positions, bag contents, or full saves are ever sent. You can change this later in Settings.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Ink.copy(alpha = 0.7f),
+                )
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = { vm.setAnalyticsConsent(true) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                ) { Text("Allow analytics") }
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { vm.setAnalyticsConsent(false) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                ) { Text("No thanks") }
+            }
+        }
+        else -> CenterCard {
+            Column(Modifier.widthIn(min = 280.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_brand_mark),
+                    contentDescription = null,
+                    modifier = Modifier.size(72.dp),
+                )
+                Spacer(Modifier.height(12.dp))
+                Text("Fish Shopping", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Catch, cut, sell — run your harbor market",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                )
+                Spacer(Modifier.height(16.dp))
+                if (state.hasSave) {
+                    Button(
+                        onClick = vm::continueGame,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) { Text("Continue") }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = { confirmNew = true },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) { Text("New Game") }
+                } else {
+                    Button(
+                        onClick = vm::newGame,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) { Text("Play") }
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        "First session: fish → cut → stock → sell",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                    )
+                }
             }
         }
     }
-    if (confirmNew) {
+    if (confirmNew && conflict == null && recovery == null) {
         AlertDialog(
             onDismissRequest = { confirmNew = false },
             title = { Text("New Game") },
@@ -712,6 +988,88 @@ private fun TitleScreen(hasSave: Boolean, vm: GameViewModel) {
                 TextButton(onClick = { confirmNew = false }) { Text("Cancel") }
             },
         )
+    }
+}
+
+@Composable
+private fun CloudConflictPanel(conflict: CloudConflictView, vm: GameViewModel) {
+    CenterCard {
+        Column(Modifier.widthIn(min = 300.dp, max = 420.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Choose a save", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                "This device and the cloud both have valid saves that differ (${conflict.reason}).",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Ink.copy(alpha = 0.75f),
+            )
+            SnapshotChoiceCard(conflict.local)
+            SnapshotChoiceCard(conflict.remote)
+            Button(
+                onClick = {
+                    vm.resolveCloudConflict(
+                        if (conflict.recommended == SyncSource.REMOTE) SyncSource.REMOTE else SyncSource.LOCAL,
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) {
+                Text(
+                    if (conflict.recommended == SyncSource.REMOTE) "Use cloud (recommended)"
+                    else "Use this device (recommended)",
+                )
+            }
+            OutlinedButton(
+                onClick = {
+                    vm.resolveCloudConflict(
+                        if (conflict.recommended == SyncSource.REMOTE) SyncSource.LOCAL else SyncSource.REMOTE,
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) {
+                Text(
+                    if (conflict.recommended == SyncSource.REMOTE) "Use this device instead"
+                    else "Use cloud instead",
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocalRecoveryPanel(recovery: LocalRecoveryView, vm: GameViewModel) {
+    CenterCard {
+        Column(Modifier.widthIn(min = 300.dp, max = 420.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Recover save", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(recovery.reason, style = MaterialTheme.typography.bodyMedium, color = Ink.copy(alpha = 0.75f))
+            SnapshotChoiceCard(recovery.previous)
+            Button(
+                onClick = vm::confirmLocalRecovery,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) { Text("Recover previous backup") }
+            OutlinedButton(
+                onClick = vm::dismissLocalRecovery,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) { Text("Cancel") }
+        }
+    }
+}
+
+@Composable
+private fun SnapshotChoiceCard(row: SnapshotChoiceRow) {
+    Surface(
+        Modifier.fillMaxWidth(),
+        shape = PanelShape,
+        color = if (row.recommended) Action.copy(alpha = 0.12f) else PanelSurface.copy(alpha = 0.9f),
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(row.sourceLabel, fontWeight = FontWeight.Bold)
+                if (row.recommended) {
+                    Text("Recommended", style = MaterialTheme.typography.bodySmall, color = Action)
+                }
+            }
+            Text(row.harborName, style = Tabular)
+            Text("${formatCoins(row.coins)} coins · ${row.playtimeLabel} play", style = Tabular)
+            Text(row.savedAtLabel, style = MaterialTheme.typography.bodySmall, color = Ink.copy(alpha = 0.7f))
+        }
     }
 }
 
@@ -756,13 +1114,24 @@ private fun PausePanel(onResume: () -> Unit, onSettings: () -> Unit, onTitle: ()
 private fun SettingsPanel(
     settings: GameSettings,
     cloudAvailable: Boolean,
+    saveStatus: com.willio.jeanvilma.fishshopping.persistence.SaveStatusView,
     onMuted: (Boolean) -> Unit,
+    onMusicVolume: (Float) -> Unit,
+    onSfxVolume: (Float) -> Unit,
+    onHaptics: (Boolean) -> Unit,
     onQuality: (QualityPreset) -> Unit,
     onJoystickSide: (JoystickSide) -> Unit,
     onJoystickScale: (Float) -> Unit,
     onTapToMove: (Boolean) -> Unit,
     onCloudSync: (Boolean) -> Unit,
+    onAnalyticsConsent: (Boolean) -> Unit,
     onBalanceStrip: (Boolean) -> Unit,
+    onReducedMotion: (Boolean) -> Unit,
+    onCaptions: (Boolean) -> Unit,
+    onHudTextScale: (Float) -> Unit,
+    onShapeCues: (Boolean) -> Unit,
+    onTimingAssist: (Boolean) -> Unit,
+    onAccessibilityPreset: () -> Unit,
     telemetryRates: com.willio.jeanvilma.fishshopping.core.sim.TelemetryRatesView,
     onExportTelemetry: () -> String?,
     onExportBalance: () -> String?,
@@ -785,14 +1154,72 @@ private fun SettingsPanel(
                 Column(Modifier.weight(1f)) {
                     Text("Mute", fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Silences catch, sale, machine, rush, and upgrade stingers.",
+                        "Master silence for ambience and stingers. Haptics stay independent.",
                         style = MaterialTheme.typography.bodySmall,
                         color = Ink.copy(alpha = 0.7f),
                     )
                 }
                 Switch(checked = settings.muted, onCheckedChange = onMuted)
             }
+            Text("Music")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GameSettings.VOLUME_OPTIONS.forEach { step ->
+                    val label = when (step) {
+                        0f -> "Off"
+                        0.35f -> "Low"
+                        0.7f -> "Med"
+                        else -> "High"
+                    }
+                    val selected = settings.musicVolume == step
+                    if (selected) {
+                        Button(onClick = { onMusicVolume(step) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(label)
+                        }
+                    } else {
+                        OutlinedButton(onClick = { onMusicVolume(step) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(label)
+                        }
+                    }
+                }
+            }
+            Text("SFX")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GameSettings.VOLUME_OPTIONS.forEach { step ->
+                    val label = when (step) {
+                        0f -> "Off"
+                        0.35f -> "Low"
+                        0.7f -> "Med"
+                        else -> "High"
+                    }
+                    val selected = settings.sfxVolume == step
+                    if (selected) {
+                        Button(onClick = { onSfxVolume(step) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(label)
+                        }
+                    } else {
+                        OutlinedButton(onClick = { onSfxVolume(step) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(label)
+                        }
+                    }
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Haptics", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Short vibration on catch and sale.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.7f),
+                    )
+                }
+                Switch(checked = settings.hapticsEnabled, onCheckedChange = onHaptics)
+            }
             Text("Quality")
+            Text(
+                "Targets ~30 FPS on mid-tier Android. Soft-downgrades if frames stay over budget.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Ink.copy(alpha = 0.7f),
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 QualityPreset.entries.forEach { preset ->
                     val label = when (preset) {
@@ -866,15 +1293,101 @@ private fun SettingsPanel(
                     Text("Cloud sync", fontWeight = FontWeight.SemiBold)
                     Text(
                         if (cloudAvailable) {
-                            "Optional. Newest checksummed save wins across devices."
+                            "Optional anonymous link. Newest checksummed save wins; local play works with this off."
                         } else {
-                            "Optional. Add fish.firebase.* to local.properties to link a remote."
+                            "Optional. Add fish.firebase.* to local.properties (see local.properties.example). Local saves still work offline."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = Ink.copy(alpha = 0.7f),
                     )
                 }
                 Switch(checked = settings.cloudSyncEnabled, onCheckedChange = onCloudSync)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Analytics", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Privacy-safe events only (tutorial, first sale, harbors, offline, save recovery, frame timing). Never includes account ids, bag contents, or full saves.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.7f),
+                    )
+                }
+                Switch(checked = settings.analyticsConsent, onCheckedChange = onAnalyticsConsent)
+            }
+            OutlinedButton(
+                onClick = onAccessibilityPreset,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) {
+                Text("Apply accessibility preset")
+            }
+            Text(
+                "Reduced motion, captions, larger HUD text, shape status cues, and reel timing meter. Timing Sights / Master Reel upgrades still widen the sim window.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Ink.copy(alpha = 0.7f),
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Reduced motion", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Snaps the camera follow and skips flying transfer VFX.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.7f),
+                    )
+                }
+                Switch(checked = settings.reducedMotion, onCheckedChange = onReducedMotion)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Captions", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Toast text for sales, alerts, and other one-off feedback.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.7f),
+                    )
+                }
+                Switch(checked = settings.captionsEnabled, onCheckedChange = onCaptions)
+            }
+            Text("HUD text size")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GameSettings.HUD_TEXT_SCALE_OPTIONS.forEach { step ->
+                    val label = when (step) {
+                        1.15f -> "Med"
+                        1.3f -> "Large"
+                        else -> "Default"
+                    }
+                    val selected = settings.hudTextScale == step
+                    if (selected) {
+                        Button(onClick = { onHudTextScale(step) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(label)
+                        }
+                    } else {
+                        OutlinedButton(onClick = { onHudTextScale(step) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(label)
+                        }
+                    }
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Shape cues", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Adds ▶ ■ ◆ glyphs beside station and reel status so colour is not the only signal.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.7f),
+                    )
+                }
+                Switch(checked = settings.shapeCues, onCheckedChange = onShapeCues)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Timing meter", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Shows Good / Perfect bands while casting. Buy Timing Sights or Master Reel to widen the window.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ink.copy(alpha = 0.7f),
+                    )
+                }
+                Switch(checked = settings.timingAssist, onCheckedChange = onTimingAssist)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -887,6 +1400,30 @@ private fun SettingsPanel(
                 }
                 Switch(checked = settings.showBalanceStrip, onCheckedChange = onBalanceStrip)
             }
+            Text("Save status", fontWeight = FontWeight.SemiBold)
+            Text(
+                buildString {
+                    append(if (saveStatus.persistent) "Local slots: latest + previous backup." else "Memory-only (storage unavailable).")
+                    append(" ")
+                    append(saveStatus.lastSavedLabel)
+                    append(
+                        when {
+                            !saveStatus.cloudEnabled -> " · Cloud off"
+                            !saveStatus.cloudAvailable -> " · Cloud on, keys missing"
+                            saveStatus.cloudLinked -> " · Cloud linked"
+                            else -> " · Cloud on, linking…"
+                        },
+                    )
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = Ink.copy(alpha = 0.7f),
+            )
+            Text("Controls", fontWeight = FontWeight.SemiBold)
+            Text(
+                ControlQa.controlsHelpLine(),
+                style = MaterialTheme.typography.bodySmall,
+                color = Ink.copy(alpha = 0.7f),
+            )
             Text("Telemetry", fontWeight = FontWeight.SemiBold)
             Text(
                 "Privacy-safe counters (fish.telemetry.v2) and content balance knobs. Copied as JSON.",
@@ -931,7 +1468,29 @@ private fun SettingsPanel(
                 ) { Text("Copy balance") }
             }
             exportNote?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Action) }
+            Text("Legal", fontWeight = FontWeight.SemiBold)
+            Text(
+                StoreListing.SHORT_DESCRIPTION,
+                style = MaterialTheme.typography.bodySmall,
+                color = Ink.copy(alpha = 0.7f),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { openHttpUrl(context, StoreListing.PRIVACY_POLICY_URL) },
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                ) { Text("Privacy") }
+                OutlinedButton(
+                    onClick = { openHttpUrl(context, StoreListing.SUPPORT_URL) },
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                ) { Text("Support") }
+            }
         }
+    }
+}
+
+private fun openHttpUrl(context: android.content.Context, url: String) {
+    runCatching {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 }
 
@@ -1073,6 +1632,7 @@ private fun StationDetailPanel(
     onCycleRecipe: (() -> Unit)?,
     onSetPaused: (String, Boolean) -> Unit,
     onRepair: (String) -> Unit,
+    onBuildPlot: (() -> Unit)?,
     onClose: () -> Unit,
 ) {
     val station = card.stationId?.let { id -> stations.firstOrNull { it.stationId == id } }
@@ -1115,7 +1675,7 @@ private fun StationDetailPanel(
                     color = Action,
                 )
             }
-            if (onCycleRecipe != null || card.stationId != null) {
+            if (onCycleRecipe != null || card.stationId != null || onBuildPlot != null) {
                 Spacer(Modifier.height(12.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (onCycleRecipe != null && card.recipeModeLabel != null) {
@@ -1136,6 +1696,14 @@ private fun StationDetailPanel(
                             onClick = { onSetPaused(id, !paused) },
                             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                         ) { Text(if (paused) "Resume machine" else "Pause machine") }
+                    }
+                    val plotCost = card.plotCost
+                    if (onBuildPlot != null && plotCost != null) {
+                        Button(
+                            onClick = onBuildPlot,
+                            enabled = card.plotBuildable,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        ) { Text("Build · ${formatCoins(plotCost)}") }
                     }
                 }
             }
@@ -1196,6 +1764,7 @@ private fun StaffPanel(
     economyUnlocked: Boolean,
     bagFishSpoilActive: Boolean,
     coins: Long,
+    onOpenDashboard: () -> Unit,
     onHire: (String) -> Unit,
     onSetShift: (String, Boolean) -> Unit,
     onAssignGear: (String, String) -> Unit,
@@ -1226,6 +1795,10 @@ private fun StaffPanel(
                 Text("${formatCoins(coins)} coins", style = Tabular, color = Ink)
                 TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
             }
+            Button(
+                onClick = onOpenDashboard,
+                modifier = Modifier.heightIn(min = 48.dp).padding(bottom = 8.dp),
+            ) { Text("Business dashboard") }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (workers.isNotEmpty()) {
                     items(workers, key = { it.id }) { w ->
@@ -1414,19 +1987,325 @@ private fun ContractsPanel(
 }
 
 @Composable
-private fun HarborMapPanel(
-    harbors: List<HarborMapEntryView>,
-    onTravel: (String) -> Unit,
+private fun BusinessDashboardPanel(
+    dash: BusinessDashboardView,
     onClose: () -> Unit,
     modifier: Modifier,
 ) {
-    Surface(modifier.managementSheet(maxWidth = 420.dp, maxHeight = 360.dp), shape = PanelShape, color = PanelSurface, shadowElevation = 8.dp) {
+    Surface(modifier.managementSheet(maxWidth = 440.dp, maxHeight = 480.dp), shape = PanelShape, color = PanelSurface, shadowElevation = 8.dp) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Business dashboard", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            Text(
+                "Session ${dash.sessionLabel} · rates ${dash.rateIntervalLabel}",
+                style = Tabular,
+                color = Ink.copy(alpha = 0.7f),
+            )
+            Text(
+                "Committed sales only — wallet coins are not counted as revenue.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Ink.copy(alpha = 0.65f),
+            )
+            Spacer(Modifier.height(8.dp))
+            if (dash.empty) {
+                Text(
+                    "No committed sales yet — serve customers or complete a contract.",
+                    color = Ink.copy(alpha = 0.6f),
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (!dash.empty) {
+                    item {
+                        Row(verticalAlignment = Alignment.Top) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Committed revenue", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    buildString {
+                                        append("${formatCoins(dash.committedRevenue)} sales")
+                                        if (dash.contractRevenue > 0L) {
+                                            append(" · ${formatCoins(dash.contractRevenue)} contracts")
+                                        }
+                                    },
+                                    style = Tabular,
+                                    color = Ink.copy(alpha = 0.7f),
+                                )
+                                Text(
+                                    "${dash.salesCount} sales · ${dash.itemsSold} items · ${formatCoins(dash.revenuePerMinute)} ${dash.rateIntervalLabel}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Ink.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text(
+                                formatCoins(dash.committedRevenue + dash.contractRevenue),
+                                style = Tabular,
+                            )
+                        }
+                    }
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Abandon rate", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "${dash.lostCustomers} lost customers",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Ink.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text("${dash.abandonPermille / 10}%", style = Tabular)
+                        }
+                    }
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Wage ratio", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "${formatCoins(dash.wagesPaid)} wages vs sales revenue",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Ink.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text("${dash.wageRatioPermille / 10}%", style = Tabular)
+                        }
+                    }
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Sales pace", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    dash.rateIntervalLabel,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Ink.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text("${dash.salesPerMinute}/min", style = Tabular)
+                        }
+                    }
+                    items(dash.topSpecies, key = { it.speciesId }) { sp ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(sp.name, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "${sp.catches} catches",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Ink.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text("${sp.sharePermille / 10}%", style = Tabular)
+                        }
+                    }
+                }
+                if (dash.bottlenecks.isEmpty()) {
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("Bottlenecks", fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "None right now",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Ink.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text("Clear", style = Tabular, color = Action)
+                        }
+                    }
+                } else {
+                    items(dash.bottlenecks, key = { "${it.kind}:${it.id}" }) { b ->
+                        Row(verticalAlignment = Alignment.Top) {
+                            Column(Modifier.weight(1f)) {
+                                Text(b.label, fontWeight = FontWeight.SemiBold)
+                                Text(b.reason, style = MaterialTheme.typography.bodySmall, color = Danger)
+                                Text(
+                                    b.kind,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Ink.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text("Issue", style = Tabular)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpeciesBookPanel(
+    book: SpeciesBookView,
+    onClose: () -> Unit,
+    modifier: Modifier,
+) {
+    Surface(modifier.managementSheet(maxWidth = 440.dp, maxHeight = 480.dp), shape = PanelShape, color = PanelSurface, shadowElevation = 8.dp) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Species book", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            Text(
+                "${book.discovered}/${book.total} discovered",
+                style = Tabular,
+                color = Ink.copy(alpha = 0.7f),
+            )
+            Spacer(Modifier.height(8.dp))
+            if (book.empty) {
+                Text(
+                    "No catches yet — cast from a pier to fill the book.",
+                    color = Ink.copy(alpha = 0.6f),
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(book.entries, key = { it.speciesId }) { entry ->
+                    Row(verticalAlignment = Alignment.Top) {
+                        Column(Modifier.weight(1f)) {
+                            Text(entry.name, fontWeight = FontWeight.SemiBold)
+                            if (entry.discovered) {
+                                Text(
+                                    buildString {
+                                        append("${entry.catches} caught")
+                                        entry.trophyBestSizePermille?.let { size ->
+                                            append(" · best $size%")
+                                            entry.trophyBestValueCoins?.let { append(" · ${formatCoins(it)}") }
+                                        }
+                                    },
+                                    style = Tabular,
+                                    color = Ink.copy(alpha = 0.7f),
+                                )
+                                if (entry.harborNames.isNotEmpty()) {
+                                    Text(
+                                        "Zones: ${entry.harborNames.joinToString(" · ")}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Ink.copy(alpha = 0.65f),
+                                    )
+                                }
+                                if (entry.recipeNames.isNotEmpty()) {
+                                    val shown = entry.recipeNames.take(3)
+                                    val more = entry.recipeNames.size - shown.size
+                                    Text(
+                                        buildString {
+                                            append("Recipes: ${shown.joinToString(" · ")}")
+                                            if (more > 0) append(" · +$more more")
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Ink.copy(alpha = 0.65f),
+                                    )
+                                }
+                                if (entry.baseSpeciesId != null) {
+                                    Text(
+                                        "Rare upgrade form",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Action,
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    "Not discovered",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Ink.copy(alpha = 0.6f),
+                                )
+                            }
+                        }
+                        Text(
+                            if (entry.discovered) "Logged" else "—",
+                            style = Tabular,
+                            color = if (entry.discovered) Action else Ink.copy(alpha = 0.5f),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WarehousePanel(
+    warehouse: WarehouseView,
+    onClose: () -> Unit,
+    modifier: Modifier,
+) {
+    Surface(modifier.managementSheet(maxWidth = 440.dp, maxHeight = 420.dp), shape = PanelShape, color = PanelSurface, shadowElevation = 8.dp) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Warehouse", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
+            }
+            Text(
+                "Available ${warehouse.available} · Reserved ${warehouse.reserved} · Total ${warehouse.quantity}",
+                style = Tabular,
+                color = Ink.copy(alpha = 0.7f),
+            )
+            if (!warehouse.reconcileOk) {
+                Text(
+                    "Inventory mismatch${warehouse.reconcileError?.let { ": $it" } ?: ""}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Danger,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            if (warehouse.empty) {
+                Text(
+                    "No stock yet — catch fish, run stations, or stock a counter.",
+                    color = Ink.copy(alpha = 0.6f),
+                )
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(warehouse.lines, key = { it.itemId }) { line ->
+                        Column {
+                            Text(line.name, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                buildString {
+                                    append("${line.available} available")
+                                    if (line.reserved > 0) append(" · ${line.reserved} reserved")
+                                    append(" · ${line.quantity} total")
+                                },
+                                style = Tabular,
+                                color = Ink.copy(alpha = 0.7f),
+                            )
+                            if (!line.reconcileOk) {
+                                Text(
+                                    "Location totals do not match",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Danger,
+                                )
+                            }
+                            for (loc in line.locations) {
+                                Text(
+                                    buildString {
+                                        append("${loc.label}: ${loc.available}")
+                                        if (loc.reserved > 0) append(" (${loc.reserved} reserved)")
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Ink.copy(alpha = 0.65f),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HarborMapPanel(
+    harbors: List<HarborMapEntryView>,
+    fullHarborUnlock: Boolean,
+    onTravel: (String) -> Unit,
+    onUnlockAll: () -> Unit,
+    onRestoreUnlock: () -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier,
+) {
+    Surface(modifier.managementSheet(maxWidth = 420.dp, maxHeight = 420.dp), shape = PanelShape, color = PanelSurface, shadowElevation = 8.dp) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Harbor map", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text("Close") }
             }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f, fill = false)) {
                 items(harbors, key = { it.harborId }) { h ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -1463,6 +2342,27 @@ private fun HarborMapPanel(
                     }
                 }
             }
+            Text(
+                "Sunrise Pier is free. Full unlock opens every harbor — access only, no rate boosts.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Ink.copy(alpha = 0.7f),
+                modifier = Modifier.padding(top = 12.dp),
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 8.dp),
+            ) {
+                if (fullHarborUnlock) {
+                    Text("All harbors unlocked", color = Reward, modifier = Modifier.align(Alignment.CenterVertically))
+                } else {
+                    Button(onClick = onUnlockAll, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text("Unlock all harbors")
+                    }
+                }
+                OutlinedButton(onClick = onRestoreUnlock, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text("Restore")
+                }
+            }
         }
     }
 }
@@ -1479,10 +2379,16 @@ private fun QuestLogPanel(
     bank: BankView,
     coins: Long,
     decorOffers: List<DecorOfferView>,
+    cosmeticIapOffers: List<CosmeticIapOfferView>,
     decorPatienceBonusTicks: Int,
     trophySets: List<TrophySetView>,
     trophiesCount: Int,
+    speciesDiscovered: Int,
+    speciesTotal: Int,
+    onOpenSpeciesBook: () -> Unit,
     onPurchaseDecor: (String) -> Unit,
+    onPurchaseIapCosmetic: (String) -> Unit,
+    onRestorePurchases: () -> Unit,
     onTakeLoan: () -> Unit,
     onRepayLoan: () -> Unit,
     onSetCoinGoal: (Long) -> Unit,
@@ -1611,6 +2517,22 @@ private fun QuestLogPanel(
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
+                            Text("Species book", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "$speciesDiscovered/$speciesTotal discovered",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            Button(
+                                onClick = onOpenSpeciesBook,
+                                modifier = Modifier.heightIn(min = 48.dp).padding(top = 4.dp),
+                            ) { Text("Open book") }
+                        }
+                        Text("$speciesDiscovered/$speciesTotal", style = Tabular)
+                    }
+                }
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
                             Text("Trophy board", fontWeight = FontWeight.SemiBold)
                             Text("$trophiesCount species mounted", style = MaterialTheme.typography.bodySmall)
                         }
@@ -1732,6 +2654,39 @@ private fun QuestLogPanel(
                         }
                     }
                 }
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Harbor cosmetics", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "Optional paid banners · visual only · never change rates",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Ink.copy(alpha = 0.7f),
+                            )
+                            TextButton(
+                                onClick = onRestorePurchases,
+                                modifier = Modifier.padding(top = 4.dp).heightIn(min = 48.dp),
+                            ) { Text("Restore purchases") }
+                        }
+                        Text("IAP", style = Tabular, color = Action)
+                    }
+                }
+                items(cosmeticIapOffers, key = { it.id }) { c ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(c.title, fontWeight = FontWeight.SemiBold)
+                            Text(c.description, style = MaterialTheme.typography.bodySmall)
+                        }
+                        if (c.status == "owned") {
+                            Text("Owned", style = Tabular, color = Action)
+                        } else {
+                            Button(
+                                onClick = { onPurchaseIapCosmetic(c.sku) },
+                                modifier = Modifier.heightIn(min = 48.dp),
+                            ) { Text("Buy") }
+                        }
+                    }
+                }
                 if (prestigeUnlocked) {
                     items(prestige, key = { it.id }) { p ->
                         Column {
@@ -1832,7 +2787,9 @@ private fun formatAwayDuration(elapsedMillis: Long): String {
 private fun MessageTicker(vm: GameViewModel) {
     var message by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(vm) {
-        vm.messages.collect { message = it }
+        vm.messages.collect {
+            if (vm.settingsCaptionsEnabled()) message = it
+        }
     }
     LaunchedEffect(message) {
         if (message != null) {
@@ -1840,6 +2797,7 @@ private fun MessageTicker(vm: GameViewModel) {
             message = null
         }
     }
+    if (!vm.settingsCaptionsEnabled()) return
     message?.let {
         Box(Modifier.fillMaxSize().safeDrawingPadding().padding(top = 120.dp), contentAlignment = Alignment.TopCenter) {
             Pill(background = Ink) { Text(it, color = Color.White) }

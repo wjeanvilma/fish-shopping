@@ -1,19 +1,28 @@
 /**
  * Three.js (WebGL 2) presentation of a harbor. Reads SimView snapshots and writes
  * transforms; never changes game state. Uses the same GLB and node-name contract as
- * the Android Filament renderer (Player, PlayerBody, CustomerBody_N, Fly_N_*, Water).
+ * the Android Filament renderer (Player, PlayerBody, PlayerRod, CustomerBody_N,
+ * WorkerBody_N, Fly_N_*, VfxBurst_N, Water).
  *
- * Item stacks, character locomotion, flying transfers, and water are driven from
- * SimView / ItemsTransferred cues by the presenters in ./presenters.ts.
+ * Item stacks, character locomotion clips, flying transfers, machine/pay/celebrate
+ * bursts, and water are driven from SimView / event cues by ./presenters.ts.
  *
- * Phase 31: on-demand harbor GLB cache (LRU 2) + Zone_* distance occlusion fade.
+ * Phase 26/31: on-demand harbor GLB cache (LRU from device-matrix) + Zone_* fade.
+ * Phase 26 also caps medium quality toward 1080 CSS px and cancels stale loads.
  */
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { SimView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
 import type { QualityPreset } from "../game/settingsStore";
-import { downgradeQuality, FRAME_TARGET_MS, FrameTiming } from "./frameTiming";
+import { sharedAnalyticsBus } from "../analytics/analyticsBus";
+import {
+  downgradeQuality,
+  FRAME_TARGET_MS,
+  FrameTiming,
+  HARBOR_CACHE_LIMIT,
+  WEB_MEDIUM_MAX_CSS_HEIGHT,
+} from "./frameTiming";
 import {
   CUSTOMER_BODY_REST_Y,
   CustomerCrowd,
@@ -23,13 +32,23 @@ import {
   flyingTransferPoolForQuality,
   HARBOR_TRANSITION_S,
   isOcclusionFadeName,
+  machineOperatePulses,
   occlusionOpacity,
   PLAYER_BODY_REST_Y,
   PLAYER_NOSE_REST_Y,
   PLAYER_NOSE_REST_Z,
+  PLAYER_ROD_REST_X,
+  PLAYER_ROD_REST_Y,
+  PLAYER_ROD_REST_Z,
   PlayerSmoother,
   stackVisibility,
+  VFX_BURST_POOL,
+  WORKER_BODY_REST_Y,
+  WorkerCrowd,
+  WorldBursts,
+  worldBurstPoolForQuality,
   type FlyingTransferCue,
+  type WorldBurstCue,
 } from "./presenters";
 import { createWaterMaterial } from "./waterMaterial";
 
@@ -38,11 +57,16 @@ interface HarborCacheEntry {
   player: THREE.Object3D | null;
   playerBody: THREE.Object3D | null;
   playerNose: THREE.Object3D | null;
+  playerRod: THREE.Object3D | null;
   customers: THREE.Object3D[];
   customerBodies: THREE.Object3D[];
+  workers: THREE.Object3D[];
+  workerBodies: THREE.Object3D[];
   slots: Map<string, THREE.Object3D>;
+  footprints: Map<string, THREE.Mesh>;
   flyFish: THREE.Object3D[];
   flyPortion: THREE.Object3D[];
+  bursts: THREE.Object3D[];
   water: THREE.Object3D | null;
   waterMat: THREE.ShaderMaterial | null;
   fadeZones: { obj: THREE.Object3D; x: number; z: number }[];
@@ -65,15 +89,24 @@ export class HarborScene {
   private player: THREE.Object3D | null = null;
   private playerBody: THREE.Object3D | null = null;
   private playerNose: THREE.Object3D | null = null;
+  private playerRod: THREE.Object3D | null = null;
   private customers: THREE.Object3D[] = [];
   private customerBodies: THREE.Object3D[] = [];
+  private workers: THREE.Object3D[] = [];
+  private workerBodies: THREE.Object3D[] = [];
   private crowd: CustomerCrowd | null = null;
+  private workerCrowd: WorkerCrowd | null = null;
   private playerSmooth = new PlayerSmoother();
   private slots = new Map<string, THREE.Object3D>();
+  private footprints = new Map<string, THREE.Mesh>();
+  private footprintBase = new Map<string, THREE.Color>();
   private flyFish: THREE.Object3D[] = [];
   private flyPortion: THREE.Object3D[] = [];
+  private bursts: THREE.Object3D[] = [];
   private flying = new FlyingTransfers(FLYING_TRANSFER_POOL);
+  private worldBursts = new WorldBursts(VFX_BURST_POOL);
   private pendingCues: FlyingTransferCue[] = [];
+  private pendingBursts: WorldBurstCue[] = [];
   private water: THREE.Object3D | null = null;
   private waterMat: THREE.ShaderMaterial | null = null;
   private fadeZones: { obj: THREE.Object3D; x: number; z: number }[] = [];
@@ -82,6 +115,8 @@ export class HarborScene {
   /** Currently loaded blockout URL (for harbor travel swaps). */
   loadedUrl: string | null = null;
   contextLost = false;
+  /** Phase 28: host UI listens for lost/restored banners + harbor reload. */
+  onContextStateChange: ((lost: boolean) => void) | null = null;
   private cssWidth = 0;
   private cssHeight = 0;
   private appliedKey = "";
@@ -89,10 +124,14 @@ export class HarborScene {
   /** Session floor: may soft-downgrade under sustained frame misses (Phase 29). */
   private sessionQuality: QualityPreset = "medium";
   private readonly frameTiming = new FrameTiming();
-  /** Phase 31: keep up to two harbors warm for travel swaps. */
+  /** Phase 26/31: keep warm harbors for travel swaps (LRU from device-matrix). */
   private readonly harborCache = new Map<string, HarborCacheEntry>();
   private readonly harborLru: string[] = [];
   private transition = 1;
+  /** Bumps on every load request so stale GLTF awaits cannot bind after travel. */
+  private loadGen = 0;
+  /** URL to reload after WebGL context restore (Phase 28). */
+  private restoreUrl: string | null = null;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
@@ -115,13 +154,30 @@ export class HarborScene {
   }
 
   private onContextLost = (e: Event) => {
-    e.preventDefault(); // allow restoration
+    e.preventDefault(); // allow restoration (Phase 28)
+    this.restoreUrl = this.loadedUrl;
     this.contextLost = true;
+    this.onContextStateChange?.(true);
   };
 
   private onContextRestored = () => {
     this.contextLost = false;
+    this.onContextStateChange?.(false);
+    // GPU resources from before the loss are invalid — drop warm harbors and reload.
+    void this.reloadAfterContextRestore();
   };
+
+  /** Phase 28: wipe LRU harbor GPU cache and reload the active blockout. */
+  async reloadAfterContextRestore(): Promise<void> {
+    const url = this.restoreUrl ?? this.loadedUrl;
+    this.restoreUrl = null;
+    for (const entry of this.harborCache.values()) this.disposeHarborEntry(entry);
+    this.harborCache.clear();
+    this.harborLru.length = 0;
+    this.stashCurrentHarbor();
+    this.appliedKey = "";
+    if (url) await this.load(url);
+  }
 
   /** Queue sim-authoritative transfer arcs (drained on the next frame). */
   enqueueTransfers(cues: readonly FlyingTransferCue[]): void {
@@ -129,17 +185,37 @@ export class HarborScene {
     this.pendingCues.push(...cues);
   }
 
+  /** Queue Phase 16 pay / celebrate / machine_done bursts. */
+  enqueueBursts(cues: readonly WorldBurstCue[]): void {
+    if (cues.length === 0) return;
+    this.pendingBursts.push(...cues);
+  }
+
   async load(url: string): Promise<void> {
     if (this.loadedUrl === url && this.root) return;
+    const gen = ++this.loadGen;
     this.stashCurrentHarbor();
     const cached = this.harborCache.get(url);
     if (cached) {
+      if (gen !== this.loadGen) return;
       this.bindHarbor(url, cached);
       this.touchLru(url);
       this.beginTransition();
       return;
     }
     const gltf = await new GLTFLoader().loadAsync(url);
+    if (gen !== this.loadGen) {
+      // Stale travel — dispose the freshly parsed scene so it cannot leak.
+      gltf.scene.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.geometry.dispose();
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          mats.forEach((m) => m.dispose());
+        }
+      });
+      return;
+    }
     gltf.scene.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) {
         o.castShadow = !o.name.startsWith("Zone_") && o.name !== "Water";
@@ -168,14 +244,23 @@ export class HarborScene {
     this.player = null;
     this.playerBody = null;
     this.playerNose = null;
+    this.playerRod = null;
     this.customers = [];
     this.customerBodies = [];
+    this.workers = [];
+    this.workerBodies = [];
     this.crowd = null;
+    this.workerCrowd = null;
     this.slots.clear();
+    this.footprints.clear();
+    this.footprintBase.clear();
     this.flyFish = [];
     this.flyPortion = [];
+    this.bursts = [];
     this.flying.clear();
+    this.worldBursts.clear();
     this.pendingCues.length = 0;
+    this.pendingBursts.length = 0;
     this.fadeZones = [];
     this.water = null;
     this.waterMat = null;
@@ -189,7 +274,7 @@ export class HarborScene {
   }
 
   private trimCache(): void {
-    while (this.harborLru.length > 2) {
+    while (this.harborLru.length > HARBOR_CACHE_LIMIT) {
       const evict = this.harborLru.shift()!;
       if (evict === this.loadedUrl) {
         this.harborLru.push(evict);
@@ -200,6 +285,11 @@ export class HarborScene {
       this.harborCache.delete(evict);
       this.disposeHarborEntry(entry);
     }
+  }
+
+  /** Test helper: current warm-harbor cache size after trim. */
+  harborCacheSize(): number {
+    return this.harborCache.size;
   }
 
   private disposeHarborEntry(entry: HarborCacheEntry): void {
@@ -226,9 +316,20 @@ export class HarborScene {
       customers.push(c);
       customerBodies.push(sceneRoot.getObjectByName(`CustomerBody_${i}`) ?? c);
     }
+    const workers: THREE.Object3D[] = [];
+    const workerBodies: THREE.Object3D[] = [];
+    for (let i = 0; ; i++) {
+      const w = sceneRoot.getObjectByName(`Worker_${i}`);
+      if (!w) break;
+      w.visible = false;
+      workers.push(w);
+      workerBodies.push(sceneRoot.getObjectByName(`WorkerBody_${i}`) ?? w);
+    }
     const slots = new Map<string, THREE.Object3D>();
+    const footprints = new Map<string, THREE.Mesh>();
     const flyFish: THREE.Object3D[] = [];
     const flyPortion: THREE.Object3D[] = [];
+    const bursts: THREE.Object3D[] = [];
     const fadeZones: { obj: THREE.Object3D; x: number; z: number }[] = [];
     sceneRoot.traverse((o) => {
       if (/^(Bag_\d+_(fish|portion)|In_.+_\d+|Out_.+_\d+|Stock_.+_\d+)$/.test(o.name)) {
@@ -242,6 +343,23 @@ export class HarborScene {
         const kind = fly[2]!;
         const list = kind === "fish" ? flyFish : flyPortion;
         list[idx] = o;
+      }
+      const burst = /^VfxBurst_(\d+)$/.exec(o.name);
+      if (burst) {
+        o.visible = false;
+        bursts[Number(burst[1])] = o;
+        const mesh = o as THREE.Mesh;
+        if (mesh.isMesh) {
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          mats.forEach((m) => {
+            m.transparent = true;
+            m.depthWrite = false;
+          });
+        }
+      }
+      if (o.name.startsWith("Footprint_")) {
+        const mesh = o as THREE.Mesh;
+        if (mesh.isMesh) footprints.set(o.name, mesh);
       }
       if (isOcclusionFadeName(o.name)) {
         fadeZones.push({ obj: o, x: o.position.x, z: o.position.z });
@@ -270,11 +388,16 @@ export class HarborScene {
       player: sceneRoot.getObjectByName("Player") ?? null,
       playerBody: sceneRoot.getObjectByName("PlayerBody") ?? null,
       playerNose: sceneRoot.getObjectByName("PlayerNose") ?? null,
+      playerRod: sceneRoot.getObjectByName("PlayerRod") ?? null,
       customers,
       customerBodies,
+      workers,
+      workerBodies,
       slots,
+      footprints,
       flyFish,
       flyPortion,
+      bursts,
       water,
       waterMat,
       fadeZones,
@@ -288,20 +411,35 @@ export class HarborScene {
     this.player = entry.player;
     this.playerBody = entry.playerBody;
     this.playerNose = entry.playerNose;
+    this.playerRod = entry.playerRod;
     this.customers = entry.customers;
     this.customerBodies = entry.customerBodies;
+    this.workers = entry.workers;
+    this.workerBodies = entry.workerBodies;
     this.slots = entry.slots;
+    this.footprints = entry.footprints;
+    this.footprintBase.clear();
+    for (const [name, mesh] of this.footprints) {
+      const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      const std = mat as THREE.MeshStandardMaterial;
+      if (std?.color) this.footprintBase.set(name, std.color.clone());
+    }
     this.flyFish = entry.flyFish;
     this.flyPortion = entry.flyPortion;
+    this.bursts = entry.bursts;
     this.water = entry.water;
     this.waterMat = entry.waterMat;
     this.fadeZones = entry.fadeZones;
     this.crowd = new CustomerCrowd(this.customers.length);
+    this.workerCrowd = new WorkerCrowd(this.workers.length);
     this.crowd.setDrawCap(crowdDrawCapForQuality(this.sessionQuality, this.customers.length));
     this.playerSmooth = new PlayerSmoother();
     const flyPool = Math.max(this.flyFish.length, this.flyPortion.length, FLYING_TRANSFER_POOL);
     this.flying = new FlyingTransfers(flyPool);
     this.flying.setBudget(Math.min(flyPool, flyingTransferPoolForQuality(this.sessionQuality)));
+    const burstPool = Math.max(this.bursts.length, VFX_BURST_POOL);
+    this.worldBursts = new WorldBursts(burstPool);
+    this.worldBursts.setBudget(Math.min(burstPool, worldBurstPoolForQuality(this.sessionQuality)));
     this.loadedUrl = url;
   }
 
@@ -321,14 +459,19 @@ export class HarborScene {
   }
 
   /**
-   * Phase 29 quality → real GPU + VFX cost.
-   * low: 1× DPR, no shadows; medium: ≤1.5× + 1024 shadows; high: ≤2× + 2048 soft shadows.
+   * Phase 26 quality → real GPU + VFX cost (device-matrix).
+   * low: 1× DPR, no shadows; medium: ≤1.5× capped toward 1080 CSS tall + 1024 shadows;
+   * high: ≤2× + 2048 soft shadows.
    */
   private applyQuality(quality: QualityPreset): void {
     const dpr = window.devicePixelRatio || 1;
-    const ratio = quality === "low" ? 1 : quality === "medium" ? Math.min(dpr, 1.5) : Math.min(dpr, 2);
+    let ratio = quality === "low" ? 1 : quality === "medium" ? Math.min(dpr, 1.5) : Math.min(dpr, 2);
+    // Mid-desktop 1080p budget: when CSS canvas is taller than 1080, scale DPR down.
+    if (quality === "medium" && this.cssHeight > WEB_MEDIUM_MAX_CSS_HEIGHT) {
+      ratio = Math.min(ratio, WEB_MEDIUM_MAX_CSS_HEIGHT / this.cssHeight);
+    }
     const shadowMap = quality === "low" ? 0 : quality === "medium" ? 1024 : 2048;
-    const key = `${quality}:${ratio}:${shadowMap}`;
+    const key = `${quality}:${ratio.toFixed(3)}:${shadowMap}:${this.cssWidth}x${this.cssHeight}`;
     if (key === this.appliedKey) return;
     this.appliedKey = key;
     this.renderer.setPixelRatio(ratio);
@@ -345,6 +488,7 @@ export class HarborScene {
     }
     this.crowd?.setDrawCap(crowdDrawCapForQuality(quality, this.customers.length));
     this.flying.setBudget(Math.min(this.flying.poolSize, flyingTransferPoolForQuality(quality)));
+    this.worldBursts.setBudget(Math.min(this.worldBursts.poolSize, worldBurstPoolForQuality(quality)));
   }
 
   /** Effective quality after session soft-downgrade (presentation-only). */
@@ -352,7 +496,12 @@ export class HarborScene {
     return this.sessionQuality;
   }
 
-  render(nowMs: number, view: SimView | null, quality: QualityPreset = "medium"): void {
+  render(
+    nowMs: number,
+    view: SimView | null,
+    quality: QualityPreset = "medium",
+    reducedMotion = false,
+  ): void {
     if (this.contextLost) return;
     if (quality !== this.requestedQuality) {
       this.requestedQuality = quality;
@@ -361,11 +510,11 @@ export class HarborScene {
       this.appliedKey = "";
     }
     this.applyQuality(this.sessionQuality);
-    if (view) this.update(nowMs, view);
+    if (view) this.update(nowMs, view, reducedMotion);
     this.renderer.render(this.scene, this.camera);
   }
 
-  private update(nowMs: number, v: SimView): void {
+  private update(nowMs: number, v: SimView, reducedMotion: boolean): void {
     const dt = this.lastMs === 0 ? 0 : Math.min(0.25, Math.max(0, (nowMs - this.lastMs) / 1000));
     this.lastMs = nowMs;
     this.elapsed += dt;
@@ -377,19 +526,31 @@ export class HarborScene {
         this.applyQuality(next);
       }
     }
+    if (dt > 0) {
+      sharedAnalyticsBus.onFrameSample(this.frameTiming.emaFrameMs, this.sessionQuality);
+    }
 
-    const pose = this.playerSmooth.update(v.player, dt);
+    const pose = this.playerSmooth.update(v.player, dt, reducedMotion, {
+      bagUsedUnits: v.bagUsedUnits,
+      fishingProgress: v.fishingProgress,
+    });
     if (this.player) {
       this.player.position.set(pose.x, 0, pose.z);
       this.player.rotation.set(0, pose.yaw, 0);
     }
     if (this.playerBody) {
       this.playerBody.position.y = PLAYER_BODY_REST_Y + pose.bobY;
-      this.playerBody.rotation.set(pose.swayRad * 0.35, 0, pose.swayRad);
+      this.playerBody.rotation.set(pose.leanRad + pose.swayRad * 0.35, 0, pose.swayRad);
     }
     if (this.playerNose) {
       this.playerNose.position.set(0, PLAYER_NOSE_REST_Y + pose.bobY * 0.4, PLAYER_NOSE_REST_Z);
       this.playerNose.rotation.set(0, 0, -pose.swayRad * 0.5);
+    }
+    if (this.playerRod) {
+      const tip = pose.clip === "cast" ? -0.55 - 0.9 * pose.cast01 : -0.15;
+      this.playerRod.position.set(PLAYER_ROD_REST_X, PLAYER_ROD_REST_Y + pose.bobY * 0.2, PLAYER_ROD_REST_Z);
+      this.playerRod.rotation.set(tip, 0, pose.swayRad * 0.25);
+      this.playerRod.visible = true;
     }
 
     for (const [name, visible] of stackVisibility(v, this.slots.keys())) {
@@ -404,16 +565,40 @@ export class HarborScene {
         const body = this.customerBodies[i];
         if (body && body !== o) {
           body.position.y = CUSTOMER_BODY_REST_Y + c.bobY;
-          body.rotation.set(c.swayRad * 0.35, 0, c.swayRad);
+          body.rotation.set(c.leanRad + c.swayRad * 0.35, 0, c.swayRad);
+        }
+      }
+    });
+    this.workerCrowd?.update(v, dt).forEach((w, i) => {
+      const o = this.workers[i]!;
+      o.visible = w !== null;
+      if (w) {
+        o.position.set(w.x, 0, w.z);
+        o.rotation.set(0, w.yaw, 0);
+        const body = this.workerBodies[i];
+        if (body && body !== o) {
+          body.position.y = WORKER_BODY_REST_Y + w.bobY;
+          body.rotation.set(w.leanRad + w.swayRad * 0.35, 0, w.swayRad);
         }
       }
     });
 
-    if (this.pendingCues.length > 0) {
-      for (const cue of this.pendingCues) this.flying.spawn(cue);
+    if (reducedMotion) {
       this.pendingCues.length = 0;
+      this.pendingBursts.length = 0;
+      this.flying.clear();
+      this.worldBursts.clear();
+    } else {
+      if (this.pendingCues.length > 0) {
+        for (const cue of this.pendingCues) this.flying.spawn(cue);
+        this.pendingCues.length = 0;
+      }
+      if (this.pendingBursts.length > 0) {
+        for (const cue of this.pendingBursts) this.worldBursts.spawn(cue);
+        this.pendingBursts.length = 0;
+      }
     }
-    const poses = this.flying.update(dt);
+    const poses = reducedMotion ? [] : this.flying.update(dt);
     for (let i = 0; i < poses.length; i++) {
       const flyPose = poses[i]!;
       const fish = this.flyFish[i];
@@ -425,7 +610,37 @@ export class HarborScene {
       if (!mesh) continue;
       mesh.visible = true;
       mesh.position.set(flyPose.x, flyPose.y, flyPose.z);
-      mesh.rotation.set(0, 0, 0);
+      mesh.rotation.set(0, flyPose.yaw, 0);
+      mesh.scale.setScalar(flyPose.scale);
+    }
+    const burstPoses = reducedMotion ? [] : this.worldBursts.update(dt);
+    for (let i = 0; i < this.bursts.length; i++) {
+      const mesh = this.bursts[i]!;
+      const pose = burstPoses[i] ?? null;
+      mesh.visible = pose !== null;
+      if (!pose) continue;
+      mesh.position.set(pose.x, pose.y, pose.z);
+      mesh.scale.setScalar(pose.scale);
+      const m = mesh as THREE.Mesh;
+      if (m.isMesh) {
+        const mats = Array.isArray(m.material) ? m.material : [m.material];
+        for (const mat of mats) mat.opacity = pose.opacity;
+      }
+    }
+    // Phase 16: operate pulse on Footprint_* while PROCESSING.
+    const active = new Map(
+      reducedMotion ? [] : machineOperatePulses(v, this.elapsed).map((p) => [p.footprintName, p.pulse01]),
+    );
+    for (const [name, mesh] of this.footprints) {
+      const base = this.footprintBase.get(name);
+      const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      const std = mat as THREE.MeshStandardMaterial;
+      if (!std?.color || !base) continue;
+      const pulse = active.get(name) ?? 0;
+      std.color.copy(base).lerp(new THREE.Color(0xfff0a8), pulse * 0.65);
+      if ("emissive" in std && std.emissive) {
+        std.emissive.setRGB(0.35 * pulse, 0.28 * pulse, 0.05 * pulse);
+      }
     }
 
     if (this.waterMat) this.waterMat.uniforms.uTime!.value = this.elapsed;

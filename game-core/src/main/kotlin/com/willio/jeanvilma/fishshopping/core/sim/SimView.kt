@@ -28,6 +28,8 @@ data class SimView(
     /** GLB under models/ for the active harbor blockout. */
     val blockoutAsset: String,
     val harbors: List<HarborMapEntryView>,
+    /** Phase 23: one-time IAP unlocked every harbor (power-neutral). */
+    val fullHarborUnlock: Boolean = false,
     val player: PlayerView,
     val bag: List<ItemCount>,
     val bagUsedUnits: Int,
@@ -37,6 +39,12 @@ data class SimView(
     val fishingTimingWindow: Boolean,
     /** Current reel tier while casting: perfect / good / null outside the window. */
     val fishingTimingTier: String?,
+    /** Phase 19: Good reel window as 0..1 of cast duration (presentation). */
+    val timingGoodStart01: Float = 0.65f,
+    val timingGoodEnd01: Float = 0.85f,
+    /** Phase 19: Perfect reel window as 0..1 of cast duration (presentation). */
+    val timingPerfectStart01: Float = 0.72f,
+    val timingPerfectEnd01: Float = 0.78f,
     /** True while casting and the player can still attempt Reel. */
     val fishingCanReel: Boolean,
     /** True when standing on an unlocked fishing spot with zero stock. */
@@ -123,6 +131,8 @@ data class SimView(
     val unlockedCosmetics: List<String>,
     /** Phase 23 shop decor offers for the Goals panel. */
     val decorOffers: List<DecorOfferView>,
+    /** Phase 24 optional IAP cosmetics (power-neutral). */
+    val cosmeticIapOffers: List<CosmeticIapOfferView>,
     /** Summed patience bonus from owned decor. */
     val decorPatienceBonusTicks: Int,
     /** Museum personal bests (sorted by species id). */
@@ -134,6 +144,83 @@ data class SimView(
      * ([GameEvent.ItemsTransferred] from/to). Presentation only.
      */
     val transferAnchors: List<TransferAnchorView>,
+    /** Phase 7 warehouse: available vs reserved across bag/stations/counters/workers. */
+    val warehouse: WarehouseView,
+    /** Phase 8 species collection book (linked from Goals). */
+    val speciesBook: SpeciesBookView,
+    /** Phase 9 business dashboard (committed sales + rates + bottlenecks). */
+    val businessDashboard: BusinessDashboardView,
+)
+
+/** Phase 7 warehouse rollup for the management panel. */
+data class WarehouseView(
+    val lines: List<WarehouseLineView>,
+    val quantity: Int,
+    val available: Int,
+    val reserved: Int,
+    val empty: Boolean,
+    val reconcileOk: Boolean,
+    val reconcileError: String?,
+)
+
+/** Phase 8 species book collection rollup. */
+data class SpeciesBookView(
+    val entries: List<SpeciesBookEntryView>,
+    val discovered: Int,
+    val total: Int,
+    val empty: Boolean,
+)
+
+data class SpeciesBookEntryView(
+    val speciesId: String,
+    val name: String,
+    val discovered: Boolean,
+    val catches: Long,
+    val harborNames: List<String>,
+    val recipeNames: List<String>,
+    val trophyBestSizePermille: Int?,
+    val trophyBestValueCoins: Long?,
+    val rarityWeight: Int,
+    /** When this species is a rare upgrade form, the base species id. */
+    val baseSpeciesId: String?,
+)
+
+/** Phase 9 business dashboard — committed sales only (never wallet coins). */
+data class BusinessDashboardView(
+    val sessionTicks: Long,
+    val sessionLabel: String,
+    val rateIntervalLabel: String,
+    val salesCount: Long,
+    val itemsSold: Long,
+    val committedRevenue: Long,
+    val contractRevenue: Long,
+    val lostCustomers: Long,
+    val abandonPermille: Long,
+    val wagesPaid: Long,
+    val wageRatioPermille: Long,
+    val revenuePerMinute: Long,
+    val salesPerMinute: Long,
+    val topSpecies: List<SpeciesCatchShareView>,
+    val bottlenecks: List<AutomationIssueView>,
+    val empty: Boolean,
+)
+
+data class WarehouseLineView(
+    val itemId: String,
+    val name: String,
+    val quantity: Int,
+    val available: Int,
+    val reserved: Int,
+    val locations: List<WarehouseLocationView>,
+    val reconcileOk: Boolean,
+)
+
+data class WarehouseLocationView(
+    val id: String,
+    val label: String,
+    val quantity: Int,
+    val available: Int,
+    val reserved: Int,
 )
 
 /** Inventory id → ground position for bag ↔ pad ↔ counter arcs. */
@@ -171,6 +258,12 @@ data class ContextCard(
     val stationId: String? = null,
     /** Auto, or the locked recipe label. */
     val recipeModeLabel: String? = null,
+    /** Phase 6 expansion marker underfoot. */
+    val plotId: String? = null,
+    /** Confirm-spend cost when [plotId] is set and not yet built. */
+    val plotCost: Long? = null,
+    /** True when the player can afford and unlock the plot's upgrade. */
+    val plotBuildable: Boolean = false,
 )
 
 data class BaitOfferView(
@@ -392,6 +485,16 @@ data class DecorOfferView(
     val canAfford: Boolean,
 )
 
+/** Phase 24 optional IAP cosmetic row (power-neutral). */
+data class CosmeticIapOfferView(
+    val id: String,
+    val sku: String,
+    val grantsCosmetic: String,
+    val title: String,
+    val description: String,
+    val status: String,
+)
+
 /** completed | active | locked */
 data class PrestigeView(
     val id: String,
@@ -486,6 +589,8 @@ fun Simulation.view(): SimView {
             slowTicksRemaining = if (slowed) (m.slowUntilTick - s.tick).toInt().coerceAtLeast(0) else 0,
         )
     }
+    val topSpeciesViews = topSpeciesCatchShareViews()
+    val automationIssueViews = automationIssueViews(stationViews)
 
     val context: ContextCard? = when (zone?.kind) {
         ZoneKind.FISHING -> {
@@ -619,6 +724,26 @@ fun Simulation.view(): SimView {
                 progress = null,
             )
         }
+        ZoneKind.PLOT -> {
+            val plot = harbor.plotsByZone.getValue(zone.id)
+            val u = c.upgradesById.getValue(plot.grantsUpgrade)
+            val owned = plot.grantsUpgrade in s.ownedUpgrades
+            val avail = UpgradeSystem.availability(c, s, u)
+            val reqLine = when (avail) {
+                UpgradeSystem.Availability.Owned -> "Built — station registered"
+                is UpgradeSystem.Availability.Locked -> avail.reason
+                is UpgradeSystem.Availability.TooExpensive -> "Need ${avail.missing} more coins"
+                UpgradeSystem.Availability.Purchasable -> "Confirm spend to register"
+            }
+            ContextCard(
+                title = plot.name,
+                lines = listOf(plot.description, "Cost: ${u.cost}", reqLine),
+                progress = null,
+                plotId = plot.id,
+                plotCost = if (owned) null else u.cost,
+                plotBuildable = avail == UpgradeSystem.Availability.Purchasable,
+            )
+        }
         null -> null
     }
 
@@ -677,6 +802,7 @@ fun Simulation.view(): SimView {
                 specializationDescription = h.specialization?.description,
             )
         },
+        fullHarborUnlock = s.fullHarborUnlock,
         player = PlayerView(p.x, p.z, p.facingX, p.facingZ, p.zoneId),
         bag = p.bag.contents().map { (id, n) -> ItemCount(id, c.itemName(id), n) },
         bagUsedUnits = p.bag.usedUnits(),
@@ -698,6 +824,10 @@ fun Simulation.view(): SimView {
                 TimingTier.MISS -> null
             }
         },
+        timingGoodStart01 = p.timingWindowStartPermille / 1000f,
+        timingGoodEnd01 = p.timingWindowEndPermille / 1000f,
+        timingPerfectStart01 = p.timingPerfectStartPermille / 1000f,
+        timingPerfectEnd01 = p.timingPerfectEndPermille / 1000f,
         fishingCanReel = p.fishingSpecies != null && !p.reelAttemptedThisCast,
         fishingSpotEmpty = run {
             val z = zone ?: return@run false
@@ -735,13 +865,18 @@ fun Simulation.view(): SimView {
         objective = Coaching.objective(c, s),
         upgrades = c.upgrades.map { u ->
             val a = UpgradeSystem.availability(c, s, u)
+            val needsPlot = com.willio.jeanvilma.fishshopping.core.world.PlotSystem.requiresPlotPresence(harbor, u.id)
+            val onPlot = com.willio.jeanvilma.fishshopping.core.world.PlotSystem.standingOnUpgradePlot(harbor, s, u.id)
+            val plotReady = a is UpgradeSystem.Availability.Purchasable && (!needsPlot || onPlot)
             UpgradeView(
                 u.id, u.name, u.description, u.cost,
                 owned = a is UpgradeSystem.Availability.Owned,
-                purchasable = a is UpgradeSystem.Availability.Purchasable,
-                reason = when (a) {
-                    is UpgradeSystem.Availability.Locked -> a.reason
-                    is UpgradeSystem.Availability.TooExpensive -> "Need ${a.missing} more coins"
+                purchasable = plotReady,
+                reason = when {
+                    a is UpgradeSystem.Availability.Locked -> a.reason
+                    a is UpgradeSystem.Availability.TooExpensive -> "Need ${a.missing} more coins"
+                    a is UpgradeSystem.Availability.Purchasable && needsPlot && !onPlot ->
+                        "Stand on the expansion marker"
                     else -> null
                 },
             )
@@ -778,25 +913,11 @@ fun Simulation.view(): SimView {
                 goalPresets = c.bank.goalPresets,
             )
         },
-        telemetryRates = run {
-            val shares = Telemetry.speciesCatchSharePermille(s)
-            val top = shares.entries
-                .sortedWith(compareByDescending<Map.Entry<String, Long>> { it.value }.thenBy { it.key })
-                .take(3)
-                .map { (id, share) ->
-                    SpeciesCatchShareView(
-                        speciesId = id,
-                        name = c.itemName(id),
-                        sharePermille = share,
-                        catches = s.speciesCatches[id] ?: 0L,
-                    )
-                }
-            TelemetryRatesView(
-                abandonPermille = Telemetry.abandonPermille(s),
-                wageRatioPermille = Telemetry.wageRatioPermille(s),
-                topSpecies = top,
-            )
-        },
+        telemetryRates = TelemetryRatesView(
+            abandonPermille = Telemetry.abandonPermille(s),
+            wageRatioPermille = Telemetry.wageRatioPermille(s),
+            topSpecies = topSpeciesViews,
+        ),
         supervisorOnDuty = WorkerSystem.supervisorOnDuty(c, s),
         workerWagePerWorkerPerHour = s.workerWagePerWorkerPerHour,
         freeOnShiftSlots = WorkerSystem.freeOnShiftSlots(c, s),
@@ -855,27 +976,7 @@ fun Simulation.view(): SimView {
                 )
             }
         },
-        automationIssues = buildList {
-            for (st in stationViews) {
-                val reason = when {
-                    st.needsRepair && st.status == MachineStatus.NEEDS_REPAIR -> "Needs repair"
-                    st.needsRepair && st.slowed -> "Running slow"
-                    st.status == MachineStatus.OUTPUT_FULL -> "Output full"
-                    st.status == MachineStatus.WAITING_FOR_INPUT -> "No input"
-                    else -> null
-                } ?: continue
-                val name = harbor.stations.firstOrNull { it.id == st.stationId }?.let { pad ->
-                    c.machinesById[pad.machine]?.name ?: st.stationId
-                } ?: st.stationId
-                add(AutomationIssueView(st.stationId, "machine", name, reason))
-            }
-            for (w in s.workers) {
-                val reason = WorkerSystem.blockedReason(c, s, harbor, w) ?: continue
-                if (reason == "Off shift") continue
-                val def = c.workersById[w.roleId]
-                add(AutomationIssueView(w.id, "worker", def?.name ?: w.roleId, reason))
-            }
-        },
+        automationIssues = automationIssueViews,
         quests = c.quests.map { q ->
             val completed = q.id in s.completedQuests
             val locked = !completed && !ProgressionSystem.requirementsMet(s, q)
@@ -1001,6 +1102,16 @@ fun Simulation.view(): SimView {
                 canAfford = !owned && miss == null && s.coins >= d.cost,
             )
         },
+        cosmeticIapOffers = com.willio.jeanvilma.fishshopping.core.progression.CosmeticsIapSystem.CATALOG.map { sku ->
+            CosmeticIapOfferView(
+                id = sku.id,
+                sku = sku.sku,
+                grantsCosmetic = sku.grantsCosmetic,
+                title = sku.title,
+                description = sku.description,
+                status = if (sku.grantsCosmetic in s.unlockedCosmetics) "owned" else "available",
+            )
+        },
         decorPatienceBonusTicks = com.willio.jeanvilma.fishshopping.core.world.DecorSystem.patienceBonusTicks(c, s),
         trophies = s.trophies.entries.map { (id, rec) ->
             TrophyEntryView(
@@ -1023,7 +1134,51 @@ fun Simulation.view(): SimView {
             )
         },
         transferAnchors = buildTransferAnchors(),
+        warehouse = com.willio.jeanvilma.fishshopping.core.inventory.Warehouse.build(c, s, harbor),
+        speciesBook = com.willio.jeanvilma.fishshopping.core.inventory.SpeciesBook.build(c, s),
+        businessDashboard = BusinessDashboard.build(c, s, automationIssueViews, topSpeciesViews),
     )
+}
+
+private fun Simulation.topSpeciesCatchShareViews(limit: Int = 3): List<SpeciesCatchShareView> {
+    val shares = Telemetry.speciesCatchSharePermille(state)
+    return shares.entries
+        .sortedWith(compareByDescending<Map.Entry<String, Long>> { it.value }.thenBy { it.key })
+        .take(limit)
+        .map { (id, share) ->
+            SpeciesCatchShareView(
+                speciesId = id,
+                name = content.itemName(id),
+                sharePermille = share,
+                catches = state.speciesCatches[id] ?: 0L,
+            )
+        }
+}
+
+private fun Simulation.automationIssueViews(stationViews: List<StationView>): List<AutomationIssueView> {
+    val c = content
+    val s = state
+    val out = ArrayList<AutomationIssueView>()
+    for (st in stationViews) {
+        val reason = when {
+            st.needsRepair && st.status == MachineStatus.NEEDS_REPAIR -> "Needs repair"
+            st.needsRepair && st.slowed -> "Running slow"
+            st.status == MachineStatus.OUTPUT_FULL -> "Output full"
+            st.status == MachineStatus.WAITING_FOR_INPUT -> "No input"
+            else -> null
+        } ?: continue
+        val name = harbor.stations.firstOrNull { it.id == st.stationId }?.let { pad ->
+            c.machinesById[pad.machine]?.name ?: st.stationId
+        } ?: st.stationId
+        out += AutomationIssueView(st.stationId, "machine", name, reason)
+    }
+    for (w in s.workers) {
+        val reason = WorkerSystem.blockedReason(c, s, harbor, w) ?: continue
+        if (reason == "Off shift") continue
+        val def = c.workersById[w.roleId]
+        out += AutomationIssueView(w.id, "worker", def?.name ?: w.roleId, reason)
+    }
+    return out
 }
 
 private fun Simulation.buildTransferAnchors(): List<TransferAnchorView> {

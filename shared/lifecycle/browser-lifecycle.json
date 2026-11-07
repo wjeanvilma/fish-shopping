@@ -1,0 +1,52 @@
+{
+  "phase": 28,
+  "schema": "fish.lifecycle.browser_android.v1",
+  "description": "Browser + Android lifecycle QA gates: WebGL2, context loss, storage fallback, audio gesture/focus, tab/background pause+checkpoint, process-death restore via AtomicFile/IndexedDB slots, legacy fixtures migrate through schema 19→current.",
+  "web": {
+    "webgl2Required": true,
+    "webgl2GateCopy": "Fish Shopping needs a browser with WebGL 2. Try a current version of Chrome, Firefox, Edge or Safari, and make sure hardware acceleration is turned on.",
+    "contextLoss": {
+      "preventDefault": true,
+      "pauseRenderWhileLost": true,
+      "reloadHarborOnRestore": true,
+      "bannerCopy": "Graphics context lost — recovering scene…"
+    },
+    "storageUnavailable": {
+      "fallback": "memory",
+      "titleToast": "Saving is unavailable in this browser window",
+      "settingsLabel": "Memory-only (storage unavailable)."
+    },
+    "audioGesture": {
+      "unlockEvents": ["pointerdown", "keydown"],
+      "resumeSuspendedContext": true
+    },
+    "tabLifecycle": {
+      "pauseOnVisibilityHidden": true,
+      "checkpointOnPageHide": true,
+      "suspendAudioWhenHidden": true
+    }
+  },
+  "android": {
+    "pauseSimOnStop": true,
+    "checkpointOnStop": true,
+    "configChangesHandled": ["orientation", "screenSize", "screenLayout", "smallestScreenSize", "keyboardHidden"],
+    "screenOrientation": "fullSensor",
+    "audioFocus": {
+      "usage": "USAGE_GAME",
+      "gain": "AUDIOFOCUS_GAIN",
+      "silenceOnLoss": true,
+      "silenceOnTransientLoss": true,
+      "restoreOnGain": true
+    },
+    "processDeath": {
+      "restoreFrom": ["harbor_save_latest.json", "harbor_save_previous.json"],
+      "note": "ViewModel onCleared + onStop checkpoint; cold start reloads AtomicFile slots."
+    }
+  },
+  "fixtures": {
+    "legacyDir": "shared/fixtures/legacy",
+    "migrateThroughSchema": 19,
+    "currentSchema": 20,
+    "requiredLegacyVersions": [1, 12, 13, 14, 15, 16, 17, 18, 19]
+  }
+}

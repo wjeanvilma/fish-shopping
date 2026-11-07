@@ -1,69 +1,157 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import sunriseSceneUrl from "../../../shared/assets/models/sunrise_pier_blockout.glb?url";
 import moonSceneUrl from "../../../shared/assets/models/moon_cove_blockout.glb?url";
 import jettySceneUrl from "../../../shared/assets/models/obsidian_jetty_blockout.glb?url";
-import type { ActiveContractView, AutomationIssueView, BaitOfferView, BankView, ContextCard, ContractOfferView, DecorOfferView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SeasonalEventBannerView, SimView, StaffGearView, StaffHireView, StationView, TrophySetView, UpgradeView, WorkerView } from "../engine";
+import northlightSceneUrl from "../../../shared/assets/models/northlight_harbor_blockout.glb?url";
+import grandMarinaSceneUrl from "../../../shared/assets/models/grand_marina_blockout.glb?url";
+import type { ActiveContractView, AutomationIssueView, BaitOfferView, BankView, BusinessDashboardView, ContextCard, ContractOfferView, CosmeticIapOfferView, DecorOfferView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SeasonalEventBannerView, SimView, SpeciesBookView, StaffGearView, StaffHireView, StationView, TrophySetView, UpgradeView, WarehouseView, WorkerView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
-import type { GameSettings, JoystickScale } from "../game/settingsStore";
+import { VOLUME_STEPS } from "../audio/audioBus";
+import type { GameSettings, JoystickScale, SaveStatusView } from "../game/settingsStore";
 import { GameHost, type HostState } from "../game/GameHost";
+import type { CloudConflictView, LocalRecoveryView, SnapshotChoiceRow } from "../game/snapshotChoice";
+import {
+  accessibilityPreset,
+  HUD_TEXT_SCALES,
+  hudTextScaleLabel,
+  statusShapeFor,
+  statusShapeGlyph,
+  type HudTextScale,
+} from "../presenters/accessibility";
+import { controlsHelpLine, desktopKeysHint, tapToMoveHint } from "../presenters/controlQa";
+import {
+  CONTEXT_LOSS_BANNER,
+  STORAGE_UNAVAILABLE_SETTINGS,
+  WEBGL2_GATE_COPY,
+  audioUnlockEvents,
+  shouldCheckpointOnPageHide,
+  shouldPauseForVisibility,
+  shouldSuspendAudioWhenHidden,
+} from "../game/lifecyclePolicy";
+import { PRIVACY_PAGE_PATH, SUPPORT_PAGE_PATH, STORE_SHORT_DESCRIPTION } from "../store/listing";
 import { HarborScene, hasWebGL2 } from "../render/HarborScene";
 import { Joystick } from "./Joystick";
+import {
+  harborMetaMaxFraction,
+  isPortraitViewport,
+  portraitCssVars,
+  topActionsMaxFraction,
+} from "./portraitLayout";
 
 const BLOCKOUT_URLS: Record<string, string> = {
   "sunrise_pier_blockout.glb": sunriseSceneUrl,
   "moon_cove_blockout.glb": moonSceneUrl,
   "obsidian_jetty_blockout.glb": jettySceneUrl,
+  "northlight_harbor_blockout.glb": northlightSceneUrl,
+  "grand_marina_blockout.glb": grandMarinaSceneUrl,
 };
+
+/** Track viewport aspect so portrait chrome follows resized windows, not only OS orientation. */
+function usePortraitLayout(): boolean {
+  const [portrait, setPortrait] = useState(() =>
+    typeof window === "undefined" ? false : isPortraitViewport(window.innerWidth, window.innerHeight),
+  );
+  useEffect(() => {
+    const update = () => {
+      const vv = window.visualViewport;
+      const w = vv?.width ?? window.innerWidth;
+      const h = vv?.height ?? window.innerHeight;
+      setPortrait(isPortraitViewport(w, h));
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+    };
+  }, []);
+  return portrait;
+}
 
 /** The harbor is the home screen; panels open over it (blueprint "Navigation rules"). */
 export function App() {
   const [host] = useState(() => new GameHost());
   const state = useSyncExternalStore(host.subscribe, host.getState);
   const [webgl2] = useState(hasWebGL2);
+  const portrait = usePortraitLayout();
 
   useEffect(() => {
     const unlock = () => host.unlockAudio();
-    window.addEventListener("pointerdown", unlock, { once: true });
-    window.addEventListener("keydown", unlock, { once: true });
+    const events = audioUnlockEvents();
+    for (const ev of events) window.addEventListener(ev, unlock, { once: true });
     return () => {
-      window.removeEventListener("pointerdown", unlock);
-      window.removeEventListener("keydown", unlock);
+      for (const ev of events) window.removeEventListener(ev, unlock);
     };
   }, [host]);
 
   if (!webgl2) {
     return (
       <CenterCard title="WebGL 2 is not available">
-        Fish Shopping needs a browser with WebGL 2. Try a current version of Chrome, Firefox, Edge or Safari,
-        and make sure hardware acceleration is turned on.
+        {WEBGL2_GATE_COPY}
       </CenterCard>
     );
   }
+  // Landscape stays primary; portrait reflows the same chrome (no rotate-to-play gate).
   return (
-    <div className="game">
+    <div
+      className={`game ${portrait ? "is-portrait" : "is-landscape"}`}
+      data-portrait={portrait ? "true" : "false"}
+      data-harbor-meta-frac={harborMetaMaxFraction(portrait)}
+      data-top-actions-frac={topActionsMaxFraction(portrait)}
+      style={portraitCssVars(portrait) as CSSProperties}
+    >
       <World host={host} />
       {state.status === "title" ? (
-        <TitleScreen host={host} hasSave={state.hasSave} />
+        <TitleScreen host={host} state={state} />
       ) : (
-        <Hud host={host} state={state} />
+        <Hud host={host} state={state} portrait={portrait} />
       )}
-      <MessageTicker host={host} />
+      <MessageTicker host={host} enabled={state.status === "ready" ? state.settings.captionsEnabled : true} />
     </div>
   );
 }
 
-function TitleScreen({ host, hasSave }: { host: GameHost; hasSave: boolean }) {
+function TitleScreen({ host, state }: { host: GameHost; state: Extract<HostState, { status: "title" }> }) {
   const startNew = () => {
-    if (hasSave && !window.confirm("Start a new game? Your saved harbor will be erased.")) return;
+    if (state.hasSave && !window.confirm("Start a new game? Your saved harbor will be erased.")) return;
     void host.newGame();
   };
+  if (state.cloudConflict) {
+    return <CloudConflictPanel host={host} conflict={state.cloudConflict} />;
+  }
+  if (state.localRecovery) {
+    return <LocalRecoveryPanel host={host} recovery={state.localRecovery} />;
+  }
+  if (!state.settings.analyticsConsentDecided) {
+    return (
+      <div className="center">
+        <div className="panel center-card title-card" role="dialog" aria-modal="true" aria-label="Analytics consent">
+          <BrandMark className="title-brand" />
+          <h1 className="title-wordmark">Fish Shopping</h1>
+          <p className="title-tagline">Help improve the game with privacy-safe analytics?</p>
+          <p className="small muted" style={{ maxWidth: 320, margin: "0 auto 12px" }}>
+            Events cover tutorial steps, first sale, harbor unlocks, offline claims, save recovery, and frame timing.
+            No account ids, positions, bag contents, or full saves are ever sent. You can change this later in Settings.
+          </p>
+          <div className="title-actions">
+            <button className="button" onClick={() => host.setAnalyticsConsent(true)}>Allow analytics</button>
+            <button className="button ghost" onClick={() => host.setAnalyticsConsent(false)}>No thanks</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="center">
-      <div className="panel center-card" role="dialog" aria-label="Fish Shopping">
-        <h2>Fish Shopping</h2>
+      <div className="panel center-card title-card" role="dialog" aria-label="Fish Shopping">
+        <BrandMark className="title-brand" />
+        <h1 className="title-wordmark">Fish Shopping</h1>
         <p className="title-tagline">Catch, cut, sell — run your harbor market</p>
         <div className="title-actions">
-          {hasSave ? (
+          {state.hasSave ? (
             <>
               <button className="button" onClick={() => void host.continueGame()}>Continue</button>
               <button className="button ghost" onClick={startNew}>New Game</button>
@@ -72,9 +160,90 @@ function TitleScreen({ host, hasSave }: { host: GameHost; hasSave: boolean }) {
             <button className="button" onClick={startNew}>Play</button>
           )}
         </div>
-        {!hasSave && (
+        {!state.hasSave && (
           <p className="title-funnel-hint">First session: fish → cut → stock → sell</p>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** Phase 18 title / chrome brand mark (matches shared/store/brand-mark.svg). */
+function BrandMark({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 64 64" width="72" height="72" role="img" aria-hidden="true">
+      <rect width="64" height="64" rx="14" fill="#153449" />
+      <path fill="#9fd3ea" d="M10 34c8-12 22-16 34-10 4 2 8 6 10 10-2 4-6 8-10 10-12 6-26 2-34-10z" />
+      <circle cx="42" cy="30" r="2.6" fill="#153449" />
+      <path fill="#e8af4a" d="M8 34l-5.5-4.2v8.4L8 34z" />
+      <path fill="#008f95" opacity="0.35" d="M18 38c6 4 16 6 24 2 2-1 4-3 5-5-3 6-12 10-22 8-4-.5-6-2-7-5z" />
+    </svg>
+  );
+}
+
+function SnapshotChoiceCard({ row }: { row: SnapshotChoiceRow }) {
+  return (
+    <div className={`snapshot-choice${row.recommended ? " recommended" : ""}`}>
+      <div className="snapshot-choice-head">
+        <strong>{row.sourceLabel}</strong>
+        {row.recommended ? <span className="small muted">Recommended</span> : null}
+      </div>
+      <div className="num">{row.harborName}</div>
+      <div className="num">{formatCoins(row.coins)} coins · {row.playtimeLabel} play</div>
+      <div className="small muted">{row.savedAtLabel}</div>
+    </div>
+  );
+}
+
+function CloudConflictPanel({ host, conflict }: { host: GameHost; conflict: CloudConflictView }) {
+  const recommendedRemote = conflict.recommended === "remote";
+  return (
+    <div className="center">
+      <div className="panel center-card" role="dialog" aria-modal="true" aria-label="Choose a save">
+        <h2>Choose a save</h2>
+        <p className="small muted">
+          This device and the cloud both have valid saves that differ ({conflict.reason}).
+        </p>
+        <div className="snapshot-choice-list">
+          <SnapshotChoiceCard row={conflict.local} />
+          <SnapshotChoiceCard row={conflict.remote} />
+        </div>
+        <div className="title-actions">
+          <button
+            className="button"
+            onClick={() => void host.resolveCloudConflict(recommendedRemote ? "remote" : "local")}
+          >
+            {recommendedRemote ? "Use cloud (recommended)" : "Use this device (recommended)"}
+          </button>
+          <button
+            className="button ghost"
+            onClick={() => void host.resolveCloudConflict(recommendedRemote ? "local" : "remote")}
+          >
+            {recommendedRemote ? "Use this device instead" : "Use cloud instead"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LocalRecoveryPanel({ host, recovery }: { host: GameHost; recovery: LocalRecoveryView }) {
+  return (
+    <div className="center">
+      <div className="panel center-card" role="dialog" aria-modal="true" aria-label="Recover save">
+        <h2>Recover save</h2>
+        <p className="small muted">{recovery.reason}</p>
+        <div className="snapshot-choice-list">
+          <SnapshotChoiceCard row={recovery.previous} />
+        </div>
+        <div className="title-actions">
+          <button className="button" onClick={() => void host.confirmLocalRecovery()}>
+            Recover previous backup
+          </button>
+          <button className="button ghost" onClick={() => host.dismissLocalRecovery()}>
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -83,10 +252,12 @@ function TitleScreen({ host, hasSave }: { host: GameHost; hasSave: boolean }) {
 /** Canvas host: owns renderer creation/teardown and the single animation-frame loop. */
 function World({ host }: { host: GameHost }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [contextLost, setContextLost] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
     const scene = new HarborScene(canvas);
+    scene.onContextStateChange = (lost) => setContextLost(lost);
     let raf = 0;
     let disposed = false;
     let loadGen = 0;
@@ -112,15 +283,26 @@ function World({ host }: { host: GameHost }) {
           void ensureScene(view.blockoutAsset);
         }
       }
-      scene.enqueueTransfers(host.drainFlyingTransfers());
-      scene.render(now, view, host.renderQuality());
+      if (!host.settingsReducedMotion()) {
+        scene.enqueueTransfers(host.drainFlyingTransfers());
+        scene.enqueueBursts(host.drainWorldBursts());
+      } else {
+        host.drainFlyingTransfers();
+        host.drainWorldBursts();
+      }
+      scene.render(now, view, host.renderQuality(), host.settingsReducedMotion());
       raf = requestAnimationFrame(loop);
     };
     const onVisibility = () => {
-      if (document.hidden) host.pause();
+      const hidden = document.hidden;
+      if (shouldSuspendAudioWhenHidden(hidden)) host.setAudioLifecycleSuspended(true);
+      else host.setAudioLifecycleSuspended(false);
+      if (shouldPauseForVisibility(hidden)) host.pause();
       else if (host.getState().status === "ready") host.resume();
     };
-    const onPageHide = () => host.pause();
+    const onPageHide = () => {
+      if (shouldCheckpointOnPageHide()) host.pause();
+    };
 
     let tapDown: { x: number; y: number; id: number } | null = null;
     const onPointerDown = (e: PointerEvent) => {
@@ -136,7 +318,8 @@ function World({ host }: { host: GameHost }) {
       const st = host.getState();
       if (st.status !== "ready" || !st.settings.tapToMove) return;
       if (st.pauseOpen || st.settingsOpen || st.bagOpen || st.stationOpen || st.upgradesOpen
-        || st.staffOpen || st.questsOpen || st.contractsOpen || st.mapOpen || st.offlineReport) {
+        || st.staffOpen || st.questsOpen || st.contractsOpen || st.mapOpen || st.warehouseOpen
+        || st.speciesBookOpen || st.dashboardOpen || st.offlineReport) {
         return;
       }
       const view = host.latestView;
@@ -171,11 +354,21 @@ function World({ host }: { host: GameHost }) {
       window.removeEventListener("pagehide", onPageHide);
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointerup", onPointerUp);
+      scene.onContextStateChange = null;
       scene.dispose();
     };
   }, [host]);
 
-  return <canvas ref={canvasRef} className="world" aria-label="Harbor" />;
+  return (
+    <>
+      <canvas ref={canvasRef} className="world" aria-label="Harbor" />
+      {contextLost ? (
+        <div className="pill context-loss-banner" role="status" aria-live="assertive">
+          {CONTEXT_LOSS_BANNER}
+        </div>
+      ) : null}
+    </>
+  );
 }
 
 const KEY_DIRS: Record<string, [number, number]> = {
@@ -188,12 +381,15 @@ function isTextInput(t: EventTarget | null): boolean {
   return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
 }
 
-function Hud({ host, state }: { host: GameHost; state: HostState }) {
+function Hud({ host, state, portrait }: { host: GameHost; state: HostState; portrait: boolean }) {
   const upgradesOpen = state.status === "ready" && state.upgradesOpen;
   const staffOpen = state.status === "ready" && state.staffOpen;
   const questsOpen = state.status === "ready" && state.questsOpen;
   const contractsOpen = state.status === "ready" && state.contractsOpen;
   const mapOpen = state.status === "ready" && state.mapOpen;
+  const warehouseOpen = state.status === "ready" && state.warehouseOpen;
+  const speciesBookOpen = state.status === "ready" && state.speciesBookOpen;
+  const dashboardOpen = state.status === "ready" && state.dashboardOpen;
   const pauseOpen = state.status === "ready" && state.pauseOpen;
   const settingsOpen = state.status === "ready" && state.settingsOpen;
   const bagOpen = state.status === "ready" && state.bagOpen;
@@ -201,7 +397,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
   const offlineReport = state.status === "ready" ? state.offlineReport : null;
   const [touch, setTouch] = useState(() => window.matchMedia?.("(pointer: coarse)").matches ?? false);
 
-  // Keyboard: WASD / arrows move, U/H/G/J/M panels, Escape closes the panel.
+  // Keyboard: WASD / arrows move, U/H/G/J/M/I panels, Escape closes the panel.
   useEffect(() => {
     const held = new Set<string>();
     const apply = () => {
@@ -222,6 +418,9 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
         else if (questsOpen) host.setQuestsOpen(false);
         else if (contractsOpen) host.setContractsOpen(false);
         else if (mapOpen) host.setMapOpen(false);
+        else if (warehouseOpen) host.setWarehouseOpen(false);
+        else if (speciesBookOpen) host.setSpeciesBookOpen(false);
+        else if (dashboardOpen) host.setDashboardOpen(false);
         else host.setPauseOpen(true);
         return;
       }
@@ -231,6 +430,9 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       if (e.code === "KeyG" && !e.repeat) { host.setQuestsOpen(!questsOpen); return; }
       if (e.code === "KeyJ" && !e.repeat) { host.setContractsOpen(!contractsOpen); return; }
       if (e.code === "KeyM" && !e.repeat) { host.setMapOpen(!mapOpen); return; }
+      if (e.code === "KeyI" && !e.repeat) { host.setWarehouseOpen(!warehouseOpen); return; }
+      if (e.code === "KeyB" && !e.repeat) { host.setSpeciesBookOpen(!speciesBookOpen); return; }
+      if (e.code === "KeyY" && !e.repeat) { host.setDashboardOpen(!dashboardOpen); return; }
       if ((e.code === "Space" || e.code === "KeyF") && !e.repeat) { e.preventDefault(); host.reel(); return; }
       if (e.code === "KeyR" && !e.repeat) {
         const ready = host.getState();
@@ -254,7 +456,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", blur);
     };
-  }, [host, upgradesOpen, staffOpen, questsOpen, contractsOpen, mapOpen, pauseOpen, settingsOpen, bagOpen, stationOpen, offlineReport]);
+  }, [host, upgradesOpen, staffOpen, questsOpen, contractsOpen, mapOpen, warehouseOpen, speciesBookOpen, dashboardOpen, pauseOpen, settingsOpen, bagOpen, stationOpen, offlineReport]);
 
   useEffect(() => {
     const onTouch = () => setTouch(true);
@@ -267,11 +469,15 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
   if (state.status !== "ready") return null;
 
   const v = state.view;
+  const hudScale = state.settings.hudTextScale;
   return (
-    <div className="hud">
+    <div
+      className={`hud${portrait ? " hud-portrait" : " hud-landscape"}`}
+      style={{ ["--hud-font-scale" as string]: String(hudScale) }}
+    >
       <div className="pill top-left">
         {v.harborName}
-        {v.harborSpecializationName ? (
+        {!portrait && v.harborSpecializationName ? (
           <span className="spec" title={v.harborSpecializationDescription ?? undefined}>
             {" · "}{v.harborSpecializationName}
           </span>
@@ -280,7 +486,9 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
         <span className="rep" title={`${v.reputationLabel} · ${Math.trunc(v.reputationScorePermille / 10)}%`}>
           {" · Rep "}{Math.trunc(v.reputationScorePermille / 10)}%
         </span>
-        <span className="day-part"> · {v.dayPartName}{v.tideChartOwned ? " · tides" : ""}{v.preferredBaitId ? " · bait set" : ""}</span>
+        {!portrait && (
+          <span className="day-part"> · {v.dayPartName}{v.tideChartOwned ? " · tides" : ""}{v.preferredBaitId ? " · bait set" : ""}</span>
+        )}
       </div>
       <div className="pill coins top-center" aria-live="polite">{formatCoins(v.coins)} coins</div>
       {v.rush && (
@@ -307,26 +515,32 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       )}
       <div className="top-actions" role="toolbar" aria-label="Harbor actions">
         <button className="button" onClick={() => host.setPauseOpen(true)}>
-          Pause <kbd>P</kbd>
+          Pause{!portrait && <> <kbd>P</kbd></>}
         </button>
         <button className="button" onClick={() => host.setMapOpen(true)}>
-          Map <kbd>M</kbd>
+          Map{!portrait && <> <kbd>M</kbd></>}
+        </button>
+        <button className="button" onClick={() => host.setWarehouseOpen(true)}>
+          Warehouse{!portrait && <> <kbd>I</kbd></>}
         </button>
         <button className="button" onClick={() => host.setQuestsOpen(true)}>
-          Goals <kbd>G</kbd>
+          Goals{!portrait && <> <kbd>G</kbd></>}
         </button>
         <button className="button" onClick={() => host.setContractsOpen(true)}>
-          Jobs <kbd>J</kbd>
+          Jobs{!portrait && <> <kbd>J</kbd></>}
         </button>
         <button className="button" onClick={() => host.setStaffOpen(true)}>
-          Staff <kbd>H</kbd>
+          Staff{!portrait && <> <kbd>H</kbd></>}
+        </button>
+        <button className="button" onClick={() => host.setDashboardOpen(true)}>
+          Dash{!portrait && <> <kbd>Y</kbd></>}
         </button>
         <button className="button" onClick={() => host.setUpgradesOpen(true)}>
-          Upgrades <kbd>U</kbd>
+          Upgrades{!portrait && <> <kbd>U</kbd></>}
         </button>
       </div>
       {v.objective && (
-        <div className="panel objective">
+        <div className={`panel objective${portrait ? " objective-portrait" : ""}`}>
           <div className="eyebrow">
             {v.objective.eyebrow}
             {v.objective.detail ? <span className="objective-detail"> {v.objective.detail}</span> : null}
@@ -335,32 +549,58 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
         </div>
       )}
       {touch ? (
-        <Joystick
-          side={state.settings.joystickSide}
-          scale={state.settings.joystickScale}
-          onMove={(x, y) => host.setMove(x, y)}
-        />
+        <>
+          <Joystick
+            side={state.settings.joystickSide}
+            scale={state.settings.joystickScale}
+            onMove={(x, y) => host.setMove(x, y)}
+          />
+          {state.settings.tapToMove && (
+            <div className={`panel keys-hint keys-hint-${state.settings.joystickSide === "left" ? "right" : "left"}${portrait ? " keys-hint-portrait" : ""}`}>
+              {tapToMoveHint()}
+            </div>
+          )}
+        </>
       ) : (
-        <div className={`panel keys-hint keys-hint-${state.settings.joystickSide}`}>
-          Move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys
+        <div className={`panel keys-hint keys-hint-${state.settings.joystickSide}${portrait ? " keys-hint-portrait" : ""}`}>
+          {desktopKeysHint({ tapToMove: state.settings.tapToMove })}
         </div>
       )}
       {v.context && (
         <StationCard
           card={v.context}
+          stations={v.stations}
+          shapeCues={state.settings.shapeCues}
           onOpen={() => host.setStationOpen(true)}
           onCycleRecipe={v.context.stationId ? () => host.cycleStationRecipe(v.context!.stationId!) : undefined}
         />
       )}
       {v.fishingCanReel && (
-        <button
-          className={`button reel ${v.fishingTimingWindow ? "hot" : ""} ${v.fishingTimingTier === "perfect" ? "perfect" : ""}`}
-          onClick={() => host.reel()}
-        >
-          {v.fishingTimingTier === "perfect" ? "Perfect!" : v.fishingTimingTier === "good" ? "Good!" : "Reel"} <kbd>F</kbd>
-        </button>
+        <div className="reel-stack">
+          {state.settings.timingAssist && v.fishingProgress != null && (
+            <TimingMeter
+              progress01={v.fishingProgress}
+              goodStart={v.timingGoodStart01}
+              goodEnd={v.timingGoodEnd01}
+              perfectStart={v.timingPerfectStart01}
+              perfectEnd={v.timingPerfectEnd01}
+              tier={v.fishingTimingTier}
+            />
+          )}
+          <button
+            className={`button reel ${v.fishingTimingWindow ? "hot" : ""} ${v.fishingTimingTier === "perfect" ? "perfect" : ""}`}
+            onClick={() => host.reel()}
+          >
+            {state.settings.shapeCues && v.fishingTimingTier === "perfect" ? "★ " : ""}
+            {state.settings.shapeCues && v.fishingTimingTier === "good" ? "● " : ""}
+            {v.fishingTimingTier === "perfect" ? "Perfect!" : v.fishingTimingTier === "good" ? "Good!" : "Reel"} <kbd>F</kbd>
+          </button>
+        </div>
       )}
       <CarryIndicator v={v} onOpen={() => host.setBagOpen(true)} />
+      {warehouseOpen && (
+        <WarehousePanel warehouse={v.warehouse} onClose={() => host.setWarehouseOpen(false)} />
+      )}
       {upgradesOpen && (
         <UpgradePanel upgrades={v.upgrades} coins={v.coins} onBuy={(id) => host.purchase(id)} onClose={() => host.setUpgradesOpen(false)} />
       )}
@@ -379,6 +619,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           economyUnlocked={v.economyUnlocked}
           bagFishSpoilActive={v.bagFishSpoilActive}
           coins={v.coins}
+          onOpenDashboard={() => host.setDashboardOpen(true)}
           onHire={(id) => host.hire(id)}
           onSetShift={(id, on) => host.setWorkerShift(id, on)}
           onAssignGear={(workerId, upgradeId) => host.assignWorkerGear(workerId, upgradeId)}
@@ -386,6 +627,9 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           onRepair={(id) => host.repairMachine(id)}
           onClose={() => host.setStaffOpen(false)}
         />
+      )}
+      {dashboardOpen && (
+        <BusinessDashboardPanel dash={v.businessDashboard} onClose={() => host.setDashboardOpen(false)} />
       )}
       {questsOpen && (
         <QuestLogPanel
@@ -399,15 +643,24 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           bank={v.bank}
           coins={v.coins}
           decorOffers={v.decorOffers}
+          cosmeticIapOffers={v.cosmeticIapOffers}
           decorPatienceBonusTicks={v.decorPatienceBonusTicks}
           trophySets={v.trophySets}
           trophiesCount={v.trophies.length}
+          speciesDiscovered={v.speciesBook.discovered}
+          speciesTotal={v.speciesBook.total}
+          onOpenSpeciesBook={() => host.setSpeciesBookOpen(true)}
           onPurchaseDecor={(id) => host.purchaseDecor(id)}
+          onPurchaseIapCosmetic={(sku) => host.purchaseIapCosmetic(sku)}
+          onRestorePurchases={() => host.restorePurchases()}
           onTakeLoan={() => host.takeLoan()}
           onRepayLoan={() => host.repayLoan()}
           onSetCoinGoal={(amount) => host.setCoinGoal(amount)}
           onClose={() => host.setQuestsOpen(false)}
         />
+      )}
+      {speciesBookOpen && (
+        <SpeciesBookPanel book={v.speciesBook} onClose={() => host.setSpeciesBookOpen(false)} />
       )}
       {contractsOpen && (
         <ContractsPanel
@@ -424,7 +677,10 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
       {mapOpen && (
         <HarborMapPanel
           harbors={v.harbors}
+          fullHarborUnlock={v.fullHarborUnlock}
           onTravel={(id) => host.travelToHarbor(id)}
+          onUnlockAll={() => host.purchaseFullHarborUnlock()}
+          onRestoreUnlock={() => host.restoreFullHarborUnlock()}
           onClose={() => host.setMapOpen(false)}
         />
       )}
@@ -439,6 +695,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
         <SettingsPanel
           settings={state.settings}
           cloudAvailable={host.cloudAvailable()}
+          saveStatus={host.saveStatus()}
           telemetryRates={v.telemetryRates}
           onChange={(partial) => host.updateSettings(partial)}
           onExportTelemetry={() => host.exportTelemetryJson()}
@@ -471,6 +728,7 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
           onCycleRecipe={v.context.stationId ? () => host.cycleStationRecipe(v.context!.stationId!) : undefined}
           onSetPaused={(id, paused) => host.setMachinePaused(id, paused)}
           onRepair={(id) => host.repairMachine(id)}
+          onBuildPlot={v.context.plotId ? (id) => host.buildPlot(id) : undefined}
           onClose={() => host.setStationOpen(false)}
         />
       )}
@@ -481,7 +739,17 @@ function Hud({ host, state }: { host: GameHost; state: HostState }) {
   );
 }
 
-function StationCard({ card, onOpen, onCycleRecipe }: { card: ContextCard; onOpen: () => void; onCycleRecipe?: () => void }) {
+function StationCard({
+  card, stations, shapeCues, onOpen, onCycleRecipe,
+}: {
+  card: ContextCard;
+  stations: StationView[];
+  shapeCues: boolean;
+  onOpen: () => void;
+  onCycleRecipe?: () => void;
+}) {
+  const station = card.stationId ? stations.find((s) => s.stationId === card.stationId) : undefined;
+  const shape = station && shapeCues ? statusShapeGlyph(statusShapeFor(station.status)) : null;
   return (
     <div
       className="panel station-card"
@@ -494,7 +762,16 @@ function StationCard({ card, onOpen, onCycleRecipe }: { card: ContextCard; onOpe
       role="group"
       aria-label={card.title}
     >
-      <strong>{card.title}</strong>
+      <strong>
+        {shape ? <span className="status-shape" aria-hidden="true">{shape} </span> : null}
+        {card.title}
+      </strong>
+      {station && shapeCues && (
+        <div className="small muted status-shape-line">
+          <span className="status-shape" aria-hidden="true">{statusShapeGlyph(statusShapeFor(station.status))}</span>
+          {" "}{station.statusText}
+        </div>
+      )}
       {card.lines.map((l) => <div key={l} className="num">{l}</div>)}
       {card.progress !== null && (
         <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(card.progress * 100)}>
@@ -506,6 +783,34 @@ function StationCard({ card, onOpen, onCycleRecipe }: { card: ContextCard; onOpe
           Recipe: {card.recipeModeLabel} <kbd>R</kbd>
         </button>
       )}
+    </div>
+  );
+}
+
+function TimingMeter({
+  progress01, goodStart, goodEnd, perfectStart, perfectEnd, tier,
+}: {
+  progress01: number;
+  goodStart: number;
+  goodEnd: number;
+  perfectStart: number;
+  perfectEnd: number;
+  tier: "perfect" | "good" | null;
+}) {
+  const pct = Math.min(100, Math.max(0, progress01 * 100));
+  return (
+    <div
+      className={`timing-meter${tier ? ` tier-${tier}` : ""}`}
+      role="meter"
+      aria-label="Reel timing"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(pct)}
+      aria-valuetext={tier === "perfect" ? "Perfect window" : tier === "good" ? "Good window" : "Outside window"}
+    >
+      <div className="timing-band good" style={{ left: `${goodStart * 100}%`, width: `${(goodEnd - goodStart) * 100}%` }} />
+      <div className="timing-band perfect" style={{ left: `${perfectStart * 100}%`, width: `${(perfectEnd - perfectStart) * 100}%` }} />
+      <div className="timing-needle" style={{ left: `${pct}%` }} />
     </div>
   );
 }
@@ -540,9 +845,10 @@ function PausePanel({ onResume, onSettings, onTitle }: {
   );
 }
 
-function SettingsPanel({ settings, cloudAvailable, telemetryRates, onChange, onExportTelemetry, onExportBalance, onClose }: {
+function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryRates, onChange, onExportTelemetry, onExportBalance, onClose }: {
   settings: GameSettings;
   cloudAvailable: boolean;
+  saveStatus: SaveStatusView;
   telemetryRates: SimView["telemetryRates"];
   onChange: (partial: Partial<GameSettings>) => void;
   onExportTelemetry: () => string | null;
@@ -573,10 +879,59 @@ function SettingsPanel({ settings, cloudAvailable, telemetryRates, onChange, onE
           <li>
             <div className="grow">
               <strong>Mute</strong>
-              <div className="small muted">Silences catch, sale, machine, rush, and upgrade stingers.</div>
+              <div className="small muted">Master silence for ambience and stingers. Haptics stay independent.</div>
             </div>
             <button className="button" aria-pressed={settings.muted} onClick={() => onChange({ muted: !settings.muted })}>
               {settings.muted ? "On" : "Off"}
+            </button>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Music</strong>
+              <div className="small muted">Harbor ambience bed under gameplay.</div>
+            </div>
+            <div className="quality-row">
+              {VOLUME_STEPS.map((step) => (
+                <button
+                  key={`music-${step}`}
+                  className={settings.musicVolume === step ? "button" : "button ghost"}
+                  aria-pressed={settings.musicVolume === step}
+                  onClick={() => onChange({ musicVolume: step })}
+                >
+                  {step === 0 ? "Off" : step === 0.35 ? "Low" : step === 0.7 ? "Med" : "High"}
+                </button>
+              ))}
+            </div>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>SFX</strong>
+              <div className="small muted">Catch, sale, machine, rush, and upgrade stingers.</div>
+            </div>
+            <div className="quality-row">
+              {VOLUME_STEPS.map((step) => (
+                <button
+                  key={`sfx-${step}`}
+                  className={settings.sfxVolume === step ? "button" : "button ghost"}
+                  aria-pressed={settings.sfxVolume === step}
+                  onClick={() => onChange({ sfxVolume: step })}
+                >
+                  {step === 0 ? "Off" : step === 0.35 ? "Low" : step === 0.7 ? "Med" : "High"}
+                </button>
+              ))}
+            </div>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Haptics</strong>
+              <div className="small muted">Short vibration on catch and sale when the device supports it.</div>
+            </div>
+            <button
+              className="button"
+              aria-pressed={settings.hapticsEnabled}
+              onClick={() => onChange({ hapticsEnabled: !settings.hapticsEnabled })}
+            >
+              {settings.hapticsEnabled ? "On" : "Off"}
             </button>
           </li>
           <li>
@@ -593,8 +948,8 @@ function SettingsPanel({ settings, cloudAvailable, telemetryRates, onChange, onE
               <strong>Cloud sync</strong>
               <div className="small muted">
                 {cloudAvailable
-                  ? "Optional. Newest checksummed save wins across devices."
-                  : "Optional. Set VITE_FIREBASE_API_KEY + VITE_FIREBASE_PROJECT_ID to link a remote."}
+                  ? "Optional anonymous link. Newest checksummed save wins; local play works with this off."
+                  : "Optional. Set VITE_FIREBASE_API_KEY + VITE_FIREBASE_PROJECT_ID (see web/.env.example). Local saves still work offline."}
               </div>
             </div>
             <button
@@ -603,6 +958,112 @@ function SettingsPanel({ settings, cloudAvailable, telemetryRates, onChange, onE
               onClick={() => onChange({ cloudSyncEnabled: !settings.cloudSyncEnabled })}
             >
               {settings.cloudSyncEnabled ? "On" : "Off"}
+            </button>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Analytics</strong>
+              <div className="small muted">
+                Privacy-safe events only (tutorial, first sale, harbors, offline, save recovery, frame timing).
+                Never includes account ids, bag contents, or full saves.
+              </div>
+            </div>
+            <button
+              className="button"
+              aria-pressed={settings.analyticsConsent}
+              onClick={() => onChange({
+                analyticsConsent: !settings.analyticsConsent,
+                analyticsConsentDecided: true,
+              })}
+            >
+              {settings.analyticsConsent ? "On" : "Off"}
+            </button>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Accessibility preset</strong>
+              <div className="small muted">
+                Turns on reduced motion, captions, larger HUD text, shape status cues, and the reel timing meter.
+                Timing Sights / Master Reel upgrades still widen the sim window.
+              </div>
+            </div>
+            <button
+              className="button"
+              onClick={() => onChange(accessibilityPreset())}
+            >
+              Apply
+            </button>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Reduced motion</strong>
+              <div className="small muted">Snaps the camera follow and skips flying transfer VFX.</div>
+            </div>
+            <button
+              className="button"
+              aria-pressed={settings.reducedMotion}
+              onClick={() => onChange({ reducedMotion: !settings.reducedMotion })}
+            >
+              {settings.reducedMotion ? "On" : "Off"}
+            </button>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Captions</strong>
+              <div className="small muted">Toast text for sales, alerts, and other one-off feedback.</div>
+            </div>
+            <button
+              className="button"
+              aria-pressed={settings.captionsEnabled}
+              onClick={() => onChange({ captionsEnabled: !settings.captionsEnabled })}
+            >
+              {settings.captionsEnabled ? "On" : "Off"}
+            </button>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>HUD text size</strong>
+              <div className="small muted">Scales HUD labels and buttons without changing 48px touch targets.</div>
+            </div>
+            <div className="quality-row">
+              {HUD_TEXT_SCALES.map((step) => (
+                <button
+                  key={`hud-${step}`}
+                  className={settings.hudTextScale === step ? "button" : "button ghost"}
+                  aria-pressed={settings.hudTextScale === step}
+                  onClick={() => onChange({ hudTextScale: step as HudTextScale })}
+                >
+                  {hudTextScaleLabel(step)}
+                </button>
+              ))}
+            </div>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Shape cues</strong>
+              <div className="small muted">Adds ▶ ■ ◆ glyphs beside station and reel status so colour is not the only signal.</div>
+            </div>
+            <button
+              className="button"
+              aria-pressed={settings.shapeCues}
+              onClick={() => onChange({ shapeCues: !settings.shapeCues })}
+            >
+              {settings.shapeCues ? "On" : "Off"}
+            </button>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Timing meter</strong>
+              <div className="small muted">
+                Shows Good / Perfect bands while casting. Buy Timing Sights or Master Reel in Upgrades to widen the window.
+              </div>
+            </div>
+            <button
+              className="button"
+              aria-pressed={settings.timingAssist}
+              onClick={() => onChange({ timingAssist: !settings.timingAssist })}
+            >
+              {settings.timingAssist ? "On" : "Off"}
             </button>
           </li>
           <li>
@@ -618,7 +1079,26 @@ function SettingsPanel({ settings, cloudAvailable, telemetryRates, onChange, onE
               {settings.showBalanceStrip ? "On" : "Off"}
             </button>
           </li>
+          <li>
+            <div className="grow">
+              <strong>Save status</strong>
+              <div className="small muted">
+                {saveStatus.persistent ? "Local slots: latest + previous backup." : STORAGE_UNAVAILABLE_SETTINGS}
+                {" "}{saveStatus.lastSavedLabel}
+                {saveStatus.cloudEnabled
+                  ? saveStatus.cloudAvailable
+                    ? saveStatus.cloudLinked
+                      ? " · Cloud linked"
+                      : " · Cloud on, linking…"
+                    : " · Cloud on, keys missing"
+                  : " · Cloud off"}
+              </div>
+            </div>
+            <span className="num">{saveStatus.persistent ? "Disk" : "RAM"}</span>
+          </li>
         </ul>
+        <div className="small" style={{ marginTop: 12 }}>Controls</div>
+        <div className="small muted">{controlsHelpLine()}</div>
         <div className="small" style={{ marginTop: 12 }}>Telemetry</div>
         <div className="small muted">Privacy-safe counters (fish.telemetry.v2) and content balance knobs. Copied as JSON.</div>
         <div className="small reward" style={{ marginTop: 6 }}>
@@ -644,6 +1124,7 @@ function SettingsPanel({ settings, cloudAvailable, telemetryRates, onChange, onE
         </div>
         {exportNote && <div className="small" style={{ marginTop: 8 }}>{exportNote}</div>}
         <div className="small" style={{ marginTop: 12 }}>Quality</div>
+        <div className="small muted">Targets ~60 FPS @1080 mid desktop. Soft-downgrades if frames stay over budget.</div>
         <div className="quality-row">
           {(["low", "medium", "high"] as const).map((q) => (
             <button
@@ -684,6 +1165,12 @@ function SettingsPanel({ settings, cloudAvailable, telemetryRates, onChange, onE
               </button>
             );
           })}
+        </div>
+        <div className="small" style={{ marginTop: 12 }}>Legal</div>
+        <div className="small muted">{STORE_SHORT_DESCRIPTION}</div>
+        <div className="quality-row" style={{ marginTop: 8 }}>
+          <a className="button" href={PRIVACY_PAGE_PATH} target="_blank" rel="noreferrer">Privacy</a>
+          <a className="button ghost" href={SUPPORT_PAGE_PATH} target="_blank" rel="noreferrer">Support</a>
         </div>
       </div>
     </div>
@@ -785,13 +1272,14 @@ function BaitKioskPanel({ offers, preferredBaitId, coins, onBuy, onSelect, onClo
   );
 }
 
-function StationDetailPanel({ card, stations, coins, onCycleRecipe, onSetPaused, onRepair, onClose }: {
+function StationDetailPanel({ card, stations, coins, onCycleRecipe, onSetPaused, onRepair, onBuildPlot, onClose }: {
   card: ContextCard;
   stations: StationView[];
   coins: number;
   onCycleRecipe?: () => void;
   onSetPaused: (stationId: string, paused: boolean) => void;
   onRepair: (stationId: string) => void;
+  onBuildPlot?: (plotId: string) => void;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -817,7 +1305,7 @@ function StationDetailPanel({ card, stations, coins, onCycleRecipe, onSetPaused,
             <div style={{ width: `${Math.min(100, Math.max(0, card.progress * 100))}%` }} />
           </div>
         )}
-        {(onCycleRecipe || card.stationId) && (
+        {(onCycleRecipe || card.stationId || (onBuildPlot && card.plotId)) && (
           <div className="title-actions">
             {onCycleRecipe && card.recipeModeLabel && (
               <button className="button" onClick={onCycleRecipe}>
@@ -838,7 +1326,217 @@ function StationDetailPanel({ card, stations, coins, onCycleRecipe, onSetPaused,
                 {paused ? "Resume machine" : "Pause machine"}
               </button>
             )}
+            {onBuildPlot && card.plotId && card.plotCost != null && (
+              <button
+                className="button"
+                disabled={!card.plotBuildable}
+                onClick={() => onBuildPlot(card.plotId!)}
+              >
+                Build · {formatCoins(card.plotCost)}
+              </button>
+            )}
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BusinessDashboardPanel({ dash, onClose }: { dash: BusinessDashboardView; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Business dashboard" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>Business dashboard</h2>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        <div className="small muted num">
+          Session {dash.sessionLabel} · rates {dash.rateIntervalLabel}
+        </div>
+        <div className="small muted">Committed sales only — wallet coins are not counted as revenue.</div>
+        {dash.empty && (
+          <p className="muted">No committed sales yet — serve customers or complete a contract.</p>
+        )}
+        <ul className="upgrade-list">
+          {!dash.empty && (
+            <>
+              <li>
+                <div className="grow">
+                  <strong>Committed revenue</strong>
+                  <div className="small num">
+                    {formatCoins(dash.committedRevenue)} sales
+                    {dash.contractRevenue > 0 ? ` · ${formatCoins(dash.contractRevenue)} contracts` : ""}
+                  </div>
+                  <div className="small muted">
+                    {dash.salesCount} sales · {dash.itemsSold} items
+                    {` · ${formatCoins(dash.revenuePerMinute)} ${dash.rateIntervalLabel}`}
+                  </div>
+                </div>
+                <span className="num">{formatCoins(dash.committedRevenue + dash.contractRevenue)}</span>
+              </li>
+              <li>
+                <div className="grow">
+                  <strong>Abandon rate</strong>
+                  <div className="small muted">{dash.lostCustomers} lost customers</div>
+                </div>
+                <span className="num">{Math.trunc(dash.abandonPermille / 10)}%</span>
+              </li>
+              <li>
+                <div className="grow">
+                  <strong>Wage ratio</strong>
+                  <div className="small muted">{formatCoins(dash.wagesPaid)} wages vs sales revenue</div>
+                </div>
+                <span className="num">{Math.trunc(dash.wageRatioPermille / 10)}%</span>
+              </li>
+              <li>
+                <div className="grow">
+                  <strong>Sales pace</strong>
+                  <div className="small muted">{dash.rateIntervalLabel}</div>
+                </div>
+                <span className="num">{dash.salesPerMinute}/min</span>
+              </li>
+              {dash.topSpecies.map((sp) => (
+                <li key={sp.speciesId}>
+                  <div className="grow">
+                    <strong>{sp.name}</strong>
+                    <div className="small muted">{sp.catches} catches</div>
+                  </div>
+                  <span className="num">{Math.trunc(sp.sharePermille / 10)}%</span>
+                </li>
+              ))}
+            </>
+          )}
+          {dash.bottlenecks.length === 0 ? (
+            <li>
+              <div className="grow">
+                <strong>Bottlenecks</strong>
+                <div className="small muted">None right now</div>
+              </div>
+              <span className="owned">Clear</span>
+            </li>
+          ) : (
+            dash.bottlenecks.map((b) => (
+              <li key={`${b.kind}:${b.id}`}>
+                <div className="grow">
+                  <strong>{b.label}</strong>
+                  <div className="small danger">{b.reason}</div>
+                  <div className="small muted">{b.kind}</div>
+                </div>
+                <span className="num">Issue</span>
+              </li>
+            ))
+          )}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function SpeciesBookPanel({ book, onClose }: { book: SpeciesBookView; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Species book" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>Species book</h2>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        <div className="small muted num">
+          {book.discovered}/{book.total} discovered
+        </div>
+        {book.empty ? (
+          <p className="muted">No catches yet — cast from a pier to fill the book.</p>
+        ) : null}
+        <ul className="upgrade-list">
+          {book.entries.map((entry) => (
+            <li key={entry.speciesId}>
+              <div className="grow">
+                <strong>{entry.name}</strong>
+                {entry.discovered ? (
+                  <>
+                    <div className="small num">
+                      {entry.catches} caught
+                      {entry.trophyBestSizePermille != null
+                        ? ` · best ${entry.trophyBestSizePermille}% · ${formatCoins(entry.trophyBestValueCoins ?? 0)}`
+                        : ""}
+                    </div>
+                    {entry.harborNames.length > 0 && (
+                      <div className="small muted">Zones: {entry.harborNames.join(" · ")}</div>
+                    )}
+                    {entry.recipeNames.length > 0 && (
+                      <div className="small muted">
+                        Recipes: {entry.recipeNames.slice(0, 3).join(" · ")}
+                        {entry.recipeNames.length > 3 ? ` · +${entry.recipeNames.length - 3} more` : ""}
+                      </div>
+                    )}
+                    {entry.baseSpeciesId && (
+                      <div className="small reward">Rare upgrade form</div>
+                    )}
+                  </>
+                ) : (
+                  <div className="small muted">Not discovered</div>
+                )}
+              </div>
+              <span className={entry.discovered ? "owned" : "num"}>
+                {entry.discovered ? "Logged" : "—"}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function WarehousePanel({ warehouse, onClose }: { warehouse: WarehouseView; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  return (
+    <div className="scrim" onClick={onClose}>
+      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Warehouse" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>Warehouse</h2>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        <div className="small muted num">
+          Available {warehouse.available} · Reserved {warehouse.reserved} · Total {warehouse.quantity}
+        </div>
+        {!warehouse.reconcileOk && (
+          <div className="small danger" role="alert">
+            Inventory mismatch{warehouse.reconcileError ? `: ${warehouse.reconcileError}` : ""}
+          </div>
+        )}
+        {warehouse.empty ? (
+          <p className="muted">No stock yet — catch fish, run stations, or stock a counter.</p>
+        ) : (
+          <ul className="upgrade-list">
+            {warehouse.lines.map((line) => (
+              <li key={line.itemId}>
+                <div className="grow">
+                  <strong>{line.name}</strong>
+                  <div className="small num">
+                    {line.available} available
+                    {line.reserved > 0 ? ` · ${line.reserved} reserved` : ""}
+                    {` · ${line.quantity} total`}
+                  </div>
+                  {!line.reconcileOk && (
+                    <div className="small danger">Location totals do not match</div>
+                  )}
+                  <div className="small muted">
+                    {line.locations.map((loc) => (
+                      <div key={loc.id}>
+                        {loc.label}: {loc.available}
+                        {loc.reserved > 0 ? ` (${loc.reserved} reserved)` : ""}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>
@@ -918,9 +1616,12 @@ function formatAwayDuration(elapsedMillis: number): string {
   return `Away ${s}s`;
 }
 
-function HarborMapPanel({ harbors, onTravel, onClose }: {
+function HarborMapPanel({ harbors, fullHarborUnlock, onTravel, onUnlockAll, onRestoreUnlock, onClose }: {
   harbors: HarborMapEntryView[];
+  fullHarborUnlock: boolean;
   onTravel: (harborId: string) => void;
+  onUnlockAll: () => void;
+  onRestoreUnlock: () => void;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -953,6 +1654,17 @@ function HarborMapPanel({ harbors, onTravel, onClose }: {
             </li>
           ))}
         </ul>
+        <div className="small muted" style={{ marginTop: 12 }}>
+          Sunrise Pier is free. Full unlock opens every harbor — access only, no rate boosts.
+        </div>
+        <div className="quality-row" style={{ marginTop: 8 }}>
+          {fullHarborUnlock ? (
+            <span className="small reward">All harbors unlocked</span>
+          ) : (
+            <button className="button" onClick={onUnlockAll}>Unlock all harbors</button>
+          )}
+          <button className="button ghost" onClick={onRestoreUnlock}>Restore purchase</button>
+        </div>
       </div>
     </div>
   );
@@ -978,10 +1690,16 @@ function QuestLogPanel({
   bank,
   coins,
   decorOffers,
+  cosmeticIapOffers,
   decorPatienceBonusTicks,
   trophySets,
   trophiesCount,
+  speciesDiscovered,
+  speciesTotal,
+  onOpenSpeciesBook,
   onPurchaseDecor,
+  onPurchaseIapCosmetic,
+  onRestorePurchases,
   onTakeLoan,
   onRepayLoan,
   onSetCoinGoal,
@@ -997,10 +1715,16 @@ function QuestLogPanel({
   bank: BankView;
   coins: number;
   decorOffers: DecorOfferView[];
+  cosmeticIapOffers: CosmeticIapOfferView[];
   decorPatienceBonusTicks: number;
   trophySets: TrophySetView[];
   trophiesCount: number;
+  speciesDiscovered: number;
+  speciesTotal: number;
+  onOpenSpeciesBook: () => void;
   onPurchaseDecor: (decorId: string) => void;
+  onPurchaseIapCosmetic: (sku: string) => void;
+  onRestorePurchases: () => void;
   onTakeLoan: () => void;
   onRepayLoan: () => void;
   onSetCoinGoal: (amount: number) => void;
@@ -1101,6 +1825,16 @@ function QuestLogPanel({
               </div>
             </div>
             <span className="num">Goal</span>
+          </li>
+          <li>
+            <div className="grow">
+              <strong>Species book</strong>
+              <div className="small">{speciesDiscovered}/{speciesTotal} discovered</div>
+              <button className="button" onClick={onOpenSpeciesBook}>
+                Open book <kbd>B</kbd>
+              </button>
+            </div>
+            <span className="num">{speciesDiscovered}/{speciesTotal}</span>
           </li>
           <li>
             <div className="grow">
@@ -1209,6 +1943,31 @@ function QuestLogPanel({
               )}
             </li>
           ))}
+          <li>
+            <div className="grow">
+              <strong>Harbor cosmetics</strong>
+              <div className="small muted">Optional paid banners · visual only · never change rates</div>
+              <button className="button ghost" onClick={onRestorePurchases} style={{ marginTop: 6 }}>
+                Restore purchases
+              </button>
+            </div>
+            <span className="num">IAP</span>
+          </li>
+          {cosmeticIapOffers.map((c) => (
+            <li key={c.id}>
+              <div className="grow">
+                <strong>{c.title}</strong>
+                <div className="small">{c.description}</div>
+              </div>
+              {c.status === "owned" ? (
+                <span className="owned">Owned</span>
+              ) : (
+                <button className="button" onClick={() => onPurchaseIapCosmetic(c.sku)}>
+                  Buy
+                </button>
+              )}
+            </li>
+          ))}
         </ul>
       </div>
     </div>
@@ -1287,8 +2046,9 @@ function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLe
   );
 }
 
-function StaffPanel({ staff, workers, staffGear, automationIssues, stations, onShiftCount, freeOnShiftSlots, overtimeOnShiftCount, wagePerWorkerPerHour, maintenanceCoinsPerStation, economyUnlocked, bagFishSpoilActive, coins, onHire, onSetShift, onAssignGear, onUnequipGear, onRepair, onClose }: {
+function StaffPanel({ staff, workers, staffGear, automationIssues, stations, onShiftCount, freeOnShiftSlots, overtimeOnShiftCount, wagePerWorkerPerHour, maintenanceCoinsPerStation, economyUnlocked, bagFishSpoilActive, coins, onOpenDashboard, onHire, onSetShift, onAssignGear, onUnequipGear, onRepair, onClose }: {
   staff: StaffHireView[]; workers: WorkerView[]; staffGear: StaffGearView[]; automationIssues: AutomationIssueView[]; stations: StationView[]; onShiftCount: number; freeOnShiftSlots: number; overtimeOnShiftCount: number;
+  onOpenDashboard: () => void;
   wagePerWorkerPerHour: number; maintenanceCoinsPerStation: number; economyUnlocked: boolean; bagFishSpoilActive: boolean;
   coins: number; onHire: (roleId: string) => void; onSetShift: (workerId: string, onShift: boolean) => void;
   onAssignGear: (workerId: string, upgradeId: string) => void; onUnequipGear: (workerId: string, slotId: string) => void;
@@ -1313,6 +2073,11 @@ function StaffPanel({ staff, workers, staffGear, automationIssues, stations, onS
           </div>
           <span className="num">{formatCoins(coins)} coins</span>
           <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+        </div>
+        <div className="row wrap" style={{ gap: 6, marginBottom: 8 }}>
+          <button className="button" onClick={onOpenDashboard}>
+            Business dashboard <kbd>Y</kbd>
+          </button>
         </div>
         {workers.length > 0 && (
           <ul className="upgrade-list">
@@ -1420,15 +2185,19 @@ function StaffPanel({ staff, workers, staffGear, automationIssues, stations, onS
   );
 }
 
-function MessageTicker({ host }: { host: GameHost }) {
+function MessageTicker({ host, enabled }: { host: GameHost; enabled: boolean }) {
   const [message, setMessage] = useState<{ text: string; id: number } | null>(null);
-  useEffect(() => host.onMessage((text) => setMessage({ text, id: Date.now() })), [host]);
+  useEffect(() => host.onMessage((text) => {
+    if (!enabled) return;
+    setMessage({ text, id: Date.now() });
+  }), [host, enabled]);
   useEffect(() => {
     if (!message) return;
     const t = setTimeout(() => setMessage(null), 1800);
     return () => clearTimeout(t);
   }, [message]);
-  return message ? <div className="toast" role="status" key={message.id}>{message.text}</div> : null;
+  if (!enabled || !message) return null;
+  return <div className="toast" role="status" aria-live="polite" key={message.id}>{message.text}</div>;
 }
 
 /** Portrait gameplay is later scope (blueprint "Responsive layout"): suggest rotating. */

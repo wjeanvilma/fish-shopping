@@ -1,8 +1,9 @@
 {
-  "label": "Phase 28 portrait HUD fixture freeze",
-  "contentVersion": "0.50.0",
-  "schemaVersion": 19,
+  "label": "Phase 30 final freeze — content 1.0.0 / schema 20",
+  "contentVersion": "1.0.0",
+  "schemaVersion": 20,
   "ticksPerSecond": 20,
+  "releaseTag": "v1.0.0",
   "fixtures": [
     "prng-vectors.json",
     "starter-line.json",
@@ -14,7 +15,9 @@
     "legacy/snapshot-v15-starter-line-t2500.json",
     "legacy/snapshot-v16-starter-line-t2500.json",
     "legacy/snapshot-v17-starter-line-t2500.json",
-    "legacy/snapshot-v18-starter-line-t2500.json"
+    "legacy/snapshot-v18-starter-line-t2500.json",
+    "legacy/snapshot-v19-starter-line-t2500.json"
   ],
-  "notes": "Do not re-record fixtures unless rules intentionally change; then bump this pin with -PrecordFixtures=true and port web parity."
+  "definitionOfDone": "shared/ship/definition-of-done.json",
+  "notes": "1.0.0 ship pin. Re-record only with intentional rule/content changes: ./gradlew :game-core:test --tests StarterLineFixtureTest -PrecordFixtures=true"
 }

@@ -19,11 +19,11 @@ class ContentAndInventoryTest {
         assertEquals(5L, c.productsById.getValue("product.basic_portion").unitPrice)
         assertEquals(12L, c.productsById.getValue("product.fillet").unitPrice)
         assertEquals(20L, c.productsById.getValue("product.premium_portion").unitPrice)
-        assertEquals(3, c.harbors.size)
+        assertEquals(5, c.harbors.size)
         assertEquals(listOf("quest.first_ten_sales"), c.economy.requires)
         assertEquals(2, c.economy.maintenanceCoinsPerStation)
         assertEquals(listOf("quest.busy_harbor"), c.prestige.requires)
-        assertEquals(9, c.quests.size)
+        assertEquals(11, c.quests.size)
         assertEquals(
             listOf(
                 "quest.first_cast",
@@ -35,37 +35,80 @@ class ContentAndInventoryTest {
                 "quest.busy_harbor",
                 "quest.moon_crossing",
                 "quest.obsidian_landing",
+                "quest.northlight_landing",
+                "quest.grand_marina_landing",
             ),
             c.quests.map { it.id },
         )
         assertEquals(listOf("upgrade.harbor_grill"), c.questsById.getValue("quest.fill_the_hold").reward.unlockUpgrades)
         assertEquals(listOf("upgrade.side_pier"), c.questsById.getValue("quest.specialty_kitchen").reward.unlockUpgrades)
         assertEquals(listOf("quest.specialty_kitchen"), c.upgradesById.getValue("upgrade.side_pier").requires)
-        assertEquals(10, c.tutorial.size)
+        assertEquals(11, c.tutorial.size)
         assertEquals("tutorial.first_contract", c.tutorial[7].id)
         assertEquals("tutorial.hire_staff", c.tutorial[8].id)
         assertEquals("tutorial.grill_line", c.tutorial[9].id)
-        assertEquals(8, c.prestige.milestones.size)
+        assertEquals("tutorial.plot_marker", c.tutorial[10].id)
+        assertEquals(4, c.harborsById.getValue("harbor.sunrise_pier").plots.size)
+        assertTrue(c.harborsById.getValue("harbor.sunrise_pier").plotsByUpgrade.containsKey("upgrade.harbor_grill"))
+        assertEquals(5, c.harborsById.getValue("harbor.obsidian_jetty").plots.size)
+        assertEquals(12, c.prestige.milestones.size)
         assertEquals(listOf(0L, 250L, 750L, 1500L, 3000L), c.prestige.ratingThresholds)
         val pierCounters = c.harborsById.getValue("harbor.sunrise_pier").counters
         assertEquals(2, pierCounters.size)
-        assertEquals(9, pierCounters.first { it.requiresUpgrade == null }.products.size)
-        assertEquals(2, pierCounters.first { it.kind.wire == "wholesale" }.products.size)
-        assertEquals(3, c.harborsById.getValue("harbor.sunrise_pier").stations.size)
+        assertEquals(12, pierCounters.first { it.requiresUpgrade == null }.products.size)
+        assertEquals(6, pierCounters.first { it.kind.wire == "wholesale" }.products.size)
+        assertEquals(5, c.harborsById.getValue("harbor.sunrise_pier").stations.size)
+        assertEquals(6, c.machines.size)
         assertEquals(emptyList<String>(), c.harborsById.getValue("harbor.sunrise_pier").requires)
         val cove = c.harborsById.getValue("harbor.moon_cove")
         assertEquals(listOf("quest.busy_harbor"), cove.requires)
         assertEquals("moon_cove_blockout.glb", cove.blockoutAsset)
-        assertEquals(3, cove.stations.size)
+        assertEquals(5, cove.stations.size)
         val jetty = c.harborsById.getValue("harbor.obsidian_jetty")
         assertEquals(listOf("prestige.twin_harbors"), jetty.requires)
         assertEquals("obsidian_jetty_blockout.glb", jetty.blockoutAsset)
-        assertEquals(3, jetty.stations.size)
+        assertEquals(6, jetty.stations.size)
         assertEquals(2, jetty.rushes.size)
+        assertTrue(jetty.stations.any { it.machine == "machine.harbor_chiller" })
+        assertTrue(jetty.stations.any { it.machine == "machine.harbor_fryer" })
+        assertTrue(jetty.stations.any { it.machine == "machine.harbor_packer" })
+        val northlight = c.harborsById.getValue("harbor.northlight_harbor")
+        assertEquals(listOf("prestige.triple_harbors"), northlight.requires)
+        assertEquals("northlight_harbor_blockout.glb", northlight.blockoutAsset)
+        assertEquals(6, northlight.stations.size)
+        assertEquals(2, northlight.rushes.size)
+        val marina = c.harborsById.getValue("harbor.grand_marina")
+        assertEquals(listOf("prestige.quad_harbors"), marina.requires)
+        assertEquals("grand_marina_blockout.glb", marina.blockoutAsset)
+        assertEquals(6, marina.stations.size)
+        assertEquals(3, marina.fishingSpots.size)
+        assertEquals(2, marina.rushes.size)
+        assertTrue(c.machinesById.containsKey("machine.harbor_chiller"))
+        assertTrue(c.machinesById.containsKey("machine.harbor_fryer"))
+        assertTrue(c.machinesById.containsKey("machine.harbor_packer"))
+        assertEquals(
+            "machine.harbor_chiller",
+            (c.upgradesById.getValue("upgrade.harbor_chiller").effect
+                as com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine).machine,
+        )
+        assertEquals(
+            "machine.harbor_fryer",
+            (c.upgradesById.getValue("upgrade.harbor_fryer").effect
+                as com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine).machine,
+        )
+        assertEquals(
+            "machine.harbor_packer",
+            (c.upgradesById.getValue("upgrade.harbor_packer").effect
+                as com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine).machine,
+        )
         assertEquals("spec.efficient_docks", c.harborsById.getValue("harbor.sunrise_pier").specialization!!.id)
         assertEquals(1, c.harborsById.getValue("harbor.sunrise_pier").specialization!!.maintenanceDiscountPerStation)
         assertEquals(80, c.harborsById.getValue("harbor.moon_cove").specialization!!.rareChanceBonusPermille)
         assertEquals(1300, jetty.specialization!!.kindSpawnMultPermille.getValue("tourist"))
+        assertEquals("spec.cold_current", northlight.specialization!!.id)
+        assertEquals(80, northlight.specialization!!.rareChanceBonusPermille)
+        assertEquals("spec.premium_marina", marina.specialization!!.id)
+        assertEquals(1350, marina.specialization!!.kindSpawnMultPermille.getValue("premium"))
         assertTrue(c.machinesById.containsKey("machine.basic_smoker"))
         assertEquals(18L, c.productsById.getValue("product.smoked_fillet").unitPrice)
         assertEquals(100, c.recipesById.getValue("recipe.basic_portions").durationTicks)

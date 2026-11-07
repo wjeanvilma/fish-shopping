@@ -1,0 +1,51 @@
+{
+  "phase": 26,
+  "schema": "fish.perf.device_matrix.v1",
+  "description": "Blueprint device budgets for quality presets and soft auto-downgrade. Presentation-only — never changes the 20 Hz sim.",
+  "harborCacheLimit": 2,
+  "platforms": {
+    "android": {
+      "label": "Android mid-tier",
+      "targetFps": 30,
+      "resolutionNote": "Native device resolution; Filament MSAA only on high",
+      "frameTargetMs": {
+        "low": 40.0,
+        "medium": 33.3,
+        "high": 33.3
+      },
+      "downgradeStreakFrames": 45,
+      "downgradeWindowSeconds": 1.5
+    },
+    "web": {
+      "label": "Web mid desktop @1080p",
+      "targetFps": 60,
+      "resolutionNote": "Medium caps DPR ≤1.5 and draws at most 1080 CSS px tall; high ≤2× DPR",
+      "maxCssHeightMedium": 1080,
+      "frameTargetMs": {
+        "low": 22.2,
+        "medium": 16.7,
+        "high": 16.7
+      },
+      "downgradeStreakFrames": 90,
+      "downgradeWindowSeconds": 1.5
+    }
+  },
+  "qualityCosts": {
+    "low": {
+      "web": "1× DPR, no shadows, crowd≤3, fly≤4, burst≤2",
+      "android": "no shadows, no MSAA, crowd≤3, fly≤4, burst≤2"
+    },
+    "medium": {
+      "web": "≤1.5× DPR (≤1080 CSS tall), 1024 shadows, crowd≤5, fly≤8, burst≤4",
+      "android": "shadows on, no MSAA, crowd≤5, fly≤8, burst≤4"
+    },
+    "high": {
+      "web": "≤2× DPR, 2048 soft shadows, crowd≤8, fly full pool, burst full pool",
+      "android": "shadows + 4× MSAA, crowd≤8, fly full pool, burst full pool"
+    }
+  },
+  "autoDowngrade": {
+    "overBudgetMultiplier": 1.15,
+    "steps": ["high→medium", "medium→low", "low stays"]
+  }
+}

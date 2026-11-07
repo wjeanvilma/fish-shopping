@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.willio.jeanvilma.fishshopping.core.FixtureFreezeTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-06T21:24:25.486Z" hostname="Mac" time="0.001">
-  <properties/>
-  <testcase name="releasePinMatchesContentAndFixtureFiles" classname="com.willio.jeanvilma.fishshopping.core.FixtureFreezeTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

@@ -564,12 +564,23 @@ enum class ZoneKind(val wire: String) {
     MACHINE_OUTPUT("machine_output"),
     COUNTER("counter"),
     KIOSK("kiosk"),
+    /** Phase 6 expansion marker — walk-to-plot inspect / confirm build. */
+    PLOT("plot"),
     ;
 
     companion object {
         fun fromWire(s: String) = entries.firstOrNull { it.wire == s }
     }
 }
+
+/** Harbor expansion marker that grants an unlock upgrade when built. */
+data class PlotDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val zone: String,
+    val grantsUpgrade: String,
+)
 
 data class ZoneDef(val id: String, val kind: ZoneKind, val rect: RectMm)
 
@@ -739,6 +750,8 @@ data class HarborDef(
     val fishingSpots: List<FishingSpotDef>,
     val stations: List<StationDef>,
     val counters: List<CounterDef>,
+    /** Phase 6 expansion markers (walk-to-plot construction). */
+    val plots: List<PlotDef> = emptyList(),
     val customerSpawnTicks: Int,
     /** Where customers enter and leave the harbor. */
     val customerEntry: PointMm,
@@ -754,6 +767,9 @@ data class HarborDef(
 ) {
     val zonesById = zones.associateBy { it.id }
     val rushesById = rushes.associateBy { it.id }
+    val plotsById = plots.associateBy { it.id }
+    val plotsByZone = plots.associateBy { it.zone }
+    val plotsByUpgrade = plots.associateBy { it.grantsUpgrade }
     /** GLB filename under models/, matching generate_blockout.py. */
     val blockoutAsset: String get() = "${id.substringAfter('.')}_blockout.glb"
 }

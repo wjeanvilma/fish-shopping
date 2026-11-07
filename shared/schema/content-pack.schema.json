@@ -1865,6 +1865,7 @@
           "fishingSpots",
           "stations",
           "counters",
+          "plots",
           "customerSpawnTicks",
           "customerEntry",
           "customerWalkMmPerTick",
@@ -1922,7 +1923,8 @@
                         "machine_input",
                         "machine_output",
                         "counter",
-                        "kiosk"
+                        "kiosk",
+                        "plot"
                       ]
                     }
                   }
@@ -2073,6 +2075,43 @@
                   "description": "Optional upgrade that must be owned before this counter accepts stock, spawns, or cashier coverage."
                 }
               }
+            }
+          },
+          "plots": {
+            "type": "array",
+            "description": "Phase 6 expansion markers: walk onto the plot zone, inspect, confirm spend to grant an unlock upgrade.",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "name",
+                "description",
+                "zone",
+                "grantsUpgrade"
+              ],
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/id",
+                  "pattern": "^plot\\.[a-z0-9_]+$"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "zone": {
+                  "$ref": "#/$defs/id",
+                  "description": "Zone of kind plot the player must stand in to build."
+                },
+                "grantsUpgrade": {
+                  "$ref": "#/$defs/id",
+                  "description": "Upgrade granted atomically on confirm (unlock_machine / unlock_counter / unlock_fishing_spot)."
+                }
+              },
+              "additionalProperties": false
             }
           },
           "customerSpawnTicks": {

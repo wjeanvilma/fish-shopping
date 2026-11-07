@@ -17,8 +17,9 @@ object Telemetry {
 
     /** Keys that must never appear in a telemetry payload. */
     val FORBIDDEN_KEYS: Set<String> = setOf(
-        "bag", "cloudAccountId", "cloud_account_id", "accountId", "email",
-        "password", "token", "idToken", "x", "z", "facingX", "facingZ",
+        "bag", "cloudAccountId", "cloud_account_id", "cloudRefreshToken", "cloud_refresh_token",
+        "accountId", "email",
+        "password", "token", "idToken", "refreshToken", "x", "z", "facingX", "facingZ",
         "player", "workers", "customers", "machines", "counters",
     )
 

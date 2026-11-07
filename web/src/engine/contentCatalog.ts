@@ -20,6 +20,7 @@ export function contentCatalogSummary(pack: ContentPack): string {
     `  customers=${r.customers.length}`,
     `  contracts=${r.contracts.templates.length}`,
     `  harbors=${r.harbors.length}`,
+    `  plots=${r.harbors.reduce((n, h) => n + (h.plots?.length ?? 0), 0)}`,
     `  decor=${r.decor.items.length}`,
     `  seasonalEvents=${r.seasonalEvents.events.length}`,
     `  bankGoals=${r.bank.goalPresets.length}`,

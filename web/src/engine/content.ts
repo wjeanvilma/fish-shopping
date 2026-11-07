@@ -365,8 +365,16 @@ export interface CustomerDef {
 export type TutorialTrigger = { kind: "enter_zone"; zone: string } | ({ kind: "stat" } & StatGoal);
 export interface TutorialStepDef { id: string; text: string; advanceOn: TutorialTrigger }
 export interface RectMm { id: string; minX: number; minZ: number; maxX: number; maxZ: number }
-export type ZoneKind = "fishing" | "machine_input" | "machine_output" | "counter" | "kiosk";
+export type ZoneKind = "fishing" | "machine_input" | "machine_output" | "counter" | "kiosk" | "plot";
 export interface ZoneDef extends RectMm { kind: ZoneKind }
+/** Phase 6 expansion marker that grants an unlock upgrade when built. */
+export interface PlotDef {
+  id: string;
+  name: string;
+  description: string;
+  zone: string;
+  grantsUpgrade: string;
+}
 export interface DayPartDef {
   id: string;
   name: string;
@@ -452,6 +460,8 @@ export interface HarborDef {
   fishingSpots: FishingSpotDef[];
   stations: StationDef[];
   counters: CounterDef[];
+  /** Phase 6 expansion markers (walk-to-plot construction). */
+  plots: PlotDef[];
   customerSpawnTicks: number;
   customerEntry: PointMm;
   customerWalkMmPerTick: number;
@@ -581,6 +591,7 @@ export class ContentPack {
     for (const h of raw.harbors) {
       h.requires = h.requires ?? [];
       h.customerPathWaypoints = h.customerPathWaypoints ?? [];
+      h.plots = h.plots ?? [];
       h.rushes = (h.rushes ?? []).map((rush) => ({
         ...rush,
         priceMultPermille: rush.priceMultPermille ?? 1000,
@@ -1334,10 +1345,54 @@ export function validateContent(p: ContentPack): string[] {
         }
       }
     }
+    const plotIds = new Set<string>();
+    const plotZones = new Set<string>();
+    const plotUpgrades = new Set<string>();
+    for (const plot of h.plots ?? []) {
+      check(!plotIds.has(plot.id), () => `${h.id}: duplicate plot '${plot.id}'`);
+      plotIds.add(plot.id);
+      check(!plotZones.has(plot.zone), () => `${h.id}: duplicate plot zone '${plot.zone}'`);
+      plotZones.add(plot.zone);
+      check(!plotUpgrades.has(plot.grantsUpgrade), () => `${h.id}: duplicate plot grantsUpgrade '${plot.grantsUpgrade}'`);
+      plotUpgrades.add(plot.grantsUpgrade);
+      const z = zones.get(plot.zone);
+      check(!!z, () => `${plot.id}: unknown zone '${plot.zone}'`);
+      check(z?.kind === "plot", () => `${plot.id}: zone must be kind plot`);
+      if (z) {
+        check(open(rectCenterX(z), rectCenterZ(z)), () => `${plot.id}: plot zone center is not on open walkable ground`);
+      }
+      const u = p.upgradesById.get(plot.grantsUpgrade);
+      check(!!u, () => `${plot.id}: grantsUpgrade unknown '${plot.grantsUpgrade}'`);
+      if (u) {
+        const e = u.effect;
+        if (e.kind === "unlock_machine") {
+          check(h.stations.some((st) => st.machine === e.machine && st.requiresUpgrade === u.id), () =>
+            `${plot.id}: harbor has no station for unlock_machine '${e.machine}' gated by '${u.id}'`);
+        } else if (e.kind === "unlock_counter") {
+          check(h.counters.some((ct) => ct.requiresUpgrade === u.id), () =>
+            `${plot.id}: harbor has no counter gated by '${u.id}'`);
+        } else if (e.kind === "unlock_fishing_spot") {
+          check(h.fishingSpots.some((f) => f.requiresUpgrade === u.id), () =>
+            `${plot.id}: harbor has no fishing spot gated by '${u.id}'`);
+        } else {
+          check(false, () => `${plot.id}: grantsUpgrade must unlock a machine, counter, or fishing spot`);
+        }
+      }
+    }
+    for (const s of h.stations) {
+      if (!s.requiresUpgrade) continue;
+      check(plotUpgrades.has(s.requiresUpgrade), () =>
+        `${s.id}: locked station upgrade '${s.requiresUpgrade}' needs a plot on ${h.id}`);
+    }
+    for (const c of h.counters) {
+      if (!c.requiresUpgrade) continue;
+      check(plotUpgrades.has(c.requiresUpgrade), () =>
+        `${c.id}: locked counter upgrade '${c.requiresUpgrade}' needs a plot on ${h.id}`);
+    }
     for (const z of h.zones) {
       check(open(rectCenterX(z), rectCenterZ(z)), () => `${h.id}: zone '${z.id}' centre is not on open walkable ground`);
     }
-    duplicates([...h.zones, ...h.stations, ...h.counters].map((x) => x.id)).forEach((id) => errors.push(`${h.id}: duplicate '${id}'`));
+    duplicates([...h.zones, ...h.stations, ...h.counters, ...(h.plots ?? [])].map((x) => x.id)).forEach((id) => errors.push(`${h.id}: duplicate '${id}'`));
     check(zones.size > 0, () => `${h.id}: no zones`);
   }
 

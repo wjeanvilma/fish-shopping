@@ -6,22 +6,57 @@
  */
 import contentJson from "../../../shared/content/content-pack.json";
 import {
-  type Command, type ContentPack, FixedStepClock, GameState, INPUT_SCALE, NewerSaveError, OfflinePolicy,
+  type Command, type ContentPack, CosmeticsIapSystem, FixedStepClock, GameState, INPUT_SCALE, NewerSaveError, OfflinePolicy,
   type OfflineReport, ProductionSystem, Simulation, type SimView, applyOffline, buildView,
   decodeSnapshotEnvelope, encodeBalanceExport, encodeSnapshot, encodeTelemetry, loadContent,
 } from "../engine";
 import { AudioBus } from "../audio/audioBus";
 import { sfxFromEvent } from "../audio/sfxCues";
+import { sharedAnalyticsBus } from "../analytics/analyticsBus";
+import {
+  createEntitlementBilling,
+  cosmeticGrantRequestId,
+  grantRequestId,
+  type EntitlementBilling,
+} from "../billing/entitlementBilling";
 import { CloudSyncCoordinator } from "../cloud/cloudSyncCoordinator";
+import { peekSnapshot, summaryOf, type CloudConflictOffer, type SyncSource } from "../engine/cloudSync";
 import { CameraRig } from "./cameraRig";
+import { STORAGE_UNAVAILABLE_TOAST } from "./lifecyclePolicy";
 import { openSaveStore, type SaveStore } from "./saveStore";
-import { loadSettings, saveSettings, type GameSettings, type QualityPreset } from "./settingsStore";
-import { resolveFlyingTransfer, type FlyingTransferCue } from "../render/presenters";
+import {
+  formatLastSavedLabel,
+  loadSettings,
+  saveSettings,
+  type GameSettings,
+  type QualityPreset,
+  type SaveStatusView,
+} from "./settingsStore";
+import {
+  cloudConflictView,
+  localRecoveryView,
+  type CloudConflictView,
+  type LocalRecoveryView,
+} from "./snapshotChoice";
+import {
+  resolveCelebrateBurst,
+  resolveFlyingTransfer,
+  resolveMachineDoneBurst,
+  resolvePayBurst,
+  type FlyingTransferCue,
+  type WorldBurstCue,
+} from "../render/presenters";
 import { stickFromTapTarget, type TapTarget } from "../presenters/tapToMove";
 
 export type HostState =
   | { status: "loading" }
-  | { status: "title"; hasSave: boolean }
+  | {
+      status: "title";
+      hasSave: boolean;
+      cloudConflict: CloudConflictView | null;
+      localRecovery: LocalRecoveryView | null;
+      settings: GameSettings;
+    }
   | {
       status: "ready";
       view: SimView;
@@ -30,6 +65,9 @@ export type HostState =
       questsOpen: boolean;
       contractsOpen: boolean;
       mapOpen: boolean;
+      warehouseOpen: boolean;
+      speciesBookOpen: boolean;
+      dashboardOpen: boolean;
       pauseOpen: boolean;
       settingsOpen: boolean;
       bagOpen: boolean;
@@ -45,6 +83,9 @@ type PanelId =
   | "quests"
   | "contracts"
   | "map"
+  | "warehouse"
+  | "speciesBook"
+  | "dashboard"
   | "pause"
   | "settings"
   | "bag"
@@ -65,6 +106,7 @@ export class GameHost {
   private settings: GameSettings = loadSettings();
   private readonly audio = new AudioBus();
   private readonly cloud = new CloudSyncCoordinator();
+  private readonly billing: EntitlementBilling = createEntitlementBilling();
   private allowSaving = true;
   private rotateOnNextSave = true;
   private upgradesOpen = false;
@@ -72,6 +114,9 @@ export class GameHost {
   private questsOpen = false;
   private contractsOpen = false;
   private mapOpen = false;
+  private warehouseOpen = false;
+  private speciesBookOpen = false;
+  private dashboardOpen = false;
   private pauseOpen = false;
   private settingsOpen = false;
   private bagOpen = false;
@@ -83,6 +128,12 @@ export class GameHost {
   private saveChain: Promise<void> = Promise.resolve();
   private lastCheckpointEpochMs: number | null = null;
   private pendingOfflineReport: OfflineReport | null = null;
+  /** Phase 11: parked dual-snapshot choice (texts kept until the player picks). */
+  private pendingConflict: CloudConflictOffer | null = null;
+  private cloudConflictView: CloudConflictView | null = null;
+  /** Phase 11: parked corrupt-latest → previous recovery. */
+  private pendingRecoveryText: string | null = null;
+  private localRecoveryView: LocalRecoveryView | null = null;
   /** Presentation-only tap-to-move destination (cleared by stick/keys or on arrival). */
   private tapTarget: TapTarget | null = null;
   /** True while joystick/keyboard is holding a non-zero stick. */
@@ -93,6 +144,8 @@ export class GameHost {
 
   /** Presentation-only flying transfer cues (drained each frame by the scene). */
   private pendingFlying: FlyingTransferCue[] = [];
+  /** Phase 16 world bursts (pay / celebrate / machine_done). */
+  private pendingBursts: WorldBurstCue[] = [];
 
   private starting: Promise<void> | null = null;
 
@@ -104,11 +157,48 @@ export class GameHost {
     return out;
   }
 
+  /** Drain Phase 16 world burst cues for the harbor scene. */
+  drainWorldBursts(): WorldBurstCue[] {
+    if (this.pendingBursts.length === 0) return [];
+    const out = this.pendingBursts;
+    this.pendingBursts = [];
+    return out;
+  }
+
   /** Idempotent: React StrictMode mounts effects twice in development. */
   start(): Promise<void> {
-    this.audio.setMuted(this.settings.muted);
+    this.applyAudioSettings();
     this.starting ??= this.doStart();
     return this.starting;
+  }
+
+  private applyAudioSettings(): void {
+    this.audio.applyLevels({
+      muted: this.settings.muted,
+      musicVolume: this.settings.musicVolume,
+      sfxVolume: this.settings.sfxVolume,
+      hapticsEnabled: this.settings.hapticsEnabled,
+    });
+  }
+
+  private applyAnalyticsConsent(): void {
+    sharedAnalyticsBus.setConsent(this.settings.analyticsConsent);
+  }
+
+  /** Phase 25: answer the title consent gate (or Settings toggle). */
+  setAnalyticsConsent(consent: boolean): void {
+    this.settings = {
+      ...this.settings,
+      analyticsConsent: consent,
+      analyticsConsentDecided: true,
+    };
+    this.applyAnalyticsConsent();
+    saveSettings(this.settings);
+    if (this.state.status === "title") {
+      this.publishTitle(this.state.hasSave);
+    } else {
+      this.publish(true);
+    }
   }
 
   /** Unlock Web Audio after a user gesture (click / key / touch). */
@@ -116,13 +206,26 @@ export class GameHost {
     this.audio.unlock();
   }
 
+  /** Phase 28: Web Audio unlocked after a user gesture. */
+  audioUnlocked(): boolean {
+    return this.audio.isUnlocked;
+  }
+
+  /** Phase 28: suspend/resume Web Audio with tab visibility (keeps unlock). */
+  setAudioLifecycleSuspended(suspended: boolean): void {
+    if (suspended) this.audio.suspendForLifecycle();
+    else this.audio.resumeForLifecycle();
+  }
+
   private async doStart(): Promise<void> {
     try {
       this.content = loadContent(contentJson);
       this.store = await openSaveStore();
       this.settings = loadSettings();
+      this.applyAudioSettings();
+      this.applyAnalyticsConsent();
       const candidates = await this.store.readCandidates();
-      if (!this.store.persistent) this.say("Saving is unavailable in this browser window");
+      if (!this.store.persistent) this.say(STORAGE_UNAVAILABLE_TOAST);
       this.publishTitle(candidates.length > 0);
     } catch (e) {
       this.allowSaving = !(e instanceof NewerSaveError);
@@ -133,9 +236,11 @@ export class GameHost {
   /** Continue from the newest usable save, or a fresh harbor if every slot is unusable. */
   async continueGame(): Promise<void> {
     if (this.booting || this.state.status !== "title" || !this.content || !this.store) return;
+    if (this.cloudConflictView || this.localRecoveryView) return;
     this.booting = true;
     try {
       const restored = await this.restoreOrCreate(this.content);
+      if (!restored) return; // parked for cloud conflict or local recovery UI
       this.bootSim(restored.state, restored.savedAtEpochMs);
     } catch (e) {
       this.allowSaving = !(e instanceof NewerSaveError);
@@ -145,11 +250,83 @@ export class GameHost {
     }
   }
 
+  /** Phase 11: apply the player's dual-snapshot choice. */
+  async resolveCloudConflict(source: SyncSource): Promise<void> {
+    if (this.booting || this.state.status !== "title" || !this.content || !this.store) return;
+    const offer = this.pendingConflict;
+    if (!offer || (source !== "local" && source !== "remote")) return;
+    this.booting = true;
+    try {
+      const text = source === "remote" ? offer.remoteText : offer.localText;
+      await this.store.write(text, true);
+      const decoded = decodeSnapshotEnvelope(this.content, text);
+      this.clearSaveChoiceUi();
+      sharedAnalyticsBus.onSaveRecovery(source === "remote" ? "cloud_remote" : "cloud_local");
+      this.say(source === "remote" ? "Restored cloud save" : "Kept this device's save");
+      this.bootSim(decoded.state, decoded.savedAtEpochMs);
+    } catch (e) {
+      this.allowSaving = !(e instanceof NewerSaveError);
+      this.clearSaveChoiceUi();
+      this.setState({ status: "failed", message: e instanceof Error ? e.message : String(e) });
+    } finally {
+      this.booting = false;
+    }
+  }
+
+  /** Phase 11: load the previous backup after a corrupt latest. */
+  async confirmLocalRecovery(): Promise<void> {
+    if (this.booting || this.state.status !== "title" || !this.content || !this.store) return;
+    const text = this.pendingRecoveryText;
+    if (!text) return;
+    this.booting = true;
+    try {
+      const decoded = decodeSnapshotEnvelope(this.content, text);
+      this.rotateOnNextSave = false;
+      this.clearSaveChoiceUi();
+      sharedAnalyticsBus.onSaveRecovery("local_previous");
+      this.say("Recovered your previous save");
+      this.bootSim(decoded.state, decoded.savedAtEpochMs);
+    } catch (e) {
+      this.allowSaving = !(e instanceof NewerSaveError);
+      this.clearSaveChoiceUi();
+      this.setState({ status: "failed", message: e instanceof Error ? e.message : String(e) });
+    } finally {
+      this.booting = false;
+    }
+  }
+
+  /** Phase 11: dismiss recovery dialog and stay on the title screen. */
+  dismissLocalRecovery(): void {
+    if (this.state.status !== "title") return;
+    this.clearSaveChoiceUi();
+    void this.refreshTitleHasSave();
+  }
+
+  private clearSaveChoiceUi(): void {
+    this.pendingConflict = null;
+    this.cloudConflictView = null;
+    this.pendingRecoveryText = null;
+    this.localRecoveryView = null;
+  }
+
+  private async refreshTitleHasSave(): Promise<void> {
+    let hasSave = false;
+    if (this.store) {
+      try {
+        hasSave = (await this.store.readCandidates()).length > 0;
+      } catch {
+        hasSave = this.allowSaving;
+      }
+    }
+    this.publishTitle(hasSave);
+  }
+
   /** Wipe slots and start a new harbor. Title screen confirms before calling this. */
   async newGame(): Promise<void> {
     if (this.booting || this.state.status !== "title" || !this.content || !this.store) return;
     this.booting = true;
     try {
+      this.clearSaveChoiceUi();
       await this.cloud.clearRemote(this.settings);
       await this.store.clear();
       this.rotateOnNextSave = true;
@@ -169,9 +346,11 @@ export class GameHost {
     if (this.sim && this.commands.length > 0) this.step(this.sim);
     this.save();
     this.clearPanels();
+    this.clearSaveChoiceUi();
     this.pendingOfflineReport = null;
     this.commands.length = 0;
     this.pendingFlying = [];
+    this.pendingBursts = [];
     this.lastMove = { x: 0, z: 0 };
     try {
       await this.saveChain;
@@ -193,29 +372,49 @@ export class GameHost {
     this.commands.length = 0;
     this.lastMove = { x: 0, z: 0 };
     this.pendingFlying = [];
+    this.pendingBursts = [];
     this.pendingOfflineReport = null;
     this.clearPanels();
+    sharedAnalyticsBus.resetSessionFlags();
+    this.applyAnalyticsConsent();
     this.sim = new Simulation(this.content!, state);
     this.lastCheckpointEpochMs = savedAtEpochMs;
     this.applyPendingOffline(Date.now());
     if (this.pendingOfflineReport !== null || savedAtEpochMs !== null) this.save();
     this.latestView = buildView(this.sim);
-    if (this.store && !this.store.persistent) this.say("Saving is unavailable in this browser window");
+    if (this.store && !this.store.persistent) this.say(STORAGE_UNAVAILABLE_TOAST);
     this.publish(true);
     this.resume();
   }
 
   private publishTitle(hasSave: boolean): void {
-    this.setState({ status: "title", hasSave });
+    this.setState({
+      status: "title",
+      hasSave,
+      cloudConflict: this.cloudConflictView,
+      localRecovery: this.localRecoveryView,
+      settings: this.settings,
+    });
   }
 
-  private async restoreOrCreate(content: ContentPack): Promise<{ state: GameState; savedAtEpochMs: number | null }> {
+  /**
+   * Load the chosen snapshot, or park Phase 11 choice/recovery UI and return null.
+   */
+  private async restoreOrCreate(content: ContentPack): Promise<{ state: GameState; savedAtEpochMs: number | null } | null> {
     const candidates = await this.store!.readCandidates();
     const localLatest = candidates.find(([label]) => label === "latest")?.[1] ?? null;
     const pull = await this.cloud.pullMerge(this.settings, localLatest);
     if (pull.settings !== this.settings) {
       this.settings = pull.settings;
       saveSettings(this.settings);
+    }
+    if (pull.conflict) {
+      this.pendingConflict = pull.conflict;
+      this.cloudConflictView = cloudConflictView(pull.conflict, content);
+      this.localRecoveryView = null;
+      this.pendingRecoveryText = null;
+      this.publishTitle(true);
+      return null;
     }
     if (pull.decision.source === "remote" && pull.decision.text) {
       try {
@@ -227,16 +426,29 @@ export class GameHost {
         console.warn("Cloud save unusable:", e);
       }
     }
+    let latestCorrupt = false;
     for (const [label, text] of candidates) {
       try {
         const decoded = decodeSnapshotEnvelope(content, text);
         if (label !== "latest") {
+          if (latestCorrupt) {
+            const peeked = peekSnapshot(text);
+            if (peeked) {
+              this.pendingRecoveryText = text;
+              this.localRecoveryView = localRecoveryView(summaryOf(peeked, "local"), content);
+              this.pendingConflict = null;
+              this.cloudConflictView = null;
+              this.publishTitle(true);
+              return null;
+            }
+          }
           this.rotateOnNextSave = false;
           this.say("Recovered your previous save");
         }
         return decoded;
       } catch (e) {
         if (e instanceof NewerSaveError) throw e; // never overwrite a newer app's save
+        if (label === "latest") latestCorrupt = true;
         console.warn(`Save '${label}' unusable:`, e);
       }
     }
@@ -274,7 +486,12 @@ export class GameHost {
     this.lastCheckpointEpochMs = nowEpochMs;
     if (elapsed <= 0) return;
     const report = applyOffline(sim, elapsed);
-    this.pendingOfflineReport = OfflinePolicy.shouldShowSummary(sim.content, report) ? report : null;
+    if (OfflinePolicy.shouldShowSummary(sim.content, report)) {
+      this.pendingOfflineReport = report;
+      sharedAnalyticsBus.onOfflineClaimed(report);
+    } else {
+      this.pendingOfflineReport = null;
+    }
     this.latestView = buildView(sim);
   }
 
@@ -295,17 +512,26 @@ export class GameHost {
     const batch = this.commands.splice(0);
     let transaction = false;
     const transferred: { from: string; to: string; itemId: string }[] = [];
-    for (const e of sim.step(batch)) {
+    const payCustomers: string[] = [];
+    const machineDone: string[] = [];
+    let celebrate = false;
+    const events = sim.step(batch);
+    sharedAnalyticsBus.onGameEvents(events, sim.state);
+    for (const e of events) {
       const cue = sfxFromEvent(e);
       if (cue) this.audio.play(cue);
       switch (e.type) {
         case "items_transferred":
           transferred.push({ from: e.from, to: e.to, itemId: e.itemId });
           break;
+        case "batch_completed":
+          machineDone.push(e.stationId);
+          break;
         case "sale_committed": {
           const tip = e.preferenceMet === false ? " (substituted)"
             : (e.priceMultPermille ?? 1000) > 1000 ? " Premium tip!" : "";
           this.say(`+${e.coins} coins${tip}`);
+          payCustomers.push(e.customerId);
           transaction = true;
           break;
         }
@@ -313,29 +539,39 @@ export class GameHost {
           if (e.personalBest) {
             const name = sim.content.itemName(e.speciesId);
             this.say(`New trophy: ${name} · ${e.sizePermille}%`);
+            celebrate = true;
             transaction = true;
           } else if (e.timingBonus) {
             const tip = sim.content.speciesById.get(e.speciesId)?.baseValue ?? 0;
             this.say(`Perfect reel! +${tip}`);
+            celebrate = true;
             transaction = true;
           }
           if (e.rareUpgrade) {
             this.say(`Rare catch: ${sim.content.speciesById.get(e.speciesId)?.name ?? e.speciesId}`);
+            celebrate = true;
             transaction = true;
           }
           break;
         case "trophy_set_completed": {
           const setName = sim.content.trophySetsById.get(e.setId)?.name ?? e.setId;
           this.say(`Gallery complete: ${setName}`);
+          celebrate = true;
           transaction = true;
           break;
         }
+        case "coin_goal_reached":
+          this.say(`Coin goal reached!`);
+          celebrate = true;
+          transaction = true;
+          break;
         case "fishing_spot_depleted":
           this.say("Pier empty — fish are returning");
           transaction = true;
           break;
         case "rush_started":
           this.say(`${e.name}!`);
+          celebrate = true;
           transaction = true;
           break;
         case "machine_idle_alert": {
@@ -346,6 +582,16 @@ export class GameHost {
         }
         case "upgrade_purchased":
           if (!e.replayed) { this.say(`Bought ${sim.content.upgradesById.get(e.upgradeId)?.name ?? e.upgradeId}`); transaction = true; }
+          break;
+        case "full_harbor_unlock_granted":
+          if (!e.replayed) { this.say("All harbors unlocked"); transaction = true; }
+          break;
+        case "iap_cosmetic_granted":
+          if (!e.replayed) { this.say(`Unlocked ${e.cosmeticId}`); transaction = true; }
+          break;
+        case "iap_cosmetic_rejected":
+          this.say(e.reason);
+          transaction = true;
           break;
         case "purchase_rejected": this.say(e.reason); transaction = true; break;
         case "worker_hired":
@@ -402,6 +648,7 @@ export class GameHost {
             this.say(`Traveled to ${name}`);
             this.mapOpen = false;
             this.pendingFlying = [];
+            this.pendingBursts = [];
             transaction = true;
           }
           break;
@@ -427,6 +674,12 @@ export class GameHost {
         const cue = resolveFlyingTransfer(view, t.from, t.to, t.itemId);
         if (cue) this.pendingFlying.push(cue);
       }
+      for (const customerId of payCustomers) this.pendingBursts.push(resolvePayBurst(view, customerId));
+      for (const stationId of machineDone) {
+        const cue = resolveMachineDoneBurst(view, stationId);
+        if (cue) this.pendingBursts.push(cue);
+      }
+      if (celebrate) this.pendingBursts.push(resolveCelebrateBurst(view));
     }
     if (transaction) this.publish(true);
   }
@@ -479,7 +732,7 @@ export class GameHost {
 
   private get panelOpen(): boolean {
     return this.upgradesOpen || this.staffOpen || this.questsOpen || this.contractsOpen || this.mapOpen
-      || this.pauseOpen || this.settingsOpen || this.bagOpen || this.stationOpen
+      || this.warehouseOpen || this.speciesBookOpen || this.dashboardOpen || this.pauseOpen || this.settingsOpen || this.bagOpen || this.stationOpen
       || this.pendingOfflineReport !== null;
   }
 
@@ -489,6 +742,9 @@ export class GameHost {
     this.questsOpen = false;
     this.contractsOpen = false;
     this.mapOpen = false;
+    this.warehouseOpen = false;
+    this.speciesBookOpen = false;
+    this.dashboardOpen = false;
     this.pauseOpen = false;
     this.settingsOpen = false;
     this.bagOpen = false;
@@ -503,6 +759,9 @@ export class GameHost {
       this.questsOpen = which === "quests";
       this.contractsOpen = which === "contracts";
       this.mapOpen = which === "map";
+      this.warehouseOpen = which === "warehouse";
+      this.speciesBookOpen = which === "speciesBook";
+      this.dashboardOpen = which === "dashboard";
       this.pauseOpen = which === "pause";
       this.settingsOpen = which === "settings";
       this.bagOpen = which === "bag";
@@ -517,6 +776,9 @@ export class GameHost {
         case "quests": this.questsOpen = false; break;
         case "contracts": this.contractsOpen = false; break;
         case "map": this.mapOpen = false; break;
+        case "warehouse": this.warehouseOpen = false; break;
+        case "speciesBook": this.speciesBookOpen = false; break;
+        case "dashboard": this.dashboardOpen = false; break;
         case "pause": this.pauseOpen = false; break;
         case "settings": this.settingsOpen = false; break;
         case "bag": this.bagOpen = false; break;
@@ -531,16 +793,20 @@ export class GameHost {
   setQuestsOpen(open: boolean): void { this.setPanelOpen("quests", open); }
   setContractsOpen(open: boolean): void { this.setPanelOpen("contracts", open); }
   setMapOpen(open: boolean): void { this.setPanelOpen("map", open); }
+  setWarehouseOpen(open: boolean): void { this.setPanelOpen("warehouse", open); }
+  setSpeciesBookOpen(open: boolean): void { this.setPanelOpen("speciesBook", open); }
+  setDashboardOpen(open: boolean): void { this.setPanelOpen("dashboard", open); }
   setPauseOpen(open: boolean): void { this.setPanelOpen("pause", open); }
   setSettingsOpen(open: boolean): void { this.setPanelOpen("settings", open); }
   setBagOpen(open: boolean): void { this.setPanelOpen("bag", open); }
   setStationOpen(open: boolean): void { this.setPanelOpen("station", open); }
 
-  /** Presentation settings (mute, quality, a11y, cloud). Not part of the parity save. */
+  /** Presentation settings (mute, volumes, haptics, quality, a11y, cloud). Not part of the parity save. */
   updateSettings(partial: Partial<GameSettings>): void {
     this.settings = { ...this.settings, ...partial };
     if (!this.settings.tapToMove) this.tapTarget = null;
-    this.audio.setMuted(this.settings.muted);
+    this.applyAudioSettings();
+    this.applyAnalyticsConsent();
     if (this.settings.cloudSyncEnabled && !this.cloud.available) {
       this.say("Cloud sync on — configure Firebase keys to link a remote save");
     }
@@ -552,7 +818,11 @@ export class GameHost {
       });
     }
     saveSettings(this.settings);
-    this.publish(true);
+    if (this.state.status === "title") {
+      this.publishTitle(this.state.hasSave);
+    } else {
+      this.publish(true);
+    }
   }
 
   /** Whether a remote backend is configured (Firebase keys). Local play never needs this. */
@@ -579,6 +849,27 @@ export class GameHost {
     return this.settings.quality;
   }
 
+  /** Phase 10 a11y: snap camera / skip transfer VFX. */
+  settingsReducedMotion(): boolean {
+    return this.settings.reducedMotion;
+  }
+
+  /** Phase 10 a11y: toast captions for alerts. */
+  settingsCaptionsEnabled(): boolean {
+    return this.settings.captionsEnabled;
+  }
+
+  /** Phase 10 Settings save/cloud status row. */
+  saveStatus(): SaveStatusView {
+    return {
+      persistent: this.store?.persistent ?? false,
+      lastSavedLabel: formatLastSavedLabel(this.lastCheckpointEpochMs),
+      cloudEnabled: this.settings.cloudSyncEnabled,
+      cloudAvailable: this.cloud.available,
+      cloudLinked: !!this.settings.cloudAccountId,
+    };
+  }
+
   setMachinePaused(stationId: string, paused: boolean): void {
     this.commands.push({ type: "set_machine_paused", stationId, paused });
     if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
@@ -596,8 +887,99 @@ export class GameHost {
     }
   }
 
+  /** Phase 6: confirm spend while standing on an expansion plot marker. */
+  buildPlot(plotId: string): void {
+    this.commands.push({ type: "build_plot", plotId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
   purchaseDecor(decorId: string): void {
     this.commands.push({ type: "purchase_decor", decorId, requestId: crypto.randomUUID() });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  /** Phase 23: one-time full-harbor unlock via platform billing stub. */
+  purchaseFullHarborUnlock(): void {
+    void this.billing.purchaseFullUnlock(this.settings.cloudAccountId).then((result) => {
+      if (!result.ok) {
+        this.say(result.reason);
+        return;
+      }
+      this.applyFullUnlockGrant(result.purchaseToken, result.alreadyOwned);
+    });
+  }
+
+  /** Phase 23: restore purchases and grant if the store says owned. */
+  restoreFullHarborUnlock(): void {
+    void this.billing.restore(this.settings.cloudAccountId).then((result) => {
+      if (!result.owned || !result.purchaseToken) {
+        this.say("No harbor unlock to restore");
+        return;
+      }
+      this.applyFullUnlockGrant(result.purchaseToken, true);
+    });
+  }
+
+  private applyFullUnlockGrant(purchaseToken: string, fromRestore: boolean): void {
+    this.commands.push({
+      type: "grant_full_harbor_unlock",
+      requestId: grantRequestId(purchaseToken),
+    });
+    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+    if (fromRestore && this.sim?.state.fullHarborUnlock) {
+      this.say("Harbor unlock restored");
+    }
+  }
+
+  /** Phase 24: purchase a power-neutral cosmetic SKU. */
+  purchaseIapCosmetic(sku: string): void {
+    void this.billing.purchaseCosmetic(sku, this.settings.cloudAccountId).then((result) => {
+      if (!result.ok) {
+        this.say(result.reason);
+        return;
+      }
+      this.applyCosmeticGrant(sku, result.purchaseToken, result.alreadyOwned);
+    });
+  }
+
+  /** Phase 24: restore all entitlements (full unlock + cosmetics). */
+  restorePurchases(): void {
+    void this.billing.restoreAll(this.settings.cloudAccountId).then((owned) => {
+      if (owned.length === 0) {
+        this.say("No purchases to restore");
+        return;
+      }
+      for (const row of owned) {
+        if (row.grantsCosmetic) {
+          this.applyCosmeticGrant(row.sku, row.purchaseToken, false);
+        } else {
+          this.applyFullUnlockGrant(row.purchaseToken, false);
+        }
+      }
+      this.say(`Restored ${owned.length} purchase${owned.length === 1 ? "" : "s"}`);
+    });
+  }
+
+  private applyCosmeticGrant(sku: string, purchaseToken: string, _fromRestore: boolean): void {
+    const cosmeticId = CosmeticsIapSystem.BY_SKU.get(sku)?.grantsCosmetic;
+    if (!cosmeticId) {
+      this.say("Unknown cosmetic SKU");
+      return;
+    }
+    this.commands.push({
+      type: "grant_iap_cosmetic",
+      cosmeticId,
+      requestId: cosmeticGrantRequestId(sku, purchaseToken),
+    });
     if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
       this.step(this.sim);
       this.publish(true);
@@ -741,7 +1123,10 @@ export class GameHost {
       .then(() => store.write(text, rotate))
       .then(() => this.cloud.push(syncSettings, text))
       .then((pushed) => {
-        if (pushed.cloudAccountId !== syncSettings.cloudAccountId) {
+        if (
+          pushed.cloudAccountId !== syncSettings.cloudAccountId ||
+          pushed.cloudRefreshToken !== syncSettings.cloudRefreshToken
+        ) {
           this.settings = pushed;
           saveSettings(this.settings);
         }
@@ -780,6 +1165,9 @@ export class GameHost {
       questsOpen: this.questsOpen,
       contractsOpen: this.contractsOpen,
       mapOpen: this.mapOpen,
+      warehouseOpen: this.warehouseOpen,
+      speciesBookOpen: this.speciesBookOpen,
+      dashboardOpen: this.dashboardOpen,
       pauseOpen: this.pauseOpen,
       settingsOpen: this.settingsOpen,
       bagOpen: this.bagOpen,

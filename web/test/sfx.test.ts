@@ -1,4 +1,13 @@
 import { describe, expect, it } from "vitest";
+import {
+  canSpawnVoices,
+  clampVolume,
+  effectiveMusicGain,
+  effectiveSfxGain,
+  MAX_SFX_VOICES,
+  voicesForCue,
+  VOLUME_STEPS,
+} from "../src/audio/audioBus";
 import { HAPTIC_CUES, sfxFromEvent } from "../src/audio/sfxCues";
 
 describe("sfxFromEvent", () => {
@@ -25,5 +34,31 @@ describe("sfxFromEvent", () => {
     expect(HAPTIC_CUES.has("catch")).toBe(true);
     expect(HAPTIC_CUES.has("sale")).toBe(true);
     expect(HAPTIC_CUES.has("rush")).toBe(false);
+  });
+});
+
+describe("Phase 17 audio levels + voice cap", () => {
+  it("snaps volumes to Off/Low/Med/High steps", () => {
+    expect(VOLUME_STEPS).toEqual([0, 0.35, 0.7, 1]);
+    expect(clampVolume(0.1)).toBe(0);
+    expect(clampVolume(0.4)).toBe(0.35);
+    expect(clampVolume(0.65)).toBe(0.7);
+    expect(clampVolume(0.95)).toBe(1);
+  });
+
+  it("mutes music and sfx independently of haptics", () => {
+    expect(effectiveSfxGain(true, 1)).toBe(0);
+    expect(effectiveMusicGain(true, 0.7)).toBe(0);
+    expect(effectiveSfxGain(false, 0.35)).toBe(0.35);
+    expect(effectiveMusicGain(false, 0)).toBe(0);
+  });
+
+  it("caps concurrent SFX voices", () => {
+    expect(voicesForCue("upgrade")).toBe(3);
+    expect(voicesForCue("catch")).toBe(2);
+    expect(canSpawnVoices(0, 2)).toBe(true);
+    expect(canSpawnVoices(MAX_SFX_VOICES - 1, 2)).toBe(false);
+    expect(canSpawnVoices(MAX_SFX_VOICES, 1)).toBe(false);
+    expect(canSpawnVoices(4, 2, MAX_SFX_VOICES)).toBe(true);
   });
 });

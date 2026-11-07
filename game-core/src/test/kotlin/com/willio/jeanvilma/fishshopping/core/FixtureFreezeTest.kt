@@ -27,5 +27,9 @@ class FixtureFreezeTest {
             "tutorial must still finish inside the starter-line window",
             Shared.content.tutorial.isNotEmpty(),
         )
+        assertEquals("1.0.0", pin["contentVersion"]!!.jsonPrimitive.content)
+        assertEquals("v1.0.0", pin["releaseTag"]!!.jsonPrimitive.content)
+        assertEquals("shared/ship/definition-of-done.json", pin["definitionOfDone"]!!.jsonPrimitive.content)
+        assertTrue(File(Shared.root, "ship/definition-of-done.json").isFile)
     }
 }

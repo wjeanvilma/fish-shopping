@@ -1,0 +1,40 @@
+{
+  "phase": 30,
+  "schema": "fish.ship.definition_of_done.v1",
+  "releaseTag": "v1.0.0",
+  "contentVersion": "1.0.0",
+  "schemaVersion": 20,
+  "quotas": {
+    "harbors": 5,
+    "speciesMin": 20,
+    "machineClasses": 6
+  },
+  "checks": [
+    "blueprint_quotas",
+    "objectives_reachable",
+    "inventories_reconcile",
+    "rewards_idempotent",
+    "latest_and_previous_restore",
+    "store_urls_filled",
+    "release_pin_matches"
+  ],
+  "screensPresent": [
+    "title",
+    "hud",
+    "bag",
+    "station",
+    "upgrades",
+    "staff",
+    "quests",
+    "contracts",
+    "map",
+    "warehouse",
+    "species_book",
+    "dashboard",
+    "settings",
+    "pause",
+    "cloud_conflict",
+    "local_recovery"
+  ],
+  "notes": "Audit gates for the blueprint Complete product + Release hardening Definition of Done."
+}

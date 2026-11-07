@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Filament renders with OpenGL ES 3.0. -->
     <uses-feature
         android:glEsVersion="0x00030000"
         android:required="true" />
 
-    <!-- Catch / sale haptic pulses (Phase 25). -->
+    <!-- Catch / sale haptic pulses. -->
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- Optional cloud sync (Phase 26). Local play works offline without this path. -->
+    <!-- Optional cloud sync. Local play works offline without this path. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application

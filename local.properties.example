@@ -1,0 +1,7 @@
+# Copy to local.properties (gitignored). SDK path is machine-local.
+# sdk.dir=/Users/you/Library/Android/sdk
+
+# Phase 22 — optional cloud save (anonymous Identity Toolkit + Firestore REST).
+# Leave blank for local-only play. Never commit real keys.
+fish.firebase.apiKey=
+fish.firebase.projectId=

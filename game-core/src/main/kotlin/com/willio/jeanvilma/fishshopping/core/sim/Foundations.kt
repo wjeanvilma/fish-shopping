@@ -43,7 +43,7 @@ object SimConstants {
      * 18: loanOwed / loanDueTick / coinGoal / coinGoalCelebrated (Phase 26 bank).
      * 19: speciesCatches map (Phase 27 telemetry v2).
      */
-    const val SCHEMA_VERSION = 19
+    const val SCHEMA_VERSION = 20
 }
 
 /** Integer arithmetic that refuses to leave the shared safe range. */

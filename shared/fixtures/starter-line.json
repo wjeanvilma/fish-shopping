@@ -1,7 +1,7 @@
 {
     "name": "starter-line",
     "description": "Five minutes of the Sunrise Pier loop: fish, cut, stock, serve, hire, contract, grill, bag upgrades.",
-    "contentVersion": "0.50.0",
+    "contentVersion": "1.0.0",
     "harborId": "harbor.sunrise_pier",
     "seed": 20261105,
     "ticks": 6000,
@@ -2049,299 +2049,257 @@
         {
             "tick": 4316,
             "type": "move",
-            "x": -975,
-            "z": 220
-        },
-        {
-            "tick": 4326,
-            "type": "move",
-            "x": -976,
-            "z": 217
-        },
-        {
-            "tick": 4327,
-            "type": "move",
-            "x": -976,
-            "z": 215
-        },
-        {
-            "tick": 4328,
-            "type": "move",
-            "x": -977,
-            "z": 212
-        },
-        {
-            "tick": 4329,
-            "type": "move",
-            "x": -977,
-            "z": 210
-        },
-        {
-            "tick": 4330,
-            "type": "move",
-            "x": -978,
-            "z": 207
-        },
-        {
-            "tick": 4331,
-            "type": "move",
-            "x": -978,
-            "z": 205
-        },
-        {
-            "tick": 4332,
-            "type": "move",
-            "x": -979,
-            "z": 203
-        },
-        {
-            "tick": 4333,
-            "type": "move",
-            "x": -979,
-            "z": 200
-        },
-        {
-            "tick": 4334,
-            "type": "move",
-            "x": -980,
-            "z": 198
-        },
-        {
-            "tick": 4335,
-            "type": "move",
-            "x": -980,
-            "z": 196
-        },
-        {
-            "tick": 4336,
-            "type": "move",
-            "x": -981,
-            "z": 193
-        },
-        {
-            "tick": 4337,
-            "type": "move",
-            "x": -981,
-            "z": 191
-        },
-        {
-            "tick": 4338,
-            "type": "move",
-            "x": -981,
-            "z": 189
-        },
-        {
-            "tick": 4339,
-            "type": "move",
-            "x": -982,
-            "z": 187
-        },
-        {
-            "tick": 4340,
-            "type": "move",
-            "x": -982,
-            "z": 184
-        },
-        {
-            "tick": 4341,
-            "type": "move",
-            "x": -983,
-            "z": 182
-        },
-        {
-            "tick": 4342,
-            "type": "move",
-            "x": -983,
-            "z": 180
-        },
-        {
-            "tick": 4343,
-            "type": "move",
-            "x": -983,
-            "z": 178
-        },
-        {
-            "tick": 4344,
-            "type": "move",
-            "x": -984,
-            "z": 176
-        },
-        {
-            "tick": 4345,
-            "type": "move",
-            "x": -984,
-            "z": 174
-        },
-        {
-            "tick": 4346,
-            "type": "move",
-            "x": -985,
-            "z": 172
-        },
-        {
-            "tick": 4347,
-            "type": "move",
-            "x": -985,
-            "z": 170
-        },
-        {
-            "tick": 4348,
-            "type": "move",
-            "x": -985,
-            "z": 168
-        },
-        {
-            "tick": 4366,
-            "type": "move",
-            "x": -985,
-            "z": 169
-        },
-        {
-            "tick": 4380,
-            "type": "move",
-            "x": -985,
-            "z": 170
-        },
-        {
-            "tick": 4425,
-            "type": "move",
-            "x": -986,
-            "z": 170
-        },
-        {
-            "tick": 4427,
-            "type": "move",
-            "x": -987,
-            "z": 170
-        },
-        {
-            "tick": 4428,
-            "type": "move",
-            "x": -925,
-            "z": 165
-        },
-        {
-            "tick": 4429,
-            "type": "move",
-            "x": 0,
-            "z": 0
-        },
-        {
-            "tick": 4430,
-            "type": "move",
             "x": -1000,
             "z": 0
         },
         {
-            "tick": 4466,
+            "tick": 4324,
+            "type": "move",
+            "x": -500,
+            "z": 0
+        },
+        {
+            "tick": 4325,
             "type": "move",
             "x": 0,
             "z": 0
         },
         {
-            "tick": 4857,
+            "tick": 4326,
+            "type": "move",
+            "x": 0,
+            "z": 1000
+        },
+        {
+            "tick": 4333,
+            "type": "move",
+            "x": 0,
+            "z": 500
+        },
+        {
+            "tick": 4334,
+            "type": "move",
+            "x": 0,
+            "z": 0
+        },
+        {
+            "tick": 4335,
             "type": "move",
             "x": 1000,
             "z": 0
         },
         {
-            "tick": 4893,
+            "tick": 4351,
             "type": "move",
             "x": 0,
             "z": 0
         },
         {
-            "tick": 4894,
+            "tick": 4352,
+            "type": "move",
+            "x": -991,
+            "z": 129
+        },
+        {
+            "tick": 4370,
+            "type": "move",
+            "x": -991,
+            "z": 130
+        },
+        {
+            "tick": 4371,
+            "type": "move",
+            "x": -991,
+            "z": 129
+        },
+        {
+            "tick": 4372,
+            "type": "move",
+            "x": -991,
+            "z": 130
+        },
+        {
+            "tick": 4394,
+            "type": "move",
+            "x": -991,
+            "z": 129
+        },
+        {
+            "tick": 4395,
+            "type": "move",
+            "x": -991,
+            "z": 130
+        },
+        {
+            "tick": 4420,
+            "type": "move",
+            "x": -991,
+            "z": 129
+        },
+        {
+            "tick": 4421,
+            "type": "move",
+            "x": -991,
+            "z": 130
+        },
+        {
+            "tick": 4442,
+            "type": "move",
+            "x": -992,
+            "z": 130
+        },
+        {
+            "tick": 4443,
+            "type": "move",
+            "x": -991,
+            "z": 130
+        },
+        {
+            "tick": 4445,
+            "type": "move",
+            "x": -992,
+            "z": 130
+        },
+        {
+            "tick": 4446,
+            "type": "move",
+            "x": -991,
+            "z": 129
+        },
+        {
+            "tick": 4447,
+            "type": "move",
+            "x": -992,
+            "z": 132
+        },
+        {
+            "tick": 4448,
+            "type": "move",
+            "x": -960,
+            "z": 130
+        },
+        {
+            "tick": 4449,
+            "type": "move",
+            "x": 0,
+            "z": 0
+        },
+        {
+            "tick": 4450,
+            "type": "move",
+            "x": -1000,
+            "z": 0
+        },
+        {
+            "tick": 4486,
+            "type": "move",
+            "x": 0,
+            "z": 0
+        },
+        {
+            "tick": 4917,
+            "type": "move",
+            "x": 1000,
+            "z": 0
+        },
+        {
+            "tick": 4953,
+            "type": "move",
+            "x": 0,
+            "z": 0
+        },
+        {
+            "tick": 4954,
             "type": "move",
             "x": 898,
             "z": -438
         },
         {
-            "tick": 4908,
+            "tick": 4968,
             "type": "move",
             "x": 898,
             "z": -439
         },
         {
-            "tick": 4920,
+            "tick": 4980,
             "type": "move",
             "x": 897,
             "z": -440
         },
         {
-            "tick": 4921,
+            "tick": 4981,
             "type": "move",
             "x": 898,
             "z": -440
         },
         {
-            "tick": 4924,
+            "tick": 4984,
             "type": "move",
             "x": 898,
             "z": -439
         },
         {
-            "tick": 4925,
+            "tick": 4985,
             "type": "move",
             "x": 898,
             "z": -440
         },
         {
-            "tick": 4927,
+            "tick": 4987,
             "type": "move",
             "x": 898,
             "z": -439
         },
         {
-            "tick": 4928,
+            "tick": 4988,
             "type": "move",
             "x": 898,
             "z": -440
         },
         {
-            "tick": 4930,
+            "tick": 4990,
             "type": "move",
             "x": 898,
             "z": -439
         },
         {
-            "tick": 4931,
+            "tick": 4991,
             "type": "move",
             "x": 898,
             "z": -440
         },
         {
-            "tick": 4933,
+            "tick": 4993,
             "type": "move",
             "x": 898,
             "z": -439
         },
         {
-            "tick": 4934,
+            "tick": 4994,
             "type": "move",
             "x": 898,
             "z": -440
         },
         {
-            "tick": 4937,
+            "tick": 4997,
             "type": "move",
             "x": 899,
             "z": -440
         },
         {
-            "tick": 4938,
+            "tick": 4998,
             "type": "move",
             "x": 900,
             "z": -438
         },
         {
-            "tick": 4939,
+            "tick": 4999,
             "type": "move",
             "x": 720,
             "z": -355
         },
         {
-            "tick": 4940,
+            "tick": 5000,
             "type": "move",
             "x": 0,
             "z": 0
@@ -2349,8 +2307,8 @@
     ],
     "expect": {
         "tick": 6000,
-        "coins": 192,
-        "rngState": 1197262348,
+        "coins": 190,
+        "rngState": 1765156821,
         "playerX": 1200,
         "playerZ": -4000,
         "bag": {
@@ -2359,14 +2317,14 @@
         "bagCapacityUnits": 12,
         "machineInput": {},
         "machineOutput": {
-            "product.fillet": 6
+            "product.fillet": 4
         },
         "activeBatchRemaining": -1,
         "counterStock": {
-            "product.basic_portion": 8,
+            "product.basic_portion": 11,
             "product.premium_portion": 2
         },
-        "customers": 4,
+        "customers": 3,
         "fishingStock": {
             "zone.pier_end": 18,
             "zone.pier_spur": 10
@@ -2385,31 +2343,31 @@
             "quest.line_running",
             "quest.specialty_kitchen"
         ],
-        "tutorialIndex": 10,
+        "tutorialIndex": 11,
         "stats": {
             "stat.contract_items_delivered": 2,
             "stat.contract_revenue": 40,
             "stat.contract_standing_streak.contract.portion_order": 1,
             "stat.contracts_completed": 1,
-            "stat.counter_stocked": 32,
-            "stat.fish_caught": 29,
+            "stat.counter_stocked": 35,
+            "stat.fish_caught": 30,
             "stat.items_sold": 21,
             "stat.items_spoiled": 1,
-            "stat.lost_customers": 24,
-            "stat.machine_inputs": 29,
+            "stat.lost_customers": 25,
+            "stat.machine_inputs": 30,
             "stat.maintenance_paid": 3,
-            "stat.outputs_collected": 40,
+            "stat.outputs_collected": 43,
             "stat.quests_completed": 6,
             "stat.rare_catches": 1,
-            "stat.revenue": 155,
+            "stat.revenue": 153,
             "stat.sales": 11,
             "stat.tourist_sales": 2,
             "stat.trophy_records": 19,
             "stat.trophy_species": 9,
-            "stat.unmet_preference_sales": 7,
+            "stat.unmet_preference_sales": 8,
             "stat.upgrades_bought": 2,
-            "stat.worker_items_moved": 22,
-            "stat.worker_xp": 22,
+            "stat.worker_items_moved": 28,
+            "stat.worker_xp": 28,
             "stat.workers_hired": 1
         }
     }

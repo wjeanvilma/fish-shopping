@@ -31,7 +31,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Blueprint "Lifecycle behavior": pause the simulation in the background and checkpoint.
+    // Phase 28 / blueprint lifecycle: pause sim + abandon audio focus + AtomicFile checkpoint
+    // on background; rotation is handled via configChanges (no Activity recreate).
     override fun onStart() {
         super.onStart()
         game.resume()

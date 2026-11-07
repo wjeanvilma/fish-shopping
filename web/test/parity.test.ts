@@ -107,7 +107,7 @@ describe("shared fixtures", () => {
     const s = decodeSnapshot(content, v1);
     expect(s.customers.length).toBeGreaterThan(0);
     expect(s.customers.every((c) => c.arrived && c.walkTicksTotal === 0)).toBe(true);
-    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":19,')).toBe(true);
+    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":20,')).toBe(true);
   });
 
   it("migrates the legacy schema-12 save with worker progression defaults", () => {
@@ -115,7 +115,7 @@ describe("shared fixtures", () => {
     const s = decodeSnapshot(content, v12);
     expect(s.tick).toBe(2500);
     expect(s.workers.every((w) => w.xp === 0 && w.level === 1 && w.traits.length === 0 && w.onShift)).toBe(true);
-    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":19,')).toBe(true);
+    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":20,')).toBe(true);
   });
 
   it("migrates the legacy schema-13 save with onShift default", () => {
@@ -123,7 +123,7 @@ describe("shared fixtures", () => {
     const s = decodeSnapshot(content, v13);
     expect(s.tick).toBe(2500);
     expect(s.workers.every((w) => w.onShift)).toBe(true);
-    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":19,')).toBe(true);
+    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":20,')).toBe(true);
   });
 
   it("migrates the legacy schema-14 save with empty equipment", () => {
@@ -132,7 +132,7 @@ describe("shared fixtures", () => {
     expect(s.tick).toBe(2500);
     expect(s.workers.every((w) => w.onShift)).toBe(true);
     expect(s.workers.every((w) => Object.keys(w.equipment).length === 0)).toBe(true);
-    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":19,')).toBe(true);
+    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":20,')).toBe(true);
   });
 
   it("migrates the legacy schema-16 save with wear defaults", () => {
@@ -141,7 +141,7 @@ describe("shared fixtures", () => {
     expect(s.tick).toBe(2500);
     expect(s.machines.every((m) => !m.broken && m.slowUntilTick === 0)).toBe(true);
     const encoded = encodeSnapshot(content, s);
-    expect(encoded.startsWith('{"schemaVersion":19,')).toBe(true);
+    expect(encoded.startsWith('{"schemaVersion":20,')).toBe(true);
     expect(encoded).toContain('"broken":false');
     expect(encoded).toContain('"slowUntilTick":0');
   });
@@ -155,7 +155,7 @@ describe("shared fixtures", () => {
     expect(s.coinGoal).toBe(0);
     expect(s.coinGoalCelebrated).toBe(false);
     const encoded = encodeSnapshot(content, s);
-    expect(encoded.startsWith('{"schemaVersion":19,')).toBe(true);
+    expect(encoded.startsWith('{"schemaVersion":20,')).toBe(true);
     expect(encoded).toContain('"loanOwed":0');
     expect(encoded).toContain('"coinGoal":0');
   });
@@ -167,9 +167,32 @@ describe("shared fixtures", () => {
     expect(s.speciesCatches.size).toBe(0);
     s.recordSpeciesCatch("species.silver_sprat", 4);
     const encoded = encodeSnapshot(content, s);
-    expect(encoded.startsWith('{"schemaVersion":19,')).toBe(true);
+    expect(encoded.startsWith('{"schemaVersion":20,')).toBe(true);
     expect(encoded).toContain('"species.silver_sprat":4');
     const restored = decodeSnapshot(content, encoded);
     expect(restored.speciesCatches.get("species.silver_sprat")).toBe(4);
+  });
+
+  it("migrates the legacy schema-15 save with ownedDecor default", () => {
+    const v15 = shared("fixtures/legacy/snapshot-v15-starter-line-t2500.json").trimEnd();
+    const s = decodeSnapshot(content, v15);
+    expect(s.tick).toBe(2500);
+    expect(s.ownedDecor.size).toBe(0);
+    expect(s.fullHarborUnlock).toBe(false);
+    expect(encodeSnapshot(content, s).startsWith('{"schemaVersion":20,')).toBe(true);
+  });
+
+  it("migrates the legacy schema-19 save with fullHarborUnlock default", () => {
+    const v19 = shared("fixtures/legacy/snapshot-v19-starter-line-t2500.json").trimEnd();
+    const s = decodeSnapshot(content, v19);
+    expect(s.tick).toBe(2500);
+    expect(s.speciesCatches.size).toBeGreaterThan(0);
+    expect(s.fullHarborUnlock).toBe(false);
+    const encoded = encodeSnapshot(content, s);
+    expect(encoded.startsWith('{"schemaVersion":20,')).toBe(true);
+    expect(encoded).toContain('"fullHarborUnlock":false');
+    const restored = decodeSnapshot(content, encoded);
+    expect(restored.fullHarborUnlock).toBe(false);
+    expect(restored.speciesCatches.get("species.silver_sprat")).toBe(3);
   });
 });

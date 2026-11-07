@@ -1,5 +1,6 @@
 package com.willio.jeanvilma.fishshopping.render
 
+import com.willio.jeanvilma.fishshopping.core.sim.MachineStatus
 import com.willio.jeanvilma.fishshopping.core.sim.PlayerView
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import kotlin.math.PI
@@ -9,6 +10,7 @@ import kotlin.math.exp
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /** Max pool size for flying transfer meshes (Fly_N_fish|portion in the GLB). */
@@ -71,7 +73,7 @@ private fun shortId(id: String) = id.substringAfter('.')
 
 /**
  * Names of the pooled item slots that should be visible. Slot names follow the GLB contract
- * written by shared/tools/generate_blockout.py: Bag_<i>_fish|portion, In_<station>_<i>,
+ * written by shared/tools/generate_blockout.py (Phase 14 modular env): Bag_<i>_fish|portion, In_<station>_<i>,
  * Out_<station>_<i>, Stock_<counter>_<i>.
  */
 fun visibleStackSlots(v: SimView): Set<String> {
@@ -97,7 +99,10 @@ private val STACK_SLOT = Regex("""^(Bag_\d+_(fish|portion)|In_.+_\d+|Out_.+_\d+|
 
 fun isStackSlotName(name: String) = STACK_SLOT.matches(name)
 
-/** Grey-box locomotion pose (Phase 22). Roots use x/z/yaw; bodies use bobY/swayRad. */
+/** Phase 15 locomotion clips driven by presenters (no sim mutation). */
+enum class LocomotionClip { IDLE, WALK, CARRY, CAST }
+
+/** Character pose (Phase 22/15). Roots use x/z/yaw; bodies use bobY/swayRad/clip. */
 data class CharacterPose(
     val x: Double,
     val z: Double,
@@ -107,6 +112,11 @@ data class CharacterPose(
     val bobY: Double,
     val swayRad: Double,
     val idle: Boolean,
+    val clip: LocomotionClip = LocomotionClip.IDLE,
+    /** 0..1 cast progress when clip === CAST; otherwise 0. */
+    val cast01: Double = 0.0,
+    /** Forward lean (radians) — stronger while carrying. */
+    val leanRad: Double = 0.0,
 )
 
 /** Alias kept for older call sites; prefer [CharacterPose]. */
@@ -122,11 +132,32 @@ const val IDLE_BREATH_RAD_PER_S = 2.2
 const val QUEUE_IDLE_BREATH_MULT = 1.35
 const val PLAYER_SMOOTHING_PER_SECOND = 18.0
 const val CROWD_SMOOTHING_PER_SECOND = 10.0
-/** Rest local Y of PlayerBody / CustomerBody_N in the blockout GLB. */
+const val WORKER_SMOOTHING_PER_SECOND = 12.0
+/** Rest local Y of PlayerBody / CustomerBody_N / WorkerBody_N in the harbor GLB. */
 const val PLAYER_BODY_REST_Y = 0.8
 const val CUSTOMER_BODY_REST_Y = 0.75
+const val WORKER_BODY_REST_Y = 0.78
 const val PLAYER_NOSE_REST_Y = 1.25
 const val PLAYER_NOSE_REST_Z = 0.32
+const val PLAYER_ROD_REST_Y = 0.55
+const val PLAYER_ROD_REST_X = 0.28
+const val PLAYER_ROD_REST_Z = 0.05
+const val WORKER_POOL = 12
+
+/** Pick idle/walk/carry/cast from motion + inventory + fishing (presentation only). */
+fun pickLocomotionClip(moving: Boolean, carrying: Boolean, casting: Boolean): LocomotionClip = when {
+    casting -> LocomotionClip.CAST
+    moving && carrying -> LocomotionClip.CARRY
+    moving -> LocomotionClip.WALK
+    carrying -> LocomotionClip.CARRY
+    else -> LocomotionClip.IDLE
+}
+
+data class LocomotionOpts(
+    val carrying: Boolean = false,
+    val casting: Boolean = false,
+    val cast01: Double = 0.0,
+)
 
 /**
  * Advance walk/idle phases from smoothed displacement. Pure helper for unit tests.
@@ -142,31 +173,54 @@ fun locomoteFromMotion(
     idlePhase: Double,
     dt: Double,
     queuedIdle: Boolean = false,
+    opts: LocomotionOpts = LocomotionOpts(),
 ): Triple<CharacterPose, Double, Double> {
     val speed = if (dt > 1e-6) hypot(x - prevX, z - prevZ) / dt else 0.0
     val speed01 = min(1.0, speed / WALK_SPEED_REF_M_PER_S)
     val idle = speed < IDLE_SPEED_M_PER_S
+    val cast01 = if (opts.casting) min(1.0, max(0.0, opts.cast01)) else 0.0
+    val clip = pickLocomotionClip(moving = !idle, carrying = opts.carrying, casting = opts.casting)
     var wp = walkPhase
     var ip = idlePhase
-    if (!idle) wp += speed * WALK_STRIDE_RAD_PER_M
-    else ip += dt * IDLE_BREATH_RAD_PER_S
+    when (clip) {
+        LocomotionClip.CAST -> ip += dt * IDLE_BREATH_RAD_PER_S
+        else -> if (!idle) wp += speed * WALK_STRIDE_RAD_PER_M else ip += dt * IDLE_BREATH_RAD_PER_S
+    }
     val breath = IDLE_BREATH_AMP_M * if (queuedIdle) QUEUE_IDLE_BREATH_MULT else 1.0
-    val bobY = if (idle) breath * sin(ip)
-    else WALK_BOB_AMP_M * abs(sin(wp)) * speed01
-    val swayRad = if (idle) {
-        (if (queuedIdle) 0.035 else 0.015) * sin(ip * if (queuedIdle) 0.65 else 1.0)
-    } else {
-        WALK_SWAY_RAD * sin(wp) * speed01
+    val bobY: Double
+    val swayRad: Double
+    val leanRad: Double
+    when (clip) {
+        LocomotionClip.CAST -> {
+            bobY = breath * 0.5 * sin(ip)
+            swayRad = -0.12 - 0.25 * cast01
+            leanRad = -0.08 - 0.18 * cast01
+        }
+        LocomotionClip.CARRY -> {
+            bobY = if (idle) breath * sin(ip) else WALK_BOB_AMP_M * 0.7 * abs(sin(wp)) * speed01
+            swayRad = if (idle) 0.02 * sin(ip) else WALK_SWAY_RAD * 0.75 * sin(wp) * speed01
+            leanRad = 0.12 + if (idle) 0.0 else 0.08 * speed01
+        }
+        LocomotionClip.WALK -> {
+            bobY = WALK_BOB_AMP_M * abs(sin(wp)) * speed01
+            swayRad = WALK_SWAY_RAD * sin(wp) * speed01
+            leanRad = 0.04 * speed01
+        }
+        LocomotionClip.IDLE -> {
+            bobY = breath * sin(ip)
+            swayRad = (if (queuedIdle) 0.035 else 0.015) * sin(ip * if (queuedIdle) 0.65 else 1.0)
+            leanRad = 0.0
+        }
     }
     return Triple(
-        CharacterPose(x, z, yaw, wp, speed01, bobY, swayRad, idle),
+        CharacterPose(x, z, yaw, wp, speed01, bobY, swayRad, idle, clip, cast01, leanRad),
         wp,
         ip,
     )
 }
 
 /**
- * Eases the player toward SimView and attaches grey-box walk/idle body language.
+ * Eases the player toward SimView and attaches walk/idle/carry/cast body language.
  */
 class PlayerSmoother {
     private var x = Double.NaN
@@ -179,13 +233,29 @@ class PlayerSmoother {
         x = Double.NaN
     }
 
-    fun update(player: PlayerView, dt: Double): CharacterPose {
+    fun update(
+        player: PlayerView,
+        dt: Double,
+        reducedMotion: Boolean = false,
+        bagUsedUnits: Int = 0,
+        fishingProgress: Float? = null,
+    ): CharacterPose {
         val tx = player.xMm / 1000.0
         val tz = player.zMm / 1000.0
         val tyaw = atan2(player.facingX.toDouble(), player.facingZ.toDouble())
-        if (x.isNaN()) {
+        val carrying = bagUsedUnits > 0
+        val casting = fishingProgress != null
+        val clipOpts = LocomotionOpts(carrying = carrying, casting = casting, cast01 = fishingProgress?.toDouble() ?: 0.0)
+        if (x.isNaN() || reducedMotion) {
             x = tx; z = tz; yaw = tyaw
-            return locomoteFromMotion(tx, tz, tx, tz, tyaw, 0.0, 0.0, 0.0).first
+            walkPhase = 0.0
+            idlePhase = 0.0
+            val snapped = locomoteFromMotion(tx, tz, tx, tz, tyaw, 0.0, 0.0, 0.0, false, clipOpts).first
+            return if (reducedMotion) {
+                snapped.copy(bobY = 0.0, swayRad = 0.0, leanRad = 0.0, cast01 = if (casting) snapped.cast01 else 0.0)
+            } else {
+                snapped
+            }
         }
         val prevX = x
         val prevZ = z
@@ -196,7 +266,7 @@ class PlayerSmoother {
         while (d > PI) d -= 2 * PI
         while (d < -PI) d += 2 * PI
         yaw += d * k
-        val (pose, wp, ip) = locomoteFromMotion(prevX, prevZ, x, z, yaw, walkPhase, idlePhase, dt, false)
+        val (pose, wp, ip) = locomoteFromMotion(prevX, prevZ, x, z, yaw, walkPhase, idlePhase, dt, false, clipOpts)
         walkPhase = wp
         idlePhase = ip
         return pose
@@ -320,6 +390,67 @@ class CustomerCrowd(poolSize: Int) {
     }
 }
 
+/**
+ * Maps on-shift workers onto a fixed pool of Worker_* models (Phase 15).
+ * Off-shift workers release their slot; motion drives walk/carry clips.
+ */
+class WorkerCrowd(poolSize: Int = WORKER_POOL) {
+    private class Member(
+        val id: String,
+        var x: Double,
+        var z: Double,
+        var yaw: Double,
+        var walkPhase: Double = 0.0,
+        var idlePhase: Double = 0.0,
+    )
+
+    private val members = arrayOfNulls<Member>(poolSize)
+
+    val poolSize: Int get() = members.size
+
+    fun update(v: SimView, dt: Double): List<CharacterPose?> {
+        val present = v.workers.filter { it.onShift }.associateBy { it.id }
+        val k = 1.0 - exp(-WORKER_SMOOTHING_PER_SECOND * dt)
+
+        for (i in members.indices) {
+            val m = members[i]
+            if (m != null && m.id !in present) members[i] = null
+        }
+        for (w in present.values) {
+            if (members.any { it?.id == w.id }) continue
+            var free = -1
+            for (i in members.indices) if (members[i] == null) { free = i; break }
+            if (free < 0) continue
+            members[free] = Member(w.id, w.xMm / 1000.0, w.zMm / 1000.0, 0.0)
+        }
+
+        return members.map { m ->
+            if (m == null) return@map null
+            val w = present.getValue(m.id)
+            val tx = w.xMm / 1000.0
+            val tz = w.zMm / 1000.0
+            val dx = tx - m.x
+            val dz = tz - m.z
+            val targetYaw = if (hypot(dx, dz) > 0.02) atan2(dx, dz) else m.yaw
+            val prevX = m.x
+            val prevZ = m.z
+            m.x += dx * k
+            m.z += dz * k
+            var dy = targetYaw - m.yaw
+            while (dy > PI) dy -= 2 * PI
+            while (dy < -PI) dy += 2 * PI
+            m.yaw += dy * k
+            val (pose, wp, ip) = locomoteFromMotion(
+                prevX, prevZ, m.x, m.z, m.yaw, m.walkPhase, m.idlePhase, dt, false,
+                LocomotionOpts(carrying = w.bagUsedUnits > 0),
+            )
+            m.walkPhase = wp
+            m.idlePhase = ip
+            pose
+        }
+    }
+}
+
 /** One sim-authoritative transfer cue (from ItemsTransferred endpoints). */
 data class FlyingTransferCue(
     val fromXMm: Int,
@@ -335,6 +466,10 @@ data class FlyingTransferPose(
     val z: Double,
     /** "fish" | "portion" — matches Fly_<i>_<kind> GLB nodes. */
     val kind: String,
+    /** Phase 16: spin while arcing. */
+    val yaw: Double = 0.0,
+    /** Phase 16: slight scale pulse mid-flight. */
+    val scale: Double = 1.0,
 )
 
 /**
@@ -408,11 +543,146 @@ class FlyingTransfers(poolSize: Int = FLYING_TRANSFER_POOL) {
             val x = s.fromX + (s.toX - s.fromX) * e
             val z = s.fromZ + (s.toZ - s.fromZ) * e
             val y = FLYING_TRANSFER_BASE_Y_M + 4.0 * FLYING_TRANSFER_ARC_HEIGHT_M * t * (1.0 - t)
+            val yaw = t * PI * 2.4
+            val scale = 1.0 + 0.35 * sin(PI * t)
             if (t >= 1.0) {
                 slots[i] = null
                 return@mapIndexed null
             }
-            FlyingTransferPose(x, y, z, s.kind)
+            FlyingTransferPose(x, y, z, s.kind, yaw, scale)
+        }
+    }
+}
+
+/** Phase 16 — pooled world bursts (pay / celebrate / machine_done). */
+const val VFX_BURST_POOL = 8
+
+fun worldBurstPoolForQuality(quality: PresenterQuality): Int = when (quality) {
+    PresenterQuality.LOW -> 2
+    PresenterQuality.MEDIUM -> 4
+    PresenterQuality.HIGH -> VFX_BURST_POOL
+}
+
+enum class WorldBurstKind { PAY, CELEBRATE, MACHINE_DONE }
+
+data class WorldBurstCue(
+    val xMm: Int,
+    val zMm: Int,
+    val kind: WorldBurstKind,
+)
+
+data class WorldBurstPose(
+    val x: Double,
+    val y: Double,
+    val z: Double,
+    val scale: Double,
+    val opacity: Double,
+    val kind: WorldBurstKind,
+)
+
+data class MachineOperatePulse(
+    val footprintName: String,
+    val pulse01: Double,
+)
+
+private fun burstDurationS(kind: WorldBurstKind): Double = when (kind) {
+    WorldBurstKind.PAY -> 0.45
+    WorldBurstKind.CELEBRATE -> 0.7
+    WorldBurstKind.MACHINE_DONE -> 0.4
+}
+
+/** Footprint socket for a station id (`station.cutter_1` → `Footprint_cutter_1`). */
+fun footprintNameForStation(stationId: String): String = "Footprint_${shortId(stationId)}"
+
+/** Soft operate glow for PROCESSING stations (presentation-only). */
+fun machineOperatePulses(v: SimView, elapsed: Double): List<MachineOperatePulse> {
+    val out = ArrayList<MachineOperatePulse>()
+    for (st in v.stations) {
+        if (st.status != MachineStatus.PROCESSING) continue
+        val progress = st.progress?.toDouble() ?: 0.0
+        val breath = 0.55 + 0.45 * sin(elapsed * 6.0 + progress * PI)
+        out += MachineOperatePulse(
+            footprintName = footprintNameForStation(st.stationId),
+            pulse01 = min(1.0, max(0.0, breath)),
+        )
+    }
+    return out
+}
+
+/** Pay burst at the selling customer, else first counter pad. */
+fun resolvePayBurst(v: SimView, customerId: String): WorldBurstCue {
+    val c = v.customers.firstOrNull { it.id == customerId }
+    if (c != null) {
+        return WorldBurstCue(c.xMm.roundToInt(), c.zMm.roundToInt(), WorldBurstKind.PAY)
+    }
+    val counter = v.transferAnchors.firstOrNull { it.inventoryId.startsWith("inv.counter.") }
+    if (counter != null) return WorldBurstCue(counter.xMm, counter.zMm, WorldBurstKind.PAY)
+    return WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.PAY)
+}
+
+/** Machine-done flash above the station output pad. */
+fun resolveMachineDoneBurst(v: SimView, stationId: String): WorldBurstCue? {
+    val anchor = v.transferAnchors.firstOrNull { it.inventoryId == "inv.$stationId.output" } ?: return null
+    return WorldBurstCue(anchor.xMm, anchor.zMm, WorldBurstKind.MACHINE_DONE)
+}
+
+/** Celebrate at the player (rush / trophy / coin goal / perfect catch). */
+fun resolveCelebrateBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.CELEBRATE)
+
+/**
+ * Ephemeral world bursts. Quality-budgeted; never mutates sim.
+ */
+class WorldBursts(poolSize: Int = VFX_BURST_POOL) {
+    private class Slot(
+        val x: Double,
+        val z: Double,
+        val kind: WorldBurstKind,
+        val duration: Double,
+        var age: Double = 0.0,
+    )
+
+    private val slots = arrayOfNulls<Slot>(poolSize)
+    private var budget = poolSize
+
+    val poolSize: Int get() = slots.size
+
+    fun setBudget(n: Int) {
+        budget = max(0, min(slots.size, n))
+        for (i in budget until slots.size) slots[i] = null
+    }
+
+    fun clear() {
+        for (i in slots.indices) slots[i] = null
+    }
+
+    fun spawn(cue: WorldBurstCue): Boolean {
+        var free = -1
+        for (i in 0 until budget) if (slots[i] == null) { free = i; break }
+        if (free < 0) return false
+        slots[free] = Slot(
+            x = cue.xMm / 1000.0,
+            z = cue.zMm / 1000.0,
+            kind = cue.kind,
+            duration = burstDurationS(cue.kind),
+        )
+        return true
+    }
+
+    fun update(dt: Double): List<WorldBurstPose?> {
+        return slots.mapIndexed { i, s ->
+            if (s == null) return@mapIndexed null
+            s.age += dt
+            val t = min(1.0, s.age / s.duration)
+            val rise = t * (2.0 - t)
+            val scale = (if (s.kind == WorldBurstKind.CELEBRATE) 1.4 else 1.0) * (0.35 + 1.1 * rise)
+            val opacity = 1.0 - t * t
+            val y = 0.35 + (if (s.kind == WorldBurstKind.CELEBRATE) 1.1 else 0.7) * rise
+            if (t >= 1.0) {
+                slots[i] = null
+                return@mapIndexed null
+            }
+            WorldBurstPose(s.x, y, s.z, scale, opacity, s.kind)
         }
     }
 }

@@ -1,6 +1,6 @@
 {
   "$schema": "../schema/content-pack.schema.json",
-  "contentVersion": "0.50.0",
+  "contentVersion": "1.0.0",
   "ticksPerSecond": 20,
   "units": {
     "distance": "millimetres (integer); x/z ground plane, y is up",
@@ -301,6 +301,142 @@
       "rarityWeight": 1,
       "asset": "models/fish_prism_lanternfish.glb",
       "spoilTier": 2
+    },
+    {
+      "id": "species.frost_smelt",
+      "name": "Frost smelt",
+      "carryUnits": 1,
+      "catchTicks": 70,
+      "baseValue": 5,
+      "rarityWeight": 55,
+      "asset": "models/fish_frost_smelt.glb",
+      "rareUpgrade": {
+        "to": "species.crystal_smelt",
+        "chancePermille": 30
+      },
+      "spoilTier": 3
+    },
+    {
+      "id": "species.arctic_cod",
+      "name": "Arctic cod",
+      "carryUnits": 2,
+      "catchTicks": 150,
+      "baseValue": 10,
+      "rarityWeight": 22,
+      "asset": "models/fish_arctic_cod.glb",
+      "rareUpgrade": {
+        "to": "species.aurora_cod",
+        "chancePermille": 22
+      },
+      "spoilTier": 1
+    },
+    {
+      "id": "species.ice_char",
+      "name": "Ice char",
+      "carryUnits": 2,
+      "catchTicks": 165,
+      "baseValue": 12,
+      "rarityWeight": 14,
+      "asset": "models/fish_ice_char.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.polar_herring",
+      "name": "Polar herring",
+      "carryUnits": 1,
+      "catchTicks": 95,
+      "baseValue": 6,
+      "rarityWeight": 40,
+      "asset": "models/fish_polar_herring.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.crystal_smelt",
+      "name": "Crystal smelt",
+      "carryUnits": 1,
+      "catchTicks": 70,
+      "baseValue": 14,
+      "rarityWeight": 1,
+      "asset": "models/fish_crystal_smelt.glb",
+      "spoilTier": 3
+    },
+    {
+      "id": "species.aurora_cod",
+      "name": "Aurora cod",
+      "carryUnits": 2,
+      "catchTicks": 150,
+      "baseValue": 26,
+      "rarityWeight": 1,
+      "asset": "models/fish_aurora_cod.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.marina_tuna",
+      "name": "Marina tuna",
+      "carryUnits": 3,
+      "catchTicks": 200,
+      "baseValue": 16,
+      "rarityWeight": 10,
+      "asset": "models/fish_marina_tuna.glb",
+      "rareUpgrade": {
+        "to": "species.gilt_tuna",
+        "chancePermille": 18
+      },
+      "spoilTier": 1
+    },
+    {
+      "id": "species.saffron_sole",
+      "name": "Saffron sole",
+      "carryUnits": 1,
+      "catchTicks": 110,
+      "baseValue": 9,
+      "rarityWeight": 28,
+      "asset": "models/fish_saffron_sole.glb",
+      "rareUpgrade": {
+        "to": "species.gilt_sole",
+        "chancePermille": 26
+      },
+      "spoilTier": 2
+    },
+    {
+      "id": "species.pearl_grouper",
+      "name": "Pearl grouper",
+      "carryUnits": 3,
+      "catchTicks": 190,
+      "baseValue": 15,
+      "rarityWeight": 12,
+      "asset": "models/fish_pearl_grouper.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.harbor_pompano",
+      "name": "Harbor pompano",
+      "carryUnits": 1,
+      "catchTicks": 85,
+      "baseValue": 7,
+      "rarityWeight": 36,
+      "asset": "models/fish_harbor_pompano.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.gilt_tuna",
+      "name": "Gilt tuna",
+      "carryUnits": 3,
+      "catchTicks": 200,
+      "baseValue": 36,
+      "rarityWeight": 1,
+      "asset": "models/fish_gilt_tuna.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.gilt_sole",
+      "name": "Gilt sole",
+      "carryUnits": 1,
+      "catchTicks": 110,
+      "baseValue": 22,
+      "rarityWeight": 1,
+      "asset": "models/fish_gilt_sole.glb",
+      "spoilTier": 2
     }
   ],
   "products": [
@@ -390,6 +526,86 @@
       "carryUnits": 1,
       "unitPrice": 24,
       "asset": "models/product_grilled_skewer.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "product.chilled_fillet",
+      "name": "Chilled fillet",
+      "carryUnits": 1,
+      "unitPrice": 22,
+      "asset": "models/product_chilled_fillet.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "product.chilled_premium",
+      "name": "Chilled premium",
+      "carryUnits": 1,
+      "unitPrice": 30,
+      "asset": "models/product_chilled_premium.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "product.chilled_crate",
+      "name": "Chilled crate",
+      "carryUnits": 4,
+      "unitPrice": 85,
+      "asset": "models/product_chilled_crate.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "product.fried_portion",
+      "name": "Fried portion",
+      "carryUnits": 1,
+      "unitPrice": 14,
+      "asset": "models/product_fried_portion.glb",
+      "spoilTier": 3
+    },
+    {
+      "id": "product.fish_and_chips",
+      "name": "Fish and chips",
+      "carryUnits": 1,
+      "unitPrice": 26,
+      "asset": "models/product_fish_and_chips.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "product.crispy_skewer",
+      "name": "Crispy skewer",
+      "carryUnits": 1,
+      "unitPrice": 28,
+      "asset": "models/product_crispy_skewer.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "product.fried_carton",
+      "name": "Fried carton",
+      "carryUnits": 3,
+      "unitPrice": 70,
+      "asset": "models/product_fried_carton.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "product.chips_carton",
+      "name": "Chips carton",
+      "carryUnits": 3,
+      "unitPrice": 95,
+      "asset": "models/product_chips_carton.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "product.grill_carton",
+      "name": "Grill carton",
+      "carryUnits": 3,
+      "unitPrice": 90,
+      "asset": "models/product_grill_carton.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "product.skewer_carton",
+      "name": "Skewer carton",
+      "carryUnits": 3,
+      "unitPrice": 100,
+      "asset": "models/product_skewer_carton.glb",
       "spoilTier": 2
     }
   ],
@@ -820,6 +1036,210 @@
       "durationTicks": 95
     },
     {
+      "id": "recipe.frost_smelt_portions",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.frost_smelt",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 70
+    },
+    {
+      "id": "recipe.arctic_cod_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.arctic_cod",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 140
+    },
+    {
+      "id": "recipe.ice_char_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.ice_char",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 155
+    },
+    {
+      "id": "recipe.polar_herring_portions",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.polar_herring",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 90
+    },
+    {
+      "id": "recipe.crystal_smelt_portions",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.crystal_smelt",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 65
+    },
+    {
+      "id": "recipe.aurora_cod_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.aurora_cod",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 3
+        }
+      ],
+      "durationTicks": 135
+    },
+    {
+      "id": "recipe.marina_tuna_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.marina_tuna",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 3
+        }
+      ],
+      "durationTicks": 180
+    },
+    {
+      "id": "recipe.saffron_sole_fillets",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.saffron_sole",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 100
+    },
+    {
+      "id": "recipe.pearl_grouper_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.pearl_grouper",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 3
+        }
+      ],
+      "durationTicks": 170
+    },
+    {
+      "id": "recipe.harbor_pompano_portions",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.harbor_pompano",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 80
+    },
+    {
+      "id": "recipe.gilt_tuna_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.gilt_tuna",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 4
+        }
+      ],
+      "durationTicks": 170
+    },
+    {
+      "id": "recipe.gilt_sole_premium",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.gilt_sole",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 95
+    },
+    {
       "id": "recipe.dice_sprat",
       "machine": "machine.basic_cutter",
       "inputs": [
@@ -1085,6 +1505,261 @@
         }
       ],
       "durationTicks": 135
+    },
+    {
+      "id": "recipe.chill_fillet",
+      "machine": "machine.harbor_chiller",
+      "inputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.chilled_fillet",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 90
+    },
+    {
+      "id": "recipe.chill_premium",
+      "machine": "machine.harbor_chiller",
+      "inputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.chilled_premium",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 100
+    },
+    {
+      "id": "recipe.chill_arctic_cod",
+      "machine": "machine.harbor_chiller",
+      "inputs": [
+        {
+          "item": "species.arctic_cod",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.chilled_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 140
+    },
+    {
+      "id": "recipe.chill_ice_char",
+      "machine": "machine.harbor_chiller",
+      "inputs": [
+        {
+          "item": "species.ice_char",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.chilled_premium",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 150
+    },
+    {
+      "id": "recipe.chill_pack_crate",
+      "machine": "machine.harbor_chiller",
+      "inputs": [
+        {
+          "item": "product.chilled_fillet",
+          "quantity": 3
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.chilled_crate",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 160
+    },
+    {
+      "id": "recipe.fry_sprat",
+      "machine": "machine.harbor_fryer",
+      "inputs": [
+        {
+          "item": "species.silver_sprat",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fried_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 80
+    },
+    {
+      "id": "recipe.fry_diced",
+      "machine": "machine.harbor_fryer",
+      "inputs": [
+        {
+          "item": "product.diced_fish",
+          "quantity": 2
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fried_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 90
+    },
+    {
+      "id": "recipe.fry_fillet_chips",
+      "machine": "machine.harbor_fryer",
+      "inputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fish_and_chips",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 110
+    },
+    {
+      "id": "recipe.fry_skewer",
+      "machine": "machine.harbor_fryer",
+      "inputs": [
+        {
+          "item": "product.skewer",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.crispy_skewer",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 100
+    },
+    {
+      "id": "recipe.fry_pompano",
+      "machine": "machine.harbor_fryer",
+      "inputs": [
+        {
+          "item": "species.harbor_pompano",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fish_and_chips",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 95
+    },
+    {
+      "id": "recipe.pack_fried_carton",
+      "machine": "machine.harbor_packer",
+      "inputs": [
+        {
+          "item": "product.fried_portion",
+          "quantity": 4
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fried_carton",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 140
+    },
+    {
+      "id": "recipe.pack_chips_carton",
+      "machine": "machine.harbor_packer",
+      "inputs": [
+        {
+          "item": "product.fish_and_chips",
+          "quantity": 3
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.chips_carton",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 150
+    },
+    {
+      "id": "recipe.pack_grill_carton",
+      "machine": "machine.harbor_packer",
+      "inputs": [
+        {
+          "item": "product.grilled_fillet",
+          "quantity": 4
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.grill_carton",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 145
+    },
+    {
+      "id": "recipe.pack_skewer_carton",
+      "machine": "machine.harbor_packer",
+      "inputs": [
+        {
+          "item": "product.crispy_skewer",
+          "quantity": 3
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.skewer_carton",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 140
+    },
+    {
+      "id": "recipe.pack_smoked_carton",
+      "machine": "machine.harbor_packer",
+      "inputs": [
+        {
+          "item": "product.smoked_fillet",
+          "quantity": 4
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.grill_carton",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 155
     }
   ],
   "machines": [
@@ -1116,6 +1791,18 @@
         "recipe.opal_flounder_premium",
         "recipe.ember_eel_premium",
         "recipe.prism_lanternfish_premium",
+        "recipe.frost_smelt_portions",
+        "recipe.arctic_cod_premium",
+        "recipe.ice_char_premium",
+        "recipe.polar_herring_portions",
+        "recipe.crystal_smelt_portions",
+        "recipe.aurora_cod_premium",
+        "recipe.marina_tuna_premium",
+        "recipe.saffron_sole_fillets",
+        "recipe.pearl_grouper_premium",
+        "recipe.harbor_pompano_portions",
+        "recipe.gilt_tuna_premium",
+        "recipe.gilt_sole_premium",
         "recipe.dice_sprat",
         "recipe.dice_herring",
         "recipe.harbor_skewers",
@@ -1151,6 +1838,45 @@
       ],
       "inputCapacityUnits": 10,
       "outputCapacityUnits": 16
+    },
+    {
+      "id": "machine.harbor_chiller",
+      "name": "Harbor chiller",
+      "recipes": [
+        "recipe.chill_fillet",
+        "recipe.chill_premium",
+        "recipe.chill_arctic_cod",
+        "recipe.chill_ice_char",
+        "recipe.chill_pack_crate"
+      ],
+      "inputCapacityUnits": 10,
+      "outputCapacityUnits": 16
+    },
+    {
+      "id": "machine.harbor_fryer",
+      "name": "Harbor fryer",
+      "recipes": [
+        "recipe.fry_sprat",
+        "recipe.fry_diced",
+        "recipe.fry_fillet_chips",
+        "recipe.fry_skewer",
+        "recipe.fry_pompano"
+      ],
+      "inputCapacityUnits": 10,
+      "outputCapacityUnits": 16
+    },
+    {
+      "id": "machine.harbor_packer",
+      "name": "Harbor packer",
+      "recipes": [
+        "recipe.pack_fried_carton",
+        "recipe.pack_chips_carton",
+        "recipe.pack_grill_carton",
+        "recipe.pack_skewer_carton",
+        "recipe.pack_smoked_carton"
+      ],
+      "inputCapacityUnits": 12,
+      "outputCapacityUnits": 12
     }
   ],
   "upgrades": [
@@ -1452,6 +2178,46 @@
         "kind": "unlock_counter",
         "pad": "wholesale"
       }
+    },
+    {
+      "id": "upgrade.harbor_fryer",
+      "name": "Harbor fryer",
+      "description": "Install a prep fryer for fried portions, fish and chips, and crispy skewers.",
+      "cost": 175,
+      "requires": [
+        "quest.specialty_kitchen"
+      ],
+      "effect": {
+        "kind": "unlock_machine",
+        "machine": "machine.harbor_fryer"
+      }
+    },
+    {
+      "id": "upgrade.harbor_packer",
+      "name": "Harbor packer",
+      "description": "Install a carton packing line for bulk wholesale crates.",
+      "cost": 220,
+      "requires": [
+        "upgrade.wholesale_pad",
+        "quest.specialty_kitchen"
+      ],
+      "effect": {
+        "kind": "unlock_machine",
+        "machine": "machine.harbor_packer"
+      }
+    },
+    {
+      "id": "upgrade.harbor_chiller",
+      "name": "Harbor chiller",
+      "description": "Install a cold-storage line for chilled fillets, premiums, and crates.",
+      "cost": 200,
+      "requires": [
+        "quest.obsidian_landing"
+      ],
+      "effect": {
+        "kind": "unlock_machine",
+        "machine": "machine.harbor_chiller"
+      }
     }
   ],
   "quests": [
@@ -1602,6 +2368,38 @@
       },
       "reward": {
         "coins": 150,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.northlight_landing",
+      "name": "Northlight landing",
+      "description": "Open the northern route and land at Northlight Harbor.",
+      "requires": [
+        "quest.obsidian_landing"
+      ],
+      "goal": {
+        "stat": "stat.harbors_traveled",
+        "atLeast": 4
+      },
+      "reward": {
+        "coins": 180,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.grand_marina_landing",
+      "name": "Grand Marina landing",
+      "description": "Open the final route and land at Grand Marina.",
+      "requires": [
+        "quest.northlight_landing"
+      ],
+      "goal": {
+        "stat": "stat.harbors_traveled",
+        "atLeast": 5
+      },
+      "reward": {
+        "coins": 220,
         "unlockUpgrades": []
       }
     }
@@ -1932,6 +2730,30 @@
         "completeStat": "stat.trophy_set_obsidian_jetty"
       },
       {
+        "id": "gallery.northlight_harbor",
+        "name": "Northlight Harbor gallery",
+        "description": "Mount the four Northlight cold-water specialty fish.",
+        "species": [
+          "species.frost_smelt",
+          "species.arctic_cod",
+          "species.ice_char",
+          "species.polar_herring"
+        ],
+        "completeStat": "stat.trophy_set_northlight_harbor"
+      },
+      {
+        "id": "gallery.grand_marina",
+        "name": "Grand Marina gallery",
+        "description": "Mount the four Grand Marina specialty fish.",
+        "species": [
+          "species.marina_tuna",
+          "species.saffron_sole",
+          "species.pearl_grouper",
+          "species.harbor_pompano"
+        ],
+        "completeStat": "stat.trophy_set_grand_marina"
+      },
+      {
         "id": "gallery.rare_gallery",
         "name": "Rare gallery",
         "description": "Mount every rare-upgrade specimen.",
@@ -1945,7 +2767,11 @@
           "species.crown_bass",
           "species.opal_flounder",
           "species.ember_eel",
-          "species.prism_lanternfish"
+          "species.prism_lanternfish",
+          "species.crystal_smelt",
+          "species.aurora_cod",
+          "species.gilt_tuna",
+          "species.gilt_sole"
         ],
         "completeStat": "stat.trophy_set_rare_gallery"
       }
@@ -2044,6 +2870,42 @@
         }
       },
       {
+        "id": "prestige.quad_harbors",
+        "name": "Quad Harbors",
+        "description": "Travel the four-harbor circuit.",
+        "requires": [
+          "prestige.triple_harbors"
+        ],
+        "goal": {
+          "stat": "stat.harbors_traveled",
+          "atLeast": 4
+        },
+        "reward": {
+          "coins": 250,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.quad_harbors"
+        }
+      },
+      {
+        "id": "prestige.five_harbors",
+        "name": "Five Harbors",
+        "description": "Travel the five-harbor circuit.",
+        "requires": [
+          "prestige.quad_harbors"
+        ],
+        "goal": {
+          "stat": "stat.harbors_traveled",
+          "atLeast": 5
+        },
+        "reward": {
+          "coins": 300,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.five_harbors"
+        }
+      },
+      {
         "id": "prestige.sunrise_curator",
         "name": "Sunrise Curator",
         "description": "Fill the Sunrise Pier trophy gallery.",
@@ -2114,6 +2976,42 @@
           "catchSpeedPermille": 1100,
           "priceBonusPermille": 0,
           "cosmetic": "banner.rare_gallery"
+        }
+      },
+      {
+        "id": "prestige.northlight_curator",
+        "name": "Northlight Curator",
+        "description": "Fill the Northlight Harbor trophy gallery.",
+        "requires": [
+          "prestige.quad_harbors"
+        ],
+        "goal": {
+          "stat": "stat.trophy_set_northlight_harbor",
+          "atLeast": 1
+        },
+        "reward": {
+          "coins": 250,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.northlight_museum"
+        }
+      },
+      {
+        "id": "prestige.grand_marina_curator",
+        "name": "Grand Marina Curator",
+        "description": "Fill the Grand Marina trophy gallery.",
+        "requires": [
+          "prestige.five_harbors"
+        ],
+        "goal": {
+          "stat": "stat.trophy_set_grand_marina",
+          "atLeast": 1
+        },
+        "reward": {
+          "coins": 300,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.grand_marina_museum"
         }
       }
     ]
@@ -2291,6 +3189,116 @@
         "payout": 110,
         "penalty": 28,
         "weight": 16
+      },
+      {
+        "id": "contract.frost_smelt_crate",
+        "name": "Frost smelt crate",
+        "description": "Northern kitchens want iced frost smelt before thaw.",
+        "item": "species.frost_smelt",
+        "quantity": 8,
+        "durationTicks": 1600,
+        "payout": 55,
+        "penalty": 15,
+        "weight": 14
+      },
+      {
+        "id": "contract.arctic_cod_fillets",
+        "name": "Arctic cod order",
+        "description": "Deliver premium portions cut from arctic cod.",
+        "item": "product.premium_portion",
+        "quantity": 6,
+        "durationTicks": 2000,
+        "payout": 130,
+        "penalty": 30,
+        "weight": 10
+      },
+      {
+        "id": "contract.marina_tuna_crate",
+        "name": "Marina tuna crate",
+        "description": "Grand Marina chefs want whole marina tuna for the tasting menu.",
+        "item": "species.marina_tuna",
+        "quantity": 3,
+        "durationTicks": 2200,
+        "payout": 160,
+        "penalty": 40,
+        "weight": 10
+      },
+      {
+        "id": "contract.pompano_portions",
+        "name": "Pompano portions",
+        "description": "Deliver basic portions cut from harbor pompano.",
+        "item": "product.basic_portion",
+        "quantity": 10,
+        "durationTicks": 1800,
+        "payout": 70,
+        "penalty": 18,
+        "weight": 14
+      },
+      {
+        "id": "contract.chilled_fillet_order",
+        "name": "Chilled fillet order",
+        "description": "Upscale kitchens want chilled fillets on ice.",
+        "item": "product.chilled_fillet",
+        "quantity": 6,
+        "durationTicks": 2000,
+        "payout": 150,
+        "penalty": 35,
+        "weight": 12
+      },
+      {
+        "id": "contract.chilled_crate_run",
+        "name": "Chilled crate run",
+        "description": "Deliver a chilled crate to the marina catering dock.",
+        "item": "product.chilled_crate",
+        "quantity": 2,
+        "durationTicks": 2400,
+        "payout": 190,
+        "penalty": 45,
+        "weight": 9
+      },
+      {
+        "id": "contract.fish_and_chips_tray",
+        "name": "Fish and chips tray",
+        "description": "Dockside cafe needs fish and chips for the lunch crowd.",
+        "item": "product.fish_and_chips",
+        "quantity": 5,
+        "durationTicks": 1900,
+        "payout": 140,
+        "penalty": 32,
+        "weight": 14
+      },
+      {
+        "id": "contract.crispy_skewer_platter",
+        "name": "Crispy skewer platter",
+        "description": "Deliver crispy skewers for the evening market stalls.",
+        "item": "product.crispy_skewer",
+        "quantity": 4,
+        "durationTicks": 1700,
+        "payout": 120,
+        "penalty": 28,
+        "weight": 13
+      },
+      {
+        "id": "contract.fried_carton_run",
+        "name": "Fried carton run",
+        "description": "Ship fried cartons to the regional snack wholesaler.",
+        "item": "product.fried_carton",
+        "quantity": 2,
+        "durationTicks": 2200,
+        "payout": 160,
+        "penalty": 40,
+        "weight": 11
+      },
+      {
+        "id": "contract.chips_carton_run",
+        "name": "Chips carton run",
+        "description": "Deliver fish-and-chips cartons for festival catering.",
+        "item": "product.chips_carton",
+        "quantity": 2,
+        "durationTicks": 2300,
+        "payout": 200,
+        "penalty": 48,
+        "weight": 10
       }
     ]
   },
@@ -2315,6 +3323,10 @@
         },
         {
           "item": "product.soup_stock",
+          "weight": 12
+        },
+        {
+          "item": "product.fried_portion",
           "weight": 12
         }
       ],
@@ -2350,6 +3362,10 @@
         {
           "item": "product.grilled_skewer",
           "weight": 12
+        },
+        {
+          "item": "product.fish_and_chips",
+          "weight": 14
         }
       ],
       "unmetPriceMultPermille": 750,
@@ -2380,6 +3396,10 @@
         {
           "item": "product.grilled_fillet",
           "weight": 25
+        },
+        {
+          "item": "product.chilled_premium",
+          "weight": 18
         }
       ],
       "unmetPriceMultPermille": 600,
@@ -2444,6 +3464,10 @@
         {
           "item": "product.soup_stock",
           "weight": 15
+        },
+        {
+          "item": "product.crispy_skewer",
+          "weight": 15
         }
       ],
       "unmetPriceMultPermille": 800,
@@ -2472,6 +3496,18 @@
         {
           "item": "product.fillet_crate",
           "weight": 45
+        },
+        {
+          "item": "product.fried_carton",
+          "weight": 20
+        },
+        {
+          "item": "product.chips_carton",
+          "weight": 18
+        },
+        {
+          "item": "product.grill_carton",
+          "weight": 16
         }
       ],
       "unmetPriceMultPermille": 650,
@@ -2508,6 +3544,10 @@
         {
           "item": "product.grilled_skewer",
           "weight": 10
+        },
+        {
+          "item": "product.chilled_fillet",
+          "weight": 16
         }
       ],
       "unmetPriceMultPermille": 500,
@@ -2644,6 +3684,14 @@
         "kind": "enter_zone",
         "zone": "zone.grill_in"
       }
+    },
+    {
+      "id": "tutorial.plot_marker",
+      "text": "Walk to an expansion marker and confirm spend to register a new station pad",
+      "advanceOn": {
+        "kind": "enter_zone",
+        "zone": "zone.plot_grill"
+      }
     }
   ],
   "harbors": [
@@ -2712,6 +3760,20 @@
           "minZ": -5000,
           "maxX": 13000,
           "maxZ": -3000
+        },
+        {
+          "id": "footprint.fryer_1",
+          "minX": 11400,
+          "minZ": -2000,
+          "maxX": 13000,
+          "maxZ": 0
+        },
+        {
+          "id": "footprint.packer_1",
+          "minX": 11400,
+          "minZ": 1500,
+          "maxX": 13000,
+          "maxZ": 3500
         }
       ],
       "zones": [
@@ -2802,6 +3864,70 @@
           "minZ": -2800,
           "maxX": -6200,
           "maxZ": -1200
+        },
+        {
+          "id": "zone.fryer_in",
+          "kind": "machine_input",
+          "minX": 10000,
+          "minZ": -2000,
+          "maxX": 11400,
+          "maxZ": 0
+        },
+        {
+          "id": "zone.fryer_out",
+          "kind": "machine_output",
+          "minX": 13000,
+          "minZ": -2000,
+          "maxX": 14400,
+          "maxZ": 0
+        },
+        {
+          "id": "zone.packer_in",
+          "kind": "machine_input",
+          "minX": 10000,
+          "minZ": 1500,
+          "maxX": 11400,
+          "maxZ": 3500
+        },
+        {
+          "id": "zone.packer_out",
+          "kind": "machine_output",
+          "minX": 13000,
+          "minZ": 1500,
+          "maxX": 14400,
+          "maxZ": 3500
+        },
+        {
+          "id": "zone.plot_grill",
+          "kind": "plot",
+          "minX": 11600,
+          "minZ": -2800,
+          "maxX": 12800,
+          "maxZ": -2200
+        },
+        {
+          "id": "zone.plot_fryer",
+          "kind": "plot",
+          "minX": 11600,
+          "minZ": 400,
+          "maxX": 12800,
+          "maxZ": 1000
+        },
+        {
+          "id": "zone.plot_packer",
+          "kind": "plot",
+          "minX": 11600,
+          "minZ": 3700,
+          "maxX": 12800,
+          "maxZ": 4300
+        },
+        {
+          "id": "zone.plot_wholesale",
+          "kind": "plot",
+          "minX": 5500,
+          "minZ": 1000,
+          "maxX": 8500,
+          "maxZ": 1600
         }
       ],
       "fishingSpots": [
@@ -2881,6 +4007,20 @@
           "inputZone": "zone.grill_in",
           "outputZone": "zone.grill_out",
           "requiresUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "station.fryer_1",
+          "machine": "machine.harbor_fryer",
+          "inputZone": "zone.fryer_in",
+          "outputZone": "zone.fryer_out",
+          "requiresUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "station.packer_1",
+          "machine": "machine.harbor_packer",
+          "inputZone": "zone.packer_in",
+          "outputZone": "zone.packer_out",
+          "requiresUpgrade": "upgrade.harbor_packer"
         }
       ],
       "counters": [
@@ -2896,7 +4036,10 @@
             "product.skewer",
             "product.soup_stock",
             "product.grilled_fillet",
-            "product.grilled_skewer"
+            "product.grilled_skewer",
+            "product.fried_portion",
+            "product.fish_and_chips",
+            "product.crispy_skewer"
           ],
           "capacityUnits": 30,
           "zone": "zone.counter_1",
@@ -2917,7 +4060,11 @@
           "kind": "wholesale",
           "products": [
             "product.ice_packed_crate",
-            "product.fillet_crate"
+            "product.fillet_crate",
+            "product.fried_carton",
+            "product.chips_carton",
+            "product.grill_carton",
+            "product.skewer_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.wholesale_1",
@@ -2985,7 +4132,37 @@
         "maintenanceDiscountPerStation": 1,
         "rareChanceBonusPermille": 0,
         "kindSpawnMultPermille": {}
-      }
+      },
+      "plots": [
+        {
+          "id": "plot.sunrise_grill",
+          "name": "Grill expansion",
+          "description": "Pour a charcoal grill pad for a second cook line.",
+          "zone": "zone.plot_grill",
+          "grantsUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "plot.sunrise_fryer",
+          "name": "Fryer expansion",
+          "description": "Stake out a prep fryer pad for fried portions and chips.",
+          "zone": "zone.plot_fryer",
+          "grantsUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "plot.sunrise_packer",
+          "name": "Packer expansion",
+          "description": "Mark a carton packing pad for wholesale bulk runs.",
+          "zone": "zone.plot_packer",
+          "grantsUpgrade": "upgrade.harbor_packer"
+        },
+        {
+          "id": "plot.sunrise_wholesale",
+          "name": "Wholesale expansion",
+          "description": "Survey a B2B pad for crate and carton sales.",
+          "zone": "zone.plot_wholesale",
+          "grantsUpgrade": "upgrade.wholesale_pad"
+        }
+      ]
     },
     {
       "id": "harbor.moon_cove",
@@ -3052,6 +4229,20 @@
           "minZ": -5000,
           "maxX": -11400,
           "maxZ": -3000
+        },
+        {
+          "id": "footprint.cove_fryer",
+          "minX": -13000,
+          "minZ": -2000,
+          "maxX": -11400,
+          "maxZ": 0
+        },
+        {
+          "id": "footprint.cove_packer",
+          "minX": -13000,
+          "minZ": 1500,
+          "maxX": -11400,
+          "maxZ": 3500
         }
       ],
       "zones": [
@@ -3142,6 +4333,70 @@
           "minZ": -2800,
           "maxX": 7800,
           "maxZ": -1200
+        },
+        {
+          "id": "zone.cove_fryer_in",
+          "kind": "machine_input",
+          "minX": -11400,
+          "minZ": -2000,
+          "maxX": -10000,
+          "maxZ": 0
+        },
+        {
+          "id": "zone.cove_fryer_out",
+          "kind": "machine_output",
+          "minX": -14400,
+          "minZ": -2000,
+          "maxX": -13000,
+          "maxZ": 0
+        },
+        {
+          "id": "zone.cove_packer_in",
+          "kind": "machine_input",
+          "minX": -11400,
+          "minZ": 1500,
+          "maxX": -10000,
+          "maxZ": 3500
+        },
+        {
+          "id": "zone.cove_packer_out",
+          "kind": "machine_output",
+          "minX": -14400,
+          "minZ": 1500,
+          "maxX": -13000,
+          "maxZ": 3500
+        },
+        {
+          "id": "zone.cove_plot_grill",
+          "kind": "plot",
+          "minX": -12800,
+          "minZ": -2800,
+          "maxX": -11600,
+          "maxZ": -2200
+        },
+        {
+          "id": "zone.cove_plot_fryer",
+          "kind": "plot",
+          "minX": -12800,
+          "minZ": 400,
+          "maxX": -11600,
+          "maxZ": 1000
+        },
+        {
+          "id": "zone.cove_plot_packer",
+          "kind": "plot",
+          "minX": -12800,
+          "minZ": 3700,
+          "maxX": -11600,
+          "maxZ": 4300
+        },
+        {
+          "id": "zone.cove_plot_wholesale",
+          "kind": "plot",
+          "minX": -8500,
+          "minZ": 1000,
+          "maxX": -5500,
+          "maxZ": 1600
         }
       ],
       "fishingSpots": [
@@ -3219,6 +4474,20 @@
           "inputZone": "zone.cove_grill_in",
           "outputZone": "zone.cove_grill_out",
           "requiresUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "station.cove_fryer",
+          "machine": "machine.harbor_fryer",
+          "inputZone": "zone.cove_fryer_in",
+          "outputZone": "zone.cove_fryer_out",
+          "requiresUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "station.cove_packer",
+          "machine": "machine.harbor_packer",
+          "inputZone": "zone.cove_packer_in",
+          "outputZone": "zone.cove_packer_out",
+          "requiresUpgrade": "upgrade.harbor_packer"
         }
       ],
       "counters": [
@@ -3234,7 +4503,10 @@
             "product.skewer",
             "product.soup_stock",
             "product.grilled_fillet",
-            "product.grilled_skewer"
+            "product.grilled_skewer",
+            "product.fried_portion",
+            "product.fish_and_chips",
+            "product.crispy_skewer"
           ],
           "capacityUnits": 30,
           "zone": "zone.cove_counter",
@@ -3255,7 +4527,11 @@
           "kind": "wholesale",
           "products": [
             "product.ice_packed_crate",
-            "product.fillet_crate"
+            "product.fillet_crate",
+            "product.fried_carton",
+            "product.chips_carton",
+            "product.grill_carton",
+            "product.skewer_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.cove_wholesale",
@@ -3325,7 +4601,37 @@
         "maintenanceDiscountPerStation": 0,
         "rareChanceBonusPermille": 80,
         "kindSpawnMultPermille": {}
-      }
+      },
+      "plots": [
+        {
+          "id": "plot.cove_grill",
+          "name": "Grill expansion",
+          "description": "Pour a charcoal grill pad for a second cook line.",
+          "zone": "zone.cove_plot_grill",
+          "grantsUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "plot.cove_fryer",
+          "name": "Fryer expansion",
+          "description": "Stake out a prep fryer pad for fried portions and chips.",
+          "zone": "zone.cove_plot_fryer",
+          "grantsUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "plot.cove_packer",
+          "name": "Packer expansion",
+          "description": "Mark a carton packing pad for wholesale bulk runs.",
+          "zone": "zone.cove_plot_packer",
+          "grantsUpgrade": "upgrade.harbor_packer"
+        },
+        {
+          "id": "plot.cove_wholesale",
+          "name": "Wholesale expansion",
+          "description": "Survey a B2B pad for crate and carton sales.",
+          "zone": "zone.cove_plot_wholesale",
+          "grantsUpgrade": "upgrade.wholesale_pad"
+        }
+      ]
     },
     {
       "id": "harbor.obsidian_jetty",
@@ -3338,7 +4644,7 @@
         {
           "id": "area.jetty_land",
           "minX": -8000,
-          "minZ": -14500,
+          "minZ": -18500,
           "maxX": 8000,
           "maxZ": 8000
         },
@@ -3392,6 +4698,27 @@
           "minZ": -13000,
           "maxX": -3000,
           "maxZ": -11400
+        },
+        {
+          "id": "footprint.jetty_chiller",
+          "minX": -5000,
+          "minZ": -17500,
+          "maxX": -3000,
+          "maxZ": -15900
+        },
+        {
+          "id": "footprint.jetty_fryer",
+          "minX": 3500,
+          "minZ": -12500,
+          "maxX": 4500,
+          "maxZ": -10900
+        },
+        {
+          "id": "footprint.jetty_packer",
+          "minX": 3500,
+          "minZ": -15500,
+          "maxX": 4500,
+          "maxZ": -13900
         }
       ],
       "zones": [
@@ -3482,6 +4809,94 @@
           "minZ": 6200,
           "maxX": -1200,
           "maxZ": 7800
+        },
+        {
+          "id": "zone.jetty_chiller_in",
+          "kind": "machine_input",
+          "minX": -3000,
+          "minZ": -17500,
+          "maxX": -1400,
+          "maxZ": -15900
+        },
+        {
+          "id": "zone.jetty_chiller_out",
+          "kind": "machine_output",
+          "minX": -6600,
+          "minZ": -17500,
+          "maxX": -5000,
+          "maxZ": -15900
+        },
+        {
+          "id": "zone.jetty_fryer_in",
+          "kind": "machine_input",
+          "minX": 2000,
+          "minZ": -12500,
+          "maxX": 3500,
+          "maxZ": -10900
+        },
+        {
+          "id": "zone.jetty_fryer_out",
+          "kind": "machine_output",
+          "minX": 4500,
+          "minZ": -12500,
+          "maxX": 6000,
+          "maxZ": -10900
+        },
+        {
+          "id": "zone.jetty_packer_in",
+          "kind": "machine_input",
+          "minX": 2000,
+          "minZ": -15500,
+          "maxX": 3500,
+          "maxZ": -13900
+        },
+        {
+          "id": "zone.jetty_packer_out",
+          "kind": "machine_output",
+          "minX": 4500,
+          "minZ": -15500,
+          "maxX": 6000,
+          "maxZ": -13900
+        },
+        {
+          "id": "zone.jetty_plot_grill",
+          "kind": "plot",
+          "minX": -4800,
+          "minZ": -11200,
+          "maxX": -3200,
+          "maxZ": -10600
+        },
+        {
+          "id": "zone.jetty_plot_chiller",
+          "kind": "plot",
+          "minX": -4800,
+          "minZ": -14800,
+          "maxX": -3200,
+          "maxZ": -14200
+        },
+        {
+          "id": "zone.jetty_plot_fryer",
+          "kind": "plot",
+          "minX": 3200,
+          "minZ": -10700,
+          "maxX": 4800,
+          "maxZ": -10100
+        },
+        {
+          "id": "zone.jetty_plot_packer",
+          "kind": "plot",
+          "minX": 3200,
+          "minZ": -13700,
+          "maxX": 4800,
+          "maxZ": -13100
+        },
+        {
+          "id": "zone.jetty_plot_wholesale",
+          "kind": "plot",
+          "minX": 1000,
+          "minZ": -8500,
+          "maxX": 1800,
+          "maxZ": -5500
         }
       ],
       "fishingSpots": [
@@ -3559,6 +4974,27 @@
           "inputZone": "zone.jetty_grill_in",
           "outputZone": "zone.jetty_grill_out",
           "requiresUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "station.jetty_chiller",
+          "machine": "machine.harbor_chiller",
+          "inputZone": "zone.jetty_chiller_in",
+          "outputZone": "zone.jetty_chiller_out",
+          "requiresUpgrade": "upgrade.harbor_chiller"
+        },
+        {
+          "id": "station.jetty_fryer",
+          "machine": "machine.harbor_fryer",
+          "inputZone": "zone.jetty_fryer_in",
+          "outputZone": "zone.jetty_fryer_out",
+          "requiresUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "station.jetty_packer",
+          "machine": "machine.harbor_packer",
+          "inputZone": "zone.jetty_packer_in",
+          "outputZone": "zone.jetty_packer_out",
+          "requiresUpgrade": "upgrade.harbor_packer"
         }
       ],
       "counters": [
@@ -3574,7 +5010,12 @@
             "product.skewer",
             "product.soup_stock",
             "product.grilled_fillet",
-            "product.grilled_skewer"
+            "product.grilled_skewer",
+            "product.chilled_fillet",
+            "product.chilled_premium",
+            "product.fried_portion",
+            "product.fish_and_chips",
+            "product.crispy_skewer"
           ],
           "capacityUnits": 30,
           "zone": "zone.jetty_counter",
@@ -3595,7 +5036,12 @@
           "kind": "wholesale",
           "products": [
             "product.ice_packed_crate",
-            "product.fillet_crate"
+            "product.fillet_crate",
+            "product.chilled_crate",
+            "product.fried_carton",
+            "product.chips_carton",
+            "product.grill_carton",
+            "product.skewer_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.jetty_wholesale",
@@ -3667,7 +5113,1117 @@
         "kindSpawnMultPermille": {
           "tourist": 1300
         }
-      }
+      },
+      "plots": [
+        {
+          "id": "plot.jetty_grill",
+          "name": "Grill expansion",
+          "description": "Pour a charcoal grill pad for a second cook line.",
+          "zone": "zone.jetty_plot_grill",
+          "grantsUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "plot.jetty_chiller",
+          "name": "Chiller expansion",
+          "description": "Stake cold-storage foundations for chilled product.",
+          "zone": "zone.jetty_plot_chiller",
+          "grantsUpgrade": "upgrade.harbor_chiller"
+        },
+        {
+          "id": "plot.jetty_fryer",
+          "name": "Fryer expansion",
+          "description": "Stake out a prep fryer pad for fried portions and chips.",
+          "zone": "zone.jetty_plot_fryer",
+          "grantsUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "plot.jetty_packer",
+          "name": "Packer expansion",
+          "description": "Mark a carton packing pad for wholesale bulk runs.",
+          "zone": "zone.jetty_plot_packer",
+          "grantsUpgrade": "upgrade.harbor_packer"
+        },
+        {
+          "id": "plot.jetty_wholesale",
+          "name": "Wholesale expansion",
+          "description": "Survey a B2B pad for crate and carton sales.",
+          "zone": "zone.jetty_plot_wholesale",
+          "grantsUpgrade": "upgrade.wholesale_pad"
+        }
+      ]
+    },
+    {
+      "id": "harbor.northlight_harbor",
+      "name": "Northlight Harbor",
+      "playerSpawn": {
+        "x": 0,
+        "z": 0
+      },
+      "walkable": [
+        {
+          "id": "area.nl_land",
+          "minX": -8500,
+          "minZ": -18800,
+          "maxX": 8500,
+          "maxZ": 8500
+        },
+        {
+          "id": "area.nl_pier",
+          "minX": -1600,
+          "minZ": 8400,
+          "maxX": 1600,
+          "maxZ": 17000
+        },
+        {
+          "id": "area.nl_spur",
+          "minX": -4500,
+          "minZ": 12000,
+          "maxX": -1600,
+          "maxZ": 15500
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "footprint.nl_cutter",
+          "minX": -5200,
+          "minZ": -4200,
+          "maxX": -3200,
+          "maxZ": -2200
+        },
+        {
+          "id": "footprint.nl_smoker",
+          "minX": -5200,
+          "minZ": -8800,
+          "maxX": -3200,
+          "maxZ": -7200
+        },
+        {
+          "id": "footprint.nl_counter",
+          "minX": 3600,
+          "minZ": -4700,
+          "maxX": 4600,
+          "maxZ": -1700
+        },
+        {
+          "id": "footprint.nl_wholesale",
+          "minX": 3600,
+          "minZ": -8700,
+          "maxX": 4600,
+          "maxZ": -5700
+        },
+        {
+          "id": "footprint.nl_grill",
+          "minX": -5200,
+          "minZ": -13200,
+          "maxX": -3200,
+          "maxZ": -11600
+        },
+        {
+          "id": "footprint.nl_chiller",
+          "minX": -5200,
+          "minZ": -17800,
+          "maxX": -3200,
+          "maxZ": -16200
+        },
+        {
+          "id": "footprint.nl_fryer",
+          "minX": 3600,
+          "minZ": -12800,
+          "maxX": 4600,
+          "maxZ": -11200
+        },
+        {
+          "id": "footprint.nl_packer",
+          "minX": 3600,
+          "minZ": -15800,
+          "maxX": 4600,
+          "maxZ": -14200
+        }
+      ],
+      "zones": [
+        {
+          "id": "zone.nl_end",
+          "kind": "fishing",
+          "minX": -1600,
+          "minZ": 13500,
+          "maxX": 1600,
+          "maxZ": 17000
+        },
+        {
+          "id": "zone.nl_spur",
+          "kind": "fishing",
+          "minX": -4500,
+          "minZ": 12000,
+          "maxX": -1600,
+          "maxZ": 15500
+        },
+        {
+          "id": "zone.nl_cutter_in",
+          "kind": "machine_input",
+          "minX": -3200,
+          "minZ": -4200,
+          "maxX": -1600,
+          "maxZ": -2200
+        },
+        {
+          "id": "zone.nl_cutter_out",
+          "kind": "machine_output",
+          "minX": -6800,
+          "minZ": -4200,
+          "maxX": -5200,
+          "maxZ": -2200
+        },
+        {
+          "id": "zone.nl_smoker_in",
+          "kind": "machine_input",
+          "minX": -3200,
+          "minZ": -8800,
+          "maxX": -1600,
+          "maxZ": -7200
+        },
+        {
+          "id": "zone.nl_smoker_out",
+          "kind": "machine_output",
+          "minX": -6800,
+          "minZ": -8800,
+          "maxX": -5200,
+          "maxZ": -7200
+        },
+        {
+          "id": "zone.nl_counter",
+          "kind": "counter",
+          "minX": 2100,
+          "minZ": -4700,
+          "maxX": 3600,
+          "maxZ": -1700
+        },
+        {
+          "id": "zone.nl_wholesale",
+          "kind": "counter",
+          "minX": 2100,
+          "minZ": -8700,
+          "maxX": 3600,
+          "maxZ": -5700
+        },
+        {
+          "id": "zone.nl_grill_in",
+          "kind": "machine_input",
+          "minX": -3200,
+          "minZ": -13200,
+          "maxX": -1600,
+          "maxZ": -11600
+        },
+        {
+          "id": "zone.nl_grill_out",
+          "kind": "machine_output",
+          "minX": -6800,
+          "minZ": -13200,
+          "maxX": -5200,
+          "maxZ": -11600
+        },
+        {
+          "id": "zone.nl_bait_kiosk",
+          "kind": "kiosk",
+          "minX": -3000,
+          "minZ": 6500,
+          "maxX": -1400,
+          "maxZ": 8100
+        },
+        {
+          "id": "zone.nl_chiller_in",
+          "kind": "machine_input",
+          "minX": -3200,
+          "minZ": -17800,
+          "maxX": -1600,
+          "maxZ": -16200
+        },
+        {
+          "id": "zone.nl_chiller_out",
+          "kind": "machine_output",
+          "minX": -6800,
+          "minZ": -17800,
+          "maxX": -5200,
+          "maxZ": -16200
+        },
+        {
+          "id": "zone.nl_fryer_in",
+          "kind": "machine_input",
+          "minX": 2100,
+          "minZ": -12800,
+          "maxX": 3600,
+          "maxZ": -11200
+        },
+        {
+          "id": "zone.nl_fryer_out",
+          "kind": "machine_output",
+          "minX": 4600,
+          "minZ": -12800,
+          "maxX": 6100,
+          "maxZ": -11200
+        },
+        {
+          "id": "zone.nl_packer_in",
+          "kind": "machine_input",
+          "minX": 2100,
+          "minZ": -15800,
+          "maxX": 3600,
+          "maxZ": -14200
+        },
+        {
+          "id": "zone.nl_packer_out",
+          "kind": "machine_output",
+          "minX": 4600,
+          "minZ": -15800,
+          "maxX": 6100,
+          "maxZ": -14200
+        },
+        {
+          "id": "zone.nl_plot_grill",
+          "kind": "plot",
+          "minX": -5000,
+          "minZ": -11400,
+          "maxX": -3400,
+          "maxZ": -10800
+        },
+        {
+          "id": "zone.nl_plot_chiller",
+          "kind": "plot",
+          "minX": -5000,
+          "minZ": -15000,
+          "maxX": -3400,
+          "maxZ": -14400
+        },
+        {
+          "id": "zone.nl_plot_fryer",
+          "kind": "plot",
+          "minX": 3300,
+          "minZ": -11000,
+          "maxX": 4900,
+          "maxZ": -10400
+        },
+        {
+          "id": "zone.nl_plot_packer",
+          "kind": "plot",
+          "minX": 3300,
+          "minZ": -14000,
+          "maxX": 4900,
+          "maxZ": -13400
+        },
+        {
+          "id": "zone.nl_plot_wholesale",
+          "kind": "plot",
+          "minX": 1100,
+          "minZ": -8700,
+          "maxX": 1900,
+          "maxZ": -5700
+        }
+      ],
+      "fishingSpots": [
+        {
+          "zone": "zone.nl_end",
+          "species": [
+            "species.frost_smelt",
+            "species.polar_herring",
+            "species.arctic_cod",
+            "species.ice_char",
+            "species.silver_sprat",
+            "species.harbor_herring",
+            "species.dawn_anchovy"
+          ],
+          "stockMax": 16,
+          "regenTicks": 48,
+          "regenCurvePermille": [
+            2100,
+            1600,
+            1200,
+            900,
+            750
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1200,
+            "day": 950,
+            "dusk": 1000,
+            "night": 1100
+          }
+        },
+        {
+          "zone": "zone.nl_spur",
+          "species": [
+            "species.arctic_cod",
+            "species.ice_char",
+            "species.frost_smelt",
+            "species.ghost_lanternfish"
+          ],
+          "stockMax": 8,
+          "regenTicks": 62,
+          "regenCurvePermille": [
+            2300,
+            1700,
+            1200,
+            950,
+            780
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1150,
+            "day": 1000,
+            "dusk": 1050,
+            "night": 980
+          }
+        }
+      ],
+      "stations": [
+        {
+          "id": "station.nl_cutter",
+          "machine": "machine.basic_cutter",
+          "inputZone": "zone.nl_cutter_in",
+          "outputZone": "zone.nl_cutter_out"
+        },
+        {
+          "id": "station.nl_smoker",
+          "machine": "machine.basic_smoker",
+          "inputZone": "zone.nl_smoker_in",
+          "outputZone": "zone.nl_smoker_out"
+        },
+        {
+          "id": "station.nl_grill",
+          "machine": "machine.harbor_grill",
+          "inputZone": "zone.nl_grill_in",
+          "outputZone": "zone.nl_grill_out",
+          "requiresUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "station.nl_chiller",
+          "machine": "machine.harbor_chiller",
+          "inputZone": "zone.nl_chiller_in",
+          "outputZone": "zone.nl_chiller_out",
+          "requiresUpgrade": "upgrade.harbor_chiller"
+        },
+        {
+          "id": "station.nl_fryer",
+          "machine": "machine.harbor_fryer",
+          "inputZone": "zone.nl_fryer_in",
+          "outputZone": "zone.nl_fryer_out",
+          "requiresUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "station.nl_packer",
+          "machine": "machine.harbor_packer",
+          "inputZone": "zone.nl_packer_in",
+          "outputZone": "zone.nl_packer_out",
+          "requiresUpgrade": "upgrade.harbor_packer"
+        }
+      ],
+      "counters": [
+        {
+          "id": "counter.nl_1",
+          "kind": "retail",
+          "products": [
+            "product.basic_portion",
+            "product.fillet",
+            "product.premium_portion",
+            "product.smoked_fillet",
+            "product.diced_fish",
+            "product.skewer",
+            "product.soup_stock",
+            "product.grilled_fillet",
+            "product.grilled_skewer",
+            "product.chilled_fillet",
+            "product.chilled_premium",
+            "product.fried_portion",
+            "product.fish_and_chips",
+            "product.crispy_skewer"
+          ],
+          "capacityUnits": 30,
+          "zone": "zone.nl_counter",
+          "footprint": "footprint.nl_counter",
+          "checkoutTicks": 20,
+          "maxQueue": 4,
+          "queueAnchor": {
+            "x": 5400,
+            "z": -3200
+          },
+          "queueStep": {
+            "x": 0,
+            "z": 900
+          }
+        },
+        {
+          "id": "counter.nl_wholesale",
+          "kind": "wholesale",
+          "products": [
+            "product.ice_packed_crate",
+            "product.fillet_crate",
+            "product.chilled_crate",
+            "product.fried_carton",
+            "product.chips_carton",
+            "product.grill_carton",
+            "product.skewer_carton"
+          ],
+          "capacityUnits": 24,
+          "zone": "zone.nl_wholesale",
+          "footprint": "footprint.nl_wholesale",
+          "checkoutTicks": 28,
+          "maxQueue": 3,
+          "queueAnchor": {
+            "x": 5400,
+            "z": -7200
+          },
+          "queueStep": {
+            "x": 0,
+            "z": 900
+          },
+          "requiresUpgrade": "upgrade.wholesale_pad"
+        }
+      ],
+      "customerSpawnTicks": 140,
+      "customerEntry": {
+        "x": 6800,
+        "z": -9800
+      },
+      "customerWalkMmPerTick": 100,
+      "customerPathWaypoints": [
+        {
+          "x": 7200,
+          "z": -7800
+        },
+        {
+          "x": 7200,
+          "z": -4800
+        },
+        {
+          "x": 6000,
+          "z": -3600
+        }
+      ],
+      "rushes": [
+        {
+          "id": "rush.nl_aurora",
+          "name": "Aurora rush",
+          "periodTicks": 2400,
+          "startTick": 100,
+          "durationTicks": 320,
+          "spawnSpeedPermille": 2250,
+          "queueBonus": 2,
+          "priceMultPermille": 1150
+        },
+        {
+          "id": "rush.nl_frost_market",
+          "name": "Frost market",
+          "periodTicks": 2400,
+          "startTick": 1700,
+          "durationTicks": 300,
+          "spawnSpeedPermille": 2150,
+          "queueBonus": 2,
+          "priceMultPermille": 1200
+        }
+      ],
+      "requires": [
+        "prestige.triple_harbors"
+      ],
+      "specialization": {
+        "id": "spec.cold_current",
+        "name": "Cold current",
+        "description": "Icy waters favor rares and draw exacting critics.",
+        "maintenanceDiscountPerStation": 1,
+        "rareChanceBonusPermille": 80,
+        "kindSpawnMultPermille": {
+          "critic": 1250,
+          "premium": 1150
+        }
+      },
+      "plots": [
+        {
+          "id": "plot.nl_grill",
+          "name": "Grill expansion",
+          "description": "Pour a charcoal grill pad for a second cook line.",
+          "zone": "zone.nl_plot_grill",
+          "grantsUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "plot.nl_chiller",
+          "name": "Chiller expansion",
+          "description": "Stake cold-storage foundations for chilled product.",
+          "zone": "zone.nl_plot_chiller",
+          "grantsUpgrade": "upgrade.harbor_chiller"
+        },
+        {
+          "id": "plot.nl_fryer",
+          "name": "Fryer expansion",
+          "description": "Stake out a prep fryer pad for fried portions and chips.",
+          "zone": "zone.nl_plot_fryer",
+          "grantsUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "plot.nl_packer",
+          "name": "Packer expansion",
+          "description": "Mark a carton packing pad for wholesale bulk runs.",
+          "zone": "zone.nl_plot_packer",
+          "grantsUpgrade": "upgrade.harbor_packer"
+        },
+        {
+          "id": "plot.nl_wholesale",
+          "name": "Wholesale expansion",
+          "description": "Survey a B2B pad for crate and carton sales.",
+          "zone": "zone.nl_plot_wholesale",
+          "grantsUpgrade": "upgrade.wholesale_pad"
+        }
+      ]
+    },
+    {
+      "id": "harbor.grand_marina",
+      "name": "Grand Marina",
+      "playerSpawn": {
+        "x": 0,
+        "z": 0
+      },
+      "walkable": [
+        {
+          "id": "area.gm_land",
+          "minX": -9500,
+          "minZ": -19000,
+          "maxX": 9500,
+          "maxZ": 9000
+        },
+        {
+          "id": "area.gm_pier",
+          "minX": -1800,
+          "minZ": 8800,
+          "maxX": 1800,
+          "maxZ": 18000
+        },
+        {
+          "id": "area.gm_east_dock",
+          "minX": 1800,
+          "minZ": 12000,
+          "maxX": 5200,
+          "maxZ": 16000
+        },
+        {
+          "id": "area.gm_west_dock",
+          "minX": -5200,
+          "minZ": 12000,
+          "maxX": -1800,
+          "maxZ": 16000
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "footprint.gm_cutter",
+          "minX": -5400,
+          "minZ": -4400,
+          "maxX": -3400,
+          "maxZ": -2400
+        },
+        {
+          "id": "footprint.gm_smoker",
+          "minX": -5400,
+          "minZ": -9000,
+          "maxX": -3400,
+          "maxZ": -7400
+        },
+        {
+          "id": "footprint.gm_counter",
+          "minX": 3800,
+          "minZ": -4900,
+          "maxX": 4800,
+          "maxZ": -1900
+        },
+        {
+          "id": "footprint.gm_wholesale",
+          "minX": 3800,
+          "minZ": -8900,
+          "maxX": 4800,
+          "maxZ": -5900
+        },
+        {
+          "id": "footprint.gm_grill",
+          "minX": -5400,
+          "minZ": -13400,
+          "maxX": -3400,
+          "maxZ": -11800
+        },
+        {
+          "id": "footprint.gm_chiller",
+          "minX": -5400,
+          "minZ": -18000,
+          "maxX": -3400,
+          "maxZ": -16400
+        },
+        {
+          "id": "footprint.gm_fryer",
+          "minX": 3800,
+          "minZ": -13000,
+          "maxX": 4800,
+          "maxZ": -11400
+        },
+        {
+          "id": "footprint.gm_packer",
+          "minX": 3800,
+          "minZ": -16000,
+          "maxX": 4800,
+          "maxZ": -14400
+        }
+      ],
+      "zones": [
+        {
+          "id": "zone.gm_end",
+          "kind": "fishing",
+          "minX": -1800,
+          "minZ": 14500,
+          "maxX": 1800,
+          "maxZ": 18000
+        },
+        {
+          "id": "zone.gm_east",
+          "kind": "fishing",
+          "minX": 1800,
+          "minZ": 12000,
+          "maxX": 5200,
+          "maxZ": 16000
+        },
+        {
+          "id": "zone.gm_west",
+          "kind": "fishing",
+          "minX": -5200,
+          "minZ": 12000,
+          "maxX": -1800,
+          "maxZ": 16000
+        },
+        {
+          "id": "zone.gm_cutter_in",
+          "kind": "machine_input",
+          "minX": -3400,
+          "minZ": -4400,
+          "maxX": -1800,
+          "maxZ": -2400
+        },
+        {
+          "id": "zone.gm_cutter_out",
+          "kind": "machine_output",
+          "minX": -7000,
+          "minZ": -4400,
+          "maxX": -5400,
+          "maxZ": -2400
+        },
+        {
+          "id": "zone.gm_smoker_in",
+          "kind": "machine_input",
+          "minX": -3400,
+          "minZ": -9000,
+          "maxX": -1800,
+          "maxZ": -7400
+        },
+        {
+          "id": "zone.gm_smoker_out",
+          "kind": "machine_output",
+          "minX": -7000,
+          "minZ": -9000,
+          "maxX": -5400,
+          "maxZ": -7400
+        },
+        {
+          "id": "zone.gm_counter",
+          "kind": "counter",
+          "minX": 2300,
+          "minZ": -4900,
+          "maxX": 3800,
+          "maxZ": -1900
+        },
+        {
+          "id": "zone.gm_wholesale",
+          "kind": "counter",
+          "minX": 2300,
+          "minZ": -8900,
+          "maxX": 3800,
+          "maxZ": -5900
+        },
+        {
+          "id": "zone.gm_grill_in",
+          "kind": "machine_input",
+          "minX": -3400,
+          "minZ": -13400,
+          "maxX": -1800,
+          "maxZ": -11800
+        },
+        {
+          "id": "zone.gm_grill_out",
+          "kind": "machine_output",
+          "minX": -7000,
+          "minZ": -13400,
+          "maxX": -5400,
+          "maxZ": -11800
+        },
+        {
+          "id": "zone.gm_bait_kiosk",
+          "kind": "kiosk",
+          "minX": -3200,
+          "minZ": 6800,
+          "maxX": -1600,
+          "maxZ": 8400
+        },
+        {
+          "id": "zone.gm_chiller_in",
+          "kind": "machine_input",
+          "minX": -3400,
+          "minZ": -18000,
+          "maxX": -1800,
+          "maxZ": -16400
+        },
+        {
+          "id": "zone.gm_chiller_out",
+          "kind": "machine_output",
+          "minX": -7000,
+          "minZ": -18000,
+          "maxX": -5400,
+          "maxZ": -16400
+        },
+        {
+          "id": "zone.gm_fryer_in",
+          "kind": "machine_input",
+          "minX": 2300,
+          "minZ": -13000,
+          "maxX": 3800,
+          "maxZ": -11400
+        },
+        {
+          "id": "zone.gm_fryer_out",
+          "kind": "machine_output",
+          "minX": 4800,
+          "minZ": -13000,
+          "maxX": 6300,
+          "maxZ": -11400
+        },
+        {
+          "id": "zone.gm_packer_in",
+          "kind": "machine_input",
+          "minX": 2300,
+          "minZ": -16000,
+          "maxX": 3800,
+          "maxZ": -14400
+        },
+        {
+          "id": "zone.gm_packer_out",
+          "kind": "machine_output",
+          "minX": 4800,
+          "minZ": -16000,
+          "maxX": 6300,
+          "maxZ": -14400
+        },
+        {
+          "id": "zone.gm_plot_grill",
+          "kind": "plot",
+          "minX": -5200,
+          "minZ": -11600,
+          "maxX": -3600,
+          "maxZ": -11000
+        },
+        {
+          "id": "zone.gm_plot_chiller",
+          "kind": "plot",
+          "minX": -5200,
+          "minZ": -15200,
+          "maxX": -3600,
+          "maxZ": -14600
+        },
+        {
+          "id": "zone.gm_plot_fryer",
+          "kind": "plot",
+          "minX": 3500,
+          "minZ": -11200,
+          "maxX": 5100,
+          "maxZ": -10600
+        },
+        {
+          "id": "zone.gm_plot_packer",
+          "kind": "plot",
+          "minX": 3500,
+          "minZ": -14200,
+          "maxX": 5100,
+          "maxZ": -13600
+        },
+        {
+          "id": "zone.gm_plot_wholesale",
+          "kind": "plot",
+          "minX": 1300,
+          "minZ": -8900,
+          "maxX": 2100,
+          "maxZ": -5900
+        }
+      ],
+      "fishingSpots": [
+        {
+          "zone": "zone.gm_end",
+          "species": [
+            "species.marina_tuna",
+            "species.pearl_grouper",
+            "species.saffron_sole",
+            "species.harbor_pompano",
+            "species.amber_snapper",
+            "species.king_grouper",
+            "species.arctic_cod"
+          ],
+          "stockMax": 20,
+          "regenTicks": 40,
+          "regenCurvePermille": [
+            2000,
+            1500,
+            1150,
+            900,
+            750
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1100,
+            "day": 1050,
+            "dusk": 1000,
+            "night": 950
+          }
+        },
+        {
+          "zone": "zone.gm_east",
+          "species": [
+            "species.saffron_sole",
+            "species.harbor_pompano",
+            "species.frost_smelt",
+            "species.blue_mackerel"
+          ],
+          "stockMax": 10,
+          "regenTicks": 55,
+          "regenCurvePermille": [
+            2200,
+            1650,
+            1200,
+            920,
+            760
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1050,
+            "day": 1000,
+            "dusk": 1100,
+            "night": 980
+          }
+        },
+        {
+          "zone": "zone.gm_west",
+          "species": [
+            "species.marina_tuna",
+            "species.pearl_grouper",
+            "species.ice_char",
+            "species.lava_eel"
+          ],
+          "stockMax": 8,
+          "regenTicks": 65,
+          "regenCurvePermille": [
+            2400,
+            1750,
+            1250,
+            950,
+            780
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1000,
+            "day": 980,
+            "dusk": 1050,
+            "night": 1120
+          }
+        }
+      ],
+      "stations": [
+        {
+          "id": "station.gm_cutter",
+          "machine": "machine.basic_cutter",
+          "inputZone": "zone.gm_cutter_in",
+          "outputZone": "zone.gm_cutter_out"
+        },
+        {
+          "id": "station.gm_smoker",
+          "machine": "machine.basic_smoker",
+          "inputZone": "zone.gm_smoker_in",
+          "outputZone": "zone.gm_smoker_out"
+        },
+        {
+          "id": "station.gm_grill",
+          "machine": "machine.harbor_grill",
+          "inputZone": "zone.gm_grill_in",
+          "outputZone": "zone.gm_grill_out",
+          "requiresUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "station.gm_chiller",
+          "machine": "machine.harbor_chiller",
+          "inputZone": "zone.gm_chiller_in",
+          "outputZone": "zone.gm_chiller_out",
+          "requiresUpgrade": "upgrade.harbor_chiller"
+        },
+        {
+          "id": "station.gm_fryer",
+          "machine": "machine.harbor_fryer",
+          "inputZone": "zone.gm_fryer_in",
+          "outputZone": "zone.gm_fryer_out",
+          "requiresUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "station.gm_packer",
+          "machine": "machine.harbor_packer",
+          "inputZone": "zone.gm_packer_in",
+          "outputZone": "zone.gm_packer_out",
+          "requiresUpgrade": "upgrade.harbor_packer"
+        }
+      ],
+      "counters": [
+        {
+          "id": "counter.gm_1",
+          "kind": "retail",
+          "products": [
+            "product.basic_portion",
+            "product.fillet",
+            "product.premium_portion",
+            "product.smoked_fillet",
+            "product.diced_fish",
+            "product.skewer",
+            "product.soup_stock",
+            "product.grilled_fillet",
+            "product.grilled_skewer",
+            "product.chilled_fillet",
+            "product.chilled_premium",
+            "product.fried_portion",
+            "product.fish_and_chips",
+            "product.crispy_skewer"
+          ],
+          "capacityUnits": 36,
+          "zone": "zone.gm_counter",
+          "footprint": "footprint.gm_counter",
+          "checkoutTicks": 18,
+          "maxQueue": 5,
+          "queueAnchor": {
+            "x": 5600,
+            "z": -3400
+          },
+          "queueStep": {
+            "x": 0,
+            "z": 900
+          }
+        },
+        {
+          "id": "counter.gm_wholesale",
+          "kind": "wholesale",
+          "products": [
+            "product.ice_packed_crate",
+            "product.fillet_crate",
+            "product.chilled_crate",
+            "product.fried_carton",
+            "product.chips_carton",
+            "product.grill_carton",
+            "product.skewer_carton"
+          ],
+          "capacityUnits": 28,
+          "zone": "zone.gm_wholesale",
+          "footprint": "footprint.gm_wholesale",
+          "checkoutTicks": 26,
+          "maxQueue": 3,
+          "queueAnchor": {
+            "x": 5600,
+            "z": -7400
+          },
+          "queueStep": {
+            "x": 0,
+            "z": 900
+          },
+          "requiresUpgrade": "upgrade.wholesale_pad"
+        }
+      ],
+      "customerSpawnTicks": 120,
+      "customerEntry": {
+        "x": 7200,
+        "z": -10000
+      },
+      "customerWalkMmPerTick": 105,
+      "customerPathWaypoints": [
+        {
+          "x": 7600,
+          "z": -8000
+        },
+        {
+          "x": 7600,
+          "z": -5000
+        },
+        {
+          "x": 6200,
+          "z": -3800
+        }
+      ],
+      "rushes": [
+        {
+          "id": "rush.gm_regatta",
+          "name": "Regatta rush",
+          "periodTicks": 2400,
+          "startTick": 150,
+          "durationTicks": 360,
+          "spawnSpeedPermille": 2400,
+          "queueBonus": 3,
+          "priceMultPermille": 1180
+        },
+        {
+          "id": "rush.gm_tasting",
+          "name": "Tasting hour",
+          "periodTicks": 2400,
+          "startTick": 1600,
+          "durationTicks": 320,
+          "spawnSpeedPermille": 2200,
+          "queueBonus": 2,
+          "priceMultPermille": 1250
+        }
+      ],
+      "requires": [
+        "prestige.quad_harbors"
+      ],
+      "specialization": {
+        "id": "spec.premium_marina",
+        "name": "Premium marina",
+        "description": "Yacht crowds tip well \u2014 premium visitors spawn more often.",
+        "maintenanceDiscountPerStation": 0,
+        "rareChanceBonusPermille": 40,
+        "kindSpawnMultPermille": {
+          "premium": 1350,
+          "critic": 1200
+        }
+      },
+      "plots": [
+        {
+          "id": "plot.gm_grill",
+          "name": "Grill expansion",
+          "description": "Pour a charcoal grill pad for a second cook line.",
+          "zone": "zone.gm_plot_grill",
+          "grantsUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "plot.gm_chiller",
+          "name": "Chiller expansion",
+          "description": "Stake cold-storage foundations for chilled product.",
+          "zone": "zone.gm_plot_chiller",
+          "grantsUpgrade": "upgrade.harbor_chiller"
+        },
+        {
+          "id": "plot.gm_fryer",
+          "name": "Fryer expansion",
+          "description": "Stake out a prep fryer pad for fried portions and chips.",
+          "zone": "zone.gm_plot_fryer",
+          "grantsUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "plot.gm_packer",
+          "name": "Packer expansion",
+          "description": "Mark a carton packing pad for wholesale bulk runs.",
+          "zone": "zone.gm_plot_packer",
+          "grantsUpgrade": "upgrade.harbor_packer"
+        },
+        {
+          "id": "plot.gm_wholesale",
+          "name": "Wholesale expansion",
+          "description": "Survey a B2B pad for crate and carton sales.",
+          "zone": "zone.gm_plot_wholesale",
+          "grantsUpgrade": "upgrade.wholesale_pad"
+        }
+      ]
     }
   ],
   "bait": [
@@ -3814,6 +6370,22 @@
         "cost": 75,
         "requiresCosmetic": "banner.twin_harbors",
         "patienceBonusTicks": 40
+      },
+      {
+        "id": "decor.triple_harbors_pennant",
+        "name": "Triple Harbors pennant",
+        "description": "Fly the three-harbor pennant once the circuit opens north.",
+        "cost": 85,
+        "requiresCosmetic": "banner.triple_harbors",
+        "patienceBonusTicks": 42
+      },
+      {
+        "id": "decor.quad_harbors_flag",
+        "name": "Quad Harbors flag",
+        "description": "Fly the four-harbor colors before the final crossing.",
+        "cost": 95,
+        "requiresCosmetic": "banner.quad_harbors",
+        "patienceBonusTicks": 45
       }
     ]
   },
@@ -3844,6 +6416,34 @@
           "species.moon_flounder": 2000,
           "species.ghost_lanternfish": 1800,
           "species.ink_squid": 1500
+        }
+      },
+      {
+        "id": "event.northlight_freeze",
+        "name": "Northlight Freeze",
+        "description": "Cold currents thicken frost smelt and arctic cod runs.",
+        "periodTicks": 12000,
+        "startTick": 3000,
+        "durationTicks": 1800,
+        "banner": "banner.northlight_freeze",
+        "speciesWeightMultPermille": {
+          "species.frost_smelt": 2100,
+          "species.arctic_cod": 1900,
+          "species.polar_herring": 1600
+        }
+      },
+      {
+        "id": "event.grand_regatta",
+        "name": "Grand Regatta",
+        "description": "Regatta week packs the marina with premium guests and tuna runs.",
+        "periodTicks": 12000,
+        "startTick": 10850,
+        "durationTicks": 1100,
+        "banner": "banner.grand_regatta",
+        "speciesWeightMultPermille": {
+          "species.marina_tuna": 2000,
+          "species.pearl_grouper": 1800,
+          "species.saffron_sole": 1500
         }
       }
     ]

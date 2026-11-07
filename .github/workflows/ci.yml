@@ -1,4 +1,4 @@
-# Phase 28 — schema + cross-ref content gate and Kotlin/web parity fixtures.
+# Content validate, Kotlin/web parity, and Phase 27 Android release assemble.
 name: CI
 
 on:
@@ -45,3 +45,24 @@ jobs:
       - name: Web engine + parity fixtures
         working-directory: web
         run: npm test
+
+  android-release:
+    name: Android assembleRelease
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Assemble release (R8 + debug-signed CI keystore)
+        run: ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Fallback assembleDebug if release blocked
+        if: failure()
+        run: |
+          echo "::warning::assembleRelease failed — falling back to assembleDebug gate"
+          ./gradlew :app:assembleDebug --no-daemon

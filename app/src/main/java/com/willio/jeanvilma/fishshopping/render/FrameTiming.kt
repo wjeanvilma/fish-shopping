@@ -3,8 +3,9 @@ package com.willio.jeanvilma.fishshopping.render
 import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 
 /**
- * Presentation-only frame timing (Phase 29). Tracks EMA frame ms and a soft
- * auto-downgrade signal when mid-device targets are missed. Never touches the 20 Hz sim.
+ * Presentation-only frame timing (Phase 26 device matrix). Tracks EMA frame ms
+ * and soft auto-downgrade when Android mid-tier 30 FPS budgets are missed.
+ * Never touches the 20 Hz sim. Mirrors shared/perf/device-matrix.json (android).
  */
 class FrameTiming(
     private val emaAlpha: Double = 0.08,
@@ -30,7 +31,7 @@ class FrameTiming(
         val ms = maxOf(0.0, dtSeconds) * 1000.0
         lastFrameMs = ms
         emaFrameMs = if (emaFrameMs == 0.0) ms else emaFrameMs + (ms - emaFrameMs) * emaAlpha
-        if (ms > targetMs * 1.15) overStreak += 1 else overStreak = 0
+        if (ms > targetMs * OVER_BUDGET_MULT) overStreak += 1 else overStreak = 0
         if (overStreak >= downgradeStreak) {
             overStreak = 0
             return true
@@ -39,13 +40,19 @@ class FrameTiming(
     }
 
     companion object {
-        /** Mid-device frame-time targets (ms). Medium/high aim for ~60 Hz; low allows ~45 Hz. */
+        /** Android mid-tier: ~30 FPS for medium/high; low allows ~25 FPS. */
         fun targetMs(quality: QualityPreset): Double = when (quality) {
-            QualityPreset.LOW -> 22.2
-            QualityPreset.MEDIUM, QualityPreset.HIGH -> 16.7
+            QualityPreset.LOW -> 40.0
+            QualityPreset.MEDIUM, QualityPreset.HIGH -> 33.3
         }
 
-        const val FRAME_DOWNGRADE_STREAK = 90
+        /** ~1.5 s of sustained over-budget frames at 30 Hz. */
+        const val FRAME_DOWNGRADE_STREAK = 45
+
+        const val OVER_BUDGET_MULT = 1.15
+
+        /** Harbor GLB LRU size (matches web / device-matrix.json). */
+        const val HARBOR_CACHE_LIMIT = 2
 
         fun downgrade(quality: QualityPreset): QualityPreset = when (quality) {
             QualityPreset.HIGH -> QualityPreset.MEDIUM

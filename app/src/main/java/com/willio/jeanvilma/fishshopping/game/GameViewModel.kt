@@ -4,12 +4,17 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.willio.jeanvilma.fishshopping.analytics.AnalyticsBus
 import com.willio.jeanvilma.fishshopping.audio.AudioBus
 import com.willio.jeanvilma.fishshopping.audio.sfxFromEvent
+import com.willio.jeanvilma.fishshopping.billing.EntitlementBillings
+import com.willio.jeanvilma.fishshopping.billing.PurchaseOutcome
 import com.willio.jeanvilma.fishshopping.cloud.CloudSyncCoordinator
 import com.willio.jeanvilma.fishshopping.core.content.BalanceExport
 import com.willio.jeanvilma.fishshopping.core.content.ContentLoader
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
+import com.willio.jeanvilma.fishshopping.core.persistence.CloudConflictOffer
+import com.willio.jeanvilma.fishshopping.core.persistence.CloudSync
 import com.willio.jeanvilma.fishshopping.core.persistence.NewerSaveException
 import com.willio.jeanvilma.fishshopping.core.persistence.SnapshotCodec
 import com.willio.jeanvilma.fishshopping.core.persistence.SyncSource
@@ -31,7 +36,11 @@ import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 import com.willio.jeanvilma.fishshopping.persistence.SettingsStore
 import com.willio.jeanvilma.fishshopping.persistence.SnapshotStore
 import com.willio.jeanvilma.fishshopping.render.FlyingTransferCue
+import com.willio.jeanvilma.fishshopping.render.WorldBurstCue
+import com.willio.jeanvilma.fishshopping.render.resolveCelebrateBurst
 import com.willio.jeanvilma.fishshopping.render.resolveFlyingTransfer
+import com.willio.jeanvilma.fishshopping.render.resolveMachineDoneBurst
+import com.willio.jeanvilma.fishshopping.render.resolvePayBurst
 import com.willio.jeanvilma.fishshopping.ui.hud.TapTarget
 import com.willio.jeanvilma.fishshopping.ui.hud.stickFromTapTarget
 import kotlin.math.hypot
@@ -54,7 +63,12 @@ import kotlin.random.Random
 
 sealed interface GameUiState {
     data object Loading : GameUiState
-    data class Title(val hasSave: Boolean) : GameUiState
+    data class Title(
+        val hasSave: Boolean,
+        val cloudConflict: CloudConflictView? = null,
+        val localRecovery: LocalRecoveryView? = null,
+        val settings: GameSettings = GameSettings(),
+    ) : GameUiState
     data class Ready(
         val view: SimView,
         val upgradesOpen: Boolean,
@@ -62,6 +76,9 @@ sealed interface GameUiState {
         val questsOpen: Boolean = false,
         val contractsOpen: Boolean = false,
         val mapOpen: Boolean = false,
+        val warehouseOpen: Boolean = false,
+        val speciesBookOpen: Boolean = false,
+        val dashboardOpen: Boolean = false,
         val pauseOpen: Boolean = false,
         val settingsOpen: Boolean = false,
         val bagOpen: Boolean = false,
@@ -90,6 +107,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val settingsStore = SettingsStore(app)
     private val audio = AudioBus(app)
     private val cloud = CloudSyncCoordinator()
+    private val billing = EntitlementBillings.create(app)
 
     private val _ui = MutableStateFlow<GameUiState>(GameUiState.Loading)
     val ui: StateFlow<GameUiState> = _ui
@@ -103,6 +121,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Presentation-only flying transfer cues for the harbor renderer (drained each frame). */
     private val flyingTransfers = ConcurrentLinkedQueue<FlyingTransferCue>()
+    /** Phase 16 world bursts (pay / celebrate / machine_done). */
+    private val worldBursts = ConcurrentLinkedQueue<WorldBurstCue>()
 
     private val commands = ConcurrentLinkedQueue<Command>()
 
@@ -117,8 +137,35 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         return out
     }
 
+    /** Drain Phase 16 world burst cues for the renderer (main thread). */
+    fun drainWorldBursts(): List<WorldBurstCue> {
+        if (worldBursts.isEmpty()) return emptyList()
+        val out = ArrayList<WorldBurstCue>()
+        while (true) {
+            val next = worldBursts.poll() ?: break
+            out += next
+        }
+        return out
+    }
+
     /** Quality preset for the Filament renderer (presentation-only; includes title screen). */
     fun renderQuality(): QualityPreset = settings.quality
+
+    /** Phase 10 a11y: snap camera / skip transfer VFX. */
+    fun settingsReducedMotion(): Boolean = settings.reducedMotion
+
+    /** Phase 10 a11y: toast captions for alerts. */
+    fun settingsCaptionsEnabled(): Boolean = settings.captionsEnabled
+
+    /** Phase 10 Settings save/cloud status row. */
+    fun saveStatus(): com.willio.jeanvilma.fishshopping.persistence.SaveStatusView =
+        com.willio.jeanvilma.fishshopping.persistence.SaveStatusView(
+            persistent = true,
+            lastSavedLabel = GameSettings.formatLastSavedLabel(lastCheckpointEpochMs),
+            cloudEnabled = settings.cloudSyncEnabled,
+            cloudAvailable = cloud.available,
+            cloudLinked = !settings.cloudAccountId.isNullOrBlank(),
+        )
 
     // Owned by the sim thread only.
     private var content: ContentPack? = null
@@ -142,6 +189,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     @Volatile
     private var mapOpen = false
     @Volatile
+    private var warehouseOpen = false
+    @Volatile
+    private var speciesBookOpen = false
+    @Volatile
+    private var dashboardOpen = false
+    @Volatile
     private var pauseOpen = false
     @Volatile
     private var settingsOpen = false
@@ -154,6 +207,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Wall clock of the last checkpoint; used for offline catch-up on resume/load. */
     private var lastCheckpointEpochMs: Long? = null
     private var pendingOfflineReport: OfflineReport? = null
+    /** Phase 11: parked dual-snapshot choice (texts kept until the player picks). */
+    private var pendingConflict: CloudConflictOffer? = null
+    private var cloudConflictView: CloudConflictView? = null
+    /** Phase 11: parked corrupt-latest → previous recovery. */
+    private var pendingRecoveryText: String? = null
+    private var localRecoveryView: LocalRecoveryView? = null
     /** Presentation-only tap-to-move destination (cleared by stick/keys or on arrival). */
     @Volatile
     private var tapTarget: TapTarget? = null
@@ -162,11 +221,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private var stickActive = false
 
     private val panelOpen get() = upgradesOpen || staffOpen || questsOpen || contractsOpen || mapOpen
-        || pauseOpen || settingsOpen || bagOpen || stationOpen
+        || warehouseOpen || speciesBookOpen || dashboardOpen || pauseOpen || settingsOpen || bagOpen || stationOpen
         || pendingOfflineReport != null
 
     init {
-        audio.setMuted(settings.muted)
+        applyAudioSettings()
         viewModelScope.launch(simDispatcher) { load() }
     }
 
@@ -178,7 +237,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             }
             content = pack
             settings = settingsStore.load()
-            audio.setMuted(settings.muted)
+            applyAudioSettings()
+            applyAnalyticsConsent()
             publishTitle(store.readCandidates().isNotEmpty())
         } catch (e: NewerSaveException) {
             allowSaving = false
@@ -192,11 +252,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Continue from the newest usable save, or a fresh harbor if every slot is unusable. */
     fun continueGame() {
         viewModelScope.launch(simDispatcher) {
-            if (booting || _ui.value !is GameUiState.Title) return@launch
+            val title = _ui.value as? GameUiState.Title ?: return@launch
+            if (booting || title.cloudConflict != null || title.localRecovery != null) return@launch
             val pack = content ?: return@launch
             booting = true
             try {
-                val restored = restoreOrCreate(pack)
+                val restored = restoreOrCreate(pack) ?: return@launch // parked for choice/recovery UI
                 bootSim(restored.state, restored.savedAtEpochMs)
             } catch (e: NewerSaveException) {
                 allowSaving = false
@@ -210,6 +271,82 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Phase 11: apply the player's dual-snapshot choice. */
+    fun resolveCloudConflict(source: SyncSource) {
+        viewModelScope.launch(simDispatcher) {
+            if (booting || _ui.value !is GameUiState.Title) return@launch
+            val pack = content ?: return@launch
+            val offer = pendingConflict ?: return@launch
+            if (source != SyncSource.LOCAL && source != SyncSource.REMOTE) return@launch
+            booting = true
+            try {
+                val text = if (source == SyncSource.REMOTE) offer.remoteText else offer.localText
+                store.write(text, rotate = true)
+                val decoded = SnapshotCodec.decodeEnvelope(pack, text)
+                clearSaveChoiceUi()
+                AnalyticsBus.shared.onSaveRecovery(
+                    if (source == SyncSource.REMOTE) "cloud_remote" else "cloud_local",
+                )
+                _messages.tryEmit(if (source == SyncSource.REMOTE) "Restored cloud save" else "Kept this device's save")
+                bootSim(decoded.state, decoded.savedAtEpochMs)
+            } catch (e: NewerSaveException) {
+                allowSaving = false
+                clearSaveChoiceUi()
+                _ui.value = GameUiState.Failed(e.message ?: "This save needs a newer version of the app.")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to resolve cloud conflict", e)
+                clearSaveChoiceUi()
+                _ui.value = GameUiState.Failed(e.message ?: "Could not apply save choice.")
+            } finally {
+                booting = false
+            }
+        }
+    }
+
+    /** Phase 11: load the previous backup after a corrupt latest. */
+    fun confirmLocalRecovery() {
+        viewModelScope.launch(simDispatcher) {
+            if (booting || _ui.value !is GameUiState.Title) return@launch
+            val pack = content ?: return@launch
+            val text = pendingRecoveryText ?: return@launch
+            booting = true
+            try {
+                val decoded = SnapshotCodec.decodeEnvelope(pack, text)
+                rotateOnNextSave = false
+                clearSaveChoiceUi()
+                AnalyticsBus.shared.onSaveRecovery("local_previous")
+                _messages.tryEmit("Recovered your previous save")
+                bootSim(decoded.state, decoded.savedAtEpochMs)
+            } catch (e: NewerSaveException) {
+                allowSaving = false
+                clearSaveChoiceUi()
+                _ui.value = GameUiState.Failed(e.message ?: "This save needs a newer version of the app.")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to recover previous save", e)
+                clearSaveChoiceUi()
+                _ui.value = GameUiState.Failed(e.message ?: "Could not recover save.")
+            } finally {
+                booting = false
+            }
+        }
+    }
+
+    /** Phase 11: dismiss recovery dialog and stay on the title screen. */
+    fun dismissLocalRecovery() {
+        viewModelScope.launch(simDispatcher) {
+            if (_ui.value !is GameUiState.Title) return@launch
+            clearSaveChoiceUi()
+            publishTitle(store.readCandidates().isNotEmpty())
+        }
+    }
+
+    private fun clearSaveChoiceUi() {
+        pendingConflict = null
+        cloudConflictView = null
+        pendingRecoveryText = null
+        localRecoveryView = null
+    }
+
     /** Wipe slots and start a new harbor. The title screen confirms before calling this. */
     fun newGame() {
         viewModelScope.launch(simDispatcher) {
@@ -217,6 +354,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             val pack = content ?: return@launch
             booting = true
             try {
+                clearSaveChoiceUi()
                 cloud.clearRemote(settings)
                 store.clear()
                 rotateOnNextSave = true
@@ -241,6 +379,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             if (s != null && commands.isNotEmpty()) step(s)
             save()
             closeAllPanels()
+            clearSaveChoiceUi()
             pendingOfflineReport = null
             commands.clear()
             flyingTransfers.clear()
@@ -258,6 +397,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         flyingTransfers.clear()
         pendingOfflineReport = null
         closeAllPanels()
+        AnalyticsBus.shared.resetSessionFlags()
+        applyAnalyticsConsent()
         sim = Simulation(pack, state)
         lastCheckpointEpochMs = savedAtEpochMs
         applyPendingOffline(System.currentTimeMillis())
@@ -269,7 +410,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun publishTitle(hasSave: Boolean) {
-        _ui.value = GameUiState.Title(hasSave)
+        _ui.value = GameUiState.Title(
+            hasSave = hasSave,
+            cloudConflict = cloudConflictView,
+            localRecovery = localRecoveryView,
+            settings = settings,
+        )
     }
 
     /** Block until saves queued before this call have been written. */
@@ -281,26 +427,54 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     private data class Restored(val state: GameState, val savedAtEpochMs: Long?)
 
-    /** Latest valid snapshot, falling back to the previous one (blueprint "Recovery"). */
-    private fun restoreOrCreate(pack: ContentPack): Restored {
-        val localLatest = store.readCandidates().firstOrNull { it.first == "latest" }?.second
+    /**
+     * Latest valid snapshot, falling back to the previous one (blueprint "Recovery").
+     * Returns null when Phase 11 parks a cloud-conflict or corrupt-latest dialog.
+     */
+    private fun restoreOrCreate(pack: ContentPack): Restored? {
+        val candidates = store.readCandidates()
+        val localLatest = candidates.firstOrNull { it.first == "latest" }?.second
         val pull = cloud.pullMerge(settings, localLatest)
         if (pull.settings != settings) {
             settings = pull.settings
             settingsStore.save(settings)
         }
+        val conflict = pull.conflict
+        if (conflict != null) {
+            pendingConflict = conflict
+            cloudConflictView = SnapshotChoice.conflictView(conflict, pack)
+            localRecoveryView = null
+            pendingRecoveryText = null
+            publishTitle(hasSave = true)
+            return null
+        }
         if (pull.decision.source == SyncSource.REMOTE && pull.decision.text != null) {
             runCatching {
-                store.write(pull.decision.text, rotate = true)
-                val decoded = SnapshotCodec.decodeEnvelope(pack, pull.decision.text)
+                store.write(pull.decision.text!!, rotate = true)
+                val decoded = SnapshotCodec.decodeEnvelope(pack, pull.decision.text!!)
                 _messages.tryEmit("Restored newer cloud save")
                 return Restored(decoded.state, decoded.savedAtEpochMs)
             }.onFailure { Log.w(TAG, "Cloud save unusable: ${it.message}") }
         }
-        for ((label, text) in store.readCandidates()) {
+        var latestCorrupt = false
+        for ((label, text) in candidates) {
             try {
                 val decoded = SnapshotCodec.decodeEnvelope(pack, text)
                 if (label != "latest") {
+                    if (latestCorrupt) {
+                        val peeked = CloudSync.peek(text)
+                        if (peeked != null) {
+                            pendingRecoveryText = text
+                            localRecoveryView = SnapshotChoice.recoveryView(
+                                CloudSync.summaryOf(peeked, SyncSource.LOCAL),
+                                pack,
+                            )
+                            pendingConflict = null
+                            cloudConflictView = null
+                            publishTitle(hasSave = true)
+                            return null
+                        }
+                    }
                     rotateOnNextSave = false
                     _messages.tryEmit("Recovered your previous save")
                 }
@@ -308,6 +482,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: NewerSaveException) {
                 throw e // never overwrite a save from a newer app
             } catch (e: Exception) {
+                if (label == "latest") latestCorrupt = true
                 Log.w(TAG, "Save '$label' unusable: ${e.message}")
             }
         }
@@ -316,6 +491,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Called from Activity.onStart. No-ops until a harbor simulation is on screen. */
     fun resume() {
+        // Phase 28: reclaim USAGE_GAME focus when returning to the foreground.
+        audio.requestFocus()
         if (loopJob?.isActive == true) return
         loopJob = viewModelScope.launch(simDispatcher) {
             if (sim != null && _ui.value is GameUiState.Ready) {
@@ -343,6 +520,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         loopJob?.cancel()
         loopJob = null
         enqueueMove(0f, 0f)
+        // Phase 28: abandon focus + AtomicFile checkpoint (survives process death).
+        audio.abandonFocus()
         simExecutor.execute { save() }
     }
 
@@ -360,7 +539,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         lastCheckpointEpochMs = nowEpochMs
         if (elapsed <= 0L) return
         val report = applyOffline(s, elapsed)
-        pendingOfflineReport = if (OfflinePolicy.shouldShowSummary(s.content, report)) report else null
+        if (OfflinePolicy.shouldShowSummary(s.content, report)) {
+            pendingOfflineReport = report
+            AnalyticsBus.shared.onOfflineClaimed(report)
+        } else {
+            pendingOfflineReport = null
+        }
         latestView = s.view()
     }
 
@@ -410,6 +594,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     fun setQuestsOpen(open: Boolean) = setPanelOpen(Panel.QUESTS, open)
     fun setContractsOpen(open: Boolean) = setPanelOpen(Panel.CONTRACTS, open)
     fun setMapOpen(open: Boolean) = setPanelOpen(Panel.MAP, open)
+    fun setWarehouseOpen(open: Boolean) = setPanelOpen(Panel.WAREHOUSE, open)
+    fun setSpeciesBookOpen(open: Boolean) = setPanelOpen(Panel.SPECIES_BOOK, open)
+    fun setDashboardOpen(open: Boolean) = setPanelOpen(Panel.DASHBOARD, open)
     fun setPauseOpen(open: Boolean) = setPanelOpen(Panel.PAUSE, open)
     fun setSettingsOpen(open: Boolean) = setPanelOpen(Panel.SETTINGS, open)
     fun setBagOpen(open: Boolean) = setPanelOpen(Panel.BAG, open)
@@ -427,6 +614,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         questsOpen = which == Panel.QUESTS
         contractsOpen = which == Panel.CONTRACTS
         mapOpen = which == Panel.MAP
+        warehouseOpen = which == Panel.WAREHOUSE
+        speciesBookOpen = which == Panel.SPECIES_BOOK
+        dashboardOpen = which == Panel.DASHBOARD
         pauseOpen = which == Panel.PAUSE
         settingsOpen = which == Panel.SETTINGS
         bagOpen = which == Panel.BAG
@@ -443,6 +633,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             Panel.QUESTS -> questsOpen = false
             Panel.CONTRACTS -> contractsOpen = false
             Panel.MAP -> mapOpen = false
+            Panel.WAREHOUSE -> warehouseOpen = false
+            Panel.SPECIES_BOOK -> speciesBookOpen = false
+            Panel.DASHBOARD -> dashboardOpen = false
             Panel.PAUSE -> pauseOpen = false
             Panel.SETTINGS -> settingsOpen = false
             Panel.BAG -> bagOpen = false
@@ -456,6 +649,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         questsOpen = false
         contractsOpen = false
         mapOpen = false
+        warehouseOpen = false
+        speciesBookOpen = false
+        dashboardOpen = false
         pauseOpen = false
         settingsOpen = false
         bagOpen = false
@@ -465,22 +661,43 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Presentation settings (mute, quality, a11y, cloud). Not part of the parity save. */
     fun updateSettings(
         muted: Boolean = settings.muted,
+        musicVolume: Float = settings.musicVolume,
+        sfxVolume: Float = settings.sfxVolume,
+        hapticsEnabled: Boolean = settings.hapticsEnabled,
         quality: QualityPreset = settings.quality,
         joystickSide: JoystickSide = settings.joystickSide,
         joystickScale: Float = settings.joystickScale,
         tapToMove: Boolean = settings.tapToMove,
         cloudSyncEnabled: Boolean = settings.cloudSyncEnabled,
         showBalanceStrip: Boolean = settings.showBalanceStrip,
+        reducedMotion: Boolean = settings.reducedMotion,
+        captionsEnabled: Boolean = settings.captionsEnabled,
+        hudTextScale: Float = settings.hudTextScale,
+        shapeCues: Boolean = settings.shapeCues,
+        timingAssist: Boolean = settings.timingAssist,
+        analyticsConsent: Boolean = settings.analyticsConsent,
+        analyticsConsentDecided: Boolean = settings.analyticsConsentDecided,
     ) {
         var next = GameSettings(
             muted = muted,
+            musicVolume = GameSettings.clampVolume(musicVolume),
+            sfxVolume = GameSettings.clampVolume(sfxVolume),
+            hapticsEnabled = hapticsEnabled,
             quality = quality,
             joystickSide = joystickSide,
             joystickScale = GameSettings.clampScale(joystickScale),
             tapToMove = tapToMove,
             cloudSyncEnabled = cloudSyncEnabled,
             showBalanceStrip = showBalanceStrip,
+            reducedMotion = reducedMotion,
+            captionsEnabled = captionsEnabled,
+            hudTextScale = GameSettings.clampHudTextScale(hudTextScale),
+            shapeCues = shapeCues,
+            timingAssist = timingAssist,
+            analyticsConsent = analyticsConsent,
+            analyticsConsentDecided = analyticsConsentDecided,
             cloudAccountId = settings.cloudAccountId,
+            cloudRefreshToken = settings.cloudRefreshToken,
         )
         if (next.cloudSyncEnabled && !cloud.available) {
             // Still allow the opt-in flag; pushes no-op until Firebase keys are configured.
@@ -492,9 +709,58 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
         settings = next
         if (!next.tapToMove) tapTarget = null
-        audio.setMuted(next.muted)
+        applyAudioSettings()
+        applyAnalyticsConsent()
         settingsStore.save(next)
-        viewModelScope.launch(simDispatcher) { publish(force = true) }
+        viewModelScope.launch(simDispatcher) {
+            if (_ui.value is GameUiState.Title) {
+                val hasSave = (_ui.value as GameUiState.Title).hasSave
+                publishTitle(hasSave)
+            } else {
+                publish(force = true)
+            }
+        }
+    }
+
+    /** Phase 25: answer the title consent gate (or Settings toggle). */
+    fun setAnalyticsConsent(consent: Boolean) {
+        updateSettings(analyticsConsent = consent, analyticsConsentDecided = true)
+    }
+
+    private fun applyAnalyticsConsent() {
+        AnalyticsBus.shared.setConsent(settings.analyticsConsent)
+    }
+
+    /** Phase 19: one-tap Accessibility preset (reduced motion, captions, larger HUD, shapes, timing meter). */
+    fun applyAccessibilityPreset() {
+        val preset = com.willio.jeanvilma.fishshopping.ui.applyAccessibilityPreset(settings)
+        updateSettings(
+            muted = preset.muted,
+            musicVolume = preset.musicVolume,
+            sfxVolume = preset.sfxVolume,
+            hapticsEnabled = preset.hapticsEnabled,
+            quality = preset.quality,
+            joystickSide = preset.joystickSide,
+            joystickScale = preset.joystickScale,
+            tapToMove = preset.tapToMove,
+            cloudSyncEnabled = preset.cloudSyncEnabled,
+            showBalanceStrip = preset.showBalanceStrip,
+            reducedMotion = preset.reducedMotion,
+            captionsEnabled = preset.captionsEnabled,
+            hudTextScale = preset.hudTextScale,
+            shapeCues = preset.shapeCues,
+            timingAssist = preset.timingAssist,
+        )
+        _messages.tryEmit("Accessibility preset on")
+    }
+
+    private fun applyAudioSettings() {
+        audio.applyLevels(
+            muted = settings.muted,
+            musicVolume = settings.musicVolume,
+            sfxVolume = settings.sfxVolume,
+            hapticsEnabled = settings.hapticsEnabled,
+        )
     }
 
     /** Whether a remote backend is configured (Firebase keys). Local play never needs this. */
@@ -527,8 +793,87 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Phase 6: confirm spend while standing on an expansion plot marker. */
+    fun buildPlot(plotId: String) {
+        commands += Command.BuildPlot(plotId, UUID.randomUUID().toString())
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
     fun purchaseDecor(decorId: String) {
         commands += Command.PurchaseDecor(decorId, UUID.randomUUID().toString())
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+        }
+    }
+
+    /** Phase 23: one-time full-harbor unlock via platform billing stub. */
+    fun purchaseFullHarborUnlock() {
+        when (val result = billing.purchaseFullUnlock(settings.cloudAccountId)) {
+            is PurchaseOutcome.Err -> _messages.tryEmit(result.reason)
+            is PurchaseOutcome.Ok -> applyFullUnlockGrant(result.purchaseToken, result.alreadyOwned)
+        }
+    }
+
+    /** Phase 23: restore purchases and grant if the store says owned. */
+    fun restoreFullHarborUnlock() {
+        val (owned, token) = billing.restore(settings.cloudAccountId)
+        if (!owned || token.isNullOrBlank()) {
+            _messages.tryEmit("No harbor unlock to restore")
+            return
+        }
+        applyFullUnlockGrant(token, fromRestore = true)
+    }
+
+    /** Phase 24: purchase a power-neutral cosmetic SKU. */
+    fun purchaseIapCosmetic(sku: String) {
+        when (val result = billing.purchaseCosmetic(sku, settings.cloudAccountId)) {
+            is PurchaseOutcome.Err -> _messages.tryEmit(result.reason)
+            is PurchaseOutcome.Ok -> applyCosmeticGrant(sku, result.purchaseToken)
+        }
+    }
+
+    /** Phase 24: restore all entitlements (full unlock + cosmetics). */
+    fun restorePurchases() {
+        val owned = billing.restoreAll(settings.cloudAccountId)
+        if (owned.isEmpty()) {
+            _messages.tryEmit("No purchases to restore")
+            return
+        }
+        for (row in owned) {
+            val cosmetic = row.grantsCosmetic
+            if (cosmetic != null) {
+                applyCosmeticGrant(row.sku, row.purchaseToken)
+            } else {
+                applyFullUnlockGrant(row.purchaseToken, fromRestore = false)
+            }
+        }
+        _messages.tryEmit("Restored ${owned.size} purchase${if (owned.size == 1) "" else "s"}")
+    }
+
+    private fun applyFullUnlockGrant(purchaseToken: String, fromRestore: Boolean) {
+        commands += Command.GrantFullHarborUnlock(EntitlementBillings.requestIdForToken(purchaseToken))
+        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+            sim?.let { step(it); publish(force = true) }
+            if (fromRestore && sim?.state?.fullHarborUnlock == true) {
+                _messages.tryEmit("Harbor unlock restored")
+            }
+        } else if (fromRestore) {
+            _messages.tryEmit("Harbor unlock restored")
+        }
+    }
+
+    private fun applyCosmeticGrant(sku: String, purchaseToken: String) {
+        val cosmeticId = com.willio.jeanvilma.fishshopping.core.progression.CosmeticsIapSystem.BY_SKU[sku]?.grantsCosmetic
+        if (cosmeticId == null) {
+            _messages.tryEmit("Unknown cosmetic SKU")
+            return
+        }
+        commands += Command.GrantIapCosmetic(
+            cosmeticId,
+            EntitlementBillings.cosmeticRequestId(sku, purchaseToken),
+        )
         if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
@@ -652,12 +997,17 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             next = commands.poll()
         }
         val events = s.step(batch)
+        AnalyticsBus.shared.onGameEvents(events, s.state)
         var transaction = false
         val transferred = ArrayList<GameEvent.ItemsTransferred>()
+        val payCustomers = ArrayList<String>()
+        val machineDone = ArrayList<String>()
+        var celebrate = false
         for (e in events) {
             sfxFromEvent(e)?.let { audio.play(it) }
             when (e) {
                 is GameEvent.ItemsTransferred -> transferred += e
+                is GameEvent.BatchCompleted -> machineDone += e.stationId
                 is GameEvent.SaleCommitted -> {
                     val tip = when {
                         e.tipped && e.preferenceMet -> " Premium tip!"
@@ -665,26 +1015,36 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                         else -> ""
                     }
                     _messages.tryEmit("+${e.coins} coins$tip")
+                    payCustomers += e.customerId
                     transaction = true
                 }
                 is GameEvent.FishCaught -> {
                     if (e.personalBest) {
                         val name = s.content.itemName(e.speciesId)
                         _messages.tryEmit("New trophy: $name · ${e.sizePermille}%")
+                        celebrate = true
                         transaction = true
                     } else if (e.timingBonus) {
                         val tip = s.content.speciesById[e.speciesId]?.baseValue ?: 0L
                         _messages.tryEmit("Perfect reel! +$tip")
+                        celebrate = true
                         transaction = true
                     }
                     if (e.rareUpgrade) {
                         _messages.tryEmit("Rare catch: ${s.content.speciesById[e.speciesId]?.name ?: e.speciesId}")
+                        celebrate = true
                         transaction = true
                     }
                 }
                 is GameEvent.TrophySetCompleted -> {
                     val setName = s.content.trophySetsById[e.setId]?.name ?: e.setId
                     _messages.tryEmit("Gallery complete: $setName")
+                    celebrate = true
+                    transaction = true
+                }
+                is GameEvent.CoinGoalReached -> {
+                    _messages.tryEmit("Coin goal reached!")
+                    celebrate = true
                     transaction = true
                 }
                 is GameEvent.FishingSpotDepleted -> {
@@ -693,6 +1053,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 is GameEvent.RushStarted -> {
                     _messages.tryEmit("${e.name}!")
+                    celebrate = true
                     transaction = true
                 }
                 is GameEvent.MachineIdleAlert -> {
@@ -702,6 +1063,18 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 is GameEvent.UpgradePurchased -> if (!e.replayed) {
                     _messages.tryEmit("Bought ${s.content.upgradesById[e.upgradeId]?.name ?: e.upgradeId}")
+                    transaction = true
+                }
+                is GameEvent.FullHarborUnlockGranted -> if (!e.replayed) {
+                    _messages.tryEmit("All harbors unlocked")
+                    transaction = true
+                }
+                is GameEvent.IapCosmeticGranted -> if (!e.replayed) {
+                    _messages.tryEmit("Unlocked ${e.cosmeticId}")
+                    transaction = true
+                }
+                is GameEvent.IapCosmeticRejected -> {
+                    _messages.tryEmit(e.reason)
                     transaction = true
                 }
                 is GameEvent.PurchaseRejected -> { _messages.tryEmit(e.reason); transaction = true }
@@ -783,6 +1156,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             for (e in transferred) {
                 resolveFlyingTransfer(view, e.from, e.to, e.itemId)?.let { flyingTransfers.offer(it) }
             }
+            for (customerId in payCustomers) worldBursts.offer(resolvePayBurst(view, customerId))
+            for (stationId in machineDone) {
+                resolveMachineDoneBurst(view, stationId)?.let { worldBursts.offer(it) }
+            }
+            if (celebrate) worldBursts.offer(resolveCelebrateBurst(view))
         }
         if (transaction) publish(force = true)
     }
@@ -800,7 +1178,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         ioExecutor.execute {
             runCatching { store.write(text, rotate) }.onFailure { Log.e(TAG, "Save failed", it) }
             val pushed = cloud.push(syncSettings, text)
-            if (pushed.cloudAccountId != syncSettings.cloudAccountId) {
+            if (
+                pushed.cloudAccountId != syncSettings.cloudAccountId ||
+                pushed.cloudRefreshToken != syncSettings.cloudRefreshToken
+            ) {
                 settings = pushed
                 settingsStore.save(pushed)
             }
@@ -820,6 +1201,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             questsOpen = questsOpen,
             contractsOpen = contractsOpen,
             mapOpen = mapOpen,
+            warehouseOpen = warehouseOpen,
+            speciesBookOpen = speciesBookOpen,
+            dashboardOpen = dashboardOpen,
             pauseOpen = pauseOpen,
             settingsOpen = settingsOpen,
             bagOpen = bagOpen,
@@ -830,6 +1214,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        // Phase 28 process death / Activity finish: release focus, then flush final save.
+        audio.abandonFocus()
         // shutdown() lets queued work (the final save) finish; no new work is accepted.
         // Wait briefly for the sim thread so its final save is handed to the IO thread first.
         simExecutor.shutdown()
@@ -838,7 +1224,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private enum class Panel {
-        UPGRADES, STAFF, QUESTS, CONTRACTS, MAP, PAUSE, SETTINGS, BAG, STATION,
+        UPGRADES, STAFF, QUESTS, CONTRACTS, MAP, WAREHOUSE, SPECIES_BOOK, DASHBOARD, PAUSE, SETTINGS, BAG, STATION,
     }
 
     private companion object {

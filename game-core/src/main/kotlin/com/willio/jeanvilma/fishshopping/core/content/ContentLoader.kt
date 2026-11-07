@@ -474,6 +474,15 @@ object ContentLoader {
                 requiresUpgrade = c.optional("requiresUpgrade")?.string(),
             )
         },
+        plots = h["plots"].list { p ->
+            PlotDef(
+                id = p["id"].string(),
+                name = p["name"].string(),
+                description = p["description"].string(),
+                zone = p["zone"].string(),
+                grantsUpgrade = p["grantsUpgrade"].string(),
+            )
+        },
         customerSpawnTicks = h["customerSpawnTicks"].int(min = 1),
         customerEntry = point(h["customerEntry"]),
         customerWalkMmPerTick = h["customerWalkMmPerTick"].int(min = 1),

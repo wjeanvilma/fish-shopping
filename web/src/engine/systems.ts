@@ -2,7 +2,7 @@
  * Per-tick systems. Each function mirrors the Kotlin object of the same name in game-core;
  * keep them line-for-line comparable so fixture mismatches are easy to trace.
  */
-import type { BaitDef, ContentPack, ContractTemplateDef, CounterDef, DayPartDef, DecorDef, FishingSpotDef, HarborDef, ItemQuantity, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, SeasonalEventDef, SpeciesDef, UpgradeDef, UpgradeEffect, WorkerDef } from "./content";
+import type { BaitDef, ContentPack, ContractTemplateDef, CounterDef, DayPartDef, DecorDef, FishingSpotDef, HarborDef, ItemQuantity, PlotDef, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, SeasonalEventDef, SpeciesDef, UpgradeDef, UpgradeEffect, WorkerDef } from "./content";
 import { bankRepayAmount } from "./content";
 import type { TimingTier, TrophyRecord } from "./state";
 import { counterAccepts, queueSlot, rectCenterX, rectCenterZ, rectContains } from "./content";
@@ -105,6 +105,7 @@ export const TransferSystem = {
       }
       case "fishing":
       case "kiosk":
+      case "plot":
         break;
     }
     if (moved) p.transferCooldown = ctx.content.player.transferIntervalTicks - 1;
@@ -1085,6 +1086,62 @@ export const CustomerSystem = {
   },
 };
 
+// ---------------------------------------------------------------- world/Plots.kt
+
+/** Phase 6 plot construction: walk-to-plot inspect → confirm spend → unlock register. */
+export const PlotSystem = {
+  plotForUpgrade(harbor: HarborDef, upgradeId: string): PlotDef | undefined {
+    return harbor.plots.find((p) => p.grantsUpgrade === upgradeId);
+  },
+
+  requiresPlotPresence(harbor: HarborDef, upgradeId: string): boolean {
+    return PlotSystem.plotForUpgrade(harbor, upgradeId) !== undefined;
+  },
+
+  standingOnPlot(s: GameState, plot: PlotDef): boolean {
+    return s.player.zoneId === plot.zone;
+  },
+
+  standingOnUpgradePlot(harbor: HarborDef, s: GameState, upgradeId: string): boolean {
+    const plot = PlotSystem.plotForUpgrade(harbor, upgradeId);
+    if (!plot) return true;
+    return PlotSystem.standingOnPlot(s, plot);
+  },
+
+  build(ctx: StepContext, plotId: string, requestId: string): void {
+    const s = ctx.state;
+    const plot = ctx.harbor.plots.find((p) => p.id === plotId);
+    if (!plot) {
+      ctx.emit({ type: "plot_build_rejected", tick: s.tick, plotId, requestId, reason: "Unknown plot" });
+      return;
+    }
+    const zone = s.player.zoneId ? ctx.harbor.zones.find((z) => z.id === s.player.zoneId) : undefined;
+    if (!zone || zone.kind !== "plot" || zone.id !== plot.zone) {
+      ctx.emit({ type: "plot_build_rejected", tick: s.tick, plotId, requestId, reason: "Stand on the expansion marker" });
+      return;
+    }
+    const eventCountBefore = ctx.events.length;
+    UpgradeSystem.purchase(ctx, plot.grantsUpgrade, requestId);
+    const newEvents = ctx.events.slice(eventCountBefore);
+    const rejected = [...newEvents].reverse().find((e) => e.type === "purchase_rejected");
+    if (rejected && rejected.type === "purchase_rejected") {
+      ctx.emit({ type: "plot_build_rejected", tick: s.tick, plotId, requestId, reason: rejected.reason });
+      return;
+    }
+    const purchased = [...newEvents].reverse().find((e) => e.type === "upgrade_purchased");
+    if (purchased && purchased.type === "upgrade_purchased") {
+      ctx.emit({
+        type: "plot_built",
+        tick: s.tick,
+        plotId,
+        upgradeId: plot.grantsUpgrade,
+        receipt: purchased.receipt,
+        replayed: purchased.replayed,
+      });
+    }
+  },
+};
+
 // ---------------------------------------------------------------- progression/Progression.kt
 
 export type Availability =
@@ -1115,6 +1172,10 @@ export const UpgradeSystem = {
     const u = ctx.content.upgradesById.get(upgradeId);
     const reject = (reason: string) => ctx.emit({ type: "purchase_rejected", tick: s.tick, upgradeId, requestId, reason });
     if (!u) return reject("Unknown upgrade");
+    // Phase 6: construction upgrades that have a harbor plot must be confirmed at the marker.
+    if (!PlotSystem.standingOnUpgradePlot(ctx.harbor, s, upgradeId)) {
+      return reject("Stand on the expansion marker");
+    }
     const a = UpgradeSystem.availability(ctx.content, s, u);
     switch (a.kind) {
       case "owned": return reject("Already owned");
@@ -2161,14 +2222,136 @@ function removeSpoilUnits(
  * Harbor map travel. Unlocks via HarborDef.requires; each visit stashes the
  * left-behind layout so machines, stock, customers, and staff resume on return.
  */
+export const FullUnlockSystem = {
+  ENTITLEMENT_ID: "entitlement.full_harbor_unlock",
+  FREE_HARBOR_ID: "harbor.sunrise_pier",
+  SKU: "fish.full_harbor_unlock",
+
+  requestIdForPurchaseToken(purchaseToken: string): string {
+    return `full-unlock:${purchaseToken}`;
+  },
+
+  grant(ctx: StepContext, requestId: string): void {
+    const s = ctx.state;
+    const prior = s.purchaseReceipts.get(requestId);
+    if (prior) {
+      ctx.emit({ type: "full_harbor_unlock_granted", tick: s.tick, receipt: prior, replayed: true });
+      return;
+    }
+    if (s.fullHarborUnlock) {
+      const receipt: Receipt = {
+        id: s.newId("unlock"), type: "full_harbor_unlock", coinDelta: 0, tick: s.tick,
+        reference: FullUnlockSystem.ENTITLEMENT_ID,
+      };
+      s.record(receipt);
+      s.purchaseReceipts.set(requestId, receipt);
+      ctx.emit({ type: "full_harbor_unlock_granted", tick: s.tick, receipt, replayed: true });
+      return;
+    }
+    s.fullHarborUnlock = true;
+    const receipt: Receipt = {
+      id: s.newId("unlock"), type: "full_harbor_unlock", coinDelta: 0, tick: s.tick,
+      reference: FullUnlockSystem.ENTITLEMENT_ID,
+    };
+    s.record(receipt);
+    s.purchaseReceipts.set(requestId, receipt);
+    ctx.emit({ type: "full_harbor_unlock_granted", tick: s.tick, receipt, replayed: false });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "full_unlock" });
+  },
+};
+
+/**
+ * Phase 24 — optional paid cosmetics (power-neutral banners).
+ * Catalog mirrors shared/billing/entitlements.json; none gate patience-buffing decor.
+ */
+export const CosmeticsIapSystem = {
+  CATALOG: [
+    {
+      id: "entitlement.cosmetic.sunset_bunting",
+      sku: "fish.cosmetic.sunset_bunting",
+      grantsCosmetic: "banner.iap_sunset_bunting",
+      title: "Sunset bunting",
+      description: "Warm dusk bunting for the pier. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.pearl_string",
+      sku: "fish.cosmetic.pearl_string",
+      grantsCosmetic: "banner.iap_pearl_string",
+      title: "Pearl string lights",
+      description: "Pearl-white string lights. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.captain_crest",
+      sku: "fish.cosmetic.captain_crest",
+      grantsCosmetic: "banner.iap_captain_crest",
+      title: "Captain's crest",
+      description: "A harbor crest plaque. Visual only — never changes rates, wages, or sale prices.",
+    },
+  ] as const,
+
+  BY_SKU: new Map<string, {
+    id: string; sku: string; grantsCosmetic: string; title: string; description: string;
+  }>(),
+  BY_COSMETIC: new Map<string, {
+    id: string; sku: string; grantsCosmetic: string; title: string; description: string;
+  }>(),
+  GRANTED_COSMETICS: new Set<string>(),
+
+  requestIdForPurchaseToken(sku: string, purchaseToken: string): string {
+    return `iap-cosmetic:${sku}:${purchaseToken}`;
+  },
+
+  grant(ctx: StepContext, cosmeticId: string, requestId: string): void {
+    const s = ctx.state;
+    const prior = s.purchaseReceipts.get(requestId);
+    if (prior) {
+      ctx.emit({ type: "iap_cosmetic_granted", tick: s.tick, cosmeticId, receipt: prior, replayed: true });
+      return;
+    }
+    const sku = CosmeticsIapSystem.BY_COSMETIC.get(cosmeticId);
+    if (!sku) {
+      ctx.emit({
+        type: "iap_cosmetic_rejected", tick: s.tick, cosmeticId, requestId, reason: "Unknown cosmetic SKU",
+      });
+      return;
+    }
+    if (s.unlockedCosmetics.has(cosmeticId)) {
+      const receipt: Receipt = {
+        id: s.newId("cosmetic"), type: "iap_cosmetic", coinDelta: 0, tick: s.tick, reference: cosmeticId,
+      };
+      s.record(receipt);
+      s.purchaseReceipts.set(requestId, receipt);
+      ctx.emit({ type: "iap_cosmetic_granted", tick: s.tick, cosmeticId, receipt, replayed: true });
+      return;
+    }
+    s.unlockedCosmetics.add(cosmeticId);
+    const receipt: Receipt = {
+      id: s.newId("cosmetic"), type: "iap_cosmetic", coinDelta: 0, tick: s.tick, reference: cosmeticId,
+    };
+    s.record(receipt);
+    s.purchaseReceipts.set(requestId, receipt);
+    ctx.emit({ type: "iap_cosmetic_granted", tick: s.tick, cosmeticId, receipt, replayed: false });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "iap_cosmetic" });
+  },
+};
+
+for (const sku of CosmeticsIapSystem.CATALOG) {
+  CosmeticsIapSystem.BY_SKU.set(sku.sku, sku);
+  CosmeticsIapSystem.BY_COSMETIC.set(sku.grantsCosmetic, sku);
+  CosmeticsIapSystem.GRANTED_COSMETICS.add(sku.grantsCosmetic);
+}
+
 export const HarborTravelSystem = {
   unlocked(content: ContentPack, s: GameState, def: HarborDef): boolean {
+    // Phase 23: one-time IAP unlocks every harbor (Sunrise Pier is free via empty requires).
+    if (s.fullHarborUnlock) return true;
     return def.requires.every(
       (it) => s.ownedUpgrades.has(it) || s.completedQuests.has(it) || s.completedPrestige.has(it),
     );
   },
 
   missingRequirement(content: ContentPack, s: GameState, def: HarborDef): string | null {
+    if (s.fullHarborUnlock) return null;
     const missing = def.requires.find(
       (it) => !s.ownedUpgrades.has(it) && !s.completedQuests.has(it) && !s.completedPrestige.has(it),
     );

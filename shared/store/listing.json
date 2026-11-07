@@ -1,7 +1,10 @@
 {
+  "phase": 29,
+  "schema": "fish.store.listing.v1",
   "appName": "Fish Shopping",
+  "packageName": "com.willio.jeanvilma.fishshopping",
   "shortDescription": "Catch, cut, and sell fish in a cozy 3D harbor market.",
-  "fullDescription": "Run your own waterfront fish market. Cast from the pier, process catches on the cutter, stock the counter, and serve a growing crowd. Hire staff, unlock upgrades, take delivery contracts, and expand to new harbors — all with a fixed 20 Hz simulation shared by Android and web.\n\nFirst session loop: fish → cut → stock → sell.",
+  "fullDescription": "Run your own waterfront fish market. Cast from the pier, process catches on the cutter, stock the counter, and serve a growing crowd. Hire staff, unlock upgrades, take delivery contracts, and expand to new harbors — all with a fixed 20 Hz simulation shared by Android and web.\n\nFirst session loop: fish → cut → stock → sell.\n\nOptional cloud sync and privacy-safe analytics are off until you opt in. One-time harbor unlock and power-neutral cosmetics are available via in-app purchase; Restore purchases recovers entitlements on a new device.",
   "keywords": [
     "fishing",
     "tycoon",
@@ -13,15 +16,99 @@
   ],
   "category": "Simulation",
   "contentRating": "Everyone",
-  "supportUrl": "",
-  "privacyPolicyUrl": "",
+  "canonicalHost": "https://willio.github.io/FishShopping",
+  "supportUrl": "https://willio.github.io/FishShopping/support.html",
+  "privacyPolicyUrl": "https://willio.github.io/FishShopping/privacy.html",
+  "licensesPath": "shared/store/licenses.json",
+  "playListing": {
+    "title": "Fish Shopping",
+    "shortDescription": "Catch, cut, and sell fish in a cozy 3D harbor market.",
+    "fullDescription": "Run your own waterfront fish market. Cast from the pier, process catches on the cutter, stock the counter, and serve a growing crowd. Hire staff, unlock upgrades, take delivery contracts, and expand to new harbors — all with a fixed 20 Hz simulation shared by Android and web.\n\nFirst session loop: fish → cut → stock → sell.\n\nOptional cloud sync and privacy-safe analytics are off until you opt in. One-time harbor unlock and power-neutral cosmetics are available via in-app purchase; Restore purchases recovers entitlements on a new device.",
+    "category": "Simulation",
+    "contentRating": "Everyone",
+    "featureGraphic": "shared/store/feature-graphic.png",
+    "iconNotes": "Adaptive + legacy mipmaps from shared/tools/generate_store_chrome.py; brand mark matches web favicon (Ink tile, sky fish, reward fin)."
+  },
+  "webLanding": {
+    "title": "Fish Shopping",
+    "tagline": "Catch, cut, sell — run your harbor market",
+    "description": "Catch, cut, and sell fish in a cozy 3D harbor market.",
+    "ctaPlay": "Play in browser",
+    "ctaPrivacy": "Privacy",
+    "ctaSupport": "Support"
+  },
+  "assets": {
+    "brandMark": "shared/store/brand-mark.svg",
+    "featureGraphicSvg": "shared/store/feature-graphic.svg",
+    "featureGraphicPng": "shared/store/feature-graphic.png",
+    "androidAdaptiveIcon": "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+    "androidLegacyIcon": "app/src/main/res/mipmap-*/ic_launcher.png",
+    "webFavicon": "web/public/favicon.svg",
+    "webAppleTouchIcon": "web/public/apple-touch-icon.png",
+    "webIcon512": "web/public/icon-512.png",
+    "webLandingPage": "web/public/landing.html",
+    "privacyPage": "web/public/privacy.html",
+    "supportPage": "web/public/support.html",
+    "licenses": "shared/store/licenses.json"
+  },
+  "iconNotes": "Adaptive + legacy mipmaps from shared/tools/generate_store_chrome.py; brand mark matches web favicon (Ink tile, sky fish, reward fin).",
+  "featureGraphicNotes": "1024×500 harbor pier with logo wordmark Fish Shopping — source SVG + PNG in shared/store/.",
   "screenshotShots": [
-    "Title — Play / Continue funnel",
-    "Pier casting with timing reel",
-    "Cutter pads and flying transfers",
-    "Counter service with customers",
-    "Upgrades / staff / goals panels"
-  ],
-  "iconNotes": "Use app mipmap / adaptive icon; web favicon in web/public/favicon.svg",
-  "featureGraphicNotes": "1024×500 harbor pier with logo wordmark Fish Shopping"
+    {
+      "id": "title",
+      "title": "Title — Play / Continue funnel",
+      "orientation": "portrait",
+      "aspect": "9:16",
+      "storyboard": "shared/store/screenshots/title.svg",
+      "capture": "Title card with brand mark + Fish Shopping wordmark; Play (fresh) or Continue/New Game (save present); no debug overlays."
+    },
+    {
+      "id": "pier_cast",
+      "title": "Pier casting with timing reel",
+      "orientation": "portrait",
+      "aspect": "9:16",
+      "storyboard": "shared/store/screenshots/pier_cast.svg",
+      "capture": "Player on pier_end fishing; cast/reel feedback visible; sky + water readable; HUD coins and objective unobtrusive."
+    },
+    {
+      "id": "cutter_transfers",
+      "title": "Cutter pads and flying transfers",
+      "orientation": "landscape",
+      "aspect": "16:9",
+      "storyboard": "shared/store/screenshots/cutter_transfers.svg",
+      "capture": "Cutter station PROCESSING or just completed; Bag ↔ pad flying transfer arc mid-flight; Footprint pulse optional."
+    },
+    {
+      "id": "counter_service",
+      "title": "Counter service with customers",
+      "orientation": "landscape",
+      "aspect": "16:9",
+      "storyboard": "shared/store/screenshots/counter_service.svg",
+      "capture": "At least one customer at counter; portions stocked; sale feedback or pay burst if available; crowd readable."
+    },
+    {
+      "id": "panels",
+      "title": "Upgrades / staff / goals panels",
+      "orientation": "portrait",
+      "aspect": "9:16",
+      "storyboard": "shared/store/screenshots/panels.svg",
+      "capture": "Management sheet open (Upgrades or Staff or Goals); 48dp controls; harbor still visible behind scrim."
+    },
+    {
+      "id": "map_travel",
+      "title": "Harbor map travel",
+      "orientation": "portrait",
+      "aspect": "9:16",
+      "storyboard": "shared/store/screenshots/map_travel.svg",
+      "capture": "Harbor map panel listing Sunrise Pier plus later harbors; specialization labels visible."
+    },
+    {
+      "id": "rush_hour",
+      "title": "Rush banner + busy counter",
+      "orientation": "landscape",
+      "aspect": "16:9",
+      "storyboard": "shared/store/screenshots/rush_hour.svg",
+      "capture": "Rush banner active; multiple customers; coins climbing — peak session energy shot."
+    }
+  ]
 }

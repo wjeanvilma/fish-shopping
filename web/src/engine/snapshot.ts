@@ -123,6 +123,7 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
     completedPrestige: [...s.completedPrestige].sort(compareStrings),
     unlockedCosmetics: [...s.unlockedCosmetics].sort(compareStrings),
     ownedDecor: [...s.ownedDecor].sort(compareStrings),
+    fullHarborUnlock: s.fullHarborUnlock,
     loanOwed: s.loanOwed,
     loanDueTick: s.loanDueTick,
     coinGoal: s.coinGoal,
@@ -213,6 +214,7 @@ export function decodeSnapshotEnvelope(content: ContentPack, text: string): Deco
  *  - v16 -> v17: machine broken + slowUntilTick (Phase 25 wear).
  *  - v17 -> v18: loanOwed / loanDueTick / coinGoal / coinGoalCelebrated (Phase 26 bank).
  *  - v18 -> v19: speciesCatches map (Phase 27 telemetry v2).
+ *  - v19 -> v20: fullHarborUnlock (Phase 23 one-time IAP entitlement).
  */
 function readState(content: ContentPack, n: Reader, version: number): GameState {
   const harborId = n.get("harborId").string();
@@ -407,6 +409,9 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
   if (version >= 16) {
     n.get("ownedDecor").list().map((x) => x.string()).filter((id) => content.decorById.has(id))
       .forEach((id) => s.ownedDecor.add(id));
+  }
+  if (version >= 20) {
+    s.fullHarborUnlock = n.optional("fullHarborUnlock")?.bool() ?? false;
   }
   if (version >= 18) {
     s.loanOwed = n.optional("loanOwed")?.int(0) ?? 0;

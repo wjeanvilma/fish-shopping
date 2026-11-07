@@ -1,0 +1,40 @@
+{
+  "phase": 22,
+  "authMode": "identity_toolkit_anonymous",
+  "documentPath": "users/{uid}/saves/harbor",
+  "documentFields": ["snapshot", "savedAtEpochMs", "checksum"],
+  "conflictUi": "phase11_dual_snapshot_choice",
+  "firestoreRules": "not_shipped_ask_for_snippet",
+  "envKeys": {
+    "web": [
+      {
+        "name": "VITE_FIREBASE_API_KEY",
+        "required": true,
+        "description": "Firebase Web API key for Identity Toolkit + Firestore REST"
+      },
+      {
+        "name": "VITE_FIREBASE_PROJECT_ID",
+        "required": true,
+        "description": "Firebase / GCP project id"
+      }
+    ],
+    "android": [
+      {
+        "name": "fish.firebase.apiKey",
+        "file": "local.properties",
+        "required": true,
+        "description": "Injected as BuildConfig.FIREBASE_API_KEY"
+      },
+      {
+        "name": "fish.firebase.projectId",
+        "file": "local.properties",
+        "required": true,
+        "description": "Injected as BuildConfig.FIREBASE_PROJECT_ID"
+      }
+    ]
+  },
+  "guestRecovery": {
+    "persisted": ["cloudAccountId", "cloudRefreshToken"],
+    "note": "Anonymous uid restored via Secure Token refresh_token grant"
+  }
+}

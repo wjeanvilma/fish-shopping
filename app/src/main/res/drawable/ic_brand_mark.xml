@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- Title-screen brand mark (matches shared/store/brand-mark.svg). -->
+    <path
+        android:fillColor="#153449"
+        android:pathData="M14,0 h36 a14,14 0 0 1 14,14 v36 a14,14 0 0 1 -14,14 h-36 a14,14 0 0 1 -14,-14 v-36 a14,14 0 0 1 14,-14 z" />
+    <path
+        android:fillColor="#9FD3EA"
+        android:pathData="M10,34 C18,22 32,18 44,24 C48,26 52,30 54,34 C52,38 48,42 44,44 C32,50 18,46 10,34 Z" />
+    <path
+        android:fillColor="#E8AF4A"
+        android:pathData="M8,34 L2.5,29.8 L2.5,38.2 Z" />
+    <path
+        android:fillColor="#153449"
+        android:pathData="M42,30 m-2.6,0 a2.6,2.6 0 1,0 5.2,0 a2.6,2.6 0 1,0 -5.2,0" />
+    <path
+        android:fillColor="#008F95"
+        android:fillAlpha="0.35"
+        android:pathData="M18,38 C24,42 34,44 42,40 C44,39 46,37 47,35 C44,41 35,45 25,43 C21,42.5 19,40.5 18,38 Z" />
+</vector>

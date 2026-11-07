@@ -1,0 +1,29 @@
+{
+  "name": "Fish Shopping",
+  "short_name": "Fish Shopping",
+  "description": "Catch, cut, and sell fish in a cozy 3D harbor market.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#9fd3ea",
+  "theme_color": "#153449",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

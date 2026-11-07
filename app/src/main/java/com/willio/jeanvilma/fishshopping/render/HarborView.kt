@@ -23,14 +23,18 @@ import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 fun HarborView(
     viewProvider: () -> SimView?,
     transferProvider: () -> List<FlyingTransferCue> = { emptyList() },
+    burstProvider: () -> List<WorldBurstCue> = { emptyList() },
     qualityProvider: () -> QualityPreset = { QualityPreset.MEDIUM },
+    reducedMotionProvider: () -> Boolean = { false },
     modifier: Modifier = Modifier,
     sceneAsset: String = "models/sunrise_pier_blockout.glb",
 ) {
     val context = LocalContext.current
     val currentProvider = rememberUpdatedState(viewProvider)
     val currentTransfers = rememberUpdatedState(transferProvider)
+    val currentBursts = rememberUpdatedState(burstProvider)
     val currentQuality = rememberUpdatedState(qualityProvider)
+    val currentReducedMotion = rememberUpdatedState(reducedMotionProvider)
     val renderer = remember { HarborRenderer(context.applicationContext) }
 
     AndroidView(
@@ -50,7 +54,13 @@ fun HarborView(
             override fun doFrame(frameTimeNanos: Long) {
                 choreographer.postFrameCallback(this)
                 renderer.enqueueTransfers(currentTransfers.value())
-                renderer.render(frameTimeNanos, currentProvider.value(), currentQuality.value())
+                renderer.enqueueBursts(currentBursts.value())
+                renderer.render(
+                    frameTimeNanos,
+                    currentProvider.value(),
+                    currentQuality.value(),
+                    currentReducedMotion.value(),
+                )
             }
         }
         choreographer.postFrameCallback(frameCallback)

@@ -38,12 +38,16 @@ class HarborWorldStash(
  */
 object HarborTravelSystem {
 
-    fun unlocked(content: ContentPack, s: GameState, def: HarborDef): Boolean =
-        def.requires.all {
+    fun unlocked(content: ContentPack, s: GameState, def: HarborDef): Boolean {
+        // Phase 23: one-time IAP unlocks every harbor (Sunrise Pier is free via empty requires).
+        if (s.fullHarborUnlock) return true
+        return def.requires.all {
             it in s.ownedUpgrades || it in s.completedQuests || it in s.completedPrestige
         }
+    }
 
     fun missingRequirement(content: ContentPack, s: GameState, def: HarborDef): String? {
+        if (s.fullHarborUnlock) return null
         val missing = def.requires.firstOrNull {
             it !in s.ownedUpgrades && it !in s.completedQuests && it !in s.completedPrestige
         } ?: return null

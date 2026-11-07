@@ -8,6 +8,8 @@ import com.willio.jeanvilma.fishshopping.core.economy.EconomySystem
 import com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
 import com.willio.jeanvilma.fishshopping.core.inventory.InvariantChecker
 import com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
+import com.willio.jeanvilma.fishshopping.core.progression.CosmeticsIapSystem
+import com.willio.jeanvilma.fishshopping.core.progression.FullUnlockSystem
 import com.willio.jeanvilma.fishshopping.core.progression.PrestigeSystem
 import com.willio.jeanvilma.fishshopping.core.progression.ProgressionSystem
 import com.willio.jeanvilma.fishshopping.core.progression.UpgradeSystem
@@ -76,6 +78,7 @@ class Simulation(val content: ContentPack, val state: GameState) {
                 state.player.inputZ = c.z.coerceIn(-s, s)
             }
             is Command.PurchaseUpgrade -> UpgradeSystem.purchase(ctx, c.upgradeId, c.requestId)
+            is Command.BuildPlot -> com.willio.jeanvilma.fishshopping.core.world.PlotSystem.build(ctx, c.plotId, c.requestId)
             is Command.SetMachinePaused -> state.machines.firstOrNull { it.stationId == c.stationId }?.paused = c.paused
             is Command.Reel -> state.player.reelRequested = true
             is Command.SelectMachineRecipe -> {
@@ -93,6 +96,8 @@ class Simulation(val content: ContentPack, val state: GameState) {
             is Command.BuyBait -> com.willio.jeanvilma.fishshopping.core.fishing.BaitSystem.buy(ctx, c.baitId, c.requestId)
             is Command.SelectBait -> com.willio.jeanvilma.fishshopping.core.fishing.BaitSystem.select(state, content, c.baitId)
             is Command.PurchaseDecor -> com.willio.jeanvilma.fishshopping.core.world.DecorSystem.purchase(ctx, c.decorId, c.requestId)
+            is Command.GrantFullHarborUnlock -> FullUnlockSystem.grant(ctx, c.requestId)
+            is Command.GrantIapCosmetic -> CosmeticsIapSystem.grant(ctx, c.cosmeticId, c.requestId)
             is Command.RepairMachine -> EconomySystem.repair(ctx, c.stationId, c.requestId)
             is Command.TakeLoan -> com.willio.jeanvilma.fishshopping.core.economy.BankSystem.takeLoan(ctx, c.requestId)
             is Command.RepayLoan -> com.willio.jeanvilma.fishshopping.core.economy.BankSystem.repayLoan(ctx, c.requestId)

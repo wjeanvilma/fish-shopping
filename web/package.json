@@ -1,7 +1,7 @@
 {
   "name": "fish-shopping-web",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Fish Shopping web client: TypeScript + React + Three.js (WebGL 2). Shares content and parity fixtures with the Android client via ../shared.",
   "scripts": {

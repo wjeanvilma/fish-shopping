@@ -50,6 +50,13 @@ export function isOcclusionFadeName(name: string): boolean {
   return name.startsWith("Zone_");
 }
 
+const STACK_SLOT = /^(Bag_\d+_(fish|portion)|In_.+_\d+|Out_.+_\d+|Stock_.+_\d+)$/;
+
+/** True for pooled item slot nodes in the harbor GLB (mirrors Presenters.kt). */
+export function isStackSlotName(name: string): boolean {
+  return STACK_SLOT.test(name);
+}
+
 /**
  * 1 at/near the player, 0 beyond [farM]. Linear between near and far.
  * Pure helper mirrored in Presenters.kt.
@@ -69,7 +76,7 @@ const shortId = (id: string) => id.slice(id.indexOf(".") + 1);
 
 /**
  * Which pooled item slots are visible. Slot names follow the GLB contract written by
- * shared/tools/generate_blockout.py: Bag_<i>_fish|portion, In_<station>_<i>, Out_<station>_<i>,
+ * shared/tools/generate_blockout.py (Phase 14 modular env): Bag_<i>_fish|portion, In_<station>_<i>, Out_<station>_<i>,
  * Stock_<counter>_<i>. Returns [name, visible] for every name in [slotNames].
  */
 export function stackVisibility(v: SimView, slotNames: Iterable<string>): [string, boolean][] {
@@ -92,7 +99,10 @@ export function stackVisibility(v: SimView, slotNames: Iterable<string>): [strin
   return [...slotNames].map((n) => [n, shown.has(n)]);
 }
 
-/** Grey-box locomotion pose (Phase 22). Roots use x/z/yaw; bodies use bobY/swayRad. */
+/** Phase 15 locomotion clips driven by presenters (no sim mutation). */
+export type LocomotionClip = "idle" | "walk" | "carry" | "cast";
+
+/** Character pose (Phase 22/15). Roots use x/z/yaw; bodies use bobY/swayRad/clip. */
 export interface CharacterPose {
   x: number;
   z: number;
@@ -102,6 +112,12 @@ export interface CharacterPose {
   bobY: number;
   swayRad: number;
   idle: boolean;
+  /** Active clip for body language (cast rod tip, carry lean, walk sway). */
+  clip: LocomotionClip;
+  /** 0..1 cast progress when clip === "cast"; otherwise 0. */
+  cast01: number;
+  /** Forward lean (radians) — stronger while carrying. */
+  leanRad: number;
 }
 
 /** @deprecated Alias kept for older call sites; prefer CharacterPose. */
@@ -117,11 +133,30 @@ export const IDLE_BREATH_RAD_PER_S = 2.2;
 export const QUEUE_IDLE_BREATH_MULT = 1.35;
 export const PLAYER_SMOOTHING_PER_SECOND = 18;
 export const CROWD_SMOOTHING_PER_SECOND = 10;
-/** Rest local Y of PlayerBody / CustomerBody_N in the blockout GLB. */
+export const WORKER_SMOOTHING_PER_SECOND = 12;
+/** Rest local Y of PlayerBody / CustomerBody_N / WorkerBody_N in the harbor GLB. */
 export const PLAYER_BODY_REST_Y = 0.8;
 export const CUSTOMER_BODY_REST_Y = 0.75;
+export const WORKER_BODY_REST_Y = 0.78;
 export const PLAYER_NOSE_REST_Y = 1.25;
 export const PLAYER_NOSE_REST_Z = 0.32;
+export const PLAYER_ROD_REST_Y = 0.55;
+export const PLAYER_ROD_REST_X = 0.28;
+export const PLAYER_ROD_REST_Z = 0.05;
+export const WORKER_POOL = 12;
+
+/** Pick idle/walk/carry/cast from motion + inventory + fishing (presentation only). */
+export function pickLocomotionClip(opts: {
+  moving: boolean;
+  carrying: boolean;
+  casting: boolean;
+}): LocomotionClip {
+  if (opts.casting) return "cast";
+  if (opts.moving && opts.carrying) return "carry";
+  if (opts.moving) return "walk";
+  if (opts.carrying) return "carry";
+  return "idle";
+}
 
 const LEAVE_SPEED_M_PER_S = 2;
 /** Queued customers face the counter (toward -z, back at the player and camera). */
@@ -141,30 +176,54 @@ export function locomoteFromMotion(
   idlePhase: number,
   dt: number,
   queuedIdle = false,
+  opts: { carrying?: boolean; casting?: boolean; cast01?: number } = {},
 ): { pose: CharacterPose; walkPhase: number; idlePhase: number } {
   const speed = dt > 1e-6 ? Math.hypot(x - prevX, z - prevZ) / dt : 0;
   const speed01 = Math.min(1, speed / WALK_SPEED_REF_M_PER_S);
   const idle = speed < IDLE_SPEED_M_PER_S;
+  const carrying = !!opts.carrying;
+  const casting = !!opts.casting;
+  const cast01 = casting ? Math.min(1, Math.max(0, opts.cast01 ?? 0)) : 0;
+  const clip = pickLocomotionClip({ moving: !idle, carrying, casting });
   let wp = walkPhase;
   let ip = idlePhase;
-  if (!idle) wp += speed * WALK_STRIDE_RAD_PER_M;
+  if (clip === "cast") ip += dt * IDLE_BREATH_RAD_PER_S;
+  else if (!idle) wp += speed * WALK_STRIDE_RAD_PER_M;
   else ip += dt * IDLE_BREATH_RAD_PER_S;
   const breath = IDLE_BREATH_AMP_M * (queuedIdle ? QUEUE_IDLE_BREATH_MULT : 1);
-  const bobY = idle
-    ? breath * Math.sin(ip)
-    : WALK_BOB_AMP_M * Math.abs(Math.sin(wp)) * speed01;
-  const swayRad = idle
-    ? (queuedIdle ? 0.035 : 0.015) * Math.sin(ip * (queuedIdle ? 0.65 : 1))
-    : WALK_SWAY_RAD * Math.sin(wp) * speed01;
+  let bobY: number;
+  let swayRad: number;
+  let leanRad: number;
+  if (clip === "cast") {
+    bobY = breath * 0.5 * Math.sin(ip);
+    swayRad = -0.12 - 0.25 * cast01;
+    leanRad = -0.08 - 0.18 * cast01;
+  } else if (clip === "carry") {
+    bobY = idle
+      ? breath * Math.sin(ip)
+      : WALK_BOB_AMP_M * 0.7 * Math.abs(Math.sin(wp)) * speed01;
+    swayRad = idle
+      ? 0.02 * Math.sin(ip)
+      : WALK_SWAY_RAD * 0.75 * Math.sin(wp) * speed01;
+    leanRad = 0.12 + (idle ? 0 : 0.08 * speed01);
+  } else if (clip === "walk") {
+    bobY = WALK_BOB_AMP_M * Math.abs(Math.sin(wp)) * speed01;
+    swayRad = WALK_SWAY_RAD * Math.sin(wp) * speed01;
+    leanRad = 0.04 * speed01;
+  } else {
+    bobY = breath * Math.sin(ip);
+    swayRad = (queuedIdle ? 0.035 : 0.015) * Math.sin(ip * (queuedIdle ? 0.65 : 1));
+    leanRad = 0;
+  }
   return {
-    pose: { x, z, yaw, walkPhase: wp, speed01, bobY, swayRad, idle },
+    pose: { x, z, yaw, walkPhase: wp, speed01, bobY, swayRad, idle, clip, cast01, leanRad },
     walkPhase: wp,
     idlePhase: ip,
   };
 }
 
 /**
- * Eases the player toward SimView and attaches grey-box walk/idle body language.
+ * Eases the player toward SimView and attaches walk/idle/carry/cast body language.
  */
 export class PlayerSmoother {
   private x = Number.NaN;
@@ -177,15 +236,29 @@ export class PlayerSmoother {
     this.x = Number.NaN;
   }
 
-  update(player: SimView["player"], dt: number): CharacterPose {
+  update(
+    player: SimView["player"],
+    dt: number,
+    reducedMotion = false,
+    extras: { bagUsedUnits?: number; fishingProgress?: number | null } = {},
+  ): CharacterPose {
     const tx = player.xMm / 1000;
     const tz = player.zMm / 1000;
     const tyaw = Math.atan2(player.facingX, player.facingZ);
-    if (Number.isNaN(this.x)) {
+    const carrying = (extras.bagUsedUnits ?? 0) > 0;
+    const cast01 = extras.fishingProgress ?? null;
+    const casting = cast01 !== null && cast01 !== undefined;
+    const clipOpts = { carrying, casting, cast01: cast01 ?? 0 };
+    if (Number.isNaN(this.x) || reducedMotion) {
       this.x = tx;
       this.z = tz;
       this.yaw = tyaw;
-      return locomoteFromMotion(tx, tz, tx, tz, tyaw, 0, 0, 0).pose;
+      this.walkPhase = 0;
+      this.idlePhase = 0;
+      const snapped = locomoteFromMotion(tx, tz, tx, tz, tyaw, 0, 0, 0, false, clipOpts).pose;
+      return reducedMotion
+        ? { ...snapped, bobY: 0, swayRad: 0, leanRad: 0, cast01: casting ? snapped.cast01 : 0 }
+        : snapped;
     }
     const prevX = this.x;
     const prevZ = this.z;
@@ -198,7 +271,7 @@ export class PlayerSmoother {
     this.yaw += d * k;
     const moved = locomoteFromMotion(
       prevX, prevZ, this.x, this.z, this.yaw,
-      this.walkPhase, this.idlePhase, dt, false,
+      this.walkPhase, this.idlePhase, dt, false, clipOpts,
     );
     this.walkPhase = moved.walkPhase;
     this.idlePhase = moved.idlePhase;
@@ -311,6 +384,74 @@ export class CustomerCrowd {
   }
 }
 
+/**
+ * Maps on-shift workers onto a fixed pool of Worker_* models (Phase 15).
+ * Off-shift workers release their slot; motion drives walk/carry clips.
+ */
+export class WorkerCrowd {
+  private readonly members: (null | {
+    id: string; x: number; z: number; yaw: number;
+    walkPhase: number; idlePhase: number;
+  })[];
+
+  constructor(poolSize = WORKER_POOL) {
+    this.members = Array.from({ length: poolSize }, () => null);
+  }
+
+  get poolSize(): number {
+    return this.members.length;
+  }
+
+  update(v: SimView, dt: number): (CharacterPose | null)[] {
+    const present = new Map(
+      v.workers.filter((w) => w.onShift).map((w) => [w.id, w]),
+    );
+    const k = 1 - Math.exp(-WORKER_SMOOTHING_PER_SECOND * dt);
+
+    for (let i = 0; i < this.members.length; i++) {
+      const m = this.members[i];
+      if (m && !present.has(m.id)) this.members[i] = null;
+    }
+
+    for (const w of present.values()) {
+      if (this.members.some((m) => m?.id === w.id)) continue;
+      let free = -1;
+      for (let i = 0; i < this.members.length; i++) {
+        if (this.members[i] === null) { free = i; break; }
+      }
+      if (free < 0) continue;
+      this.members[free] = {
+        id: w.id, x: w.xMm / 1000, z: w.zMm / 1000, yaw: 0,
+        walkPhase: 0, idlePhase: 0,
+      };
+    }
+
+    return this.members.map((m) => {
+      if (!m) return null;
+      const w = present.get(m.id)!;
+      const tx = w.xMm / 1000;
+      const tz = w.zMm / 1000;
+      const dx = tx - m.x, dz = tz - m.z;
+      const targetYaw = Math.hypot(dx, dz) > 0.02 ? Math.atan2(dx, dz) : m.yaw;
+      const prevX = m.x;
+      const prevZ = m.z;
+      m.x += dx * k;
+      m.z += dz * k;
+      let dy = targetYaw - m.yaw;
+      while (dy > Math.PI) dy -= 2 * Math.PI;
+      while (dy < -Math.PI) dy += 2 * Math.PI;
+      m.yaw += dy * k;
+      const moved = locomoteFromMotion(
+        prevX, prevZ, m.x, m.z, m.yaw, m.walkPhase, m.idlePhase, dt, false,
+        { carrying: w.bagUsedUnits > 0 },
+      );
+      m.walkPhase = moved.walkPhase;
+      m.idlePhase = moved.idlePhase;
+      return moved.pose;
+    });
+  }
+}
+
 /** Reverse approach waypoints, then the harbor entry (meters). */
 function buildLeavePathMeters(v: SimView): [number, number][] {
   const points: [number, number][] = [];
@@ -337,6 +478,10 @@ export interface FlyingTransferPose {
   z: number;
   /** "fish" | "portion" — matches Fly_<i>_<kind> GLB nodes. */
   kind: string;
+  /** Phase 16: spin while arcing. */
+  yaw: number;
+  /** Phase 16: slight scale pulse mid-flight. */
+  scale: number;
 }
 
 /**
@@ -416,11 +561,158 @@ export class FlyingTransfers {
       const x = s.fromX + (s.toX - s.fromX) * e;
       const z = s.fromZ + (s.toZ - s.fromZ) * e;
       const y = FLYING_TRANSFER_BASE_Y_M + 4 * FLYING_TRANSFER_ARC_HEIGHT_M * t * (1 - t);
+      const yaw = t * Math.PI * 2.4;
+      const scale = 1 + 0.35 * Math.sin(Math.PI * t);
       if (t >= 1) {
         this.slots[i] = null;
         return null;
       }
-      return { x, y, z, kind: s.kind };
+      return { x, y, z, kind: s.kind, yaw, scale };
+    });
+  }
+}
+
+/** Phase 16 — pooled world bursts (pay / celebrate / machine_done). */
+export const VFX_BURST_POOL = 8;
+export const VFX_BURST_POOL_BY_QUALITY = {
+  low: 2,
+  medium: 4,
+  high: VFX_BURST_POOL,
+} as const;
+
+export function worldBurstPoolForQuality(quality: PresenterQuality): number {
+  return VFX_BURST_POOL_BY_QUALITY[quality];
+}
+
+export type WorldBurstKind = "pay" | "celebrate" | "machine_done";
+
+export interface WorldBurstCue {
+  xMm: number;
+  zMm: number;
+  kind: WorldBurstKind;
+}
+
+export interface WorldBurstPose {
+  x: number;
+  y: number;
+  z: number;
+  scale: number;
+  opacity: number;
+  kind: WorldBurstKind;
+}
+
+export interface MachineOperatePulse {
+  /** Footprint_* node name in the harbor GLB. */
+  footprintName: string;
+  /** 0..1 emissive/brightness pulse while PROCESSING. */
+  pulse01: number;
+}
+
+const BURST_DURATION_S: Record<WorldBurstKind, number> = {
+  pay: 0.45,
+  celebrate: 0.7,
+  machine_done: 0.4,
+};
+
+/** Footprint socket for a station id (`station.cutter_1` → `Footprint_cutter_1`). */
+export function footprintNameForStation(stationId: string): string {
+  return `Footprint_${shortId(stationId)}`;
+}
+
+/** Soft operate glow for PROCESSING stations (presentation-only). */
+export function machineOperatePulses(v: SimView, elapsed: number): MachineOperatePulse[] {
+  const out: MachineOperatePulse[] = [];
+  for (const st of v.stations) {
+    if (st.status !== "PROCESSING") continue;
+    const progress = st.progress ?? 0;
+    const breath = 0.55 + 0.45 * Math.sin(elapsed * 6 + progress * Math.PI);
+    out.push({
+      footprintName: footprintNameForStation(st.stationId),
+      pulse01: Math.min(1, Math.max(0, breath)),
+    });
+  }
+  return out;
+}
+
+/** Pay burst at the selling customer, else first counter pad. */
+export function resolvePayBurst(v: SimView, customerId: string): WorldBurstCue {
+  const c = v.customers.find((x) => x.id === customerId);
+  if (c) return { xMm: c.xMm, zMm: c.zMm, kind: "pay" };
+  const counter = v.transferAnchors.find((a) => a.inventoryId.startsWith("inv.counter."));
+  if (counter) return { xMm: counter.xMm, zMm: counter.zMm, kind: "pay" };
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "pay" };
+}
+
+/** Machine-done flash above the station output pad. */
+export function resolveMachineDoneBurst(v: SimView, stationId: string): WorldBurstCue | null {
+  const anchor = v.transferAnchors.find((a) => a.inventoryId === `inv.${stationId}.output`);
+  if (!anchor) return null;
+  return { xMm: anchor.xMm, zMm: anchor.zMm, kind: "machine_done" };
+}
+
+/** Celebrate at the player (rush / trophy / coin goal / perfect catch). */
+export function resolveCelebrateBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "celebrate" };
+}
+
+/**
+ * Ephemeral world bursts. Quality-budgeted; never mutates sim.
+ */
+export class WorldBursts {
+  private slots: (null | {
+    x: number; z: number; kind: WorldBurstKind; age: number; duration: number;
+  })[];
+  private budget: number;
+
+  constructor(poolSize = VFX_BURST_POOL) {
+    this.slots = Array.from({ length: poolSize }, () => null);
+    this.budget = poolSize;
+  }
+
+  get poolSize(): number {
+    return this.slots.length;
+  }
+
+  setBudget(n: number): void {
+    const next = Math.max(0, Math.min(this.slots.length, Math.floor(n)));
+    this.budget = next;
+    for (let i = next; i < this.slots.length; i++) this.slots[i] = null;
+  }
+
+  clear(): void {
+    for (let i = 0; i < this.slots.length; i++) this.slots[i] = null;
+  }
+
+  spawn(cue: WorldBurstCue): boolean {
+    let free = -1;
+    for (let i = 0; i < this.budget; i++) {
+      if (this.slots[i] === null) { free = i; break; }
+    }
+    if (free < 0) return false;
+    this.slots[free] = {
+      x: cue.xMm / 1000,
+      z: cue.zMm / 1000,
+      kind: cue.kind,
+      age: 0,
+      duration: BURST_DURATION_S[cue.kind],
+    };
+    return true;
+  }
+
+  update(dt: number): (WorldBurstPose | null)[] {
+    return this.slots.map((s, i) => {
+      if (!s) return null;
+      s.age += dt;
+      const t = Math.min(1, s.age / s.duration);
+      const rise = t * (2 - t);
+      const scale = (s.kind === "celebrate" ? 1.4 : 1.0) * (0.35 + 1.1 * rise);
+      const opacity = 1 - t * t;
+      const y = 0.35 + (s.kind === "celebrate" ? 1.1 : 0.7) * rise;
+      if (t >= 1) {
+        this.slots[i] = null;
+        return null;
+      }
+      return { x: s.x, y, z: s.z, scale, opacity, kind: s.kind };
     });
   }
 }

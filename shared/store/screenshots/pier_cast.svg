@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 640" role="img" aria-label="Pier casting">
+  <!-- Phase 29 screenshot storyboard (9:16) — replace with device capture PNG before Play submit. -->
+  <rect width="360" height="640" fill="#9fd3ea"/>
+  <rect x="16" y="16" width="328" height="608" rx="18" fill="#153449"/>
+  <text x="180.0" y="268.8" text-anchor="middle" fill="#e8af4a" font-family="system-ui,sans-serif" font-size="22" font-weight="700">Fish Shopping</text>
+  <text x="180.0" y="332.8" text-anchor="middle" fill="#f4fffe" font-family="system-ui,sans-serif" font-size="16" font-weight="600">Pier casting</text>
+  <text x="180.0" y="396.8" text-anchor="middle" fill="#9fd3ea" font-family="system-ui,sans-serif" font-size="12">Timing reel · pier_end · sky/water</text>
+  <text x="180.0" y="563.2" text-anchor="middle" fill="#008f95" font-family="system-ui,sans-serif" font-size="11">storyboard · pier_cast · 9:16</text>
+</svg>

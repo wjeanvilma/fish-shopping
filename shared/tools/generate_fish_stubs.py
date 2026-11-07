@@ -1,104 +1,145 @@
 #!/usr/bin/env python3
 """
-Writes grey-box GLB stubs for every species/product asset path in the content pack.
-Clients can load these until authored art replaces them.
+Phase 13 — stylized species / product GLBs for every content-pack asset path.
+
+Keeps the path contract (`models/fish_*.glb`, `models/product_*.glb`). Meshes are
+procedural silhouettes (not grey-box cubes) with per-item colors. Clients load
+these as standard glTF 2.0 (Three.js GLTFLoader / Filament AssetLoader).
 
     python3 shared/tools/generate_fish_stubs.py
 """
+from __future__ import annotations
+
 import json
-import struct
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-FISH_COLOR = "#A9BCCB"
-FISH_SCALE = [0.30, 0.09, 0.13]
-PRODUCT_COLOR = "#F2B9A0"
-PRODUCT_SCALE = [0.22, 0.09, 0.20]
-CRATE_SCALE = [0.34, 0.18, 0.28]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from glb_geometry import (  # noqa: E402
+    build_glb,
+    fish_silhouette,
+    product_silhouette,
+)
+
+GENERATOR = "fish-shopping generate_item_art.py"
+
+# Display scale for world/catalog preview (metres). Harbor blockout slots stay separate.
+FISH_SCALE = [0.30, 0.30, 0.30]
+PRODUCT_SCALE = [0.24, 0.24, 0.24]
+CRATE_SCALE = [0.34, 0.34, 0.34]
+
+# Keyword → body color (sRGB hex). First match in id/name wins.
+FISH_COLORS = [
+    ("golden", "#E8AF4A"), ("gilt", "#D4A84B"), ("amber", "#E09A3E"),
+    ("ruby", "#C23B4B"), ("sapphire", "#2F6FED"), ("bronze", "#CD7F32"),
+    ("copper", "#B87333"), ("silver", "#C5D0D8"), ("pearl", "#E8E0D5"),
+    ("opal", "#9AD0C5"), ("prism", "#9B7ED9"), ("ghost", "#D7E6F0"),
+    ("aurora", "#6BC4C8"), ("crystal", "#A8E0F0"), ("frost", "#B8D4E8"),
+    ("ice", "#9CC8E0"), ("arctic", "#7FA8C4"), ("polar", "#A0B8C8"),
+    ("blue", "#3A7CA5"), ("ink", "#2A2438"), ("lava", "#C45C26"),
+    ("ember", "#D4552A"), ("moon", "#8A9BB0"), ("sail", "#4A8FA8"),
+    ("tide", "#3D7A6A"), ("reef", "#2F8F7A"), ("dawn", "#E8C07A"),
+    ("crown", "#C9A227"), ("king", "#4F7A5A"), ("marina", "#2E6B8A"),
+    ("saffron", "#D4A017"), ("harbor", "#6A8FA0"), ("pompano", "#D2B48C"),
+]
+DEFAULT_FISH = "#7FA6B8"
+
+PRODUCT_COLORS = {
+    "basic_portion": "#F2B9A0",
+    "fillet": "#E8C4A8",
+    "premium_portion": "#F0A882",
+    "smoked_fillet": "#C47A4A",
+    "diced_fish": "#E0B090",
+    "skewer": "#D4926A",
+    "soup_stock": "#C8883A",
+    "ice_packed_crate": "#8EB8C8",
+    "fillet_crate": "#C4A882",
+    "grilled_fillet": "#B86A32",
+    "grilled_skewer": "#A85A28",
+    "chilled_fillet": "#A8C8D4",
+    "chilled_premium": "#90B8C8",
+    "chilled_crate": "#7AA8B8",
+    "fried_portion": "#E0A040",
+    "fish_and_chips": "#E8B050",
+    "crispy_skewer": "#D49838",
+    "fried_carton": "#D4A060",
+    "chips_carton": "#E0B060",
+    "grill_carton": "#C88848",
+    "skewer_carton": "#C89858",
+}
+DEFAULT_PRODUCT = "#F2B9A0"
 
 
-def srgb_to_linear(hex_color):
-    def ch(v):
-        c = v / 255.0
-        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
-
-    h = hex_color.lstrip("#")
-    return [round(ch(int(h[i:i + 2], 16)), 5) for i in (0, 2, 4)] + [1.0]
-
-
-def unit_cube():
-    faces = [
-        ((1, 0, 0), [(.5, -.5, -.5), (.5, .5, -.5), (.5, .5, .5), (.5, -.5, .5)]),
-        ((-1, 0, 0), [(-.5, -.5, .5), (-.5, .5, .5), (-.5, .5, -.5), (-.5, -.5, -.5)]),
-        ((0, 1, 0), [(-.5, .5, -.5), (-.5, .5, .5), (.5, .5, .5), (.5, .5, -.5)]),
-        ((0, -1, 0), [(-.5, -.5, .5), (-.5, -.5, -.5), (.5, -.5, -.5), (.5, -.5, .5)]),
-        ((0, 0, 1), [(.5, -.5, .5), (.5, .5, .5), (-.5, .5, .5), (-.5, -.5, .5)]),
-        ((0, 0, -1), [(-.5, -.5, -.5), (-.5, .5, -.5), (.5, .5, -.5), (.5, -.5, -.5)]),
-    ]
-    pos, nrm, idx = [], [], []
-    for n, quad in faces:
-        base = len(pos)
-        pos += quad
-        nrm += [n] * 4
-        idx += [base, base + 1, base + 2, base, base + 2, base + 3]
-    return pos, nrm, idx
+def fish_kind(species_id: str, name: str) -> str:
+    blob = f"{species_id} {name}".lower()
+    if "squid" in blob:
+        return "squid"
+    if "eel" in blob:
+        return "eel"
+    if "flounder" in blob or "sole" in blob:
+        return "flat"
+    if "needle" in blob or "anchovy" in blob or "smelt" in blob:
+        return "long"
+    return "default"
 
 
-def build_item_glb(name: str, color: str, scale: list[float]) -> bytes:
-    pos, nrm, idx = unit_cube()
-    pos_bytes = b"".join(struct.pack("<3f", *p) for p in pos)
-    nrm_bytes = b"".join(struct.pack("<3f", *n) for n in nrm)
-    idx_bytes = b"".join(struct.pack("<H", i) for i in idx)
-    blob = pos_bytes + nrm_bytes + idx_bytes
-    blob += b"\0" * ((4 - len(blob) % 4) % 4)
-
-    gltf = {
-        "asset": {"version": "2.0", "generator": "fish-shopping generate_fish_stubs.py"},
-        "buffers": [{"byteLength": len(blob)}],
-        "bufferViews": [
-            {"buffer": 0, "byteOffset": 0, "byteLength": len(pos_bytes), "target": 34962},
-            {"buffer": 0, "byteOffset": len(pos_bytes), "byteLength": len(nrm_bytes), "target": 34962},
-            {"buffer": 0, "byteOffset": len(pos_bytes) + len(nrm_bytes), "byteLength": len(idx_bytes), "target": 34963},
-        ],
-        "accessors": [
-            {"bufferView": 0, "componentType": 5126, "count": 24, "type": "VEC3",
-             "min": [-.5, -.5, -.5], "max": [.5, .5, .5]},
-            {"bufferView": 1, "componentType": 5126, "count": 24, "type": "VEC3"},
-            {"bufferView": 2, "componentType": 5123, "count": 36, "type": "SCALAR"},
-        ],
-        "materials": [{
-            "name": "item",
-            "pbrMetallicRoughness": {
-                "baseColorFactor": srgb_to_linear(color),
-                "metallicFactor": 0.0,
-                "roughnessFactor": 0.85,
-            },
-        }],
-        "meshes": [{
-            "name": "item",
-            "primitives": [{"attributes": {"POSITION": 0, "NORMAL": 1}, "indices": 2, "material": 0}],
-        }],
-        "nodes": [{
-            "name": name,
-            "mesh": 0,
-            "scale": scale,
-        }],
-        "scenes": [{"name": name, "nodes": [0]}],
-        "scene": 0,
-    }
-    js = json.dumps(gltf, separators=(",", ":")).encode()
-    js += b" " * ((4 - len(js) % 4) % 4)
-    total = 12 + 8 + len(js) + 8 + len(blob)
-    return (struct.pack("<III", 0x46546C67, 2, total)
-            + struct.pack("<II", len(js), 0x4E4F534A) + js
-            + struct.pack("<II", len(blob), 0x004E4942) + blob)
+def fish_color(species_id: str, name: str) -> str:
+    blob = f"{species_id} {name}".lower()
+    for key, color in FISH_COLORS:
+        if key in blob:
+            return color
+    return DEFAULT_FISH
 
 
-def write_stub(out_dir: Path, item_id: str, asset: str, color: str, scale: list[float]) -> None:
+def product_kind(product_id: str) -> str:
+    pid = product_id.lower()
+    if "crate" in pid:
+        return "crate"
+    if "carton" in pid:
+        return "carton"
+    if "skewer" in pid:
+        return "skewer"
+    if "soup" in pid:
+        return "soup"
+    if "diced" in pid:
+        return "diced"
+    if "fish_and_chips" in pid or "chips" in pid:
+        return "chips"
+    if "fried" in pid or "crispy" in pid or "grilled" in pid:
+        return "fried"
+    if "fillet" in pid:
+        return "fillet"
+    return "portion"
+
+
+def product_color(product_id: str) -> str:
+    short = product_id.split(".", 1)[-1]
+    return PRODUCT_COLORS.get(short, DEFAULT_PRODUCT)
+
+
+def write_item(out_dir: Path, item_id: str, asset: str, color: str, kind: str, family: str) -> Path:
     rel = asset[len("models/"):] if asset.startswith("models/") else asset
     out = out_dir / rel
-    out.write_bytes(build_item_glb(item_id, color, scale))
-    print(f"wrote {out.relative_to(ROOT.parent)}")
+    if family == "fish":
+        pos, nrm, idx, bounds = fish_silhouette(kind)
+        scale = FISH_SCALE
+    else:
+        pos, nrm, idx, bounds = product_silhouette(kind)
+        scale = CRATE_SCALE if kind == "crate" else PRODUCT_SCALE
+    out.write_bytes(build_glb(
+        name=item_id,
+        generator=GENERATOR,
+        color=color,
+        pos=pos,
+        nrm=nrm,
+        idx=idx,
+        bounds=bounds,
+        scale=scale,
+        extras={"stylized": True, "silhouette": kind, "phase": 13},
+    ))
+    return out
 
 
 def main() -> int:
@@ -110,16 +151,25 @@ def main() -> int:
         asset = sp.get("asset")
         if not asset:
             continue
-        write_stub(out_dir, sp["id"], asset, FISH_COLOR, FISH_SCALE)
+        write_item(
+            out_dir, sp["id"], asset,
+            fish_color(sp["id"], sp.get("name", "")),
+            fish_kind(sp["id"], sp.get("name", "")),
+            "fish",
+        )
         fish_n += 1
     for prod in content["products"]:
         asset = prod.get("asset")
         if not asset:
             continue
-        scale = CRATE_SCALE if "crate" in prod["id"] else PRODUCT_SCALE
-        write_stub(out_dir, prod["id"], asset, PRODUCT_COLOR, scale)
+        write_item(
+            out_dir, prod["id"], asset,
+            product_color(prod["id"]),
+            product_kind(prod["id"]),
+            "product",
+        )
         product_n += 1
-    print(f"{fish_n} fish stubs, {product_n} product stubs")
+    print(f"{fish_n} stylized fish, {product_n} stylized products → {GENERATOR}")
     return 0
 
 

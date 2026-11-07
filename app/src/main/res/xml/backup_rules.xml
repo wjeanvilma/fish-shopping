@@ -1,13 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Phase 27 — full-backup-content for API &lt; 31 (ignored on 31+; see data_extraction_rules).
+  Same excludes as cloud-backup: corruptible harbor save slots + entitlement stub prefs.
+  File-domain include is required so path excludes are valid under FullBackupContent lint.
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <include domain="sharedpref" path="." />
+    <include domain="file" path="." />
+    <exclude domain="sharedpref" path="fish_shopping_entitlements.xml" />
+    <exclude domain="file" path="harbor_save_latest.json" />
+    <exclude domain="file" path="harbor_save_previous.json" />
+    <exclude domain="file" path="harbor_save_latest.json.new" />
+    <exclude domain="file" path="harbor_save_previous.json.new" />
 </full-backup-content>
