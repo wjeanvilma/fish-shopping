@@ -149,20 +149,27 @@ androidComponents {
 }
 
 // Phase 4: fail release packaging with a clear message when upload signing is missing.
-// Capture primitives at configuration time so the action is configuration-cache safe.
-afterEvaluate {
-    val releaseSigningReady = uploadConfigured || allowDebugFallback
-    if (!releaseSigningReady) {
-        val releaseSigningMessage =
-            "Release signing not configured. Set FISH_UPLOAD_STORE_FILE / " +
-                "FISH_UPLOAD_STORE_PASSWORD / FISH_UPLOAD_KEY_ALIAS / FISH_UPLOAD_KEY_PASSWORD " +
-                "(or fish.upload.* in local.properties). " +
-                "For local R8 smoke only, set fish.upload.allowDebugFallback=true. " +
-                "See local.properties.example and shared/android/release-signing.json."
-        listOf("packageRelease", "assembleRelease", "bundleRelease").forEach { taskName ->
-            tasks.findByName(taskName)?.doFirst {
-                throw GradleException(releaseSigningMessage)
+// Use a dedicated task + dependsOn (not doFirst on AGP tasks) so configuration-cache can serialize.
+val releaseSigningReady = uploadConfigured || allowDebugFallback
+val releaseSigningMessage =
+    "Release signing not configured. Set FISH_UPLOAD_STORE_FILE / " +
+        "FISH_UPLOAD_STORE_PASSWORD / FISH_UPLOAD_KEY_ALIAS / FISH_UPLOAD_KEY_PASSWORD " +
+        "(or fish.upload.* in local.properties). " +
+        "For local R8 smoke only, set fish.upload.allowDebugFallback=true. " +
+        "See local.properties.example and shared/android/release-signing.json."
+if (!releaseSigningReady) {
+    val checkReleaseUploadSigning =
+        tasks.register("checkReleaseUploadSigning") {
+            description = "Fails release packaging when Play upload signing is not configured."
+            // Message is a configuration-time String — safe for the configuration cache.
+            val message = releaseSigningMessage
+            doLast {
+                throw GradleException(message)
             }
+        }
+    arrayOf("packageRelease", "bundleRelease").forEach { taskName ->
+        tasks.matching { it.name == taskName }.configureEach {
+            dependsOn(checkReleaseUploadSigning)
         }
     }
 }

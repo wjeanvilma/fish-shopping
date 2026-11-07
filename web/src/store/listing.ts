@@ -52,6 +52,11 @@ export interface StoreListing {
   dodCloseoutPhase?: number;
   dodCloseoutCatalog?: string;
   completeTag?: string;
+  pagesLegalLivePhase?: number;
+  pagesLegalLiveCatalog?: string;
+  landingPlayCtaPhase?: number;
+  landingPlayCtaCatalog?: string;
+  playUrl?: string;
   defaultLocale?: string;
   locales?: string[];
   whatsNew?: string;

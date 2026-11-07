@@ -63,21 +63,25 @@
       "Real IAP paths: Play Billing production + web checkout catalogs wired to entitlements",
       "Real screenshots: phone + tablet captures under shared/store/screenshots/captures",
       "Authored audio: SFX pack + music beds present and validated",
-      "Legal pages pipeline ready (local HTML + pages.yml + pages:legal); confirm HTTP 200 on canonicalHost after Pages publish",
+      "Live web legal/landing on canonicalHost (privacy/support/landing HTTPS 200) — Finish 2.0 Phase 1 verified",
       "Closed-testing catalog ready (signoff path to Phase 18 production)",
       "Public ship + hotfix lane catalogs green; RELEASE_PIN schema 20",
       "All post-1.0 phase gate catalogs present (Phases 1–29)",
-      "Operator: publish GitHub Pages legal/landing if URLs 404, then cut annotated git tag v1.0-complete"
+      "Operator: cut annotated git tag v1.0-complete when ready (legal URLs already live)"
     ],
     "operatorGates": [
       {
         "id": "legal_urls_http_200",
+        "status": "verified",
+        "verifiedAt": "2026-11-07",
+        "verifiedBy": "finish_2.0_phase_1",
+        "catalog": "shared/ship/pages-legal-live.json",
         "urls": [
           "https://wjeanvilma.github.io/fish-shopping/",
           "https://wjeanvilma.github.io/fish-shopping/support.html",
           "https://wjeanvilma.github.io/fish-shopping/privacy.html"
         ],
-        "note": "Deploy remains manual (pages.yml / npm run pages:legal). Confirm 200 before cutting v1.0-complete."
+        "note": "Repo made public; Pages workflow deploy succeeded; npm run pages:live asserts HTTP 200."
       },
       {
         "id": "play_production_listing_live",

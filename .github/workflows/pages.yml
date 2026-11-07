@@ -1,4 +1,4 @@
-# Phase 7 (post-1.0) — publish privacy / support / landing to GitHub Pages.
+# Finish 2.0 Phase 1–2 — publish privacy / support / landing + /play SPA to GitHub Pages.
 name: Pages legal
 
 on:
@@ -6,15 +6,19 @@ on:
   push:
     branches: [main, master, dev]
     paths:
-      - "web/public/privacy.html"
-      - "web/public/support.html"
-      - "web/public/landing.html"
-      - "web/public/favicon.svg"
-      - "web/public/apple-touch-icon.png"
-      - "web/public/icon-512.png"
+      - "web/public/**"
+      - "web/index.html"
+      - "web/src/**"
+      - "web/vite.config.ts"
+      - "web/package.json"
+      - "web/package-lock.json"
       - "web/scripts/build-legal-pages.ts"
+      - "web/scripts/build-pages-site.ts"
       - "shared/store/legal-pages.json"
       - "shared/store/listing.json"
+      - "shared/ship/landing-play-cta.json"
+      - "shared/content/**"
+      - "shared/assets/**"
       - ".github/workflows/pages.yml"
 
 permissions:
@@ -28,7 +32,7 @@ concurrency:
 
 jobs:
   build:
-    name: Stage legal pages
+    name: Stage legal + play site
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,9 +47,9 @@ jobs:
         working-directory: web
         run: npm ci
 
-      - name: Build legal pages site
+      - name: Build legal pages + play SPA
         working-directory: web
-        run: npm run pages:legal
+        run: npm run pages:site
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

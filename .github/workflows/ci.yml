@@ -148,6 +148,14 @@ jobs:
         working-directory: web
         run: npm run dod:validate
 
+      - name: Pages legal live HTTP 200
+        working-directory: web
+        run: npm run pages:live
+
+      - name: Landing Play-in-browser CTA
+        working-directory: web
+        run: npm run landing:validate
+
       - name: Validate content (Kotlin ContentLoader)
         run: ./gradlew :game-core:validateContent --no-daemon
 

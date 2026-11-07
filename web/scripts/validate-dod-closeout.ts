@@ -151,7 +151,7 @@ function validate(): string[] {
   if (hotfix.phase !== 29) errors.push("hotfix-lane phase must be 29");
   if (hotfix.schemaVersion !== 20) errors.push("hotfix-lane schemaVersion must stay 20");
 
-  // Legal pages pipeline (live HTTP 200 is an operatorGate — deploy is manual)
+  // Legal pages pipeline — Finish 2.0 Phase 1 verifies live HTTP 200 via pages:live
   const urls = [
     listing.privacyPolicyUrl,
     listing.supportUrl,
@@ -171,6 +171,7 @@ function validate(): string[] {
     legal.sources?.support ?? "web/public/support.html",
     legal.sources?.landing ?? "web/public/landing.html",
     legal.github?.workflow ?? ".github/workflows/pages.yml",
+    "shared/ship/pages-legal-live.json",
   ]) {
     if (!existsSync(resolve(root, rel))) errors.push(`missing legal page/pipeline ${rel}`);
   }
@@ -180,9 +181,15 @@ function validate(): string[] {
   if (!existsSync(resolve(root, "web/scripts/build-legal-pages.ts"))) {
     errors.push("missing web/scripts/build-legal-pages.ts");
   }
-  const operatorGates = closeout.operatorGates as { id: string }[] | undefined;
-  if (!operatorGates?.some((g) => g.id === "legal_urls_http_200")) {
+  const operatorGates = closeout.operatorGates as { id: string; status?: string }[] | undefined;
+  const legalGate = operatorGates?.find((g) => g.id === "legal_urls_http_200");
+  if (!legalGate) {
     errors.push("closeout.operatorGates missing legal_urls_http_200");
+  } else if (legalGate.status !== "verified") {
+    errors.push("legal_urls_http_200 must be verified (Finish 2.0 Phase 1)");
+  }
+  if (legal.liveVerified?.status !== "verified") {
+    errors.push("legal-pages.liveVerified.status must be verified");
   }
 
   if (DOD_PHASE !== 30) errors.push("DOD_PHASE mirror mismatch");

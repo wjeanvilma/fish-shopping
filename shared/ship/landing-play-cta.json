@@ -1,0 +1,48 @@
+{
+  "phase": 2,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.landing_play_cta.v1",
+  "description": "Finish 2.0 Phase 2 — landing primary CTA matches listing webLanding.ctaPlay and deep-links to the hosted playable SPA under /play/ on canonicalHost.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 20,
+  "listing": "shared/store/listing.json",
+  "listingCopy": "shared/store/listing-copy.json",
+  "legalPages": "shared/store/legal-pages.json",
+  "pagesLegalLive": "shared/ship/pages-legal-live.json",
+  "canonicalHost": "https://wjeanvilma.github.io/fish-shopping",
+  "landingUrl": "https://wjeanvilma.github.io/fish-shopping/",
+  "playPath": "play/",
+  "playUrl": "https://wjeanvilma.github.io/fish-shopping/play/",
+  "viteBase": "/fish-shopping/play/",
+  "cta": {
+    "play": "Play in browser",
+    "privacy": "Privacy",
+    "support": "Support"
+  },
+  "landingSource": "web/public/landing.html",
+  "build": {
+    "npmScript": "pages:site",
+    "legalScript": "pages:legal",
+    "playEnv": "FISH_PAGES_BASE=/fish-shopping/play/",
+    "publishRoot": "web/dist-legal",
+    "playOutDir": "web/dist-legal/play",
+    "workflow": ".github/workflows/pages.yml"
+  },
+  "checklist": [
+    "landing.html primary CTA label equals listing.webLanding.ctaPlay",
+    "landing.html primary CTA href is play/ (relative)",
+    "Privacy/Support ghost CTAs match listing copy",
+    "pages:site builds legal pages + Vite SPA into dist-legal/play",
+    "playUrl returns HTTP 200 with Fish Shopping app shell",
+    "Pages workflow deploys updated site"
+  ],
+  "preflightGates": [
+    "shared/ship/landing-play-cta.json",
+    "shared/store/listing.json",
+    "web/public/landing.html",
+    "web/scripts/build-pages-site.ts",
+    "web/src/store/landingPlayCta.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/LandingPlayCta.kt",
+    ".github/workflows/pages.yml"
+  ]
+}

@@ -28,5 +28,12 @@
   "publishRoot": "web/dist-legal",
   "indexFrom": "landing.html",
   "pathStyle": "relative",
-  "listingFields": ["canonicalHost", "supportUrl", "privacyPolicyUrl", "landingUrl"]
+  "listingFields": ["canonicalHost", "supportUrl", "privacyPolicyUrl", "landingUrl"],
+  "liveVerified": {
+    "status": "verified",
+    "verifiedAt": "2026-11-07",
+    "finish2Phase": 1,
+    "catalog": "shared/ship/pages-legal-live.json",
+    "note": "GitHub Pages Actions deploy; repo public on free plan."
+  }
 }

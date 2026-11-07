@@ -1,0 +1,52 @@
+{
+  "phase": 1,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.pages_legal_live.v1",
+  "description": "Finish 2.0 Phase 1 — GitHub Pages legal/landing live at canonicalHost (HTTP 200). Build via pages:legal; deploy via .github/workflows/pages.yml (GitHub Actions).",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 20,
+  "legalPagesCatalog": "shared/store/legal-pages.json",
+  "definitionOfDone": "shared/ship/definition-of-done.json",
+  "packageName": "com.willio.jeanvilma.fishshopping",
+  "canonicalHost": "https://wjeanvilma.github.io/fish-shopping",
+  "urls": {
+    "landing": "https://wjeanvilma.github.io/fish-shopping/",
+    "support": "https://wjeanvilma.github.io/fish-shopping/support.html",
+    "privacy": "https://wjeanvilma.github.io/fish-shopping/privacy.html"
+  },
+  "pages": {
+    "host": "github_pages",
+    "buildType": "workflow",
+    "workflow": ".github/workflows/pages.yml",
+    "workflowName": "Pages legal",
+    "npmScript": "pages:legal",
+    "publishRoot": "web/dist-legal",
+    "requirePublicRepo": true,
+    "note": "Private repos on free GitHub plans cannot enable Pages; repo must be public for github.io."
+  },
+  "liveCheck": {
+    "method": "GET",
+    "expectStatus": 200,
+    "validateScript": "npm run pages:live",
+    "ciStep": "Pages legal live HTTP 200"
+  },
+  "checklist": [
+    "Repo is public (free plan Pages requirement)",
+    "GitHub Pages build_type=workflow enabled",
+    "npm run pages:legal stages web/dist-legal",
+    "Pages legal workflow deploys successfully",
+    "landing / support / privacy return HTTP 200 on canonicalHost",
+    "DoD operatorGate legal_urls_http_200 marked verified"
+  ],
+  "preflightGates": [
+    "shared/store/legal-pages.json",
+    "shared/store/listing.json",
+    "web/public/privacy.html",
+    "web/public/support.html",
+    "web/public/landing.html",
+    "web/scripts/build-legal-pages.ts",
+    ".github/workflows/pages.yml",
+    "web/src/store/pagesLegalLive.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/PagesLegalLive.kt"
+  ]
+}
