@@ -49,6 +49,8 @@
   "pagesLegalLiveCatalog": "shared/ship/pages-legal-live.json",
   "landingPlayCtaPhase": 2,
   "landingPlayCtaCatalog": "shared/ship/landing-play-cta.json",
+  "spaHostPhase": 3,
+  "spaHostCatalog": "shared/ship/spa-host.json",
   "playUrl": "https://wjeanvilma.github.io/fish-shopping/play/",
   "defaultLocale": "en",
   "locales": ["en"],

@@ -156,6 +156,10 @@ jobs:
         working-directory: web
         run: npm run landing:validate
 
+      - name: SPA host on canonicalHost
+        working-directory: web
+        run: npm run spa:validate
+
       - name: Validate content (Kotlin ContentLoader)
         run: ./gradlew :game-core:validateContent --no-daemon
 

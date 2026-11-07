@@ -56,6 +56,8 @@ export interface StoreListing {
   pagesLegalLiveCatalog?: string;
   landingPlayCtaPhase?: number;
   landingPlayCtaCatalog?: string;
+  spaHostPhase?: number;
+  spaHostCatalog?: string;
   playUrl?: string;
   defaultLocale?: string;
   locales?: string[];

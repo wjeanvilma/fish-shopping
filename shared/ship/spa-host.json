@@ -1,0 +1,60 @@
+{
+  "phase": 3,
+  "plan": "30_finish_2.0",
+  "schema": "fish.ship.spa_host.v1",
+  "description": "Finish 2.0 Phase 3 — playable Vite SPA hosted on GitHub Pages at canonical play URL (/play/), with legal/landing paths stable at site root.",
+  "contentVersion": "1.0.1",
+  "schemaVersion": 20,
+  "host": "github_pages",
+  "canonicalHost": "https://wjeanvilma.github.io/fish-shopping",
+  "playPath": "play/",
+  "playUrl": "https://wjeanvilma.github.io/fish-shopping/play/",
+  "viteBase": "/fish-shopping/play/",
+  "landingPlayCta": "shared/ship/landing-play-cta.json",
+  "legalPages": "shared/store/legal-pages.json",
+  "publicShip": "shared/ship/public-ship.json",
+  "build": {
+    "npmScript": "pages:site",
+    "publishRoot": "web/dist-legal",
+    "playOutDir": "web/dist-legal/play",
+    "workflow": ".github/workflows/pages.yml",
+    "fallback404": true,
+    "stripLegalHtmlFromPlay": true
+  },
+  "legalPathsStable": [
+    { "path": "/", "url": "https://wjeanvilma.github.io/fish-shopping/", "mustInclude": "Play in browser" },
+    { "path": "/privacy.html", "url": "https://wjeanvilma.github.io/fish-shopping/privacy.html", "mustInclude": "Privacy" },
+    { "path": "/support.html", "url": "https://wjeanvilma.github.io/fish-shopping/support.html", "mustInclude": "Support" }
+  ],
+  "spaChecks": {
+    "indexMustInclude": ["id=\"root\"", "/fish-shopping/play/assets/"],
+    "mustNotBeLegalOnly": true,
+    "requiredPublishedFiles": [
+      "index.html",
+      "404.html",
+      "manifest.webmanifest",
+      "favicon.svg"
+    ],
+    "requiredAssetSuffixes": [".js", ".css", ".glb"],
+    "requiredAudioDirs": ["sfx", "music"]
+  },
+  "validateScript": "npm run spa:validate",
+  "checklist": [
+    "pages:site publishes Vite dist under dist-legal/play with FISH_PAGES_BASE",
+    "play/404.html mirrors index.html for SPA deep-link fallback",
+    "Legal HTML stripped from play/ publish (root privacy/support/landing stay authoritative)",
+    "playUrl index + primary JS/CSS assets return HTTP 200",
+    "Root legal URLs still serve landing/privacy/support (not SPA shell)",
+    "public-ship + listing point at spa-host catalog"
+  ],
+  "preflightGates": [
+    "shared/ship/spa-host.json",
+    "shared/ship/landing-play-cta.json",
+    "shared/store/legal-pages.json",
+    "shared/ship/public-ship.json",
+    "web/scripts/build-pages-site.ts",
+    "web/src/store/spaHost.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/SpaHost.kt",
+    ".github/workflows/pages.yml"
+  ]
+}

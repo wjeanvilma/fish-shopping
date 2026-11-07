@@ -17,6 +17,7 @@ on:
       - "shared/store/legal-pages.json"
       - "shared/store/listing.json"
       - "shared/ship/landing-play-cta.json"
+      - "shared/ship/spa-host.json"
       - "shared/content/**"
       - "shared/assets/**"
       - ".github/workflows/pages.yml"

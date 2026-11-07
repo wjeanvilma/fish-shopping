@@ -35,6 +35,10 @@ export interface PublicShipCatalog {
     distDir: string;
     ciJob: string;
     ciArtifactName: string;
+    spaHostPhase?: number;
+    spaHostCatalog?: string;
+    playUrl?: string;
+    playPath?: string;
   };
   storeBuildHashes: {
     algorithm: string;

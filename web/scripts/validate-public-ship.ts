@@ -80,6 +80,12 @@ function validate(): string[] {
   if (catalog.web.canonicalHost !== listing.canonicalHost) {
     errors.push("web.canonicalHost ≠ listing.canonicalHost");
   }
+  if (catalog.web.spaHostPhase != null && catalog.web.spaHostPhase !== 3) {
+    errors.push("web.spaHostPhase must be 3 when set");
+  }
+  if (catalog.web.playUrl && catalog.web.playUrl !== listing.playUrl) {
+    errors.push("web.playUrl ≠ listing.playUrl");
+  }
   if (catalog.web.canonicalHost !== legal.canonicalHost) {
     errors.push("web.canonicalHost ≠ legal-pages.canonicalHost");
   }

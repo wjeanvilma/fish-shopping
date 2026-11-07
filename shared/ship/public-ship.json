@@ -38,14 +38,22 @@
     "host": "github_pages",
     "canonicalHost": "https://wjeanvilma.github.io/fish-shopping",
     "legalPagesCatalog": "shared/store/legal-pages.json",
+    "spaHostPhase": 3,
+    "spaHostCatalog": "shared/ship/spa-host.json",
+    "playUrl": "https://wjeanvilma.github.io/fish-shopping/play/",
+    "playPath": "play/",
+    "pagesBuildCommand": "npm run pages:site",
+    "pagesPublishRoot": "web/dist-legal",
+    "pagesPlayIndex": "web/dist-legal/play/index.html",
     "buildCommand": "npm run build",
     "workingDirectory": "web",
     "distDir": "web/dist",
     "distIndex": "web/dist/index.html",
     "ciJob": "web-release",
     "ciArtifactName": "web-release-dist",
+    "pagesWorkflow": ".github/workflows/pages.yml",
     "sourcemap": true,
-    "note": "CI builds and archives the Vite SPA; GitHub Pages continues to host legal/landing (Phase 7). Full SPA host cutover is operator-driven."
+    "note": "Finish 2.0 Phase 3: GitHub Pages hosts legal/landing at site root and the Vite SPA under /play/ (pages:site). web-release still archives a default-base dist for CI artifacts."
   },
   "storeBuildHashes": {
     "algorithm": "sha256",
