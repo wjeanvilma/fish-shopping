@@ -555,7 +555,7 @@ class FlyingTransfers(poolSize: Int = FLYING_TRANSFER_POOL) {
     }
 }
 
-/** Phase 16/21 — pooled world bursts; Finish 2.0 Phase 22 adds achievement/festival/contract_done/goal_claim. */
+/** Phase 16/21 — pooled world bursts; Finish 2.0/3.0 add event burst kinds. */
 const val VFX_BURST_POOL = 8
 
 fun worldBurstPoolForQuality(quality: PresenterQuality): Int = when (quality) {
@@ -567,6 +567,7 @@ fun worldBurstPoolForQuality(quality: PresenterQuality): Int = when (quality) {
 enum class WorldBurstKind {
     CATCH, PAY, CELEBRATE, MACHINE_DONE,
     ACHIEVEMENT, FESTIVAL, CONTRACT_DONE, GOAL_CLAIM,
+    RIVAL_BEAT, PRESTIGE, TROPHY_SET, HARBOR_TRAVEL, HIRE, LOAN,
 }
 
 data class WorldBurstCue(
@@ -598,10 +599,18 @@ private fun burstDurationS(kind: WorldBurstKind): Double = when (kind) {
     WorldBurstKind.FESTIVAL -> 0.6
     WorldBurstKind.CONTRACT_DONE -> 0.4
     WorldBurstKind.GOAL_CLAIM -> 0.35
+    WorldBurstKind.RIVAL_BEAT -> 0.5
+    WorldBurstKind.PRESTIGE -> 0.65
+    WorldBurstKind.TROPHY_SET -> 0.55
+    WorldBurstKind.HARBOR_TRAVEL -> 0.45
+    WorldBurstKind.HIRE -> 0.35
+    WorldBurstKind.LOAN -> 0.4
 }
 
-/** Phase 21 — screen-shake kinds; Finish 2.0 Phase 22 adds achievement/festival. */
-enum class ShakeKind { CATCH, CUT, SALE, CELEBRATE, ACHIEVEMENT, FESTIVAL }
+/** Phase 21 + Finish 2.0/3.0 shake kinds. */
+enum class ShakeKind {
+    CATCH, CUT, SALE, CELEBRATE, ACHIEVEMENT, FESTIVAL, RIVAL_BEAT, PRESTIGE,
+}
 
 const val SHAKE_DURATION_S = 0.18
 const val MAX_SHAKE_AMPLITUDE_M = 0.12
@@ -613,6 +622,8 @@ fun shakeAmplitudeM(kind: ShakeKind): Double = when (kind) {
     ShakeKind.CELEBRATE -> 0.08
     ShakeKind.ACHIEVEMENT -> 0.06
     ShakeKind.FESTIVAL -> 0.05
+    ShakeKind.RIVAL_BEAT -> 0.07
+    ShakeKind.PRESTIGE -> 0.08
 }
 
 fun shakeScaleForQuality(quality: PresenterQuality): Double = when (quality) {
@@ -731,6 +742,30 @@ fun resolveContractDoneBurst(v: SimView): WorldBurstCue =
 fun resolveGoalClaimBurst(v: SimView): WorldBurstCue =
     WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.GOAL_CLAIM)
 
+/** Finish 3.0 Phase 24 — rival beaten cue at the player. */
+fun resolveRivalBeatBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.RIVAL_BEAT)
+
+/** Finish 3.0 Phase 24 — prestige unlock at the player. */
+fun resolvePrestigeBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.PRESTIGE)
+
+/** Finish 3.0 Phase 24 — trophy set complete at the player. */
+fun resolveTrophySetBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.TROPHY_SET)
+
+/** Finish 3.0 Phase 24 — harbor travel at the player. */
+fun resolveHarborTravelBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.HARBOR_TRAVEL)
+
+/** Finish 3.0 Phase 24 — worker hire at the player. */
+fun resolveHireBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.HIRE)
+
+/** Finish 3.0 Phase 24 — loan taken at the player. */
+fun resolveLoanBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.LOAN)
+
 /**
  * Ephemeral world bursts. Quality-budgeted; never mutates sim.
  */
@@ -779,7 +814,10 @@ class WorldBursts(poolSize: Int = VFX_BURST_POOL) {
             val kindScale = when (s.kind) {
                 WorldBurstKind.CELEBRATE,
                 WorldBurstKind.ACHIEVEMENT,
-                WorldBurstKind.FESTIVAL -> 1.4
+                WorldBurstKind.FESTIVAL,
+                WorldBurstKind.PRESTIGE,
+                WorldBurstKind.RIVAL_BEAT,
+                WorldBurstKind.TROPHY_SET -> 1.4
                 WorldBurstKind.CATCH -> 0.85
                 else -> 1.0
             }
@@ -788,7 +826,10 @@ class WorldBursts(poolSize: Int = VFX_BURST_POOL) {
             val yRise = when (s.kind) {
                 WorldBurstKind.CELEBRATE,
                 WorldBurstKind.ACHIEVEMENT,
-                WorldBurstKind.FESTIVAL -> 1.1
+                WorldBurstKind.FESTIVAL,
+                WorldBurstKind.PRESTIGE,
+                WorldBurstKind.RIVAL_BEAT,
+                WorldBurstKind.TROPHY_SET -> 1.1
                 WorldBurstKind.CATCH -> 0.55
                 else -> 0.7
             }

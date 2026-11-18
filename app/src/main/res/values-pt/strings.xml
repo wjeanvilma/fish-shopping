@@ -1,0 +1,7 @@
+<resources>
+    <!-- Finish 3.0 Phase 6 — Portuguese store listing copy. Source: shared/store/locales/pt.json -->
+    <string name="app_name">Fish Shopping</string>
+    <string name="store_short_description">Pesque, corte e venda peixe em um aconchegante mercado 3D do porto.</string>
+    <string name="store_tagline">Pesca, corta, vende — administre seu mercado do porto</string>
+    <string name="store_whats_new">Congelamento 3.0.0 — setenta e cinco espécies, trinta missões, dez máquinas, mercados rivais, endgame esquema 24, bloqueio de paridade 3.0, analytics remoto e ops Finish 3.0. Esquema 24; saves 2.0 anteriores ainda carregam.</string>
+</resources>

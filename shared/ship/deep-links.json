@@ -1,0 +1,41 @@
+{
+  "phase": 20,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.deep_links.v1",
+  "description": "Finish 3.0 Phase 20 — Android App Links + web deep links. Shared route catalog, assetlinks stub, Manifest intent-filters, GameViewModel/GameHost apply after Ready. Schema stays 24 / content 2.0.0. Closes kickoff gap deepLinksMissing.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "deepLinksMarker": "authored-finish-3.0-phase-20",
+  "closesGap": "deepLinksMissing",
+  "routesCatalog": "shared/deep-links/routes.json",
+  "assetLinksPath": "web/public/.well-known/assetlinks.json",
+  "packageName": "com.willio.jeanvilma.fishshopping",
+  "host": "wjeanvilma.github.io",
+  "pathPrefix": "/fish-shopping/play",
+  "customScheme": "fishshopping",
+  "customHost": "open",
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-deep-links.json",
+  "validateScript": "npm run deeplink:validate",
+  "checklist": [
+    "Shared DeepLinkRoutes parse (query/path/hash) mirrors web deepLinks.ts",
+    "Android Manifest App Links + fishshopping://open custom scheme; MainActivity onNewIntent",
+    "GameViewModel/GameHost queue deep link until Ready; soft harbor travel if locked",
+    "assetlinks.json published to Pages site root (.well-known); fingerprint placeholder",
+    "Kickoff gap deepLinksMissing closed; phase 20 validate = deeplink:validate",
+    "schema stays 24 / content 2.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/deep-links.json",
+    "shared/fixtures/parity-deep-links.json",
+    "shared/deep-links/routes.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "web/public/.well-known/assetlinks.json",
+    "web/src/deeplink/deepLinks.ts",
+    "web/src/ship/deepLinksShip.ts",
+    "web/scripts/validate-deep-links.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/deeplink/DeepLinkRoutes.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/DeepLinks.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/deeplink/DeepLinkHandler.kt"
+  ]
+}

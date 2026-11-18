@@ -59,7 +59,7 @@ describe("Species 37–50 + baits (Finish 2.0 Phase 9)", () => {
     expect(SPECIES_3750_SCHEMA).toBe("fish.ship.species_37_50.v1");
     expect(SPECIES_COUNT_FLOOR).toBe(50);
     expect(BAIT_COUNT_FLOOR).toBe(8);
-    expect(content.species).toHaveLength(50);
+    expect(content.species.length).toBeGreaterThanOrEqual(50);
     expect(content.bait.length).toBeGreaterThanOrEqual(8);
     expect((storeListing as { species3750Phase?: number }).species3750Phase).toBe(9);
     for (const entry of SPECIES_3750.newBaseSpecies) {
@@ -97,8 +97,8 @@ describe("Species 37–50 + baits (Finish 2.0 Phase 9)", () => {
       expect(sim.state.player.bag.quantity(step.baitId)).toBeGreaterThan(0);
     }
 
-    expect(content.species.length).toBe(fx.expectFinal.speciesCount);
-    expect(content.bait.length).toBe(fx.expectFinal.baitCount);
+    expect(content.species.length).toBeGreaterThanOrEqual(fx.expectFinal.speciesCount);
+    expect(content.bait.length).toBeGreaterThanOrEqual(fx.expectFinal.baitCount);
     expect(sim.state.player.bag.quantity(fx.expectFinal.baitOwned)).toBeGreaterThan(0);
   });
 

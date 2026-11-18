@@ -1,0 +1,11 @@
+{
+  "id": "bait.scaffold_kelp_chunk",
+  "name": "Kelp chunk",
+  "description": "Scaffold bait pack with a mild rare bump.",
+  "carryUnits": 1,
+  "packQuantity": 3,
+  "cost": 22,
+  "rareSpeciesWeightMultPermille": 1200,
+  "rareChanceBonusPermille": 50,
+  "requires": []
+}

@@ -90,8 +90,17 @@ export function dodRequiredChecks(): string[] {
     "hotfix_lane_ready",
     "finish2_freeze_2_0_0",
     "content_floors_2_0",
+    "finish3_freeze_3_0_0",
+    "content_floors_3_0",
     "loc_freeze_anti_regression",
   ];
+}
+
+export function isFinish3FreezeReady(
+  status: string = (DEFINITION_OF_DONE as { finish3Freeze?: { status?: string } }).finish3Freeze
+    ?.status ?? "",
+): boolean {
+  return status === "ready_for_release_tag" || status === "tag_cut" || status === "archived";
 }
 
 export function isCloseoutReady(status: string = DOD_CLOSEOUT_STATUS): boolean {

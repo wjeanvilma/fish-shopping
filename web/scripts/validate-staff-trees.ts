@@ -41,18 +41,18 @@ function validate(): string[] {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (STAFF_TREES_PHASE !== 15) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
-  if (catalog.branchCount !== 5 || STAFF_BRANCH_FLOOR !== 5) {
-    errors.push("branchCount must be 5");
+  if (catalog.branchCount !== 10 || STAFF_BRANCH_FLOOR !== 10) {
+    errors.push("branchCount must be 10");
   }
   if (catalog.scheduleCount !== 2 || STAFF_SCHEDULE_FLOOR !== 2) {
     errors.push("scheduleCount must be 2");
   }
-  if (dod.quotas?.staffBranches !== 5) errors.push("DoD quotas.staffBranches must be 5");
+  if (dod.quotas?.staffBranches !== 10) errors.push("DoD quotas.staffBranches must be 10");
   if (dod.quotas?.staffSchedules !== 2) errors.push("DoD quotas.staffSchedules must be 2");
-  if (content.staffTrees.branches.length < 5) {
-    errors.push(`branches ${content.staffTrees.branches.length} < 5`);
+  if (content.staffTrees.branches.length < 10) {
+    errors.push(`branches ${content.staffTrees.branches.length} < 10`);
   }
   if (content.staffTrees.schedules.length < 2) {
     errors.push(`schedules ${content.staffTrees.schedules.length} < 2`);
@@ -70,7 +70,7 @@ function validate(): string[] {
   if (pin.staffTrees !== "shared/ship/staff-trees.json") {
     errors.push("RELEASE_PIN.staffTrees path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
 
   for (const id of STAFF_TREES.branches) {
     if (!content.staffBranchesById.has(id)) errors.push(`missing branch ${id}`);

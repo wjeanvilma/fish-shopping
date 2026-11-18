@@ -1,0 +1,156 @@
+{
+  "phase": 25,
+  "plan": "30_finish_3.0",
+  "schema": "fish.a11y.accessibility_depth_2.v1",
+  "description": "Finish 3.0 Phase 25 — a11y depth 2 for bank/loan, trophies, decor, theme, map, dashboard, and rival HUD. Extends Finish 2.0 accessibility-depth; distinct from a11y2:validate.",
+  "extendsCatalog": "shared/a11y/accessibility-depth.json",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "simHzInvariant": 20,
+  "wcag": {
+    "normalTextMin": 4.5,
+    "largeOrUiMin": 3.0
+  },
+  "screenSurfaceMin": 7,
+  "contrastPairMin": 4,
+  "uiA11yStringKeyMin": 8,
+  "liveRegionMin": 1,
+  "screenSurfaces": [
+    {
+      "id": "goals_bank_loan",
+      "webDialogLabelKey": "nav.goals",
+      "androidPaneTitleKey": "nav.goals",
+      "sectionLabelKey": "a11y.bankSection",
+      "initialFocus": "close",
+      "keyboardPath": "KeyG Goals → Pier bank"
+    },
+    {
+      "id": "goals_trophy",
+      "webDialogLabelKey": "nav.goals",
+      "androidPaneTitleKey": "nav.goals",
+      "sectionLabelKey": "a11y.trophySection",
+      "initialFocus": "close",
+      "keyboardPath": "KeyG Goals → Trophy board"
+    },
+    {
+      "id": "goals_decor",
+      "webDialogLabelKey": "nav.goals",
+      "androidPaneTitleKey": "nav.goals",
+      "sectionLabelKey": "a11y.decorSection",
+      "initialFocus": "close",
+      "keyboardPath": "KeyG Goals → Shop decor"
+    },
+    {
+      "id": "settings_theme",
+      "webDialogLabelKey": "settings.theme",
+      "androidPaneTitleKey": "settings.title",
+      "sectionLabelKey": "a11y.themeGroup",
+      "initialFocus": "close",
+      "keyboardPath": "Pause → Settings → Appearance"
+    },
+    {
+      "id": "harbor_map_travel",
+      "webDialogLabelKey": "panels.map",
+      "androidPaneTitleKey": "panels.map",
+      "initialFocus": "close",
+      "keyboardPath": "KeyM Harbor map"
+    },
+    {
+      "id": "business_dashboard",
+      "webDialogLabelKey": "panels.dashboard",
+      "androidPaneTitleKey": "panels.dashboard",
+      "initialFocus": "close",
+      "keyboardPath": "KeyY Business dashboard"
+    },
+    {
+      "id": "hud_rival_pressure",
+      "webDialogLabelKey": "hud.rivalPressure",
+      "androidPaneTitleKey": "hud.rivalPressure",
+      "initialFocus": "n/a",
+      "keyboardPath": "HUD live region"
+    }
+  ],
+  "contrastPairs": [
+    {
+      "id": "dark_ink_on_surface",
+      "fg": "#E8F1F6",
+      "bg": "#1A2A35",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Dark theme primary ink on surface"
+    },
+    {
+      "id": "dark_muted_on_surface",
+      "fg": "#9BB0BC",
+      "bg": "#1A2A35",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Dark theme muted / secondary panel copy"
+    },
+    {
+      "id": "dark_reward_on_surface",
+      "fg": "#F0C15A",
+      "bg": "#1A2A35",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Dark theme reward / tip text"
+    },
+    {
+      "id": "dark_action_on_surface",
+      "fg": "#2BB8BE",
+      "bg": "#1A2A35",
+      "role": "large_or_ui",
+      "minRatio": 3.0,
+      "use": "Dark theme action / specialty accents"
+    },
+    {
+      "id": "dark_danger_on_surface",
+      "fg": "#E57368",
+      "bg": "#1A2A35",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Dark theme danger / locked copy"
+    }
+  ],
+  "liveRegions": [
+    "rival_pressure"
+  ],
+  "talkBack": {
+    "android": {
+      "requirePaneTitleOnMapDashboard": true,
+      "themeGroupSemantics": true,
+      "goalsSectionLabels": true,
+      "rivalHudLiveRegion": true
+    },
+    "web": {
+      "rivalPressureAriaLive": "polite",
+      "dialogRoleOnMapDashboard": true,
+      "themeGroupAriaLabel": true,
+      "initialFocusClose": true
+    }
+  },
+  "reducedMotion": {
+    "honorsSettingsToggle": true,
+    "crossRef": "shared/ship/vfx-juice-3.json"
+  },
+  "keyboardDocumentedSurfaces": [
+    "Goals bank/trophy/decor (G)",
+    "Harbor map (M)",
+    "Business dashboard (Y)",
+    "Settings → Appearance",
+    "Rival pressure HUD live region"
+  ],
+  "sourcePins": {
+    "depth1": "shared/a11y/accessibility-depth.json",
+    "webApp": "web/src/ui/App.tsx",
+    "androidGameScreen": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt",
+    "webCss": "web/src/ui/styles.css"
+  },
+  "manualChecklist": [
+    "TalkBack: Goals → Bank / Trophy / Decor sections",
+    "TalkBack: Settings → Appearance group; Map + Dashboard pane titles",
+    "Keyboard: G/M/Y + Esc stack; Settings theme buttons",
+    "Rival pressure live region announces when rivals pressuring",
+    "Contrast: dark ink/muted/reward/action/danger on #1A2A35"
+  ]
+}

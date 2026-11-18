@@ -1,7 +1,8 @@
 /**
  * Phase 25/26 — consent-gated analytics bus for the web client.
  * Drops events when consent is off; never attaches PII or save blobs.
- * Phase 26: session lifecycle + dashboard ledger.
+ * Post-1.0 Phase 26: session lifecycle + dashboard ledger.
+ * Finish 3.0 Phase 26: optional remote batch sink (env base URL).
  */
 import {
   Analytics,
@@ -16,14 +17,28 @@ import {
   sharedAnalyticsDashboardLedger,
   type AnalyticsDashboardLedger,
 } from "./analyticsDashboardLedger";
+import {
+  FanoutAnalyticsSink,
+  RemoteAnalyticsSink,
+  resolveAnalyticsApiBase,
+} from "./remoteAnalyticsSink";
 
 export type AnalyticsTrackSink = { track(event: AnalyticsEvent | null): void };
 
 const FRAME_SUMMARY_EVERY = 600;
 
+function buildDefaultSink(): { sink: AnalyticsTrackSink; remote: RemoteAnalyticsSink | null } {
+  const memory = new MemoryAnalyticsSink();
+  const base = resolveAnalyticsApiBase();
+  if (!base) return { sink: memory, remote: null };
+  const remote = new RemoteAnalyticsSink({ baseUrl: base, platform: "web" });
+  return { sink: new FanoutAnalyticsSink([memory, remote]), remote };
+}
+
 export class AnalyticsBus {
   private consent = false;
   private sink: AnalyticsTrackSink;
+  private remote: RemoteAnalyticsSink | null;
   private firstSaleSent = false;
   private unlockedHarbors = new Set<string>();
   private frameSamples = 0;
@@ -32,10 +47,18 @@ export class AnalyticsBus {
   private ledger: AnalyticsDashboardLedger;
 
   constructor(
-    sink: AnalyticsTrackSink = new MemoryAnalyticsSink(),
+    sink?: AnalyticsTrackSink,
     ledger: AnalyticsDashboardLedger = sharedAnalyticsDashboardLedger,
+    remote: RemoteAnalyticsSink | null = null,
   ) {
-    this.sink = sink;
+    if (sink) {
+      this.sink = sink;
+      this.remote = remote;
+    } else {
+      const built = buildDefaultSink();
+      this.sink = built.sink;
+      this.remote = built.remote;
+    }
     this.ledger = ledger;
     this.ledger.bindEmitter((event) => this.track(event));
   }
@@ -43,6 +66,7 @@ export class AnalyticsBus {
   setConsent(consent: boolean): void {
     this.consent = consent;
     this.ledger.setConsent(consent);
+    this.remote?.setConsent(consent);
   }
 
   getConsent(): boolean {
@@ -128,6 +152,12 @@ export class AnalyticsBus {
   /** Phase 26: mark a clean session end for crash-free rate. */
   onSessionEndClean(): void {
     this.ledger.onSessionEndClean();
+    void this.remote?.onSessionEnd();
+  }
+
+  /** Finish 3.0 Phase 26: remote sink attached when VITE_ANALYTICS_API_BASE is set. */
+  remoteSinkEnabled(): boolean {
+    return this.remote?.enabled() === true;
   }
 
   exportDashboardJson(): string {

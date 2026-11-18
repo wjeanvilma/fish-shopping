@@ -48,6 +48,10 @@ data class ContentPack(
     val staffTrees: StaffTreesCatalog,
     /** Service reputation from served vs abandoned (Phase 13). */
     val reputation: ReputationDef,
+    /** Finish 3.0 Phase 14 — rival NPC markets (single-player). */
+    val rivalMarkets: RivalMarketsCatalog,
+    /** Finish 3.0 Phase 15 — endgame deepen board. */
+    val endgame: EndgameCatalog,
     /** Timed delivery contracts board (Phase 17). */
     val contracts: ContractsDef,
     val customers: List<CustomerDef>,
@@ -83,6 +87,9 @@ data class ContentPack(
     val customersById = customers.associateBy { it.id }
     val decorById = decor.items.associateBy { it.id }
     val seasonalEventsById = seasonalEvents.events.associateBy { it.id }
+    val rivalsById = rivalMarkets.rivals.associateBy { it.id }
+    val endgameTiersById = endgame.tiers.associateBy { it.id }
+    val endgameChallengesById = endgame.challenges.associateBy { it.id }
     val harborsById = harbors.associateBy { it.id }
 
     /** Carry units for any item (species, product, or bait). Throws on unknown IDs. */
@@ -92,8 +99,18 @@ data class ContentPack(
             ?: baitById[itemId]?.carryUnits
             ?: error("Unknown item $itemId")
 
-    fun itemName(itemId: String): String =
-        speciesById[itemId]?.name ?: productsById[itemId]?.name ?: baitById[itemId]?.name ?: itemId
+    fun itemName(itemId: String): String {
+        val english =
+            speciesById[itemId]?.name
+                ?: productsById[itemId]?.name
+                ?: baitById[itemId]?.name
+                ?: itemId
+        return com.willio.jeanvilma.fishshopping.core.i18n.ContentStrings.t(itemId, english)
+    }
+
+    /** Localized display name for any content entity id with an English fallback. */
+    fun displayName(id: String, english: String): String =
+        com.willio.jeanvilma.fishshopping.core.i18n.ContentStrings.t(id, english)
 
     fun isKnownItem(itemId: String) = itemId in speciesById || itemId in productsById || itemId in baitById
 }
@@ -612,6 +629,59 @@ data class PrestigeDef(
     val milestones: List<PrestigeMilestoneDef>,
 )
 
+/** Finish 3.0 Phase 14 — single-player rival NPC market stall. */
+data class RivalMarketDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val harbors: List<String>,
+    val aggressionPermille: Int,
+    val specialtyProducts: List<String>,
+    val undercutPriceMultPermille: Int,
+    val activeDayParts: List<String>,
+)
+
+/** Finish 3.0 Phase 14 — rival NPC markets catalog. */
+data class RivalMarketsCatalog(
+    val tickInterval: Int,
+    val emptyStockSiphonChancePermille: Int,
+    val lowRepSiphonBonusPermille: Int,
+    val minReputationBandToResist: Int,
+    val wellStockedUnits: Int,
+    val pressureSpawnMultPermille: Int,
+    val rivals: List<RivalMarketDef>,
+)
+
+/** Finish 3.0 Phase 15 — endgame tier. */
+data class EndgameTierDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val requiresPrestigeCount: Int,
+    val requiresRivalBeats: Int,
+    val requiresChallenges: Int,
+    val catchSpeedPermille: Int,
+    val priceBonusPermille: Int,
+    val coins: Long,
+)
+
+/** Finish 3.0 Phase 15 — endgame challenge. */
+data class EndgameChallengeDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val stat: String,
+    val atLeast: Long,
+    val rewardCoins: Long,
+)
+
+/** Finish 3.0 Phase 15 — endgame deepen catalog. */
+data class EndgameCatalog(
+    val requiresPrestigeCount: Int,
+    val tiers: List<EndgameTierDef>,
+    val challenges: List<EndgameChallengeDef>,
+)
+
 /**
  * Service reputation (Phase 13): computed from lifetime sales vs lost customers.
  * Distinct from prestige harbor ★ (revenue). Softly biases customer spawn mix.
@@ -797,11 +867,23 @@ data class DayPartDef(
     val catchSpeedMultPermille: Int,
 )
 
+/** Harbor-scoped day-part species weight pocket (Finish 3.0 Phase 12). */
+data class EcologyHabitatDef(
+    val id: String,
+    val name: String,
+    val harbors: List<String>,
+    val favoredDayParts: List<String>,
+    val speciesWeightMultPermille: Map<String, Int> = emptyMap(),
+)
+
 data class EcologyDef(
     val dayLengthTicks: Int,
     val parts: List<DayPartDef>,
+    /** Optional habitat pockets that boost species weights by harbor + day part. */
+    val habitats: List<EcologyHabitatDef> = emptyList(),
 ) {
     val partsById = parts.associateBy { it.id }
+    val habitatsById = habitats.associateBy { it.id }
 }
 
 data class FishingSpotDef(

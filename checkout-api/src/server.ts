@@ -1,12 +1,14 @@
 /**
  * Finish 2.0 Phase 25 — local web checkout API emulator.
+ * Finish 3.0 Phase 16 — live Stripe Checkout + webhook when CHECKOUT_API_MODE=live.
  *
  * Endpoints match shared/billing/web-billing.json:
  *   POST /v1/checkout
  *   GET  /v1/entitlements?cloudAccountId=
  *   POST /v1/fulfill
+ *   POST /v1/stripe/webhook  (Phase 16)
  *
- * No payment-provider secrets. Instant stub mode by default.
+ * No payment-provider secrets committed. Instant stub mode by default.
  *
  * Run from repo:  cd web && npm run checkout-api:dev
  * Or:             npx --prefix web vite-node ../checkout-api/src/server.ts
@@ -18,9 +20,18 @@ import {
   handleEntitlements,
   handleFulfill,
   instantCheckoutEnabled,
+  ROUTE_PATHS,
   type CheckoutBody,
   type FulfillBody,
 } from "./handlers";
+import {
+  applyStripeCheckoutCompleted,
+  isLiveMode,
+  stripeConfigured,
+  stripeWebhookSecret,
+  STRIPE_WEBHOOK_PATH,
+  verifyStripeWebhook,
+} from "./stripeLive";
 import { sharedStore } from "./store";
 
 function readBody(req: IncomingMessage): Promise<string> {
@@ -38,7 +49,7 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, Stripe-Signature",
   });
   res.end(payload);
 }
@@ -57,7 +68,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Headers": "Content-Type, Stripe-Signature",
     });
     res.end();
     return;
@@ -67,13 +78,18 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     sendJson(res, 200, {
       ok: true,
       phase: 25,
+      finish3StripeLivePhase: 16,
       mode: process.env.CHECKOUT_API_MODE ?? "stub",
       instant: instantCheckoutEnabled(),
+      live: isLiveMode(),
+      stripeConfigured: stripeConfigured(),
+      webhookPath: STRIPE_WEBHOOK_PATH,
     });
     return;
   }
 
   // Sandbox pay page — redirects to successUrl after marking session ready for fulfill.
+  // Live mode never uses this path for checkout.url responses.
   if (method === "GET" && path === "/sandbox/pay") {
     const params = parseQuery(rawUrl);
     const sessionId = params.get("session_id") ?? "";
@@ -81,6 +97,24 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const dest = session?.successUrl ?? "/?billing=success";
     res.writeHead(302, { Location: dest, "Access-Control-Allow-Origin": "*" });
     res.end();
+    return;
+  }
+
+  if (method === "POST" && path === ROUTE_PATHS.stripeWebhook) {
+    const raw = await readBody(req);
+    const sig = req.headers["stripe-signature"];
+    const header = Array.isArray(sig) ? sig[0] : sig;
+    const verified = verifyStripeWebhook(raw, header, stripeWebhookSecret());
+    if ("error" in verified) {
+      sendJson(res, verified.status, { error: verified.error });
+      return;
+    }
+    const applied = applyStripeCheckoutCompleted(verified, sharedStore);
+    if ("error" in applied) {
+      sendJson(res, applied.status, { error: applied.error });
+      return;
+    }
+    sendJson(res, 200, { received: true, webProductId: applied.webProductId || null });
     return;
   }
 
@@ -93,7 +127,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       sendJson(res, 400, { error: "Invalid JSON" });
       return;
     }
-    const result = handleCheckout(body);
+    const result = await handleCheckout(body);
     if ("error" in result) {
       sendJson(res, result.status, { error: result.error });
       return;
@@ -140,8 +174,11 @@ const server = createServer((req, res) => {
 
 server.listen(port, () => {
   console.log(`[checkout-api] listening on http://localhost:${port}`);
-  console.log(`[checkout-api] mode=${process.env.CHECKOUT_API_MODE ?? "stub"} instant=${instantCheckoutEnabled()}`);
+  console.log(
+    `[checkout-api] mode=${process.env.CHECKOUT_API_MODE ?? "stub"} instant=${instantCheckoutEnabled()} live=${isLiveMode()} stripeConfigured=${stripeConfigured()}`,
+  );
   console.log(`[checkout-api] POST ${BILLING_API.checkout.path}`);
   console.log(`[checkout-api] GET  ${BILLING_API.entitlements.path}`);
   console.log(`[checkout-api] POST ${BILLING_API.fulfill.path}`);
+  console.log(`[checkout-api] POST ${STRIPE_WEBHOOK_PATH}`);
 });

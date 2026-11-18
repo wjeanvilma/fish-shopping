@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 20 — fish art pass readiness.
+ * Finish 2.0 Phase 20 + Finish 3.0 Phase 9 — fish art pass readiness.
  *
  * Usage:
  *   npm run fishart:validate
@@ -50,14 +50,14 @@ function validate(): string[] {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (FISH_ART_PHASE !== 20) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
-  if (catalog.authoredSpeciesMin !== 10 || AUTHORED_FISH_FLOOR !== 10) {
-    errors.push("authoredSpeciesMin must be 10");
+  if (catalog.authoredSpeciesMin !== 50 || AUTHORED_FISH_FLOOR !== 50) {
+    errors.push("authoredSpeciesMin must be 50");
   }
   if (catalog.fishArtMarker !== FISH_ART_MARKER) errors.push("fishArtMarker mirror mismatch");
-  if ((dod.quotas?.authoredFishSpecies ?? 0) < 10) {
-    errors.push("DoD quotas.authoredFishSpecies must be ≥ 10");
+  if ((dod.quotas?.authoredFishSpecies ?? 0) < 50) {
+    errors.push("DoD quotas.authoredFishSpecies must be ≥ 50");
   }
   if (listing.fishArtPassPhase !== 20) errors.push("listing.fishArtPassPhase must be 20");
   if (listing.fishArtPassCatalog !== "shared/ship/fish-art-pass.json") {
@@ -70,7 +70,7 @@ function validate(): string[] {
   if (pin.fishArtPass !== "shared/ship/fish-art-pass.json") {
     errors.push("RELEASE_PIN.fishArtPass path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
 
   const licenseIds = new Set((licenses.records ?? []).map((r: { id: string }) => r.id));
   if (!licenseIds.has("fish-authored-art")) {
@@ -81,8 +81,8 @@ function validate(): string[] {
     if (!existsSync(resolve(root, gate))) errors.push(`missing preflight gate ${gate}`);
   }
 
-  if (!Array.isArray(catalog.authoredSpecies) || catalog.authoredSpecies.length < 10) {
-    errors.push("authoredSpecies must list ≥ 10 species");
+  if (!Array.isArray(catalog.authoredSpecies) || catalog.authoredSpecies.length < 50) {
+    errors.push("authoredSpecies must list ≥ 50 species");
   }
   if (fixture.expect?.species?.length !== catalog.authoredSpecies.length) {
     errors.push("parity fixture species count must match catalog");

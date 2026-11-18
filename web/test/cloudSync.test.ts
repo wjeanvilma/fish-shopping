@@ -97,6 +97,9 @@ describe("CloudSyncCoordinator + MemoryCloudBackend", () => {
       analyticsConsent: false, analyticsConsentDecided: false,
       cloudAccountId: "user-test", cloudRefreshToken: null,
       equippedCosmeticId: null,
+      locale: "en",
+      themePreference: "system",
+      dailyGoalRemindersEnabled: false,
     };
     await backend.put("user-test", newer);
     const pull = await coord.pullMerge(settings, older);
@@ -120,6 +123,9 @@ describe("CloudSyncCoordinator + MemoryCloudBackend", () => {
       analyticsConsent: false, analyticsConsentDecided: false,
       cloudAccountId: "user-test", cloudRefreshToken: null,
       equippedCosmeticId: null,
+      locale: "en",
+      themePreference: "system",
+      dailyGoalRemindersEnabled: false,
     }, local);
     expect(pull.decision.source).toBe("local");
     expect(pull.decision.reason).toContain("off");

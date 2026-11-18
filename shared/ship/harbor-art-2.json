@@ -1,0 +1,73 @@
+{
+  "phase": 8,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.harbor_art_2.v1",
+  "description": "Finish 3.0 Phase 8 — harbor art pass 2. Authors the remaining 5 harbor GLB theme sets (moon/obsidian/northlight/marina/ember) so all 8 harbors carry HarborArt_* props. Schema 23 / content 2.0.0.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 23,
+  "harborArt2Marker": "authored-finish-3.0-phase-8",
+  "harborArtPassCatalog": "shared/ship/harbor-art-pass.json",
+  "harborArtMarker": "authored-phase-19",
+  "authoredHarborTarget": 8,
+  "priorAuthoredHarborFloor": 3,
+  "newAuthoredHarbors": [
+    {
+      "harborId": "harbor.moon_cove",
+      "theme": "moon",
+      "asset": "shared/assets/models/moon_cove_blockout.glb"
+    },
+    {
+      "harborId": "harbor.obsidian_jetty",
+      "theme": "obsidian",
+      "asset": "shared/assets/models/obsidian_jetty_blockout.glb"
+    },
+    {
+      "harborId": "harbor.northlight_harbor",
+      "theme": "northlight",
+      "asset": "shared/assets/models/northlight_harbor_blockout.glb"
+    },
+    {
+      "harborId": "harbor.grand_marina",
+      "theme": "marina",
+      "asset": "shared/assets/models/grand_marina_blockout.glb"
+    },
+    {
+      "harborId": "harbor.ember_wharf",
+      "theme": "ember",
+      "asset": "shared/assets/models/ember_wharf_blockout.glb"
+    }
+  ],
+  "themesModule": "shared/tools/harbor_themes.py",
+  "generator": "shared/tools/generate_blockout.py",
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "gapClosed": "authoredHarborsRemaining",
+  "gapClosedValue": 0,
+  "parityFixture": "shared/fixtures/parity-harbor-art-2.json",
+  "validateScript": "npm run harborart2:validate",
+  "checklist": [
+    "harbor-art-pass.json authoredHarbors = 8 with distinct themes",
+    "5 new GLBs (moon/obsidian/northlight/marina/ember) tagged authored-phase-19",
+    "Kickoff baseline.authoredHarbors = 8; gaps.authoredHarborsRemaining = 0",
+    "licenses harbor-authored-art lists all 8 paths",
+    "DoD quotas.authoredHarborScenes = 8",
+    "harborart:validate + harborart2:validate green",
+    "CI runs harborart2:validate",
+    "schema stays 23 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/harbor-art-2.json",
+    "shared/fixtures/parity-harbor-art-2.json",
+    "shared/ship/harbor-art-pass.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "shared/tools/harbor_themes.py",
+    "shared/tools/generate_blockout.py",
+    "shared/assets/models/moon_cove_blockout.glb",
+    "shared/assets/models/obsidian_jetty_blockout.glb",
+    "shared/assets/models/northlight_harbor_blockout.glb",
+    "shared/assets/models/grand_marina_blockout.glb",
+    "shared/assets/models/ember_wharf_blockout.glb",
+    "web/src/ship/harborArt2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/HarborArt2.kt",
+    "web/scripts/validate-harbor-art-2.ts"
+  ]
+}

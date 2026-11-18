@@ -20,11 +20,11 @@ function parseGlbJson(buf: Buffer): Record<string, unknown> {
   return JSON.parse(buf.subarray(20, 20 + chunkLen).toString("utf8").replace(/\0+$/, ""));
 }
 
-describe("fish art pass (Finish 2.0 Phase 20)", () => {
+describe("fish art pass (Finish 2.0 Phase 20 + Finish 3.0 Phase 9)", () => {
   it("locks catalog floors", () => {
     expect(FISH_ART_PHASE).toBe(20);
-    expect(AUTHORED_FISH_FLOOR).toBe(10);
-    expect(FISH_ART_PASS.authoredSpecies.length).toBeGreaterThanOrEqual(10);
+    expect(AUTHORED_FISH_FLOOR).toBe(50);
+    expect(FISH_ART_PASS.authoredSpecies.length).toBeGreaterThanOrEqual(50);
     expect(
       (JSON.parse(readFileSync(resolve(root, "shared/store/listing.json"), "utf8")) as {
         fishArtPassPhase?: number;

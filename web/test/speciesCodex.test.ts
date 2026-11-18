@@ -22,12 +22,12 @@ const content = loadContent(
 );
 
 describe("Species codex / journal (Finish 2.0 Phase 12)", () => {
-  it("locks catalog and fifty codex entries", () => {
+  it("locks catalog and seventy-five codex entries", () => {
     expect(SPECIES_CODEX_PHASE).toBe(12);
     expect(SPECIES_CODEX_SCHEMA).toBe("fish.ship.species_codex.v1");
-    expect(CODEX_ENTRY_FLOOR).toBe(50);
-    expect(content.species).toHaveLength(50);
-    expect(content.codex.entries).toHaveLength(50);
+    expect(CODEX_ENTRY_FLOOR).toBe(75);
+    expect(content.species).toHaveLength(75);
+    expect(content.codex.entries).toHaveLength(75);
     expect(content.codex.families).toHaveLength(9);
     expect((storeListing as { speciesCodexPhase?: number }).speciesCodexPhase).toBe(12);
     for (const fam of SPECIES_CODEX.families) {

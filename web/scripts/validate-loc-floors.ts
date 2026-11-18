@@ -42,7 +42,7 @@ function validate(): string[] {
   if (catalog.schema !== LOC_FLOORS_SCHEMA) errors.push("bad schema");
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (LOC_FLOORS_PHASE !== 6) errors.push("phase mirror mismatch");
-  if (catalog.schemaVersion !== 23) errors.push("schemaVersion must be 23 at freeze");
+  if (catalog.schemaVersion !== 24) errors.push("schemaVersion must be 24 at Finish 3.0 freeze");
   if (catalog.metric?.unit !== "physical_lines") errors.push("metric.unit must be physical_lines");
   if (catalog.enforceFloors !== true) errors.push("enforceFloors must be true at Phase 30");
   if (catalog.enforceAtPhase !== 30) errors.push("enforceAtPhase must be 30");
@@ -50,11 +50,11 @@ function validate(): string[] {
     errors.push("enforceMode must be freeze_anti_regression");
   }
 
-  if (catalog.scopes.gameCore.phase30Floor !== 16000) errors.push("gameCore freeze floor must be 16000");
-  if (catalog.scopes.app.phase30Floor !== 10000) errors.push("app freeze floor must be 10000");
-  if (catalog.scopes.webSrc.phase30Floor !== 24000) errors.push("webSrc freeze floor must be 24000");
-  if (catalog.productTotalFloor !== 50000) errors.push("productTotalFloor must be 50000");
-  if (LOC_PRODUCT_TOTAL_FLOOR !== 50000) errors.push("TS product total floor mirror mismatch");
+  if (catalog.scopes.gameCore.phase30Floor !== 20900) errors.push("gameCore freeze floor must be 20900");
+  if (catalog.scopes.app.phase30Floor !== 13100) errors.push("app freeze floor must be 13100");
+  if (catalog.scopes.webSrc.phase30Floor !== 30200) errors.push("webSrc freeze floor must be 30200");
+  if (catalog.productTotalFloor !== 64200) errors.push("productTotalFloor must be 64200");
+  if (LOC_PRODUCT_TOTAL_FLOOR !== 64200) errors.push("TS product total floor mirror mismatch");
 
   if (catalog.scopes.gameCore.planTarget !== 25000) errors.push("gameCore planTarget must stay 25000");
   if (catalog.scopes.app.planTarget !== 16000) errors.push("app planTarget must stay 16000");
@@ -69,7 +69,7 @@ function validate(): string[] {
 
   if (!ci.includes("loc:smoke")) errors.push("ci.yml missing loc:smoke");
   if (!kotlin.includes("PRODUCT_TOTAL_FLOOR")) errors.push("Kotlin LocFloors missing PRODUCT_TOTAL_FLOOR");
-  if (!kotlin.includes("16_000") && !kotlin.includes("16000")) {
+  if (!kotlin.includes("20_900") && !kotlin.includes("20900")) {
     errors.push("Kotlin LocFloors missing game-core freeze floor");
   }
   if (!kotlin.includes("PLAN_TARGET")) errors.push("Kotlin LocFloors missing plan targets");

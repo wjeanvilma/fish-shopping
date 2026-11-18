@@ -702,12 +702,14 @@ export class HarborScene {
       }
     }
 
-    // Finish 2.0 Phase 22 — weather/festival ambient (not burst-pool; quality/reduced-motion scaled).
+    // Finish 2.0 Phase 22 + Finish 3.0 Phase 24 — weather/festival/tide/rival ambient.
     const ambient = weatherAmbientProfile(
       v.weatherId,
       !!v.seasonalEvent,
       this.sessionQuality,
       reducedMotion,
+      v.tidePhaseId || "day",
+      !!v.rivalPressureActive || (v.activeRivalIds?.length ?? 0) > 0,
     );
     this.scene.background = new THREE.Color(ambient.skyHex);
     if (this.waterMat) {

@@ -1,0 +1,43 @@
+{
+  "phase": 5,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.android_i18n.v1",
+  "description": "Finish 3.0 Phase 5 — Android HUD chrome through UiStrings (en+es). Eliminates Text(\" literals under ui/hud; content-pack names stay English. Schema 23 / content 2.0.0.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 23,
+  "androidI18nMarker": "authored-finish-3.0-phase-5",
+  "hudPackageRoot": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud",
+  "uiStringsIndex": "shared/i18n/ui-strings.json",
+  "uiStringsEn": "shared/i18n/ui-strings.en.json",
+  "uiStringsEs": "shared/i18n/ui-strings.es.json",
+  "uiStringsKotlin": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/i18n/UiStrings.kt",
+  "uiStringKeyMin": 120,
+  "androidTextLiteralsMax": 0,
+  "textLiteralPattern": "Text\\s*\\(\\s*\"",
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "gapFlagClosed": "androidI18nIncomplete",
+  "parityFixture": "shared/fixtures/parity-android-i18n.json",
+  "validateScript": "npm run androidi18n:validate",
+  "checklist": [
+    "en + es UI string catalogs ≥120 keys with identical key sets",
+    "UiStrings.kt EN/ES maps match JSON key sets",
+    "ui/hud has zero Text(\" chrome literals",
+    "Kickoff gaps.androidI18nIncomplete = false",
+    "app compiles (:app:compileDebugKotlin)",
+    "parity fixture + androidi18n:validate green",
+    "CI runs androidi18n:validate",
+    "schema stays 23 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/android-i18n.json",
+    "shared/fixtures/parity-android-i18n.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "shared/i18n/ui-strings.json",
+    "shared/i18n/ui-strings.en.json",
+    "shared/i18n/ui-strings.es.json",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/i18n/UiStrings.kt",
+    "web/src/ship/androidI18n.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/AndroidI18n.kt",
+    "web/scripts/validate-android-i18n.ts"
+  ]
+}

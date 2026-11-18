@@ -10,7 +10,7 @@
   },
   "expect": {
     "discovered": 1,
-    "total": 50,
+    "total": 75,
     "familyCount": 9,
     "sprat": {
       "speciesId": "species.silver_sprat",

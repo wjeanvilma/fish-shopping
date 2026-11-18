@@ -1,7 +1,7 @@
 {
   "phase": 20,
   "schema": "fish.audio.music_pack.v1",
-  "description": "Post-1.0 Phase 20 — authored harbor/shop loop beds with mute, SFX duck, and focus-loss duck/silence. Replaces Phase 19 procedural ambience; size-budgeted for mobile.",
+  "description": "Post-1.0 Phase 20 — authored harbor/shop loop beds with mute, SFX duck, and focus-loss duck/silence. Replaces Phase 19 procedural ambience; size-budgeted for mobile. Finish 2.0 Phase 21 adds festival/storm beds; Finish 3.0 Phase 23 adds night/rival beds. Ducking policy stays frozen.",
   "sampleRate": 22050,
   "channels": 1,
   "encoding": "pcm_s16le",
@@ -15,7 +15,7 @@
   "androidRawPrefix": "music_",
   "loopDurationSec": 4,
   "maxBytesPerBed": 190000,
-  "maxTotalBytes": 720000,
+  "maxTotalBytes": 1200000,
   "masterMusicScale": 0.42,
   "beds": [
     {
@@ -47,12 +47,30 @@
       "role": "storm",
       "design": "low rumble + sparse rain ticks for storm weather",
       "pack2": true
+    },
+    {
+      "id": "night",
+      "file": "night.wav",
+      "androidRaw": "music_night",
+      "role": "night",
+      "design": "dark nocturnal pad + soft tide wash for dusk/night",
+      "pack3": true
+    },
+    {
+      "id": "rival",
+      "file": "rival.wav",
+      "androidRaw": "music_rival",
+      "role": "rival",
+      "design": "tense low pulse + dissonant fifth for rival pressure",
+      "pack3": true
     }
   ],
   "defaultBed": "harbor",
   "bedSwitch": {
     "festivalWhen": ["seasonal_active"],
     "stormWhen": ["weather_storm"],
+    "rivalWhen": ["rival_pressure"],
+    "nightWhen": ["tide_night_or_dusk"],
     "shopWhen": ["station_open"],
     "harborOtherwise": true
   },

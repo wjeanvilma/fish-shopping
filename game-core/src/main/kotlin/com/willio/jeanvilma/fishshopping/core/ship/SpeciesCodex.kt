@@ -9,8 +9,8 @@ object SpeciesCodex {
     const val PLAN = "30_finish_2.0"
     const val SCHEMA = "fish.ship.species_codex.v1"
     const val CATALOG = "shared/ship/species-codex.json"
-    const val SPECIES_COUNT = 50
-    const val CODEX_ENTRY_COUNT = 50
+    const val SPECIES_COUNT = 75
+    const val CODEX_ENTRY_COUNT = 75
     const val FAMILY_COUNT = 9
     const val PARITY_FIXTURE = "shared/fixtures/parity-species-codex.json"
     const val CONTENT_VERSION = "1.0.1"

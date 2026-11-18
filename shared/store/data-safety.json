@@ -67,7 +67,7 @@
       "ephemeral": false,
       "required": false,
       "purposes": ["Analytics"],
-      "notes": "Allowlisted events only after analytics consent: tutorial_step_completed, first_sale, harbor_unlocked, offline_claimed, save_recovery, session_start, crash_free_session. No bag contents, positions, or full saves."
+      "notes": "Allowlisted events only after analytics consent: tutorial_step_completed, first_sale, harbor_unlocked, offline_claimed, save_recovery, session_start, crash_free_session, frame_time_summary. Local rolling counters by default; optional first-party remote batch sink when analytics API base is configured. No bag contents, positions, or full saves."
     },
     {
       "category": "App info and performance",
@@ -140,6 +140,8 @@
       "crash_free_session"
     ],
     "dashboardCatalog": "shared/ops/analytics-dashboard.json",
+    "remoteSinkCatalog": "shared/ops/remote-analytics-sink.json",
+    "remoteSinkOptIn": true,
     "forbiddenKeysInclude": [
       "uid",
       "userId",

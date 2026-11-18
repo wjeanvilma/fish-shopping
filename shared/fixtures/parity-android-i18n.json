@@ -1,0 +1,19 @@
+{
+  "schema": "fish.fixtures.parity_android_i18n.v1",
+  "androidI18nMarker": "authored-finish-3.0-phase-5",
+  "phase": 5,
+  "plan": "30_finish_3.0",
+  "expect": {
+    "uiStringKeyMin": 120,
+    "androidTextLiteralsMax": 0,
+    "schemaVersion": 23,
+    "contentVersion": "2.0.0",
+    "gates": [
+      "catalog_keys_ge_120",
+      "en_es_key_parity",
+      "hud_text_literals_zero",
+      "gap_closed",
+      "ci_gate"
+    ]
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "phase": 13,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.machines_9_10.v1",
+  "description": "Finish 3.0 Phase 13 — author machine classes 9–10 (Harbor press + Harbor pickler) with recipe graphs, unlock plots on all harbors, and product SKUs. Schema 23 / content 2.0.0.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 23,
+  "machineCount": 10,
+  "machines910Marker": "authored-finish-3.0-phase-13",
+  "newMachines": [
+    {
+      "id": "machine.harbor_press",
+      "name": "Harbor press",
+      "unlockUpgrade": "upgrade.harbor_press",
+      "recipeCount": 6,
+      "sampleRecipe": "recipe.press_fillet",
+      "products": [
+        "product.pressed_fillet",
+        "product.fish_cake",
+        "product.press_carton"
+      ],
+      "moduleGlb": "shared/assets/models/modules/press.glb"
+    },
+    {
+      "id": "machine.harbor_pickler",
+      "name": "Harbor pickler",
+      "unlockUpgrade": "upgrade.harbor_pickler",
+      "recipeCount": 6,
+      "sampleRecipe": "recipe.pickle_fillet",
+      "products": [
+        "product.pickled_fillet",
+        "product.relish_jar",
+        "product.pickle_carton"
+      ],
+      "moduleGlb": "shared/assets/models/modules/pickler.glb"
+    }
+  ],
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-machines-9-10.json",
+  "authorTool": "shared/tools/mutate_phase13_machines.py",
+  "validateScript": "npm run machines910:validate",
+  "checklist": [
+    "content-pack has 10 machine classes including harbor_press and harbor_pickler",
+    "Unlock upgrades + expansion plots on all 8 harbors",
+    "Recipe graph produces new retail/wholesale SKUs",
+    "Product + module GLBs regenerated; harbor blockouts refreshed",
+    "Kickoff baseline.machines = 10; gapTargets.machinesMin met",
+    "machines910:validate green in CI",
+    "schema stays 23"
+  ],
+  "preflightGates": [
+    "shared/ship/machines-9-10.json",
+    "shared/fixtures/parity-machines-9-10.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "shared/tools/mutate_phase13_machines.py",
+    "shared/assets/models/modules/press.glb",
+    "shared/assets/models/modules/pickler.glb",
+    "shared/assets/models/product_pressed_fillet.glb",
+    "shared/assets/models/product_pickled_fillet.glb",
+    "web/src/ship/machines910.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Machines910.kt",
+    "web/scripts/validate-machines-9-10.ts"
+  ]
+}

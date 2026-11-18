@@ -24,5 +24,7 @@ object SpaHost {
         "404.html",
         "manifest.webmanifest",
         "favicon.svg",
+        "sw.js",
+        "offline.html",
     )
 }

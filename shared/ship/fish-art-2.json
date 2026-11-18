@@ -1,0 +1,42 @@
+{
+  "phase": 9,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.fish_art_2.v1",
+  "description": "Finish 3.0 Phase 9 — fish mesh pass 2. Authors the remaining 40 species FishArt meshes so all 50 content-pack species carry multi-part authored themes. Schema 23 / content 2.0.0.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 23,
+  "fishArt2Marker": "authored-finish-3.0-phase-9",
+  "fishArtPassCatalog": "shared/ship/fish-art-pass.json",
+  "fishArtMarker": "authored-phase-20",
+  "authoredSpeciesTarget": 50,
+  "priorAuthoredSpeciesFloor": 10,
+  "newAuthoredCount": 40,
+  "themesModule": "shared/tools/fish_themes.py",
+  "generator": "shared/tools/generate_fish_stubs.py",
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "gapClosed": "authoredFishRemaining",
+  "gapClosedValue": 0,
+  "parityFixture": "shared/fixtures/parity-fish-art-2.json",
+  "validateScript": "npm run fishart2:validate",
+  "checklist": [
+    "fish-art-pass.json authoredSpecies = 50 with distinct themes",
+    "40 new species GLBs tagged authored-phase-20",
+    "Kickoff baseline.authoredFish = 50; gaps.authoredFishRemaining = 0",
+    "licenses fish-authored-art lists all 50 paths",
+    "DoD quotas.authoredFishSpecies = 50",
+    "fishart:validate + fishart2:validate green",
+    "CI runs fishart2:validate",
+    "schema stays 23 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/fish-art-2.json",
+    "shared/fixtures/parity-fish-art-2.json",
+    "shared/ship/fish-art-pass.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "shared/tools/fish_themes.py",
+    "shared/tools/generate_fish_stubs.py",
+    "web/src/ship/fishArt2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/FishArt2.kt",
+    "web/scripts/validate-fish-art-2.ts"
+  ]
+}

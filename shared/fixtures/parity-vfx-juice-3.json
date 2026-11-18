@@ -1,0 +1,32 @@
+{
+  "schema": "fish.fixture.parity_vfx_juice_3.v1",
+  "description": "Finish 3.0 Phase 24: rival/prestige/trophy/travel/hire/loan juice + tide ambient under budget-gate.",
+  "eventBurstMin": 6,
+  "eventShakeMin": 2,
+  "tideAmbientMin": 4,
+  "vfxJuice3Marker": "authored-finish-3.0-phase-24",
+  "expect": {
+    "eventBursts": [
+      "rival_beat",
+      "prestige",
+      "trophy_set",
+      "harbor_travel",
+      "hire",
+      "loan"
+    ],
+    "eventShake": ["rival_beat", "prestige"],
+    "tidePhases": ["dawn", "day", "dusk", "night"],
+    "maxShakeAmplitudeM": 0.12,
+    "sharesBurstPool": true,
+    "ambientConsumesBurstPool": false,
+    "simHzInvariant": 20,
+    "eventMap": {
+      "rival_beaten": { "burst": "rival_beat", "shake": "rival_beat" },
+      "prestige_unlocked": { "burst": "prestige", "shake": "prestige" },
+      "trophy_set_completed": { "burst": "trophy_set" },
+      "harbor_traveled": { "burst": "harbor_travel" },
+      "worker_hired": { "burst": "hire" },
+      "loan_taken": { "burst": "loan" }
+    }
+  }
+}

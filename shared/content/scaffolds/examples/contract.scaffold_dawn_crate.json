@@ -1,0 +1,11 @@
+{
+  "id": "contract.scaffold_dawn_crate",
+  "name": "Dawn crate",
+  "description": "Scaffold contract for dawn ferry buyers.",
+  "item": "species.dawn_anchovy",
+  "quantity": 4,
+  "durationTicks": 1800,
+  "payout": 48,
+  "penalty": 10,
+  "weight": 20
+}

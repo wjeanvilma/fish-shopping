@@ -1,6 +1,6 @@
 {
   "schema": "fish.fixture.parity_machines_7_8.v1",
-  "description": "Finish 2.0 Phase 10: unlock harbor steamer via sunrise plot, process fillet → steamed_fillet; assert 8 machine classes and warehouse reconcile.",
+  "description": "Finish 2.0 Phase 10: unlock harbor steamer via sunrise plot, process fillet → steamed_fillet; assert ≥8 machine classes and warehouse reconcile.",
   "harborId": "harbor.sunrise_pier",
   "seed": 1010,
   "setup": {
@@ -20,7 +20,7 @@
     "expectOutput": { "item": "product.steamed_fillet", "quantity": 1 }
   },
   "expectFinal": {
-    "machineCount": 8,
+    "machineCount": 10,
     "ownedUpgrade": "upgrade.harbor_steamer",
     "reconcileOk": true
   }

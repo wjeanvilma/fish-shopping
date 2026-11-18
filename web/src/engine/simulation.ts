@@ -3,7 +3,7 @@ import type { ContentPack, HarborDef } from "./content";
 import { CHECKPOINT_INTERVAL_TICKS, INPUT_SCALE } from "./foundations";
 import type { Command, GameEvent, GameState } from "./state";
 import {
-  AchievementSystem, AutomationSystem, BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DailyGoalsSystem, DecorSystem, EconomySystem, FishingSystem, FullUnlockSystem, HarborTravelSystem, MovementSystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, SeasonalEventSystem, WeatherSystem, MasterySystem, StaffTreesSystem,
+  AchievementSystem, AutomationSystem, BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DailyGoalsSystem, DecorSystem, EconomySystem, EndgameSystem, FishingSystem, FullUnlockSystem, HarborTravelSystem, MovementSystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, RivalMarketSystem, SeasonalEventSystem, WeatherSystem, MasterySystem, StaffTreesSystem,
   StepContext, TransferSystem, UpgradeSystem, WorkerSystem, invariantProblems,
 } from "./systems";
 
@@ -29,11 +29,13 @@ export class Simulation {
     TransferSystem.step(ctx);
     ProductionSystem.step(ctx);
     CustomerSystem.step(ctx);
+    RivalMarketSystem.step(ctx);
     WorkerSystem.step(ctx);
     StaffTreesSystem.step(ctx);
     AutomationSystem.step(ctx);
     ProgressionSystem.step(ctx);
     PrestigeSystem.step(ctx);
+    EndgameSystem.step(ctx);
     AchievementSystem.step(ctx);
     DailyGoalsSystem.step(ctx);
     WeatherSystem.step(ctx);

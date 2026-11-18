@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 15 — staff specialization trees catalog
+ * Finish 2.0 Phase 15 + Finish 3.0 Phase 10 — staff specialization trees catalog
  * (mirrors shared/ship/staff-trees.json).
  */
 import treesJson from "../../../shared/ship/staff-trees.json";

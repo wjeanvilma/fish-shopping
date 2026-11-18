@@ -1,0 +1,24 @@
+{
+  "schema": "fish.fixtures.parity_species_51_75.v1",
+  "species51_75Marker": "authored-finish-3.0-phase-12",
+  "phase": 12,
+  "plan": "30_finish_3.0",
+  "expect": {
+    "speciesCount": 75,
+    "newSpeciesCount": 25,
+    "habitatCount": 8,
+    "newBaseCount": 13,
+    "newRareCount": 12,
+    "schemaVersion": 23,
+    "contentVersion": "2.0.0",
+    "gates": [
+      "species_roster_75",
+      "habitats_wired",
+      "spots_and_galleries",
+      "codex_complete",
+      "glb_assets",
+      "kickoff_species_met",
+      "ci_gate"
+    ]
+  }
+}

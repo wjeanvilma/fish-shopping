@@ -1,0 +1,93 @@
+{
+  "phase": 24,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.vfx_juice_3.v1",
+  "description": "Finish 3.0 Phase 24 — rival/prestige/trophy/travel/hire/loan visual juice + tide/rival ambient under budget-gate; extends post-1.0 vfx-juice + Finish 2.0 juice 2; presentation-only; sim 20 Hz; schema stays 24.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "extendsCatalog": "shared/perf/vfx-juice.json",
+  "extendsJuice2Catalog": "shared/ship/vfx-juice-2.json",
+  "budgetGateCatalog": "shared/perf/budget-gate.json",
+  "simHzInvariant": 20,
+  "vfxJuice3Marker": "authored-finish-3.0-phase-24",
+  "eventBurstMin": 6,
+  "eventShakeMin": 2,
+  "tideAmbientMin": 4,
+  "eventBursts": {
+    "kinds": [
+      "rival_beat",
+      "prestige",
+      "trophy_set",
+      "harbor_travel",
+      "hire",
+      "loan"
+    ],
+    "durationSec": {
+      "rival_beat": 0.5,
+      "prestige": 0.65,
+      "trophy_set": 0.55,
+      "harbor_travel": 0.45,
+      "hire": 0.35,
+      "loan": 0.4
+    },
+    "sharesBurstPool": true,
+    "note": "New kinds reuse VfxBurst_* slots under existing presenterCaps.burst; tide/rival ambient does not consume the pool."
+  },
+  "eventShake": {
+    "kinds": ["rival_beat", "prestige"],
+    "durationSec": 0.18,
+    "maxAmplitudeM": 0.12,
+    "amplitudeM": {
+      "rival_beat": 0.07,
+      "prestige": 0.08
+    },
+    "scaleByQuality": { "low": 0.5, "medium": 0.85, "high": 1.0 },
+    "disabledWhenReducedMotion": true
+  },
+  "ambientTide": {
+    "phases": ["dawn", "day", "dusk", "night"],
+    "qualityScaled": true,
+    "rivalTintWhenPressuring": true,
+    "consumesBurstPool": false
+  },
+  "eventMap": {
+    "rival_beaten": { "burst": "rival_beat", "shake": "rival_beat" },
+    "prestige_unlocked": { "burst": "prestige", "shake": "prestige" },
+    "trophy_set_completed": { "burst": "trophy_set" },
+    "harbor_traveled": { "burst": "harbor_travel" },
+    "worker_hired": { "burst": "hire" },
+    "loan_taken": { "burst": "loan" }
+  },
+  "parityFixture": "shared/fixtures/parity-vfx-juice-3.json",
+  "validateScript": "npm run vfx3:validate",
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "checklist": [
+    "≥6 new event burst kinds (rival_beat/prestige/trophy_set/harbor_travel/hire/loan)",
+    "≥2 new shake kinds (rival_beat/prestige) under maxShakeAmplitudeM",
+    "≥4 tide ambient phases + rival tint (not burst pool)",
+    "presenterCaps.burst/fly/crowd unchanged; post-1.0 vfx:validate + vfx2:validate still green",
+    "GameHost + GameViewModel wire Finish 3.0 events",
+    "HarborScene + HarborRenderer apply tide/rival ambient",
+    "parity-vfx-juice-3 + vfx3:validate green",
+    "CI runs vfx3:validate",
+    "kickoff phase 24 validate=vfx3:validate + measuredAtPhase≥24",
+    "schema stays 24 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/vfx-juice-3.json",
+    "shared/fixtures/parity-vfx-juice-3.json",
+    "shared/perf/budget-gate.json",
+    "shared/perf/vfx-juice.json",
+    "shared/ship/vfx-juice-2.json",
+    "web/src/ship/vfxJuice3.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/VfxJuice3.kt",
+    "web/src/render/presenters.ts",
+    "web/src/render/weatherAmbient.ts",
+    "web/src/render/HarborScene.ts",
+    "web/src/game/GameHost.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/Presenters.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/WeatherAmbient.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRenderer.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt"
+  ]
+}

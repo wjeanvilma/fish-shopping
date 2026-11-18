@@ -25,9 +25,9 @@ const content = loadContent(
 describe("Staff trees (Finish 2.0 Phase 15)", () => {
   it("locks catalog floors", () => {
     expect(STAFF_TREES_PHASE).toBe(15);
-    expect(STAFF_BRANCH_FLOOR).toBe(5);
+    expect(STAFF_BRANCH_FLOOR).toBe(10);
     expect(STAFF_SCHEDULE_FLOOR).toBe(2);
-    expect(content.staffTrees.branches.length).toBeGreaterThanOrEqual(5);
+    expect(content.staffTrees.branches.length).toBeGreaterThanOrEqual(10);
     expect(content.staffTrees.schedules.length).toBeGreaterThanOrEqual(2);
     expect((storeListing as { staffTreesPhase?: number }).staffTreesPhase).toBe(15);
     for (const id of STAFF_TREES.branches) {

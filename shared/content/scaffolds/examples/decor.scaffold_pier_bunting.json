@@ -1,0 +1,8 @@
+{
+  "id": "decor.scaffold_pier_bunting",
+  "name": "Pier bunting",
+  "description": "Scaffold pier bunting that holds a bit of patience.",
+  "cost": 95,
+  "requiresCosmetic": null,
+  "patienceBonusTicks": 22
+}

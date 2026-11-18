@@ -39,9 +39,18 @@ object SeasonalEventSystem {
     fun priceMultPermille(content: ContentPack, tick: Long): Int =
         active(content, tick)?.priceMultPermille ?: 1000
 
-    /** Scale a catch weight by the active seasonal species multiplier. */
-    fun scaledWeight(base: Int, content: ContentPack, tick: Long, speciesId: String): Int {
-        val mult = speciesWeightMultPermille(content, tick, speciesId)
+    /** Scale a catch weight by seasonal + ecology habitat multipliers. */
+    fun scaledWeight(
+        base: Int,
+        content: ContentPack,
+        tick: Long,
+        speciesId: String,
+        harborId: String? = null,
+    ): Int {
+        var mult = speciesWeightMultPermille(content, tick, speciesId).toLong()
+        if (harborId != null) {
+            mult = (mult * EcologySystem.habitatWeightMultPermille(content, tick, harborId, speciesId)) / 1000L
+        }
         return max(1, ((base.toLong() * mult) / 1000L).toInt())
     }
 

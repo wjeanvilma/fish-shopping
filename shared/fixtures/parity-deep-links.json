@@ -1,0 +1,67 @@
+{
+  "schema": "fish.fixture.parity_deep_links.v1",
+  "description": "Finish 3.0 Phase 20: deep-link parse vectors + App Link wiring expectations.",
+  "deepLinksMarker": "authored-finish-3.0-phase-20",
+  "expect": {
+    "closesGap": "deepLinksMissing",
+    "schemaVersion": 24,
+    "contentVersion": "2.0.0",
+    "packageName": "com.willio.jeanvilma.fishshopping",
+    "host": "wjeanvilma.github.io",
+    "pathPrefix": "/fish-shopping/play",
+    "customScheme": "fishshopping",
+    "uriVectors": [
+      {
+        "uri": "https://wjeanvilma.github.io/fish-shopping/play/?panel=goals",
+        "panel": "quests",
+        "harborId": null,
+        "source": "query"
+      },
+      {
+        "uri": "https://wjeanvilma.github.io/fish-shopping/play/?go=contracts&harbor=harbor.sunrise_pier",
+        "panel": "contracts",
+        "harborId": "harbor.sunrise_pier",
+        "source": "query"
+      },
+      {
+        "uri": "https://wjeanvilma.github.io/fish-shopping/play/map",
+        "panel": "map",
+        "harborId": null,
+        "source": "path"
+      },
+      {
+        "uri": "https://wjeanvilma.github.io/fish-shopping/play/#codex",
+        "panel": "speciesBook",
+        "harborId": null,
+        "source": "hash"
+      },
+      {
+        "uri": "fishshopping://open?panel=staff",
+        "panel": "staff",
+        "harborId": null,
+        "source": "query"
+      }
+    ],
+    "manifestMustContain": [
+      "android:autoVerify=\"true\"",
+      "wjeanvilma.github.io",
+      "/fish-shopping/play",
+      "fishshopping",
+      "android:host=\"open\"",
+      "android:launchMode=\"singleTop\""
+    ],
+    "mainActivityMustContain": [
+      "DeepLinkHandler",
+      "onNewIntent",
+      "applyDeepLink"
+    ],
+    "buildPagesMustContain": [
+      ".well-known/assetlinks.json",
+      ".well-known"
+    ],
+    "assetLinksMustContain": [
+      "com.willio.jeanvilma.fishshopping",
+      "REPLACE_WITH_UPLOAD_CERT_SHA256"
+    ]
+  }
+}

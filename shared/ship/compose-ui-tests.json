@@ -1,0 +1,45 @@
+{
+  "phase": 21,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.compose_ui_tests.v1",
+  "description": "Finish 3.0 Phase 21 — Compose UI integration tests. Stable test tags, testable title/offline/pause composables, Robolectric JVM suite + instrumented twin. Schema stays 24 / content 2.0.0. Closes kickoff gap composeUiTestsMissing.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "composeUiTestsMarker": "authored-finish-3.0-phase-21",
+  "closesGap": "composeUiTestsMissing",
+  "tagsModule": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/ComposeUiTags.kt",
+  "robolectricSuite": "app/src/test/java/com/willio/jeanvilma/fishshopping/ComposeUiIntegrationTest.kt",
+  "instrumentedSuite": "app/src/androidTest/java/com/willio/jeanvilma/fishshopping/TitleMenuInstrumentedTest.kt",
+  "gradleUnitTestFilter": "*ComposeUiIntegrationTest*",
+  "gradleUnitTestTask": ":app:testDebugUnitTest",
+  "minTagCount": 16,
+  "scenarios": [
+    "title_menu_play_no_save",
+    "title_menu_continue_has_save",
+    "title_analytics_consent",
+    "offline_summary_continue",
+    "pause_panel_actions"
+  ],
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-compose-ui-tests.json",
+  "validateScript": "npm run composeui:validate",
+  "checklist": [
+    "ComposeUiTags wired on title / offline / pause / nav chrome",
+    "TitleMenuContent + TitleAnalyticsConsentContent are ViewModel-free for tests",
+    "Robolectric ComposeUiIntegrationTest green in CI (:app:testDebugUnitTest)",
+    "Instrumented TitleMenuInstrumentedTest present for device path",
+    "Kickoff gap composeUiTestsMissing closed; phase 21 validate = composeui:validate",
+    "schema stays 24 / content 2.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/compose-ui-tests.json",
+    "shared/fixtures/parity-compose-ui-tests.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/ComposeUiTags.kt",
+    "app/src/test/java/com/willio/jeanvilma/fishshopping/ComposeUiIntegrationTest.kt",
+    "app/src/androidTest/java/com/willio/jeanvilma/fishshopping/TitleMenuInstrumentedTest.kt",
+    "web/src/ship/composeUiTests.ts",
+    "web/scripts/validate-compose-ui-tests.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ComposeUiTests.kt"
+  ]
+}

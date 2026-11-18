@@ -1,0 +1,62 @@
+{
+  "phase": 17,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.cloud_qa_2.v1",
+  "description": "Finish 3.0 Phase 17 — cloud production QA harness 2. Expands Finish 2.0 Phase 26 conflict/offline vectors with local-newer conflict, corrupt remote, unavailable push queue, sync-disabled, empty-local pull, flush hold, schema-24 roundtrip, and guest uid stability. In-process Memory/Null backends only; no emulator start and no firestore.rules deploy.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "cloudQa2Marker": "authored-finish-3.0-phase-17",
+  "priorFirestoreQaPhase": 26,
+  "priorHarnessModule": "web/src/cloud/cloudQaHarness.ts",
+  "qaScenarioMin": 8,
+  "qaScenarioTotalMin": 12,
+  "baselineScenarioCount": 4,
+  "wave2ScenarioCount": 8,
+  "wave2ScenarioIds": [
+    "conflict_local_newer_recommends_local",
+    "corrupt_remote_keeps_local",
+    "push_unavailable_queues",
+    "sync_disabled_skips_network",
+    "pull_remote_fills_empty_local",
+    "flush_stays_queued_when_unavailable",
+    "schema24_snapshot_roundtrip",
+    "guest_uid_preserved_on_ensure"
+  ],
+  "productionPathCatalog": "shared/cloud/production-path.json",
+  "snippetPath": "shared/cloud/snippets/firestore-harbor-save.rules",
+  "snippetMode": "snippet_only_not_deployed",
+  "forbiddenDeployablePaths": [
+    "firestore.rules",
+    "firebase/firestore.rules"
+  ],
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-cloud-qa-2.json",
+  "validateScript": "npm run cloudqa2:validate",
+  "manualCommands": [
+    "cd web && npm run cloudqa2:validate",
+    "cd web && npm run firestoreqa:validate",
+    "Optional emulator: firebase emulators:start --only auth,firestore (operator-owned; not required for CI)",
+    "Paste shared/cloud/snippets/firestore-harbor-save.rules into Firebase Console if operating live cloud (do not auto-deploy)"
+  ],
+  "checklist": [
+    "Harness covers ≥8 Phase 17 wave-2 scenarios + ≥12 total including Phase 26 baseline",
+    "Schema 24 snapshot push/pull roundtrip green",
+    "Unavailable backend queues push; sync-disabled skips network",
+    "Corrupt remote keeps local without conflict UI",
+    "Snippet-only rules mode preserved; no deployable firestore.rules",
+    "Kickoff phase 17 validate = cloudqa2:validate; measuredAtPhase ≥ 17",
+    "schema stays 24 / content 2.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/cloud-qa-2.json",
+    "shared/fixtures/parity-cloud-qa-2.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "shared/cloud/production-path.json",
+    "shared/cloud/snippets/firestore-harbor-save.rules",
+    "web/src/cloud/cloudQaHarness.ts",
+    "web/src/ship/cloudQa2.ts",
+    "web/scripts/validate-cloud-qa-2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/CloudQa2.kt",
+    "game-core/src/test/kotlin/com/willio/jeanvilma/fishshopping/core/CloudQa2CatalogTest.kt"
+  ]
+}

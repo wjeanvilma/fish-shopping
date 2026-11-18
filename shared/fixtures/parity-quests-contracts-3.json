@@ -1,0 +1,21 @@
+{
+  "schema": "fish.fixture.parity_quests_contracts_3.v1",
+  "description": "Finish 3.0 Phase 27: quest floor 30 + dawn express chain + new rep gates.",
+  "questsContracts3Marker": "authored-finish-3.0-phase-27",
+  "questsMin": 30,
+  "deliveryChainsMin": 3,
+  "reputationGatedMin": 3,
+  "contractTemplatesMin": 43,
+  "newChainId": "chain.dawn_express",
+  "newChainHeadId": "contract.chain_dawn_catch",
+  "newChainLength": 3,
+  "newRepGatedId": "contract.trusted_bulk",
+  "newRepGatedBand": 2,
+  "terminalQuestId": "quest.endgame_beacon",
+  "simHzInvariant": 20,
+  "expect": {
+    "contentVersion": "2.0.0",
+    "schemaVersion": 24,
+    "newQuests": 10
+  }
+}

@@ -62,6 +62,7 @@ object FishingSystem {
                     ctx.content,
                     ctx.state.tick,
                     it.id,
+                    ctx.state.harborId,
                 )
             }
             val pick = candidates[ctx.state.rng.pickWeighted(weights)]
@@ -129,7 +130,11 @@ object FishingSystem {
      * Finish 2.0 Phase 13 weather + tide, and Phase 14 mastery / technique multipliers.
      */
     fun effectiveCatchSpeed(content: ContentPack, state: GameState, speciesId: String? = null): Int {
-        var speed = maxOf(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille).toLong()
+        var speed = maxOf(
+            state.player.catchSpeedPermille,
+            state.prestigeCatchSpeedPermille,
+            state.endgameCatchSpeedPermille,
+        ).toLong()
         if (hasTideChart(state)) {
             val part = dayPartAt(content, state.tick)
             speed = (speed * part.catchSpeedMultPermille) / 1000L

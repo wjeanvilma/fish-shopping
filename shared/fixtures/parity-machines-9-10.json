@@ -1,0 +1,40 @@
+{
+  "schema": "fish.fixtures.parity_machines_9_10.v1",
+  "machines910Marker": "authored-finish-3.0-phase-13",
+  "phase": 13,
+  "plan": "30_finish_3.0",
+  "description": "Finish 3.0 Phase 13: unlock harbor press via sunrise plot, process fillet → pressed_fillet; assert 10 machine classes.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1310,
+  "setup": {
+    "coins": 800,
+    "completedQuests": ["quest.specialty_kitchen"],
+    "ownedUpgrades": ["upgrade.harbor_steamer"]
+  },
+  "build": {
+    "plotId": "plot.sunrise_press",
+    "requestId": "p13-press-build",
+    "expectUpgrade": "upgrade.harbor_press",
+    "stationId": "station.press_1"
+  },
+  "process": {
+    "walkTo": { "x": 10700, "z": -11000, "expectZone": "zone.press_in" },
+    "bagAfterUnlock": { "product.fillet": 1 },
+    "preferredRecipeId": "recipe.press_fillet",
+    "expectOutput": { "item": "product.pressed_fillet", "quantity": 1 }
+  },
+  "expectFinal": {
+    "machineCount": 10,
+    "ownedUpgrade": "upgrade.harbor_press",
+    "schemaVersion": 23,
+    "contentVersion": "2.0.0",
+    "gates": [
+      "machines_10",
+      "plots_wired",
+      "recipes_and_products",
+      "module_glbs",
+      "kickoff_machines_met",
+      "ci_gate"
+    ]
+  }
+}

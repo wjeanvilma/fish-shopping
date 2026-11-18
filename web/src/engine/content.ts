@@ -5,6 +5,7 @@
  */
 import Ajv2020 from "ajv/dist/2020";
 import schema from "../../../shared/schema/content-pack.schema.json";
+import { contentName } from "../i18n/contentStrings";
 import { SafeMath, TICKS_PER_SECOND } from "./foundations";
 
 export interface PlayerDef {
@@ -453,6 +454,59 @@ export interface ReputationDef {
   coachingPraiseScorePermille: number;
 }
 
+/** Finish 3.0 Phase 14 — single-player rival NPC market stall. */
+export interface RivalMarketDef {
+  id: string;
+  name: string;
+  description: string;
+  harbors: string[];
+  aggressionPermille: number;
+  specialtyProducts: string[];
+  undercutPriceMultPermille: number;
+  activeDayParts: string[];
+}
+
+/** Finish 3.0 Phase 14 — rival NPC markets catalog. */
+export interface RivalMarketsCatalog {
+  tickInterval: number;
+  emptyStockSiphonChancePermille: number;
+  lowRepSiphonBonusPermille: number;
+  minReputationBandToResist: number;
+  wellStockedUnits: number;
+  pressureSpawnMultPermille: number;
+  rivals: RivalMarketDef[];
+}
+
+/** Finish 3.0 Phase 15 — endgame tier. */
+export interface EndgameTierDef {
+  id: string;
+  name: string;
+  description: string;
+  requiresPrestigeCount: number;
+  requiresRivalBeats: number;
+  requiresChallenges: number;
+  catchSpeedPermille: number;
+  priceBonusPermille: number;
+  coins: number;
+}
+
+/** Finish 3.0 Phase 15 — endgame challenge. */
+export interface EndgameChallengeDef {
+  id: string;
+  name: string;
+  description: string;
+  stat: string;
+  atLeast: number;
+  rewardCoins: number;
+}
+
+/** Finish 3.0 Phase 15 — endgame deepen catalog. */
+export interface EndgameCatalog {
+  requiresPrestigeCount: number;
+  tiers: EndgameTierDef[];
+  challenges: EndgameChallengeDef[];
+}
+
 export type ContractKind = "standard" | "standing";
 
 export interface ContractTemplateDef {
@@ -548,9 +602,19 @@ export interface DayPartDef {
   /** Player catch-speed multiplier when a tide chart is owned. */
   catchSpeedMultPermille: number;
 }
+/** Harbor-scoped day-part species weight pocket (Finish 3.0 Phase 12). */
+export interface EcologyHabitatDef {
+  id: string;
+  name: string;
+  harbors: string[];
+  favoredDayParts: string[];
+  speciesWeightMultPermille?: Record<string, number>;
+}
 export interface EcologyDef {
   dayLengthTicks: number;
   parts: DayPartDef[];
+  /** Optional habitat pockets that boost species weights by harbor + day part. */
+  habitats?: EcologyHabitatDef[];
 }
 export interface FishingSpotDef {
   zone: string;
@@ -675,6 +739,10 @@ export interface RawContentPack {
   staffTrees: StaffTreesCatalog;
   /** Service reputation from served vs abandoned (Phase 13). */
   reputation: ReputationDef;
+  /** Finish 3.0 Phase 14 — rival NPC markets (single-player). */
+  rivalMarkets: RivalMarketsCatalog;
+  /** Finish 3.0 Phase 15 — endgame deepen board. */
+  endgame: EndgameCatalog;
   contracts: ContractsDef;
   customers: CustomerDef[];
   tutorial: TutorialStepDef[];
@@ -755,6 +823,9 @@ export class ContentPack {
   readonly customersById: Map<string, CustomerDef>;
   readonly decorById: Map<string, DecorDef>;
   readonly seasonalEventsById: Map<string, SeasonalEventDef>;
+  readonly rivalsById: Map<string, RivalMarketDef>;
+  readonly endgameTiersById: Map<string, EndgameTierDef>;
+  readonly endgameChallengesById: Map<string, EndgameChallengeDef>;
   readonly harborsById: Map<string, HarborDef>;
   readonly staffBranchesById: Map<string, StaffBranchDef>;
   readonly staffSchedulesById: Map<string, StaffScheduleDef>;
@@ -829,6 +900,9 @@ export class ContentPack {
     }
     this.decorById = byId(raw.decor.items);
     this.seasonalEventsById = byId(raw.seasonalEvents.events);
+    this.rivalsById = byId(raw.rivalMarkets.rivals);
+    this.endgameTiersById = byId(raw.endgame.tiers);
+    this.endgameChallengesById = byId(raw.endgame.challenges);
     this.harborsById = byId(raw.harbors);
     this.staffBranchesById = byId(raw.staffTrees.branches);
     this.staffSchedulesById = byId(raw.staffTrees.schedules);
@@ -861,6 +935,8 @@ export class ContentPack {
   get fishingMastery() { return this.raw.fishingMastery; }
   get staffTrees() { return this.raw.staffTrees; }
   get reputation() { return this.raw.reputation; }
+  get rivalMarkets() { return this.raw.rivalMarkets; }
+  get endgame() { return this.raw.endgame; }
   get contracts() { return this.raw.contracts; }
   get decor() { return this.raw.decor; }
   get seasonalEvents() { return this.raw.seasonalEvents; }
@@ -876,10 +952,16 @@ export class ContentPack {
   };
 
   itemName(itemId: string): string {
-    return this.speciesById.get(itemId)?.name
+    const english = this.speciesById.get(itemId)?.name
       ?? this.productsById.get(itemId)?.name
       ?? this.baitById.get(itemId)?.name
       ?? itemId;
+    return contentName(itemId, english);
+  }
+
+  /** Localized display name for any content entity id with an English fallback. */
+  displayName(id: string, english: string): string {
+    return contentName(id, english);
   }
 
   isKnownItem(itemId: string): boolean {
@@ -1101,6 +1183,26 @@ export function validateContent(p: ContentPack): string[] {
   }
   check(r.ecology.parts[r.ecology.parts.length - 1]!.endPermille === 1000, () =>
     "ecology.parts must end at endPermille 1000");
+  const ecologyPartIds = new Set(r.ecology.parts.map((p) => p.id));
+  const harborIdSet = new Set(r.harbors.map((h) => h.id));
+  const speciesIdSet = new Set(r.species.map((s) => s.id));
+  const habitats = r.ecology.habitats ?? [];
+  check(new Set(habitats.map((h) => h.id)).size === habitats.length, () =>
+    "ecology.habitats ids must be unique");
+  for (const habitat of habitats) {
+    check(habitat.harbors.length > 0, () => `${habitat.id}: harbors must not be empty`);
+    check(habitat.favoredDayParts.length > 0, () => `${habitat.id}: favoredDayParts must not be empty`);
+    for (const hid of habitat.harbors) {
+      check(harborIdSet.has(hid), () => `${habitat.id}: unknown harbor '${hid}'`);
+    }
+    for (const part of habitat.favoredDayParts) {
+      check(ecologyPartIds.has(part), () => `${habitat.id}: unknown day part '${part}'`);
+    }
+    for (const [sp, mult] of Object.entries(habitat.speciesWeightMultPermille ?? {})) {
+      check(speciesIdSet.has(sp), () => `${habitat.id}: unknown species '${sp}'`);
+      check(mult >= 1, () => `${habitat.id}: speciesWeightMultPermille.${sp} must be >= 1`);
+    }
+  }
   check(r.trophies.sizeMinPermille <= r.trophies.sizeMaxPermille, () =>
     "trophies: sizeMinPermille must be <= sizeMaxPermille");
   check(r.trophies.sets.length > 0, () => "trophies.sets must not be empty");
@@ -1269,6 +1371,72 @@ export function validateContent(p: ContentPack): string[] {
     }
     check(sch.wageMultPermille >= 1, () => `${sch.id}: wageMultPermille must be >= 1`);
   }
+  const rivalsCat = r.rivalMarkets;
+  check(!!rivalsCat, () => "rivalMarkets is required");
+  check(rivalsCat.tickInterval >= 1, () => "rivalMarkets.tickInterval must be >= 1");
+  check(rivalsCat.emptyStockSiphonChancePermille >= 0 && rivalsCat.emptyStockSiphonChancePermille <= 1000, () =>
+    "rivalMarkets.emptyStockSiphonChancePermille must be 0..1000");
+  check(rivalsCat.lowRepSiphonBonusPermille >= 0 && rivalsCat.lowRepSiphonBonusPermille <= 1000, () =>
+    "rivalMarkets.lowRepSiphonBonusPermille must be 0..1000");
+  check(rivalsCat.minReputationBandToResist >= 0, () =>
+    "rivalMarkets.minReputationBandToResist must be >= 0");
+  check(rivalsCat.wellStockedUnits >= 1, () => "rivalMarkets.wellStockedUnits must be >= 1");
+  check(rivalsCat.pressureSpawnMultPermille >= 1, () =>
+    "rivalMarkets.pressureSpawnMultPermille must be >= 1");
+  check(Array.isArray(rivalsCat.rivals) && rivalsCat.rivals.length > 0, () =>
+    "rivalMarkets.rivals must not be empty");
+  check(new Set(rivalsCat.rivals.map((rv) => rv.id)).size === rivalsCat.rivals.length, () =>
+    "rivalMarkets.rivals ids must be unique");
+  const harborIdsForRivals = new Set(r.harbors.map((h) => h.id));
+  const productIdsForRivals = new Set(r.products.map((p) => p.id));
+  for (const rival of rivalsCat.rivals) {
+    check(rival.id.startsWith("rival."), () => `${rival.id}: id must start with 'rival.'`);
+    check(rival.harbors.length > 0, () => `${rival.id}: harbors must not be empty`);
+    for (const hid of rival.harbors) {
+      check(harborIdsForRivals.has(hid), () => `${rival.id}: unknown harbor '${hid}'`);
+    }
+    check(rival.aggressionPermille >= 1 && rival.aggressionPermille <= 1000, () =>
+      `${rival.id}: aggressionPermille must be 1..1000`);
+    check(rival.specialtyProducts.length > 0, () => `${rival.id}: specialtyProducts must not be empty`);
+    for (const pid of rival.specialtyProducts) {
+      check(productIdsForRivals.has(pid), () => `${rival.id}: unknown product '${pid}'`);
+    }
+    check(rival.undercutPriceMultPermille >= 1 && rival.undercutPriceMultPermille <= 1000, () =>
+      `${rival.id}: undercutPriceMultPermille must be 1..1000`);
+    check(rival.activeDayParts.length > 0, () => `${rival.id}: activeDayParts must not be empty`);
+    for (const part of rival.activeDayParts) {
+      check(dayParts.has(part), () => `${rival.id}: unknown day part '${part}'`);
+    }
+  }
+
+  const endgame = r.endgame;
+  check(!!endgame, () => "endgame is required");
+  check(endgame.requiresPrestigeCount >= 0, () => "endgame.requiresPrestigeCount must be >= 0");
+  check(Array.isArray(endgame.tiers) && endgame.tiers.length > 0, () =>
+    "endgame.tiers must not be empty");
+  check(new Set(endgame.tiers.map((t) => t.id)).size === endgame.tiers.length, () =>
+    "endgame.tiers ids must be unique");
+  for (const tier of endgame.tiers) {
+    check(tier.id.startsWith("endgame.tier."), () => `${tier.id}: id must start with 'endgame.tier.'`);
+    check(tier.requiresPrestigeCount >= 0, () => `${tier.id}: requiresPrestigeCount must be >= 0`);
+    check(tier.requiresRivalBeats >= 0, () => `${tier.id}: requiresRivalBeats must be >= 0`);
+    check(tier.requiresChallenges >= 0, () => `${tier.id}: requiresChallenges must be >= 0`);
+    check(tier.catchSpeedPermille >= 1, () => `${tier.id}: catchSpeedPermille must be >= 1`);
+    check(tier.priceBonusPermille >= 1, () => `${tier.id}: priceBonusPermille must be >= 1`);
+    check(tier.coins >= 0, () => `${tier.id}: coins must be >= 0`);
+  }
+  check(Array.isArray(endgame.challenges) && endgame.challenges.length > 0, () =>
+    "endgame.challenges must not be empty");
+  check(new Set(endgame.challenges.map((c) => c.id)).size === endgame.challenges.length, () =>
+    "endgame.challenges ids must be unique");
+  for (const ch of endgame.challenges) {
+    check(ch.id.startsWith("endgame.challenge."), () =>
+      `${ch.id}: id must start with 'endgame.challenge.'`);
+    check(ch.stat.startsWith("stat."), () => `${ch.id}: stat must start with 'stat.'`);
+    check(ch.atLeast >= 1, () => `${ch.id}: atLeast must be >= 1`);
+    check(ch.rewardCoins >= 0, () => `${ch.id}: rewardCoins must be >= 0`);
+  }
+
   const rep = r.reputation;
   check(!!rep, () => "reputation is required");
   check(rep.minSample >= 1, () => "reputation.minSample must be >= 1");

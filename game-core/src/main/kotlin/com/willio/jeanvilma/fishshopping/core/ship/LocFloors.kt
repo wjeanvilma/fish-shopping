@@ -1,16 +1,16 @@
 package com.willio.jeanvilma.fishshopping.core.ship
 
 /**
- * Finish 2.0 Phase 6 → Phase 30 — product LOC floors from
- * `shared/ship/loc-floors.json`. Phase 30 enforces freeze anti-regression
- * floors; plan targets are retained without padding.
+ * Finish 2.0 Phase 6 → Finish 3.0 Phase 30 — product LOC floors from
+ * `shared/ship/loc-floors.json`. Phase 30 enforces Finish 3.0 freeze
+ * anti-regression floors; plan targets are retained without padding.
  */
 object LocFloors {
     const val PHASE = 6
     const val PLAN = "30_finish_2.0"
     const val SCHEMA = "fish.ship.loc_floors.v1"
     const val CATALOG = "shared/ship/loc-floors.json"
-    const val SCHEMA_VERSION = 23
+    const val SCHEMA_VERSION = 24
     const val METRIC_UNIT = "physical_lines"
     const val ENFORCE_FLOORS = true
     const val ENFORCE_AT_PHASE = 30
@@ -20,13 +20,13 @@ object LocFloors {
     const val APP_ROOT = "app/src/main"
     const val WEB_SRC_ROOT = "web/src"
 
-    /** Freeze anti-regression floors (Phase 30). */
-    const val GAME_CORE_FLOOR = 16_000
-    const val APP_FLOOR = 10_000
-    const val WEB_SRC_FLOOR = 24_000
-    const val PRODUCT_TOTAL_FLOOR = 50_000
+    /** Finish 3.0 freeze anti-regression floors (Phase 30). */
+    const val GAME_CORE_FLOOR = 20_900
+    const val APP_FLOOR = 13_100
+    const val WEB_SRC_FLOOR = 30_200
+    const val PRODUCT_TOTAL_FLOOR = 64_200
 
-    /** Original Finish 2.0 plan targets (retained, not padded). */
+    /** Original Finish 2.0 / 3.0 plan targets (retained, not padded). */
     const val GAME_CORE_PLAN_TARGET = 25_000
     const val APP_PLAN_TARGET = 16_000
     const val WEB_SRC_PLAN_TARGET = 38_000

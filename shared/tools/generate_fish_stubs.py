@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Phase 13 — stylized species / product GLBs for every content-pack asset path.
-Finish 2.0 Phase 20 — authored multi-part FishArt_* meshes for top species
-(shared/tools/fish_themes.py) while keeping the path contract.
+Finish 2.0 Phase 20 + Finish 3.0 Phase 9 — authored multi-part FishArt_* meshes
+for all species (shared/tools/fish_themes.py) while keeping the path contract.
 
 Keeps the path contract (`models/fish_*.glb`, `models/product_*.glb`). Clients load
 these as standard glTF 2.0 (Three.js GLTFLoader / Filament AssetLoader).
@@ -61,6 +61,14 @@ FISH_COLORS = [
     ("coral", "#E07070"), ("lagoon", "#2FA8A0"), ("tropic", "#F0A040"),
     ("gale", "#5A7A98"), ("squall", "#4A6080"), ("thunder", "#6A5ACD"),
     ("cinder", "#C06040"), ("ash", "#8A8A8A"), ("magma", "#E04020"),
+    ("mangrove", "#C87840"), ("glass", "#C8E0E8"), ("shear", "#5A7088"),
+    ("foam", "#A8C8D8"), ("slag", "#A06040"), ("kiln", "#C07050"),
+    ("drift", "#B0D0E0"), ("rime", "#98B8C8"), ("silk", "#E0A050"),
+    ("parade", "#4A90A8"), ("veil", "#8A9BB0"), ("dusk", "#6A5080"),
+    ("basalt", "#5A5858"), ("amberjack", "#E0A050"), ("scad", "#4A90A8"),
+    ("skate", "#8A9BB0"), ("cuttle", "#6A5080"), ("gurnard", "#5A5858"),
+    ("goby", "#C8E0E8"), ("drum", "#5A7088"), ("loach", "#A06040"),
+    ("icefish", "#B0D0E0"), ("bream", "#98B8C8"),
 ]
 DEFAULT_FISH = "#7FA6B8"
 
@@ -93,6 +101,12 @@ PRODUCT_COLORS = {
     "cured_fillet": "#B06038",
     "dried_strip": "#A07040",
     "kiln_carton": "#986040",
+    "pressed_fillet": "#C8A070",
+    "fish_cake": "#D4B080",
+    "press_carton": "#B09068",
+    "pickled_fillet": "#70A878",
+    "relish_jar": "#88B060",
+    "pickle_carton": "#609868",
 }
 DEFAULT_PRODUCT = "#F2B9A0"
 

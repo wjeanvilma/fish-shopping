@@ -35,7 +35,7 @@ function readJson(path: string): any {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
-function validate(): string[] {
+async function validate(): Promise<string[]> {
   const errors: string[] = [];
   const catalog = readJson(resolve(root, "shared/ship/web-checkout-api.json"));
   const fixture = readJson(resolve(root, "shared/fixtures/parity-web-checkout-api.json"));
@@ -55,7 +55,7 @@ function validate(): string[] {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (WEB_CHECKOUT_API_PHASE !== 25) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
   if (catalog.checkoutApiMarker !== WEB_CHECKOUT_API_MARKER) errors.push("marker mismatch");
   if (fixture.checkoutApiMarker !== WEB_CHECKOUT_API_MARKER) errors.push("fixture marker mismatch");
@@ -119,7 +119,7 @@ function validate(): string[] {
 
   // Handler contract smoke (in-memory)
   const store = new CheckoutStore();
-  const instant = handleCheckout(
+  const instant = await handleCheckout(
     { webProductId: "fish.full_harbor_unlock", cloudAccountId: null },
     { store, instant: true },
   );
@@ -131,7 +131,7 @@ function validate(): string[] {
     errors.push("purchaseToken must start with stub-");
   }
 
-  const owned = handleCheckout(
+  const owned = await handleCheckout(
     { webProductId: "fish.full_harbor_unlock", cloudAccountId: null },
     { store, instant: true },
   );
@@ -145,7 +145,7 @@ function validate(): string[] {
   }
 
   const sessionStore = new CheckoutStore();
-  const sess = handleCheckout(
+  const sess = await handleCheckout(
     {
       webProductId: "fish.cosmetic.sunset_bunting",
       cloudAccountId: "acct_test",
@@ -166,8 +166,21 @@ function validate(): string[] {
     }
   }
 
-  const bad = handleCheckout({ webProductId: "fish.nope" }, { store: new CheckoutStore(), instant: true });
+  const bad = await handleCheckout({ webProductId: "fish.nope" }, { store: new CheckoutStore(), instant: true });
   if (!("error" in bad) || bad.status !== 400) errors.push("unknown product must 400");
+
+  // Live mode fails closed without secrets (never sandbox while claiming live).
+  const liveMissing = await handleCheckout(
+    { webProductId: "fish.full_harbor_unlock" },
+    {
+      store: new CheckoutStore(),
+      instant: false,
+      env: { CHECKOUT_API_MODE: "live", STRIPE_SECRET_KEY: "" },
+    },
+  );
+  if (!("error" in liveMissing) || liveMissing.status !== 503) {
+    errors.push("live mode without STRIPE_SECRET_KEY must 503");
+  }
 
   if (!webEnv.includes("VITE_BILLING_API_BASE=")) {
     errors.push("web/.env.example missing VITE_BILLING_API_BASE");
@@ -196,7 +209,7 @@ function validate(): string[] {
   if (pin.webCheckoutApi !== "shared/ship/web-checkout-api.json") {
     errors.push("RELEASE_PIN.webCheckoutApi path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
   if (!pkg.scripts?.["checkoutapi:validate"]) {
     errors.push("web/package.json missing checkoutapi:validate");
   }
@@ -220,7 +233,7 @@ function validate(): string[] {
   return errors;
 }
 
-const errors = validate();
+const errors = await validate();
 if (errors.length) {
   console.error("checkoutapi:validate FAILED");
   for (const e of errors) console.error(`  - ${e}`);

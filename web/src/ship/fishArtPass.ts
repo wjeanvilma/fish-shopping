@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 20 — fish art pass catalog
+ * Finish 2.0 Phase 20 + Finish 3.0 Phase 9 — fish art pass catalog
  * (mirrors shared/ship/fish-art-pass.json).
  */
 import catalogJson from "../../../shared/ship/fish-art-pass.json";

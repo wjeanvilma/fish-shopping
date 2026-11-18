@@ -18,7 +18,6 @@ import com.willio.jeanvilma.fishshopping.billing.PendingEntitlementLedger
 import com.willio.jeanvilma.fishshopping.billing.PurchaseOutcome
 import com.willio.jeanvilma.fishshopping.billing.RestoredEntitlement
 import com.willio.jeanvilma.fishshopping.core.lifecycle.AndroidDeviceLifecycle
-import com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem
 import com.willio.jeanvilma.fishshopping.core.progression.EntitlementReconcile
 import com.willio.jeanvilma.fishshopping.cloud.CloudSyncCoordinator
 import com.willio.jeanvilma.fishshopping.core.content.BalanceExport
@@ -33,8 +32,13 @@ import com.willio.jeanvilma.fishshopping.core.sim.Command
 import com.willio.jeanvilma.fishshopping.core.sim.FixedStepClock
 import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
 import com.willio.jeanvilma.fishshopping.core.sim.GameState
-import com.willio.jeanvilma.fishshopping.core.sim.OfflinePolicy
 import com.willio.jeanvilma.fishshopping.core.sim.OfflineReport
+import com.willio.jeanvilma.fishshopping.core.deeplink.DeepLinkRoutes
+import com.willio.jeanvilma.fishshopping.core.shell.ShellPanelId
+import com.willio.jeanvilma.fishshopping.core.shell.ShellPanelController
+import com.willio.jeanvilma.fishshopping.core.shell.ShellModalPolicy
+import com.willio.jeanvilma.fishshopping.core.shell.ShellHudPolicy
+import com.willio.jeanvilma.fishshopping.core.shell.OfflineShell
 import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import com.willio.jeanvilma.fishshopping.core.sim.Simulation
@@ -44,6 +48,7 @@ import com.willio.jeanvilma.fishshopping.core.sim.view
 import com.willio.jeanvilma.fishshopping.persistence.GameSettings
 import com.willio.jeanvilma.fishshopping.persistence.JoystickSide
 import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
+import com.willio.jeanvilma.fishshopping.persistence.ThemePreference
 import com.willio.jeanvilma.fishshopping.persistence.SettingsStore
 import com.willio.jeanvilma.fishshopping.persistence.SnapshotStore
 import com.willio.jeanvilma.fishshopping.render.FlyingTransferCue
@@ -56,8 +61,14 @@ import com.willio.jeanvilma.fishshopping.render.resolveContractDoneBurst
 import com.willio.jeanvilma.fishshopping.render.resolveFestivalBurst
 import com.willio.jeanvilma.fishshopping.render.resolveFlyingTransfer
 import com.willio.jeanvilma.fishshopping.render.resolveGoalClaimBurst
+import com.willio.jeanvilma.fishshopping.render.resolveHarborTravelBurst
+import com.willio.jeanvilma.fishshopping.render.resolveHireBurst
+import com.willio.jeanvilma.fishshopping.render.resolveLoanBurst
 import com.willio.jeanvilma.fishshopping.render.resolveMachineDoneBurst
 import com.willio.jeanvilma.fishshopping.render.resolvePayBurst
+import com.willio.jeanvilma.fishshopping.render.resolvePrestigeBurst
+import com.willio.jeanvilma.fishshopping.render.resolveRivalBeatBurst
+import com.willio.jeanvilma.fishshopping.render.resolveTrophySetBurst
 import com.willio.jeanvilma.fishshopping.ui.hud.TapTarget
 import com.willio.jeanvilma.fishshopping.ui.hud.stickFromTapTarget
 import kotlin.math.hypot
@@ -203,6 +214,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private var content: ContentPack? = null
     private var sim: Simulation? = null
     private var booting = false
+    /** Finish 3.0 Phase 20 — deep link queued until Ready after boot. */
+    private var pendingDeepLink: DeepLinkRoutes.Intent? = null
     @Volatile
     private var settings: GameSettings = settingsStore.load()
     private var allowSaving = true
@@ -210,30 +223,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private var rotateOnNextSave = true
     private var lastHudPublishNanos = 0L
 
-    @Volatile
-    private var upgradesOpen = false
-    @Volatile
-    private var staffOpen = false
-    @Volatile
-    private var questsOpen = false
-    @Volatile
-    private var contractsOpen = false
-    @Volatile
-    private var mapOpen = false
-    @Volatile
-    private var warehouseOpen = false
-    @Volatile
-    private var speciesBookOpen = false
-    @Volatile
-    private var dashboardOpen = false
-    @Volatile
-    private var pauseOpen = false
-    @Volatile
-    private var settingsOpen = false
-    @Volatile
-    private var bagOpen = false
-    @Volatile
-    private var stationOpen = false
+    private val panels = ShellPanelController()
     private var lastMove = Command.Move(0, 0)
     private var loopJob: Job? = null
     /** Wall clock of the last checkpoint; used for offline catch-up on resume/load. */
@@ -252,9 +242,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     @Volatile
     private var stickActive = false
 
-    private val panelOpen get() = upgradesOpen || staffOpen || questsOpen || contractsOpen || mapOpen
-        || warehouseOpen || speciesBookOpen || dashboardOpen || pauseOpen || settingsOpen || bagOpen || stationOpen
-        || pendingOfflineReport != null
+    private val panelOpen get() = ShellModalPolicy.blocksWorldInput(
+        panels.snapshot(),
+        pendingOfflineReport != null,
+    )
 
     /** Phase 25: flush offline cloud queue when connectivity returns (online_event). */
     private val connectivityManager =
@@ -291,6 +282,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             settings = settingsStore.load()
             applyAudioSettings()
             applyAnalyticsConsent()
+            syncDailyGoalReminders()
             publishTitle(store.readCandidates().isNotEmpty())
         } catch (e: NewerSaveException) {
             allowSaving = false
@@ -466,6 +458,55 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         latestView = sim?.view()
         publish(force = true)
         resume()
+        flushPendingDeepLink()
+    }
+
+    /**
+     * Finish 3.0 Phase 20 — apply App Link / custom-scheme intent.
+     * Queues until Ready; soft auto-continues from Title when a save exists.
+     */
+    fun applyDeepLink(intent: DeepLinkRoutes.Intent) {
+        if (intent.isEmpty) return
+        if (_ui.value is GameUiState.Ready && sim != null) {
+            viewModelScope.launch(simDispatcher) { consumeDeepLink(intent) }
+            return
+        }
+        pendingDeepLink = intent
+        val title = _ui.value as? GameUiState.Title
+        if (title != null &&
+            title.hasSave &&
+            title.cloudConflict == null &&
+            title.localRecovery == null &&
+            !booting
+        ) {
+            continueGame()
+        }
+    }
+
+    private fun flushPendingDeepLink() {
+        val pending = pendingDeepLink ?: return
+        pendingDeepLink = null
+        if (!pending.isEmpty) consumeDeepLink(pending)
+    }
+
+    private fun consumeDeepLink(intent: DeepLinkRoutes.Intent) {
+        when (intent.panel) {
+            ShellPanelId.QUESTS -> setQuestsOpen(true)
+            ShellPanelId.CONTRACTS -> setContractsOpen(true)
+            ShellPanelId.STAFF -> setStaffOpen(true)
+            ShellPanelId.MAP -> setMapOpen(true)
+            ShellPanelId.UPGRADES -> setUpgradesOpen(true)
+            ShellPanelId.DASHBOARD -> setDashboardOpen(true)
+            ShellPanelId.SETTINGS -> setSettingsOpen(true)
+            ShellPanelId.SPECIES_BOOK -> setSpeciesBookOpen(true)
+            ShellPanelId.WAREHOUSE -> setWarehouseOpen(true)
+            ShellPanelId.BAG -> setBagOpen(true)
+            ShellPanelId.STATION -> setStationOpen(true)
+            ShellPanelId.PAUSE -> setPauseOpen(true)
+            null -> Unit
+        }
+        val harbor = intent.harborId?.trim().orEmpty()
+        if (harbor.isNotEmpty()) travelToHarbor(harbor)
     }
 
     private fun publishTitle(hasSave: Boolean) {
@@ -475,6 +516,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             localRecovery = localRecoveryView,
             settings = settings,
         )
+        // Finish 3.0 Phase 20 — App Link may arrive during Loading; continue once Title is up.
+        if (pendingDeepLink != null &&
+            hasSave &&
+            cloudConflictView == null &&
+            localRecoveryView == null &&
+            !booting
+        ) {
+            continueGame()
+        }
     }
 
     /** Block until saves queued before this call have been written. */
@@ -618,15 +668,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
         pushWallClock(nowEpochMs)
         if (report != null) {
-            val enriched = report.copy(
-                journalLines = DailyGoalsSystem.journalLines(s.content, s.state, report),
-            )
-            if (OfflinePolicy.shouldShowSummary(s.content, enriched)) {
-                pendingOfflineReport = enriched
-                AnalyticsBus.shared.onOfflineClaimed(enriched)
-            } else {
-                pendingOfflineReport = null
-            }
+            val pending = OfflineShell.decidePendingReport(s.content, s.state, report)
+            pendingOfflineReport = pending
+            if (pending != null) AnalyticsBus.shared.onOfflineClaimed(pending)
         }
         latestView = s.view()
     }
@@ -644,7 +688,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun claimDailyGoal(objectiveId: String) {
         commands += Command.ClaimDailyGoal(objectiveId, UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
@@ -690,80 +734,40 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun setUpgradesOpen(open: Boolean) = setPanelOpen(Panel.UPGRADES, open)
-    fun setStaffOpen(open: Boolean) = setPanelOpen(Panel.STAFF, open)
+    fun setUpgradesOpen(open: Boolean) = setPanelOpen(ShellPanelId.UPGRADES, open)
+    fun setStaffOpen(open: Boolean) = setPanelOpen(ShellPanelId.STAFF, open)
     fun setQuestsOpen(open: Boolean) {
         if (open) syncWallClock(System.currentTimeMillis())
-        setPanelOpen(Panel.QUESTS, open)
+        setPanelOpen(ShellPanelId.QUESTS, open)
     }
-    fun setContractsOpen(open: Boolean) = setPanelOpen(Panel.CONTRACTS, open)
-    fun setMapOpen(open: Boolean) = setPanelOpen(Panel.MAP, open)
-    fun setWarehouseOpen(open: Boolean) = setPanelOpen(Panel.WAREHOUSE, open)
-    fun setSpeciesBookOpen(open: Boolean) = setPanelOpen(Panel.SPECIES_BOOK, open)
-    fun setDashboardOpen(open: Boolean) = setPanelOpen(Panel.DASHBOARD, open)
-    fun setPauseOpen(open: Boolean) = setPanelOpen(Panel.PAUSE, open)
-    fun setSettingsOpen(open: Boolean) = setPanelOpen(Panel.SETTINGS, open)
-    fun setBagOpen(open: Boolean) = setPanelOpen(Panel.BAG, open)
-    fun setStationOpen(open: Boolean) = setPanelOpen(Panel.STATION, open)
+    fun setContractsOpen(open: Boolean) = setPanelOpen(ShellPanelId.CONTRACTS, open)
+    fun setMapOpen(open: Boolean) = setPanelOpen(ShellPanelId.MAP, open)
+    fun setWarehouseOpen(open: Boolean) = setPanelOpen(ShellPanelId.WAREHOUSE, open)
+    fun setSpeciesBookOpen(open: Boolean) = setPanelOpen(ShellPanelId.SPECIES_BOOK, open)
+    fun setDashboardOpen(open: Boolean) = setPanelOpen(ShellPanelId.DASHBOARD, open)
+    fun setPauseOpen(open: Boolean) = setPanelOpen(ShellPanelId.PAUSE, open)
+    fun setSettingsOpen(open: Boolean) = setPanelOpen(ShellPanelId.SETTINGS, open)
+    fun setBagOpen(open: Boolean) = setPanelOpen(ShellPanelId.BAG, open)
+    fun setStationOpen(open: Boolean) = setPanelOpen(ShellPanelId.STATION, open)
 
     /** Opening one panel closes the others. Closing only clears that panel. */
-    private fun setPanelOpen(which: Panel, open: Boolean) {
-        if (open) openPanel(which) else closePanel(which)
+    private fun setPanelOpen(which: ShellPanelId, open: Boolean) {
+        if (open) {
+            panels.open(which)
+            tapTarget = null
+            stickActive = false
+            enqueueMove(0f, 0f)
+            // Phase 19: authored UI click when a management panel opens.
+            audio.play(SfxCue.UI)
+        } else {
+            panels.close(which)
+        }
+        syncMusicBed()
         viewModelScope.launch(simDispatcher) { publish(force = true) }
     }
 
-    private fun openPanel(which: Panel) {
-        upgradesOpen = which == Panel.UPGRADES
-        staffOpen = which == Panel.STAFF
-        questsOpen = which == Panel.QUESTS
-        contractsOpen = which == Panel.CONTRACTS
-        mapOpen = which == Panel.MAP
-        warehouseOpen = which == Panel.WAREHOUSE
-        speciesBookOpen = which == Panel.SPECIES_BOOK
-        dashboardOpen = which == Panel.DASHBOARD
-        pauseOpen = which == Panel.PAUSE
-        settingsOpen = which == Panel.SETTINGS
-        bagOpen = which == Panel.BAG
-        stationOpen = which == Panel.STATION
-        tapTarget = null
-        stickActive = false
-        enqueueMove(0f, 0f)
-        // Phase 19: authored UI click when a management panel opens.
-        audio.play(SfxCue.UI)
-        syncMusicBed()
-    }
-
-    private fun closePanel(which: Panel) {
-        when (which) {
-            Panel.UPGRADES -> upgradesOpen = false
-            Panel.STAFF -> staffOpen = false
-            Panel.QUESTS -> questsOpen = false
-            Panel.CONTRACTS -> contractsOpen = false
-            Panel.MAP -> mapOpen = false
-            Panel.WAREHOUSE -> warehouseOpen = false
-            Panel.SPECIES_BOOK -> speciesBookOpen = false
-            Panel.DASHBOARD -> dashboardOpen = false
-            Panel.PAUSE -> pauseOpen = false
-            Panel.SETTINGS -> settingsOpen = false
-            Panel.BAG -> bagOpen = false
-            Panel.STATION -> stationOpen = false
-        }
-        syncMusicBed()
-    }
-
     private fun closeAllPanels() {
-        upgradesOpen = false
-        staffOpen = false
-        questsOpen = false
-        contractsOpen = false
-        mapOpen = false
-        warehouseOpen = false
-        speciesBookOpen = false
-        dashboardOpen = false
-        pauseOpen = false
-        settingsOpen = false
-        bagOpen = false
-        stationOpen = false
+        panels.closeAll()
         syncMusicBed()
     }
 
@@ -788,6 +792,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         analyticsConsentDecided: Boolean = settings.analyticsConsentDecided,
         equippedCosmeticId: String? = settings.equippedCosmeticId,
         locale: String = settings.locale,
+        themePreference: ThemePreference = settings.themePreference,
+        dailyGoalRemindersEnabled: Boolean = settings.dailyGoalRemindersEnabled,
     ) {
         var next = GameSettings(
             muted = muted,
@@ -811,6 +817,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             cloudRefreshToken = settings.cloudRefreshToken,
             equippedCosmeticId = equippedCosmeticId?.takeIf { it.isNotBlank() },
             locale = com.willio.jeanvilma.fishshopping.core.i18n.UiStrings.resolveLocale(locale),
+            themePreference = themePreference,
+            dailyGoalRemindersEnabled = dailyGoalRemindersEnabled,
         )
         val enablingCloud = next.cloudSyncEnabled && !settings.cloudSyncEnabled
         if (next.cloudSyncEnabled && !cloud.available) {
@@ -826,6 +834,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         applyAudioSettings()
         applyAnalyticsConsent()
         settingsStore.save(next)
+        syncDailyGoalReminders()
         if (enablingCloud) flushCloudOfflineQueue()
         viewModelScope.launch(simDispatcher) {
             if (_ui.value is GameUiState.Title) {
@@ -835,6 +844,19 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 publish(force = true)
             }
         }
+    }
+
+    /** Finish 3.0 Phase 18 — keep local daily-goal reminder alarm in sync with settings + board. */
+    fun syncDailyGoalReminders() {
+        val unclaimed = when (val ui = _ui.value) {
+            is GameUiState.Ready -> ui.view.dailyGoals.count { !it.claimed }
+            else -> 0
+        }
+        com.willio.jeanvilma.fishshopping.push.DailyGoalReminderScheduler.sync(
+            getApplication(),
+            settings.dailyGoalRemindersEnabled,
+            unclaimed,
+        )
     }
 
     /** Phase 25: answer the title consent gate (or Settings toggle). */
@@ -885,13 +907,22 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         syncMusicBed()
     }
 
-    /** Finish 2.0 Phase 21: festival/storm beds; ducking unchanged. */
+    /** Finish 2.0 Phase 21 + Finish 3.0 Phase 23: festival/storm/rival/night beds; ducking unchanged. */
     private fun syncMusicBed() {
         val v = latestView
         val festivalActive = v?.seasonalEvent != null
         val weatherId = v?.weatherId.orEmpty()
         val stormActive = weatherId.contains("rain") || weatherId.contains("gale")
-        audio.syncMusicBedFromPanels(stationOpen, festivalActive, stormActive)
+        val rivalActive = v?.rivalPressureActive == true || (v?.activeRivalIds?.isNotEmpty() == true)
+        val tide = v?.tidePhaseId.orEmpty()
+        val nightActive = tide == "night" || tide == "dusk"
+        audio.syncMusicBedFromPanels(
+            panels.isOpen(ShellPanelId.STATION),
+            festivalActive,
+            stormActive,
+            rivalActive,
+            nightActive,
+        )
     }
 
     /** Whether a remote backend is configured (Firebase keys). Local play never needs this. */
@@ -911,7 +942,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setMachinePaused(stationId: String, paused: Boolean) {
         commands += Command.SetMachinePaused(stationId, paused)
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
@@ -919,7 +950,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     fun purchase(upgradeId: String) {
         commands += Command.PurchaseUpgrade(upgradeId, UUID.randomUUID().toString())
         // Management panels pause the world; advance a single tick so the command commits now.
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
@@ -927,14 +958,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Phase 6: confirm spend while standing on an expansion plot marker. */
     fun buildPlot(plotId: String) {
         commands += Command.BuildPlot(plotId, UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun purchaseDecor(decorId: String) {
         commands += Command.PurchaseDecor(decorId, UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
@@ -1089,119 +1120,119 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun repairMachine(stationId: String) {
         commands += Command.RepairMachine(stationId, UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun takeLoan() {
         commands += Command.TakeLoan(UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun repayLoan() {
         commands += Command.RepayLoan(UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun setCoinGoal(amount: Long) {
         commands += Command.SetCoinGoal(amount)
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun hire(roleId: String) {
         commands += Command.HireWorker(roleId, UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun setWorkerShift(workerId: String, onShift: Boolean) {
         commands += Command.SetWorkerShift(workerId, onShift)
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun assignWorkerGear(workerId: String, upgradeId: String) {
         commands += Command.AssignWorkerGear(workerId, upgradeId)
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun unequipWorkerGear(workerId: String, slotId: String) {
         commands += Command.UnequipWorkerGear(workerId, slotId)
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun acceptContract(offerId: String) {
         commands += Command.AcceptContract(offerId, UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun deliverContract(contractId: String) {
         commands += Command.DeliverContract(contractId, UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun travelToHarbor(harborId: String) {
         commands += Command.TravelToHarbor(harborId, UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun buyBait(baitId: String) {
         commands += Command.BuyBait(baitId, UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun selectBait(baitId: String?) {
         commands += Command.SelectBait(baitId)
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun selectTechnique(techniqueId: String?) {
         commands += Command.SelectTechnique(techniqueId)
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun trainWorkerBranch(workerId: String, branchId: String) {
         commands += Command.TrainWorkerBranch(workerId, branchId, UUID.randomUUID().toString())
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun selectWorkerBranch(workerId: String, branchId: String?) {
         commands += Command.SelectWorkerBranch(workerId, branchId)
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
 
     fun setWorkerSchedule(workerId: String, scheduleId: String?) {
         commands += Command.SetWorkerSchedule(workerId, scheduleId)
-        if (panelOpen && pendingOfflineReport == null) viewModelScope.launch(simDispatcher) {
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
             sim?.let { step(it); publish(force = true) }
         }
     }
@@ -1214,7 +1245,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Cycle Auto → each recipe → Auto for a station (no tick advance). */
     fun cycleStationRecipe(stationId: String) {
         if (pendingOfflineReport != null) return
-        if (panelOpen && !stationOpen) return
+        if (panelOpen && !panels.isOpen(ShellPanelId.STATION)) return
         viewModelScope.launch(simDispatcher) {
             val s = sim ?: return@launch
             val m = s.state.machines.firstOrNull { it.stationId == stationId } ?: return@launch
@@ -1244,6 +1275,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         var festivalBurst = false
         var contractDoneBurst = false
         var goalClaimBurst = false
+        var rivalBeatBurst = false
+        var prestigeBurst = false
+        var trophySetBurst = false
+        var harborTravelBurst = false
+        var hireBurst = false
+        var loanBurst = false
         for (e in events) {
             sfxFromEvent(e)?.let { audio.play(it) }
             when (e) {
@@ -1286,7 +1323,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 is GameEvent.TrophySetCompleted -> {
                     val setName = s.content.trophySetsById[e.setId]?.name ?: e.setId
                     _messages.tryEmit("Gallery complete: $setName")
-                    celebrate = true
+                    trophySetBurst = true
                     transaction = true
                 }
                 is GameEvent.CoinGoalReached -> {
@@ -1327,6 +1364,25 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 is GameEvent.PurchaseRejected -> { _messages.tryEmit(e.reason); transaction = true }
                 is GameEvent.WorkerHired -> if (!e.replayed) {
                     _messages.tryEmit("Hired ${s.content.workersById[e.roleId]?.name ?: e.roleId}")
+                    hireBurst = true
+                    transaction = true
+                }
+                is GameEvent.RivalMarketOpened -> {
+                    _messages.tryEmit("Rival open: ${e.name}")
+                    transaction = true
+                }
+                is GameEvent.RivalSaleStolen -> {
+                    _messages.tryEmit("Rival stole a sale")
+                    transaction = true
+                }
+                is GameEvent.RivalBeaten -> {
+                    _messages.tryEmit("Rival beaten!")
+                    rivalBeatBurst = true
+                    transaction = true
+                }
+                is GameEvent.LoanTaken -> if (!e.replayed) {
+                    _messages.tryEmit("Loan +${e.principal}")
+                    loanBurst = true
                     transaction = true
                 }
                 is GameEvent.WorkerLeveledUp -> {
@@ -1358,6 +1414,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                         if (e.coinsRewarded > 0) append(" (+${e.coinsRewarded})")
                     }
                     _messages.tryEmit(tip)
+                    prestigeBurst = true
                     transaction = true
                 }
                 is GameEvent.AchievementUnlocked -> {
@@ -1415,10 +1472,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 is GameEvent.HarborTraveled -> if (!e.replayed) {
                     val name = s.content.harborsById[e.toHarborId]?.name ?: e.toHarborId
                     _messages.tryEmit("Traveled to $name")
-                    mapOpen = false
+                    panels.close(ShellPanelId.MAP)
                     flyingTransfers.clear()
                     worldBursts.clear()
                     pendingShakes.clear()
+                    harborTravelBurst = true
                     transaction = true
                 }
                 is GameEvent.TravelRejected -> { _messages.tryEmit(e.reason); transaction = true }
@@ -1452,7 +1510,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 worldBursts.offer(resolveCelebrateBurst(view))
                 pendingShakes.offer(ShakeKind.CELEBRATE)
             }
-            // Finish 2.0 Phase 22 — weather/festival/achievement visual juice (shared burst pool).
+            // Finish 2.0 Phase 22 + Finish 3.0 Phase 24 visual juice (shared burst pool).
             if (achievementBurst) {
                 worldBursts.offer(resolveAchievementBurst(view))
                 pendingShakes.offer(ShakeKind.ACHIEVEMENT)
@@ -1463,6 +1521,18 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             }
             if (contractDoneBurst) worldBursts.offer(resolveContractDoneBurst(view))
             if (goalClaimBurst) worldBursts.offer(resolveGoalClaimBurst(view))
+            if (rivalBeatBurst) {
+                worldBursts.offer(resolveRivalBeatBurst(view))
+                pendingShakes.offer(ShakeKind.RIVAL_BEAT)
+            }
+            if (prestigeBurst) {
+                worldBursts.offer(resolvePrestigeBurst(view))
+                pendingShakes.offer(ShakeKind.PRESTIGE)
+            }
+            if (trophySetBurst) worldBursts.offer(resolveTrophySetBurst(view))
+            if (harborTravelBurst) worldBursts.offer(resolveHarborTravelBurst(view))
+            if (hireBurst) worldBursts.offer(resolveHireBurst(view))
+            if (loanBurst) worldBursts.offer(resolveLoanBurst(view))
         }
         if (transaction) publish(force = true)
     }
@@ -1512,26 +1582,33 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private fun publish(force: Boolean) {
         val s = sim ?: return
         val now = System.nanoTime()
-        if (!force && now - lastHudPublishNanos < HUD_PUBLISH_INTERVAL_NANOS) return
+        if (!force && now - lastHudPublishNanos < ShellHudPolicy.PUBLISH_INTERVAL_NANOS) return
         lastHudPublishNanos = now
         val v = latestView ?: s.view().also { latestView = it }
+        val flags = panels.snapshot()
         _ui.value = GameUiState.Ready(
             view = v,
-            upgradesOpen = upgradesOpen,
-            staffOpen = staffOpen,
-            questsOpen = questsOpen,
-            contractsOpen = contractsOpen,
-            mapOpen = mapOpen,
-            warehouseOpen = warehouseOpen,
-            speciesBookOpen = speciesBookOpen,
-            dashboardOpen = dashboardOpen,
-            pauseOpen = pauseOpen,
-            settingsOpen = settingsOpen,
-            bagOpen = bagOpen,
-            stationOpen = stationOpen,
+            upgradesOpen = flags.upgradesOpen,
+            staffOpen = flags.staffOpen,
+            questsOpen = flags.questsOpen,
+            contractsOpen = flags.contractsOpen,
+            mapOpen = flags.mapOpen,
+            warehouseOpen = flags.warehouseOpen,
+            speciesBookOpen = flags.speciesBookOpen,
+            dashboardOpen = flags.dashboardOpen,
+            pauseOpen = flags.pauseOpen,
+            settingsOpen = flags.settingsOpen,
+            bagOpen = flags.bagOpen,
+            stationOpen = flags.stationOpen,
             offlineReport = pendingOfflineReport,
             settings = settings,
         )
+        if (settings.dailyGoalRemindersEnabled) {
+            com.willio.jeanvilma.fishshopping.push.DailyGoalReminderScheduler.updateUnclaimed(
+                getApplication(),
+                v.dailyGoals.count { !it.claimed },
+            )
+        }
     }
 
     override fun onCleared() {
@@ -1546,15 +1623,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         ioExecutor.shutdown()
     }
 
-    private enum class Panel {
-        UPGRADES, STAFF, QUESTS, CONTRACTS, MAP, WAREHOUSE, SPECIES_BOOK, DASHBOARD, PAUSE, SETTINGS, BAG, STATION,
-    }
 
     private companion object {
         const val TAG = "FishShopping"
         const val CONTENT_ASSET = "content-pack.json"
         const val START_HARBOR = "harbor.sunrise_pier"
         const val FRAME_DELAY_MS = 8L
-        const val HUD_PUBLISH_INTERVAL_NANOS = 100_000_000L
     }
 }

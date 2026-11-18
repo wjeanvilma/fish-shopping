@@ -1,0 +1,290 @@
+{
+  "phase": 1,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.finish3_kickoff.v1",
+  "description": "Finish 3.0 Phase 1 \u2014 kickoff + gap scoreboard from frozen 2.0.0. Pins Finish 2.0 as finished, locks measured gaps, and opens the 30-phase path to content 3.0.0 / \u226580k product LOC without padding.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "kickoffMarker": "authored-finish-3.0-phase-1",
+  "priorPlan": {
+    "id": "30_finish_2.0",
+    "status": "finished",
+    "freezeCatalog": "shared/ship/freeze-2.0.0.json",
+    "releaseTag": "v2.0.0",
+    "contentVersion": "2.0.0",
+    "schemaVersion": 23
+  },
+  "endState": {
+    "contentVersion": "3.0.0",
+    "schemaVersionMin": 24,
+    "releaseTag": "v3.0.0",
+    "versionName": "3.0.0",
+    "productLocMin": 80000,
+    "gameCoreLocMin": 25000,
+    "appLocMin": 16000,
+    "webSrcLocMin": 38000
+  },
+  "baseline": {
+    "measuredAtPhase": 30,
+    "contentVersion": "3.0.0",
+    "schemaVersion": 24,
+    "gameCoreLoc": 20962,
+    "appLoc": 13169,
+    "webSrcLoc": 30357,
+    "productLoc": 64488,
+    "harbors": 8,
+    "species": 75,
+    "machines": 10,
+    "quests": 30,
+    "authoredHarbors": 8,
+    "authoredFish": 50,
+    "i18nLocales": 3,
+    "i18nUiKeys": 248,
+    "androidUiStringsCalls": 214,
+    "androidTextLiterals": 0,
+    "staffComingSoonReasons": 0
+  },
+  "gaps": {
+    "authoredHarborsRemaining": 0,
+    "authoredFishRemaining": 0,
+    "productLocRemaining": 15512,
+    "androidHudDecomposition": false,
+    "webHudDecomposition": false,
+    "androidI18nIncomplete": false,
+    "contentI18nMissing": false,
+    "thirdLocaleMissing": false,
+    "darkThemeMissing": false,
+    "staffComingSoonPresent": false,
+    "stripeLiveCheckoutPartial": false,
+    "pwaMissing": false,
+    "composeUiTestsMissing": false,
+    "webE2eMissing": false,
+    "pushRemindersMissing": false,
+    "deepLinksMissing": false
+  },
+  "gapTargets": {
+    "authoredHarbors": 8,
+    "authoredFish": 50,
+    "i18nLocales": 3,
+    "i18nUiKeysMin": 120,
+    "androidTextLiteralsMax": 0,
+    "staffComingSoonReasons": 0,
+    "productLoc": 80000,
+    "speciesMin": 75,
+    "machinesMin": 10,
+    "questsMin": 30
+  },
+  "phases": [
+    {
+      "phase": 1,
+      "id": "kickoff",
+      "title": "Kickoff + gap scoreboard",
+      "validate": "finish3:validate"
+    },
+    {
+      "phase": 2,
+      "id": "android-hud-split",
+      "title": "Android HUD panel decomposition",
+      "validate": "androidhud:validate"
+    },
+    {
+      "phase": 3,
+      "id": "web-hud-split",
+      "title": "Web HUD panel decomposition",
+      "validate": "webhud:validate"
+    },
+    {
+      "phase": 4,
+      "id": "shell-controller",
+      "title": "Shared shell controller extraction",
+      "validate": "shellctrl:validate"
+    },
+    {
+      "phase": 5,
+      "id": "android-i18n",
+      "title": "Android i18n completion",
+      "validate": "androidi18n:validate"
+    },
+    {
+      "phase": 6,
+      "id": "content-i18n",
+      "title": "Content i18n + third locale",
+      "validate": "contenti18n:validate"
+    },
+    {
+      "phase": 7,
+      "id": "theme-ds",
+      "title": "Dark theme + design-system components",
+      "validate": "themeds:validate"
+    },
+    {
+      "phase": 8,
+      "id": "harbor-art-2",
+      "title": "Harbor art pass 2 (remaining 5)",
+      "validate": "harborart2:validate"
+    },
+    {
+      "phase": 9,
+      "id": "fish-art-2",
+      "title": "Fish mesh pass 2 (to 50 authored)",
+      "validate": "fishart2:validate"
+    },
+    {
+      "phase": 10,
+      "id": "staff-unlock",
+      "title": "Unlock remaining staff roles",
+      "validate": "staffunlock:validate"
+    },
+    {
+      "phase": 11,
+      "id": "worker-ai-depth",
+      "title": "Worker AI depth for new roles",
+      "validate": "workerai:validate"
+    },
+    {
+      "phase": 12,
+      "id": "species-51-75",
+      "title": "Species 51\u201375 + ecology",
+      "validate": "species5175:validate"
+    },
+    {
+      "phase": 13,
+      "id": "machines-9-10",
+      "title": "Machines 9\u201310 + recipes",
+      "validate": "machines910:validate"
+    },
+    {
+      "phase": 14,
+      "id": "rival-markets",
+      "title": "Rival NPC markets (single-player)",
+      "validate": "rivalmarkets:validate"
+    },
+    {
+      "phase": 15,
+      "id": "schema-24-endgame",
+      "title": "Schema 24 + endgame deepen",
+      "validate": "schema24:validate"
+    },
+    {
+      "phase": 16,
+      "id": "stripe-live",
+      "title": "Live Stripe web checkout",
+      "validate": "stripe:validate"
+    },
+    {
+      "phase": 17,
+      "id": "cloud-qa-2",
+      "title": "Cloud production QA harness 2",
+      "validate": "cloudqa2:validate"
+    },
+    {
+      "phase": 18,
+      "id": "local-push",
+      "title": "Local daily-goal push reminders",
+      "validate": "localpush:validate"
+    },
+    {
+      "phase": 19,
+      "id": "pwa-shell",
+      "title": "Web PWA / service worker shell",
+      "validate": "pwa:validate"
+    },
+    {
+      "phase": 20,
+      "id": "deep-links",
+      "title": "Android App Links + web deep links",
+      "validate": "deeplink:validate"
+    },
+    {
+      "phase": 21,
+      "id": "compose-ui-tests",
+      "title": "Compose UI integration tests",
+      "validate": "composeui:validate"
+    },
+    {
+      "phase": 22,
+      "id": "web-e2e",
+      "title": "Web Playwright E2E smoke",
+      "validate": "webe2e:validate"
+    },
+    {
+      "phase": 23,
+      "id": "audio-pack-3",
+      "title": "SFX/music pack 3",
+      "validate": "audiopack3:validate"
+    },
+    {
+      "phase": 24,
+      "id": "vfx-juice-3",
+      "title": "VFX/juice 3",
+      "validate": "vfx3:validate"
+    },
+    {
+      "phase": 25,
+      "id": "a11y-depth-2",
+      "title": "A11y depth 2",
+      "validate": "a11ydepth2:validate"
+    },
+    {
+      "phase": 26,
+      "id": "remote-analytics",
+      "title": "Opt-in remote analytics sink",
+      "validate": "remoteanalytics:validate"
+    },
+    {
+      "phase": 27,
+      "id": "quests-contracts-3",
+      "title": "Quests/contracts expansion wave",
+      "validate": "quests3:validate"
+    },
+    {
+      "phase": 28,
+      "id": "content-cli-2",
+      "title": "Content authoring CLI expansion",
+      "validate": "contentcli2:validate"
+    },
+    {
+      "phase": 29,
+      "id": "parity-lock-3",
+      "title": "Parity lock 3.0",
+      "validate": "parity3:validate"
+    },
+    {
+      "phase": 30,
+      "id": "freeze-3",
+      "title": "3.0.0 freeze & DoD",
+      "validate": "freeze3:validate"
+    }
+  ],
+  "definitionOfDone": "shared/ship/definition-of-done.json",
+  "locCatalog": "shared/ship/loc-floors.json",
+  "harborArtCatalog": "shared/ship/harbor-art-pass.json",
+  "fishArtCatalog": "shared/ship/fish-art-pass.json",
+  "i18nScaffold": "shared/ship/i18n-scaffold.json",
+  "parityFixture": "shared/fixtures/parity-finish-3.0-kickoff.json",
+  "validateScript": "npm run finish3:validate",
+  "smokeScript": "npm run finish3:smoke",
+  "checklist": [
+    "Finish 2.0 priorPlan marked finished; freeze-2.0.0.json still green",
+    "Kickoff catalog locks live baseline LOC (updated as Finish 3.0 phases land)",
+    "Gap scoreboard lists authored harbors 8/8 + fish 50/50 (closed Phases 8\u20139), product LOC \u219280k",
+    "30 Finish 3.0 phase ids present and ordered 1\u201330",
+    "Kotlin + TS mirrors match catalog; parity fixture marker locked",
+    "listing + RELEASE_PIN + DoD finish3Kickoff wired",
+    "CI runs finish3:validate + finish3:smoke",
+    "Content/version stays 2.0.0 / schema 23 until later Finish 3.0 bumps"
+  ],
+  "preflightGates": [
+    "shared/ship/finish-3.0-kickoff.json",
+    "shared/fixtures/parity-finish-3.0-kickoff.json",
+    "shared/ship/freeze-2.0.0.json",
+    "shared/ship/loc-floors.json",
+    "shared/ship/harbor-art-pass.json",
+    "shared/ship/fish-art-pass.json",
+    "shared/ship/definition-of-done.json",
+    "web/src/ship/finish3Kickoff.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Finish3Kickoff.kt",
+    "web/scripts/validate-finish-3-kickoff.ts",
+    "web/scripts/smoke-finish-3-kickoff.ts"
+  ]
+}

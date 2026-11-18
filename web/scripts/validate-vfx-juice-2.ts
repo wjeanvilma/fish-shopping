@@ -63,7 +63,7 @@ function validate(): string[] {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (VFX_JUICE_2_PHASE !== 22) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
   if (catalog.vfxJuice2Marker !== VFX_JUICE_2_MARKER) errors.push("marker mismatch");
   if (catalog.simHzInvariant !== 20) errors.push("simHzInvariant must be 20");
@@ -147,7 +147,7 @@ function validate(): string[] {
   if (pin.vfxJuice2 !== "shared/ship/vfx-juice-2.json") {
     errors.push("RELEASE_PIN.vfxJuice2 path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
 
   // Presenter + host wiring.
   for (const kind of ["achievement", "festival", "contract_done", "goal_claim"]) {

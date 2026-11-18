@@ -12,6 +12,9 @@ enum class QualityPreset { LOW, MEDIUM, HIGH }
 
 enum class JoystickSide { LEFT, RIGHT }
 
+/** Finish 3.0 Phase 7 — presentation theme preference (not parity save). */
+enum class ThemePreference { SYSTEM, LIGHT, DARK }
+
 data class GameSettings(
     val muted: Boolean = false,
     /** Phase 17/20: music bed gain (0 / 0.35 / 0.7 / 1). */
@@ -51,8 +54,12 @@ data class GameSettings(
     val cloudRefreshToken: String? = null,
     /** Phase 24: equipped harbor banner cosmetic id (presentation-only). */
     val equippedCosmeticId: String? = null,
-    /** Finish 2.0 Phase 23: UI chrome locale (en | es). */
+    /** Finish 2.0 Phase 23 + Finish 3.0 Phase 6: UI/content locale (en | es | pt). */
     val locale: String = UiStrings.DEFAULT_LOCALE,
+    /** Finish 3.0 Phase 7: HUD chrome light/dark/system. */
+    val themePreference: ThemePreference = ThemePreference.SYSTEM,
+    /** Finish 3.0 Phase 18: opt-in local daily-goal push reminders. */
+    val dailyGoalRemindersEnabled: Boolean = false,
 ) {
     companion object {
         val SCALE_OPTIONS = listOf(0.75f, 1f, 1.25f)
@@ -125,6 +132,12 @@ class SettingsStore(context: Context) {
         cloudRefreshToken = prefs.getString(KEY_CLOUD_REFRESH, null),
         equippedCosmeticId = prefs.getString(KEY_EQUIPPED_COSMETIC, null),
         locale = UiStrings.resolveLocale(prefs.getString(KEY_LOCALE, UiStrings.DEFAULT_LOCALE)),
+        themePreference = when (prefs.getString(KEY_THEME, "system")) {
+            "light" -> ThemePreference.LIGHT
+            "dark" -> ThemePreference.DARK
+            else -> ThemePreference.SYSTEM
+        },
+        dailyGoalRemindersEnabled = prefs.getBoolean(KEY_DAILY_REMINDERS, false),
     ).also { UiStrings.setLocale(it.locale) }
 
     fun save(settings: GameSettings) {
@@ -168,6 +181,15 @@ class SettingsStore(context: Context) {
                 val cosmetic = settings.equippedCosmeticId
                 if (cosmetic.isNullOrBlank()) remove(KEY_EQUIPPED_COSMETIC) else putString(KEY_EQUIPPED_COSMETIC, cosmetic)
                 putString(KEY_LOCALE, UiStrings.resolveLocale(settings.locale))
+                putString(
+                    KEY_THEME,
+                    when (settings.themePreference) {
+                        ThemePreference.LIGHT -> "light"
+                        ThemePreference.DARK -> "dark"
+                        ThemePreference.SYSTEM -> "system"
+                    },
+                )
+                putBoolean(KEY_DAILY_REMINDERS, settings.dailyGoalRemindersEnabled)
             }
             .apply()
     }
@@ -195,5 +217,7 @@ class SettingsStore(context: Context) {
         const val KEY_CLOUD_REFRESH = "cloud_refresh_token"
         const val KEY_EQUIPPED_COSMETIC = "equipped_cosmetic_id"
         const val KEY_LOCALE = "locale"
+        const val KEY_THEME = "theme_preference"
+        const val KEY_DAILY_REMINDERS = "daily_goal_reminders_enabled"
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 19 — harbor art pass catalog
+ * Finish 2.0 Phase 19 + Finish 3.0 Phase 8 — harbor art pass catalog
  * (mirrors shared/ship/harbor-art-pass.json).
  */
 import catalogJson from "../../../shared/ship/harbor-art-pass.json";

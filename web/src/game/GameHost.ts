@@ -6,8 +6,7 @@
  */
 import contentJson from "../../../shared/content/content-pack.json";
 import {
-  type Command, type ContentPack, CosmeticsIapSystem, FixedStepClock, FullUnlockSystem, GameState, INPUT_SCALE, NewerSaveError, OfflinePolicy,
-  DailyGoalsSystem,
+  type Command, type ContentPack, CosmeticsIapSystem, FixedStepClock, FullUnlockSystem, GameState, INPUT_SCALE, NewerSaveError,
   type OfflineReport, ProductionSystem, Simulation, type SimView, applyOffline, buildView,
   decodeSnapshotEnvelope, encodeBalanceExport, encodeSnapshot, encodeTelemetry, loadContent,
 } from "../engine";
@@ -27,6 +26,11 @@ import {
   type StoreOwned,
 } from "../billing/entitlementReconcile";
 import { PendingEntitlementLedger } from "../billing/pendingEntitlementLedger";
+import {
+  parseLocation,
+  stripDeepLinkQuery,
+  type DeepLinkIntent,
+} from "../deeplink/deepLinks";
 import { CloudSyncCoordinator } from "../cloud/cloudSyncCoordinator";
 import { peekSnapshot, summaryOf, type CloudConflictOffer, type SyncSource } from "../engine/cloudSync";
 import { CameraRig } from "./cameraRig";
@@ -36,6 +40,7 @@ import { openSaveStore, type SaveStore } from "./saveStore";
 import {
   formatLastSavedLabel,
   applyLocaleFromSettings,
+  applyThemeFromSettings,
   loadSettings,
   saveSettings,
   type GameSettings,
@@ -49,6 +54,13 @@ import {
   type LocalRecoveryView,
 } from "./snapshotChoice";
 import {
+  ShellHudPolicy,
+  ShellModalPolicy,
+  ShellPanelController,
+  type ShellPanelId,
+} from "../shell/shellPanels";
+import { OfflineShell } from "../shell/offlineShell";
+import {
   resolveAchievementBurst,
   resolveCatchBurst,
   resolveCelebrateBurst,
@@ -56,8 +68,14 @@ import {
   resolveFestivalBurst,
   resolveFlyingTransfer,
   resolveGoalClaimBurst,
+  resolveHarborTravelBurst,
+  resolveHireBurst,
+  resolveLoanBurst,
   resolveMachineDoneBurst,
   resolvePayBurst,
+  resolvePrestigeBurst,
+  resolveRivalBeatBurst,
+  resolveTrophySetBurst,
   type FlyingTransferCue,
   type ShakeKind,
   type WorldBurstCue,
@@ -93,22 +111,8 @@ export type HostState =
     }
   | { status: "failed"; message: string };
 
-type PanelId =
-  | "upgrades"
-  | "staff"
-  | "quests"
-  | "contracts"
-  | "map"
-  | "warehouse"
-  | "speciesBook"
-  | "dashboard"
-  | "pause"
-  | "settings"
-  | "bag"
-  | "station";
 
 const START_HARBOR = "harbor.sunrise_pier";
-const HUD_PUBLISH_INTERVAL_MS = 100;
 
 export class GameHost {
   private state: HostState = { status: "loading" };
@@ -122,6 +126,7 @@ export class GameHost {
   private settings: GameSettings = (() => {
     const s = loadSettings();
     applyLocaleFromSettings(s);
+    applyThemeFromSettings(s);
     return s;
   })();
   private readonly audio = new AudioBus();
@@ -130,20 +135,11 @@ export class GameHost {
   private readonly pendingEntitlements = new PendingEntitlementLedger();
   private allowSaving = true;
   private rotateOnNextSave = true;
-  private upgradesOpen = false;
-  private staffOpen = false;
-  private questsOpen = false;
-  private contractsOpen = false;
-  private mapOpen = false;
-  private warehouseOpen = false;
-  private speciesBookOpen = false;
-  private dashboardOpen = false;
-  private pauseOpen = false;
-  private settingsOpen = false;
-  private bagOpen = false;
-  private stationOpen = false;
+  private readonly panels = new ShellPanelController();
   private running = false;
   private booting = false;
+  /** Finish 3.0 Phase 20 — deep link queued until Ready after boot. */
+  private pendingDeepLink: DeepLinkIntent | null = null;
   private lastMove = { x: 0, z: 0 };
   private lastHudPublishMs = 0;
   private saveChain: Promise<void> = Promise.resolve();
@@ -213,13 +209,23 @@ export class GameHost {
     this.syncMusicBed();
   }
 
-  /** Finish 2.0 Phase 21: festival/storm beds; ducking unchanged. */
+  /** Finish 2.0 Phase 21 + Finish 3.0 Phase 23: festival/storm/rival/night beds; ducking unchanged. */
   private syncMusicBed(): void {
     const v = this.latestView;
     const festivalActive = !!v?.seasonalEvent;
     const weatherId = v?.weatherId ?? "";
     const stormActive = weatherId.includes("rain") || weatherId.includes("gale");
-    this.audio.syncMusicBedFromPanels(this.stationOpen, festivalActive, stormActive);
+    const rivalActive =
+      !!v?.rivalPressureActive || (v?.activeRivalIds?.length ?? 0) > 0;
+    const tide = v?.tidePhaseId ?? "";
+    const nightActive = tide === "night" || tide === "dusk";
+    this.audio.syncMusicBedFromPanels(
+      this.panels.isOpen("station"),
+      festivalActive,
+      stormActive,
+      rivalActive,
+      nightActive,
+    );
   }
 
   private applyAnalyticsConsent(): void {
@@ -275,10 +281,17 @@ export class GameHost {
       this.settings = loadSettings();
       this.applyAudioSettings();
       this.applyAnalyticsConsent();
+      this.syncDailyGoalReminders();
       await this.consumeBillingReturnQuery();
+      // Finish 3.0 Phase 20 — capture panel/harbor query/hash before Title.
+      const deep = parseLocation();
+      if (deep.panel || deep.harborId) this.pendingDeepLink = deep;
       const candidates = await this.store.readCandidates();
       if (!this.store.persistent) this.say(STORAGE_UNAVAILABLE_TOAST);
       this.publishTitle(candidates.length > 0);
+      if (this.pendingDeepLink && candidates.length > 0) {
+        await this.continueGame();
+      }
     } catch (e) {
       this.allowSaving = !(e instanceof NewerSaveError);
       this.setState({ status: "failed", message: e instanceof Error ? e.message : String(e) });
@@ -444,6 +457,80 @@ export class GameHost {
     if (this.store && !this.store.persistent) this.say(STORAGE_UNAVAILABLE_TOAST);
     this.publish(true);
     this.resume();
+    this.flushPendingDeepLink();
+  }
+
+  /**
+   * Finish 3.0 Phase 20 — apply web deep link (query/path/hash).
+   * Queues until Ready; soft auto-continues from Title when a save exists.
+   */
+  applyDeepLink(intent: DeepLinkIntent): void {
+    if (!intent.panel && !intent.harborId) return;
+    if (this.state.status === "ready" && this.sim) {
+      this.consumeDeepLink(intent);
+      return;
+    }
+    this.pendingDeepLink = intent;
+    if (
+      this.state.status === "title" &&
+      this.state.hasSave &&
+      !this.state.cloudConflict &&
+      !this.state.localRecovery &&
+      !this.booting
+    ) {
+      void this.continueGame();
+    }
+  }
+
+  private flushPendingDeepLink(): void {
+    const pending = this.pendingDeepLink;
+    this.pendingDeepLink = null;
+    if (pending && (pending.panel || pending.harborId)) this.consumeDeepLink(pending);
+  }
+
+  private consumeDeepLink(intent: DeepLinkIntent): void {
+    switch (intent.panel) {
+      case "quests":
+        this.setQuestsOpen(true);
+        break;
+      case "contracts":
+        this.setContractsOpen(true);
+        break;
+      case "staff":
+        this.setStaffOpen(true);
+        break;
+      case "map":
+        this.setMapOpen(true);
+        break;
+      case "upgrades":
+        this.setUpgradesOpen(true);
+        break;
+      case "dashboard":
+        this.setDashboardOpen(true);
+        break;
+      case "settings":
+        this.setSettingsOpen(true);
+        break;
+      case "speciesBook":
+        this.setSpeciesBookOpen(true);
+        break;
+      case "warehouse":
+        this.setWarehouseOpen(true);
+        break;
+      case "bag":
+        this.setBagOpen(true);
+        break;
+      case "station":
+        this.setStationOpen(true);
+        break;
+      case "pause":
+        this.setPauseOpen(true);
+        break;
+      default:
+        break;
+    }
+    if (intent.harborId) this.travelToHarbor(intent.harborId);
+    if (typeof location !== "undefined") stripDeepLinkQuery(location.search);
   }
 
   private publishTitle(hasSave: boolean): void {
@@ -553,18 +640,9 @@ export class GameHost {
     this.commands.push({ type: "sync_wall_clock", epochMs: nowEpochMs });
     this.step(sim);
     if (report) {
-      const journalLines = DailyGoalsSystem.journalLines(sim.content, sim.state, report);
-      report = {
-        ...report,
-        journalLines,
-        hadActivity: report.hadActivity || journalLines.length > 0,
-      };
-      if (OfflinePolicy.shouldShowSummary(sim.content, report)) {
-        this.pendingOfflineReport = report;
-        sharedAnalyticsBus.onOfflineClaimed(report);
-      } else {
-        this.pendingOfflineReport = null;
-      }
+      const pending = OfflineShell.decidePendingReport(sim.content, sim.state, report);
+      this.pendingOfflineReport = pending;
+      if (pending) sharedAnalyticsBus.onOfflineClaimed(pending);
     }
     this.latestView = buildView(sim);
   }
@@ -594,6 +672,12 @@ export class GameHost {
     let festivalBurst = false;
     let contractDoneBurst = false;
     let goalClaimBurst = false;
+    let rivalBeatBurst = false;
+    let prestigeBurst = false;
+    let trophySetBurst = false;
+    let harborTravelBurst = false;
+    let hireBurst = false;
+    let loanBurst = false;
     const events = sim.step(batch);
     sharedAnalyticsBus.onGameEvents(events, sim.state);
     for (const e of events) {
@@ -639,7 +723,7 @@ export class GameHost {
         case "trophy_set_completed": {
           const setName = sim.content.trophySetsById.get(e.setId)?.name ?? e.setId;
           this.say(`Gallery complete: ${setName}`);
-          celebrate = true;
+          trophySetBurst = true;
           transaction = true;
           break;
         }
@@ -678,7 +762,11 @@ export class GameHost {
           break;
         case "purchase_rejected": this.say(e.reason); transaction = true; break;
         case "worker_hired":
-          if (!e.replayed) { this.say(`Hired ${sim.content.workersById.get(e.roleId)?.name ?? e.roleId}`); transaction = true; }
+          if (!e.replayed) {
+            this.say(`Hired ${sim.content.workersById.get(e.roleId)?.name ?? e.roleId}`);
+            hireBurst = true;
+            transaction = true;
+          }
           break;
         case "worker_leveled_up": {
           const name = sim.content.workersById.get(e.roleId)?.name ?? e.roleId;
@@ -720,9 +808,30 @@ export class GameHost {
             ? `Prestige: ${name} (+${e.coinsRewarded})`
             : `Prestige: ${name}`;
           this.say(tip);
+          prestigeBurst = true;
           transaction = true;
           break;
         }
+        case "rival_market_opened":
+          this.say(`Rival open: ${e.name}`);
+          transaction = true;
+          break;
+        case "rival_sale_stolen":
+          this.say("Rival stole a sale");
+          transaction = true;
+          break;
+        case "rival_beaten":
+          this.say("Rival beaten!");
+          rivalBeatBurst = true;
+          transaction = true;
+          break;
+        case "loan_taken":
+          if (!e.replayed) {
+            this.say(`Loan +${e.principal}`);
+            loanBurst = true;
+            transaction = true;
+          }
+          break;
         case "achievement_unlocked": {
           const name = sim.content.achievementsById.get(e.achievementId)?.name ?? e.achievementId;
           const tip = e.coinsRewarded > 0
@@ -775,10 +884,11 @@ export class GameHost {
           if (!e.replayed) {
             const name = sim.content.harborsById.get(e.toHarborId)?.name ?? e.toHarborId;
             this.say(`Traveled to ${name}`);
-            this.mapOpen = false;
+            this.panels.close("map");
             this.pendingFlying = [];
             this.pendingBursts = [];
             this.pendingShakes = [];
+            harborTravelBurst = true;
             transaction = true;
           }
           break;
@@ -815,7 +925,7 @@ export class GameHost {
         this.pendingBursts.push(resolveCelebrateBurst(view));
         this.pendingShakes.push("celebrate");
       }
-      // Finish 2.0 Phase 22 — weather/festival/achievement visual juice (shared burst pool).
+      // Finish 2.0 Phase 22 + Finish 3.0 Phase 24 visual juice (shared burst pool).
       if (achievementBurst) {
         this.pendingBursts.push(resolveAchievementBurst(view));
         this.pendingShakes.push("achievement");
@@ -826,6 +936,18 @@ export class GameHost {
       }
       if (contractDoneBurst) this.pendingBursts.push(resolveContractDoneBurst(view));
       if (goalClaimBurst) this.pendingBursts.push(resolveGoalClaimBurst(view));
+      if (rivalBeatBurst) {
+        this.pendingBursts.push(resolveRivalBeatBurst(view));
+        this.pendingShakes.push("rival_beat");
+      }
+      if (prestigeBurst) {
+        this.pendingBursts.push(resolvePrestigeBurst(view));
+        this.pendingShakes.push("prestige");
+      }
+      if (trophySetBurst) this.pendingBursts.push(resolveTrophySetBurst(view));
+      if (harborTravelBurst) this.pendingBursts.push(resolveHarborTravelBurst(view));
+      if (hireBurst) this.pendingBursts.push(resolveHireBurst(view));
+      if (loanBurst) this.pendingBursts.push(resolveLoanBurst(view));
     }
     if (transaction) this.publish(true);
   }
@@ -877,64 +999,29 @@ export class GameHost {
   }
 
   private get panelOpen(): boolean {
-    return this.upgradesOpen || this.staffOpen || this.questsOpen || this.contractsOpen || this.mapOpen
-      || this.warehouseOpen || this.speciesBookOpen || this.dashboardOpen || this.pauseOpen || this.settingsOpen || this.bagOpen || this.stationOpen
-      || this.pendingOfflineReport !== null;
+    return ShellModalPolicy.blocksWorldInput(
+      this.panels.snapshot(),
+      this.pendingOfflineReport !== null,
+    );
   }
 
   private clearPanels(): void {
-    this.upgradesOpen = false;
-    this.staffOpen = false;
-    this.questsOpen = false;
-    this.contractsOpen = false;
-    this.mapOpen = false;
-    this.warehouseOpen = false;
-    this.speciesBookOpen = false;
-    this.dashboardOpen = false;
-    this.pauseOpen = false;
-    this.settingsOpen = false;
-    this.bagOpen = false;
-    this.stationOpen = false;
+    this.panels.closeAll();
   }
 
   /** Opening one panel closes the others. Closing only clears that panel. */
-  private setPanelOpen(which: PanelId, open: boolean): void {
+  private setPanelOpen(which: ShellPanelId, open: boolean): void {
     if (open) {
-      this.upgradesOpen = which === "upgrades";
-      this.staffOpen = which === "staff";
-      this.questsOpen = which === "quests";
-      this.contractsOpen = which === "contracts";
-      this.mapOpen = which === "map";
-      this.warehouseOpen = which === "warehouse";
-      this.speciesBookOpen = which === "speciesBook";
-      this.dashboardOpen = which === "dashboard";
-      this.pauseOpen = which === "pause";
-      this.settingsOpen = which === "settings";
-      this.bagOpen = which === "bag";
-      this.stationOpen = which === "station";
+      this.panels.open(which);
       this.tapTarget = null;
       this.stickActive = false;
       this.enqueueMove(0, 0);
       // Phase 19: authored UI click when a management panel opens.
       this.audio.play("ui");
-      this.syncMusicBed();
     } else {
-      switch (which) {
-        case "upgrades": this.upgradesOpen = false; break;
-        case "staff": this.staffOpen = false; break;
-        case "quests": this.questsOpen = false; break;
-        case "contracts": this.contractsOpen = false; break;
-        case "map": this.mapOpen = false; break;
-        case "warehouse": this.warehouseOpen = false; break;
-        case "speciesBook": this.speciesBookOpen = false; break;
-        case "dashboard": this.dashboardOpen = false; break;
-        case "pause": this.pauseOpen = false; break;
-        case "settings": this.settingsOpen = false; break;
-        case "bag": this.bagOpen = false; break;
-        case "station": this.stationOpen = false; break;
-      }
-      this.syncMusicBed();
+      this.panels.close(which);
     }
+    this.syncMusicBed();
     this.publish(true);
   }
 
@@ -954,7 +1041,7 @@ export class GameHost {
 
   claimDailyGoal(objectiveId: string): void {
     this.commands.push({ type: "claim_daily_goal", objectiveId, requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -972,6 +1059,8 @@ export class GameHost {
   /** Presentation settings (mute, volumes, haptics, quality, a11y, cloud). Not part of the parity save. */
   updateSettings(partial: Partial<GameSettings>): void {
     const enablingCloud = partial.cloudSyncEnabled === true && !this.settings.cloudSyncEnabled;
+    const enablingReminders =
+      partial.dailyGoalRemindersEnabled === true && !this.settings.dailyGoalRemindersEnabled;
     this.settings = { ...this.settings, ...partial };
     if (!this.settings.tapToMove) this.tapTarget = null;
     this.applyAudioSettings();
@@ -988,11 +1077,56 @@ export class GameHost {
       });
     }
     saveSettings(this.settings);
+    if (enablingReminders) {
+      void this.enableDailyGoalReminders();
+    } else {
+      this.syncDailyGoalReminders();
+    }
     if (this.state.status === "title") {
       this.publishTitle(this.state.hasSave);
     } else {
       this.publish(true);
     }
+  }
+
+  /** Finish 3.0 Phase 18 — count unclaimed board dailies from the latest view. */
+  unclaimedDailyGoalCount(): number {
+    const view = this.latestView?.dailyGoals;
+    if (!view) return 0;
+    return view.filter((g) => !g.claimed).length;
+  }
+
+  /** Finish 3.0 Phase 18 — request permission when enabling, then schedule. */
+  async enableDailyGoalReminders(): Promise<void> {
+    const { requestNotificationPermission } = await import("../push/localPushReminders");
+    const perm = await requestNotificationPermission();
+    if (perm !== "granted") {
+      this.settings = { ...this.settings, dailyGoalRemindersEnabled: false };
+      saveSettings(this.settings);
+      this.say("Notification permission is required for daily-goal reminders");
+      this.publish(true);
+      return;
+    }
+    this.syncDailyGoalReminders();
+  }
+
+  /** Finish 3.0 Phase 18 — sync web Notification timer with settings + board. */
+  syncDailyGoalReminders(): void {
+    void Promise.all([
+      import("../push/localPushReminders"),
+      import("../i18n/strings"),
+    ]).then(([push, i18n]) => {
+      if (!this.settings.dailyGoalRemindersEnabled) {
+        push.cancelScheduledDailyGoalReminder();
+        return;
+      }
+      push.syncLocalDailyGoalReminders({
+        enabled: true,
+        unclaimedCount: this.unclaimedDailyGoalCount(),
+        title: i18n.t("push.dailyGoalTitle"),
+        bodyTemplate: i18n.t("push.dailyGoalBody"),
+      });
+    });
   }
 
   /** Whether a remote backend is configured (Firebase keys). Local play never needs this. */
@@ -1097,7 +1231,7 @@ export class GameHost {
 
   setMachinePaused(stationId: string, paused: boolean): void {
     this.commands.push({ type: "set_machine_paused", stationId, paused });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1106,7 +1240,7 @@ export class GameHost {
   purchase(upgradeId: string): void {
     this.commands.push({ type: "purchase_upgrade", upgradeId, requestId: crypto.randomUUID() });
     // Management panels pause the world; advance a single tick so the command commits now.
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1115,7 +1249,7 @@ export class GameHost {
   /** Phase 6: confirm spend while standing on an expansion plot marker. */
   buildPlot(plotId: string): void {
     this.commands.push({ type: "build_plot", plotId, requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1123,7 +1257,7 @@ export class GameHost {
 
   purchaseDecor(decorId: string): void {
     this.commands.push({ type: "purchase_decor", decorId, requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1298,7 +1432,7 @@ export class GameHost {
 
   repairMachine(stationId: string): void {
     this.commands.push({ type: "repair_machine", stationId, requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1306,7 +1440,7 @@ export class GameHost {
 
   takeLoan(): void {
     this.commands.push({ type: "take_loan", requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1314,7 +1448,7 @@ export class GameHost {
 
   repayLoan(): void {
     this.commands.push({ type: "repay_loan", requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1322,7 +1456,7 @@ export class GameHost {
 
   setCoinGoal(amount: number): void {
     this.commands.push({ type: "set_coin_goal", amount });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1330,7 +1464,7 @@ export class GameHost {
 
   hire(roleId: string): void {
     this.commands.push({ type: "hire_worker", roleId, requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1338,7 +1472,7 @@ export class GameHost {
 
   setWorkerShift(workerId: string, onShift: boolean): void {
     this.commands.push({ type: "set_worker_shift", workerId, onShift });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1346,7 +1480,7 @@ export class GameHost {
 
   trainWorkerBranch(workerId: string, branchId: string): void {
     this.commands.push({ type: "train_worker_branch", workerId, branchId, requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1354,7 +1488,7 @@ export class GameHost {
 
   selectWorkerBranch(workerId: string, branchId: string | null): void {
     this.commands.push({ type: "select_worker_branch", workerId, branchId });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1362,7 +1496,7 @@ export class GameHost {
 
   setWorkerSchedule(workerId: string, scheduleId: string | null): void {
     this.commands.push({ type: "set_worker_schedule", workerId, scheduleId });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1370,7 +1504,7 @@ export class GameHost {
 
   assignWorkerGear(workerId: string, upgradeId: string): void {
     this.commands.push({ type: "assign_worker_gear", workerId, upgradeId });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1378,7 +1512,7 @@ export class GameHost {
 
   unequipWorkerGear(workerId: string, slotId: string): void {
     this.commands.push({ type: "unequip_worker_gear", workerId, slotId });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1386,7 +1520,7 @@ export class GameHost {
 
   acceptContract(offerId: string): void {
     this.commands.push({ type: "accept_contract", offerId, requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1394,7 +1528,7 @@ export class GameHost {
 
   deliverContract(contractId: string): void {
     this.commands.push({ type: "deliver_contract", contractId, requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1402,7 +1536,7 @@ export class GameHost {
 
   travelToHarbor(harborId: string): void {
     this.commands.push({ type: "travel_to_harbor", harborId, requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1410,7 +1544,7 @@ export class GameHost {
 
   buyBait(baitId: string): void {
     this.commands.push({ type: "buy_bait", baitId, requestId: crypto.randomUUID() });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1418,7 +1552,7 @@ export class GameHost {
 
   selectBait(baitId: string | null): void {
     this.commands.push({ type: "select_bait", baitId });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1426,7 +1560,7 @@ export class GameHost {
 
   selectTechnique(techniqueId: string | null): void {
     this.commands.push({ type: "select_technique", techniqueId });
-    if (this.panelOpen && this.sim && !this.pendingOfflineReport) {
+    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
       this.step(this.sim);
       this.publish(true);
     }
@@ -1440,7 +1574,7 @@ export class GameHost {
   /** Cycle Auto → each recipe → Auto for a station (no tick advance). */
   cycleStationRecipe(stationId: string): void {
     if (!this.sim || this.pendingOfflineReport) return;
-    if (this.panelOpen && !this.stationOpen) return;
+    if (this.panelOpen && !this.panels.isOpen("station")) return;
     const m = this.sim.state.machines.find((mm) => mm.stationId === stationId);
     if (!m) return;
     ProductionSystem.cyclePreferredRecipe(this.sim.content, m);
@@ -1500,23 +1634,24 @@ export class GameHost {
   private publish(force: boolean): void {
     if (!this.latestView) return;
     const now = performance.now();
-    if (!force && now - this.lastHudPublishMs < HUD_PUBLISH_INTERVAL_MS) return;
+    if (!force && now - this.lastHudPublishMs < ShellHudPolicy.PUBLISH_INTERVAL_MS) return;
     this.lastHudPublishMs = now;
+      const flags = this.panels.snapshot();
     this.setState({
       status: "ready",
       view: this.latestView,
-      upgradesOpen: this.upgradesOpen,
-      staffOpen: this.staffOpen,
-      questsOpen: this.questsOpen,
-      contractsOpen: this.contractsOpen,
-      mapOpen: this.mapOpen,
-      warehouseOpen: this.warehouseOpen,
-      speciesBookOpen: this.speciesBookOpen,
-      dashboardOpen: this.dashboardOpen,
-      pauseOpen: this.pauseOpen,
-      settingsOpen: this.settingsOpen,
-      bagOpen: this.bagOpen,
-      stationOpen: this.stationOpen,
+      upgradesOpen: flags.upgradesOpen,
+      staffOpen: flags.staffOpen,
+      questsOpen: flags.questsOpen,
+      contractsOpen: flags.contractsOpen,
+      mapOpen: flags.mapOpen,
+      warehouseOpen: flags.warehouseOpen,
+      speciesBookOpen: flags.speciesBookOpen,
+      dashboardOpen: flags.dashboardOpen,
+      pauseOpen: flags.pauseOpen,
+      settingsOpen: flags.settingsOpen,
+      bagOpen: flags.bagOpen,
+      stationOpen: flags.stationOpen,
       offlineReport: this.pendingOfflineReport,
       settings: this.settings,
     });

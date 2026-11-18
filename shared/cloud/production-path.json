@@ -72,8 +72,11 @@
     "Paste shared/cloud/snippets/firestore-harbor-save.rules into Firebase Console (snippet-only; no auto-deploy)",
     "Enable cloud sync in Settings; grant guest; verify conflict UI with two devices",
     "Toggle airplane mode, checkpoint, restore network \u2014 offline queue flushes",
-    "Run npm run firestoreqa:validate (Finish 2.0 Phase 26 conflict/offline QA harness)"
+    "Run npm run firestoreqa:validate (Finish 2.0 Phase 26 conflict/offline QA harness)",
+    "Run npm run cloudqa2:validate (Finish 3.0 Phase 17 production QA harness 2)"
   ],
+  "finish3CloudQa2Phase": 17,
+  "finish3CloudQa2Catalog": "shared/ship/cloud-qa-2.json",
   "preflightGates": [
     "shared/cloud/production-path.json",
     "web/.env.example",

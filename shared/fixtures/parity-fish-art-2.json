@@ -1,0 +1,20 @@
+{
+  "schema": "fish.fixtures.parity_fish_art_2.v1",
+  "fishArt2Marker": "authored-finish-3.0-phase-9",
+  "phase": 9,
+  "plan": "30_finish_3.0",
+  "expect": {
+    "authoredSpeciesTarget": 50,
+    "newAuthoredCount": 40,
+    "authoredFishRemaining": 0,
+    "schemaVersion": 23,
+    "contentVersion": "2.0.0",
+    "gates": [
+      "fifty_authored_species",
+      "forty_new_themes",
+      "kickoff_gap_closed",
+      "licenses_updated",
+      "ci_gate"
+    ]
+  }
+}

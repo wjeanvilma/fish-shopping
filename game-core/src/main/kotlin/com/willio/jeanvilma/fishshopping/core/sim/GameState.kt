@@ -67,6 +67,17 @@ object Stats {
     /** Finish 2.0 Phase 15 — staff branch train purchases / unlocks. */
     const val STAFF_BRANCH_TRAINING = "stat.staff_branch_training"
     const val STAFF_BRANCHES_UNLOCKED = "stat.staff_branches_unlocked"
+    /** Finish 3.0 Phase 11 — supervisor floor patrols / greeter patience top-ups / ice multi-pickups. */
+    const val SUPERVISOR_PATROLS = "stat.supervisor_patrols"
+    const val GREETER_WELCOMES = "stat.greeter_welcomes"
+    const val ICE_RUNNER_MULTI_PICKUPS = "stat.ice_runner_multi_pickups"
+    /** Finish 3.0 Phase 14 — rival NPC market siphon / player beat counters. */
+    const val RIVAL_SALES_STOLEN = "stat.rival_sales_stolen"
+    const val RIVAL_UNDERCUTS = "stat.rival_undercuts"
+    const val RIVAL_BEATS = "stat.rival_beats"
+    /** Finish 3.0 Phase 15 — endgame deepen unlocks. */
+    const val ENDGAME_TIERS_UNLOCKED = "stat.endgame_tiers_unlocked"
+    const val ENDGAME_CHALLENGES_COMPLETED = "stat.endgame_challenges_completed"
     const val DECOR_BOUGHT = "stat.decor_bought"
     const val MACHINES_BROKEN = "stat.machines_broken"
     const val MACHINES_SLOWED = "stat.machines_slowed"
@@ -91,7 +102,10 @@ object Stats {
         DAILY_LOGIN_STREAK, DAILY_GOALS_CLAIMED,
         HARBORS_TRAVELED, MAINTENANCE_PAID, ITEMS_SPOILED,
         PRESTIGE_COMPLETED, TROPHY_SPECIES, TROPHY_RECORDS, TROPHY_SETS_COMPLETE, ACHIEVEMENTS_UNLOCKED,
-        MASTERY_XP, MASTERY_LEVEL_UPS, STAFF_BRANCH_TRAINING, STAFF_BRANCHES_UNLOCKED, DECOR_BOUGHT,
+        MASTERY_XP, MASTERY_LEVEL_UPS, STAFF_BRANCH_TRAINING, STAFF_BRANCHES_UNLOCKED,
+        SUPERVISOR_PATROLS, GREETER_WELCOMES, ICE_RUNNER_MULTI_PICKUPS,
+        RIVAL_SALES_STOLEN, RIVAL_UNDERCUTS, RIVAL_BEATS,
+        ENDGAME_TIERS_UNLOCKED, ENDGAME_CHALLENGES_COMPLETED, DECOR_BOUGHT,
         MACHINES_BROKEN, MACHINES_SLOWED, MACHINES_REPAIRED, REPAIR_SPENT,
         LOANS_TAKEN, LOAN_INTEREST_ACCRUED, LOAN_REPAID, LOAN_COLLECTED, COIN_GOALS_REACHED,
     )
@@ -362,6 +376,12 @@ class GameState(
     val ownedUpgrades = TreeSet<String>()
     val completedQuests = TreeSet<String>()
     val completedPrestige = TreeSet<String>()
+    /** Finish 3.0 Phase 15 / schema 24 — beaten rival NPC market ids. */
+    val beatenRivalIds = TreeSet<String>()
+    /** Finish 3.0 Phase 15 / schema 24 — unlocked endgame tier ids. */
+    val unlockedEndgameTiers = TreeSet<String>()
+    /** Finish 3.0 Phase 15 / schema 24 — completed endgame challenge ids. */
+    val completedEndgameChallenges = TreeSet<String>()
     val unlockedCosmetics = TreeSet<String>()
     /** Phase 23 owned shop decor (placable cosmetics). */
     val ownedDecor = TreeSet<String>()
@@ -411,6 +431,10 @@ class GameState(
     var prestigeCatchSpeedPermille = 1000
     /** Permanent sale price multiplier from prestige (rebuilt on load). */
     var prestigePriceBonusPermille = 1000
+    /** Permanent catch-speed floor from endgame tiers (rebuilt on load). */
+    var endgameCatchSpeedPermille = 1000
+    /** Permanent sale price multiplier from endgame tiers (rebuilt on load). */
+    var endgamePriceBonusPermille = 1000
     /** Progress toward next station upkeep (not persisted). */
     var maintenanceAccrualTicks = 0
     /** Progress toward next counter spoilage (not persisted). */
@@ -603,6 +627,20 @@ sealed interface GameEvent {
     /** Phase 24 seasonal overlay became active on the sim clock. */
     data class SeasonalEventStarted(override val tick: Long, val eventId: String, val name: String) : GameEvent
     data class SeasonalEventEnded(override val tick: Long, val eventId: String, val name: String) : GameEvent
+    data class RivalMarketOpened(override val tick: Long, val rivalId: String, val name: String) : GameEvent
+    data class RivalMarketClosed(override val tick: Long, val rivalId: String, val name: String) : GameEvent
+    data class RivalSaleStolen(override val tick: Long, val rivalId: String, val productId: String) : GameEvent
+    data class RivalBeaten(override val tick: Long, val rivalId: String, val productId: String) : GameEvent
+    data class EndgameTierUnlocked(
+        override val tick: Long,
+        val tierId: String,
+        val coinsRewarded: Long,
+    ) : GameEvent
+    data class EndgameChallengeCompleted(
+        override val tick: Long,
+        val challengeId: String,
+        val coinsRewarded: Long,
+    ) : GameEvent
     /** Station stayed WAITING_FOR_INPUT / OUTPUT_FULL too long during a rush (Phase 20). */
     data class MachineIdleAlert(
         override val tick: Long,

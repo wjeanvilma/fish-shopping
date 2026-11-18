@@ -1,0 +1,31 @@
+{
+  "schema": "fish.pwa.shell.v1",
+  "phase": 19,
+  "plan": "30_finish_3.0",
+  "description": "Finish 3.0 Phase 19 — web PWA shell policy: service worker script, offline fallback, cache id, manifest requirements.",
+  "swScript": "sw.js",
+  "swPublicPath": "web/public/sw.js",
+  "offlineFallback": "offline.html",
+  "offlinePublicPath": "web/public/offline.html",
+  "manifestPath": "web/public/manifest.webmanifest",
+  "cachePrefix": "fish-shopping-pwa-",
+  "cacheName": "fish-shopping-pwa-v1",
+  "display": "standalone",
+  "registerModule": "web/src/pwa/registerServiceWorker.ts",
+  "requiredManifestKeys": [
+    "name",
+    "short_name",
+    "start_url",
+    "display",
+    "icons",
+    "theme_color",
+    "background_color"
+  ],
+  "requiredShellFiles": [
+    "web/public/sw.js",
+    "web/public/offline.html",
+    "web/public/manifest.webmanifest",
+    "web/public/icon-192.png",
+    "web/public/icon-512.png"
+  ]
+}

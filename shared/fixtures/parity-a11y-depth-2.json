@@ -1,0 +1,43 @@
+{
+  "schema": "fish.fixture.parity_a11y_depth_2.v1",
+  "description": "Finish 3.0 Phase 25: a11y depth 2 surfaces, dark contrast, rival live region.",
+  "a11yDepth2Marker": "authored-finish-3.0-phase-25",
+  "screenSurfaceMin": 7,
+  "contrastPairMin": 4,
+  "uiA11yStringKeyMin": 8,
+  "liveRegionMin": 1,
+  "simHzInvariant": 20,
+  "expect": {
+    "screenIds": [
+      "goals_bank_loan",
+      "goals_trophy",
+      "goals_decor",
+      "settings_theme",
+      "harbor_map_travel",
+      "business_dashboard",
+      "hud_rival_pressure"
+    ],
+    "contrastPairIds": [
+      "dark_ink_on_surface",
+      "dark_muted_on_surface",
+      "dark_reward_on_surface",
+      "dark_action_on_surface",
+      "dark_danger_on_surface"
+    ],
+    "requiredUiKeys": [
+      "a11y.bankSection",
+      "a11y.trophySection",
+      "a11y.decorSection",
+      "a11y.themeGroup",
+      "a11y.rivalPressureActive",
+      "a11y.rivalPressureClear",
+      "hud.rivalPressure",
+      "panels.map",
+      "panels.dashboard",
+      "settings.theme"
+    ],
+    "liveRegions": [
+      "rival_pressure"
+    ]
+  }
+}

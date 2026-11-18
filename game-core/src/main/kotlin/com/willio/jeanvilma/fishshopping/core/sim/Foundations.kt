@@ -47,7 +47,7 @@ object SimConstants {
      * 22: speciesMasteryXp + activeTechniqueId (Finish 2.0 Phase 14 — fishing mastery).
      * 23: worker branch/schedule fields (Finish 2.0 Phase 15 — staff trees).
      */
-    const val SCHEMA_VERSION = 23
+    const val SCHEMA_VERSION = 24
 }
 
 /** Integer arithmetic that refuses to leave the shared safe range. */

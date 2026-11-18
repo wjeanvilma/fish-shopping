@@ -8,16 +8,17 @@ object DefinitionOfDone {
     const val PHASE = 30
     const val SCHEMA = "fish.ship.definition_of_done.v1"
     const val CATALOG = "shared/ship/definition-of-done.json"
-    const val RELEASE_TAG = "v2.0.0"
+    const val RELEASE_TAG = "v3.0.0"
     const val COMPLETE_TAG = "v1.0-complete"
-    const val CONTENT_VERSION = "2.0.0"
-    const val SCHEMA_VERSION = 23
+    const val CONTENT_VERSION = "3.0.0"
+    const val SCHEMA_VERSION = 24
     const val CLOSEOUT_STATUS = "archived"
     const val FINISH2_FREEZE_STATUS = "ready_for_release_tag"
+    const val FINISH3_FREEZE_STATUS = "ready_for_release_tag"
     const val HARBOR_QUOTA = 8
-    const val SPECIES_MIN = 50
-    const val MACHINE_CLASSES = 8
-    const val QUEST_FLOOR = 20
+    const val SPECIES_MIN = 75
+    const val MACHINE_CLASSES = 10
+    const val QUEST_FLOOR = 30
     const val COSMETIC_FLOOR = 12
 
     val REQUIRED_CHECKS: List<String> = listOf(
@@ -37,6 +38,8 @@ object DefinitionOfDone {
         "hotfix_lane_ready",
         "finish2_freeze_2_0_0",
         "content_floors_2_0",
+        "finish3_freeze_3_0_0",
+        "content_floors_3_0",
         "loc_freeze_anti_regression",
     )
 
@@ -76,5 +79,8 @@ object DefinitionOfDone {
         status == "ready_for_complete_tag" || status == "tag_cut" || status == "archived"
 
     fun isFinish2FreezeReady(status: String): Boolean =
+        status == "ready_for_release_tag" || status == "tag_cut" || status == "archived"
+
+    fun isFinish3FreezeReady(status: String): Boolean =
         status == "ready_for_release_tag" || status == "tag_cut" || status == "archived"
 }

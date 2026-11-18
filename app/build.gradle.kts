@@ -135,6 +135,12 @@ android {
         compose = true
         buildConfig = true
     }
+    // Finish 3.0 Phase 21 — Robolectric Compose UI tests need packaged resources.
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 // Package the shared content pack and 3D assets straight from ../shared so the
@@ -204,6 +210,10 @@ dependencies {
     testImplementation(libs.junit)
     // Real org.json for JVM unit tests (Android's org.json is not mocked usefully).
     testImplementation(libs.org.json)
+    // Finish 3.0 Phase 21 — Compose UI integration on JVM via Robolectric.
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -1,0 +1,60 @@
+{
+  "schema": "fish.fixture.parity_local_push_reminders.v1",
+  "description": "Finish 3.0 Phase 18: local daily-goal reminder schedule vectors + gap close.",
+  "localPushRemindersMarker": "authored-finish-3.0-phase-18",
+  "expect": {
+    "closesGap": "pushRemindersMissing",
+    "defaultLocalHour": 18,
+    "defaultLocalMinute": 0,
+    "requiresUnclaimedGoals": true,
+    "optInDefault": false,
+    "schemaVersion": 24,
+    "contentVersion": "2.0.0",
+    "scheduleVectors": [
+      {
+        "id": "same_day_before_hour",
+        "nowLocalHour": 10,
+        "nowLocalMinute": 0,
+        "expectSameDay": true
+      },
+      {
+        "id": "same_day_after_hour",
+        "nowLocalHour": 19,
+        "nowLocalMinute": 0,
+        "expectSameDay": false
+      },
+      {
+        "id": "deliver_when_unclaimed",
+        "enabled": true,
+        "unclaimed": 2,
+        "lastDay": 100,
+        "today": 101,
+        "expectDeliver": true
+      },
+      {
+        "id": "skip_when_disabled",
+        "enabled": false,
+        "unclaimed": 2,
+        "lastDay": 100,
+        "today": 101,
+        "expectDeliver": false
+      },
+      {
+        "id": "skip_when_all_claimed",
+        "enabled": true,
+        "unclaimed": 0,
+        "lastDay": 100,
+        "today": 101,
+        "expectDeliver": false
+      },
+      {
+        "id": "skip_same_day_repeat",
+        "enabled": true,
+        "unclaimed": 2,
+        "lastDay": 101,
+        "today": 101,
+        "expectDeliver": false
+      }
+    ]
+  }
+}

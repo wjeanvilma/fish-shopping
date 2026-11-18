@@ -2,9 +2,9 @@
   "phase": 6,
   "plan": "30_finish_2.0",
   "schema": "fish.ship.loc_floors.v1",
-  "description": "Finish 2.0 Phase 6 scoreboard → Phase 30 freeze. Measures real source only (no padding). Phase 30 enforces freeze anti-regression floors; plan targets (25k/16k/38k/80k) retained as documentation.",
-  "contentVersion": "2.0.0",
-  "schemaVersion": 23,
+  "description": "Finish 2.0 Phase 6 scoreboard \u2192 Finish 3.0 Phase 30 freeze. Measures real source only (no padding). Phase 30 enforces Finish 3.0 freeze anti-regression floors; plan targets (25k/16k/38k/80k) retained as documentation.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
   "metric": {
     "unit": "physical_lines",
     "note": "Count every physical line in product source files (including blanks/comments). Matches the ~42k baseline used in the Finish 2.0 plan.",
@@ -24,7 +24,7 @@
       "extensions": [
         ".kt"
       ],
-      "phase30Floor": 16000,
+      "phase30Floor": 20900,
       "planTarget": 25000
     },
     "app": {
@@ -33,7 +33,7 @@
       "extensions": [
         ".kt"
       ],
-      "phase30Floor": 10000,
+      "phase30Floor": 13100,
       "planTarget": 16000
     },
     "webSrc": {
@@ -43,11 +43,11 @@
         ".ts",
         ".tsx"
       ],
-      "phase30Floor": 24000,
+      "phase30Floor": 30200,
       "planTarget": 38000
     }
   },
-  "productTotalFloor": 50000,
+  "productTotalFloor": 64200,
   "enforceFloors": true,
   "enforceAtPhase": 30,
   "baseline": {
@@ -56,7 +56,7 @@
     "app": 9287,
     "webSrc": 20114,
     "productTotal": 42677,
-    "note": "Phase 6 cut baseline (physical lines). Growth must come from real systems/content — never copy-paste padding."
+    "note": "Phase 6 cut baseline (physical lines). Growth must come from real systems/content \u2014 never copy-paste padding."
   },
   "testScopesInformational": {
     "gameCoreTests": "game-core/src/test",

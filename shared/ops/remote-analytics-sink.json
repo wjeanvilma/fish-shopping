@@ -1,0 +1,49 @@
+{
+  "phase": 26,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ops.remote_analytics_sink.v1",
+  "description": "Finish 3.0 Phase 26 — opt-in remote analytics batch sink. Extends post-1.0 local analytics dashboard; consent-gated; env-configured endpoint; no PII; fails closed without a base URL.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "analyticsSchema": "fish.analytics.v1",
+  "batchSchema": "fish.analytics.batch.v1",
+  "extendsDashboard": "shared/ops/analytics-dashboard.json",
+  "consentRequired": true,
+  "constraints": {
+    "noPii": true,
+    "consentGated": true,
+    "failClosedWithoutBaseUrl": true,
+    "noSecretsInRepo": true,
+    "schemaFrozen": true
+  },
+  "endpoint": {
+    "method": "POST",
+    "path": "/v1/analytics/batch",
+    "healthPath": "/health",
+    "contentType": "application/json"
+  },
+  "client": {
+    "webEnvKey": "VITE_ANALYTICS_API_BASE",
+    "androidMetaKey": "fish.analytics.apiBase",
+    "localEmulatorDefaultBase": "http://localhost:8788"
+  },
+  "batch": {
+    "maxEvents": 20,
+    "maxQueue": 100,
+    "flushIntervalMs": 15000,
+    "flushOnSessionEnd": true,
+    "dropOldestOnOverflow": true,
+    "resyncSanitizeOnFlush": true
+  },
+  "envelope": {
+    "requiredFields": ["schema", "platform", "sentAtMs", "events"],
+    "eventFields": ["name", "props", "schema", "clientTsMs"],
+    "platforms": ["web", "android"]
+  },
+  "eventNameMin": 8,
+  "sourcePins": {
+    "analytics": "shared/ops/analytics-dashboard.json",
+    "dataSafety": "shared/store/data-safety.json",
+    "privacy": "web/public/privacy.html"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "phase": 27,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.quests_contracts_3.v1",
+  "description": "Finish 3.0 Phase 27 — quests/contracts expansion wave. Raises authored quests to ≥30 and adds a third delivery chain plus more reputation-gated contracts without changing the Finish 2.0 contracts:validate floors. Schema stays 24 / content 2.0.0.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "questsContracts3Marker": "authored-finish-3.0-phase-27",
+  "questsMin": 30,
+  "deliveryChainsMin": 3,
+  "reputationGatedMin": 3,
+  "contractTemplatesMin": 43,
+  "newQuests": [
+    "quest.rival_pressure",
+    "quest.loan_ledger",
+    "quest.decor_touch",
+    "quest.mastery_climb",
+    "quest.daily_grind",
+    "quest.achievement_hunter",
+    "quest.chain_captain",
+    "quest.premium_counter",
+    "quest.repair_crew",
+    "quest.endgame_beacon"
+  ],
+  "newChain": "chain.dawn_express",
+  "newChainHead": "contract.chain_dawn_catch",
+  "newReputationGated": [
+    "contract.trusted_bulk",
+    "contract.legend_crate"
+  ],
+  "extendsContracts20": "shared/ship/contracts-2.0.json",
+  "parityFixture": "shared/fixtures/parity-quests-contracts-3.json",
+  "validateScript": "npm run quests3:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "checklist": [
+    "≥30 authored quests chained past prestige_wave",
+    "≥3 delivery chains including chain.dawn_express",
+    "≥3 reputation-gated contract templates",
+    "content-strings en/es/pt + ContentStrings.kt parity for new ids",
+    "Finish 2.0 contracts:validate still green (historical floors)",
+    "parity-quests-contracts-3 + quests3:validate green",
+    "CI runs quests3:validate",
+    "kickoff phase 27 validate=quests3:validate + measuredAtPhase≥27",
+    "schema stays 24 / content 2.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/quests-contracts-3.json",
+    "shared/fixtures/parity-quests-contracts-3.json",
+    "shared/ship/contracts-2.0.json",
+    "shared/content/content-pack.json",
+    "shared/i18n/content-strings.en.json",
+    "shared/i18n/content-strings.es.json",
+    "shared/i18n/content-strings.pt.json",
+    "web/src/ship/questsContracts3.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/QuestsContracts3.kt",
+    "web/scripts/validate-quests-contracts-3.ts"
+  ]
+}

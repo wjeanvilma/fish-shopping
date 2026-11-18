@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 27 — harbor / species / quest JSON scaffolds.
+ * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 — content JSON scaffolds.
  * Generates schema-shaped fragments; does not mutate content-pack.json.
  */
 import { normalizeSlug, qualifyId, titleFromSlug, type ScaffoldKind } from "./ids";
@@ -15,10 +15,18 @@ export interface ScaffoldRequest {
   goalStat?: string;
   /** Quest goal atLeast (default 5). */
   goalAtLeast?: number;
-  /** Harbor travel requires (default empty). */
+  /** Harbor/quest/bait requires (default empty). */
   requires?: string[];
   /** Fishing spot species ids (default species.harbor_herring). */
   fishingSpecies?: string[];
+  /** Contract delivery item id (default species.silver_sprat). */
+  item?: string;
+  /** Contract quantity (default 3). */
+  quantity?: number;
+  /** Bait/decor/contract cost or payout hint. */
+  cost?: number;
+  /** Decor patience bonus ticks (default 20). */
+  patienceBonusTicks?: number;
 }
 
 export interface ScaffoldResult {
@@ -191,8 +199,74 @@ export function scaffoldHarbor(req: ScaffoldRequest): ScaffoldResult {
   return { kind: "harbor", id, fileName: `${id}.json`, document };
 }
 
+/** Finish 3.0 Phase 28 — contract template fragment. */
+export function scaffoldContract(req: ScaffoldRequest): ScaffoldResult {
+  const slug = normalizeSlug(req.id);
+  const id = qualifyId("contract", slug);
+  const name = req.name?.trim() || titleFromSlug(slug);
+  const description =
+    req.description?.trim() ||
+    `Authoring scaffold contract for ${name}. Tune payout/penalty before merging.`;
+  const document = {
+    id,
+    name,
+    description,
+    item: req.item ?? "species.silver_sprat",
+    quantity: req.quantity ?? 3,
+    durationTicks: 1800,
+    payout: req.cost ?? 40,
+    penalty: 10,
+    weight: 20,
+  };
+  return { kind: "contract", id, fileName: `${id}.json`, document };
+}
+
+/** Finish 3.0 Phase 28 — bait fragment. */
+export function scaffoldBait(req: ScaffoldRequest): ScaffoldResult {
+  const slug = normalizeSlug(req.id);
+  const id = qualifyId("bait", slug);
+  const name = req.name?.trim() || titleFromSlug(slug);
+  const description =
+    req.description?.trim() ||
+    `Authoring scaffold bait for ${name}. Adjust rare weights before merge.`;
+  const document = {
+    id,
+    name,
+    description,
+    carryUnits: 1,
+    packQuantity: 3,
+    cost: req.cost ?? 25,
+    rareSpeciesWeightMultPermille: 1200,
+    rareChanceBonusPermille: 50,
+    requires: req.requires ?? [],
+  };
+  return { kind: "bait", id, fileName: `${id}.json`, document };
+}
+
+/** Finish 3.0 Phase 28 — shop decor fragment. */
+export function scaffoldDecor(req: ScaffoldRequest): ScaffoldResult {
+  const slug = normalizeSlug(req.id);
+  const id = qualifyId("decor", slug);
+  const name = req.name?.trim() || titleFromSlug(slug);
+  const description =
+    req.description?.trim() ||
+    `Authoring scaffold decor for ${name}. Optional requiresCosmetic before merge.`;
+  const document = {
+    id,
+    name,
+    description,
+    cost: req.cost ?? 100,
+    requiresCosmetic: null as string | null,
+    patienceBonusTicks: req.patienceBonusTicks ?? 20,
+  };
+  return { kind: "decor", id, fileName: `${id}.json`, document };
+}
+
 export function buildScaffold(req: ScaffoldRequest): ScaffoldResult {
   if (req.kind === "species") return scaffoldSpecies(req);
   if (req.kind === "quest") return scaffoldQuest(req);
-  return scaffoldHarbor(req);
+  if (req.kind === "harbor") return scaffoldHarbor(req);
+  if (req.kind === "contract") return scaffoldContract(req);
+  if (req.kind === "bait") return scaffoldBait(req);
+  return scaffoldDecor(req);
 }

@@ -584,7 +584,7 @@ export function worldBurstPoolForQuality(quality: PresenterQuality): number {
   return VFX_BURST_POOL_BY_QUALITY[quality];
 }
 
-/** Finish 2.0 Phase 22 adds achievement/festival/contract_done/goal_claim. */
+/** Finish 2.0 Phase 22 + Finish 3.0 Phase 24 event burst kinds. */
 export type WorldBurstKind =
   | "catch"
   | "pay"
@@ -593,7 +593,13 @@ export type WorldBurstKind =
   | "achievement"
   | "festival"
   | "contract_done"
-  | "goal_claim";
+  | "goal_claim"
+  | "rival_beat"
+  | "prestige"
+  | "trophy_set"
+  | "harbor_travel"
+  | "hire"
+  | "loan";
 
 export interface WorldBurstCue {
   xMm: number;
@@ -626,10 +632,24 @@ const BURST_DURATION_S: Record<WorldBurstKind, number> = {
   festival: 0.6,
   contract_done: 0.4,
   goal_claim: 0.35,
+  rival_beat: 0.5,
+  prestige: 0.65,
+  trophy_set: 0.55,
+  harbor_travel: 0.45,
+  hire: 0.35,
+  loan: 0.4,
 };
 
-/** Phase 21 — screen-shake kinds; Finish 2.0 Phase 22 adds achievement/festival. */
-export type ShakeKind = "catch" | "cut" | "sale" | "celebrate" | "achievement" | "festival";
+/** Phase 21 + Finish 2.0/3.0 shake kinds. */
+export type ShakeKind =
+  | "catch"
+  | "cut"
+  | "sale"
+  | "celebrate"
+  | "achievement"
+  | "festival"
+  | "rival_beat"
+  | "prestige";
 
 export const SHAKE_DURATION_S = 0.18;
 /** Hard cap after quality scale (meters). */
@@ -641,6 +661,8 @@ export const SHAKE_AMPLITUDE_M: Record<ShakeKind, number> = {
   celebrate: 0.08,
   achievement: 0.06,
   festival: 0.05,
+  rival_beat: 0.07,
+  prestige: 0.08,
 };
 export const SHAKE_SCALE_BY_QUALITY = {
   low: 0.5,
@@ -774,6 +796,36 @@ export function resolveGoalClaimBurst(v: SimView): WorldBurstCue {
   return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "goal_claim" };
 }
 
+/** Finish 3.0 Phase 24 — rival beaten cue at the player. */
+export function resolveRivalBeatBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "rival_beat" };
+}
+
+/** Finish 3.0 Phase 24 — prestige unlock at the player. */
+export function resolvePrestigeBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "prestige" };
+}
+
+/** Finish 3.0 Phase 24 — trophy set complete at the player. */
+export function resolveTrophySetBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "trophy_set" };
+}
+
+/** Finish 3.0 Phase 24 — harbor travel at the player. */
+export function resolveHarborTravelBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "harbor_travel" };
+}
+
+/** Finish 3.0 Phase 24 — worker hire at the player. */
+export function resolveHireBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "hire" };
+}
+
+/** Finish 3.0 Phase 24 — loan taken at the player. */
+export function resolveLoanBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "loan" };
+}
+
 /**
  * Ephemeral world bursts. Quality-budgeted; never mutates sim.
  */
@@ -825,15 +877,29 @@ export class WorldBursts {
       const t = Math.min(1, s.age / s.duration);
       const rise = t * (2 - t);
       const kindScale =
-        s.kind === "celebrate" || s.kind === "achievement" || s.kind === "festival" ? 1.4
-          : s.kind === "catch" ? 0.85
-          : 1.0;
+        s.kind === "celebrate" ||
+        s.kind === "achievement" ||
+        s.kind === "festival" ||
+        s.kind === "prestige" ||
+        s.kind === "rival_beat" ||
+        s.kind === "trophy_set"
+          ? 1.4
+          : s.kind === "catch"
+            ? 0.85
+            : 1.0;
       const scale = kindScale * (0.35 + 1.1 * rise);
       const opacity = 1 - t * t;
       const y = 0.35 + (
-        s.kind === "celebrate" || s.kind === "achievement" || s.kind === "festival" ? 1.1
-          : s.kind === "catch" ? 0.55
-          : 0.7
+        s.kind === "celebrate" ||
+        s.kind === "achievement" ||
+        s.kind === "festival" ||
+        s.kind === "prestige" ||
+        s.kind === "rival_beat" ||
+        s.kind === "trophy_set"
+          ? 1.1
+          : s.kind === "catch"
+            ? 0.55
+            : 0.7
       ) * rise;
       if (t >= 1) {
         this.slots[i] = null;

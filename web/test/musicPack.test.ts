@@ -21,7 +21,14 @@ describe("music beds (post-1.0 Phase 20)", () => {
     expect(MUSIC_PACK_SCHEMA).toBe("fish.audio.music_pack.v1");
     expect(musicPack.defaultBed).toBe("harbor");
     expect(musicPack.replacesProceduralAmbience).toBe(true);
-    expect(musicPack.beds.map((b) => b.id)).toEqual(["harbor", "shop", "festival", "storm"]);
+    expect(musicPack.beds.map((b) => b.id)).toEqual([
+      "harbor",
+      "shop",
+      "festival",
+      "storm",
+      "night",
+      "rival",
+    ]);
     expect(musicPack.ducking.sfxDuckFactor).toBeGreaterThan(0);
     expect(musicPack.ducking.sfxDuckFactor).toBeLessThan(1);
     expect(musicPack.ducking.focusLossSilence).toBe(true);
@@ -29,6 +36,8 @@ describe("music beds (post-1.0 Phase 20)", () => {
     expect(musicBedForPanels(true)).toBe("shop");
     expect(musicBedForPanels(false, true)).toBe("festival");
     expect(musicBedForPanels(true, false, true)).toBe("storm");
+    expect(musicBedForPanels(true, false, false, true)).toBe("rival");
+    expect(musicBedForPanels(true, false, false, false, true)).toBe("night");
     expect(duckedMusicGain(1, true, 0.35)).toBeCloseTo(0.35);
     expect(duckedMusicGain(1, false)).toBe(1);
     expect(focusMusicScale("gain")).toBe(1);

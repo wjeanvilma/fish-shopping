@@ -54,7 +54,7 @@ function validate(): string[] {
   if (ship.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (SUPPORT_OPS_2_SHIP_PHASE !== 28) errors.push("phase mirror mismatch");
   if (ship.schemaVersion !== 23) errors.push("ship schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
   if (ship.supportOps2Marker !== SUPPORT_OPS_2_SHIP_MARKER) errors.push("ship marker mismatch");
   if (ops2.supportOps2Marker !== SUPPORT_OPS_2_MARKER) errors.push("ops2 marker mismatch");
@@ -132,7 +132,7 @@ function validate(): string[] {
   if (pin.supportOps2 !== "shared/ship/support-ops-2.0.json") {
     errors.push("RELEASE_PIN.supportOps2 path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
   if (!pkg.scripts?.["support2:validate"]) errors.push("web/package.json missing support2:validate");
   if (SUPPORT_OPS_2_SHIP.opsCatalog !== "shared/ops/support-ops-2.0.json") {
     errors.push("ship opsCatalog mismatch");

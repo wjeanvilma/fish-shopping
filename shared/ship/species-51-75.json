@@ -1,0 +1,170 @@
+{
+  "phase": 12,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.species_51_75.v1",
+  "description": "Finish 3.0 Phase 12 — expand species roster to 75 (ids 51–75) and deepen ecology with harbor habitat weight pockets. Schema 23 / content 2.0.0.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 23,
+  "speciesCount": 75,
+  "newSpeciesCount": 25,
+  "habitatCount": 8,
+  "species51_75Marker": "authored-finish-3.0-phase-12",
+  "newBaseSpecies": [
+    {
+      "id": "species.mangrove_snapper",
+      "name": "Mangrove snapper",
+      "rareUpgrade": "species.gilt_mangrove",
+      "harbors": ["harbor.coral_lagoon"],
+      "gallery": "gallery.coral_lagoon",
+      "habitat": "habitat.mangrove_fringe"
+    },
+    {
+      "id": "species.glass_goby",
+      "name": "Glass goby",
+      "rareUpgrade": "species.prism_goby",
+      "harbors": ["harbor.coral_lagoon"],
+      "gallery": "gallery.coral_lagoon",
+      "habitat": "habitat.mangrove_fringe"
+    },
+    {
+      "id": "species.shear_drum",
+      "name": "Shear drum",
+      "rareUpgrade": "species.thunder_drum",
+      "harbors": ["harbor.storm_quay"],
+      "gallery": "gallery.storm_quay",
+      "habitat": "habitat.shear_channel"
+    },
+    {
+      "id": "species.foam_skater",
+      "name": "Foam skater",
+      "rareUpgrade": "species.crystal_skater",
+      "harbors": ["harbor.storm_quay"],
+      "gallery": "gallery.storm_quay",
+      "habitat": "habitat.shear_channel"
+    },
+    {
+      "id": "species.slag_loach",
+      "name": "Slag loach",
+      "rareUpgrade": "species.magma_loach",
+      "harbors": ["harbor.ember_wharf"],
+      "gallery": "gallery.ember_wharf",
+      "habitat": "habitat.kiln_outflow"
+    },
+    {
+      "id": "species.kiln_perch",
+      "name": "Kiln perch",
+      "rareUpgrade": "species.gilt_kiln",
+      "harbors": ["harbor.ember_wharf"],
+      "gallery": "gallery.ember_wharf",
+      "habitat": "habitat.kiln_outflow"
+    },
+    {
+      "id": "species.drift_icefish",
+      "name": "Drift icefish",
+      "rareUpgrade": "species.aurora_icefish",
+      "harbors": ["harbor.northlight_harbor"],
+      "gallery": "gallery.northlight_harbor",
+      "habitat": "habitat.rime_shelf"
+    },
+    {
+      "id": "species.rime_bream",
+      "name": "Rime bream",
+      "rareUpgrade": "species.crystal_bream",
+      "harbors": ["harbor.northlight_harbor"],
+      "gallery": "gallery.northlight_harbor",
+      "habitat": "habitat.rime_shelf"
+    },
+    {
+      "id": "species.silk_amberjack",
+      "name": "Silk amberjack",
+      "rareUpgrade": "species.gilt_amberjack",
+      "harbors": ["harbor.grand_marina"],
+      "gallery": "gallery.grand_marina",
+      "habitat": "habitat.parade_lane"
+    },
+    {
+      "id": "species.parade_scad",
+      "name": "Parade scad",
+      "rareUpgrade": "species.opal_scad",
+      "harbors": ["harbor.grand_marina"],
+      "gallery": "gallery.grand_marina",
+      "habitat": "habitat.parade_lane"
+    },
+    {
+      "id": "species.veil_skate",
+      "name": "Veil skate",
+      "rareUpgrade": "species.pearl_skate",
+      "harbors": ["harbor.moon_cove"],
+      "gallery": "gallery.moon_cove",
+      "habitat": "habitat.veil_flats"
+    },
+    {
+      "id": "species.dusk_cuttle",
+      "name": "Dusk cuttle",
+      "rareUpgrade": "species.opal_cuttle",
+      "harbors": ["harbor.moon_cove"],
+      "gallery": "gallery.moon_cove",
+      "habitat": "habitat.veil_flats"
+    },
+    {
+      "id": "species.basalt_gurnard",
+      "name": "Basalt gurnard",
+      "rareUpgrade": null,
+      "harbors": ["harbor.obsidian_jetty"],
+      "gallery": "gallery.obsidian_jetty",
+      "habitat": "habitat.basalt_spur"
+    }
+  ],
+  "newRareSpecies": [
+    "species.gilt_mangrove",
+    "species.prism_goby",
+    "species.thunder_drum",
+    "species.crystal_skater",
+    "species.magma_loach",
+    "species.gilt_kiln",
+    "species.aurora_icefish",
+    "species.crystal_bream",
+    "species.gilt_amberjack",
+    "species.opal_scad",
+    "species.pearl_skate",
+    "species.opal_cuttle"
+  ],
+  "habitatIds": [
+    "habitat.mangrove_fringe",
+    "habitat.shear_channel",
+    "habitat.kiln_outflow",
+    "habitat.rime_shelf",
+    "habitat.parade_lane",
+    "habitat.veil_flats",
+    "habitat.basalt_spur",
+    "habitat.boardwalk_edge"
+  ],
+  "rareGallery": "gallery.rare_gallery",
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-species-51-75.json",
+  "artTool": "shared/tools/generate_fish_stubs.py",
+  "authorTool": "shared/tools/author_species_51_75.py",
+  "validateScript": "npm run species5175:validate",
+  "checklist": [
+    "content-pack has 75 species including Phase 12 wave + rares",
+    "ecology.habitats has 8 harbor day-part weight pockets",
+    "Fishing spots + harbor galleries + rare_gallery wired",
+    "Codex entries for all 75 species",
+    "Fish GLBs authored via fish_themes + generate_fish_stubs",
+    "Kickoff baseline.species = 75; gapTargets.speciesMin met",
+    "species5175:validate green in CI",
+    "schema stays 23"
+  ],
+  "preflightGates": [
+    "shared/ship/species-51-75.json",
+    "shared/fixtures/parity-species-51-75.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "shared/tools/author_species_51_75.py",
+    "shared/assets/models/fish_mangrove_snapper.glb",
+    "shared/assets/models/fish_basalt_gurnard.glb",
+    "web/src/ship/species5175.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Species5175.kt",
+    "web/scripts/validate-species-51-75.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/world/EcologySystem.kt"
+  ]
+}

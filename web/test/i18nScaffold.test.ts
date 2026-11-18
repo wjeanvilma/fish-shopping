@@ -30,16 +30,19 @@ describe("i18n scaffold (Finish 2.0 Phase 23)", () => {
       (JSON.parse(readFileSync(resolve(root, "shared/store/listing-copy.json"), "utf8")) as {
         locales?: string[];
       }).locales,
-    ).toEqual(["en", "es"]);
+    ).toEqual(["en", "es", "pt"]);
   });
 
-  it("resolves t() with en fallback and es override", () => {
+  it("resolves t() with en fallback and es/pt override", () => {
     expect(resolveLocale("es")).toBe("es");
+    expect(resolveLocale("pt")).toBe("pt");
     expect(resolveLocale("fr")).toBe("en");
     setLocale("en");
     expect(t("nav.pause")).toBe("Pause");
     setLocale("es");
     expect(t("nav.pause")).toBe("Pausa");
+    setLocale("pt");
+    expect(t("nav.pause")).not.toBe("Pause");
     expect(t("achievements.count", { unlocked: 2, total: 14 })).toBe("2/14");
     setLocale("en");
   });

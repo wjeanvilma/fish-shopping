@@ -1,0 +1,18 @@
+{
+  "schema": "fish.push.local_daily_goal_reminders.v1",
+  "phase": 18,
+  "plan": "30_finish_3.0",
+  "description": "Finish 3.0 Phase 18 — local daily-goal push reminder policy (opt-in). No remote FCM; Android AlarmManager + web Notification API.",
+  "defaultLocalHour": 18,
+  "defaultLocalMinute": 0,
+  "channelId": "daily_goals",
+  "channelName": "Daily goals",
+  "notificationId": 1801,
+  "requestCode": 1801,
+  "titleKey": "push.dailyGoalTitle",
+  "bodyKey": "push.dailyGoalBody",
+  "optInDefault": false,
+  "requiresUnclaimedGoals": true,
+  "androidReceiver": "com.willio.jeanvilma.fishshopping.push.DailyGoalReminderReceiver",
+  "webStorageLastDayKey": "fish-shopping-daily-reminder-last-day"
+}

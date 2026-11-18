@@ -5,6 +5,7 @@ import com.willio.jeanvilma.fishshopping.core.content.ContentPack
 import com.willio.jeanvilma.fishshopping.core.content.ItemQuantity
 import com.willio.jeanvilma.fishshopping.core.content.Node
 import com.willio.jeanvilma.fishshopping.core.inventory.Inventory
+import com.willio.jeanvilma.fishshopping.core.progression.EndgameSystem
 import com.willio.jeanvilma.fishshopping.core.progression.PrestigeSystem
 import com.willio.jeanvilma.fishshopping.core.progression.UpgradeSystem
 import com.willio.jeanvilma.fishshopping.core.sim.Batch
@@ -108,6 +109,12 @@ object SnapshotCodec {
             put("ownedUpgrades", JsonArray(s.ownedUpgrades.map { JsonPrimitive(it) }))
             put("completedQuests", JsonArray(s.completedQuests.map { JsonPrimitive(it) }))
             put("completedPrestige", JsonArray(s.completedPrestige.map { JsonPrimitive(it) }))
+            put("beatenRivalIds", JsonArray(s.beatenRivalIds.map { JsonPrimitive(it) }))
+            put("unlockedEndgameTiers", JsonArray(s.unlockedEndgameTiers.map { JsonPrimitive(it) }))
+            put(
+                "completedEndgameChallenges",
+                JsonArray(s.completedEndgameChallenges.map { JsonPrimitive(it) }),
+            )
             put("unlockedCosmetics", JsonArray(s.unlockedCosmetics.map { JsonPrimitive(it) }))
             put("ownedDecor", JsonArray(s.ownedDecor.map { JsonPrimitive(it) }))
             put("fullHarborUnlock", s.fullHarborUnlock)
@@ -215,6 +222,7 @@ object SnapshotCodec {
      *  - v20 -> v21: unlockedAchievements (Finish 2.0 Phase 7 achievements scaffold).
      *  - v21 -> v22: speciesMasteryXp + activeTechniqueId (Finish 2.0 Phase 14 fishing mastery).
      *  - v22 -> v23: worker activeBranchId / unlockedBranchIds / branchTrainingXp / scheduleId (Phase 15).
+     *  - v23 -> v24: beatenRivalIds + unlockedEndgameTiers + completedEndgameChallenges (Finish 3.0 Phase 15).
      */
     private fun readState(content: ContentPack, n: Node, version: Int): GameState {
         val harborId = n["harborId"].string()
@@ -393,6 +401,17 @@ object SnapshotCodec {
                 .forEach { s.completedPrestige += it }
             n["unlockedCosmetics"].list { it.string() }.forEach { s.unlockedCosmetics += it }
         }
+        if (version >= 24) {
+            n["beatenRivalIds"].list { it.string() }
+                .filter { it in content.rivalsById }
+                .forEach { s.beatenRivalIds += it }
+            n["unlockedEndgameTiers"].list { it.string() }
+                .filter { it in content.endgameTiersById }
+                .forEach { s.unlockedEndgameTiers += it }
+            n["completedEndgameChallenges"].list { it.string() }
+                .filter { it in content.endgameChallengesById }
+                .forEach { s.completedEndgameChallenges += it }
+        }
         if (version >= 16) {
             n["ownedDecor"].list { it.string() }
                 .filter { it in content.decorById }
@@ -467,6 +486,9 @@ object SnapshotCodec {
         s.ownedUpgrades.forEach { UpgradeSystem.applyEffect(s, content.upgradesById.getValue(it).effect) }
         s.completedPrestige.forEach { id ->
             PrestigeSystem.applyReward(s, content.prestigeMilestonesById.getValue(id))
+        }
+        s.unlockedEndgameTiers.forEach { id ->
+            EndgameSystem.applyTierReward(s, content.endgameTiersById.getValue(id))
         }
         pruneWorkerEquipment(content, s)
         for (stash in s.harborStashes.values) pruneWorkerEquipmentList(content, s, stash.workers)

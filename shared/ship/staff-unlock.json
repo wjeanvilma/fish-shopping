@@ -1,0 +1,52 @@
+{
+  "phase": 10,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.staff_unlock.v1",
+  "description": "Finish 3.0 Phase 10 — unlock remaining staff roles. Specialization branches for operator/supervisor/ice_runner/smoker_specialist/greeter; Coming soon hire lock retired. Schema 23 / content 2.0.0.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 23,
+  "staffUnlockMarker": "authored-finish-3.0-phase-10",
+  "staffTreesCatalog": "shared/ship/staff-trees.json",
+  "hireableRoleCount": 8,
+  "staffBranchTarget": 10,
+  "newBranchIds": [
+    "branch.operator.pad_link",
+    "branch.supervisor.floor_lead",
+    "branch.ice_runner.chill_haul",
+    "branch.smoker_specialist.kiln_focus",
+    "branch.greeter.welcome_desk"
+  ],
+  "hireableRoles": [
+    "fisher",
+    "porter",
+    "operator",
+    "cashier",
+    "supervisor",
+    "ice_runner",
+    "smoker_specialist",
+    "greeter"
+  ],
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "gapFlagClosed": "staffComingSoonPresent",
+  "gapComingSoonReasons": 0,
+  "parityFixture": "shared/fixtures/parity-staff-unlock.json",
+  "validateScript": "npm run staffunlock:validate",
+  "checklist": [
+    "All 8 worker roles hireable; Coming soon hire rows = 0",
+    "staffTrees branches = 10 covering every hireable role",
+    "Kickoff baseline.staffComingSoonReasons = 0; gaps.staffComingSoonPresent = false",
+    "content-strings en/es/pt include new branch keys",
+    "stafftrees:validate + staffunlock:validate green",
+    "CI runs staffunlock:validate",
+    "schema stays 23"
+  ],
+  "preflightGates": [
+    "shared/ship/staff-unlock.json",
+    "shared/fixtures/parity-staff-unlock.json",
+    "shared/ship/staff-trees.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "web/src/ship/staffUnlock.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/StaffUnlock.kt",
+    "web/scripts/validate-staff-unlock.ts"
+  ]
+}

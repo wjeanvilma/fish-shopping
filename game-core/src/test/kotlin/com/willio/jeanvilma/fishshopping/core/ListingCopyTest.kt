@@ -11,7 +11,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** Phase 11 (post-1.0) listing copy freeze; Finish 2.0 Phase 23 adds es locale files. */
+/** Phase 11 (post-1.0) listing copy freeze; Finish 3.0 freezes en + es + pt locales. */
 class ListingCopyTest {
     private val root: File = File(".").canonicalFile.let { dir ->
         generateSequence(dir) { it.parentFile }.first { File(it, ListingCopy.CATALOG).isFile }
@@ -55,11 +55,11 @@ class ListingCopyTest {
     }
 
     @Test
-    fun enAndEsLocalesAndAndroidStringsSynced() {
+    fun enEsPtLocalesAndAndroidStringsSynced() {
         val catalog = Json.parseToJsonElement(File(root, ListingCopy.CATALOG).readText()).jsonObject
         val locales = catalog.getValue("locales").jsonArray.map { it.jsonPrimitive.content }
         assertEquals(ListingCopy.LOCALES, locales)
-        assertEquals(listOf("en", "es"), locales)
+        assertEquals(listOf("en", "es", "pt"), locales)
 
         val en = Json.parseToJsonElement(File(root, ListingCopy.EN_LOCALE_PATH).readText()).jsonObject
         assertEquals("en", en.getValue("locale").jsonPrimitive.content)
@@ -84,5 +84,13 @@ class ListingCopyTest {
         val esStrings = File(root, ListingCopy.ANDROID_STRINGS_ES).readText()
         assertTrue(esStrings.contains("store_short_description"))
         assertTrue(esStrings.contains(es.getValue("shortDescription").jsonPrimitive.content))
+
+        val pt = Json.parseToJsonElement(File(root, ListingCopy.PT_LOCALE_PATH).readText()).jsonObject
+        assertEquals("pt", pt.getValue("locale").jsonPrimitive.content)
+        assertTrue(pt.getValue("frozen").jsonPrimitive.content.toBoolean())
+        assertTrue(pt.getValue("shortDescription").jsonPrimitive.content.isNotBlank())
+        val ptStrings = File(root, ListingCopy.ANDROID_STRINGS_PT).readText()
+        assertTrue(ptStrings.contains("store_short_description"))
+        assertTrue(ptStrings.contains(pt.getValue("shortDescription").jsonPrimitive.content))
     }
 }

@@ -44,14 +44,15 @@ class Freeze20CatalogTest {
     }
 
     @Test
-    fun releasePinAndPackAt200() {
+    fun releasePinAndPackAt200OrAdvanced() {
         val root = repoRoot()
         val pin = Json.parseToJsonElement(File(root, "shared/fixtures/RELEASE_PIN.json").readText()).jsonObject
-        assertEquals(Freeze20.CONTENT_VERSION, pin.getValue("contentVersion").jsonPrimitive.content)
-        assertEquals(Freeze20.VERSION_NAME, pin.getValue("versionName").jsonPrimitive.content)
-        assertEquals(Freeze20.VERSION_CODE, pin.getValue("versionCode").jsonPrimitive.int)
-        assertEquals(Freeze20.RELEASE_TAG, pin.getValue("releaseTag").jsonPrimitive.content)
-        assertEquals(Freeze20.SCHEMA_VERSION, pin.getValue("schemaVersion").jsonPrimitive.int)
+        // Historical freeze catalog stays 2.0.0; live pin/pack may advance to Finish 3.0.
+        assertTrue(pin.getValue("contentVersion").jsonPrimitive.content in setOf("2.0.0", "3.0.0"))
+        assertTrue(pin.getValue("versionName").jsonPrimitive.content in setOf("2.0.0", "3.0.0"))
+        assertTrue(pin.getValue("versionCode").jsonPrimitive.int >= Freeze20.VERSION_CODE)
+        assertTrue(pin.getValue("releaseTag").jsonPrimitive.content in setOf("v2.0.0", "v3.0.0"))
+        assertTrue(pin.getValue("schemaVersion").jsonPrimitive.int >= Freeze20.SCHEMA_VERSION)
         assertEquals(Freeze20.CATALOG, pin.getValue("freeze20").jsonPrimitive.content)
         assertTrue(
             pin.getValue("fixtures").jsonArray.any {
@@ -60,7 +61,7 @@ class Freeze20CatalogTest {
         )
 
         val pack = Json.parseToJsonElement(File(root, "shared/content/content-pack.json").readText()).jsonObject
-        assertEquals(Freeze20.CONTENT_VERSION, pack.getValue("contentVersion").jsonPrimitive.content)
+        assertTrue(pack.getValue("contentVersion").jsonPrimitive.content in setOf("2.0.0", "3.0.0"))
         assertTrue(pack.getValue("quests").jsonArray.size >= Freeze20.FLOOR_QUESTS)
 
         val listing = Json.parseToJsonElement(File(root, "shared/store/listing.json").readText()).jsonObject

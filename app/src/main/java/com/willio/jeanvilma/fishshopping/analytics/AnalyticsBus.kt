@@ -13,7 +13,8 @@ import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 /**
  * Phase 25/26 — consent-gated analytics bus for Android.
  * Drops events when consent is off; never attaches PII or save blobs.
- * Phase 26: session lifecycle + dashboard ledger.
+ * Post-1.0 Phase 26: session lifecycle + dashboard ledger.
+ * Finish 3.0 Phase 26: optional remote batch sink (manifest meta-data).
  */
 fun interface AnalyticsTrackSink {
     fun track(event: Analytics.Event?)
@@ -22,6 +23,7 @@ fun interface AnalyticsTrackSink {
 class AnalyticsBus(
     private var sink: AnalyticsTrackSink = NOOP,
     private var ledger: AnalyticsDashboardLedger? = null,
+    private var remote: RemoteAnalyticsSink? = null,
 ) {
     @Volatile
     var consent: Boolean = false
@@ -39,6 +41,14 @@ class AnalyticsBus(
         ledger.setConsent(consent)
     }
 
+    fun attachRemote(remote: RemoteAnalyticsSink) {
+        this.remote = remote
+        remote.setConsent(consent)
+        if (remote.enabled()) {
+            sink = FanoutAnalyticsSink(listOf(sink, remote))
+        }
+    }
+
     fun setSink(sink: AnalyticsTrackSink) {
         this.sink = sink
     }
@@ -46,6 +56,7 @@ class AnalyticsBus(
     fun setConsent(consent: Boolean) {
         this.consent = consent
         ledger?.setConsent(consent)
+        remote?.setConsent(consent)
     }
 
     fun track(event: Analytics.Event?) {
@@ -124,7 +135,11 @@ class AnalyticsBus(
     /** Phase 26: mark a clean session end for crash-free rate. */
     fun onSessionEndClean() {
         ledger?.onSessionEndClean()
+        remote?.onSessionEnd()
     }
+
+    /** Finish 3.0 Phase 26: remote sink attached when fish.analytics.apiBase is set. */
+    fun remoteSinkEnabled(): Boolean = remote?.enabled() == true
 
     fun exportDashboardJson(): String = ledger?.exportJson()
         ?: AnalyticsDashboard.encodeSnapshot(
@@ -151,6 +166,7 @@ class AnalyticsBus(
         fun install(app: Application): AnalyticsBus {
             val ledger = AnalyticsDashboardLedger(app)
             shared.attachLedger(ledger)
+            shared.attachRemote(RemoteAnalyticsSink.fromContext(app))
             return shared
         }
 

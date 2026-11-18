@@ -1,0 +1,50 @@
+{
+  "phase": 14,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.rival_markets.v1",
+  "description": "Finish 3.0 Phase 14 — single-player rival NPC markets. Eight harbor rivals siphon demand, undercut specialty SKUs, and can be beaten by well-stocked counters. Schema 23 / content 2.0.0 (stats + events only; no new save fields).",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 23,
+  "rivalCount": 8,
+  "rivalMarketsMarker": "authored-finish-3.0-phase-14",
+  "stats": [
+    "stat.rival_sales_stolen",
+    "stat.rival_undercuts",
+    "stat.rival_beats"
+  ],
+  "rivalIds": [
+    "rival.dockside_dolly",
+    "rival.moon_mariner",
+    "rival.obsidian_cart",
+    "rival.northlight_nook",
+    "rival.marina_monger",
+    "rival.coral_crock",
+    "rival.storm_hawker",
+    "rival.ember_emporium"
+  ],
+  "authorTool": "shared/tools/mutate_phase14_rivals.py",
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-rival-markets.json",
+  "validateScript": "npm run rivalmarkets:validate",
+  "checklist": [
+    "content-pack.rivalMarkets lists 8 rivals covering all harbors",
+    "RivalMarketSystem TS + Kotlin parity (spawn pressure, undercut, siphon, beat)",
+    "Stats RIVAL_SALES_STOLEN / RIVAL_UNDERCUTS / RIVAL_BEATS wired",
+    "View exposes activeRivalIds + rivalPressureActive",
+    "Kickoff baseline measuredAtPhase ≥ 14; phase 14 validate = rivalmarkets:validate",
+    "rivalmarkets:validate green in CI",
+    "schema stays 23"
+  ],
+  "preflightGates": [
+    "shared/ship/rival-markets.json",
+    "shared/fixtures/parity-rival-markets.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "shared/tools/mutate_phase14_rivals.py",
+    "web/src/ship/rivalMarkets.ts",
+    "web/scripts/validate-rival-markets.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/RivalMarkets.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/customers/RivalMarketSystem.kt",
+    "web/src/engine/systems.ts",
+    "shared/schema/content-pack.schema.json"
+  ]
+}

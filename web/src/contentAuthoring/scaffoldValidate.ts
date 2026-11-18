@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 27 — Ajv fragment validation for content scaffolds.
+ * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 — Ajv fragment validation for content scaffolds.
  */
 import Ajv2020 from "ajv/dist/2020";
 import schema from "../../../shared/schema/content-pack.schema.json";
@@ -12,11 +12,35 @@ ajv.addSchema(schema as object, "content-pack");
 const validateSpecies = ajv.compile({ $ref: "content-pack#/properties/species/items" });
 const validateQuest = ajv.compile({ $ref: "content-pack#/properties/quests/items" });
 const validateHarbor = ajv.compile({ $ref: "content-pack#/properties/harbors/items" });
+const validateContract = ajv.compile({
+  $ref: "content-pack#/properties/contracts/properties/templates/items",
+});
+const validateBait = ajv.compile({ $ref: "content-pack#/properties/bait/items" });
+const validateDecor = ajv.compile({
+  $ref: "content-pack#/properties/decor/properties/items/items",
+});
 
 function ajvErrors(validate: { errors?: Array<{ instancePath?: string; message?: string }> | null }): string[] {
   return (validate.errors ?? []).map(
     (e) => `${e.instancePath || "/"} ${e.message ?? "invalid"}`,
   );
+}
+
+function validatorFor(kind: ScaffoldKind) {
+  switch (kind) {
+    case "species":
+      return validateSpecies;
+    case "quest":
+      return validateQuest;
+    case "harbor":
+      return validateHarbor;
+    case "contract":
+      return validateContract;
+    case "bait":
+      return validateBait;
+    case "decor":
+      return validateDecor;
+  }
 }
 
 export function validateScaffoldFragment(
@@ -26,8 +50,7 @@ export function validateScaffoldFragment(
   const structural = structuralScaffoldErrors(kind, document);
   if (structural.length) return structural;
 
-  const validate =
-    kind === "species" ? validateSpecies : kind === "quest" ? validateQuest : validateHarbor;
+  const validate = validatorFor(kind);
   const ok = validate(document) as boolean;
   return ok ? [] : ajvErrors(validate);
 }

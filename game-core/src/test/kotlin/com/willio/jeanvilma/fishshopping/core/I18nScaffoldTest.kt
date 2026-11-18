@@ -38,7 +38,7 @@ class I18nScaffoldTest {
             listing.getValue("i18nScaffoldCatalog").jsonPrimitive.content,
         )
         assertEquals(
-            listOf("en", "es"),
+            listOf("en", "es", "pt"),
             listing.getValue("locales").jsonArray.map { it.jsonPrimitive.content },
         )
     }
@@ -48,16 +48,22 @@ class I18nScaffoldTest {
         val root = repoRoot()
         val en = Json.parseToJsonElement(File(root, "shared/i18n/ui-strings.en.json").readText()).jsonObject
         val es = Json.parseToJsonElement(File(root, "shared/i18n/ui-strings.es.json").readText()).jsonObject
+        val pt = Json.parseToJsonElement(File(root, "shared/i18n/ui-strings.pt.json").readText()).jsonObject
         val enKeys = en.getValue("strings").jsonObject.keys
         val esKeys = es.getValue("strings").jsonObject.keys
+        val ptKeys = pt.getValue("strings").jsonObject.keys
         assertTrue(enKeys.size >= I18nScaffold.UI_STRING_KEY_MIN)
         assertEquals(enKeys, esKeys)
+        assertEquals(enKeys, ptKeys)
         assertEquals(enKeys, UiStrings.KEYS)
         assertEquals(enKeys.size, UiStrings.keyCount("en"))
         assertEquals(enKeys.size, UiStrings.keyCount("es"))
+        assertEquals(enKeys.size, UiStrings.keyCount("pt"))
 
         UiStrings.setLocale("es")
         assertEquals("Pausa", UiStrings.t("nav.pause"))
+        UiStrings.setLocale("pt")
+        assertTrue(UiStrings.t("nav.pause") != "Pause")
         UiStrings.setLocale("en")
         assertEquals("Pause", UiStrings.t("nav.pause"))
         assertEquals("2/14", UiStrings.t("achievements.count", mapOf("unlocked" to 2, "total" to 14)))
@@ -70,6 +76,8 @@ class I18nScaffoldTest {
             },
         )
         assertTrue(File(root, "shared/store/locales/es.json").isFile)
+        assertTrue(File(root, "shared/store/locales/pt.json").isFile)
         assertTrue(File(root, "app/src/main/res/values-es/strings.xml").isFile)
+        assertTrue(File(root, "app/src/main/res/values-pt/strings.xml").isFile)
     }
 }

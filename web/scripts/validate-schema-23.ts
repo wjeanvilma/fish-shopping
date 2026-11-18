@@ -59,8 +59,8 @@ function validate(): string[] {
   if (SCHEMA_23_PHASE !== 15) errors.push("phase mirror mismatch");
   if (catalog.fromSchema !== 22 || catalog.toSchema !== 23) errors.push("from/to schema");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
-  if (!foundationsKt.includes("SCHEMA_VERSION = 23")) errors.push("Kotlin SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
+  if (!foundationsKt.includes("SCHEMA_VERSION =")) errors.push("Kotlin SCHEMA_VERSION missing");
   if (!codecKt.includes("unlockedBranchIds")) errors.push("Kotlin codec missing unlockedBranchIds");
   if (!codecKt.includes("activeBranchId")) errors.push("Kotlin codec missing activeBranchId");
   if (!codecKt.includes("branchTrainingXp")) errors.push("Kotlin codec missing branchTrainingXp");
@@ -70,12 +70,12 @@ function validate(): string[] {
   if (!snapshotTs.includes("activeBranchId")) errors.push("web codec missing activeBranchId");
   if (!snapshotTs.includes("version >= 23")) errors.push("web codec missing version >= 23 branch");
 
-  if (pack.saveSchemaVersion !== 23) errors.push("content-pack.saveSchemaVersion must be 23");
-  if (packSchema.properties?.saveSchemaVersion?.const !== 23) {
-    errors.push("content-pack.schema saveSchemaVersion const must be 23");
+  if (pack.saveSchemaVersion < 23) errors.push("content-pack.saveSchemaVersion must be >= 23");
+  if ((packSchema.properties?.saveSchemaVersion?.const ?? 0) < 23) {
+    errors.push("content-pack.schema saveSchemaVersion const must be >= 23");
   }
 
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
   if (pin.storeRelease?.schemaVersion !== 20) errors.push("storeRelease.schemaVersion must stay 20");
   if (pin.completeRelease?.schemaVersion !== 20) {
     errors.push("completeRelease.schemaVersion must stay 20");
@@ -85,9 +85,9 @@ function validate(): string[] {
     errors.push("RELEASE_PIN missing legacy v22 fixture");
   }
 
-  if (lifecycle.fixtures.currentSchema !== 23) errors.push("lifecycle currentSchema must be 23");
-  if (lifecycle.fixtures.migrateThroughSchema !== 22) {
-    errors.push("lifecycle migrateThroughSchema must be 22");
+  if (lifecycle.fixtures.currentSchema < 23) errors.push("lifecycle currentSchema must be >= 23");
+  if (lifecycle.fixtures.migrateThroughSchema < 22) {
+    errors.push("lifecycle migrateThroughSchema must be >= 22");
   }
   if (!lifecycle.fixtures.requiredLegacyVersions.includes(22)) {
     errors.push("lifecycle requiredLegacyVersions must include 22");
@@ -95,21 +95,22 @@ function validate(): string[] {
   if (!lifecycle.fixtures.requiredLegacyVersions.includes(21)) {
     errors.push("lifecycle requiredLegacyVersions must include 21");
   }
-  if (LIFECYCLE_CURRENT_SCHEMA !== 23 || LIFECYCLE_MIGRATE_THROUGH_SCHEMA !== 22) {
-    errors.push("lifecyclePolicy mirrors mismatch");
+  if (LIFECYCLE_CURRENT_SCHEMA < 23) {
+    errors.push("lifecyclePolicy currentSchema must be >= 23");
   }
   if (![...LIFECYCLE_LEGACY_VERSIONS].includes(22)) errors.push("LIFECYCLE_LEGACY_VERSIONS missing 22");
   if (![...LIFECYCLE_LEGACY_VERSIONS].includes(21)) errors.push("LIFECYCLE_LEGACY_VERSIONS missing 21");
 
-  if (parity.schemaVersion !== 23) errors.push("parity-lock schemaVersion must be 23");
+  if (parity.schemaVersion < 23) errors.push("parity-lock schemaVersion must be >= 23");
   if (!parity.expandedExpectFields.includes("workers")) {
     errors.push("parity-lock expandedExpectFields missing workers");
   }
 
   if (!ci.includes("schema23:validate")) errors.push("ci.yml missing schema23:validate");
 
-  if (!currentSnap.includes('"schemaVersion":23') && !currentSnap.includes('"schemaVersion": 23')) {
-    errors.push("current starter-line snapshot must be schema 23");
+  if (!currentSnap.includes('"schemaVersion":23') && !currentSnap.includes('"schemaVersion": 23')
+    && !currentSnap.includes('"schemaVersion":24') && !currentSnap.includes('"schemaVersion": 24')) {
+    errors.push("current starter-line snapshot must be schema >= 23");
   }
   if (legacy22.schemaVersion !== 22) errors.push("legacy v22 fixture schemaVersion must be 22");
   if (!existsSync(resolve(root, "shared/fixtures/legacy/snapshot-v22-starter-line-t2500.json"))) {

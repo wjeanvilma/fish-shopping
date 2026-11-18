@@ -163,6 +163,28 @@ def kiln_module():
     return _finish(pos, nrm, idx)
 
 
+def press_module():
+    """Harbor press: frame, platen, screw post."""
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.30, 0.0), (0.90, 0.60, 0.75))  # base
+    add_box(pos, nrm, idx, (0.0, 0.70, 0.0), (0.80, 0.10, 0.65))  # lower platen
+    add_box(pos, nrm, idx, (0.0, 1.05, 0.0), (0.70, 0.10, 0.55))  # upper platen
+    add_box(pos, nrm, idx, (0.0, 1.25, 0.0), (0.14, 0.45, 0.14))  # screw post
+    add_box(pos, nrm, idx, (0.0, 1.50, 0.0), (0.28, 0.10, 0.28))  # wheel
+    return _finish(pos, nrm, idx)
+
+
+def pickler_module():
+    """Harbor pickler: brine vat, lid rails, jar rack."""
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.40, 0.0), (0.85, 0.80, 0.75))  # vat
+    add_box(pos, nrm, idx, (0.0, 0.85, 0.0), (0.70, 0.08, 0.60))  # brine surface
+    add_box(pos, nrm, idx, (-0.30, 1.05, 0.0), (0.08, 0.30, 0.50))  # lid rail
+    add_box(pos, nrm, idx, (0.30, 1.05, 0.0), (0.08, 0.30, 0.50))
+    add_box(pos, nrm, idx, (0.0, 0.55, 0.40), (0.45, 0.35, 0.12))  # jar rack
+    return _finish(pos, nrm, idx)
+
+
 MODULE_BUILDERS = {
     "pier": pier_deck_module,
     "ground": ground_module,
@@ -176,6 +198,8 @@ MODULE_BUILDERS = {
     "packer": packer_module,
     "steamer": steamer_module,
     "kiln": kiln_module,
+    "press": press_module,
+    "pickler": pickler_module,
 }
 
 MODULE_COLORS = {
@@ -191,6 +215,8 @@ MODULE_COLORS = {
     "packer": "#6B8F71",
     "steamer": "#3A9B8F",
     "kiln": "#A04828",
+    "press": "#7A6A58",
+    "pickler": "#5A8A6A",
 }
 
 # World Y height (metres) when node scale Y = height / 1.0 after normalize.
@@ -207,4 +233,6 @@ MODULE_HEIGHTS = {
     "packer": 1.35,
     "steamer": 1.40,
     "kiln": 1.50,
+    "press": 1.45,
+    "pickler": 1.40,
 }

@@ -58,6 +58,9 @@ describe("settingsStore Phase 10 a11y fields", () => {
       cloudAccountId: null,
       cloudRefreshToken: null,
       equippedCosmeticId: null,
+      locale: "en",
+      themePreference: "system",
+      dailyGoalRemindersEnabled: false,
     });
     const s = loadSettings();
     expect(s.reducedMotion).toBe(true);
@@ -86,6 +89,9 @@ describe("settingsStore Phase 10 a11y fields", () => {
       cloudAccountId: null,
       cloudRefreshToken: null,
       equippedCosmeticId: null,
+      locale: "en",
+      themePreference: "system",
+      dailyGoalRemindersEnabled: false,
     });
     const s = loadSettings();
     expect(s.musicVolume).toBe(0.35);

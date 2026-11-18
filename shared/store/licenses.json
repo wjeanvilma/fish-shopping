@@ -14,7 +14,9 @@
   "records": [
     {
       "id": "harbor-blockouts",
-      "paths": ["shared/assets/models/*_blockout.glb"],
+      "paths": [
+        "shared/assets/models/*_blockout.glb"
+      ],
       "kind": "3d",
       "origin": "first_party_generated",
       "tool": "shared/tools/generate_blockout.py",
@@ -25,17 +27,24 @@
       "paths": [
         "shared/assets/models/sunrise_pier_blockout.glb",
         "shared/assets/models/coral_lagoon_blockout.glb",
-        "shared/assets/models/storm_quay_blockout.glb"
+        "shared/assets/models/storm_quay_blockout.glb",
+        "shared/assets/models/moon_cove_blockout.glb",
+        "shared/assets/models/obsidian_jetty_blockout.glb",
+        "shared/assets/models/northlight_harbor_blockout.glb",
+        "shared/assets/models/grand_marina_blockout.glb",
+        "shared/assets/models/ember_wharf_blockout.glb"
       ],
       "kind": "3d",
       "origin": "first_party_generated",
       "tool": "shared/tools/generate_blockout.py",
-      "note": "Finish 2.0 Phase 19 authored low-poly harbor themes (HarborArt_* props + palettes via harbor_themes.py).",
+      "note": "Finish 2.0 Phase 19 + Finish 3.0 Phase 8 authored low-poly harbor themes (HarborArt_* props + palettes via harbor_themes.py).",
       "rights": "original"
     },
     {
       "id": "env-modules",
-      "paths": ["shared/assets/models/modules/*.glb"],
+      "paths": [
+        "shared/assets/models/modules/*.glb"
+      ],
       "kind": "3d",
       "origin": "first_party_generated",
       "tool": "shared/tools/generate_env_modules.py",
@@ -43,7 +52,9 @@
     },
     {
       "id": "character-modules",
-      "paths": ["shared/assets/models/characters/*.glb"],
+      "paths": [
+        "shared/assets/models/characters/*.glb"
+      ],
       "kind": "3d",
       "origin": "first_party_generated",
       "tool": "shared/tools/generate_character_modules.py",
@@ -61,17 +72,60 @@
         "shared/assets/models/fish_tide_bass.glb",
         "shared/assets/models/fish_amber_snapper.glb",
         "shared/assets/models/fish_king_grouper.glb",
-        "shared/assets/models/fish_reef_perch.glb"
+        "shared/assets/models/fish_reef_perch.glb",
+        "shared/assets/models/fish_moon_flounder.glb",
+        "shared/assets/models/fish_ink_squid.glb",
+        "shared/assets/models/fish_lava_eel.glb",
+        "shared/assets/models/fish_ghost_lanternfish.glb",
+        "shared/assets/models/fish_golden_sprat.glb",
+        "shared/assets/models/fish_gilt_mackerel.glb",
+        "shared/assets/models/fish_bronze_mullet.glb",
+        "shared/assets/models/fish_ruby_snapper.glb",
+        "shared/assets/models/fish_silver_dawn_anchovy.glb",
+        "shared/assets/models/fish_sapphire_needlefish.glb",
+        "shared/assets/models/fish_crown_bass.glb",
+        "shared/assets/models/fish_opal_flounder.glb",
+        "shared/assets/models/fish_ember_eel.glb",
+        "shared/assets/models/fish_prism_lanternfish.glb",
+        "shared/assets/models/fish_frost_smelt.glb",
+        "shared/assets/models/fish_arctic_cod.glb",
+        "shared/assets/models/fish_ice_char.glb",
+        "shared/assets/models/fish_polar_herring.glb",
+        "shared/assets/models/fish_crystal_smelt.glb",
+        "shared/assets/models/fish_aurora_cod.glb",
+        "shared/assets/models/fish_marina_tuna.glb",
+        "shared/assets/models/fish_saffron_sole.glb",
+        "shared/assets/models/fish_pearl_grouper.glb",
+        "shared/assets/models/fish_harbor_pompano.glb",
+        "shared/assets/models/fish_gilt_tuna.glb",
+        "shared/assets/models/fish_gilt_sole.glb",
+        "shared/assets/models/fish_coral_wrasse.glb",
+        "shared/assets/models/fish_gilt_wrasse.glb",
+        "shared/assets/models/fish_lagoon_tang.glb",
+        "shared/assets/models/fish_opal_tang.glb",
+        "shared/assets/models/fish_gale_jack.glb",
+        "shared/assets/models/fish_thunder_jack.glb",
+        "shared/assets/models/fish_squall_bass.glb",
+        "shared/assets/models/fish_prism_squall.glb",
+        "shared/assets/models/fish_cinder_carp.glb",
+        "shared/assets/models/fish_gilt_cinder.glb",
+        "shared/assets/models/fish_ash_pike.glb",
+        "shared/assets/models/fish_magma_pike.glb",
+        "shared/assets/models/fish_tropic_ray.glb",
+        "shared/assets/models/fish_pearl_ray.glb"
       ],
       "kind": "3d",
       "origin": "first_party_generated",
       "tool": "shared/tools/generate_fish_stubs.py",
-      "note": "Finish 2.0 Phase 20 authored multi-part FishArt meshes for Sunrise Pier gallery top species (fish_themes.py).",
+      "note": "Finish 2.0 Phase 20 + Finish 3.0 Phase 9 authored multi-part FishArt meshes for all 50 species (fish_themes.py).",
       "rights": "original"
     },
     {
       "id": "item-art",
-      "paths": ["shared/assets/models/fish_*.glb", "shared/assets/models/product_*.glb"],
+      "paths": [
+        "shared/assets/models/fish_*.glb",
+        "shared/assets/models/product_*.glb"
+      ],
       "kind": "3d",
       "origin": "first_party_generated",
       "tool": "shared/tools/generate_fish_stubs.py",
@@ -101,7 +155,9 @@
     },
     {
       "id": "screenshot-storyboards",
-      "paths": ["shared/store/screenshots/*.svg"],
+      "paths": [
+        "shared/store/screenshots/*.svg"
+      ],
       "kind": "2d",
       "origin": "first_party_authored",
       "rights": "original",
@@ -165,8 +221,30 @@
       "note": "Finish 2.0 Phase 21 pack-2 stingers + festival/storm beds (plan 30_finish_2.0). Distinct from post-1.0 Phase 21 vfx-juice."
     },
     {
+      "id": "authored-audio-pack-3",
+      "paths": [
+        "shared/audio/sfx/rival_open.wav",
+        "shared/audio/sfx/rival_steal.wav",
+        "shared/audio/sfx/rival_beat.wav",
+        "shared/audio/sfx/harbor_travel.wav",
+        "shared/audio/sfx/hire.wav",
+        "shared/audio/sfx/prestige.wav",
+        "shared/audio/sfx/loan.wav",
+        "shared/audio/sfx/trophy_set.wav",
+        "shared/audio/music/night.wav",
+        "shared/audio/music/rival.wav"
+      ],
+      "kind": "audio",
+      "origin": "first_party_authored",
+      "tool": "shared/tools/generate_sfx_pack.py + shared/tools/generate_music_pack.py",
+      "rights": "original",
+      "note": "Finish 3.0 Phase 23 pack-3 stingers + night/rival beds (plan 30_finish_3.0). Ducking policy unchanged from music-pack.json."
+    },
+    {
       "id": "content-pack",
-      "paths": ["shared/content/content-pack.json"],
+      "paths": [
+        "shared/content/content-pack.json"
+      ],
       "kind": "data",
       "origin": "first_party_authored",
       "rights": "original"
@@ -177,7 +255,7 @@
       "kind": "runtime",
       "origin": "third_party_dependency",
       "rights": "dependency_licenses",
-      "note": "See ossNotices for Filament, Three.js, React, Kotlin, AndroidX/Compose, and related SPDX attributions shown in Settings → Licenses."
+      "note": "See ossNotices for Filament, Three.js, React, Kotlin, AndroidX/Compose, and related SPDX attributions shown in Settings \u2192 Licenses."
     }
   ],
   "ossNotices": [
@@ -187,7 +265,9 @@
       "version": "1.77.3",
       "spdx": "Apache-2.0",
       "url": "https://github.com/google/filament",
-      "platforms": ["android"],
+      "platforms": [
+        "android"
+      ],
       "notice": "Copyright Google LLC. Licensed under the Apache License, Version 2.0."
     },
     {
@@ -196,8 +276,10 @@
       "version": "0.170.0",
       "spdx": "MIT",
       "url": "https://github.com/mrdoob/three.js",
-      "platforms": ["web"],
-      "notice": "Copyright © 2010-2024 three.js authors. MIT License."
+      "platforms": [
+        "web"
+      ],
+      "notice": "Copyright \u00a9 2010-2024 three.js authors. MIT License."
     },
     {
       "id": "react",
@@ -205,7 +287,9 @@
       "version": "18.3.1",
       "spdx": "MIT",
       "url": "https://github.com/facebook/react",
-      "platforms": ["web"],
+      "platforms": [
+        "web"
+      ],
       "notice": "Copyright Meta Platforms, Inc. and affiliates. MIT License."
     },
     {
@@ -214,7 +298,9 @@
       "version": "2.4.0",
       "spdx": "Apache-2.0",
       "url": "https://github.com/JetBrains/kotlin",
-      "platforms": ["android"],
+      "platforms": [
+        "android"
+      ],
       "notice": "Copyright JetBrains s.r.o. Licensed under the Apache License, Version 2.0."
     },
     {
@@ -223,7 +309,9 @@
       "version": "1.9.0",
       "spdx": "Apache-2.0",
       "url": "https://github.com/Kotlin/kotlinx.serialization",
-      "platforms": ["android"],
+      "platforms": [
+        "android"
+      ],
       "notice": "Copyright JetBrains s.r.o. Licensed under the Apache License, Version 2.0."
     },
     {
@@ -232,7 +320,9 @@
       "version": "BOM",
       "spdx": "Apache-2.0",
       "url": "https://developer.android.com/jetpack",
-      "platforms": ["android"],
+      "platforms": [
+        "android"
+      ],
       "notice": "Copyright The Android Open Source Project. Licensed under the Apache License, Version 2.0."
     },
     {
@@ -241,7 +331,9 @@
       "version": "5.4.21",
       "spdx": "MIT",
       "url": "https://github.com/vitejs/vite",
-      "platforms": ["web"],
+      "platforms": [
+        "web"
+      ],
       "notice": "Copyright Evan You and Vite contributors. MIT License. Used for the web client build."
     },
     {
@@ -250,7 +342,9 @@
       "version": "8.17.1",
       "spdx": "MIT",
       "url": "https://github.com/ajv-validator/ajv",
-      "platforms": ["web"],
+      "platforms": [
+        "web"
+      ],
       "notice": "Copyright 2015-2024 Evgeny Poberezkin. MIT License."
     }
   ],

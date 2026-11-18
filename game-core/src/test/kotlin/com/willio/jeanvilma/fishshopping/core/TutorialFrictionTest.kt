@@ -60,7 +60,7 @@ class TutorialFrictionTest {
         val catalog = Json.parseToJsonElement(File(root, TutorialFriction.CATALOG).readText()).jsonObject
         val pack = Json.parseToJsonElement(File(root, TutorialFriction.CONTENT_PACK).readText()).jsonObject
         assertTrue(
-            pack.getValue("contentVersion").jsonPrimitive.content in setOf("1.0.0", "1.0.1", "2.0.0"),
+            pack.getValue("contentVersion").jsonPrimitive.content in setOf("1.0.0", "1.0.1", "2.0.0", "3.0.0"),
         )
         val pin = Json.parseToJsonElement(File(root, "shared/fixtures/RELEASE_PIN.json").readText()).jsonObject
         assertTrue(pin.getValue("schemaVersion").jsonPrimitive.content.toInt() >= TutorialFriction.SCHEMA_VERSION)

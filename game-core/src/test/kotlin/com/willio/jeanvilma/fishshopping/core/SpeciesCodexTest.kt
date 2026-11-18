@@ -34,8 +34,8 @@ class SpeciesCodexTest {
         assertEquals(SpeciesCodex.SCHEMA, json.getValue("schema").jsonPrimitive.content)
         assertEquals(SpeciesCodex.CODEX_ENTRY_COUNT, json.getValue("codexEntryCount").jsonPrimitive.content.toInt())
         assertEquals(SpeciesCodex.FAMILY_COUNT, json.getValue("familyCount").jsonPrimitive.content.toInt())
-        assertEquals(50, Shared.content.species.size)
-        assertEquals(50, Shared.content.codex.entries.size)
+        assertEquals(75, Shared.content.species.size)
+        assertEquals(75, Shared.content.codex.entries.size)
         assertEquals(9, Shared.content.codex.families.size)
         for (fam in SpeciesCodex.FAMILIES) {
             assertTrue(fam, fam in Shared.content.codex.families)
@@ -44,7 +44,7 @@ class SpeciesCodexTest {
         assertEquals(12, listing.getValue("speciesCodexPhase").jsonPrimitive.content.toInt())
         assertEquals(SpeciesCodex.CATALOG, listing.getValue("speciesCodexCatalog").jsonPrimitive.content)
         val dod = Json.parseToJsonElement(File(root, "shared/ship/definition-of-done.json").readText()).jsonObject
-        assertEquals(50, dod.getValue("quotas").jsonObject.getValue("codexEntries").jsonPrimitive.int)
+        assertEquals(75, dod.getValue("quotas").jsonObject.getValue("codexEntries").jsonPrimitive.int)
         val screens = dod.getValue("screensPresent").jsonArray.map { it.jsonPrimitive.content }
         assertTrue(screens.contains("species_journal"))
     }

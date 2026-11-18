@@ -41,7 +41,7 @@ function validate(): string[] {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (CONTRACTS_20_PHASE !== 17) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
   if (catalog.deliveryChainCount !== 2 || DELIVERY_CHAIN_FLOOR !== 2) {
     errors.push("deliveryChainCount must be 2");
@@ -65,7 +65,7 @@ function validate(): string[] {
   if (pin.contracts20 !== "shared/ship/contracts-2.0.json") {
     errors.push("RELEASE_PIN.contracts20 path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
 
   for (const id of CONTRACTS_20.chainHeads) {
     if (!content.contractTemplatesById.has(id)) errors.push(`missing chain head ${id}`);
@@ -118,18 +118,18 @@ function validate(): string[] {
     "utf8",
   );
   const systemsTs = readFileSync(resolve(root, "web/src/engine/systems.ts"), "utf8");
-  const appTsx = readFileSync(resolve(root, "web/src/ui/App.tsx"), "utf8");
-  const screenKt = readFileSync(
-    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt"),
+  const contractsPanelTs = readFileSync(resolve(root, "web/src/ui/ContractsPanel.tsx"), "utf8");
+  const contractsPanelKt = readFileSync(
+    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/ContractsPanel.kt"),
     "utf8",
   );
   if (!contractsKt.includes("advanceOrFinishChain")) errors.push("Kotlin chain advance missing");
   if (!contractsKt.includes("failStreak")) errors.push("Kotlin failStreak missing");
   if (!systemsTs.includes("advanceOrFinishChain")) errors.push("web chain advance missing");
-  if (!appTsx.includes("failStreak")) errors.push("web Jobs panel missing fail streak");
-  if (!appTsx.includes("chainStep")) errors.push("web Jobs panel missing chain step");
-  if (!screenKt.includes("failStreak")) errors.push("Android Jobs panel missing fail streak");
-  if (!screenKt.includes("chainStep")) errors.push("Android Jobs panel missing chain step");
+  if (!contractsPanelTs.includes("failStreak")) errors.push("web Jobs panel missing fail streak");
+  if (!contractsPanelTs.includes("chainStep")) errors.push("web Jobs panel missing chain step");
+  if (!contractsPanelKt.includes("failStreak")) errors.push("Android Jobs panel missing fail streak");
+  if (!contractsPanelKt.includes("chainStep")) errors.push("Android Jobs panel missing chain step");
 
   for (const gate of catalog.preflightGates as string[]) {
     if (!existsSync(resolve(root, gate))) errors.push(`missing preflight ${gate}`);

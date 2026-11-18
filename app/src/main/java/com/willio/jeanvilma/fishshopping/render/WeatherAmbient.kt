@@ -2,10 +2,15 @@ package com.willio.jeanvilma.fishshopping.render
 
 /**
  * Finish 2.0 Phase 22 — weather ambient profiles for harbor presentation.
+ * Finish 3.0 Phase 24 adds tide + rival ambient mixes (still not burst-pool).
  * Presentation-only; does not consume the VfxBurst pool or change 20 Hz sim.
  */
 enum class WeatherAmbientId {
     CLEAR, OVERCAST, RAIN, FOG, GALE, DEFAULT,
+}
+
+enum class TideAmbientId {
+    DAWN, DAY, DUSK, NIGHT,
 }
 
 data class WeatherAmbientProfile(
@@ -34,6 +39,13 @@ private data class AmbientBase(
     val festivalWarmth: Float,
 )
 
+private data class TideMix(
+    val sky: Int,
+    val water: Int,
+    val amount: Float,
+    val bob: Double,
+)
+
 private val PROFILES = mapOf(
     WeatherAmbientId.CLEAR to AmbientBase(WeatherAmbientId.CLEAR, 0x9fd3ea, 0x1a5f7a, 0x3a9fc4, 1.0, 0.18f),
     WeatherAmbientId.OVERCAST to AmbientBase(WeatherAmbientId.OVERCAST, 0x8aa0b0, 0x2a4a5a, 0x4a7080, 0.7, 0.12f),
@@ -41,6 +53,13 @@ private val PROFILES = mapOf(
     WeatherAmbientId.FOG to AmbientBase(WeatherAmbientId.FOG, 0xc8d0d4, 0x4a6068, 0x7a9098, 0.4, 0.08f),
     WeatherAmbientId.GALE to AmbientBase(WeatherAmbientId.GALE, 0x4a5a70, 0x102838, 0x285870, 1.85, 0.06f),
     WeatherAmbientId.DEFAULT to AmbientBase(WeatherAmbientId.DEFAULT, 0x9fd3ea, 0x1a5f7a, 0x3a9fc4, 1.0, 0.15f),
+)
+
+private val TIDE_MIX = mapOf(
+    TideAmbientId.DAWN to TideMix(0xf2c4a0, 0x3a7a90, 0.22f, 0.95),
+    TideAmbientId.DAY to TideMix(0x9fd3ea, 0x1a5f7a, 0.0f, 1.0),
+    TideAmbientId.DUSK to TideMix(0xe08958, 0x2a4860, 0.28f, 0.9),
+    TideAmbientId.NIGHT to TideMix(0x1a2848, 0x0c2030, 0.42f, 0.75),
 )
 
 val WEATHER_AMBIENT_PATTERN_IDS = listOf(
@@ -51,6 +70,8 @@ val WEATHER_AMBIENT_PATTERN_IDS = listOf(
     "weather.gale",
 )
 
+val TIDE_AMBIENT_PHASE_IDS = listOf("dawn", "day", "dusk", "night")
+
 fun weatherAmbientIdForWeatherId(weatherId: String): WeatherAmbientId = when {
     weatherId.contains("gale") -> WeatherAmbientId.GALE
     weatherId.contains("rain") -> WeatherAmbientId.RAIN
@@ -60,11 +81,20 @@ fun weatherAmbientIdForWeatherId(weatherId: String): WeatherAmbientId = when {
     else -> WeatherAmbientId.DEFAULT
 }
 
+fun tideAmbientIdForPhaseId(tidePhaseId: String): TideAmbientId = when (tidePhaseId) {
+    "dawn" -> TideAmbientId.DAWN
+    "dusk" -> TideAmbientId.DUSK
+    "night" -> TideAmbientId.NIGHT
+    else -> TideAmbientId.DAY
+}
+
 fun weatherAmbientProfile(
     weatherId: String,
     festivalActive: Boolean = false,
     quality: PresenterQuality = PresenterQuality.MEDIUM,
     reducedMotion: Boolean = false,
+    tidePhaseId: String = "day",
+    rivalActive: Boolean = false,
 ): WeatherAmbientProfile {
     val base = PROFILES.getValue(weatherAmbientIdForWeatherId(weatherId))
     val qScale = when (quality) {
@@ -72,14 +102,27 @@ fun weatherAmbientProfile(
         PresenterQuality.MEDIUM -> 0.85f
         PresenterQuality.HIGH -> 1.0f
     }
-    val bob = if (reducedMotion) 0.0 else base.bobScale * qScale
-    val sky = if (festivalActive) {
-        mixRgb(base.sky, 0xf0c878, base.festivalWarmth * qScale)
-    } else {
-        unpackRgb(base.sky)
+    val tide = TIDE_MIX.getValue(tideAmbientIdForPhaseId(tidePhaseId))
+    val bob = if (reducedMotion) 0.0 else base.bobScale * qScale * tide.bob
+    var sky = unpackRgb(base.sky)
+    var deep = unpackRgb(base.deep)
+    var shallow = unpackRgb(base.shallow)
+    if (tide.amount > 0f) {
+        sky = mixRgb(base.sky, tide.sky, tide.amount * qScale)
+        deep = mixRgb(base.deep, tide.water, tide.amount * 0.65f * qScale)
+        shallow = mixRgb(base.shallow, tide.water, tide.amount * 0.45f * qScale)
     }
-    val deep = unpackRgb(base.deep)
-    val shallow = unpackRgb(base.shallow)
+    if (festivalActive) {
+        sky = mixRgb(
+            packRgb(sky),
+            0xf0c878,
+            base.festivalWarmth * qScale,
+        )
+    }
+    if (rivalActive) {
+        sky = mixRgb(packRgb(sky), 0x8a4068, 0.18f * qScale)
+        deep = mixRgb(packRgb(deep), 0x3a2040, 0.12f * qScale)
+    }
     return WeatherAmbientProfile(
         id = base.id,
         skyR = sky[0], skyG = sky[1], skyB = sky[2],
@@ -95,6 +138,13 @@ private fun unpackRgb(hex: Int): FloatArray = floatArrayOf(
     ((hex shr 8) and 0xff) / 255f,
     (hex and 0xff) / 255f,
 )
+
+private fun packRgb(rgb: FloatArray): Int {
+    val r = (rgb[0].coerceIn(0f, 1f) * 255).toInt()
+    val g = (rgb[1].coerceIn(0f, 1f) * 255).toInt()
+    val b = (rgb[2].coerceIn(0f, 1f) * 255).toInt()
+    return (r shl 16) or (g shl 8) or b
+}
 
 private fun mixRgb(a: Int, b: Int, t: Float): FloatArray {
     val A = unpackRgb(a)

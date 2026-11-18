@@ -1,7 +1,7 @@
 {
   "$schema": "../schema/content-pack.schema.json",
-  "contentVersion": "2.0.0",
-  "saveSchemaVersion": 23,
+  "contentVersion": "3.0.0",
+  "saveSchemaVersion": 24,
   "ticksPerSecond": 20,
   "units": {
     "distance": "millimetres (integer); x/z ground plane, y is up",
@@ -606,6 +606,304 @@
       "rarityWeight": 1,
       "asset": "models/fish_pearl_ray.glb",
       "spoilTier": 1
+    },
+    {
+      "id": "species.mangrove_snapper",
+      "name": "Mangrove snapper",
+      "carryUnits": 1,
+      "catchTicks": 105,
+      "baseValue": 6,
+      "rarityWeight": 48,
+      "asset": "models/fish_mangrove_snapper.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.gilt_mangrove",
+        "chancePermille": 33
+      }
+    },
+    {
+      "id": "species.gilt_mangrove",
+      "name": "Gilt mangrove",
+      "carryUnits": 1,
+      "catchTicks": 105,
+      "baseValue": 14,
+      "rarityWeight": 1,
+      "asset": "models/fish_gilt_mangrove.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.glass_goby",
+      "name": "Glass goby",
+      "carryUnits": 1,
+      "catchTicks": 90,
+      "baseValue": 4,
+      "rarityWeight": 60,
+      "asset": "models/fish_glass_goby.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.prism_goby",
+        "chancePermille": 36
+      }
+    },
+    {
+      "id": "species.prism_goby",
+      "name": "Prism goby",
+      "carryUnits": 1,
+      "catchTicks": 90,
+      "baseValue": 12,
+      "rarityWeight": 1,
+      "asset": "models/fish_prism_goby.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.shear_drum",
+      "name": "Shear drum",
+      "carryUnits": 2,
+      "catchTicks": 135,
+      "baseValue": 9,
+      "rarityWeight": 36,
+      "asset": "models/fish_shear_drum.glb",
+      "spoilTier": 1,
+      "rareUpgrade": {
+        "to": "species.thunder_drum",
+        "chancePermille": 28
+      }
+    },
+    {
+      "id": "species.thunder_drum",
+      "name": "Thunder drum",
+      "carryUnits": 2,
+      "catchTicks": 135,
+      "baseValue": 20,
+      "rarityWeight": 1,
+      "asset": "models/fish_thunder_drum.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.foam_skater",
+      "name": "Foam skater",
+      "carryUnits": 1,
+      "catchTicks": 100,
+      "baseValue": 5,
+      "rarityWeight": 50,
+      "asset": "models/fish_foam_skater.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.crystal_skater",
+        "chancePermille": 34
+      }
+    },
+    {
+      "id": "species.crystal_skater",
+      "name": "Crystal skater",
+      "carryUnits": 1,
+      "catchTicks": 100,
+      "baseValue": 13,
+      "rarityWeight": 1,
+      "asset": "models/fish_crystal_skater.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.slag_loach",
+      "name": "Slag loach",
+      "carryUnits": 1,
+      "catchTicks": 120,
+      "baseValue": 7,
+      "rarityWeight": 40,
+      "asset": "models/fish_slag_loach.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.magma_loach",
+        "chancePermille": 30
+      }
+    },
+    {
+      "id": "species.magma_loach",
+      "name": "Magma loach",
+      "carryUnits": 1,
+      "catchTicks": 120,
+      "baseValue": 16,
+      "rarityWeight": 1,
+      "asset": "models/fish_magma_loach.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.kiln_perch",
+      "name": "Kiln perch",
+      "carryUnits": 1,
+      "catchTicks": 112,
+      "baseValue": 6,
+      "rarityWeight": 44,
+      "asset": "models/fish_kiln_perch.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.gilt_kiln",
+        "chancePermille": 31
+      }
+    },
+    {
+      "id": "species.gilt_kiln",
+      "name": "Gilt kiln",
+      "carryUnits": 1,
+      "catchTicks": 112,
+      "baseValue": 14,
+      "rarityWeight": 1,
+      "asset": "models/fish_gilt_kiln.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.drift_icefish",
+      "name": "Drift icefish",
+      "carryUnits": 1,
+      "catchTicks": 118,
+      "baseValue": 7,
+      "rarityWeight": 38,
+      "asset": "models/fish_drift_icefish.glb",
+      "spoilTier": 1,
+      "rareUpgrade": {
+        "to": "species.aurora_icefish",
+        "chancePermille": 29
+      }
+    },
+    {
+      "id": "species.aurora_icefish",
+      "name": "Aurora icefish",
+      "carryUnits": 1,
+      "catchTicks": 118,
+      "baseValue": 16,
+      "rarityWeight": 1,
+      "asset": "models/fish_aurora_icefish.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.rime_bream",
+      "name": "Rime bream",
+      "carryUnits": 2,
+      "catchTicks": 140,
+      "baseValue": 10,
+      "rarityWeight": 30,
+      "asset": "models/fish_rime_bream.glb",
+      "spoilTier": 1,
+      "rareUpgrade": {
+        "to": "species.crystal_bream",
+        "chancePermille": 26
+      }
+    },
+    {
+      "id": "species.crystal_bream",
+      "name": "Crystal bream",
+      "carryUnits": 2,
+      "catchTicks": 140,
+      "baseValue": 22,
+      "rarityWeight": 1,
+      "asset": "models/fish_crystal_bream.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.silk_amberjack",
+      "name": "Silk amberjack",
+      "carryUnits": 2,
+      "catchTicks": 150,
+      "baseValue": 11,
+      "rarityWeight": 28,
+      "asset": "models/fish_silk_amberjack.glb",
+      "spoilTier": 1,
+      "rareUpgrade": {
+        "to": "species.gilt_amberjack",
+        "chancePermille": 25
+      }
+    },
+    {
+      "id": "species.gilt_amberjack",
+      "name": "Gilt amberjack",
+      "carryUnits": 2,
+      "catchTicks": 150,
+      "baseValue": 24,
+      "rarityWeight": 1,
+      "asset": "models/fish_gilt_amberjack.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.parade_scad",
+      "name": "Parade scad",
+      "carryUnits": 1,
+      "catchTicks": 108,
+      "baseValue": 6,
+      "rarityWeight": 46,
+      "asset": "models/fish_parade_scad.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.opal_scad",
+        "chancePermille": 32
+      }
+    },
+    {
+      "id": "species.opal_scad",
+      "name": "Opal scad",
+      "carryUnits": 1,
+      "catchTicks": 108,
+      "baseValue": 14,
+      "rarityWeight": 1,
+      "asset": "models/fish_opal_scad.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.veil_skate",
+      "name": "Veil skate",
+      "carryUnits": 2,
+      "catchTicks": 155,
+      "baseValue": 12,
+      "rarityWeight": 22,
+      "asset": "models/fish_veil_skate.glb",
+      "spoilTier": 1,
+      "rareUpgrade": {
+        "to": "species.pearl_skate",
+        "chancePermille": 23
+      }
+    },
+    {
+      "id": "species.pearl_skate",
+      "name": "Pearl skate",
+      "carryUnits": 2,
+      "catchTicks": 155,
+      "baseValue": 26,
+      "rarityWeight": 1,
+      "asset": "models/fish_pearl_skate.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.dusk_cuttle",
+      "name": "Dusk cuttle",
+      "carryUnits": 1,
+      "catchTicks": 125,
+      "baseValue": 8,
+      "rarityWeight": 34,
+      "asset": "models/fish_dusk_cuttle.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.opal_cuttle",
+        "chancePermille": 28
+      }
+    },
+    {
+      "id": "species.opal_cuttle",
+      "name": "Opal cuttle",
+      "carryUnits": 1,
+      "catchTicks": 125,
+      "baseValue": 18,
+      "rarityWeight": 1,
+      "asset": "models/fish_opal_cuttle.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.basalt_gurnard",
+      "name": "Basalt gurnard",
+      "carryUnits": 2,
+      "catchTicks": 148,
+      "baseValue": 13,
+      "rarityWeight": 20,
+      "asset": "models/fish_basalt_gurnard.glb",
+      "spoilTier": 1
     }
   ],
   "products": [
@@ -832,6 +1130,54 @@
       "unitPrice": 96,
       "spoilTier": 1,
       "asset": "models/product_kiln_carton.glb"
+    },
+    {
+      "id": "product.pressed_fillet",
+      "name": "Pressed fillet",
+      "carryUnits": 1,
+      "unitPrice": 23,
+      "spoilTier": 2,
+      "asset": "models/product_pressed_fillet.glb"
+    },
+    {
+      "id": "product.fish_cake",
+      "name": "Fish cake",
+      "carryUnits": 1,
+      "unitPrice": 14,
+      "spoilTier": 3,
+      "asset": "models/product_fish_cake.glb"
+    },
+    {
+      "id": "product.press_carton",
+      "name": "Press carton",
+      "carryUnits": 3,
+      "unitPrice": 92,
+      "spoilTier": 2,
+      "asset": "models/product_press_carton.glb"
+    },
+    {
+      "id": "product.pickled_fillet",
+      "name": "Pickled fillet",
+      "carryUnits": 1,
+      "unitPrice": 22,
+      "spoilTier": 1,
+      "asset": "models/product_pickled_fillet.glb"
+    },
+    {
+      "id": "product.relish_jar",
+      "name": "Relish jar",
+      "carryUnits": 1,
+      "unitPrice": 11,
+      "spoilTier": 1,
+      "asset": "models/product_relish_jar.glb"
+    },
+    {
+      "id": "product.pickle_carton",
+      "name": "Pickle carton",
+      "carryUnits": 3,
+      "unitPrice": 90,
+      "spoilTier": 1,
+      "asset": "models/product_pickle_carton.glb"
     }
   ],
   "recipes": [
@@ -2176,6 +2522,431 @@
         }
       ],
       "durationTicks": 150
+    },
+    {
+      "id": "recipe.mangrove_snapper_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.mangrove_snapper",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 95
+    },
+    {
+      "id": "recipe.glass_goby_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.glass_goby",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 70
+    },
+    {
+      "id": "recipe.shear_drum_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.shear_drum",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 125
+    },
+    {
+      "id": "recipe.foam_skater_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.foam_skater",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 85
+    },
+    {
+      "id": "recipe.slag_loach_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.slag_loach",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 110
+    },
+    {
+      "id": "recipe.kiln_perch_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.kiln_perch",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 100
+    },
+    {
+      "id": "recipe.drift_icefish_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.drift_icefish",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 115
+    },
+    {
+      "id": "recipe.rime_bream_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.rime_bream",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 130
+    },
+    {
+      "id": "recipe.silk_amberjack_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.silk_amberjack",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 140
+    },
+    {
+      "id": "recipe.parade_scad_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.parade_scad",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 90
+    },
+    {
+      "id": "recipe.veil_skate_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.veil_skate",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 145
+    },
+    {
+      "id": "recipe.dusk_cuttle_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.dusk_cuttle",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 118
+    },
+    {
+      "id": "recipe.basalt_gurnard_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.basalt_gurnard",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 138
+    },
+    {
+      "id": "recipe.press_fillet",
+      "machine": "machine.harbor_press",
+      "inputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.pressed_fillet",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 110
+    },
+    {
+      "id": "recipe.press_portion",
+      "machine": "machine.harbor_press",
+      "inputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fish_cake",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 85
+    },
+    {
+      "id": "recipe.press_tang",
+      "machine": "machine.harbor_press",
+      "inputs": [
+        {
+          "item": "species.lagoon_tang",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fish_cake",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 120
+    },
+    {
+      "id": "recipe.press_scad",
+      "machine": "machine.harbor_press",
+      "inputs": [
+        {
+          "item": "species.parade_scad",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.pressed_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 125
+    },
+    {
+      "id": "recipe.press_amberjack",
+      "machine": "machine.harbor_press",
+      "inputs": [
+        {
+          "item": "species.silk_amberjack",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.pressed_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 135
+    },
+    {
+      "id": "recipe.pack_press_carton",
+      "machine": "machine.harbor_press",
+      "inputs": [
+        {
+          "item": "product.pressed_fillet",
+          "quantity": 4
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.press_carton",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 145
+    },
+    {
+      "id": "recipe.pickle_fillet",
+      "machine": "machine.harbor_pickler",
+      "inputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.pickled_fillet",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 120
+    },
+    {
+      "id": "recipe.pickle_portion",
+      "machine": "machine.harbor_pickler",
+      "inputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.relish_jar",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 90
+    },
+    {
+      "id": "recipe.pickle_mullet",
+      "machine": "machine.harbor_pickler",
+      "inputs": [
+        {
+          "item": "species.copper_mullet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.pickled_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 130
+    },
+    {
+      "id": "recipe.pickle_goby",
+      "machine": "machine.harbor_pickler",
+      "inputs": [
+        {
+          "item": "species.glass_goby",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.relish_jar",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 115
+    },
+    {
+      "id": "recipe.pickle_cuttle",
+      "machine": "machine.harbor_pickler",
+      "inputs": [
+        {
+          "item": "species.dusk_cuttle",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.pickled_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 140
+    },
+    {
+      "id": "recipe.pack_pickle_carton",
+      "machine": "machine.harbor_pickler",
+      "inputs": [
+        {
+          "item": "product.pickled_fillet",
+          "quantity": 4
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.pickle_carton",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 150
     }
   ],
   "machines": [
@@ -2317,6 +3088,34 @@
         "recipe.cure_cinder",
         "recipe.cure_ash_pike",
         "recipe.pack_kiln_carton"
+      ],
+      "inputCapacityUnits": 10,
+      "outputCapacityUnits": 16
+    },
+    {
+      "id": "machine.harbor_press",
+      "name": "Harbor press",
+      "recipes": [
+        "recipe.press_fillet",
+        "recipe.press_portion",
+        "recipe.press_tang",
+        "recipe.press_scad",
+        "recipe.press_amberjack",
+        "recipe.pack_press_carton"
+      ],
+      "inputCapacityUnits": 10,
+      "outputCapacityUnits": 16
+    },
+    {
+      "id": "machine.harbor_pickler",
+      "name": "Harbor pickler",
+      "recipes": [
+        "recipe.pickle_fillet",
+        "recipe.pickle_portion",
+        "recipe.pickle_mullet",
+        "recipe.pickle_goby",
+        "recipe.pickle_cuttle",
+        "recipe.pack_pickle_carton"
       ],
       "inputCapacityUnits": 10,
       "outputCapacityUnits": 16
@@ -2688,6 +3487,34 @@
         "kind": "unlock_machine",
         "machine": "machine.harbor_kiln"
       }
+    },
+    {
+      "id": "upgrade.harbor_press",
+      "name": "Harbor press",
+      "description": "Install a press line for pressed fillets, fish cakes, and press cartons.",
+      "cost": 210,
+      "requires": [
+        "quest.specialty_kitchen",
+        "upgrade.harbor_steamer"
+      ],
+      "effect": {
+        "kind": "unlock_machine",
+        "machine": "machine.harbor_press"
+      }
+    },
+    {
+      "id": "upgrade.harbor_pickler",
+      "name": "Harbor pickler",
+      "description": "Install a pickling line for pickled fillets, relish jars, and pickle cartons.",
+      "cost": 240,
+      "requires": [
+        "quest.specialty_kitchen",
+        "upgrade.harbor_kiln"
+      ],
+      "effect": {
+        "kind": "unlock_machine",
+        "machine": "machine.harbor_pickler"
+      }
     }
   ],
   "quests": [
@@ -3016,6 +3843,166 @@
         "coins": 500,
         "unlockUpgrades": []
       }
+    },
+    {
+      "id": "quest.rival_pressure",
+      "name": "Rival pressure",
+      "description": "Beat a rival market once after prestige.",
+      "requires": [
+        "quest.prestige_wave"
+      ],
+      "goal": {
+        "stat": "stat.rival_beats",
+        "atLeast": 1
+      },
+      "reward": {
+        "coins": 420,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.loan_ledger",
+      "name": "Loan ledger",
+      "description": "Take a bank loan to float the next expansion.",
+      "requires": [
+        "quest.rival_pressure"
+      ],
+      "goal": {
+        "stat": "stat.loans_taken",
+        "atLeast": 1
+      },
+      "reward": {
+        "coins": 380,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.decor_touch",
+      "name": "Decor touch",
+      "description": "Buy shop decor to polish the counter.",
+      "requires": [
+        "quest.loan_ledger"
+      ],
+      "goal": {
+        "stat": "stat.decor_bought",
+        "atLeast": 1
+      },
+      "reward": {
+        "coins": 360,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.mastery_climb",
+      "name": "Mastery climb",
+      "description": "Level up fishing mastery once on the line.",
+      "requires": [
+        "quest.decor_touch"
+      ],
+      "goal": {
+        "stat": "stat.mastery_level_ups",
+        "atLeast": 1
+      },
+      "reward": {
+        "coins": 400,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.daily_grind",
+      "name": "Daily grind",
+      "description": "Claim three daily goals across sessions.",
+      "requires": [
+        "quest.mastery_climb"
+      ],
+      "goal": {
+        "stat": "stat.daily_goals_claimed",
+        "atLeast": 3
+      },
+      "reward": {
+        "coins": 440,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.achievement_hunter",
+      "name": "Achievement hunter",
+      "description": "Unlock five achievements on the board.",
+      "requires": [
+        "quest.daily_grind"
+      ],
+      "goal": {
+        "stat": "stat.achievements_unlocked",
+        "atLeast": 5
+      },
+      "reward": {
+        "coins": 480,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.chain_captain",
+      "name": "Chain captain",
+      "description": "Finish a full delivery contract chain.",
+      "requires": [
+        "quest.achievement_hunter"
+      ],
+      "goal": {
+        "stat": "stat.contract_chains_completed",
+        "atLeast": 1
+      },
+      "reward": {
+        "coins": 520,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.premium_counter",
+      "name": "Premium counter",
+      "description": "Close ten premium sales at the counter.",
+      "requires": [
+        "quest.chain_captain"
+      ],
+      "goal": {
+        "stat": "stat.premium_sales",
+        "atLeast": 10
+      },
+      "reward": {
+        "coins": 500,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.repair_crew",
+      "name": "Repair crew",
+      "description": "Repair a broken machine on the floor.",
+      "requires": [
+        "quest.premium_counter"
+      ],
+      "goal": {
+        "stat": "stat.machines_repaired",
+        "atLeast": 1
+      },
+      "reward": {
+        "coins": 460,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.endgame_beacon",
+      "name": "Endgame beacon",
+      "description": "Unlock an endgame prestige tier.",
+      "requires": [
+        "quest.repair_crew"
+      ],
+      "goal": {
+        "stat": "stat.endgame_tiers_unlocked",
+        "atLeast": 1
+      },
+      "reward": {
+        "coins": 600,
+        "unlockUpgrades": []
+      }
     }
   ],
   "workers": [
@@ -3340,6 +4327,136 @@
         "regenMultPermille": 1450,
         "catchSpeedMultPermille": 850
       }
+    ],
+    "habitats": [
+      {
+        "id": "habitat.mangrove_fringe",
+        "name": "Mangrove fringe",
+        "harbors": [
+          "harbor.coral_lagoon"
+        ],
+        "favoredDayParts": [
+          "dawn",
+          "dusk"
+        ],
+        "speciesWeightMultPermille": {
+          "species.mangrove_snapper": 1550,
+          "species.glass_goby": 1450,
+          "species.coral_wrasse": 1250
+        }
+      },
+      {
+        "id": "habitat.shear_channel",
+        "name": "Shear channel",
+        "harbors": [
+          "harbor.storm_quay"
+        ],
+        "favoredDayParts": [
+          "day",
+          "dusk"
+        ],
+        "speciesWeightMultPermille": {
+          "species.shear_drum": 1600,
+          "species.foam_skater": 1500,
+          "species.gale_jack": 1300
+        }
+      },
+      {
+        "id": "habitat.kiln_outflow",
+        "name": "Kiln outflow",
+        "harbors": [
+          "harbor.ember_wharf"
+        ],
+        "favoredDayParts": [
+          "dusk",
+          "night"
+        ],
+        "speciesWeightMultPermille": {
+          "species.slag_loach": 1650,
+          "species.kiln_perch": 1500,
+          "species.cinder_carp": 1300
+        }
+      },
+      {
+        "id": "habitat.rime_shelf",
+        "name": "Rime shelf",
+        "harbors": [
+          "harbor.northlight_harbor"
+        ],
+        "favoredDayParts": [
+          "dawn",
+          "night"
+        ],
+        "speciesWeightMultPermille": {
+          "species.drift_icefish": 1600,
+          "species.rime_bream": 1500,
+          "species.frost_smelt": 1300
+        }
+      },
+      {
+        "id": "habitat.parade_lane",
+        "name": "Parade lane",
+        "harbors": [
+          "harbor.grand_marina"
+        ],
+        "favoredDayParts": [
+          "day",
+          "dusk"
+        ],
+        "speciesWeightMultPermille": {
+          "species.silk_amberjack": 1550,
+          "species.parade_scad": 1450,
+          "species.marina_tuna": 1250
+        }
+      },
+      {
+        "id": "habitat.veil_flats",
+        "name": "Veil flats",
+        "harbors": [
+          "harbor.moon_cove"
+        ],
+        "favoredDayParts": [
+          "dusk",
+          "night"
+        ],
+        "speciesWeightMultPermille": {
+          "species.veil_skate": 1700,
+          "species.dusk_cuttle": 1550,
+          "species.moon_flounder": 1300
+        }
+      },
+      {
+        "id": "habitat.basalt_spur",
+        "name": "Basalt spur",
+        "harbors": [
+          "harbor.obsidian_jetty"
+        ],
+        "favoredDayParts": [
+          "day",
+          "night"
+        ],
+        "speciesWeightMultPermille": {
+          "species.basalt_gurnard": 1750,
+          "species.lava_eel": 1400,
+          "species.reef_perch": 1250
+        }
+      },
+      {
+        "id": "habitat.boardwalk_edge",
+        "name": "Boardwalk edge",
+        "harbors": [
+          "harbor.sunrise_pier"
+        ],
+        "favoredDayParts": [
+          "dawn",
+          "day"
+        ],
+        "speciesWeightMultPermille": {
+          "species.dawn_anchovy": 1400,
+          "species.silver_sprat": 1300,
+          "species.foam_skater": 1200
+        }
+      }
     ]
   },
   "economy": {
@@ -3401,7 +4518,9 @@
           "species.moon_flounder",
           "species.ink_squid",
           "species.lava_eel",
-          "species.ghost_lanternfish"
+          "species.ghost_lanternfish",
+          "species.veil_skate",
+          "species.dusk_cuttle"
         ],
         "completeStat": "stat.trophy_set_moon_cove"
       },
@@ -3413,7 +4532,8 @@
           "species.reef_perch",
           "species.tide_bass",
           "species.sail_needlefish",
-          "species.lava_eel"
+          "species.lava_eel",
+          "species.basalt_gurnard"
         ],
         "completeStat": "stat.trophy_set_obsidian_jetty"
       },
@@ -3425,7 +4545,9 @@
           "species.frost_smelt",
           "species.arctic_cod",
           "species.ice_char",
-          "species.polar_herring"
+          "species.polar_herring",
+          "species.drift_icefish",
+          "species.rime_bream"
         ],
         "completeStat": "stat.trophy_set_northlight_harbor"
       },
@@ -3437,7 +4559,9 @@
           "species.marina_tuna",
           "species.saffron_sole",
           "species.pearl_grouper",
-          "species.harbor_pompano"
+          "species.harbor_pompano",
+          "species.silk_amberjack",
+          "species.parade_scad"
         ],
         "completeStat": "stat.trophy_set_grand_marina"
       },
@@ -3449,7 +4573,9 @@
           "species.coral_wrasse",
           "species.lagoon_tang",
           "species.tropic_ray",
-          "species.reef_perch"
+          "species.reef_perch",
+          "species.mangrove_snapper",
+          "species.glass_goby"
         ],
         "completeStat": "stat.trophy_set_coral_lagoon"
       },
@@ -3461,7 +4587,9 @@
           "species.gale_jack",
           "species.squall_bass",
           "species.frost_smelt",
-          "species.sail_needlefish"
+          "species.sail_needlefish",
+          "species.shear_drum",
+          "species.foam_skater"
         ],
         "completeStat": "stat.trophy_set_storm_quay"
       },
@@ -3473,7 +4601,9 @@
           "species.cinder_carp",
           "species.ash_pike",
           "species.lava_eel",
-          "species.amber_snapper"
+          "species.amber_snapper",
+          "species.slag_loach",
+          "species.kiln_perch"
         ],
         "completeStat": "stat.trophy_set_ember_wharf"
       },
@@ -3502,7 +4632,19 @@
           "species.prism_squall",
           "species.gilt_cinder",
           "species.magma_pike",
-          "species.pearl_ray"
+          "species.pearl_ray",
+          "species.gilt_mangrove",
+          "species.prism_goby",
+          "species.thunder_drum",
+          "species.crystal_skater",
+          "species.magma_loach",
+          "species.gilt_kiln",
+          "species.aurora_icefish",
+          "species.crystal_bream",
+          "species.gilt_amberjack",
+          "species.opal_scad",
+          "species.pearl_skate",
+          "species.opal_cuttle"
         ],
         "completeStat": "stat.trophy_set_rare_gallery"
       }
@@ -4312,6 +5454,69 @@
         "penalty": 35,
         "weight": 70,
         "requiresReputationBand": 4
+      },
+      {
+        "id": "contract.chain_dawn_catch",
+        "name": "Dawn express · catch",
+        "description": "Chain step 1/3 — dawn anchovy for the early ferry.",
+        "item": "species.dawn_anchovy",
+        "quantity": 6,
+        "durationTicks": 1600,
+        "payout": 45,
+        "penalty": 12,
+        "weight": 48,
+        "chainId": "chain.dawn_express",
+        "chainStep": 1
+      },
+      {
+        "id": "contract.chain_dawn_chill",
+        "name": "Dawn express · chill",
+        "description": "Chain step 2/3 — chilled fillets for the ferry pantry.",
+        "item": "product.chilled_fillet",
+        "quantity": 2,
+        "durationTicks": 1400,
+        "payout": 70,
+        "penalty": 16,
+        "weight": 1,
+        "chainId": "chain.dawn_express",
+        "chainStep": 2
+      },
+      {
+        "id": "contract.chain_dawn_crate",
+        "name": "Dawn express · crate",
+        "description": "Chain step 3/3 — ice-packed crate to close the dawn run.",
+        "item": "product.ice_packed_crate",
+        "quantity": 1,
+        "durationTicks": 1200,
+        "payout": 95,
+        "penalty": 20,
+        "weight": 1,
+        "chainId": "chain.dawn_express",
+        "chainStep": 3
+      },
+      {
+        "id": "contract.trusted_bulk",
+        "name": "Trusted bulk mackerel",
+        "description": "Good reputation only — bulk blue mackerel for the co-op buyers.",
+        "item": "species.blue_mackerel",
+        "quantity": 10,
+        "durationTicks": 1800,
+        "payout": 90,
+        "penalty": 22,
+        "weight": 85,
+        "requiresReputationBand": 2
+      },
+      {
+        "id": "contract.legend_crate",
+        "name": "Legend grill carton",
+        "description": "Excellent reputation only — grill cartons for the legend lounge.",
+        "item": "product.grill_carton",
+        "quantity": 2,
+        "durationTicks": 1500,
+        "payout": 180,
+        "penalty": 40,
+        "weight": 65,
+        "requiresReputationBand": 4
       }
     ],
     "failStreakThreshold": 3,
@@ -4355,6 +5560,10 @@
         {
           "item": "product.steamed_portion",
           "weight": 10
+        },
+        {
+          "item": "product.fish_cake",
+          "weight": 10
         }
       ],
       "unmetPriceMultPermille": 750,
@@ -4397,6 +5606,10 @@
         {
           "item": "product.harbor_broth",
           "weight": 10
+        },
+        {
+          "item": "product.relish_jar",
+          "weight": 10
         }
       ],
       "unmetPriceMultPermille": 750,
@@ -4438,6 +5651,14 @@
         },
         {
           "item": "product.steamed_fillet",
+          "weight": 12
+        },
+        {
+          "item": "product.pressed_fillet",
+          "weight": 13
+        },
+        {
+          "item": "product.pickled_fillet",
           "weight": 12
         }
       ],
@@ -4959,9 +6180,9 @@
         {
           "id": "area.land",
           "minX": -8000,
-          "minZ": -8800,
-          "maxX": 14500,
-          "maxZ": 8200
+          "minZ": -12500,
+          "maxX": 14900,
+          "maxZ": 11200
         },
         {
           "id": "area.pier",
@@ -5041,6 +6262,20 @@
           "maxX": 13000,
           "minZ": 5200,
           "maxZ": 7200
+        },
+        {
+          "id": "footprint.press_1",
+          "minX": 11400,
+          "maxX": 13000,
+          "minZ": -12000,
+          "maxZ": -10000
+        },
+        {
+          "id": "footprint.pickler_1",
+          "minX": 11400,
+          "maxX": 13000,
+          "minZ": 8700,
+          "maxZ": 10700
         }
       ],
       "zones": [
@@ -5243,6 +6478,54 @@
           "maxZ": 5000,
           "id": "zone.plot_kiln",
           "kind": "plot"
+        },
+        {
+          "minX": 10000,
+          "maxX": 11400,
+          "minZ": -12000,
+          "maxZ": -10000,
+          "id": "zone.press_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 13000,
+          "maxX": 14400,
+          "minZ": -12000,
+          "maxZ": -10000,
+          "id": "zone.press_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 10000,
+          "maxX": 11400,
+          "minZ": 8700,
+          "maxZ": 10700,
+          "id": "zone.pickler_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 13000,
+          "maxX": 14400,
+          "minZ": 8700,
+          "maxZ": 10700,
+          "id": "zone.pickler_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 11600,
+          "maxX": 12800,
+          "minZ": -9800,
+          "maxZ": -9200,
+          "id": "zone.plot_press",
+          "kind": "plot"
+        },
+        {
+          "minX": 11600,
+          "maxX": 12800,
+          "minZ": 7900,
+          "maxZ": 8500,
+          "id": "zone.plot_pickler",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -5350,6 +6633,20 @@
           "inputZone": "zone.kiln_in",
           "outputZone": "zone.kiln_out",
           "requiresUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "station.press_1",
+          "machine": "machine.harbor_press",
+          "inputZone": "zone.press_in",
+          "outputZone": "zone.press_out",
+          "requiresUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "station.pickler_1",
+          "machine": "machine.harbor_pickler",
+          "inputZone": "zone.pickler_in",
+          "outputZone": "zone.pickler_out",
+          "requiresUpgrade": "upgrade.harbor_pickler"
         }
       ],
       "counters": [
@@ -5373,7 +6670,11 @@
             "product.steamed_portion",
             "product.harbor_broth",
             "product.cured_fillet",
-            "product.dried_strip"
+            "product.dried_strip",
+            "product.pressed_fillet",
+            "product.fish_cake",
+            "product.pickled_fillet",
+            "product.relish_jar"
           ],
           "capacityUnits": 30,
           "zone": "zone.counter_1",
@@ -5400,7 +6701,9 @@
             "product.grill_carton",
             "product.skewer_carton",
             "product.steam_carton",
-            "product.kiln_carton"
+            "product.kiln_carton",
+            "product.press_carton",
+            "product.pickle_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.wholesale_1",
@@ -5511,6 +6814,20 @@
           "description": "Expansion marker for the harbor kiln line.",
           "zone": "zone.plot_kiln",
           "grantsUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "plot.sunrise_press",
+          "name": "Sunrise press pad",
+          "description": "Expansion marker for the harbor press line.",
+          "zone": "zone.plot_press",
+          "grantsUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "plot.sunrise_pickler",
+          "name": "Sunrise pickler pad",
+          "description": "Expansion marker for the harbor pickler line.",
+          "zone": "zone.plot_pickler",
+          "grantsUpgrade": "upgrade.harbor_pickler"
         }
       ]
     },
@@ -5524,10 +6841,10 @@
       "walkable": [
         {
           "id": "area.cove_land",
-          "minX": -14500,
-          "minZ": -8800,
+          "minX": -14900,
+          "minZ": -12500,
           "maxX": 8000,
-          "maxZ": 8200
+          "maxZ": 11200
         },
         {
           "id": "area.cove_pier",
@@ -5607,6 +6924,20 @@
           "maxX": -11400,
           "minZ": 5200,
           "maxZ": 7200
+        },
+        {
+          "id": "footprint.cove_press",
+          "minX": -13000,
+          "maxX": -11400,
+          "minZ": -12000,
+          "maxZ": -10000
+        },
+        {
+          "id": "footprint.cove_pickler",
+          "minX": -13000,
+          "maxX": -11400,
+          "minZ": 8700,
+          "maxZ": 10700
         }
       ],
       "zones": [
@@ -5809,6 +7140,54 @@
           "maxZ": 5000,
           "id": "zone.cove_plot_kiln",
           "kind": "plot"
+        },
+        {
+          "minX": -11400,
+          "maxX": -10000,
+          "minZ": -12000,
+          "maxZ": -10000,
+          "id": "zone.cove_press_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -14400,
+          "maxX": -13000,
+          "minZ": -12000,
+          "maxZ": -10000,
+          "id": "zone.cove_press_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -11400,
+          "maxX": -10000,
+          "minZ": 8700,
+          "maxZ": 10700,
+          "id": "zone.cove_pickler_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -14400,
+          "maxX": -13000,
+          "minZ": 8700,
+          "maxZ": 10700,
+          "id": "zone.cove_pickler_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -12800,
+          "maxX": -11600,
+          "minZ": -9800,
+          "maxZ": -9200,
+          "id": "zone.cove_plot_press",
+          "kind": "plot"
+        },
+        {
+          "minX": -12800,
+          "maxX": -11600,
+          "minZ": 7900,
+          "maxZ": 8500,
+          "id": "zone.cove_plot_pickler",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -5823,7 +7202,9 @@
             "species.amber_snapper",
             "species.lava_eel",
             "species.king_grouper",
-            "species.silver_sprat"
+            "species.silver_sprat",
+            "species.veil_skate",
+            "species.dusk_cuttle"
           ],
           "stockMax": 20,
           "regenTicks": 40,
@@ -5848,7 +7229,8 @@
             "species.moon_flounder",
             "species.ink_squid",
             "species.harbor_herring",
-            "species.blue_mackerel"
+            "species.blue_mackerel",
+            "species.dusk_cuttle"
           ],
           "stockMax": 10,
           "regenTicks": 55,
@@ -5914,6 +7296,20 @@
           "inputZone": "zone.cove_kiln_in",
           "outputZone": "zone.cove_kiln_out",
           "requiresUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "station.cove_press",
+          "machine": "machine.harbor_press",
+          "inputZone": "zone.cove_press_in",
+          "outputZone": "zone.cove_press_out",
+          "requiresUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "station.cove_pickler",
+          "machine": "machine.harbor_pickler",
+          "inputZone": "zone.cove_pickler_in",
+          "outputZone": "zone.cove_pickler_out",
+          "requiresUpgrade": "upgrade.harbor_pickler"
         }
       ],
       "counters": [
@@ -5937,7 +7333,11 @@
             "product.steamed_portion",
             "product.harbor_broth",
             "product.cured_fillet",
-            "product.dried_strip"
+            "product.dried_strip",
+            "product.pressed_fillet",
+            "product.fish_cake",
+            "product.pickled_fillet",
+            "product.relish_jar"
           ],
           "capacityUnits": 30,
           "zone": "zone.cove_counter",
@@ -5964,7 +7364,9 @@
             "product.grill_carton",
             "product.skewer_carton",
             "product.steam_carton",
-            "product.kiln_carton"
+            "product.kiln_carton",
+            "product.press_carton",
+            "product.pickle_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.cove_wholesale",
@@ -6077,6 +7479,20 @@
           "description": "Expansion marker for the harbor kiln line.",
           "zone": "zone.cove_plot_kiln",
           "grantsUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "plot.cove_press",
+          "name": "Moon Cove press pad",
+          "description": "Expansion marker for the harbor press line.",
+          "zone": "zone.cove_plot_press",
+          "grantsUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "plot.cove_pickler",
+          "name": "Moon Cove pickler pad",
+          "description": "Expansion marker for the harbor pickler line.",
+          "zone": "zone.cove_plot_pickler",
+          "grantsUpgrade": "upgrade.harbor_pickler"
         }
       ]
     },
@@ -6091,7 +7507,7 @@
         {
           "id": "area.jetty_land",
           "minX": -8000,
-          "minZ": -21200,
+          "minZ": -24700,
           "maxX": 8000,
           "maxZ": 8000
         },
@@ -6180,6 +7596,20 @@
           "maxX": 4500,
           "minZ": -18700,
           "maxZ": -17100
+        },
+        {
+          "id": "footprint.jetty_press",
+          "minX": -5000,
+          "maxX": -3000,
+          "minZ": -24200,
+          "maxZ": -22600
+        },
+        {
+          "id": "footprint.jetty_pickler",
+          "minX": 3500,
+          "maxX": 4500,
+          "minZ": -22200,
+          "maxZ": -20600
         }
       ],
       "zones": [
@@ -6406,6 +7836,54 @@
           "maxZ": -15700,
           "id": "zone.jetty_plot_kiln",
           "kind": "plot"
+        },
+        {
+          "minX": -3000,
+          "maxX": -1400,
+          "minZ": -24200,
+          "maxZ": -22600,
+          "id": "zone.jetty_press_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -6600,
+          "maxX": -5000,
+          "minZ": -24200,
+          "maxZ": -22600,
+          "id": "zone.jetty_press_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2000,
+          "maxX": 3500,
+          "minZ": -22200,
+          "maxZ": -20600,
+          "id": "zone.jetty_pickler_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4500,
+          "maxX": 6000,
+          "minZ": -22200,
+          "maxZ": -20600,
+          "id": "zone.jetty_pickler_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -4800,
+          "maxX": -3200,
+          "minZ": -22400,
+          "maxZ": -21200,
+          "id": "zone.jetty_plot_press",
+          "kind": "plot"
+        },
+        {
+          "minX": 3200,
+          "maxX": 4800,
+          "minZ": -20400,
+          "maxZ": -19200,
+          "id": "zone.jetty_plot_pickler",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -6420,7 +7898,8 @@
             "species.copper_mullet",
             "species.king_grouper",
             "species.dawn_anchovy",
-            "species.silver_sprat"
+            "species.silver_sprat",
+            "species.basalt_gurnard"
           ],
           "stockMax": 18,
           "regenTicks": 42,
@@ -6518,6 +7997,20 @@
           "inputZone": "zone.jetty_kiln_in",
           "outputZone": "zone.jetty_kiln_out",
           "requiresUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "station.jetty_press",
+          "machine": "machine.harbor_press",
+          "inputZone": "zone.jetty_press_in",
+          "outputZone": "zone.jetty_press_out",
+          "requiresUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "station.jetty_pickler",
+          "machine": "machine.harbor_pickler",
+          "inputZone": "zone.jetty_pickler_in",
+          "outputZone": "zone.jetty_pickler_out",
+          "requiresUpgrade": "upgrade.harbor_pickler"
         }
       ],
       "counters": [
@@ -6543,7 +8036,11 @@
             "product.steamed_portion",
             "product.harbor_broth",
             "product.cured_fillet",
-            "product.dried_strip"
+            "product.dried_strip",
+            "product.pressed_fillet",
+            "product.fish_cake",
+            "product.pickled_fillet",
+            "product.relish_jar"
           ],
           "capacityUnits": 30,
           "zone": "zone.jetty_counter",
@@ -6571,7 +8068,9 @@
             "product.grill_carton",
             "product.skewer_carton",
             "product.steam_carton",
-            "product.kiln_carton"
+            "product.kiln_carton",
+            "product.press_carton",
+            "product.pickle_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.jetty_wholesale",
@@ -6693,6 +8192,20 @@
           "description": "Expansion marker for the harbor kiln line.",
           "zone": "zone.jetty_plot_kiln",
           "grantsUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "plot.jetty_press",
+          "name": "Obsidian Jetty press pad",
+          "description": "Expansion marker for the harbor press line.",
+          "zone": "zone.jetty_plot_press",
+          "grantsUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "plot.jetty_pickler",
+          "name": "Obsidian Jetty pickler pad",
+          "description": "Expansion marker for the harbor pickler line.",
+          "zone": "zone.jetty_plot_pickler",
+          "grantsUpgrade": "upgrade.harbor_pickler"
         }
       ]
     },
@@ -6707,7 +8220,7 @@
         {
           "id": "area.nl_land",
           "minX": -8500,
-          "minZ": -21500,
+          "minZ": -25000,
           "maxX": 8500,
           "maxZ": 8500
         },
@@ -6796,6 +8309,20 @@
           "maxX": 4600,
           "minZ": -19000,
           "maxZ": -17400
+        },
+        {
+          "id": "footprint.nl_press",
+          "minX": -5200,
+          "maxX": -3200,
+          "minZ": -24500,
+          "maxZ": -22900
+        },
+        {
+          "id": "footprint.nl_pickler",
+          "minX": 3600,
+          "maxX": 4600,
+          "minZ": -22500,
+          "maxZ": -20900
         }
       ],
       "zones": [
@@ -7022,6 +8549,54 @@
           "maxZ": -16000,
           "id": "zone.nl_plot_kiln",
           "kind": "plot"
+        },
+        {
+          "minX": -3200,
+          "maxX": -1600,
+          "minZ": -24500,
+          "maxZ": -22900,
+          "id": "zone.nl_press_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -6800,
+          "maxX": -5200,
+          "minZ": -24500,
+          "maxZ": -22900,
+          "id": "zone.nl_press_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2100,
+          "maxX": 3600,
+          "minZ": -22500,
+          "maxZ": -20900,
+          "id": "zone.nl_pickler_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4600,
+          "maxX": 6100,
+          "minZ": -22500,
+          "maxZ": -20900,
+          "id": "zone.nl_pickler_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5000,
+          "maxX": -3400,
+          "minZ": -22700,
+          "maxZ": -21500,
+          "id": "zone.nl_plot_press",
+          "kind": "plot"
+        },
+        {
+          "minX": 3300,
+          "maxX": 4900,
+          "minZ": -20700,
+          "maxZ": -19500,
+          "id": "zone.nl_plot_pickler",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -7034,7 +8609,9 @@
             "species.ice_char",
             "species.silver_sprat",
             "species.harbor_herring",
-            "species.dawn_anchovy"
+            "species.dawn_anchovy",
+            "species.drift_icefish",
+            "species.rime_bream"
           ],
           "stockMax": 16,
           "regenTicks": 48,
@@ -7058,7 +8635,9 @@
             "species.arctic_cod",
             "species.ice_char",
             "species.frost_smelt",
-            "species.ghost_lanternfish"
+            "species.ghost_lanternfish",
+            "species.drift_icefish",
+            "species.rime_bream"
           ],
           "stockMax": 8,
           "regenTicks": 62,
@@ -7131,6 +8710,20 @@
           "inputZone": "zone.nl_kiln_in",
           "outputZone": "zone.nl_kiln_out",
           "requiresUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "station.nl_press",
+          "machine": "machine.harbor_press",
+          "inputZone": "zone.nl_press_in",
+          "outputZone": "zone.nl_press_out",
+          "requiresUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "station.nl_pickler",
+          "machine": "machine.harbor_pickler",
+          "inputZone": "zone.nl_pickler_in",
+          "outputZone": "zone.nl_pickler_out",
+          "requiresUpgrade": "upgrade.harbor_pickler"
         }
       ],
       "counters": [
@@ -7156,7 +8749,11 @@
             "product.steamed_portion",
             "product.harbor_broth",
             "product.cured_fillet",
-            "product.dried_strip"
+            "product.dried_strip",
+            "product.pressed_fillet",
+            "product.fish_cake",
+            "product.pickled_fillet",
+            "product.relish_jar"
           ],
           "capacityUnits": 30,
           "zone": "zone.nl_counter",
@@ -7184,7 +8781,9 @@
             "product.grill_carton",
             "product.skewer_carton",
             "product.steam_carton",
-            "product.kiln_carton"
+            "product.kiln_carton",
+            "product.press_carton",
+            "product.pickle_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.nl_wholesale",
@@ -7307,6 +8906,20 @@
           "description": "Expansion marker for the harbor kiln line.",
           "zone": "zone.nl_plot_kiln",
           "grantsUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "plot.nl_press",
+          "name": "Northlight press pad",
+          "description": "Expansion marker for the harbor press line.",
+          "zone": "zone.nl_plot_press",
+          "grantsUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "plot.nl_pickler",
+          "name": "Northlight pickler pad",
+          "description": "Expansion marker for the harbor pickler line.",
+          "zone": "zone.nl_plot_pickler",
+          "grantsUpgrade": "upgrade.harbor_pickler"
         }
       ]
     },
@@ -7321,7 +8934,7 @@
         {
           "id": "area.gm_land",
           "minX": -9500,
-          "minZ": -21700,
+          "minZ": -25200,
           "maxX": 9500,
           "maxZ": 9000
         },
@@ -7417,6 +9030,20 @@
           "maxX": 4800,
           "minZ": -19200,
           "maxZ": -17600
+        },
+        {
+          "id": "footprint.gm_press",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -24700,
+          "maxZ": -23100
+        },
+        {
+          "id": "footprint.gm_pickler",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -22700,
+          "maxZ": -21100
         }
       ],
       "zones": [
@@ -7651,6 +9278,54 @@
           "maxZ": -16200,
           "id": "zone.gm_plot_kiln",
           "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -24700,
+          "maxZ": -23100,
+          "id": "zone.gm_press_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -24700,
+          "maxZ": -23100,
+          "id": "zone.gm_press_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -22700,
+          "maxZ": -21100,
+          "id": "zone.gm_pickler_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -22700,
+          "maxZ": -21100,
+          "id": "zone.gm_pickler_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -22900,
+          "maxZ": -21700,
+          "id": "zone.gm_plot_press",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -20900,
+          "maxZ": -19700,
+          "id": "zone.gm_plot_pickler",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -7663,7 +9338,9 @@
             "species.harbor_pompano",
             "species.amber_snapper",
             "species.king_grouper",
-            "species.arctic_cod"
+            "species.arctic_cod",
+            "species.silk_amberjack",
+            "species.parade_scad"
           ],
           "stockMax": 20,
           "regenTicks": 40,
@@ -7687,7 +9364,8 @@
             "species.saffron_sole",
             "species.harbor_pompano",
             "species.frost_smelt",
-            "species.blue_mackerel"
+            "species.blue_mackerel",
+            "species.parade_scad"
           ],
           "stockMax": 10,
           "regenTicks": 55,
@@ -7784,6 +9462,20 @@
           "inputZone": "zone.gm_kiln_in",
           "outputZone": "zone.gm_kiln_out",
           "requiresUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "station.gm_press",
+          "machine": "machine.harbor_press",
+          "inputZone": "zone.gm_press_in",
+          "outputZone": "zone.gm_press_out",
+          "requiresUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "station.gm_pickler",
+          "machine": "machine.harbor_pickler",
+          "inputZone": "zone.gm_pickler_in",
+          "outputZone": "zone.gm_pickler_out",
+          "requiresUpgrade": "upgrade.harbor_pickler"
         }
       ],
       "counters": [
@@ -7809,7 +9501,11 @@
             "product.steamed_portion",
             "product.harbor_broth",
             "product.cured_fillet",
-            "product.dried_strip"
+            "product.dried_strip",
+            "product.pressed_fillet",
+            "product.fish_cake",
+            "product.pickled_fillet",
+            "product.relish_jar"
           ],
           "capacityUnits": 36,
           "zone": "zone.gm_counter",
@@ -7837,7 +9533,9 @@
             "product.grill_carton",
             "product.skewer_carton",
             "product.steam_carton",
-            "product.kiln_carton"
+            "product.kiln_carton",
+            "product.press_carton",
+            "product.pickle_carton"
           ],
           "capacityUnits": 28,
           "zone": "zone.gm_wholesale",
@@ -7960,6 +9658,20 @@
           "description": "Expansion marker for the harbor kiln line.",
           "zone": "zone.gm_plot_kiln",
           "grantsUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "plot.gm_press",
+          "name": "Grand Marina press pad",
+          "description": "Expansion marker for the harbor press line.",
+          "zone": "zone.gm_plot_press",
+          "grantsUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "plot.gm_pickler",
+          "name": "Grand Marina pickler pad",
+          "description": "Expansion marker for the harbor pickler line.",
+          "zone": "zone.gm_plot_pickler",
+          "grantsUpgrade": "upgrade.harbor_pickler"
         }
       ]
     },
@@ -7974,7 +9686,7 @@
         {
           "id": "area.cl_land",
           "minX": -9500,
-          "minZ": -21700,
+          "minZ": -25200,
           "maxX": 9500,
           "maxZ": 9000
         },
@@ -8070,6 +9782,20 @@
           "maxX": 4800,
           "minZ": -19200,
           "maxZ": -17600
+        },
+        {
+          "id": "footprint.cl_press",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -24700,
+          "maxZ": -23100
+        },
+        {
+          "id": "footprint.cl_pickler",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -22700,
+          "maxZ": -21100
         }
       ],
       "zones": [
@@ -8304,6 +10030,54 @@
           "maxZ": -16200,
           "id": "zone.cl_plot_kiln",
           "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -24700,
+          "maxZ": -23100,
+          "id": "zone.cl_press_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -24700,
+          "maxZ": -23100,
+          "id": "zone.cl_press_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -22700,
+          "maxZ": -21100,
+          "id": "zone.cl_pickler_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -22700,
+          "maxZ": -21100,
+          "id": "zone.cl_pickler_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -22900,
+          "maxZ": -21700,
+          "id": "zone.cl_plot_press",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -20900,
+          "maxZ": -19700,
+          "id": "zone.cl_plot_pickler",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -8316,7 +10090,9 @@
             "species.reef_perch",
             "species.pearl_grouper",
             "species.harbor_pompano",
-            "species.moon_flounder"
+            "species.moon_flounder",
+            "species.mangrove_snapper",
+            "species.glass_goby"
           ],
           "stockMax": 18,
           "regenTicks": 42,
@@ -8340,7 +10116,9 @@
             "species.coral_wrasse",
             "species.lagoon_tang",
             "species.saffron_sole",
-            "species.blue_mackerel"
+            "species.blue_mackerel",
+            "species.mangrove_snapper",
+            "species.glass_goby"
           ],
           "stockMax": 10,
           "regenTicks": 55,
@@ -8437,6 +10215,20 @@
           "inputZone": "zone.cl_kiln_in",
           "outputZone": "zone.cl_kiln_out",
           "requiresUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "station.cl_press",
+          "machine": "machine.harbor_press",
+          "inputZone": "zone.cl_press_in",
+          "outputZone": "zone.cl_press_out",
+          "requiresUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "station.cl_pickler",
+          "machine": "machine.harbor_pickler",
+          "inputZone": "zone.cl_pickler_in",
+          "outputZone": "zone.cl_pickler_out",
+          "requiresUpgrade": "upgrade.harbor_pickler"
         }
       ],
       "counters": [
@@ -8462,7 +10254,11 @@
             "product.steamed_portion",
             "product.harbor_broth",
             "product.cured_fillet",
-            "product.dried_strip"
+            "product.dried_strip",
+            "product.pressed_fillet",
+            "product.fish_cake",
+            "product.pickled_fillet",
+            "product.relish_jar"
           ],
           "capacityUnits": 36,
           "zone": "zone.cl_counter",
@@ -8490,7 +10286,9 @@
             "product.grill_carton",
             "product.skewer_carton",
             "product.steam_carton",
-            "product.kiln_carton"
+            "product.kiln_carton",
+            "product.press_carton",
+            "product.pickle_carton"
           ],
           "capacityUnits": 28,
           "zone": "zone.cl_wholesale",
@@ -8613,6 +10411,20 @@
           "description": "Expansion marker for the harbor kiln line.",
           "zone": "zone.cl_plot_kiln",
           "grantsUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "plot.cl_press",
+          "name": "Coral Lagoon press pad",
+          "description": "Expansion marker for the harbor press line.",
+          "zone": "zone.cl_plot_press",
+          "grantsUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "plot.cl_pickler",
+          "name": "Coral Lagoon pickler pad",
+          "description": "Expansion marker for the harbor pickler line.",
+          "zone": "zone.cl_plot_pickler",
+          "grantsUpgrade": "upgrade.harbor_pickler"
         }
       ]
     },
@@ -8627,7 +10439,7 @@
         {
           "id": "area.sq_land",
           "minX": -9500,
-          "minZ": -21700,
+          "minZ": -25200,
           "maxX": 9500,
           "maxZ": 9000
         },
@@ -8723,6 +10535,20 @@
           "maxX": 4800,
           "minZ": -19200,
           "maxZ": -17600
+        },
+        {
+          "id": "footprint.sq_press",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -24700,
+          "maxZ": -23100
+        },
+        {
+          "id": "footprint.sq_pickler",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -22700,
+          "maxZ": -21100
         }
       ],
       "zones": [
@@ -8957,6 +10783,54 @@
           "maxZ": -16200,
           "id": "zone.sq_plot_kiln",
           "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -24700,
+          "maxZ": -23100,
+          "id": "zone.sq_press_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -24700,
+          "maxZ": -23100,
+          "id": "zone.sq_press_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -22700,
+          "maxZ": -21100,
+          "id": "zone.sq_pickler_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -22700,
+          "maxZ": -21100,
+          "id": "zone.sq_pickler_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -22900,
+          "maxZ": -21700,
+          "id": "zone.sq_plot_press",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -20900,
+          "maxZ": -19700,
+          "id": "zone.sq_plot_pickler",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -8969,7 +10843,9 @@
             "species.lava_eel",
             "species.frost_smelt",
             "species.sail_needlefish",
-            "species.arctic_cod"
+            "species.arctic_cod",
+            "species.shear_drum",
+            "species.foam_skater"
           ],
           "stockMax": 16,
           "regenTicks": 48,
@@ -8993,7 +10869,9 @@
             "species.gale_jack",
             "species.squall_bass",
             "species.polar_herring",
-            "species.ice_char"
+            "species.ice_char",
+            "species.shear_drum",
+            "species.foam_skater"
           ],
           "stockMax": 9,
           "regenTicks": 58,
@@ -9090,6 +10968,20 @@
           "inputZone": "zone.sq_kiln_in",
           "outputZone": "zone.sq_kiln_out",
           "requiresUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "station.sq_press",
+          "machine": "machine.harbor_press",
+          "inputZone": "zone.sq_press_in",
+          "outputZone": "zone.sq_press_out",
+          "requiresUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "station.sq_pickler",
+          "machine": "machine.harbor_pickler",
+          "inputZone": "zone.sq_pickler_in",
+          "outputZone": "zone.sq_pickler_out",
+          "requiresUpgrade": "upgrade.harbor_pickler"
         }
       ],
       "counters": [
@@ -9115,7 +11007,11 @@
             "product.steamed_portion",
             "product.harbor_broth",
             "product.cured_fillet",
-            "product.dried_strip"
+            "product.dried_strip",
+            "product.pressed_fillet",
+            "product.fish_cake",
+            "product.pickled_fillet",
+            "product.relish_jar"
           ],
           "capacityUnits": 36,
           "zone": "zone.sq_counter",
@@ -9143,7 +11039,9 @@
             "product.grill_carton",
             "product.skewer_carton",
             "product.steam_carton",
-            "product.kiln_carton"
+            "product.kiln_carton",
+            "product.press_carton",
+            "product.pickle_carton"
           ],
           "capacityUnits": 28,
           "zone": "zone.sq_wholesale",
@@ -9267,6 +11165,20 @@
           "description": "Expansion marker for the harbor kiln line.",
           "zone": "zone.sq_plot_kiln",
           "grantsUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "plot.sq_press",
+          "name": "Storm Quay press pad",
+          "description": "Expansion marker for the harbor press line.",
+          "zone": "zone.sq_plot_press",
+          "grantsUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "plot.sq_pickler",
+          "name": "Storm Quay pickler pad",
+          "description": "Expansion marker for the harbor pickler line.",
+          "zone": "zone.sq_plot_pickler",
+          "grantsUpgrade": "upgrade.harbor_pickler"
         }
       ]
     },
@@ -9281,7 +11193,7 @@
         {
           "id": "area.ew_land",
           "minX": -9500,
-          "minZ": -21700,
+          "minZ": -25200,
           "maxX": 9500,
           "maxZ": 9000
         },
@@ -9377,6 +11289,20 @@
           "maxX": 4800,
           "minZ": -19200,
           "maxZ": -17600
+        },
+        {
+          "id": "footprint.ew_press",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -24700,
+          "maxZ": -23100
+        },
+        {
+          "id": "footprint.ew_pickler",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -22700,
+          "maxZ": -21100
         }
       ],
       "zones": [
@@ -9611,6 +11537,54 @@
           "maxZ": -16200,
           "id": "zone.ew_plot_kiln",
           "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -24700,
+          "maxZ": -23100,
+          "id": "zone.ew_press_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -24700,
+          "maxZ": -23100,
+          "id": "zone.ew_press_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -22700,
+          "maxZ": -21100,
+          "id": "zone.ew_pickler_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -22700,
+          "maxZ": -21100,
+          "id": "zone.ew_pickler_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -22900,
+          "maxZ": -21700,
+          "id": "zone.ew_plot_press",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -20900,
+          "maxZ": -19700,
+          "id": "zone.ew_plot_pickler",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -9623,7 +11597,9 @@
             "species.marina_tuna",
             "species.amber_snapper",
             "species.saffron_sole",
-            "species.king_grouper"
+            "species.king_grouper",
+            "species.slag_loach",
+            "species.kiln_perch"
           ],
           "stockMax": 17,
           "regenTicks": 45,
@@ -9647,7 +11623,9 @@
             "species.cinder_carp",
             "species.ash_pike",
             "species.harbor_pompano",
-            "species.reef_perch"
+            "species.reef_perch",
+            "species.slag_loach",
+            "species.kiln_perch"
           ],
           "stockMax": 10,
           "regenTicks": 52,
@@ -9744,6 +11722,20 @@
           "inputZone": "zone.ew_kiln_in",
           "outputZone": "zone.ew_kiln_out",
           "requiresUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "station.ew_press",
+          "machine": "machine.harbor_press",
+          "inputZone": "zone.ew_press_in",
+          "outputZone": "zone.ew_press_out",
+          "requiresUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "station.ew_pickler",
+          "machine": "machine.harbor_pickler",
+          "inputZone": "zone.ew_pickler_in",
+          "outputZone": "zone.ew_pickler_out",
+          "requiresUpgrade": "upgrade.harbor_pickler"
         }
       ],
       "counters": [
@@ -9769,7 +11761,11 @@
             "product.steamed_portion",
             "product.harbor_broth",
             "product.cured_fillet",
-            "product.dried_strip"
+            "product.dried_strip",
+            "product.pressed_fillet",
+            "product.fish_cake",
+            "product.pickled_fillet",
+            "product.relish_jar"
           ],
           "capacityUnits": 36,
           "zone": "zone.ew_counter",
@@ -9797,7 +11793,9 @@
             "product.grill_carton",
             "product.skewer_carton",
             "product.steam_carton",
-            "product.kiln_carton"
+            "product.kiln_carton",
+            "product.press_carton",
+            "product.pickle_carton"
           ],
           "capacityUnits": 28,
           "zone": "zone.ew_wholesale",
@@ -9921,6 +11919,20 @@
           "description": "Expansion marker for the harbor kiln line.",
           "zone": "zone.ew_plot_kiln",
           "grantsUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "plot.ew_press",
+          "name": "Ember Wharf press pad",
+          "description": "Expansion marker for the harbor press line.",
+          "zone": "zone.ew_plot_press",
+          "grantsUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "plot.ew_pickler",
+          "name": "Ember Wharf pickler pad",
+          "description": "Expansion marker for the harbor pickler line.",
+          "zone": "zone.ew_plot_pickler",
+          "grantsUpgrade": "upgrade.harbor_pickler"
         }
       ]
     }
@@ -10203,7 +12215,9 @@
         "speciesWeightMultPermille": {
           "species.saffron_sole": 2000,
           "species.cinder_carp": 1500,
-          "species.ash_pike": 1450
+          "species.ash_pike": 1450,
+          "species.silk_amberjack": 1500,
+          "species.parade_scad": 1500
         }
       },
       {
@@ -10222,7 +12236,9 @@
         "speciesWeightMultPermille": {
           "species.coral_wrasse": 2100,
           "species.lagoon_tang": 1700,
-          "species.tropic_ray": 1600
+          "species.tropic_ray": 1600,
+          "species.mangrove_snapper": 1500,
+          "species.glass_goby": 1500
         }
       },
       {
@@ -10243,7 +12259,9 @@
           "species.arctic_cod": 1900,
           "species.polar_herring": 1600,
           "species.gale_jack": 1500,
-          "species.squall_bass": 1550
+          "species.squall_bass": 1550,
+          "species.drift_icefish": 1500,
+          "species.rime_bream": 1500
         }
       },
       {
@@ -10262,7 +12280,9 @@
         "speciesWeightMultPermille": {
           "species.squall_bass": 2100,
           "species.gale_jack": 1800,
-          "species.ink_squid": 1500
+          "species.ink_squid": 1500,
+          "species.shear_drum": 1500,
+          "species.foam_skater": 1500
         }
       },
       {
@@ -10299,7 +12319,9 @@
         "speciesWeightMultPermille": {
           "species.ember_eel": 2100,
           "species.cinder_carp": 1600,
-          "species.ash_pike": 1500
+          "species.ash_pike": 1500,
+          "species.slag_loach": 1500,
+          "species.kiln_perch": 1500
         }
       },
       {
@@ -10321,7 +12343,9 @@
           "species.ink_squid": 1500,
           "species.coral_wrasse": 1500,
           "species.lagoon_tang": 1400,
-          "species.tropic_ray": 1600
+          "species.tropic_ray": 1600,
+          "species.veil_skate": 1500,
+          "species.dusk_cuttle": 1500
         }
       },
       {
@@ -10882,6 +12906,181 @@
         "lore": "Tropic ray dressed in pearl. Handle gently.",
         "habitatHint": "Lagoon flats, rare.",
         "journalTip": "Rare forms share waters with their base — keep casting."
+      },
+      {
+        "speciesId": "species.mangrove_snapper",
+        "family": "reef",
+        "lore": "Root-shadow ambushers with copper cheeks.",
+        "habitatHint": "Dawn mangrove roots at Coral Lagoon.",
+        "journalTip": "Lagoon schools reward moving before a pocket empties."
+      },
+      {
+        "speciesId": "species.gilt_mangrove",
+        "family": "reef",
+        "lore": "Gold-laced rare of the mangrove line.",
+        "habitatHint": "Same roots — rarer flash.",
+        "journalTip": "Lagoon schools reward moving before a pocket empties."
+      },
+      {
+        "speciesId": "species.glass_goby",
+        "family": "reef",
+        "lore": "Nearly invisible until the school turns.",
+        "habitatHint": "Shallow reef pockets at first light.",
+        "journalTip": "Lagoon schools reward moving before a pocket empties."
+      },
+      {
+        "speciesId": "species.prism_goby",
+        "family": "reef",
+        "lore": "Refracts pier lanterns into coin-bright sides.",
+        "habitatHint": "Glass goby grounds on a lucky cast.",
+        "journalTip": "Lagoon schools reward moving before a pocket empties."
+      },
+      {
+        "speciesId": "species.shear_drum",
+        "family": "storm",
+        "lore": "Drums the shear walls before a squall.",
+        "habitatHint": "Storm Quay channels in hard wind.",
+        "journalTip": "Watch the shear — storm fish punish late reels."
+      },
+      {
+        "speciesId": "species.thunder_drum",
+        "family": "storm",
+        "lore": "Rare thunderhead of the drum family.",
+        "habitatHint": "Shear channels after Perfect reels.",
+        "journalTip": "Watch the shear — storm fish punish late reels."
+      },
+      {
+        "speciesId": "species.foam_skater",
+        "family": "storm",
+        "lore": "Skips whitecaps like a thrown coin.",
+        "habitatHint": "Foam lines off Storm Quay.",
+        "journalTip": "Watch the shear — storm fish punish late reels."
+      },
+      {
+        "speciesId": "species.crystal_skater",
+        "family": "storm",
+        "lore": "Ice-bright rare skater.",
+        "habitatHint": "Foam lines under rare luck.",
+        "journalTip": "Watch the shear — storm fish punish late reels."
+      },
+      {
+        "speciesId": "species.slag_loach",
+        "family": "ember",
+        "lore": "Feeds on kiln slag warm-water bugs.",
+        "habitatHint": "Ember Wharf heated outflows.",
+        "journalTip": "Warm outflows thicken after dusk maintenance."
+      },
+      {
+        "speciesId": "species.magma_loach",
+        "family": "ember",
+        "lore": "Rare molten stripe along the loach.",
+        "habitatHint": "Kiln outflows on a hot night.",
+        "journalTip": "Warm outflows thicken after dusk maintenance."
+      },
+      {
+        "speciesId": "species.kiln_perch",
+        "family": "ember",
+        "lore": "Perches on warm brick rubble.",
+        "habitatHint": "Ember docks after dusk.",
+        "journalTip": "Warm outflows thicken after dusk maintenance."
+      },
+      {
+        "speciesId": "species.gilt_kiln",
+        "family": "ember",
+        "lore": "Gilded rare perch of the kiln line.",
+        "habitatHint": "Kiln perch water after a Perfect.",
+        "journalTip": "Warm outflows thicken after dusk maintenance."
+      },
+      {
+        "speciesId": "species.drift_icefish",
+        "family": "polar",
+        "lore": "Rides ice pans into the harbor mouth.",
+        "habitatHint": "Northlight dawn shelves.",
+        "journalTip": "Cold shelves favor dawn and deep night casts."
+      },
+      {
+        "speciesId": "species.aurora_icefish",
+        "family": "polar",
+        "lore": "Aurora-backed rare icefish.",
+        "habitatHint": "Drift ice lanes under rare luck.",
+        "journalTip": "Cold shelves favor dawn and deep night casts."
+      },
+      {
+        "speciesId": "species.rime_bream",
+        "family": "polar",
+        "lore": "Frost crystals lace its scales.",
+        "habitatHint": "Deep rime shelves at night.",
+        "journalTip": "Cold shelves favor dawn and deep night casts."
+      },
+      {
+        "speciesId": "species.crystal_bream",
+        "family": "polar",
+        "lore": "Rare crystal-plated bream.",
+        "habitatHint": "Rime shelves on a lucky cast.",
+        "journalTip": "Cold shelves favor dawn and deep night casts."
+      },
+      {
+        "speciesId": "species.silk_amberjack",
+        "family": "marina",
+        "lore": "Silk-smooth jack of the parade lane.",
+        "habitatHint": "Grand Marina day channels.",
+        "journalTip": "Parade traffic boosts scad; jacks want open lane water."
+      },
+      {
+        "speciesId": "species.gilt_amberjack",
+        "family": "marina",
+        "lore": "Gilt rare of the amberjack run.",
+        "habitatHint": "Parade lane after Perfect timing.",
+        "journalTip": "Parade traffic boosts scad; jacks want open lane water."
+      },
+      {
+        "speciesId": "species.parade_scad",
+        "family": "marina",
+        "lore": "Follows festival barges in tight schools.",
+        "habitatHint": "Marina parade edges at dusk.",
+        "journalTip": "Parade traffic boosts scad; jacks want open lane water."
+      },
+      {
+        "speciesId": "species.opal_scad",
+        "family": "marina",
+        "lore": "Opal-sheen rare scad.",
+        "habitatHint": "Parade scad water under rare luck.",
+        "journalTip": "Parade traffic boosts scad; jacks want open lane water."
+      },
+      {
+        "speciesId": "species.veil_skate",
+        "family": "cove",
+        "lore": "Glides under moon veils on the flats.",
+        "habitatHint": "Moon Cove dusk flats.",
+        "journalTip": "Moon flats peak when lantern customers arrive."
+      },
+      {
+        "speciesId": "species.pearl_skate",
+        "family": "cove",
+        "lore": "Pearl-disk rare skate.",
+        "habitatHint": "Veil flats after a Perfect reel.",
+        "journalTip": "Moon flats peak when lantern customers arrive."
+      },
+      {
+        "speciesId": "species.dusk_cuttle",
+        "family": "cove",
+        "lore": "Inks the dusk water before vanishing.",
+        "habitatHint": "Cove night slips.",
+        "journalTip": "Moon flats peak when lantern customers arrive."
+      },
+      {
+        "speciesId": "species.opal_cuttle",
+        "family": "cove",
+        "lore": "Opal rare of the cuttle line.",
+        "habitatHint": "Dusk cuttle water on lucky casts.",
+        "journalTip": "Moon flats peak when lantern customers arrive."
+      },
+      {
+        "speciesId": "species.basalt_gurnard",
+        "family": "jetty",
+        "lore": "Walks basalt shelves on armored fins.",
+        "habitatHint": "Obsidian Jetty basalt spurs.",
+        "journalTip": "Basalt spurs hold heavy fish — bag space first."
       }
     ]
   },
@@ -11149,6 +13348,81 @@
         "carryBonus": 0,
         "transferIntervalMultPermille": 800,
         "wageMultPermille": 1080
+      },
+      {
+        "id": "branch.operator.pad_link",
+        "role": "operator",
+        "name": "Pad link",
+        "description": "Faster machine-to-machine hauls between pads.",
+        "parentId": null,
+        "requiresWorkerLevel": 2,
+        "trainingCostCoins": 50,
+        "trainingXpRequired": 15,
+        "catchSpeedMultPermille": 1000,
+        "moveSpeedMultPermille": 1100,
+        "carryBonus": 0,
+        "transferIntervalMultPermille": 820,
+        "wageMultPermille": 1080
+      },
+      {
+        "id": "branch.supervisor.floor_lead",
+        "role": "supervisor",
+        "name": "Floor lead",
+        "description": "Keeps the floor paced while posted.",
+        "parentId": null,
+        "requiresWorkerLevel": 2,
+        "trainingCostCoins": 55,
+        "trainingXpRequired": 18,
+        "catchSpeedMultPermille": 1000,
+        "moveSpeedMultPermille": 1120,
+        "carryBonus": 0,
+        "transferIntervalMultPermille": 1000,
+        "wageMultPermille": 1120
+      },
+      {
+        "id": "branch.ice_runner.chill_haul",
+        "role": "ice_runner",
+        "name": "Chill haul",
+        "description": "Extra carry and speed for fragile iced stock.",
+        "parentId": null,
+        "requiresWorkerLevel": 2,
+        "trainingCostCoins": 48,
+        "trainingXpRequired": 15,
+        "catchSpeedMultPermille": 1000,
+        "moveSpeedMultPermille": 1180,
+        "carryBonus": 1,
+        "transferIntervalMultPermille": 820,
+        "wageMultPermille": 1080
+      },
+      {
+        "id": "branch.smoker_specialist.kiln_focus",
+        "role": "smoker_specialist",
+        "name": "Kiln focus",
+        "description": "Snappier smoker pad transfers.",
+        "parentId": null,
+        "requiresWorkerLevel": 2,
+        "trainingCostCoins": 52,
+        "trainingXpRequired": 16,
+        "catchSpeedMultPermille": 1000,
+        "moveSpeedMultPermille": 1080,
+        "carryBonus": 0,
+        "transferIntervalMultPermille": 780,
+        "wageMultPermille": 1100
+      },
+      {
+        "id": "branch.greeter.welcome_desk",
+        "role": "greeter",
+        "name": "Welcome desk",
+        "description": "Posts cleaner at the entry welcome desk.",
+        "parentId": null,
+        "requiresWorkerLevel": 2,
+        "trainingCostCoins": 40,
+        "trainingXpRequired": 12,
+        "catchSpeedMultPermille": 1000,
+        "moveSpeedMultPermille": 1080,
+        "carryBonus": 0,
+        "transferIntervalMultPermille": 1000,
+        "wageMultPermille": 1060
       }
     ],
     "schedules": [
@@ -11173,6 +13447,242 @@
         ],
         "autoOnShift": true,
         "wageMultPermille": 1100
+      }
+    ]
+  },
+  "rivalMarkets": {
+    "tickInterval": 40,
+    "emptyStockSiphonChancePermille": 350,
+    "lowRepSiphonBonusPermille": 150,
+    "minReputationBandToResist": 3,
+    "wellStockedUnits": 3,
+    "pressureSpawnMultPermille": 780,
+    "rivals": [
+      {
+        "id": "rival.dockside_dolly",
+        "name": "Dockside Dolly",
+        "description": "Sunrise pier hawker undercutting basic portions and fillets at dawn.",
+        "harbors": [
+          "harbor.sunrise_pier"
+        ],
+        "aggressionPermille": 420,
+        "specialtyProducts": [
+          "product.basic_portion",
+          "product.fillet"
+        ],
+        "undercutPriceMultPermille": 900,
+        "activeDayParts": [
+          "dawn",
+          "day"
+        ]
+      },
+      {
+        "id": "rival.moon_mariner",
+        "name": "Moon Mariner Stall",
+        "description": "Moon cove night stall chasing smoked and grilled fillets.",
+        "harbors": [
+          "harbor.moon_cove"
+        ],
+        "aggressionPermille": 450,
+        "specialtyProducts": [
+          "product.smoked_fillet",
+          "product.grilled_fillet"
+        ],
+        "undercutPriceMultPermille": 910,
+        "activeDayParts": [
+          "dusk",
+          "night"
+        ]
+      },
+      {
+        "id": "rival.obsidian_cart",
+        "name": "Obsidian Cart Co.",
+        "description": "Jetty cart siphoning chilled fillets and fried portions.",
+        "harbors": [
+          "harbor.obsidian_jetty"
+        ],
+        "aggressionPermille": 480,
+        "specialtyProducts": [
+          "product.chilled_fillet",
+          "product.fried_portion"
+        ],
+        "undercutPriceMultPermille": 880,
+        "activeDayParts": [
+          "day",
+          "dusk"
+        ]
+      },
+      {
+        "id": "rival.northlight_nook",
+        "name": "Northlight Nook",
+        "description": "Cold-harbor nook competing on ice crates and steamed fillets.",
+        "harbors": [
+          "harbor.northlight_harbor"
+        ],
+        "aggressionPermille": 400,
+        "specialtyProducts": [
+          "product.ice_packed_crate",
+          "product.steamed_fillet"
+        ],
+        "undercutPriceMultPermille": 920,
+        "activeDayParts": [
+          "dawn",
+          "night"
+        ]
+      },
+      {
+        "id": "rival.marina_monger",
+        "name": "Marina Monger",
+        "description": "Grand marina wholesale rival for press and steam cartons.",
+        "harbors": [
+          "harbor.grand_marina"
+        ],
+        "aggressionPermille": 460,
+        "specialtyProducts": [
+          "product.press_carton",
+          "product.steam_carton"
+        ],
+        "undercutPriceMultPermille": 890,
+        "activeDayParts": [
+          "day"
+        ]
+      },
+      {
+        "id": "rival.coral_crock",
+        "name": "Coral Crock",
+        "description": "Lagoon crock trading pickled fillets and relish jars.",
+        "harbors": [
+          "harbor.coral_lagoon"
+        ],
+        "aggressionPermille": 430,
+        "specialtyProducts": [
+          "product.pickled_fillet",
+          "product.relish_jar"
+        ],
+        "undercutPriceMultPermille": 905,
+        "activeDayParts": [
+          "dawn",
+          "day"
+        ]
+      },
+      {
+        "id": "rival.storm_hawker",
+        "name": "Storm Hawker",
+        "description": "Quay hawker pushing cured fillets and dried strips in rough weather.",
+        "harbors": [
+          "harbor.storm_quay"
+        ],
+        "aggressionPermille": 500,
+        "specialtyProducts": [
+          "product.cured_fillet",
+          "product.dried_strip"
+        ],
+        "undercutPriceMultPermille": 870,
+        "activeDayParts": [
+          "dusk",
+          "night"
+        ]
+      },
+      {
+        "id": "rival.ember_emporium",
+        "name": "Ember Emporium",
+        "description": "Wharf emporium competing on fish cakes and kiln cartons.",
+        "harbors": [
+          "harbor.ember_wharf"
+        ],
+        "aggressionPermille": 470,
+        "specialtyProducts": [
+          "product.fish_cake",
+          "product.kiln_carton"
+        ],
+        "undercutPriceMultPermille": 885,
+        "activeDayParts": [
+          "day",
+          "dusk"
+        ]
+      }
+    ]
+  },
+  "endgame": {
+    "requiresPrestigeCount": 8,
+    "tiers": [
+      {
+        "id": "endgame.tier.deep_harbor",
+        "name": "Deep Harbor",
+        "description": "Clear eight prestige milestones to open the endgame board.",
+        "requiresPrestigeCount": 8,
+        "requiresRivalBeats": 0,
+        "requiresChallenges": 0,
+        "catchSpeedPermille": 1025,
+        "priceBonusPermille": 1025,
+        "coins": 400
+      },
+      {
+        "id": "endgame.tier.rival_warden",
+        "name": "Rival Warden",
+        "description": "Beat three rival stalls while holding Deep Harbor.",
+        "requiresPrestigeCount": 8,
+        "requiresRivalBeats": 3,
+        "requiresChallenges": 0,
+        "catchSpeedPermille": 1050,
+        "priceBonusPermille": 1050,
+        "coins": 600
+      },
+      {
+        "id": "endgame.tier.legend_pier",
+        "name": "Legend Pier",
+        "description": "Finish two endgame challenges after Rival Warden.",
+        "requiresPrestigeCount": 12,
+        "requiresRivalBeats": 5,
+        "requiresChallenges": 2,
+        "catchSpeedPermille": 1080,
+        "priceBonusPermille": 1080,
+        "coins": 900
+      },
+      {
+        "id": "endgame.tier.crown_market",
+        "name": "Crown Market",
+        "description": "Sweep all eight rivals and every endgame challenge.",
+        "requiresPrestigeCount": 16,
+        "requiresRivalBeats": 8,
+        "requiresChallenges": 4,
+        "catchSpeedPermille": 1120,
+        "priceBonusPermille": 1120,
+        "coins": 1500
+      }
+    ],
+    "challenges": [
+      {
+        "id": "endgame.challenge.rival_sweep",
+        "name": "Rival Sweep",
+        "description": "Beat every harbor rival at least once.",
+        "stat": "stat.rival_beats",
+        "atLeast": 8,
+        "rewardCoins": 350
+      },
+      {
+        "id": "endgame.challenge.prestige_surge",
+        "name": "Prestige Surge",
+        "description": "Complete sixteen prestige milestones.",
+        "stat": "stat.prestige_completed",
+        "atLeast": 16,
+        "rewardCoins": 400
+      },
+      {
+        "id": "endgame.challenge.codex_depth",
+        "name": "Codex Depth",
+        "description": "Log seventy-five species catches across the roster.",
+        "stat": "stat.fish_caught",
+        "atLeast": 200,
+        "rewardCoins": 300
+      },
+      {
+        "id": "endgame.challenge.market_master",
+        "name": "Market Master",
+        "description": "Ring up five hundred counter sales.",
+        "stat": "stat.sales",
+        "atLeast": 500,
+        "rewardCoins": 450
       }
     ]
   }

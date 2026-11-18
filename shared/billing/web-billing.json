@@ -8,6 +8,8 @@
   "productionBackend": "web",
   "forceStubEnv": "VITE_BILLING_FORCE_STUB",
   "finish2CheckoutApiPhase": 25,
+  "finish3StripeLivePhase": 16,
+  "stripeLiveCatalog": "shared/ship/stripe-live-checkout.json",
   "moduleCatalog": "shared/ship/web-checkout-api.json",
   "localEmulator": "checkout-api/",
   "catalog": "shared/billing/entitlements.json",
@@ -26,8 +28,30 @@
       "name": "VITE_BILLING_FORCE_STUB",
       "required": false,
       "description": "Set to true to force local stub even when API base is configured"
+    },
+    {
+      "name": "CHECKOUT_API_MODE",
+      "required": false,
+      "description": "stub (default) | live. Live disables instant checkout and requires STRIPE_SECRET_KEY."
+    },
+    {
+      "name": "STRIPE_SECRET_KEY",
+      "required": false,
+      "description": "Server-only Stripe secret for live Checkout Sessions (never commit real values)"
+    },
+    {
+      "name": "STRIPE_WEBHOOK_SECRET",
+      "required": false,
+      "description": "Server-only Stripe webhook signing secret for POST /v1/stripe/webhook"
     }
   ],
+  "stripeLive": {
+    "webhookPath": "/v1/stripe/webhook",
+    "checkoutHost": "https://checkout.stripe.com/",
+    "priceMapSource": "shared/billing/web-checkout-products.json#stripePriceId",
+    "failsClosedWithoutSecret": true,
+    "sandboxFallbackForbiddenInLive": true
+  },
   "api": {
     "checkout": {
       "method": "POST",
@@ -174,6 +198,6 @@
     }
   ],
   "sandbox": {
-    "note": "Point VITE_BILLING_API_BASE at a test checkout API; FakeWebStoreBridge covers unit tests without network."
+    "note": "Point VITE_BILLING_API_BASE at a test checkout API; FakeWebStoreBridge covers unit tests without network. CHECKOUT_API_MODE=stub keeps /sandbox/pay; live mode never uses it."
   }
 }

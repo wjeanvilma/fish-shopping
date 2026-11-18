@@ -228,6 +228,26 @@ object ContentValidator {
             prevEnd = part.endPermille
         }
         check(p.ecology.parts.last().endPermille == 1000) { "ecology.parts must end at endPermille 1000" }
+        val ecologyParts = p.ecology.parts.map { it.id }.toSet()
+        val harborIds = p.harbors.map { it.id }.toSet()
+        val speciesIds = p.species.map { it.id }.toSet()
+        check(p.ecology.habitats.map { it.id }.toSet().size == p.ecology.habitats.size) {
+            "ecology.habitats ids must be unique"
+        }
+        for (habitat in p.ecology.habitats) {
+            check(habitat.harbors.isNotEmpty()) { "${habitat.id}: harbors must not be empty" }
+            check(habitat.favoredDayParts.isNotEmpty()) { "${habitat.id}: favoredDayParts must not be empty" }
+            for (hid in habitat.harbors) {
+                check(hid in harborIds) { "${habitat.id}: unknown harbor '$hid'" }
+            }
+            for (part in habitat.favoredDayParts) {
+                check(part in ecologyParts) { "${habitat.id}: unknown day part '$part'" }
+            }
+            for ((sp, mult) in habitat.speciesWeightMultPermille) {
+                check(sp in speciesIds) { "${habitat.id}: unknown species '$sp'" }
+                check(mult >= 1) { "${habitat.id}: speciesWeightMultPermille.$sp must be >= 1" }
+            }
+        }
         check(p.trophies.sizeMinPermille <= p.trophies.sizeMaxPermille) {
             "trophies: sizeMinPermille must be <= sizeMaxPermille"
         }
@@ -423,6 +443,83 @@ object ContentValidator {
                 check(part in dayParts) { "${sch.id}: unknown day part '$part'" }
             }
             check(sch.wageMultPermille >= 1) { "${sch.id}: wageMultPermille must be >= 1" }
+        }
+
+        val rivalsCat = p.rivalMarkets
+        check(rivalsCat.tickInterval >= 1) { "rivalMarkets.tickInterval must be >= 1" }
+        check(rivalsCat.emptyStockSiphonChancePermille in 0..1000) {
+            "rivalMarkets.emptyStockSiphonChancePermille must be 0..1000"
+        }
+        check(rivalsCat.lowRepSiphonBonusPermille in 0..1000) {
+            "rivalMarkets.lowRepSiphonBonusPermille must be 0..1000"
+        }
+        check(rivalsCat.minReputationBandToResist >= 0) {
+            "rivalMarkets.minReputationBandToResist must be >= 0"
+        }
+        check(rivalsCat.wellStockedUnits >= 1) { "rivalMarkets.wellStockedUnits must be >= 1" }
+        check(rivalsCat.pressureSpawnMultPermille >= 1) {
+            "rivalMarkets.pressureSpawnMultPermille must be >= 1"
+        }
+        check(rivalsCat.rivals.isNotEmpty()) { "rivalMarkets.rivals must not be empty" }
+        check(rivalsCat.rivals.map { it.id }.toSet().size == rivalsCat.rivals.size) {
+            "rivalMarkets.rivals ids must be unique"
+        }
+        for (rival in rivalsCat.rivals) {
+            check(rival.id.startsWith("rival.")) { "${rival.id}: id must start with 'rival.'" }
+            check(rival.harbors.isNotEmpty()) { "${rival.id}: harbors must not be empty" }
+            for (hid in rival.harbors) {
+                check(hid in p.harborsById) { "${rival.id}: unknown harbor '$hid'" }
+            }
+            check(rival.aggressionPermille in 1..1000) {
+                "${rival.id}: aggressionPermille must be 1..1000"
+            }
+            check(rival.specialtyProducts.isNotEmpty()) {
+                "${rival.id}: specialtyProducts must not be empty"
+            }
+            for (pid in rival.specialtyProducts) {
+                check(pid in p.productsById) { "${rival.id}: unknown product '$pid'" }
+            }
+            check(rival.undercutPriceMultPermille in 1..1000) {
+                "${rival.id}: undercutPriceMultPermille must be 1..1000"
+            }
+            check(rival.activeDayParts.isNotEmpty()) {
+                "${rival.id}: activeDayParts must not be empty"
+            }
+            for (part in rival.activeDayParts) {
+                check(part in dayParts) { "${rival.id}: unknown day part '$part'" }
+            }
+        }
+
+        val endgame = p.endgame
+        check(endgame.requiresPrestigeCount >= 0) { "endgame.requiresPrestigeCount must be >= 0" }
+        check(endgame.tiers.isNotEmpty()) { "endgame.tiers must not be empty" }
+        check(endgame.tiers.map { it.id }.toSet().size == endgame.tiers.size) {
+            "endgame.tiers ids must be unique"
+        }
+        for (tier in endgame.tiers) {
+            check(tier.id.startsWith("endgame.tier.")) {
+                "${tier.id}: id must start with 'endgame.tier.'"
+            }
+            check(tier.requiresPrestigeCount >= 0) {
+                "${tier.id}: requiresPrestigeCount must be >= 0"
+            }
+            check(tier.requiresRivalBeats >= 0) { "${tier.id}: requiresRivalBeats must be >= 0" }
+            check(tier.requiresChallenges >= 0) { "${tier.id}: requiresChallenges must be >= 0" }
+            check(tier.catchSpeedPermille >= 1) { "${tier.id}: catchSpeedPermille must be >= 1" }
+            check(tier.priceBonusPermille >= 1) { "${tier.id}: priceBonusPermille must be >= 1" }
+            check(tier.coins >= 0) { "${tier.id}: coins must be >= 0" }
+        }
+        check(endgame.challenges.isNotEmpty()) { "endgame.challenges must not be empty" }
+        check(endgame.challenges.map { it.id }.toSet().size == endgame.challenges.size) {
+            "endgame.challenges ids must be unique"
+        }
+        for (ch in endgame.challenges) {
+            check(ch.id.startsWith("endgame.challenge.")) {
+                "${ch.id}: id must start with 'endgame.challenge.'"
+            }
+            check(ch.stat.startsWith("stat.")) { "${ch.id}: stat must start with 'stat.'" }
+            check(ch.atLeast >= 1) { "${ch.id}: atLeast must be >= 1" }
+            check(ch.rewardCoins >= 0) { "${ch.id}: rewardCoins must be >= 0" }
         }
 
         val rep = p.reputation

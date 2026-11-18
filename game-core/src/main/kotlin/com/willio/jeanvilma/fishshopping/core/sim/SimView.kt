@@ -1,12 +1,15 @@
 package com.willio.jeanvilma.fishshopping.core.sim
 
+
 import com.willio.jeanvilma.fishshopping.core.content.ZoneKind
 import com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
 import com.willio.jeanvilma.fishshopping.core.customers.ReputationSystem
+import com.willio.jeanvilma.fishshopping.core.customers.RivalMarketSystem
 import com.willio.jeanvilma.fishshopping.core.fishing.FishingSystem
 import com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
 import com.willio.jeanvilma.fishshopping.core.contracts.ContractSystem
 import com.willio.jeanvilma.fishshopping.core.economy.EconomySystem
+import com.willio.jeanvilma.fishshopping.core.progression.EndgameSystem
 import com.willio.jeanvilma.fishshopping.core.progression.PrestigeSystem
 import com.willio.jeanvilma.fishshopping.core.progression.ProgressionSystem
 import com.willio.jeanvilma.fishshopping.core.progression.UpgradeSystem
@@ -148,7 +151,17 @@ data class SimView(
     val reputationBand: Int,
     /** Short band label for the HUD strip. */
     val reputationLabel: String,
+    /** Finish 3.0 Phase 14 — active rival NPC market ids at this harbor. */
+    val activeRivalIds: List<String>,
+    /** True when rivals are siphoning demand / undercutting. */
+    val rivalPressureActive: Boolean,
     val prestige: List<PrestigeView>,
+    /** Finish 3.0 Phase 15 — endgame deepen board. */
+    val endgameUnlocked: Boolean,
+    val endgameLockedReason: String?,
+    val beatenRivalCount: Int,
+    val endgameTiers: List<EndgameTierView>,
+    val endgameChallenges: List<EndgameChallengeView>,
     /** Finish 2.0 Phase 11 — lifetime achievements for Settings / HUD. */
     val achievements: List<AchievementView>,
     val unlockedAchievementsCount: Int,
@@ -628,6 +641,31 @@ data class PrestigeView(
     val reason: String?,
 )
 
+/** unlocked | ready | locked — Finish 3.0 Phase 15 endgame tiers. */
+data class EndgameTierView(
+    val id: String,
+    val name: String,
+    val description: String,
+    val status: String,
+    val requiresPrestigeCount: Int,
+    val requiresRivalBeats: Int,
+    val requiresChallenges: Int,
+    val catchSpeedPermille: Int,
+    val priceBonusPermille: Int,
+    val coins: Long,
+)
+
+/** completed | active — Finish 3.0 Phase 15 endgame challenges. */
+data class EndgameChallengeView(
+    val id: String,
+    val name: String,
+    val description: String,
+    val status: String,
+    val progress: Long,
+    val goalAtLeast: Long,
+    val rewardCoins: Long,
+)
+
 /** unlocked | active — Finish 2.0 Phase 11 achievements. */
 data class AchievementView(
     val id: String,
@@ -690,7 +728,7 @@ fun Simulation.view(): SimView {
     val stationViews = s.machines.map { m ->
         val stDef = harbor.stations.first { it.id == m.stationId }
         val unlocked = ProductionSystem.isUnlocked(stDef, s)
-        val lockName = stDef.requiresUpgrade?.let { c.upgradesById[it]?.name ?: it } ?: "an upgrade"
+        val lockName = stDef.requiresUpgrade?.let { c.upgradesById[it]?.let { u -> c.displayName(u.id, u.name) } ?: it } ?: "an upgrade"
         val status = when {
             !unlocked -> MachineStatus.LOCKED
             m.broken -> MachineStatus.NEEDS_REPAIR
@@ -757,7 +795,7 @@ fun Simulation.view(): SimView {
                 "Fish here: ${spot.stock}/${spotDef.stockMax}",
                 if (tideOwned) "${part.name} · tide chart" else part.name,
             )
-            if (casting) lines += "Hooked: ${c.speciesById.getValue(p.fishingSpecies!!).name}"
+            if (casting) lines += "Hooked: ${c.speciesById.getValue(p.fishingSpecies!!).let { c.displayName(it.id, it.name) }}"
             val regenNeeded = FishingSystem.regenTicksFor(c, s, spotDef, spot.stock)
             val progress = when {
                 casting -> p.fishingProgress.toFloat() / p.fishingCatchTicks
@@ -778,7 +816,7 @@ fun Simulation.view(): SimView {
             }
             val mode = m.preferredRecipeId?.let { ProductionSystem.recipeLabel(it) } ?: "Auto"
             ContextCard(
-                title = c.machinesById.getValue(m.machineId).name,
+                title = c.machinesById.getValue(m.machineId).let { c.displayName(it.id, it.name) },
                 lines = listOf(
                     v.statusText,
                     "In: ${m.input.usedUnits()}/${m.input.capacityUnits}   Out: ${m.output.usedUnits()}/${m.output.capacityUnits}",
@@ -796,7 +834,7 @@ fun Simulation.view(): SimView {
             val unlocked = CustomerSystem.isUnlocked(def, s)
             val padLabel = if (def.kind.wire == "wholesale") "Wholesale" else "Counter"
             if (!unlocked) {
-                val lockName = def.requiresUpgrade?.let { c.upgradesById[it]?.name ?: it } ?: "an upgrade"
+                val lockName = def.requiresUpgrade?.let { c.upgradesById[it]?.let { u -> c.displayName(u.id, u.name) } ?: it } ?: "an upgrade"
                 ContextCard(
                     "$padLabel locked",
                     listOf("Buy $lockName to open this B2B pad"),
@@ -805,7 +843,7 @@ fun Simulation.view(): SimView {
             } else {
                 val queued = s.customers.filter { it.counterId == def.id }
                 val front = queued.firstOrNull { it.arrived }
-                val label = def.products.joinToString(" / ") { c.productsById.getValue(it).name }
+                val label = def.products.joinToString(" / ") { c.productsById.getValue(it).let { p -> c.displayName(p.id, p.name) } }
                 val demandMult = CustomerSystem.demandPriceMultPermille(c, s, harbor, def, counter)
                 val lines = mutableListOf(
                     "Stock: ${counter.stock.usedUnits()}/${def.capacityUnits}",
@@ -844,7 +882,7 @@ fun Simulation.view(): SimView {
             }
         }
         ZoneKind.KIOSK -> {
-            val preferred = p.preferredBaitId?.let { c.baitById[it]?.name } ?: "Auto"
+            val preferred = p.preferredBaitId?.let { c.baitById[it]?.let { b -> c.displayName(b.id, b.name) } } ?: "Auto"
             ContextCard(
                 title = "Bait kiosk",
                 lines = listOf(
@@ -892,7 +930,7 @@ fun Simulation.view(): SimView {
             }
             BaitOfferView(
                 id = b.id,
-                name = b.name,
+                name = c.displayName(b.id, b.name),
                 description = b.description,
                 cost = b.cost,
                 packQuantity = b.packQuantity,
@@ -910,7 +948,7 @@ fun Simulation.view(): SimView {
         tick = s.tick,
         coins = s.coins,
         harborId = s.harborId,
-        harborName = harbor.name,
+        harborName = c.displayName(harbor.id, harbor.name),
         harborSpecializationName = harbor.specialization?.name,
         harborSpecializationDescription = harbor.specialization?.description,
         blockoutAsset = harbor.blockoutAsset,
@@ -980,21 +1018,21 @@ fun Simulation.view(): SimView {
         dayPartName = FishingSystem.dayPartAt(c, s.tick).name,
         tideChartOwned = FishingSystem.hasTideChart(s),
         weatherId = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.weatherAt(c, s.tick).id,
-        weatherName = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.weatherAt(c, s.tick).name,
+        weatherName = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.weatherAt(c, s.tick).let { c.displayName(it.id, it.name) },
         weatherDescription = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.weatherAt(c, s.tick).description,
         weatherTicksRemaining = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.ticksUntilWeatherChange(c, s.tick),
         tidePhaseId = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.tidePhaseAt(c, s.tick).id,
-        tidePhaseName = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.tidePhaseAt(c, s.tick).name,
+        tidePhaseName = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.tidePhaseAt(c, s.tick).let { c.displayName(it.id, it.name) },
         tideTicksRemaining = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.ticksUntilTideChange(c, s.tick),
         activeTechniqueId = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.technique(c, s).id,
-        activeTechniqueName = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.technique(c, s).name,
+        activeTechniqueName = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.technique(c, s).let { c.displayName(it.id, it.name) },
         masteryGlobalLevel = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.globalLevel(c, s),
         techniques = c.fishingMastery.techniques.map { tech ->
             val unlocked = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.isUnlocked(c, s, tech)
             val active = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.technique(c, s).id == tech.id
             TechniqueView(
                 id = tech.id,
-                name = tech.name,
+                name = c.displayName(tech.id, tech.name),
                 description = tech.description,
                 requiresMasteryLevel = tech.requiresMasteryLevel,
                 unlocked = unlocked,
@@ -1022,7 +1060,7 @@ fun Simulation.view(): SimView {
             val onPlot = com.willio.jeanvilma.fishshopping.core.world.PlotSystem.standingOnUpgradePlot(harbor, s, u.id)
             val plotReady = a is UpgradeSystem.Availability.Purchasable && (!needsPlot || onPlot)
             UpgradeView(
-                u.id, u.name, u.description, u.cost,
+                u.id, c.displayName(u.id, u.name), u.description, u.cost,
                 owned = a is UpgradeSystem.Availability.Owned,
                 purchasable = plotReady,
                 reason = when {
@@ -1035,12 +1073,12 @@ fun Simulation.view(): SimView {
             )
         },
         rush = CustomerSystem.activeRush(harbor, s.tick)?.let { r ->
-            RushBannerView(r.id, r.name, CustomerSystem.ticksRemaining(r, s.tick))
+            RushBannerView(r.id, c.displayName(r.id, r.name), CustomerSystem.ticksRemaining(r, s.tick))
         },
         seasonalEvent = com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem.active(c, s.tick)?.let { e ->
             SeasonalEventBannerView(
                 eventId = e.id,
-                name = e.name,
+                name = c.displayName(e.id, e.name),
                 description = e.description,
                 ticksRemaining = com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem.ticksRemaining(e, s.tick),
                 banner = e.banner,
@@ -1087,12 +1125,12 @@ fun Simulation.view(): SimView {
             val activeBranch = w.activeBranchId?.let { c.staffBranchesById[it] }
             val activeSchedule = w.scheduleId?.let { c.staffSchedulesById[it] }
             WorkerView(
-                w.id, w.roleId, def?.name ?: w.roleId, roleWire,
+                w.id, w.roleId, def?.let { c.displayName(it.id, it.name) } ?: w.roleId, roleWire,
                 w.x, w.z, w.bag.usedUnits(), w.bag.capacityUnits, w.phase.name,
                 level = w.level,
                 xp = w.xp,
                 xpToNext = xpToNext,
-                traitNames = w.traits.map { tid -> c.workerTraitsById[tid]?.name ?: tid },
+                traitNames = w.traits.map { tid -> c.workerTraitsById[tid]?.let { c.displayName(it.id, it.name) } ?: tid },
                 onShift = w.onShift,
                 equipment = prog.loadouts.slots.mapNotNull { slot ->
                     val uid = w.equipment[slot.id] ?: return@mapNotNull null
@@ -1100,7 +1138,7 @@ fun Simulation.view(): SimView {
                         slotId = slot.id,
                         slotName = slot.name,
                         upgradeId = uid,
-                        upgradeName = c.upgradesById[uid]?.name ?: uid,
+                        upgradeName = c.upgradesById[uid]?.let { c.displayName(it.id, it.name) } ?: uid,
                     )
                 },
                 blockedReason = WorkerSystem.blockedReason(c, s, harbor, w),
@@ -1114,7 +1152,7 @@ fun Simulation.view(): SimView {
                     else StaffTreesSystem.canTrain(c, s, w, branch.id)
                     StaffBranchOfferView(
                         id = branch.id,
-                        name = branch.name,
+                        name = c.displayName(branch.id, branch.name),
                         description = branch.description,
                         parentId = branch.parentId,
                         requiresWorkerLevel = branch.requiresWorkerLevel,
@@ -1132,7 +1170,7 @@ fun Simulation.view(): SimView {
                 schedules = c.staffTrees.schedules.map { sch ->
                     StaffScheduleOfferView(
                         id = sch.id,
-                        name = sch.name,
+                        name = c.displayName(sch.id, sch.name),
                         description = sch.description,
                         dayParts = sch.dayParts,
                         wageMultPermille = sch.wageMultPermille,
@@ -1145,7 +1183,7 @@ fun Simulation.view(): SimView {
             val a = WorkerSystem.availability(c, s, def)
             val hired = s.workers.count { it.roleId == def.id }
             StaffHireView(
-                def.id, def.name, def.role.wire, def.hireCost, hired, def.maxHired,
+                def.id, c.displayName(def.id, def.name), def.role.wire, def.hireCost, hired, def.maxHired,
                 purchasable = a is WorkerSystem.WorkerHireAvailability.Purchasable,
                 reason = when (a) {
                     is WorkerSystem.WorkerHireAvailability.Locked -> a.reason
@@ -1161,7 +1199,7 @@ fun Simulation.view(): SimView {
                 val wearer = s.workers.firstOrNull { it.equipment[slot.id] == uid }
                 StaffGearView(
                     upgradeId = uid,
-                    name = c.upgradesById[uid]?.name ?: uid,
+                    name = c.upgradesById[uid]?.let { c.displayName(it.id, it.name) } ?: uid,
                     slotId = slot.id,
                     slotName = slot.name,
                     equippedOnWorkerId = wearer?.id,
@@ -1176,7 +1214,7 @@ fun Simulation.view(): SimView {
             val progress = s.stat(q.goal.stat).coerceAtMost(q.goal.atLeast)
             QuestView(
                 id = q.id,
-                name = q.name,
+                name = c.displayName(q.id, q.name),
                 description = q.description,
                 status = when {
                     completed -> "completed"
@@ -1279,6 +1317,8 @@ fun Simulation.view(): SimView {
         reputationScorePermille = ReputationSystem.scorePermille(c, s),
         reputationBand = ReputationSystem.band(c, s),
         reputationLabel = ReputationSystem.bandLabel(c, s),
+        activeRivalIds = RivalMarketSystem.activeRivals(c, s, s.harborId).map { it.id },
+        rivalPressureActive = RivalMarketSystem.isPressuring(c, s, s.harborId),
         prestige = c.prestige.milestones.map { m ->
             val completed = m.id in s.completedPrestige
             val locked = !completed && !PrestigeSystem.requirementsMet(s, m)
@@ -1299,6 +1339,41 @@ fun Simulation.view(): SimView {
                 catchSpeedPermille = m.reward.catchSpeedPermille,
                 priceBonusPermille = m.reward.priceBonusPermille,
                 reason = if (locked) PrestigeSystem.missingRequirement(c, s, m)?.let { "Requires: $it" } else null,
+            )
+        },
+        endgameUnlocked = EndgameSystem.boardUnlocked(c, s),
+        endgameLockedReason = EndgameSystem.missingBoardRequirement(c, s)?.let { "Requires: $it" },
+        beatenRivalCount = s.beatenRivalIds.size,
+        endgameTiers = c.endgame.tiers.map { t ->
+            val unlocked = t.id in s.unlockedEndgameTiers
+            EndgameTierView(
+                id = t.id,
+                name = t.name,
+                description = t.description,
+                status = when {
+                    unlocked -> "unlocked"
+                    EndgameSystem.tierRequirementsMet(s, t) -> "ready"
+                    else -> "locked"
+                },
+                requiresPrestigeCount = t.requiresPrestigeCount,
+                requiresRivalBeats = t.requiresRivalBeats,
+                requiresChallenges = t.requiresChallenges,
+                catchSpeedPermille = t.catchSpeedPermille,
+                priceBonusPermille = t.priceBonusPermille,
+                coins = t.coins,
+            )
+        },
+        endgameChallenges = c.endgame.challenges.map { ch ->
+            val completed = ch.id in s.completedEndgameChallenges
+            val progress = s.stat(ch.stat).coerceAtMost(ch.atLeast)
+            EndgameChallengeView(
+                id = ch.id,
+                name = ch.name,
+                description = ch.description,
+                status = if (completed) "completed" else "active",
+                progress = if (completed) ch.atLeast else progress,
+                goalAtLeast = ch.atLeast,
+                rewardCoins = ch.rewardCoins,
             )
         },
         achievements = c.achievements.entries.map { a ->
@@ -1415,7 +1490,7 @@ private fun Simulation.automationIssueViews(stationViews: List<StationView>): Li
         val reason = WorkerSystem.blockedReason(c, s, harbor, w) ?: continue
         if (reason == "Off shift") continue
         val def = c.workersById[w.roleId]
-        out += AutomationIssueView(w.id, "worker", def?.name ?: w.roleId, reason)
+        out += AutomationIssueView(w.id, "worker", def?.let { c.displayName(it.id, it.name) } ?: w.roleId, reason)
     }
     return out
 }

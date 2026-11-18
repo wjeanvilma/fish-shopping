@@ -2,13 +2,13 @@
   "phase": 20,
   "plan": "30_finish_2.0",
   "schema": "fish.ship.fish_art_pass.v1",
-  "description": "Finish 2.0 Phase 20 — move top species off shared silhouette stubs to authored multi-part FishArt meshes; licenses + size budgets; path contract unchanged.",
-  "contentVersion": "1.0.1",
+  "description": "Finish 2.0 Phase 20 + Finish 3.0 Phase 9 \u2014 all 50 species authored multi-part FishArt meshes; licenses + size budgets; path contract unchanged.",
+  "contentVersion": "2.0.0",
   "schemaVersion": 23,
-  "authoredSpeciesMin": 10,
+  "authoredSpeciesMin": 50,
   "fishArtMarker": "authored-phase-20",
   "maxBytesPerFish": 32000,
-  "maxTotalAuthoredBytes": 320000,
+  "maxTotalAuthoredBytes": 1600000,
   "generator": "shared/tools/generate_fish_stubs.py",
   "themesModule": "shared/tools/fish_themes.py",
   "authoredSpecies": [
@@ -61,17 +61,216 @@
       "speciesId": "species.reef_perch",
       "theme": "pier_reef",
       "asset": "shared/assets/models/fish_reef_perch.glb"
+    },
+    {
+      "speciesId": "species.moon_flounder",
+      "theme": "moon_flat",
+      "asset": "shared/assets/models/fish_moon_flounder.glb"
+    },
+    {
+      "speciesId": "species.ink_squid",
+      "theme": "ink_tentacle",
+      "asset": "shared/assets/models/fish_ink_squid.glb"
+    },
+    {
+      "speciesId": "species.lava_eel",
+      "theme": "lava_ribbon",
+      "asset": "shared/assets/models/fish_lava_eel.glb"
+    },
+    {
+      "speciesId": "species.ghost_lanternfish",
+      "theme": "ghost_glow",
+      "asset": "shared/assets/models/fish_ghost_lanternfish.glb"
+    },
+    {
+      "speciesId": "species.golden_sprat",
+      "theme": "gold_sprat",
+      "asset": "shared/assets/models/fish_golden_sprat.glb"
+    },
+    {
+      "speciesId": "species.gilt_mackerel",
+      "theme": "gilt_stripe",
+      "asset": "shared/assets/models/fish_gilt_mackerel.glb"
+    },
+    {
+      "speciesId": "species.bronze_mullet",
+      "theme": "bronze_bulk",
+      "asset": "shared/assets/models/fish_bronze_mullet.glb"
+    },
+    {
+      "speciesId": "species.ruby_snapper",
+      "theme": "ruby_jaw",
+      "asset": "shared/assets/models/fish_ruby_snapper.glb"
+    },
+    {
+      "speciesId": "species.silver_dawn_anchovy",
+      "theme": "silver_slender",
+      "asset": "shared/assets/models/fish_silver_dawn_anchovy.glb"
+    },
+    {
+      "speciesId": "species.sapphire_needlefish",
+      "theme": "sapphire_needle",
+      "asset": "shared/assets/models/fish_sapphire_needlefish.glb"
+    },
+    {
+      "speciesId": "species.crown_bass",
+      "theme": "crown_bass",
+      "asset": "shared/assets/models/fish_crown_bass.glb"
+    },
+    {
+      "speciesId": "species.opal_flounder",
+      "theme": "opal_flat",
+      "asset": "shared/assets/models/fish_opal_flounder.glb"
+    },
+    {
+      "speciesId": "species.ember_eel",
+      "theme": "ember_ribbon",
+      "asset": "shared/assets/models/fish_ember_eel.glb"
+    },
+    {
+      "speciesId": "species.prism_lanternfish",
+      "theme": "prism_glow",
+      "asset": "shared/assets/models/fish_prism_lanternfish.glb"
+    },
+    {
+      "speciesId": "species.frost_smelt",
+      "theme": "frost_long",
+      "asset": "shared/assets/models/fish_frost_smelt.glb"
+    },
+    {
+      "speciesId": "species.arctic_cod",
+      "theme": "arctic_cod",
+      "asset": "shared/assets/models/fish_arctic_cod.glb"
+    },
+    {
+      "speciesId": "species.ice_char",
+      "theme": "ice_char",
+      "asset": "shared/assets/models/fish_ice_char.glb"
+    },
+    {
+      "speciesId": "species.polar_herring",
+      "theme": "polar_herring",
+      "asset": "shared/assets/models/fish_polar_herring.glb"
+    },
+    {
+      "speciesId": "species.crystal_smelt",
+      "theme": "crystal_long",
+      "asset": "shared/assets/models/fish_crystal_smelt.glb"
+    },
+    {
+      "speciesId": "species.aurora_cod",
+      "theme": "aurora_cod",
+      "asset": "shared/assets/models/fish_aurora_cod.glb"
+    },
+    {
+      "speciesId": "species.marina_tuna",
+      "theme": "marina_tuna",
+      "asset": "shared/assets/models/fish_marina_tuna.glb"
+    },
+    {
+      "speciesId": "species.saffron_sole",
+      "theme": "saffron_flat",
+      "asset": "shared/assets/models/fish_saffron_sole.glb"
+    },
+    {
+      "speciesId": "species.pearl_grouper",
+      "theme": "pearl_grouper",
+      "asset": "shared/assets/models/fish_pearl_grouper.glb"
+    },
+    {
+      "speciesId": "species.harbor_pompano",
+      "theme": "harbor_pompano",
+      "asset": "shared/assets/models/fish_harbor_pompano.glb"
+    },
+    {
+      "speciesId": "species.gilt_tuna",
+      "theme": "gilt_tuna",
+      "asset": "shared/assets/models/fish_gilt_tuna.glb"
+    },
+    {
+      "speciesId": "species.gilt_sole",
+      "theme": "gilt_flat",
+      "asset": "shared/assets/models/fish_gilt_sole.glb"
+    },
+    {
+      "speciesId": "species.coral_wrasse",
+      "theme": "coral_wrasse",
+      "asset": "shared/assets/models/fish_coral_wrasse.glb"
+    },
+    {
+      "speciesId": "species.gilt_wrasse",
+      "theme": "gilt_wrasse",
+      "asset": "shared/assets/models/fish_gilt_wrasse.glb"
+    },
+    {
+      "speciesId": "species.lagoon_tang",
+      "theme": "lagoon_tang",
+      "asset": "shared/assets/models/fish_lagoon_tang.glb"
+    },
+    {
+      "speciesId": "species.opal_tang",
+      "theme": "opal_tang",
+      "asset": "shared/assets/models/fish_opal_tang.glb"
+    },
+    {
+      "speciesId": "species.gale_jack",
+      "theme": "gale_jack",
+      "asset": "shared/assets/models/fish_gale_jack.glb"
+    },
+    {
+      "speciesId": "species.thunder_jack",
+      "theme": "thunder_jack",
+      "asset": "shared/assets/models/fish_thunder_jack.glb"
+    },
+    {
+      "speciesId": "species.squall_bass",
+      "theme": "squall_bass",
+      "asset": "shared/assets/models/fish_squall_bass.glb"
+    },
+    {
+      "speciesId": "species.prism_squall",
+      "theme": "prism_squall",
+      "asset": "shared/assets/models/fish_prism_squall.glb"
+    },
+    {
+      "speciesId": "species.cinder_carp",
+      "theme": "cinder_carp",
+      "asset": "shared/assets/models/fish_cinder_carp.glb"
+    },
+    {
+      "speciesId": "species.gilt_cinder",
+      "theme": "gilt_cinder",
+      "asset": "shared/assets/models/fish_gilt_cinder.glb"
+    },
+    {
+      "speciesId": "species.ash_pike",
+      "theme": "ash_pike",
+      "asset": "shared/assets/models/fish_ash_pike.glb"
+    },
+    {
+      "speciesId": "species.magma_pike",
+      "theme": "magma_pike",
+      "asset": "shared/assets/models/fish_magma_pike.glb"
+    },
+    {
+      "speciesId": "species.tropic_ray",
+      "theme": "tropic_ray",
+      "asset": "shared/assets/models/fish_tropic_ray.glb"
+    },
+    {
+      "speciesId": "species.pearl_ray",
+      "theme": "pearl_ray",
+      "asset": "shared/assets/models/fish_pearl_ray.glb"
     }
   ],
   "parityFixture": "shared/fixtures/parity-fish-art-pass.json",
-  "definitionOfDoneAuthoredFish": 10,
+  "definitionOfDoneAuthoredFish": 50,
   "validateScript": "npm run fishart:validate",
   "checklist": [
-    "≥10 species GLBs tagged extras.fishArt=authored-phase-20 with distinct themes",
+    "All 50 species GLBs tagged extras.fishArt=authored-phase-20 with distinct themes",
     "FishArt_* multi-part nodes present; models/fish_*.glb path contract unchanged",
-    "each authored GLB ≤ maxBytesPerFish; pairwise hashes differ",
-    "non-authored species remain Phase 13 stylized stubs",
-    "licenses.json records fish-authored-art + generator tool",
+    "each authored GLB \u2264 maxBytesPerFish; pairwise hashes differ",
+    "licenses.json records fish-authored-art for all 50 paths",
     "parity-fish-art-pass fixture + fishart:validate green",
     "CI runs fishart:validate",
     "schema stays 23 (presentation-only)"

@@ -1,7 +1,7 @@
 {
   "phase": 19,
   "schema": "fish.audio.sfx_pack.v1",
-  "description": "Post-1.0 Phase 19 — authored mono WAV stingers for catch / cut / sell / UI (plus abandon, upgrade, rush). Buses keep mute, SFX gain, voice cap, and Android/Web focus-lifecycle policy. Phase 20 replaces procedural ambience with authored music beds.",
+  "description": "Post-1.0 Phase 19 — authored mono WAV stingers for catch / cut / sell / UI (plus abandon, upgrade, rush). Buses keep mute, SFX gain, voice cap, and Android/Web focus-lifecycle policy. Phase 20 replaces procedural ambience with authored music beds. Finish 2.0 Phase 21 adds pack-2 stingers; Finish 3.0 Phase 23 adds pack-3 rival/travel/hire/prestige/loan/trophy stingers.",
   "sampleRate": 22050,
   "channels": 1,
   "encoding": "pcm_s16le",
@@ -14,7 +14,7 @@
   "androidRawDir": "app/src/main/res/raw",
   "androidRawPrefix": "sfx_",
   "maxBytesPerClip": 24576,
-  "maxTotalBytes": 240000,
+  "maxTotalBytes": 320000,
   "maxDurationMs": 420,
   "voiceCostPerClip": 1,
   "maxSfxVoices": 6,
@@ -145,6 +145,78 @@
       "haptic": false,
       "design": "warm quest fanfare",
       "pack2": true
+    },
+    {
+      "id": "rival_open",
+      "file": "rival_open.wav",
+      "androidRaw": "sfx_rival_open",
+      "role": "feedback",
+      "haptic": false,
+      "design": "sharp minor rival-arrival sting",
+      "pack3": true
+    },
+    {
+      "id": "rival_steal",
+      "file": "rival_steal.wav",
+      "androidRaw": "sfx_rival_steal",
+      "role": "feedback",
+      "haptic": false,
+      "design": "quick snatch descending steal",
+      "pack3": true
+    },
+    {
+      "id": "rival_beat",
+      "file": "rival_beat.wav",
+      "androidRaw": "sfx_rival_beat",
+      "role": "feedback",
+      "haptic": true,
+      "design": "short triumphant rival-beat fanfare",
+      "pack3": true
+    },
+    {
+      "id": "harbor_travel",
+      "file": "harbor_travel.wav",
+      "androidRaw": "sfx_harbor_travel",
+      "role": "feedback",
+      "haptic": false,
+      "design": "soft boat horn + water whoosh",
+      "pack3": true
+    },
+    {
+      "id": "hire",
+      "file": "hire.wav",
+      "androidRaw": "sfx_hire",
+      "role": "ui",
+      "haptic": false,
+      "design": "handshake click + up note",
+      "pack3": true
+    },
+    {
+      "id": "prestige",
+      "file": "prestige.wav",
+      "androidRaw": "sfx_prestige",
+      "role": "feedback",
+      "haptic": true,
+      "design": "deep rising prestige swell",
+      "pack3": true
+    },
+    {
+      "id": "loan",
+      "file": "loan.wav",
+      "androidRaw": "sfx_loan",
+      "role": "sell",
+      "haptic": false,
+      "design": "cash drawer + paper stamp",
+      "pack3": true
+    },
+    {
+      "id": "trophy_set",
+      "file": "trophy_set.wav",
+      "androidRaw": "sfx_trophy_set",
+      "role": "feedback",
+      "haptic": true,
+      "design": "bright metal trophy clink arpeggio",
+      "pack3": true
     }
   ],
   "eventMap": {
@@ -161,7 +233,15 @@
     "contract_failed": "contract_fail",
     "daily_goal_claimed": "goal_claim",
     "mastery_level_up": "mastery_up",
-    "quest_completed": "quest_done"
+    "quest_completed": "quest_done",
+    "rival_market_opened": "rival_open",
+    "rival_sale_stolen": "rival_steal",
+    "rival_beaten": "rival_beat",
+    "harbor_traveled": "harbor_travel",
+    "worker_hired": "hire",
+    "prestige_unlocked": "prestige",
+    "loan_taken": "loan",
+    "trophy_set_completed": "trophy_set"
   },
   "preflightGates": [
     "shared/audio/sfx-pack.json",

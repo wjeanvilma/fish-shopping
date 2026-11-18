@@ -2,23 +2,49 @@
   "schema": "fish.i18n.ui_strings.v1",
   "phase": 23,
   "plan": "30_finish_2.0",
-  "description": "Finish 2.0 Phase 23 — UI chrome string catalogs (en + es). Content-pack names stay English.",
+  "description": "Finish 2.0 Phase 23 + Finish 3.0 Phase 6 — UI chrome string catalogs (en + es + pt).",
   "defaultLocale": "en",
-  "supportedLocales": ["en", "es"],
+  "supportedLocales": [
+    "en",
+    "es",
+    "pt"
+  ],
   "bundles": {
     "en": "shared/i18n/ui-strings.en.json",
-    "es": "shared/i18n/ui-strings.es.json"
+    "es": "shared/i18n/ui-strings.es.json",
+    "pt": "shared/i18n/ui-strings.pt.json"
   },
-  "keyMin": 48,
+  "keyMin": 120,
   "namespaces": [
-    "nav",
-    "pause",
-    "settings",
+    "a11y",
     "achievements",
-    "lifecycle",
+    "bag",
+    "bait",
+    "bank",
+    "codex",
     "common",
+    "contracts",
+    "cosmetics",
+    "dashboard",
+    "decor",
+    "goals",
+    "hud",
     "landing",
+    "lifecycle",
+    "map",
+    "nav",
+    "offline",
     "panels",
-    "hud"
+    "pause",
+    "prestige",
+    "quest",
+    "settings",
+    "snapshot",
+    "staff",
+    "station",
+    "title",
+    "trophy",
+    "upgrade",
+    "warehouse"
   ]
 }

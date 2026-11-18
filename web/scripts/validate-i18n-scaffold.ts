@@ -57,28 +57,34 @@ function validate(): string[] {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (I18N_SCAFFOLD_PHASE !== 23) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
   if (catalog.i18nMarker !== I18N_SCAFFOLD_MARKER) errors.push("marker mismatch");
   if (catalog.defaultLocale !== "en" || DEFAULT_LOCALE !== "en") errors.push("defaultLocale must be en");
   if (catalog.secondLocale !== "es" || SECOND_LOCALE !== "es") errors.push("secondLocale must be es");
-  if (JSON.stringify(catalog.supportedLocales) !== JSON.stringify(["en", "es"])) {
-    errors.push("supportedLocales must be [en, es]");
+  if (JSON.stringify(catalog.supportedLocales) !== JSON.stringify(["en", "es", "pt"])) {
+    errors.push("supportedLocales must be [en, es, pt]");
   }
   if (catalog.uiStringKeyMin !== 48 || UI_STRING_KEY_FLOOR !== 48) {
     errors.push("uiStringKeyMin must be 48");
   }
-  if (catalog.localeFileMin !== 2 || LOCALE_FILE_FLOOR !== 2) {
-    errors.push("localeFileMin must be 2");
+  if (catalog.localeFileMin !== 3 || LOCALE_FILE_FLOOR !== 3) {
+    errors.push("localeFileMin must be 3");
   }
 
   const enKeys = Object.keys(enUi.strings ?? {});
   const esKeys = Object.keys(esUi.strings ?? {});
+  const ptUi = readJson(resolve(root, "shared/i18n/ui-strings.pt.json"));
+  const ptKeys = Object.keys(ptUi.strings ?? {});
   if (enKeys.length < 48) errors.push(`en ui strings ${enKeys.length} < 48`);
   if (esKeys.length < 48) errors.push(`es ui strings ${esKeys.length} < 48`);
-  if (enKeys.length !== esKeys.length) errors.push("en/es ui key count mismatch");
+  if (ptKeys.length < 48) errors.push(`pt ui strings ${ptKeys.length} < 48`);
+  if (enKeys.length !== esKeys.length || enKeys.length !== ptKeys.length) {
+    errors.push("en/es/pt ui key count mismatch");
+  }
   for (const k of enKeys) {
     if (!esKeys.includes(k)) errors.push(`es missing ui key ${k}`);
+    if (!ptKeys.includes(k)) errors.push(`pt missing ui key ${k}`);
   }
   for (const k of fixture.expect.requiredUiKeys as string[]) {
     if (!enKeys.includes(k)) errors.push(`en missing required key ${k}`);
@@ -88,9 +94,12 @@ function validate(): string[] {
   }
   if (uiStringKeyCount("en") < UI_STRING_KEY_FLOOR) errors.push("runtime en key count below floor");
   if (uiStringKeyCount("es") < UI_STRING_KEY_FLOOR) errors.push("runtime es key count below floor");
+  if (uiStringKeyCount("pt") < UI_STRING_KEY_FLOOR) errors.push("runtime pt key count below floor");
 
   setLocale("es");
   if (t("nav.pause") === "Pause") errors.push("es nav.pause should not be English Pause");
+  setLocale("pt");
+  if (t("nav.pause") === "Pause") errors.push("pt nav.pause should not be English Pause");
   setLocale("en");
   if (t("nav.pause") !== "Pause") errors.push("en nav.pause mismatch");
 
@@ -99,16 +108,18 @@ function validate(): string[] {
   }
   const enListing = readJson(resolve(root, "shared/store/locales/en.json"));
   const esListing = readJson(resolve(root, "shared/store/locales/es.json"));
+  const ptListing = readJson(resolve(root, "shared/store/locales/pt.json"));
   for (const key of fixture.expect.listingKeys as string[]) {
     if (enListing[key] == null) errors.push(`en listing missing ${key}`);
     if (esListing[key] == null) errors.push(`es listing missing ${key}`);
+    if (ptListing[key] == null) errors.push(`pt listing missing ${key}`);
   }
 
-  if (JSON.stringify(listingCopy.locales) !== JSON.stringify(["en", "es"])) {
-    errors.push("listing-copy.locales must be [en, es]");
+  if (JSON.stringify(listingCopy.locales) !== JSON.stringify(["en", "es", "pt"])) {
+    errors.push("listing-copy.locales must be [en, es, pt]");
   }
-  if (JSON.stringify(listing.locales) !== JSON.stringify(["en", "es"])) {
-    errors.push("listing.locales must be [en, es]");
+  if (JSON.stringify(listing.locales) !== JSON.stringify(["en", "es", "pt"])) {
+    errors.push("listing.locales must be [en, es, pt]");
   }
   if (listing.i18nScaffoldPhase !== 23) errors.push("listing.i18nScaffoldPhase must be 23");
   if (listing.i18nScaffoldCatalog !== "shared/ship/i18n-scaffold.json") {
@@ -123,14 +134,22 @@ function validate(): string[] {
   if (pin.i18nScaffold !== "shared/ship/i18n-scaffold.json") {
     errors.push("RELEASE_PIN.i18nScaffold path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
 
   if (!settingsTs.includes("locale")) errors.push("web settingsStore missing locale");
   if (!settingsKt.includes("locale") || !settingsKt.includes("KEY_LOCALE")) {
     errors.push("Android SettingsStore missing locale");
   }
-  if (!appTsx.includes('t("nav.pause")') || !appTsx.includes('t("settings.language")')) {
-    errors.push("App.tsx must use t() for nav/settings language chrome");
+  const pauseSettingsTsx = readFileSync(
+    resolve(root, "web/src/ui/PauseSettingsPanels.tsx"),
+    "utf8",
+  );
+  if (
+    !appTsx.includes('t("nav.pause")') ||
+    (!appTsx.includes('t("settings.language")') &&
+      !pauseSettingsTsx.includes('t("settings.language")'))
+  ) {
+    errors.push("App/PauseSettings must use t() for nav/settings language chrome");
   }
   if (!gameScreen.includes('UiStrings.t("nav.pause")') || !gameScreen.includes("onLocale")) {
     errors.push("GameScreen must use UiStrings for nav + language picker");
@@ -138,8 +157,11 @@ function validate(): string[] {
   if (!existsSync(resolve(root, "app/src/main/res/values-es/strings.xml"))) {
     errors.push("missing values-es/strings.xml");
   }
-  if (index.supportedLocales?.length !== 2) errors.push("ui-strings index must list 2 locales");
-  if (SUPPORTED_LOCALES.length !== 2) errors.push("SUPPORTED_LOCALES floor");
+  if (!existsSync(resolve(root, "app/src/main/res/values-pt/strings.xml"))) {
+    errors.push("missing values-pt/strings.xml");
+  }
+  if (index.supportedLocales?.length !== 3) errors.push("ui-strings index must list 3 locales");
+  if (SUPPORTED_LOCALES.length !== 3) errors.push("SUPPORTED_LOCALES floor");
   if (I18N_SCAFFOLD.listingKeyParity !== true) errors.push("listingKeyParity must be true");
 
   for (const gatePath of catalog.preflightGates as string[]) {

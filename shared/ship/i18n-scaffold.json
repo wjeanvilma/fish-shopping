@@ -8,11 +8,12 @@
   "i18nMarker": "authored-finish-2.0-phase-23",
   "defaultLocale": "en",
   "secondLocale": "es",
-  "supportedLocales": ["en", "es"],
+  "supportedLocales": ["en", "es", "pt"],
+  "thirdLocale": "pt",
   "listingLocalesDir": "shared/store/locales",
   "uiStringsIndex": "shared/i18n/ui-strings.json",
   "uiStringKeyMin": 48,
-  "localeFileMin": 2,
+  "localeFileMin": 3,
   "listingKeyParity": true,
   "parityFixture": "shared/fixtures/parity-i18n-scaffold.json",
   "validateScript": "npm run i18n:validate",
@@ -33,12 +34,15 @@
     "shared/i18n/ui-strings.json",
     "shared/i18n/ui-strings.en.json",
     "shared/i18n/ui-strings.es.json",
+    "shared/i18n/ui-strings.pt.json",
     "shared/store/locales/en.json",
     "shared/store/locales/es.json",
+    "shared/store/locales/pt.json",
     "web/src/ship/i18nScaffold.ts",
     "web/src/i18n/strings.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/I18nScaffold.kt",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/i18n/UiStrings.kt",
-    "app/src/main/res/values-es/strings.xml"
+    "app/src/main/res/values-es/strings.xml",
+    "app/src/main/res/values-pt/strings.xml"
   ]
 }

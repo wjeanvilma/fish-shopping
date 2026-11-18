@@ -1,0 +1,21 @@
+{
+  "schema": "fish.fixtures.parity_content_i18n.v1",
+  "contentI18nMarker": "authored-finish-3.0-phase-6",
+  "phase": 6,
+  "plan": "30_finish_3.0",
+  "expect": {
+    "localeCountMin": 3,
+    "contentStringKeyMin": 250,
+    "thirdLocale": "pt",
+    "schemaVersion": 23,
+    "contentVersion": "2.0.0",
+    "gates": [
+      "content_keys_ge_250",
+      "en_es_pt_key_parity",
+      "third_locale_pt",
+      "item_name_wired",
+      "gaps_closed",
+      "ci_gate"
+    ]
+  }
+}

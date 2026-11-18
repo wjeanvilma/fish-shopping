@@ -16,6 +16,7 @@ import {
   dodRequiredChecks,
   isCloseoutReady,
   isFinish2FreezeReady,
+  isFinish3FreezeReady,
 } from "../src/engine/definitionOfDone";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
@@ -55,10 +56,14 @@ function validate(): string[] {
   if (dod.completeTag !== "v1.0-complete") errors.push("completeTag must stay v1.0-complete");
   if (dod.releaseTag !== pin.releaseTag) errors.push("releaseTag ≠ RELEASE_PIN");
   if (dod.contentVersion !== pin.contentVersion) errors.push("contentVersion ≠ RELEASE_PIN");
-  if (dod.schemaVersion !== 23) errors.push("schemaVersion must be 23");
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN schemaVersion must be 23");
-  if (pin.contentVersion !== "2.0.0") errors.push("RELEASE_PIN contentVersion must be 2.0.0");
-  if (pin.releaseTag !== "v2.0.0") errors.push("RELEASE_PIN releaseTag must be v2.0.0");
+  if (![23, 24].includes(dod.schemaVersion)) errors.push("schemaVersion must be 23 or 24");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN schemaVersion must be >= 23");
+  if (!["2.0.0", "3.0.0"].includes(pin.contentVersion)) {
+    errors.push("RELEASE_PIN contentVersion must be 2.0.0 or 3.0.0");
+  }
+  if (!["v2.0.0", "v3.0.0"].includes(pin.releaseTag)) {
+    errors.push("RELEASE_PIN releaseTag must be v2.0.0 or v3.0.0");
+  }
   if (pin.definitionOfDone !== "shared/ship/definition-of-done.json") {
     errors.push("RELEASE_PIN.definitionOfDone path");
   }
@@ -95,6 +100,20 @@ function validate(): string[] {
     if (freeze.catalog !== "shared/ship/freeze-2.0.0.json") errors.push("finish2Freeze.catalog mismatch");
     if (freeze.versionCode !== 3) errors.push("finish2Freeze.versionCode must be 3");
     if (!existsSync(resolve(root, freeze.catalog))) errors.push("missing freeze-2.0.0 catalog");
+  }
+
+  const freeze3 = dod.finish3Freeze;
+  if (!freeze3) errors.push("missing finish3Freeze block");
+  else {
+    if (!isFinish3FreezeReady(freeze3.status)) {
+      errors.push(`finish3Freeze.status not ready: ${freeze3.status}`);
+    }
+    if (freeze3.releaseTag !== "v3.0.0") errors.push("finish3Freeze.releaseTag must be v3.0.0");
+    if (freeze3.contentVersion !== "3.0.0") errors.push("finish3Freeze.contentVersion must be 3.0.0");
+    if (freeze3.schemaVersion !== 24) errors.push("finish3Freeze.schemaVersion must be 24");
+    if (freeze3.catalog !== "shared/ship/freeze-3.0.0.json") errors.push("finish3Freeze.catalog mismatch");
+    if (freeze3.versionCode !== 4) errors.push("finish3Freeze.versionCode must be 4");
+    if (!existsSync(resolve(root, freeze3.catalog))) errors.push("missing freeze-3.0.0 catalog");
   }
 
   for (const check of dodRequiredChecks()) {
@@ -228,4 +247,4 @@ if (errors.length) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
-console.log("OK dod:validate — post-1.0 closeout archived + Finish 2.0 freeze ready (tag v2.0.0 manual)");
+console.log("OK dod:validate — post-1.0 closeout archived + Finish 2.0/3.0 freezes ready (tags manual)");

@@ -113,6 +113,12 @@ function main(): number {
   for (const asset of ["favicon.svg", "apple-touch-icon.png", "icon-512.png"]) {
     cpSync(resolve(publicDir, asset), resolve(outDir, asset));
   }
+  // Finish 3.0 Phase 20 — Digital Asset Links at site root for Android App Links.
+  const assetLinksSrc = resolve(publicDir, ".well-known/assetlinks.json");
+  if (existsSync(assetLinksSrc)) {
+    mkdirSync(resolve(outDir, ".well-known"), { recursive: true });
+    cpSync(assetLinksSrc, resolve(outDir, ".well-known/assetlinks.json"));
+  }
   writeFileSync(
     resolve(outDir, ".nojekyll"),
     "# Finish 2.0: publish legal + /play SPA without Jekyll processing.\n",

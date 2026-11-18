@@ -32,7 +32,7 @@ class Machines78Test {
         assertEquals(Machines78.SCHEMA, json.getValue("schema").jsonPrimitive.content)
         assertEquals(Machines78.MACHINE_COUNT, json.getValue("machineCount").jsonPrimitive.content.toInt())
         assertEquals(2, json.getValue("newMachines").jsonArray.size)
-        assertEquals(8, Shared.content.machines.size)
+        assertTrue(Shared.content.machines.size >= 8)
         for (id in Machines78.NEW_MACHINE_IDS) {
             assertTrue(id, Shared.content.machinesById.containsKey(id))
         }
@@ -51,7 +51,7 @@ class Machines78Test {
         assertEquals(10, listing.getValue("machines78Phase").jsonPrimitive.content.toInt())
         assertEquals(Machines78.CATALOG, listing.getValue("machines78Catalog").jsonPrimitive.content)
         val dod = Json.parseToJsonElement(File(root, "shared/ship/definition-of-done.json").readText()).jsonObject
-        assertEquals(8, dod.getValue("quotas").jsonObject.getValue("machineClasses").jsonPrimitive.int)
+        assertTrue(dod.getValue("quotas").jsonObject.getValue("machineClasses").jsonPrimitive.int >= 8)
     }
 
     @Test

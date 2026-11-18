@@ -34,7 +34,7 @@ export const CHECKPOINT_INTERVAL_TICKS = 30 * TICKS_PER_SECOND;
  * 19: speciesCatches map (Phase 27 telemetry v2).
  */
 /** Save schema — changelog mirrored in SnapshotCodec / snapshot.ts readState. */
-export const SCHEMA_VERSION = 23;
+export const SCHEMA_VERSION = 24;
 
 /** Kotlin-style integer division (truncates toward zero). */
 export function idiv(a: number, b: number): number {

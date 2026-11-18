@@ -1,0 +1,96 @@
+{
+  "phase": 4,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.shell_controller.v1",
+  "description": "Finish 3.0 Phase 4 — extract shared shell panel controller + offline enrich used by Android GameViewModel and web GameHost. Schema stays 23.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 23,
+  "shellControllerMarker": "authored-finish-3.0-phase-4",
+  "panelCount": 12,
+  "panelWires": [
+    "upgrades",
+    "staff",
+    "quests",
+    "contracts",
+    "map",
+    "warehouse",
+    "speciesBook",
+    "dashboard",
+    "pause",
+    "settings",
+    "bag",
+    "station"
+  ],
+  "hudPublishIntervalMs": 100,
+  "androidHostPath": "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt",
+  "webHostPath": "web/src/game/GameHost.ts",
+  "androidHostMaxLines": 1550,
+  "webHostMaxLines": 1520,
+  "requiredFiles": [
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/shell/ShellPanels.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/shell/OfflineShell.kt",
+    "web/src/shell/shellPanels.ts",
+    "web/src/shell/offlineShell.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ShellController.kt",
+    "web/src/ship/shellController.ts"
+  ],
+  "requiredSymbols": {
+    "ShellPanels.kt": [
+      "ShellPanelId",
+      "ShellPanelFlags",
+      "ShellPanelController",
+      "ShellModalPolicy",
+      "ShellHudPolicy"
+    ],
+    "OfflineShell.kt": [
+      "OfflineShell",
+      "enrichWithJournal",
+      "decidePendingReport"
+    ],
+    "shellPanels.ts": [
+      "ShellPanelController",
+      "ShellModalPolicy",
+      "SHELL_PANEL_IDS"
+    ],
+    "offlineShell.ts": [
+      "enrichWithJournal",
+      "decidePendingReport"
+    ],
+    "GameViewModel.kt": [
+      "ShellPanelController",
+      "ShellModalPolicy",
+      "OfflineShell"
+    ],
+    "GameHost.ts": [
+      "ShellPanelController",
+      "ShellModalPolicy",
+      "OfflineShell"
+    ]
+  },
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "gapFlagClosed": null,
+  "parityFixture": "shared/fixtures/parity-shell-controller.json",
+  "validateScript": "npm run shellctrl:validate",
+  "checklist": [
+    "Shared ShellPanelId/Flags/Controller + ShellModalPolicy in game-core + TS mirror",
+    "OfflineShell.enrich/decidePendingReport used by both hosts",
+    "GameViewModel + GameHost no longer own private Panel enums / duplicated open logic",
+    "Host line counts under max gates",
+    "shellctrl:validate + shell unit tests green",
+    "CI runs shellctrl:validate",
+    "schema stays 23"
+  ],
+  "preflightGates": [
+    "shared/ship/shell-controller.json",
+    "shared/fixtures/parity-shell-controller.json",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/shell/ShellPanels.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/shell/OfflineShell.kt",
+    "web/src/shell/shellPanels.ts",
+    "web/src/shell/offlineShell.ts",
+    "web/src/ship/shellController.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ShellController.kt",
+    "web/scripts/validate-shell-controller.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt",
+    "web/src/game/GameHost.ts"
+  ]
+}

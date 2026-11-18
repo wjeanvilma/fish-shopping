@@ -1,0 +1,41 @@
+{
+  "phase": 19,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.pwa_shell.v1",
+  "description": "Finish 3.0 Phase 19 — web PWA / service worker shell. Ships sw.js + offline.html, registers under Vite base scope, tightens webmanifest, and deepens Phase 18 reminders via registration.showNotification. Schema stays 24 / content 2.0.0. Closes kickoff gap pwaMissing.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "pwaShellMarker": "authored-finish-3.0-phase-19",
+  "closesGap": "pwaMissing",
+  "policyCatalog": "shared/pwa/pwa-shell.json",
+  "priorSpaHostPhase": 3,
+  "priorSpaHostPlan": "30_finish_2.0",
+  "swScript": "sw.js",
+  "offlineFallback": "offline.html",
+  "manifestPath": "web/public/manifest.webmanifest",
+  "registerModule": "web/src/pwa/registerServiceWorker.ts",
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-pwa-shell.json",
+  "validateScript": "npm run pwa:validate",
+  "checklist": [
+    "web/public/sw.js precaches shell + offline.html; network-first navigations",
+    "registerServiceWorker() from main.tsx; relative ./sw.js respects Vite base",
+    "manifest standalone + icons; index links manifest / theme-color / apple capable",
+    "Phase 18 reminders prefer SW showNotification when registered",
+    "Kickoff gap pwaMissing closed; phase 19 validate = pwa:validate",
+    "schema stays 24 / content 2.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/pwa-shell.json",
+    "shared/fixtures/parity-pwa-shell.json",
+    "shared/pwa/pwa-shell.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "web/public/sw.js",
+    "web/public/offline.html",
+    "web/public/manifest.webmanifest",
+    "web/src/pwa/registerServiceWorker.ts",
+    "web/src/ship/pwaShell.ts",
+    "web/scripts/validate-pwa-shell.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/PwaShell.kt"
+  ]
+}

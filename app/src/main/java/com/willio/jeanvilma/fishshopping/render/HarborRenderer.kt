@@ -677,12 +677,14 @@ class HarborRenderer(private val context: Context) {
             }
         }
 
-        // Finish 2.0 Phase 22 — weather/festival ambient (not burst-pool; quality/reduced-motion scaled).
+        // Finish 2.0 Phase 22 + Finish 3.0 Phase 24 — weather/festival/tide/rival ambient.
         val ambient = weatherAmbientProfile(
             weatherId = sim.weatherId,
             festivalActive = sim.seasonalEvent != null,
             quality = FrameTiming.toPresenterQuality(sessionQuality),
             reducedMotion = reducedMotion,
+            tidePhaseId = sim.tidePhaseId.ifBlank { "day" },
+            rivalActive = sim.rivalPressureActive || sim.activeRivalIds.isNotEmpty(),
         )
         try {
             skybox.setColor(floatArrayOf(ambient.skyR, ambient.skyG, ambient.skyB, 1f))

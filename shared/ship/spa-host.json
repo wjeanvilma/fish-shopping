@@ -48,7 +48,9 @@
       "index.html",
       "404.html",
       "manifest.webmanifest",
-      "favicon.svg"
+      "favicon.svg",
+      "sw.js",
+      "offline.html"
     ],
     "requiredAssetSuffixes": [
       ".js",

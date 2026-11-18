@@ -125,11 +125,50 @@ def storm_bed(sr: int, seconds: float) -> list[float]:
     return normalize(out)
 
 
+def night_bed(sr: int, seconds: float) -> list[float]:
+    n = int(sr * seconds)
+    out = [0.0] * n
+    last = 0.0
+    for i in range(n):
+        t = i / sr
+        pad = (
+            0.18 * math.sin(2 * math.pi * 82.41 * t)
+            + 0.12 * math.sin(2 * math.pi * 123.47 * t)
+            + 0.08 * math.sin(2 * math.pi * 164.81 * t)
+            + 0.05 * math.sin(2 * math.pi * 246.94 * t)
+        )
+        white = ((i * 1103515245 + 4242) & 0x7FFF) / 0x7FFF - 0.5
+        last = (last + 0.012 * white) / 1.012
+        wash = last * 0.35
+        swell = 0.88 + 0.12 * math.sin(2 * math.pi * t / seconds)
+        out[i] = (pad + wash) * swell * 0.52
+    return normalize(out)
+
+
+def rival_bed(sr: int, seconds: float) -> list[float]:
+    n = int(sr * seconds)
+    out = [0.0] * n
+    for i in range(n):
+        t = i / sr
+        pulse = 0.78 + 0.22 * math.sin(2 * math.pi * 4 * t / seconds)
+        pad = (
+            0.2 * math.sin(2 * math.pi * 98.0 * t)
+            + 0.14 * math.sin(2 * math.pi * 146.83 * t)
+            + 0.1 * math.sin(2 * math.pi * 185.0 * t)
+            + 0.06 * math.sin(2 * math.pi * 277.18 * t)
+        )
+        tension = 0.05 * math.sin(2 * math.pi * 311.13 * t + 0.5 * math.sin(2 * math.pi * t / seconds))
+        out[i] = (pad * pulse + tension) * 0.55
+    return normalize(out)
+
+
 RENDERERS = {
     "harbor": harbor_bed,
     "shop": shop_bed,
     "festival": festival_bed,
     "storm": storm_bed,
+    "night": night_bed,
+    "rival": rival_bed,
 }
 
 

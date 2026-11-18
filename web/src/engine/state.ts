@@ -55,6 +55,17 @@ export const Stats = {
   /** Finish 2.0 Phase 15 — staff branch train purchases / unlocks. */
   STAFF_BRANCH_TRAINING: "stat.staff_branch_training",
   STAFF_BRANCHES_UNLOCKED: "stat.staff_branches_unlocked",
+  /** Finish 3.0 Phase 11 — supervisor floor patrols / greeter patience top-ups / ice multi-pickups. */
+  SUPERVISOR_PATROLS: "stat.supervisor_patrols",
+  GREETER_WELCOMES: "stat.greeter_welcomes",
+  ICE_RUNNER_MULTI_PICKUPS: "stat.ice_runner_multi_pickups",
+  /** Finish 3.0 Phase 14 — rival NPC market siphon / player beat counters. */
+  RIVAL_SALES_STOLEN: "stat.rival_sales_stolen",
+  RIVAL_UNDERCUTS: "stat.rival_undercuts",
+  RIVAL_BEATS: "stat.rival_beats",
+  /** Finish 3.0 Phase 15 — endgame deepen unlocks. */
+  ENDGAME_TIERS_UNLOCKED: "stat.endgame_tiers_unlocked",
+  ENDGAME_CHALLENGES_COMPLETED: "stat.endgame_challenges_completed",
   DECOR_BOUGHT: "stat.decor_bought",
   MACHINES_BROKEN: "stat.machines_broken",
   MACHINES_SLOWED: "stat.machines_slowed",
@@ -88,7 +99,10 @@ export const STAT_KEYS: readonly string[] = [
   Stats.CONTRACT_ITEMS_DELIVERED, Stats.CONTRACT_CHAINS_COMPLETED, Stats.CONTRACT_FAIL_STREAK,
   Stats.HARBORS_TRAVELED, Stats.MAINTENANCE_PAID, Stats.ITEMS_SPOILED,
   Stats.PRESTIGE_COMPLETED, Stats.TROPHY_SPECIES, Stats.TROPHY_RECORDS, Stats.TROPHY_SETS_COMPLETE, Stats.ACHIEVEMENTS_UNLOCKED,
-  Stats.MASTERY_XP, Stats.MASTERY_LEVEL_UPS, Stats.STAFF_BRANCH_TRAINING, Stats.STAFF_BRANCHES_UNLOCKED, Stats.DECOR_BOUGHT,
+  Stats.MASTERY_XP, Stats.MASTERY_LEVEL_UPS, Stats.STAFF_BRANCH_TRAINING, Stats.STAFF_BRANCHES_UNLOCKED,
+  Stats.SUPERVISOR_PATROLS, Stats.GREETER_WELCOMES, Stats.ICE_RUNNER_MULTI_PICKUPS,
+  Stats.RIVAL_SALES_STOLEN, Stats.RIVAL_UNDERCUTS, Stats.RIVAL_BEATS,
+  Stats.ENDGAME_TIERS_UNLOCKED, Stats.ENDGAME_CHALLENGES_COMPLETED, Stats.DECOR_BOUGHT,
   Stats.MACHINES_BROKEN, Stats.MACHINES_SLOWED, Stats.MACHINES_REPAIRED, Stats.REPAIR_SPENT,
   Stats.LOANS_TAKEN, Stats.LOAN_INTEREST_ACCRUED, Stats.LOAN_REPAID, Stats.LOAN_COLLECTED, Stats.COIN_GOALS_REACHED,
   Stats.DAILY_LOGIN_STREAK, Stats.DAILY_GOALS_CLAIMED,
@@ -327,6 +341,12 @@ export class GameState {
   readonly ownedUpgrades = new Set<string>();
   readonly completedQuests = new Set<string>();
   readonly completedPrestige = new Set<string>();
+  /** Finish 3.0 Phase 15 / schema 24 — beaten rival NPC market ids. */
+  readonly beatenRivalIds = new Set<string>();
+  /** Finish 3.0 Phase 15 / schema 24 — unlocked endgame tier ids. */
+  readonly unlockedEndgameTiers = new Set<string>();
+  /** Finish 3.0 Phase 15 / schema 24 — completed endgame challenge ids. */
+  readonly completedEndgameChallenges = new Set<string>();
   readonly unlockedCosmetics = new Set<string>();
   /** Phase 23 owned shop decor (placable cosmetics). */
   readonly ownedDecor = new Set<string>();
@@ -374,6 +394,10 @@ export class GameState {
   prestigeCatchSpeedPermille = 1000;
   /** Permanent sale price multiplier from prestige (rebuilt on load). */
   prestigePriceBonusPermille = 1000;
+  /** Permanent catch-speed floor from endgame tiers (rebuilt on load). */
+  endgameCatchSpeedPermille = 1000;
+  /** Permanent sale price multiplier from endgame tiers (rebuilt on load). */
+  endgamePriceBonusPermille = 1000;
   /** Progress toward next station upkeep (not persisted). */
   maintenanceAccrualTicks = 0;
   /** Progress toward next machine wear check (not persisted). */
@@ -509,6 +533,12 @@ export type GameEvent =
   | { type: "rush_ended"; tick: number; rushId: string; name: string }
   | { type: "seasonal_event_started"; tick: number; eventId: string; name: string }
   | { type: "seasonal_event_ended"; tick: number; eventId: string; name: string }
+  | { type: "rival_market_opened"; tick: number; rivalId: string; name: string }
+  | { type: "rival_market_closed"; tick: number; rivalId: string; name: string }
+  | { type: "rival_sale_stolen"; tick: number; rivalId: string; productId: string }
+  | { type: "rival_beaten"; tick: number; rivalId: string; productId: string }
+  | { type: "endgame_tier_unlocked"; tick: number; tierId: string; coinsRewarded: number }
+  | { type: "endgame_challenge_completed"; tick: number; challengeId: string; coinsRewarded: number }
   /** Station stayed WAITING_FOR_INPUT / OUTPUT_FULL too long during a rush (Phase 20). */
   | { type: "machine_idle_alert"; tick: number; stationId: string; machineId: string; reason: string }
   | { type: "sale_committed"; tick: number; saleId: string; customerId: string; items: { item: string; quantity: number }[]; coins: number; customerTypeId?: string; priceMultPermille?: number; preferenceMet?: boolean; preferredProductId?: string | null }

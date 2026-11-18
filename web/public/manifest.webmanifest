@@ -1,11 +1,17 @@
 {
+  "id": "./",
   "name": "Fish Shopping",
   "short_name": "Fish Shopping",
   "description": "Catch, cut, and sell fish in a cozy 3D harbor market.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#9fd3ea",
   "theme_color": "#153449",
+  "categories": ["games", "entertainment"],
   "icons": [
     {
       "src": "favicon.svg",

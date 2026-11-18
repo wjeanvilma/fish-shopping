@@ -1,9 +1,10 @@
 /**
- * Finish 2.0 Phase 23 — UI chrome string resolver (en + es).
- * Presentation-only; content-pack names stay English.
+ * Finish 2.0 Phase 23 + Finish 3.0 Phase 6 — UI chrome string resolver (en + es + pt).
+ * Content-pack display names resolve via contentStrings.ts.
  */
 import enBundle from "../../../shared/i18n/ui-strings.en.json";
 import esBundle from "../../../shared/i18n/ui-strings.es.json";
+import ptBundle from "../../../shared/i18n/ui-strings.pt.json";
 import indexJson from "../../../shared/i18n/ui-strings.json";
 import {
   DEFAULT_LOCALE,
@@ -11,7 +12,7 @@ import {
   SUPPORTED_LOCALES,
 } from "../ship/i18nScaffold";
 
-export type AppLocale = "en" | "es";
+export type AppLocale = "en" | "es" | "pt";
 
 export const UI_STRINGS_SCHEMA = (indexJson as { schema: string }).schema;
 export const UI_STRING_KEYS = Object.keys(
@@ -21,12 +22,13 @@ export const UI_STRING_KEYS = Object.keys(
 const BUNDLES: Record<AppLocale, Record<string, string>> = {
   en: (enBundle as { strings: Record<string, string> }).strings,
   es: (esBundle as { strings: Record<string, string> }).strings,
+  pt: (ptBundle as { strings: Record<string, string> }).strings,
 };
 
 let activeLocale: AppLocale = DEFAULT_LOCALE as AppLocale;
 
 export function isAppLocale(value: string | null | undefined): value is AppLocale {
-  return value === "en" || value === "es";
+  return value === "en" || value === "es" || value === "pt";
 }
 
 /** Resolve a preferred locale against the supported set (fallback en). */
@@ -35,6 +37,7 @@ export function resolveLocale(preferred?: string | null): AppLocale {
   if (typeof navigator !== "undefined" && navigator.language) {
     const primary = navigator.language.split("-")[0]?.toLowerCase();
     if (primary === "es") return "es";
+    if (primary === "pt") return "pt";
   }
   return DEFAULT_LOCALE as AppLocale;
 }
@@ -47,7 +50,8 @@ export function setLocale(locale: string): AppLocale {
   const next = resolveLocale(locale);
   activeLocale = next;
   if (typeof document !== "undefined") {
-    document.documentElement.lang = next === "es" ? "es" : "en";
+    document.documentElement.lang =
+      next === "es" ? "es" : next === "pt" ? "pt" : "en";
   }
   return next;
 }

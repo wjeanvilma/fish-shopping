@@ -41,12 +41,12 @@ function validate(): string[] {
   if (SPECIES_3750_PHASE !== 9) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 21) errors.push("schemaVersion must be 21");
   if (catalog.speciesCount !== 50 || SPECIES_COUNT_FLOOR !== 50) {
-    errors.push("speciesCount must be 50");
+    errors.push("speciesCount catalog floor must be 50");
   }
   if (catalog.baitCount !== 8 || BAIT_COUNT_FLOOR !== 8) errors.push("baitCount must be 8");
-  if (dod.quotas?.speciesMin !== 50) errors.push("DoD quotas.speciesMin must be 50");
-  if (content.species.length !== 50) {
-    errors.push(`content species ${content.species.length} ≠ 50`);
+  if ((dod.quotas?.speciesMin ?? 0) < 50) errors.push("DoD quotas.speciesMin must be ≥ 50");
+  if (content.species.length < 50) {
+    errors.push(`content species ${content.species.length} < 50`);
   }
   if (content.bait.length < 8) errors.push(`content bait ${content.bait.length} < 8`);
 

@@ -1,45 +1,55 @@
 {
   "phase": 30,
   "schema": "fish.ship.definition_of_done.v1",
-  "releaseTag": "v2.0.0",
+  "releaseTag": "v3.0.0",
   "completeTag": "v1.0-complete",
-  "contentVersion": "2.0.0",
-  "schemaVersion": 23,
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
   "quotas": {
     "harbors": 8,
-    "speciesMin": 50,
-    "machineClasses": 8,
+    "speciesMin": 75,
+    "machineClasses": 10,
+    "rivalMarkets": 8,
     "achievements": 14,
-    "codexEntries": 50,
+    "codexEntries": 75,
     "weatherPatterns": 5,
     "tidePhases": 4,
     "masteryTechniques": 3,
     "masteryCoachingTips": 5,
-    "staffBranches": 5,
+    "staffBranches": 10,
     "staffSchedules": 2,
     "seasonalEvents": 8,
     "deliveryChains": 2,
     "reputationGatedContracts": 2,
     "dailyObjectives": 6,
-    "authoredHarborScenes": 3,
-    "authoredFishSpecies": 10,
+    "authoredHarborScenes": 8,
+    "authoredFishSpecies": 50,
     "audioPack2Stingers": 7,
     "audioPack2Beds": 2,
+    "audioPack3Stingers": 8,
+    "audioPack3Beds": 2,
     "vfxJuice2BurstKinds": 4,
     "vfxJuice2ShakeKinds": 2,
+    "vfxJuice3BurstKinds": 6,
+    "vfxJuice3ShakeKinds": 2,
+    "tideAmbientPhases": 4,
     "weatherAmbientPatterns": 5,
-    "i18nLocales": 2,
+    "i18nLocales": 3,
     "uiStringKeys": 48,
     "a11yDepthScreens": 9,
     "a11yContrastPairs": 4,
+    "a11yDepth2Screens": 7,
+    "a11yDepth2ContrastPairs": 4,
+    "remoteAnalyticsBatchMax": 20,
     "checkoutApiRoutes": 3,
-    "cloudQaScenarios": 4,
-    "contentScaffoldKinds": 3,
+    "cloudQaScenarios": 12,
+    "contentScaffoldKinds": 6,
     "supportOps2FeatureFaq": 6,
     "supportOps2RefundRows": 4,
-    "parityLockSuites": 8,
+    "parityLockSuites": 12,
     "parityLockFinish2Suites": 4,
-    "quests": 20,
+    "parityLockFinish3Suites": 4,
+    "quests": 30,
     "cosmetics": 12,
     "baits": 8
   },
@@ -60,7 +70,9 @@
     "hotfix_lane_ready",
     "finish2_freeze_2_0_0",
     "content_floors_2_0",
-    "loc_freeze_anti_regression"
+    "loc_freeze_anti_regression",
+    "finish3_freeze_3_0_0",
+    "content_floors_3_0"
   ],
   "screensPresent": [
     "title",
@@ -101,11 +113,11 @@
       "Real IAP paths: Play Billing production + web checkout catalogs wired to entitlements",
       "Real screenshots: phone + tablet captures under shared/store/screenshots/captures",
       "Authored audio: SFX pack + music beds present and validated",
-      "Live web legal/landing on canonicalHost (privacy/support/landing HTTPS 200) — Finish 2.0 Phase 1 verified",
+      "Live web legal/landing on canonicalHost (privacy/support/landing HTTPS 200) \u2014 Finish 2.0 Phase 1 verified",
       "Closed-testing catalog ready (signoff path to Phase 18 production)",
       "Public ship + hotfix lane catalogs green; RELEASE_PIN schema 20",
-      "All post-1.0 phase gate catalogs present (Phases 1–29)",
-      "Annotated git tag v1.0-complete cut — Finish 2.0 Phase 4 archived"
+      "All post-1.0 phase gate catalogs present (Phases 1\u201329)",
+      "Annotated git tag v1.0-complete cut \u2014 Finish 2.0 Phase 4 archived"
     ],
     "operatorGates": [
       {
@@ -303,7 +315,562 @@
       "catalog": "shared/ship/complete-tag.json"
     }
   },
-  "notes": "Phase 30 Finish 2.0 freeze: content/version 2.0.0 / schema 23. post-1.0 closeout stays archived at v1.0-complete. LOC uses freeze anti-regression floors (plan 80k target retained, not padded). Deploy/tag remain manual.",
+  "notes": "Phase 30 Finish 3.0 freeze: content/version 3.0.0 / schema 24. Finish 2.0 freeze stays historical at v2.0.0 / schema 23. post-1.0 closeout stays archived at v1.0-complete. LOC uses Finish 3.0 freeze anti-regression floors (plan 80k target retained, not padded). Deploy/tag remain manual.",
+  "finish3Kickoff": {
+    "phase": 1,
+    "plan": "30_finish_3.0",
+    "status": "frozen",
+    "statusValues": [
+      "active",
+      "in_progress",
+      "frozen"
+    ],
+    "kickoffMarker": "authored-finish-3.0-phase-1",
+    "catalog": "shared/ship/finish-3.0-kickoff.json",
+    "parityFixture": "shared/fixtures/parity-finish-3.0-kickoff.json",
+    "validateScript": "npm run finish3:validate",
+    "smokeScript": "npm run finish3:smoke",
+    "priorPlan": "30_finish_2.0",
+    "endReleaseTag": "v3.0.0",
+    "checklist": [
+      "Finish 2.0 prior plan marked finished; freeze-2.0.0 remains green",
+      "Gap scoreboard locks authored harbors 3\u21928, fish 10\u219250, product LOC \u219280k",
+      "30 Finish 3.0 phases listed kickoff\u2192freeze-3",
+      "finish3:validate + finish3:smoke green in CI"
+    ]
+  },
+  "androidHudSplit": {
+    "phase": 2,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "androidHudSplitMarker": "authored-finish-3.0-phase-2",
+    "catalog": "shared/ship/android-hud-split.json",
+    "parityFixture": "shared/fixtures/parity-android-hud-split.json",
+    "validateScript": "npm run androidhud:validate",
+    "checklist": [
+      "GameScreen.kt slim (\u22641000 lines) with GameScreen + Hud only",
+      "\u226514 extracted HUD panel/primitive modules under ui/hud/",
+      "kickoff gaps.androidHudDecomposition closed",
+      "androidhud:validate green in CI"
+    ]
+  },
+  "webHudSplit": {
+    "phase": 3,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "webHudSplitMarker": "authored-finish-3.0-phase-3",
+    "catalog": "shared/ship/web-hud-split.json",
+    "parityFixture": "shared/fixtures/parity-web-hud-split.json",
+    "validateScript": "npm run webhud:validate",
+    "checklist": [
+      "App.tsx slim (\u2264900 lines) with App + World + Hud only",
+      "\u226512 extracted UI panel/primitive modules under web/src/ui/",
+      "kickoff gaps.webHudDecomposition closed",
+      "webhud:validate green in CI"
+    ]
+  },
+  "shellController": {
+    "phase": 4,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "shellControllerMarker": "authored-finish-3.0-phase-4",
+    "catalog": "shared/ship/shell-controller.json",
+    "parityFixture": "shared/fixtures/parity-shell-controller.json",
+    "validateScript": "npm run shellctrl:validate",
+    "checklist": [
+      "Shared ShellPanelController + ShellModalPolicy + OfflineShell in game-core + TS",
+      "GameViewModel + GameHost wired; private Panel enums removed",
+      "Host line caps green",
+      "shellctrl:validate green in CI"
+    ]
+  },
+  "androidI18n": {
+    "phase": 5,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "androidI18nMarker": "authored-finish-3.0-phase-5",
+    "catalog": "shared/ship/android-i18n.json",
+    "parityFixture": "shared/fixtures/parity-android-i18n.json",
+    "validateScript": "npm run androidi18n:validate",
+    "checklist": [
+      "en+es UiStrings catalogs \u2265120 keys with parity",
+      "ui/hud Text(\" chrome literals = 0",
+      "gaps.androidI18nIncomplete closed",
+      "androidi18n:validate green in CI"
+    ]
+  },
+  "contentI18n": {
+    "phase": 6,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "contentI18nMarker": "authored-finish-3.0-phase-6",
+    "catalog": "shared/ship/content-i18n.json",
+    "parityFixture": "shared/fixtures/parity-content-i18n.json",
+    "validateScript": "npm run contenti18n:validate",
+    "checklist": [
+      "content-strings en/es/pt \u2265250 keys with parity",
+      "third locale pt on UI + listing",
+      "gaps.contentI18nMissing + thirdLocaleMissing closed",
+      "contenti18n:validate green in CI"
+    ]
+  },
+  "themeDs": {
+    "phase": 7,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "themeDsMarker": "authored-finish-3.0-phase-7",
+    "catalog": "shared/ship/theme-ds.json",
+    "parityFixture": "shared/fixtures/parity-theme-ds.json",
+    "validateScript": "npm run themeds:validate",
+    "checklist": [
+      "colorDark tokens + themePreference system/light/dark",
+      "Android + web DS primitives theme-aware",
+      "gaps.darkThemeMissing closed",
+      "themeds:validate green in CI"
+    ]
+  },
+  "harborArt2": {
+    "phase": 8,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "harborArt2Marker": "authored-finish-3.0-phase-8",
+    "catalog": "shared/ship/harbor-art-2.json",
+    "parityFixture": "shared/fixtures/parity-harbor-art-2.json",
+    "validateScript": "npm run harborart2:validate",
+    "checklist": [
+      "All 8 harbor GLBs authored with HarborArt_* themes",
+      "kickoff gaps.authoredHarborsRemaining = 0",
+      "DoD quotas.authoredHarborScenes = 8",
+      "harborart2:validate green in CI"
+    ]
+  },
+  "fishArt2": {
+    "phase": 9,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "fishArt2Marker": "authored-finish-3.0-phase-9",
+    "catalog": "shared/ship/fish-art-2.json",
+    "parityFixture": "shared/fixtures/parity-fish-art-2.json",
+    "validateScript": "npm run fishart2:validate",
+    "checklist": [
+      "All 50 species GLBs authored with FishArt_* themes",
+      "kickoff gaps.authoredFishRemaining = 0",
+      "DoD quotas.authoredFishSpecies = 50",
+      "fishart2:validate green in CI"
+    ]
+  },
+  "staffUnlock": {
+    "phase": 10,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "staffUnlockMarker": "authored-finish-3.0-phase-10",
+    "catalog": "shared/ship/staff-unlock.json",
+    "parityFixture": "shared/fixtures/parity-staff-unlock.json",
+    "validateScript": "npm run staffunlock:validate",
+    "checklist": [
+      "Specialization branches for all 8 hireable roles",
+      "Coming soon hire lock closed (0 reasons)",
+      "kickoff gaps.staffComingSoonPresent = false",
+      "staffunlock:validate green in CI"
+    ]
+  },
+  "workerAiDepth": {
+    "phase": 11,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "workerAiDepthMarker": "authored-finish-3.0-phase-11",
+    "catalog": "shared/ship/worker-ai-depth.json",
+    "parityFixture": "shared/fixtures/parity-worker-ai-depth.json",
+    "validateScript": "npm run workerai:validate",
+    "checklist": [
+      "Branch-aware AI for supervisor/greeter/ice_runner/smoker/operator",
+      "Depth stats SUPERVISOR_PATROLS / GREETER_WELCOMES / ICE_RUNNER_MULTI_PICKUPS",
+      "TS + Kotlin Workers parity",
+      "workerai:validate green in CI"
+    ]
+  },
+  "species5175": {
+    "phase": 12,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "species51_75Marker": "authored-finish-3.0-phase-12",
+    "catalog": "shared/ship/species-51-75.json",
+    "parityFixture": "shared/fixtures/parity-species-51-75.json",
+    "validateScript": "npm run species5175:validate",
+    "checklist": [
+      "75 species roster with Phase 12 wave + rares",
+      "8 ecology habitat weight pockets",
+      "Codex + fishing spots + galleries wired",
+      "species5175:validate green in CI"
+    ]
+  },
+  "machines910": {
+    "phase": 13,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "machines910Marker": "authored-finish-3.0-phase-13",
+    "catalog": "shared/ship/machines-9-10.json",
+    "parityFixture": "shared/fixtures/parity-machines-9-10.json",
+    "validateScript": "npm run machines910:validate",
+    "checklist": [
+      "10 machine classes including harbor_press and harbor_pickler",
+      "Unlock plots + stations on all 8 harbors",
+      "Press/pickler recipe graphs + product SKUs",
+      "machines910:validate green in CI"
+    ]
+  },
+  "rivalMarkets": {
+    "phase": 14,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "rivalMarketsMarker": "authored-finish-3.0-phase-14",
+    "catalog": "shared/ship/rival-markets.json",
+    "parityFixture": "shared/fixtures/parity-rival-markets.json",
+    "validateScript": "npm run rivalmarkets:validate",
+    "checklist": [
+      "8 rival NPC markets covering all harbors",
+      "Spawn pressure + undercut + siphon + beat parity",
+      "Stats + view wiring",
+      "rivalmarkets:validate green in CI"
+    ]
+  },
+  "schema24Endgame": {
+    "phase": 15,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "schema24EndgameMarker": "authored-finish-3.0-phase-15",
+    "catalog": "shared/ship/schema-24-endgame.json",
+    "parityFixture": "shared/fixtures/parity-schema-24-endgame.json",
+    "validateScript": "npm run schema24:validate",
+    "checklist": [
+      "SCHEMA_VERSION = 24 + v23\u2192v24 migration",
+      "Endgame tiers/challenges content + EndgameSystem parity",
+      "beatenRivalIds persisted; legacy v23 fixture frozen",
+      "schema24:validate green in CI"
+    ]
+  },
+  "stripeLiveCheckout": {
+    "phase": 16,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "stripeLiveCheckoutMarker": "authored-finish-3.0-phase-16",
+    "catalog": "shared/ship/stripe-live-checkout.json",
+    "parityFixture": "shared/fixtures/parity-stripe-live-checkout.json",
+    "validateScript": "npm run stripe:validate",
+    "checklist": [
+      "Live Stripe Checkout + webhook adapters (fails closed without secrets)",
+      "SKU stripePriceId placeholders; stub/instant default remains",
+      "Kickoff stripeLiveCheckoutPartial closed",
+      "stripe:validate green in CI"
+    ]
+  },
+  "cloudQa2": {
+    "phase": 17,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "cloudQa2Marker": "authored-finish-3.0-phase-17",
+    "catalog": "shared/ship/cloud-qa-2.json",
+    "parityFixture": "shared/fixtures/parity-cloud-qa-2.json",
+    "validateScript": "npm run cloudqa2:validate",
+    "checklist": [
+      "\u22658 wave-2 + \u226512 total cloud QA scenarios (Memory/Null backends)",
+      "Schema 24 roundtrip; unavailable queue + sync-disabled paths",
+      "Snippet-only Firestore rules preserved (no deployable firestore.rules)",
+      "cloudqa2:validate green in CI"
+    ]
+  },
+  "localPushReminders": {
+    "phase": 18,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "localPushRemindersMarker": "authored-finish-3.0-phase-18",
+    "catalog": "shared/ship/local-push-reminders.json",
+    "parityFixture": "shared/fixtures/parity-local-push-reminders.json",
+    "validateScript": "npm run localpush:validate",
+    "checklist": [
+      "Opt-in local daily-goal reminders (Android AlarmManager + web Notification API)",
+      "Shared schedule math + once/day unclaimed gate",
+      "Kickoff pushRemindersMissing closed",
+      "localpush:validate green in CI"
+    ]
+  },
+  "pwaShell": {
+    "phase": 19,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "pwaShellMarker": "authored-finish-3.0-phase-19",
+    "catalog": "shared/ship/pwa-shell.json",
+    "parityFixture": "shared/fixtures/parity-pwa-shell.json",
+    "validateScript": "npm run pwa:validate",
+    "checklist": [
+      "Service worker shell + offline.html under Vite base scope",
+      "Webmanifest standalone + main.tsx registration",
+      "Kickoff pwaMissing closed",
+      "pwa:validate green in CI"
+    ]
+  },
+  "deepLinks": {
+    "phase": 20,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "deepLinksMarker": "authored-finish-3.0-phase-20",
+    "catalog": "shared/ship/deep-links.json",
+    "parityFixture": "shared/fixtures/parity-deep-links.json",
+    "validateScript": "npm run deeplink:validate",
+    "checklist": [
+      "Android App Links + fishshopping:// custom scheme",
+      "Web query/path/hash deep links applied after Ready",
+      "Kickoff deepLinksMissing closed",
+      "deeplink:validate green in CI"
+    ]
+  },
+  "composeUiTests": {
+    "phase": 21,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "composeUiTestsMarker": "authored-finish-3.0-phase-21",
+    "catalog": "shared/ship/compose-ui-tests.json",
+    "parityFixture": "shared/fixtures/parity-compose-ui-tests.json",
+    "validateScript": "npm run composeui:validate",
+    "checklist": [
+      "Compose test tags + TitleMenuContent extract",
+      "Robolectric ComposeUiIntegrationTest in CI",
+      "Kickoff composeUiTestsMissing closed",
+      "composeui:validate green in CI"
+    ]
+  },
+  "webE2e": {
+    "phase": 22,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "webE2eMarker": "authored-finish-3.0-phase-22",
+    "catalog": "shared/ship/web-e2e.json",
+    "parityFixture": "shared/fixtures/parity-web-e2e.json",
+    "validateScript": "npm run webe2e:validate",
+    "checklist": [
+      "Playwright Chromium smoke (title\u2192play\u2192HUD\u2192pause)",
+      "Stable WEB_E2E_IDS data-testid wiring",
+      "Kickoff webE2eMissing closed",
+      "webe2e:validate + e2e:smoke green in CI"
+    ]
+  },
+  "audioPack3": {
+    "phase": 23,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "audioPackMarker": "authored-finish-3.0-phase-23",
+    "catalog": "shared/ship/audio-pack-3.json",
+    "parityFixture": "shared/fixtures/parity-audio-pack-3.json",
+    "validateScript": "npm run audiopack3:validate",
+    "checklist": [
+      "\u22658 pack-3 SFX stingers + \u22652 night/rival beds",
+      "Ducking policy frozen from music-pack.json",
+      "sfxFromEvent + bed priority festival>storm>rival>night>shop>harbor",
+      "audiopack3:validate green in CI"
+    ]
+  },
+  "vfxJuice3": {
+    "phase": 24,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "vfxJuice3Marker": "authored-finish-3.0-phase-24",
+    "catalog": "shared/ship/vfx-juice-3.json",
+    "parityFixture": "shared/fixtures/parity-vfx-juice-3.json",
+    "validateScript": "npm run vfx3:validate",
+    "checklist": [
+      "\u22656 pack-3 burst kinds + \u22652 shake kinds under budget-gate",
+      "Tide ambient (dawn/day/dusk/night) + rival tint",
+      "GameHost/GameViewModel + HarborScene/HarborRenderer wired",
+      "vfx3:validate green in CI"
+    ]
+  },
+  "a11yDepth2": {
+    "phase": 25,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "a11yDepth2Marker": "authored-finish-3.0-phase-25",
+    "catalog": "shared/ship/a11y-depth-2.json",
+    "parityFixture": "shared/fixtures/parity-a11y-depth-2.json",
+    "validateScript": "npm run a11ydepth2:validate",
+    "checklist": [
+      "\u22657 Finish 3.0 surfaces (bank/trophy/decor/theme/map/dashboard/rival)",
+      "\u22654 dark-theme contrast pairs under WCAG AA",
+      "Rival pressure live region + map/dashboard pane titles",
+      "a11ydepth2:validate green in CI"
+    ]
+  },
+  "remoteAnalytics": {
+    "phase": 26,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "remoteAnalyticsMarker": "authored-finish-3.0-phase-26",
+    "catalog": "shared/ship/remote-analytics.json",
+    "parityFixture": "shared/fixtures/parity-remote-analytics.json",
+    "validateScript": "npm run remoteanalytics:validate",
+    "checklist": [
+      "Consent-gated remote batch sink (env/manifest base URL)",
+      "analytics-api stub POST /v1/analytics/batch",
+      "Local dashboard remains; fail closed without base URL",
+      "remoteanalytics:validate green in CI"
+    ]
+  },
+  "questsContracts3": {
+    "phase": 27,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "questsContracts3Marker": "authored-finish-3.0-phase-27",
+    "catalog": "shared/ship/quests-contracts-3.json",
+    "parityFixture": "shared/fixtures/parity-quests-contracts-3.json",
+    "validateScript": "npm run quests3:validate",
+    "checklist": [
+      "\u226530 authored quests past prestige_wave",
+      "\u22653 delivery chains including dawn express",
+      "\u22653 reputation-gated contracts; Finish 2.0 floors untouched",
+      "quests3:validate green in CI"
+    ]
+  },
+  "contentCli2": {
+    "phase": 28,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "contentCli2Marker": "authored-finish-3.0-phase-28",
+    "catalog": "shared/ship/content-cli-2.json",
+    "parityFixture": "shared/fixtures/parity-content-cli-2.json",
+    "validateScript": "npm run contentcli2:validate",
+    "checklist": [
+      "\u22656 scaffold kinds (core + contract/bait/decor)",
+      "--list and --check-pack; no auto-merge into content-pack",
+      "Finish 2.0 contentcli:validate still green",
+      "contentcli2:validate green in CI"
+    ]
+  },
+  "parityLock3": {
+    "phase": 29,
+    "plan": "30_finish_3.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "parityLock3Marker": "authored-finish-3.0-phase-29",
+    "catalog": "shared/ship/parity-lock-3.0.json",
+    "parityFixture": "shared/fixtures/parity-parity-lock-3.0.json",
+    "validateScript": "npm run parity3:validate",
+    "checklist": [
+      "\u226512 parity suites including 4 Finish 3.0 system suites",
+      "rivals / schema24 endgame / machines 9\u201310 / quests-contracts-3",
+      "Finish 2.0 parity2:validate still green",
+      "parity3:validate green in CI"
+    ]
+  },
   "finish2Freeze": {
     "phase": 30,
     "plan": "30_finish_2.0",
@@ -324,7 +891,7 @@
     "completeTagArchived": "v1.0-complete",
     "checklist": [
       "RELEASE_PIN + content-pack at 2.0.0 / schema 23 / versionCode 3",
-      "Content floors ≥8 harbors / 50 species / 8 machines / 20 quests / 8 seasonal / 8 baits / 12 cosmetics",
+      "Content floors \u22658 harbors / 50 species / 8 machines / 20 quests / 8 seasonal / 8 baits / 12 cosmetics",
       "LOC freeze anti-regression floors green; plan targets retained without padding",
       "post-1.0 DoD closeout remains archived at v1.0-complete",
       "freeze2:validate + dod:validate green in CI",
@@ -335,6 +902,41 @@
       "npm run dod:validate",
       "git tag -a v2.0.0 -m \"Fish Shopping 2.0.0 freeze\"",
       "Archive Finish 2.0 plan status as finished"
+    ]
+  },
+  "finish3Freeze": {
+    "phase": 30,
+    "plan": "30_finish_3.0",
+    "status": "ready_for_release_tag",
+    "statusValues": [
+      "ready_for_release_tag",
+      "tag_cut",
+      "archived"
+    ],
+    "releaseTag": "v3.0.0",
+    "contentVersion": "3.0.0",
+    "schemaVersion": 24,
+    "versionName": "3.0.0",
+    "versionCode": 4,
+    "catalog": "shared/ship/freeze-3.0.0.json",
+    "validateScript": "npm run freeze3:validate",
+    "locEnforceMode": "freeze_anti_regression",
+    "completeTagArchived": "v1.0-complete",
+    "finish2ReleaseTagArchived": "v2.0.0",
+    "checklist": [
+      "RELEASE_PIN + content-pack at 3.0.0 / schema 24 / versionCode 4",
+      "Content floors \u22658 harbors / 75 species / 10 machines / 30 quests / 8 seasonal / 8 baits / 12 cosmetics",
+      "LOC freeze anti-regression floors green; plan targets retained without padding",
+      "Finish 2.0 freeze + post-1.0 closeout remain historical/archived",
+      "freeze3:validate + freeze2:validate + dod:validate green in CI",
+      "Annotated git tag v3.0.0 remains operator-manual"
+    ],
+    "manualCommands": [
+      "npm run freeze3:validate",
+      "npm run freeze2:validate",
+      "npm run dod:validate",
+      "git tag -a v3.0.0 -m \"Fish Shopping 3.0.0 freeze\"",
+      "Archive Finish 3.0 plan status as finished"
     ]
   }
 }

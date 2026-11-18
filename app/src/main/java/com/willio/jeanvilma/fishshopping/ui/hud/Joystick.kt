@@ -1,5 +1,8 @@
 package com.willio.jeanvilma.fishshopping.ui.hud
 
+import androidx.compose.material3.MaterialTheme
+
+import com.willio.jeanvilma.fishshopping.core.i18n.UiStrings
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -26,8 +29,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.offset
-import com.willio.jeanvilma.fishshopping.ui.theme.Ink
-import com.willio.jeanvilma.fishshopping.ui.theme.PanelSurface
 import kotlin.math.roundToInt
 
 /**
@@ -90,6 +91,10 @@ fun Joystick(
                 }
             },
     ) {
+        val scheme = MaterialTheme.colorScheme
+        val padFill = scheme.surface.copy(alpha = 0.35f)
+        val padStroke = scheme.onSurface.copy(alpha = 0.5f)
+        val knobStroke = scheme.onSurface
         Canvas(
             Modifier
                 .size(diameter)
@@ -102,10 +107,10 @@ fun Joystick(
                 .align(Alignment.TopStart),
         ) {
             val r = size.minDimension / 2f
-            drawCircle(PanelSurface.copy(alpha = 0.35f), radius = r)
-            drawCircle(Ink.copy(alpha = 0.5f), radius = r - 2f, style = Stroke(width = 3f))
+            drawCircle(padFill, radius = r)
+            drawCircle(padStroke, radius = r - 2f, style = Stroke(width = 3f))
             drawCircle(Color.White.copy(alpha = 0.9f), radius = r * 0.38f, center = this.center + knob)
-            drawCircle(Ink, radius = r * 0.38f, center = this.center + knob, style = Stroke(width = 4f))
+            drawCircle(knobStroke, radius = r * 0.38f, center = this.center + knob, style = Stroke(width = 4f))
         }
     }
 }

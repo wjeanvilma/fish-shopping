@@ -44,7 +44,7 @@ class StaffTreesTest {
         assertEquals(15, listing.getValue("staffTreesPhase").jsonPrimitive.content.toInt())
         assertEquals(StaffTrees.CATALOG, listing.getValue("staffTreesCatalog").jsonPrimitive.content)
         val dod = Json.parseToJsonElement(File(root, "shared/ship/definition-of-done.json").readText()).jsonObject
-        assertEquals(5, dod.getValue("quotas").jsonObject.getValue("staffBranches").jsonPrimitive.int)
+        assertEquals(10, dod.getValue("quotas").jsonObject.getValue("staffBranches").jsonPrimitive.int)
         assertEquals(2, dod.getValue("quotas").jsonObject.getValue("staffSchedules").jsonPrimitive.int)
     }
 

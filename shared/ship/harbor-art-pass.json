@@ -2,13 +2,13 @@
   "phase": 19,
   "plan": "30_finish_2.0",
   "schema": "fish.ship.harbor_art_pass.v1",
-  "description": "Finish 2.0 Phase 19 — replace ≥3 harbor GLBs with authored low-poly theme sets; licenses + size budgets; web loads all 8 blockouts.",
-  "contentVersion": "1.0.1",
+  "description": "Finish 2.0 Phase 19 + Finish 3.0 Phase 8 — all 8 harbor GLBs authored low-poly theme sets; licenses + size budgets; web loads all 8 blockouts.",
+  "contentVersion": "2.0.0",
   "schemaVersion": 23,
-  "authoredHarborMin": 3,
+  "authoredHarborMin": 8,
   "harborArtMarker": "authored-phase-19",
   "maxBytesPerHarbor": 200000,
-  "maxTotalAuthoredBytes": 600000,
+  "maxTotalAuthoredBytes": 1600000,
   "generator": "shared/tools/generate_blockout.py",
   "themesModule": "shared/tools/harbor_themes.py",
   "authoredHarbors": [
@@ -26,6 +26,31 @@
       "harborId": "harbor.storm_quay",
       "theme": "storm",
       "asset": "shared/assets/models/storm_quay_blockout.glb"
+    },
+    {
+      "harborId": "harbor.moon_cove",
+      "theme": "moon",
+      "asset": "shared/assets/models/moon_cove_blockout.glb"
+    },
+    {
+      "harborId": "harbor.obsidian_jetty",
+      "theme": "obsidian",
+      "asset": "shared/assets/models/obsidian_jetty_blockout.glb"
+    },
+    {
+      "harborId": "harbor.northlight_harbor",
+      "theme": "northlight",
+      "asset": "shared/assets/models/northlight_harbor_blockout.glb"
+    },
+    {
+      "harborId": "harbor.grand_marina",
+      "theme": "marina",
+      "asset": "shared/assets/models/grand_marina_blockout.glb"
+    },
+    {
+      "harborId": "harbor.ember_wharf",
+      "theme": "ember",
+      "asset": "shared/assets/models/ember_wharf_blockout.glb"
     }
   ],
   "allBlockoutAssets": [
@@ -39,10 +64,10 @@
     "ember_wharf_blockout.glb"
   ],
   "parityFixture": "shared/fixtures/parity-harbor-art-pass.json",
-  "definitionOfDoneAuthoredHarbors": 3,
+  "definitionOfDoneAuthoredHarbors": 8,
   "validateScript": "npm run harborart:validate",
   "checklist": [
-    "≥3 harbor GLBs tagged extras.harborArt=authored-phase-19 with distinct themes",
+    "All 8 harbor GLBs tagged extras.harborArt=authored-phase-19 with distinct themes",
     "HarborArt_* props present; presenter sockets unchanged",
     "each authored GLB ≤ maxBytesPerHarbor; pairwise hashes differ",
     "licenses.json records harbor-authored-art + generator tool",

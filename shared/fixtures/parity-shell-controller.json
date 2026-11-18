@@ -1,0 +1,18 @@
+{
+  "schema": "fish.fixtures.parity_shell_controller.v1",
+  "shellControllerMarker": "authored-finish-3.0-phase-4",
+  "phase": 4,
+  "plan": "30_finish_3.0",
+  "expect": {
+    "panelCount": 12,
+    "hudPublishIntervalMs": 100,
+    "schemaVersion": 23,
+    "gates": [
+      "shared_panel_controller",
+      "offline_shell_enrich",
+      "hosts_wired",
+      "host_line_caps",
+      "ci_gate"
+    ]
+  }
+}

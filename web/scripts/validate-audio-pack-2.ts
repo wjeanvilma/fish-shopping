@@ -55,7 +55,7 @@ function validate(): string[] {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (AUDIO_PACK_2_PHASE !== 21) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
   if (catalog.audioPackMarker !== AUDIO_PACK_2_MARKER) errors.push("marker mismatch");
   if (catalog.newStingerMin !== 7 || NEW_STINGER_FLOOR !== 7) errors.push("newStingerMin must be 7");
@@ -77,7 +77,7 @@ function validate(): string[] {
   if (pin.audioPack2 !== "shared/ship/audio-pack-2.json") {
     errors.push("RELEASE_PIN.audioPack2 path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
 
   const licenseIds = new Set((licenses.records ?? []).map((r: { id: string }) => r.id));
   if (!licenseIds.has("authored-audio-pack-2")) {

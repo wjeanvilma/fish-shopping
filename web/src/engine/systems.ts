@@ -2,7 +2,7 @@
  * Per-tick systems. Each function mirrors the Kotlin object of the same name in game-core;
  * keep them line-for-line comparable so fixture mismatches are easy to trace.
  */
-import type { AchievementDef, BaitDef, ContentPack, ContractTemplateDef, CounterDef, DailyObjectiveDef, DayPartDef, DecorDef, FishingSpotDef, HarborDef, ItemQuantity, PlotDef, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RushWindowDef, SeasonalEventDef, SpeciesDef, TidePhaseDef, UpgradeDef, UpgradeEffect, WeatherPatternDef, WorkerDef } from "./content";
+import type { AchievementDef, BaitDef, ContentPack, ContractTemplateDef, CounterDef, DailyObjectiveDef, DayPartDef, DecorDef, EndgameChallengeDef, EndgameTierDef, FishingSpotDef, HarborDef, ItemQuantity, PlotDef, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RivalMarketDef, RushWindowDef, SeasonalEventDef, SpeciesDef, TidePhaseDef, UpgradeDef, UpgradeEffect, WeatherPatternDef, WorkerDef } from "./content";
 import { bankRepayAmount } from "./content";
 import type { TimingTier, TrophyRecord } from "./state";
 import { counterAccepts, queueSlot, rectCenterX, rectCenterZ, rectContains } from "./content";
@@ -142,7 +142,13 @@ export const FishingSystem = {
       const bait = BaitSystem.resolveForCast(ctx.content, s);
       p.activeBaitId = bait?.id ?? null;
       const weights = candidates.map((sp) =>
-        SeasonalEventSystem.scaledWeight(BaitSystem.effectiveWeight(sp, bait), ctx.content, s.tick, sp.id),
+        SeasonalEventSystem.scaledWeight(
+          BaitSystem.effectiveWeight(sp, bait),
+          ctx.content,
+          s.tick,
+          sp.id,
+          s.harborId,
+        ),
       );
       const pick = candidates[s.rng.pickWeighted(weights)]!;
       p.fishingSpecies = pick.id;
@@ -212,7 +218,11 @@ export const FishingSystem = {
    * Finish 2.0 Phase 13 weather + tide, and Phase 14 mastery / technique multipliers.
    */
   effectiveCatchSpeed(content: ContentPack, state: GameState, speciesId: string | null = null): number {
-    let speed = Math.max(state.player.catchSpeedPermille, state.prestigeCatchSpeedPermille);
+    let speed = Math.max(
+      state.player.catchSpeedPermille,
+      state.prestigeCatchSpeedPermille,
+      state.endgameCatchSpeedPermille,
+    );
     if (FishingSystem.hasTideChart(state)) {
       const part = FishingSystem.dayPartAt(content, state.tick);
       speed = idiv(speed * part.catchSpeedMultPermille, 1000);
@@ -844,6 +854,7 @@ export const CustomerSystem = {
     const counterDef = ctx.harbor.counters.find((ct) => ct.id === counter.counterId)!;
     mult = idiv(mult * CustomerSystem.demandPriceMultPermille(ctx.content, s, ctx.harbor, counterDef, counter), 1000);
     mult = idiv(mult * s.prestigePriceBonusPermille, 1000);
+    mult = idiv(mult * s.endgamePriceBonusPermille, 1000);
     const amount = idiv(base * mult, 1000);
     const saleId = s.newId("sale");
     s.coins = SafeMath.creditCoins(s.coins, amount);
@@ -857,6 +868,7 @@ export const CustomerSystem = {
     else if (type.kind === "critic") s.bumpStat(Stats.CRITIC_SALES);
     else if (type.kind === "night_regular") s.bumpStat(Stats.NIGHT_SALES);
     if (!met) s.bumpStat(Stats.UNMET_PREFERENCE_SALES);
+    RivalMarketSystem.noteSaleOutcome(ctx, items);
     s.record({ id: saleId, type: "sale", coinDelta: amount, tick: s.tick, reference: c.id });
     for (const [itemId, qty] of c.reservedItems) counter.stock.takeReserved(itemId, qty);
     c.clearReservations();
@@ -1076,7 +1088,7 @@ export const CustomerSystem = {
     return table[stars]!;
   },
 
-  /** Combined ephemeral demand multiplier (rush × scarcity × rating × festival). */
+  /** Combined ephemeral demand multiplier (rush × scarcity × rating × festival × rivals). */
   demandPriceMultPermille(
     content: ContentPack,
     state: GameState,
@@ -1089,6 +1101,7 @@ export const CustomerSystem = {
     mult = idiv(mult * CustomerSystem.scarcityPriceMultPermille(content, def, counter), 1000);
     mult = idiv(mult * CustomerSystem.ratingPriceMultPermille(content, state), 1000);
     mult = idiv(mult * SeasonalEventSystem.priceMultPermille(content, state.tick), 1000);
+    mult = idiv(mult * RivalMarketSystem.salePriceMultPermille(content, state, harbor.id, def, counter), 1000);
     return Math.max(1, mult);
   },
 
@@ -1109,7 +1122,9 @@ export const CustomerSystem = {
     const crowd = WeatherSystem.customerSpawnMultPermille(content, state);
     ticks = Math.max(1, idiv(ticks * 1000, crowd));
     const festival = SeasonalEventSystem.customerSpawnMultPermille(content, state.tick);
-    return Math.max(1, idiv(ticks * 1000, festival));
+    ticks = Math.max(1, idiv(ticks * 1000, festival));
+    const rivalCrowd = RivalMarketSystem.customerSpawnMultPermille(content, state, harbor.id);
+    return Math.max(1, idiv(ticks * 1000, rivalCrowd));
   },
 
   effectiveMaxQueue(def: { maxQueue: number }, rush: RushWindowDef | null): number {
@@ -1420,6 +1435,175 @@ export const ReputationSystem = {
 };
 
 /**
+ * Finish 3.0 Phase 12 — ecology habitat pockets boost species catch weights
+ * when the active harbor matches and the current day-part is favored.
+ */
+export const EcologySystem = {
+  habitatWeightMultPermille(
+    content: ContentPack,
+    tick: number,
+    harborId: string,
+    speciesId: string,
+  ): number {
+    const partId = FishingSystem.dayPartAt(content, tick).id;
+    let best = 1000;
+    for (const habitat of content.ecology.habitats ?? []) {
+      if (!habitat.harbors.includes(harborId)) continue;
+      if (!habitat.favoredDayParts.includes(partId)) continue;
+      const mult = habitat.speciesWeightMultPermille?.[speciesId];
+      if (mult == null) continue;
+      if (mult > best) best = mult;
+    }
+    return best;
+  },
+};
+
+/**
+ * Finish 3.0 Phase 14 — single-player rival NPC markets.
+ * Active rivals siphon demand when specialty shelves are empty, undercut sale
+ * prices, and can be beaten by well-stocked specialty sales. Schema 23 stats only.
+ */
+export const RivalMarketSystem = {
+  /** Keep the scripted tutorial free of rival siphon / undercut RNG. */
+  tutorialClear(content: ContentPack, state: GameState): boolean {
+    return state.tutorialIndex >= content.tutorial.length;
+  },
+
+  activeRivals(content: ContentPack, state: GameState, harborId: string): RivalMarketDef[] {
+    if (!RivalMarketSystem.tutorialClear(content, state)) return [];
+    const partId = FishingSystem.dayPartAt(content, state.tick).id;
+    return content.rivalMarkets.rivals.filter(
+      (r) => r.harbors.includes(harborId) && r.activeDayParts.includes(partId),
+    );
+  },
+
+  specialtyStockUnits(state: GameState, specialtyProducts: string[]): number {
+    let units = 0;
+    for (const counter of state.counters) {
+      for (const productId of specialtyProducts) {
+        // Count reserved lines too — shelves still hold the SKU while checkout runs.
+        units += counter.stock.quantity(productId);
+      }
+    }
+    return units;
+  },
+
+  isPressuring(content: ContentPack, state: GameState, harborId: string): boolean {
+    const active = RivalMarketSystem.activeRivals(content, state, harborId);
+    if (active.length === 0) return false;
+    if (ReputationSystem.band(content, state) >= content.rivalMarkets.minReputationBandToResist) {
+      return false;
+    }
+    for (const rival of active) {
+      if (
+        RivalMarketSystem.specialtyStockUnits(state, rival.specialtyProducts) <
+        content.rivalMarkets.wellStockedUnits
+      ) {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  customerSpawnMultPermille(content: ContentPack, state: GameState, harborId: string): number {
+    return RivalMarketSystem.isPressuring(content, state, harborId)
+      ? content.rivalMarkets.pressureSpawnMultPermille
+      : 1000;
+  },
+
+  salePriceMultPermille(
+    content: ContentPack,
+    state: GameState,
+    harborId: string,
+    def: CounterDef,
+    _counter: CounterState,
+  ): number {
+    const active = RivalMarketSystem.activeRivals(content, state, harborId);
+    if (active.length === 0) return 1000;
+    let best = 1000;
+    for (const rival of active) {
+      const specialtyOnPad = rival.specialtyProducts.some((p) => def.products.includes(p));
+      if (!specialtyOnPad) continue;
+      const stocked = RivalMarketSystem.specialtyStockUnits(state, rival.specialtyProducts);
+      if (stocked >= content.rivalMarkets.wellStockedUnits) continue;
+      if (rival.undercutPriceMultPermille < best) best = rival.undercutPriceMultPermille;
+    }
+    return best;
+  },
+
+  noteSaleOutcome(ctx: StepContext, items: { item: string; quantity: number }[]): void {
+    const active = RivalMarketSystem.activeRivals(ctx.content, ctx.state, ctx.state.harborId);
+    if (active.length === 0) return;
+    for (const rival of active) {
+      const hit = items.find((line) => rival.specialtyProducts.includes(line.item));
+      if (!hit) continue;
+      const stocked = RivalMarketSystem.specialtyStockUnits(ctx.state, rival.specialtyProducts);
+      if (stocked >= ctx.content.rivalMarkets.wellStockedUnits) {
+        ctx.state.bumpStat(Stats.RIVAL_BEATS);
+        ctx.state.beatenRivalIds.add(rival.id);
+        ctx.emit({
+          type: "rival_beaten",
+          tick: ctx.state.tick,
+          rivalId: rival.id,
+          productId: hit.item,
+        });
+      } else {
+        ctx.state.bumpStat(Stats.RIVAL_UNDERCUTS);
+      }
+      return;
+    }
+  },
+
+  announceTransitions(ctx: StepContext): void {
+    const s = ctx.state;
+    if (!RivalMarketSystem.tutorialClear(ctx.content, s)) return;
+    const prevPart = FishingSystem.dayPartAt(ctx.content, Math.max(0, s.tick - 1)).id;
+    const curPart = FishingSystem.dayPartAt(ctx.content, s.tick).id;
+    if (prevPart === curPart && s.tick > 1) return;
+    const prevActive = ctx.content.rivalMarkets.rivals.filter(
+      (r) => r.harbors.includes(s.harborId) && r.activeDayParts.includes(prevPart),
+    );
+    const curActive = RivalMarketSystem.activeRivals(ctx.content, s, s.harborId);
+    for (const r of prevActive) {
+      if (!curActive.some((c) => c.id === r.id)) {
+        ctx.emit({ type: "rival_market_closed", tick: s.tick, rivalId: r.id, name: r.name });
+      }
+    }
+    for (const r of curActive) {
+      if (!prevActive.some((p) => p.id === r.id)) {
+        ctx.emit({ type: "rival_market_opened", tick: s.tick, rivalId: r.id, name: r.name });
+      }
+    }
+  },
+
+  step(ctx: StepContext): void {
+    RivalMarketSystem.announceTransitions(ctx);
+    const s = ctx.state;
+    const cat = ctx.content.rivalMarkets;
+    if (cat.tickInterval < 1 || s.tick % cat.tickInterval !== 0) return;
+    const active = RivalMarketSystem.activeRivals(ctx.content, s, s.harborId);
+    if (active.length === 0) return;
+    if (ReputationSystem.band(ctx.content, s) >= cat.minReputationBandToResist) return;
+    for (const rival of active) {
+      const stocked = RivalMarketSystem.specialtyStockUnits(s, rival.specialtyProducts);
+      if (stocked >= cat.wellStockedUnits) continue;
+      let chance = cat.emptyStockSiphonChancePermille;
+      chance = Math.min(1000, chance + idiv(rival.aggressionPermille * cat.lowRepSiphonBonusPermille, 1000));
+      if (s.rng.nextInRange(0, 999) >= chance) continue;
+      const productId =
+        rival.specialtyProducts[s.rng.nextInRange(0, rival.specialtyProducts.length - 1)]!;
+      s.bumpStat(Stats.RIVAL_SALES_STOLEN);
+      ctx.emit({
+        type: "rival_sale_stolen",
+        tick: s.tick,
+        rivalId: rival.id,
+        productId,
+      });
+    }
+  },
+};
+
+/**
  * Phase 24 / Finish 2.0 Phase 16 content-driven seasonal festival weekends.
  * Windows repeat on the sim clock (no live server). Active events boost catch
  * weights, stack crowd/price with weather, unlock banner cosmetics, and gate
@@ -1453,8 +1637,18 @@ export const SeasonalEventSystem = {
     return SeasonalEventSystem.active(content, tick)?.priceMultPermille ?? 1000;
   },
 
-  scaledWeight(base: number, content: ContentPack, tick: number, speciesId: string): number {
-    const mult = SeasonalEventSystem.speciesWeightMultPermille(content, tick, speciesId);
+  /** Scale a catch weight by seasonal + ecology habitat multipliers. */
+  scaledWeight(
+    base: number,
+    content: ContentPack,
+    tick: number,
+    speciesId: string,
+    harborId?: string | null,
+  ): number {
+    let mult = SeasonalEventSystem.speciesWeightMultPermille(content, tick, speciesId);
+    if (harborId) {
+      mult = Math.trunc((mult * EcologySystem.habitatWeightMultPermille(content, tick, harborId, speciesId)) / 1000);
+    }
     return Math.max(1, Math.trunc((base * mult) / 1000));
   },
 
@@ -1517,6 +1711,102 @@ export const DecorSystem = {
     ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "purchase" });
   },
 };
+
+/**
+ * Finish 3.0 Phase 15 / schema 24 — endgame deepen board.
+ * Tiers + challenges unlock after prestige; bonuses rebuild from unlockedEndgameTiers.
+ */
+export const EndgameSystem = {
+  boardUnlocked(content: ContentPack, s: GameState): boolean {
+    return s.completedPrestige.size >= content.endgame.requiresPrestigeCount;
+  },
+
+  missingBoardRequirement(content: ContentPack, s: GameState): string | null {
+    if (EndgameSystem.boardUnlocked(content, s)) return null;
+    const need = content.endgame.requiresPrestigeCount;
+    return `Prestige milestones (${s.completedPrestige.size}/${need})`;
+  },
+
+  tierRequirementsMet(s: GameState, tier: EndgameTierDef): boolean {
+    return (
+      s.completedPrestige.size >= tier.requiresPrestigeCount &&
+      s.beatenRivalIds.size >= tier.requiresRivalBeats &&
+      s.completedEndgameChallenges.size >= tier.requiresChallenges
+    );
+  },
+
+  step(ctx: StepContext): void {
+    if (!EndgameSystem.boardUnlocked(ctx.content, ctx.state)) return;
+    for (const ch of ctx.content.endgame.challenges) {
+      if (ctx.state.completedEndgameChallenges.has(ch.id)) continue;
+      if (ctx.state.stat(ch.stat) < ch.atLeast) continue;
+      completeEndgameChallenge(ctx, ch);
+    }
+    for (const tier of ctx.content.endgame.tiers) {
+      if (ctx.state.unlockedEndgameTiers.has(tier.id)) continue;
+      if (!EndgameSystem.tierRequirementsMet(ctx.state, tier)) continue;
+      unlockEndgameTier(ctx, tier);
+    }
+  },
+
+  applyTierReward(s: GameState, tier: EndgameTierDef): void {
+    if (tier.catchSpeedPermille > 0) {
+      s.endgameCatchSpeedPermille = Math.max(s.endgameCatchSpeedPermille, tier.catchSpeedPermille);
+    }
+    if (tier.priceBonusPermille > 0) {
+      s.endgamePriceBonusPermille = Math.max(s.endgamePriceBonusPermille, tier.priceBonusPermille);
+    }
+  },
+};
+
+function completeEndgameChallenge(ctx: StepContext, ch: EndgameChallengeDef): void {
+  const s = ctx.state;
+  s.completedEndgameChallenges.add(ch.id);
+  s.bumpStat(Stats.ENDGAME_CHALLENGES_COMPLETED);
+  if (ch.rewardCoins > 0) {
+    s.coins = SafeMath.creditCoins(s.coins, ch.rewardCoins);
+    const receipt: Receipt = {
+      id: s.newId("endgame_challenge"),
+      type: "endgame_challenge_reward",
+      coinDelta: ch.rewardCoins,
+      tick: s.tick,
+      reference: ch.id,
+    };
+    s.record(receipt);
+  }
+  ctx.emit({
+    type: "endgame_challenge_completed",
+    tick: s.tick,
+    challengeId: ch.id,
+    coinsRewarded: ch.rewardCoins,
+  });
+  ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "endgame_challenge" });
+}
+
+function unlockEndgameTier(ctx: StepContext, tier: EndgameTierDef): void {
+  const s = ctx.state;
+  s.unlockedEndgameTiers.add(tier.id);
+  s.bumpStat(Stats.ENDGAME_TIERS_UNLOCKED);
+  if (tier.coins > 0) {
+    s.coins = SafeMath.creditCoins(s.coins, tier.coins);
+    const receipt: Receipt = {
+      id: s.newId("endgame_tier"),
+      type: "endgame_tier_reward",
+      coinDelta: tier.coins,
+      tick: s.tick,
+      reference: tier.id,
+    };
+    s.record(receipt);
+  }
+  EndgameSystem.applyTierReward(s, tier);
+  ctx.emit({
+    type: "endgame_tier_unlocked",
+    tick: s.tick,
+    tierId: tier.id,
+    coinsRewarded: tier.coins,
+  });
+  ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "endgame_tier" });
+}
 
 /**
  * Prestige-lite (Phase 20): permanent milestone bonuses and cosmetics without wiping
@@ -3404,6 +3694,10 @@ export type WorkerHireAvailability =
   | { kind: "too_expensive"; missing: number }
   | { kind: "locked"; reason: string };
 
+/**
+ * Finish 3.0 Phase 10 — every content-defined worker role is hireable.
+ * The old `"Coming soon"` allowlist lock is retired; requirements/cost/caps remain.
+ */
 const HIREABLE_ROLES = new Set([
   "fisher", "porter", "operator", "cashier", "supervisor",
   "ice_runner", "smoker_specialist", "greeter",
@@ -3660,6 +3954,14 @@ export const WorkerSystem = {
     if (hired >= def.maxHired) return { kind: "maxed" };
     if (s.coins < def.hireCost) return { kind: "too_expensive", missing: def.hireCost - s.coins };
     return { kind: "purchasable" };
+  },
+
+  /** Finish 3.0 Phase 10 — count hire rows still showing the retired Coming soon lock. */
+  countComingSoonReasons(content: ContentPack, s: GameState): number {
+    return content.workers.reduce((n, def) => {
+      const a = WorkerSystem.availability(content, s, def);
+      return n + (a.kind === "locked" && a.reason === "Coming soon" ? 1 : 0);
+    }, 0);
   },
 
   moveSpeed(content: ContentPack, s: GameState, def: WorkerDef, w: WorkerState): number {
@@ -3932,7 +4234,9 @@ function fish(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
       return;
     }
     const pick = candidates[ctx.state.rng.pickWeighted(
-      candidates.map((c) => SeasonalEventSystem.scaledWeight(c.rarityWeight, ctx.content, ctx.state.tick, c.id)),
+      candidates.map((c) =>
+        SeasonalEventSystem.scaledWeight(c.rarityWeight, ctx.content, ctx.state.tick, c.id, ctx.state.harborId),
+      ),
     )]!;
     w.fishingSpecies = pick.id;
     w.fishingProgress = 0;
@@ -4252,6 +4556,7 @@ function stepSupervisor(ctx: StepContext, w: WorkerState, def: WorkerDef): void 
       w.phase = "WORK";
       break;
     case "WORK":
+      supervisorPatrol(ctx, w, def);
       break;
     default:
       clearTask(w);
@@ -4260,24 +4565,115 @@ function stepSupervisor(ctx: StepContext, w: WorkerState, def: WorkerDef): void 
 }
 
 function assignSupervisor(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
-  const cdef = bestCashierPost(ctx, w);
-  if (!cdef) return;
-  const zone = zonePoint(ctx.harbor, cdef.zone);
-  startWalk(w, zone.x, zone.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+  const post = bestSupervisorPost(ctx, w);
+  if (!post) return;
+  startWalk(w, post.x, post.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
   w.phase = "WALK_TO_WORK";
-  w.taskZoneId = cdef.zone;
+  w.taskZoneId = post.zoneId;
   w.taskId = ctx.state.newId("task");
+}
+
+/** Finish 3.0 Phase 11 — re-post toward busiest counter / distressed station. */
+function supervisorPatrol(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
+  const branch = StaffTreesSystem.branchOf(ctx.content, w);
+  const floorLead = branch?.id === "branch.supervisor.floor_lead";
+  const interval = floorLead ? 60 : 90;
+  if (ctx.state.tick % interval !== 0) return;
+  const post = bestSupervisorPost(ctx, w);
+  if (!post || post.zoneId === w.taskZoneId) return;
+  startWalk(w, post.x, post.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+  w.phase = "WALK_TO_WORK";
+  w.taskZoneId = post.zoneId;
+  w.taskId = ctx.state.newId("task");
+  ctx.state.bumpStat(Stats.SUPERVISOR_PATROLS);
+}
+
+function bestSupervisorPost(ctx: StepContext, w: WorkerState): { x: number; z: number; zoneId: string } | null {
+  const branch = StaffTreesSystem.branchOf(ctx.content, w);
+  if (branch?.id === "branch.supervisor.floor_lead") {
+    let best: { x: number; z: number; zoneId: string; score: number } | null = null;
+    for (const m of ctx.state.machines) {
+      const station = ctx.harbor.stations.find((s) => s.id === m.stationId);
+      if (!station || !ProductionSystem.isUnlocked(station, ctx.state) || m.paused) continue;
+      let score = 0;
+      if (m.status === "OUTPUT_FULL") score += 80;
+      if (m.status === "WAITING_FOR_INPUT") score += 60;
+      if (m.broken) score += 40;
+      if (score <= 0) continue;
+      const zone = zonePoint(ctx.harbor, station.outputZone);
+      const dist = WorkerSystem.walkTicks(w.x, w.z, zone.x, zone.z, 160);
+      score += Math.max(0, 40 - Math.trunc(dist / 5));
+      if (!best || score > best.score || (score === best.score && compareStrings(station.outputZone, best.zoneId) < 0)) {
+        best = { x: zone.x, z: zone.z, zoneId: station.outputZone, score };
+      }
+    }
+    if (best) return { x: best.x, z: best.z, zoneId: best.zoneId };
+  }
+  const cdef = bestCashierPost(ctx, w);
+  if (!cdef) return null;
+  const zone = zonePoint(ctx.harbor, cdef.zone);
+  return { x: zone.x, z: zone.z, zoneId: cdef.zone };
 }
 
 function stepIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
   switch (w.phase) {
     case "NONE": assignIceRunner(ctx, w, def); break;
     case "WALK_TO_WORK": w.phase = "PICKUP"; break;
-    case "PICKUP": pickupHaul(ctx, w, def); break;
+    case "PICKUP": pickupIceRunner(ctx, w, def); break;
     case "WALK_TO_DROP": w.phase = "DROP"; break;
     case "DROP": dropHaul(ctx, w, def); break;
     default: clearTask(w); break;
   }
+}
+
+/** Finish 3.0 Phase 11 — chill_haul chains fragile pickups before dropping. */
+function pickupIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
+  if (w.transferCooldown > 0) return;
+  const sourceId = w.taskSourceInvId;
+  const itemId = w.taskItemId;
+  if (sourceId === null || itemId === null) { abortHaul(ctx, w); return; }
+  const source = findInventory(ctx, sourceId);
+  if (!source || source.reservedQuantity(itemId) < 1 || w.bag.roomFor(itemId) < 1) {
+    abortHaul(ctx, w);
+    return;
+  }
+  source.takeReserved(itemId, 1);
+  w.bag.add(itemId, 1);
+  w.transferCooldown = WorkerSystem.transferInterval(ctx.content, def, w) - 1;
+  ctx.state.bumpStat(Stats.OUTPUTS_COLLECTED);
+  ctx.state.bumpStat(Stats.WORKER_ITEMS_MOVED);
+  ctx.emit({ type: "items_transferred", tick: ctx.state.tick, from: source.id, to: w.bag.id, itemId, count: 1 });
+
+  const branch = StaffTreesSystem.branchOf(ctx.content, w);
+  if (branch?.id === "branch.ice_runner.chill_haul") {
+    const next = findIceHaul(ctx, w);
+    if (next && w.bag.roomFor(next.itemId) >= 1 && next.source.reserve(next.itemId, 1)) {
+      w.phase = "WALK_TO_WORK";
+      w.taskSourceInvId = next.source.id;
+      w.taskDestInvId = next.dest.id;
+      w.taskItemId = next.itemId;
+      w.taskQuantity = 1;
+      w.leaseExpiresAt = ctx.state.tick + def.leaseTicks;
+      w.taskZoneId = next.sourceZoneId;
+      startWalk(w, next.sourceX, next.sourceZ, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+      ctx.state.bumpStat(Stats.ICE_RUNNER_MULTI_PICKUPS);
+      return;
+    }
+  }
+
+  const dest = findCounterDrop(ctx, w);
+  if (!dest) {
+    w.phase = "NONE";
+    w.taskSourceInvId = null;
+    w.taskItemId = null;
+    w.leaseExpiresAt = 0;
+    return;
+  }
+  startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+  w.phase = "WALK_TO_DROP";
+  w.taskDestInvId = dest.counter.stock.id;
+  w.taskZoneId = dest.zoneId;
+  w.leaseExpiresAt = ctx.state.tick + def.leaseTicks;
 }
 
 function assignIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
@@ -4331,8 +4727,9 @@ function stepSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef):
 }
 
 function assignSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
+  const kilnFocus = StaffTreesSystem.branchOf(ctx.content, w)?.id === "branch.smoker_specialist.kiln_focus";
   if (!w.bag.isEmpty()) {
-    const dest = findSmokerInputDrop(ctx, w) ?? findMachineInputForBag(ctx, w);
+    const dest = findSmokerInputDrop(ctx, w) ?? (kilnFocus ? null : findMachineInputForBag(ctx, w));
     if (!dest) return;
     startWalk(w, dest.x, dest.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
     w.phase = "WALK_TO_DROP";
@@ -4375,6 +4772,7 @@ function stepGreeter(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
       w.phase = "WORK";
       break;
     case "WORK":
+      greeterWelcomePulse(ctx, w);
       break;
     default:
       clearTask(w);
@@ -4388,6 +4786,23 @@ function assignGreeter(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
   w.phase = "WALK_TO_WORK";
   w.taskZoneId = "greeter.entry";
   w.taskId = ctx.state.newId("task");
+}
+
+/** Finish 3.0 Phase 11 — top up low-patience queued customers while posted. */
+function greeterWelcomePulse(ctx: StepContext, _w: WorkerState): void {
+  const branch = StaffTreesSystem.branchOf(ctx.content, _w);
+  const desk = branch?.id === "branch.greeter.welcome_desk";
+  const interval = desk ? 75 : 120;
+  if (ctx.state.tick % interval !== 0) return;
+  const boost = desk ? 55 : 35;
+  const threshold = desk ? 110 : 90;
+  let welcomed = 0;
+  for (const c of ctx.state.customers) {
+    if (!c.arrived || c.patienceLeft <= 0 || c.patienceLeft >= threshold) continue;
+    c.patienceLeft += boost;
+    welcomed++;
+  }
+  if (welcomed > 0) ctx.state.bumpStat(Stats.GREETER_WELCOMES, welcomed);
 }
 
 function expireLeases(ctx: StepContext): void {
@@ -4511,7 +4926,14 @@ function findMachineHaul(ctx: StepContext, w: WorkerState): HaulOffer | null {
         if (!accepted.has(itemId)) continue;
         if (!destHasRoom(ctx, dst.input, itemId, w.id)) continue;
         const demand = machineDemand(dst);
-        const score = scoreHaul(ctx, w, src.output, zone.x, zone.z, src.status === "OUTPUT_FULL" ? 50 : 0, demand);
+        let score = scoreHaul(ctx, w, src.output, zone.x, zone.z, src.status === "OUTPUT_FULL" ? 50 : 0, demand);
+        // Finish 3.0 Phase 11 — pad_link prioritizes starving machine inputs.
+        if (
+          StaffTreesSystem.branchOf(ctx.content, w)?.id === "branch.operator.pad_link" &&
+          dst.status === "WAITING_FOR_INPUT"
+        ) {
+          score += 35;
+        }
         const offer: HaulOffer = {
           source: src.output, dest: dst.input, itemId,
           sourceX: zone.x, sourceZ: zone.z, sourceZoneId: srcStation.outputZone, score,

@@ -108,8 +108,18 @@ class AudioBus(context: Context) {
         stationOpen: Boolean,
         festivalActive: Boolean = false,
         stormActive: Boolean = false,
+        rivalActive: Boolean = false,
+        nightActive: Boolean = false,
     ) {
-        setMusicBed(MusicPack.bedForContext(stationOpen, festivalActive, stormActive))
+        setMusicBed(
+            MusicPack.bedForContext(
+                stationOpen,
+                festivalActive,
+                stormActive,
+                rivalActive,
+                nightActive,
+            ),
+        )
     }
 
     fun currentMusicBed(): String = currentBed
@@ -220,6 +230,14 @@ class AudioBus(context: Context) {
         SfxCue.GOAL_CLAIM -> 140L
         SfxCue.MASTERY_UP -> 300L
         SfxCue.QUEST_DONE -> 340L
+        SfxCue.RIVAL_OPEN -> 300L
+        SfxCue.RIVAL_STEAL -> 220L
+        SfxCue.RIVAL_BEAT -> 340L
+        SfxCue.HARBOR_TRAVEL -> 360L
+        SfxCue.HIRE -> 200L
+        SfxCue.PRESTIGE -> 400L
+        SfxCue.LOAN -> 260L
+        SfxCue.TROPHY_SET -> 320L
     }
 
     private fun pulseHaptic(cue: SfxCue) {

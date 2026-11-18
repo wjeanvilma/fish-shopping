@@ -1,0 +1,32 @@
+{
+  "schema": "fish.fixture.parity_cloud_qa_2.v1",
+  "description": "Finish 3.0 Phase 17: cloud production QA harness 2 vectors (wave-2 scenarios + schema 24 roundtrip; snippet-only rules).",
+  "cloudQa2Marker": "authored-finish-3.0-phase-17",
+  "qaScenarioMin": 8,
+  "qaScenarioTotalMin": 12,
+  "expect": {
+    "wave2ScenarioIds": [
+      "conflict_local_newer_recommends_local",
+      "corrupt_remote_keeps_local",
+      "push_unavailable_queues",
+      "sync_disabled_skips_network",
+      "pull_remote_fills_empty_local",
+      "flush_stays_queued_when_unavailable",
+      "schema24_snapshot_roundtrip",
+      "guest_uid_preserved_on_ensure"
+    ],
+    "baselineScenarioIds": [
+      "conflict_dual_valid_differs",
+      "conflict_identical_no_offer",
+      "offline_enqueue_latest_wins",
+      "offline_flush_uploads"
+    ],
+    "forbiddenPaths": [
+      "firestore.rules",
+      "firebase/firestore.rules"
+    ],
+    "snippetMode": "snippet_only_not_deployed",
+    "schemaVersion": 24,
+    "contentVersion": "2.0.0"
+  }
+}

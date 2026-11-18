@@ -1,0 +1,41 @@
+{
+  "schema": "fish.i18n.content_strings.v1",
+  "phase": 6,
+  "plan": "30_finish_3.0",
+  "description": "Finish 3.0 Phase 6 — content-pack display-name overlays (en/es/pt). Schema 23 pack shape unchanged.",
+  "defaultLocale": "en",
+  "supportedLocales": [
+    "en",
+    "es",
+    "pt"
+  ],
+  "bundles": {
+    "en": "shared/i18n/content-strings.en.json",
+    "es": "shared/i18n/content-strings.es.json",
+    "pt": "shared/i18n/content-strings.pt.json"
+  },
+  "keyMin": 250,
+  "scopes": [
+    "species",
+    "products",
+    "machines",
+    "upgrades",
+    "quests",
+    "workers",
+    "harbors",
+    "bait",
+    "achievements",
+    "contracts",
+    "customers",
+    "decor",
+    "seasonal",
+    "prestige",
+    "trophies",
+    "dailyGoals",
+    "weather",
+    "tide",
+    "techniques",
+    "branches",
+    "traits"
+  ]
+}

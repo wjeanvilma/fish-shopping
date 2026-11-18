@@ -23,6 +23,8 @@ export interface CloudProductionPathCatalog {
   firestoreRulesSnippet?: string;
   firestoreRulesMode?: string;
   finish2FirestoreSnippetPhase?: number;
+  finish3CloudQa2Phase?: number;
+  finish3CloudQa2Catalog?: string;
   contentVersion: string;
   schemaVersion: number;
   envKeys: {

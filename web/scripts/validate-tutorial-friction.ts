@@ -50,7 +50,7 @@ function validate(): string[] {
   }
   if (catalog.schemaVersion !== 21) errors.push("schemaVersion must stay 21");
   // Later phases may bump live pack/pin; Phase 22 only froze advanceOn + copy at 1.0.0.
-  if (!["1.0.0", "1.0.1", "2.0.0"].includes(pack.contentVersion)) {
+  if (!["1.0.0", "1.0.1", "2.0.0", "3.0.0"].includes(pack.contentVersion)) {
     errors.push(`unexpected content-pack version ${pack.contentVersion}`);
   }
   const pin = readJson(resolve(root, "shared/fixtures/RELEASE_PIN.json"));

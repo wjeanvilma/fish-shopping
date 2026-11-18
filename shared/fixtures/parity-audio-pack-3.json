@@ -1,0 +1,47 @@
+{
+  "schema": "fish.fixture.parity_audio_pack_3.v1",
+  "description": "Finish 3.0 Phase 23: pack-3 stingers + night/rival beds; ducking frozen.",
+  "newStingerMin": 8,
+  "newBedMin": 2,
+  "audioPackMarker": "authored-finish-3.0-phase-23",
+  "expect": {
+    "stingers": [
+      "rival_open",
+      "rival_steal",
+      "rival_beat",
+      "harbor_travel",
+      "hire",
+      "prestige",
+      "loan",
+      "trophy_set"
+    ],
+    "beds": ["night", "rival"],
+    "ducking": {
+      "sfxDuckFactor": 0.35,
+      "sfxDuckRecoveryMs": 280,
+      "focusLossSilence": true,
+      "focusTransientCanDuckFactor": 0.25,
+      "webHiddenSuspendsContext": true,
+      "respectMute": true,
+      "respectMusicVolume": true
+    },
+    "eventMap": {
+      "rival_market_opened": "rival_open",
+      "rival_sale_stolen": "rival_steal",
+      "rival_beaten": "rival_beat",
+      "harbor_traveled": "harbor_travel",
+      "worker_hired": "hire",
+      "prestige_unlocked": "prestige",
+      "loan_taken": "loan",
+      "trophy_set_completed": "trophy_set"
+    },
+    "bedPriority": [
+      "festival",
+      "storm",
+      "rival",
+      "night",
+      "shop",
+      "harbor"
+    ]
+  }
+}

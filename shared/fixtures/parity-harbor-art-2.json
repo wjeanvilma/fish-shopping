@@ -1,0 +1,20 @@
+{
+  "schema": "fish.fixtures.parity_harbor_art_2.v1",
+  "harborArt2Marker": "authored-finish-3.0-phase-8",
+  "phase": 8,
+  "plan": "30_finish_3.0",
+  "expect": {
+    "authoredHarborTarget": 8,
+    "newAuthoredCount": 5,
+    "authoredHarborsRemaining": 0,
+    "schemaVersion": 23,
+    "contentVersion": "2.0.0",
+    "gates": [
+      "eight_authored_harbors",
+      "five_new_themes",
+      "kickoff_gap_closed",
+      "licenses_updated",
+      "ci_gate"
+    ]
+  }
+}

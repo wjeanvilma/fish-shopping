@@ -80,7 +80,10 @@ VFX_BURST_SIZE = [0.28, 0.28, 0.28]
 
 def _machine_key(obstacle_id: str) -> str:
     oid = obstacle_id.lower()
-    for key in ("smoker", "grill", "chiller", "fryer", "packer", "steamer", "kiln", "cutter", "counter"):
+    for key in (
+        "smoker", "grill", "chiller", "fryer", "packer", "steamer", "kiln",
+        "press", "pickler", "cutter", "counter",
+    ):
         if key in oid:
             return key
     return "counter"
@@ -104,7 +107,7 @@ def build(content, harbor):
     ]
     for name in (
         "pier", "ground", "zone", "counter", "cutter", "smoker", "grill",
-        "chiller", "fryer", "packer", "steamer", "kiln",
+        "chiller", "fryer", "packer", "steamer", "kiln", "press", "pickler",
     ):
         pos, nrm, idx, bounds = MODULE_BUILDERS[name]()
         geom_index[name] = (next_acc, next_acc + 1, next_acc + 2)

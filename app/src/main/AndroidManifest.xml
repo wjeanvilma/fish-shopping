@@ -12,6 +12,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Phase 25: flush offline cloud queue when connectivity returns. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Finish 3.0 Phase 18: local daily-goal reminders (opt-in). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -22,11 +26,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FishShopping">
+        <!-- Finish 3.0 Phase 26 — opt-in remote analytics base URL (empty = local-only). -->
+        <meta-data
+            android:name="fish.analytics.apiBase"
+            android:value="" />
         <!-- Phase 28: portrait + landscape (HUD reflows; same actions). -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:launchMode="singleTop"
             android:screenOrientation="fullSensor"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:theme="@style/Theme.FishShopping"
@@ -36,7 +45,39 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Finish 3.0 Phase 20 — verified App Links (assetlinks.json on Pages host). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="wjeanvilma.github.io"
+                    android:pathPrefix="/fish-shopping/play" />
+            </intent-filter>
+            <!-- Finish 3.0 Phase 20 — custom scheme fallback (fishshopping://open?panel=…). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="fishshopping"
+                    android:host="open" />
+            </intent-filter>
         </activity>
+
+        <!-- Finish 3.0 Phase 18 — local daily-goal reminder alarm + boot reschedule. -->
+        <receiver
+            android:name=".push.DailyGoalReminderReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.willio.jeanvilma.fishshopping.push.DAILY_GOAL_REMINDER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

@@ -179,6 +179,7 @@ object CustomerSystem {
         val counterDef = ctx.harbor.counters.first { it.id == counter.counterId }
         mult = (mult * demandPriceMultPermille(ctx.content, s, ctx.harbor, counterDef, counter).toLong()) / 1000L
         mult = (mult * s.prestigePriceBonusPermille.toLong()) / 1000L
+        mult = (mult * s.endgamePriceBonusPermille.toLong()) / 1000L
         val amount = (base * mult) / 1000L
         val saleId = s.newId("sale")
         s.coins = SafeMath.creditCoins(s.coins, amount)
@@ -195,6 +196,7 @@ object CustomerSystem {
             CustomerKind.STANDARD -> Unit
         }
         if (!met) s.bumpStat(Stats.UNMET_PREFERENCE_SALES)
+        RivalMarketSystem.noteSaleOutcome(ctx, items)
         s.record(Receipt(saleId, "sale", amount, s.tick, c.id))
         for ((itemId, qty) in c.reservedItems) {
             counter.stock.takeReserved(itemId, qty)
@@ -380,6 +382,8 @@ object CustomerSystem {
         val festival = com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem
             .customerSpawnMultPermille(content, state.tick)
         ticks = max(1, ((ticks.toLong() * 1000L) / festival.toLong()).toInt())
+        val rivalCrowd = RivalMarketSystem.customerSpawnMultPermille(content, state, harbor.id)
+        ticks = max(1, ((ticks.toLong() * 1000L) / rivalCrowd.toLong()).toInt())
         return ticks
     }
 
@@ -453,6 +457,9 @@ object CustomerSystem {
         mult = (mult * ratingPriceMultPermille(content, state).toLong()) / 1000L
         mult = (mult * com.willio.jeanvilma.fishshopping.core.world.SeasonalEventSystem
             .priceMultPermille(content, state.tick).toLong()) / 1000L
+        mult = (mult * RivalMarketSystem.salePriceMultPermille(
+            content, state, harbor.id, def, counter,
+        ).toLong()) / 1000L
         return max(1, mult.toInt())
     }
 

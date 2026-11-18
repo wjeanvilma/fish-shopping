@@ -1,8 +1,14 @@
 /**
  * Finish 2.0 Phase 25 — checkout / entitlements / fulfill handlers
  * conforming to shared/billing/web-billing.json.
+ * Finish 3.0 Phase 16 — live Stripe Checkout branch (fails closed without secrets).
  */
 import { BILLING_API, DEFAULT_PORT, isKnownProduct } from "./catalog";
+import {
+  createLiveCheckoutUrl,
+  isLiveMode,
+  type StripeSessionCreator,
+} from "./stripeLive";
 import { sharedStore, type CheckoutStore, type OwnedEntitlement } from "./store";
 
 export type CheckoutResult =
@@ -48,15 +54,16 @@ function toClientRow(row: OwnedEntitlement): { webProductId: string; purchaseTok
   return { webProductId: row.webProductId, purchaseToken: row.purchaseToken };
 }
 
-export function handleCheckout(
+export async function handleCheckout(
   body: CheckoutBody,
   opts: {
     store?: CheckoutStore;
     instant?: boolean;
     publicBase?: string;
     env?: Record<string, string | undefined>;
+    createStripeSession?: StripeSessionCreator;
   } = {},
-): CheckoutResult | HandlerError {
+): Promise<CheckoutResult | HandlerError> {
   const store = opts.store ?? sharedStore;
   const env = opts.env ?? process.env;
   const webProductId = body.webProductId?.trim() ?? "";
@@ -78,9 +85,36 @@ export function handleCheckout(
   const successUrl = body.successUrl?.trim() || `${publicBase(env)}/?billing=success`;
   const cancelUrl = body.cancelUrl?.trim() || `${publicBase(env)}/?billing=cancel`;
   const session = store.createSession(webProductId, cloudAccountId, successUrl, cancelUrl);
+
+  if (isLiveMode(env)) {
+    const live = await createLiveCheckoutUrl({
+      webProductId,
+      cloudAccountId,
+      successUrl: appendSessionId(successUrl, session.sessionId),
+      cancelUrl,
+      clientReferenceId: session.sessionId,
+      env,
+      createSession: opts.createStripeSession,
+    });
+    if ("error" in live) return live;
+    return { status: "checkout", url: live.url };
+  }
+
   const base = opts.publicBase ?? publicBase(env);
   const url = `${base}/sandbox/pay?session_id=${encodeURIComponent(session.sessionId)}&billing=success`;
   return { status: "checkout", url };
+}
+
+function appendSessionId(successUrl: string, sessionId: string): string {
+  try {
+    const u = new URL(successUrl);
+    if (!u.searchParams.has("session_id")) u.searchParams.set("session_id", sessionId);
+    if (!u.searchParams.has("billing")) u.searchParams.set("billing", "success");
+    return u.toString();
+  } catch {
+    const join = successUrl.includes("?") ? "&" : "?";
+    return `${successUrl}${join}billing=success&session_id=${encodeURIComponent(sessionId)}`;
+  }
 }
 
 export function handleEntitlements(
@@ -105,4 +139,5 @@ export const ROUTE_PATHS = {
   checkout: BILLING_API.checkout.path,
   entitlements: BILLING_API.entitlements.path,
   fulfill: BILLING_API.fulfill.path,
+  stripeWebhook: "/v1/stripe/webhook",
 } as const;

@@ -31,6 +31,9 @@ function baseSettings(over: Record<string, unknown> = {}) {
     analyticsConsent: false, analyticsConsentDecided: false,
     cloudAccountId: "user-stable", cloudRefreshToken: null as string | null,
     equippedCosmeticId: null as string | null,
+    locale: "en" as const,
+    themePreference: "system" as const,
+    dailyGoalRemindersEnabled: false,
     ...over,
   };
 }

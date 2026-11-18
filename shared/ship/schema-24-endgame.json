@@ -1,0 +1,106 @@
+{
+  "phase": 15,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.schema_24_endgame.v1",
+  "description": "Finish 3.0 Phase 15 — save schema 24 + endgame deepen. Persist beatenRivalIds / unlockedEndgameTiers / completedEndgameChallenges; four tiers and four challenges after prestige; migrate from schema 23.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "fromSchema": 23,
+  "toSchema": 24,
+  "schema24EndgameMarker": "authored-finish-3.0-phase-15",
+  "tierCount": 4,
+  "challengeCount": 4,
+  "tierIds": [
+    "endgame.tier.deep_harbor",
+    "endgame.tier.rival_warden",
+    "endgame.tier.legend_pier",
+    "endgame.tier.crown_market"
+  ],
+  "challengeIds": [
+    "endgame.challenge.rival_sweep",
+    "endgame.challenge.prestige_surge",
+    "endgame.challenge.codex_depth",
+    "endgame.challenge.market_master"
+  ],
+  "stats": [
+    "stat.endgame_tiers_unlocked",
+    "stat.endgame_challenges_completed"
+  ],
+  "migration": {
+    "fields": [
+      {
+        "field": "beatenRivalIds",
+        "type": "string[]",
+        "default": []
+      },
+      {
+        "field": "unlockedEndgameTiers",
+        "type": "string[]",
+        "default": []
+      },
+      {
+        "field": "completedEndgameChallenges",
+        "type": "string[]",
+        "default": []
+      }
+    ]
+  },
+  "engines": {
+    "kotlinSchemaConstant": "game-core/.../sim/Foundations.kt SimConstants.SCHEMA_VERSION",
+    "webSchemaConstant": "web/src/engine/foundations.ts SCHEMA_VERSION",
+    "kotlinCodec": "game-core/.../persistence/SnapshotCodec.kt",
+    "webCodec": "web/src/engine/snapshot.ts",
+    "kotlinSystem": "game-core/.../progression/EndgameSystem.kt",
+    "webSystem": "web/src/engine/systems.ts EndgameSystem"
+  },
+  "contentPack": {
+    "path": "shared/content/content-pack.json",
+    "schemaPath": "shared/schema/content-pack.schema.json",
+    "saveSchemaVersionKey": "saveSchemaVersion",
+    "saveSchemaVersion": 24
+  },
+  "lifecycle": {
+    "catalog": "shared/lifecycle/browser-lifecycle.json",
+    "currentSchema": 24,
+    "migrateThroughSchema": 23,
+    "newLegacyFixture": "shared/fixtures/legacy/snapshot-v23-starter-line-t2500.json"
+  },
+  "authorTool": "shared/tools/mutate_phase15_endgame.py",
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "releasePin": "shared/fixtures/RELEASE_PIN.json",
+  "parityLock": "shared/fixtures/parity-lock.json",
+  "parityFixture": "shared/fixtures/parity-schema-24-endgame.json",
+  "validateScript": "npm run schema24:validate",
+  "historicalFrozen": {
+    "storeReleaseSchema": 20,
+    "completeReleaseSchema": 20,
+    "freeze20Schema": 23,
+    "schema23Kickoff": 23
+  },
+  "checklist": [
+    "SimConstants / SCHEMA_VERSION = 24 (Kotlin + TS)",
+    "Snapshot codecs encode/decode beatenRivalIds + endgame sets; v23→v24 defaults empty",
+    "legacy/snapshot-v23-starter-line-t2500.json frozen; current starter-line re-recorded at 24",
+    "lifecycle currentSchema=24 migrateThroughSchema=23; requiredLegacyVersions includes 20–23",
+    "RELEASE_PIN.schemaVersion=24; freeze2/dod catalogs stay schema 23",
+    "content-pack.saveSchemaVersion=24 + schema const + endgame catalog",
+    "EndgameSystem TS + Kotlin parity; RivalMarketSystem persists beatenRivalIds",
+    "Kickoff baseline measuredAtPhase ≥ 15; phase 15 validate = schema24:validate",
+    "CI runs schema24:validate; historical SCHEMA_VERSION===23 engine/pin checks floored to ≥23"
+  ],
+  "preflightGates": [
+    "shared/ship/schema-24-endgame.json",
+    "shared/fixtures/legacy/snapshot-v23-starter-line-t2500.json",
+    "shared/fixtures/snapshot-starter-line-t2500.json",
+    "shared/fixtures/parity-schema-24-endgame.json",
+    "shared/content/content-pack.json",
+    "shared/schema/content-pack.schema.json",
+    "shared/tools/mutate_phase15_endgame.py",
+    "web/src/ship/schema24Endgame.ts",
+    "web/scripts/validate-schema-24-endgame.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Schema24Endgame.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/progression/EndgameSystem.kt",
+    "web/src/engine/systems.ts",
+    "shared/ship/finish-3.0-kickoff.json"
+  ]
+}

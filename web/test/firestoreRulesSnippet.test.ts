@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  CLOUD_QA_BASELINE_SCENARIO_IDS,
   CLOUD_QA_SCENARIO_IDS,
   cloudQaFailures,
   runCloudQaHarness,
@@ -46,7 +47,8 @@ describe("firestore rules snippet (Finish 2.0 Phase 26)", () => {
     expect(FIRESTORE_RULES_SNIPPET_PHASE).toBe(26);
     expect(FIRESTORE_RULES_SNIPPET_MARKER).toBe("authored-finish-2.0-phase-26");
     expect(FIRESTORE_QA_SCENARIO_FLOOR).toBe(4);
-    expect(CLOUD_QA_SCENARIO_IDS).toHaveLength(4);
+    expect(CLOUD_QA_BASELINE_SCENARIO_IDS).toHaveLength(4);
+    expect(CLOUD_QA_SCENARIO_IDS.length).toBeGreaterThanOrEqual(FIRESTORE_QA_SCENARIO_FLOOR);
     expect(existsSync(resolve(root, FIRESTORE_SNIPPET_PATH))).toBe(true);
     expect(existsSync(resolve(root, "firestore.rules"))).toBe(false);
     expect(existsSync(resolve(root, "firebase/firestore.rules"))).toBe(false);

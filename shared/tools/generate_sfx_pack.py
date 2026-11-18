@@ -262,6 +262,129 @@ def quest_done_clip(sr: int) -> list[float]:
     return synth(sr, 340, render)
 
 
+def rival_open_clip(sr: int) -> list[float]:
+    notes = [(311.13, 0.0), (233.08, 0.07), (185.0, 0.14)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.14:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.14 * rate)), 0.04, 0.2, 0.35, 0.45)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.42
+            total += 0.18 * math.sin(2 * math.pi * freq * 2 * local) * e
+        return total
+
+    return synth(sr, 300, render)
+
+
+def rival_steal_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        e = env_adsr(i, n, 0.03, 0.2, 0.3, 0.5)
+        freq = 720 - 380 * (i / max(1, n - 1))
+        snatch = math.sin(2 * math.pi * freq * t) * e * 0.55
+        noise = (((i * 7919) & 255) / 255 - 0.5) * math.exp(-t * 22) * 0.35
+        return snatch + noise
+
+    return synth(sr, 220, render)
+
+
+def rival_beat_clip(sr: int) -> list[float]:
+    notes = [(523.25, 0.0), (659.25, 0.06), (783.99, 0.12), (1046.5, 0.18)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.12:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.12 * rate)), 0.05, 0.2, 0.4, 0.4)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.36
+        return total
+
+    return synth(sr, 340, render)
+
+
+def harbor_travel_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        horn = math.sin(2 * math.pi * 196 * t) * env_adsr(i, n, 0.08, 0.25, 0.4, 0.4) * 0.45
+        horn2 = math.sin(2 * math.pi * 246.94 * t) * env_adsr(i, n, 0.1, 0.3, 0.3, 0.45) * 0.22
+        white = ((i * 1103515245 + 12345) & 0x7FFF) / 0x7FFF - 0.5
+        wash = white * math.exp(-t * 8) * 0.28
+        return horn + horn2 + wash
+
+    return synth(sr, 360, render)
+
+
+def hire_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        click = math.sin(2 * math.pi * 1400 * t) * math.exp(-t * 40) * 0.45
+        up = 0.0
+        if t > 0.05:
+            local = t - 0.05
+            e = env_adsr(int(local * rate), max(1, n - int(0.05 * rate)), 0.05, 0.25, 0.3, 0.5)
+            up = math.sin(2 * math.pi * 880 * local) * e * 0.4
+        return click + up
+
+    return synth(sr, 200, render)
+
+
+def prestige_clip(sr: int) -> list[float]:
+    notes = [(220.0, 0.0), (277.18, 0.08), (329.63, 0.16), (440.0, 0.24)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.18:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.18 * rate)), 0.08, 0.25, 0.45, 0.35)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.34
+            total += 0.12 * math.sin(2 * math.pi * freq * 2 * local) * e
+        return total
+
+    return synth(sr, 400, render)
+
+
+def loan_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        drawer = math.sin(2 * math.pi * 140 * t) * math.exp(-t * 18) * 0.55
+        stamp = 0.0
+        if t > 0.07:
+            local = t - 0.07
+            stamp = math.sin(2 * math.pi * 520 * local) * math.exp(-local * 28) * 0.4
+        paper = (((i * 5011) & 255) / 255 - 0.5) * math.exp(-t * 12) * 0.2
+        return drawer + stamp + paper
+
+    return synth(sr, 260, render)
+
+
+def trophy_set_clip(sr: int) -> list[float]:
+    notes = [(987.77, 0.0), (1174.66, 0.05), (1318.51, 0.10), (1567.98, 0.16)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.11:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.11 * rate)), 0.03, 0.18, 0.3, 0.5)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.32
+            total += math.sin(2 * math.pi * freq * 3 * local) * e * 0.06
+        return total
+
+    return synth(sr, 320, render)
+
+
 RENDERERS = {
     "catch": catch_clip,
     "machine_done": machine_done_clip,
@@ -277,6 +400,14 @@ RENDERERS = {
     "goal_claim": goal_claim_clip,
     "mastery_up": mastery_up_clip,
     "quest_done": quest_done_clip,
+    "rival_open": rival_open_clip,
+    "rival_steal": rival_steal_clip,
+    "rival_beat": rival_beat_clip,
+    "harbor_travel": harbor_travel_clip,
+    "hire": hire_clip,
+    "prestige": prestige_clip,
+    "loan": loan_clip,
+    "trophy_set": trophy_set_clip,
 }
 
 

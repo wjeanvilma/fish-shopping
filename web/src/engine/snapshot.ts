@@ -10,7 +10,7 @@ import {
   ContractState, CounterState, CustomerState, FishingSpotState, GameState, MachineState, WorkerState,
   type HarborWorldStash, type MachineStatus, type Receipt, type WorkerTaskPhase,
 } from "./state";
-import { FishingSystem, PrestigeSystem, TrophySystem, UpgradeSystem, WorkerSystem } from "./systems";
+import { EndgameSystem, FishingSystem, PrestigeSystem, TrophySystem, UpgradeSystem, WorkerSystem } from "./systems";
 
 export class SnapshotError extends Error {}
 
@@ -122,6 +122,9 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
     ownedUpgrades: [...s.ownedUpgrades].sort(compareStrings),
     completedQuests: [...s.completedQuests].sort(compareStrings),
     completedPrestige: [...s.completedPrestige].sort(compareStrings),
+    beatenRivalIds: [...s.beatenRivalIds].sort(compareStrings),
+    unlockedEndgameTiers: [...s.unlockedEndgameTiers].sort(compareStrings),
+    completedEndgameChallenges: [...s.completedEndgameChallenges].sort(compareStrings),
     unlockedCosmetics: [...s.unlockedCosmetics].sort(compareStrings),
     ownedDecor: [...s.ownedDecor].sort(compareStrings),
     fullHarborUnlock: s.fullHarborUnlock,
@@ -229,6 +232,7 @@ export function decodeSnapshotEnvelope(content: ContentPack, text: string): Deco
  *  - v20 -> v21: unlockedAchievements (Finish 2.0 Phase 7 achievements scaffold).
  *  - v21 -> v22: speciesMasteryXp + activeTechniqueId (Finish 2.0 Phase 14 fishing mastery).
  *  - v22 -> v23: worker activeBranchId / unlockedBranchIds / branchTrainingXp / scheduleId (Phase 15).
+ *  - v23 -> v24: beatenRivalIds + unlockedEndgameTiers + completedEndgameChallenges (Finish 3.0 Phase 15).
  */
 function readState(content: ContentPack, n: Reader, version: number): GameState {
   const harborId = n.get("harborId").string();
@@ -421,6 +425,17 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
       .forEach((id) => s.completedPrestige.add(id));
     n.get("unlockedCosmetics").list().forEach((x) => s.unlockedCosmetics.add(x.string()));
   }
+  if (version >= 24) {
+    n.get("beatenRivalIds").list().map((x) => x.string())
+      .filter((id) => content.rivalsById.has(id))
+      .forEach((id) => s.beatenRivalIds.add(id));
+    n.get("unlockedEndgameTiers").list().map((x) => x.string())
+      .filter((id) => content.endgameTiersById.has(id))
+      .forEach((id) => s.unlockedEndgameTiers.add(id));
+    n.get("completedEndgameChallenges").list().map((x) => x.string())
+      .filter((id) => content.endgameChallengesById.has(id))
+      .forEach((id) => s.completedEndgameChallenges.add(id));
+  }
   if (version >= 16) {
     n.get("ownedDecor").list().map((x) => x.string()).filter((id) => content.decorById.has(id))
       .forEach((id) => s.ownedDecor.add(id));
@@ -498,6 +513,9 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
   for (const u of s.ownedUpgrades) UpgradeSystem.applyEffect(s, content.upgradesById.get(u)!.effect);
   for (const id of s.completedPrestige) {
     PrestigeSystem.applyReward(s, content.prestigeMilestonesById.get(id)!);
+  }
+  for (const id of s.unlockedEndgameTiers) {
+    EndgameSystem.applyTierReward(s, content.endgameTiersById.get(id)!);
   }
   if (version >= 12) TrophySystem.rebuildSetStats(content, s);
   pruneWorkerEquipment(content, s, s.workers);

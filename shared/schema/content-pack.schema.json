@@ -31,6 +31,8 @@
     "fishingMastery",
     "staffTrees",
     "reputation",
+    "rivalMarkets",
+    "endgame",
     "contracts",
     "customers",
     "tutorial",
@@ -49,8 +51,8 @@
     },
     "saveSchemaVersion": {
       "type": "integer",
-      "const": 23,
-      "description": "Finish 2.0 Phase 15 \u2014 save schema this content pack targets (migrations from \u226422)."
+      "const": 24,
+      "description": "Finish 3.0 Phase 15 \u2014 save schema this content pack targets (migrations from \u226423)."
     },
     "ticksPerSecond": {
       "const": 20
@@ -1294,7 +1296,7 @@
         "parts"
       ],
       "additionalProperties": false,
-      "description": "Harbor day-part cycle that scales fishing-spot regen (and tide-chart catch speed).",
+      "description": "Harbor day-part cycle that scales fishing-spot regen (and tide-chart catch speed), plus optional habitat weight pockets.",
       "properties": {
         "dayLengthTicks": {
           "$ref": "#/$defs/positiveInt",
@@ -1337,6 +1339,51 @@
               "catchSpeedMultPermille": {
                 "$ref": "#/$defs/positiveInt",
                 "description": "Applied to player cast speed when a tide chart is owned."
+              }
+            }
+          }
+        },
+        "habitats": {
+          "type": "array",
+          "description": "Finish 3.0 Phase 12 — harbor + day-part species weight pockets.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "harbors",
+              "favoredDayParts"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "harbors": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              },
+              "favoredDayParts": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                }
+              },
+              "speciesWeightMultPermille": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/$defs/positiveInt"
+                }
               }
             }
           }
@@ -1693,6 +1740,219 @@
         "coachingPraiseScorePermille": {
           "$ref": "#/$defs/positiveInt",
           "description": "Score that triggers a praise tip once minSample is met."
+        }
+      }
+    },
+    "rivalMarkets": {
+      "type": "object",
+      "description": "Finish 3.0 Phase 14 — single-player rival NPC markets that siphon demand and undercut specialty SKUs.",
+      "required": [
+        "tickInterval",
+        "emptyStockSiphonChancePermille",
+        "lowRepSiphonBonusPermille",
+        "minReputationBandToResist",
+        "wellStockedUnits",
+        "pressureSpawnMultPermille",
+        "rivals"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tickInterval": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Sim ticks between rival siphon rolls."
+        },
+        "emptyStockSiphonChancePermille": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "lowRepSiphonBonusPermille": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "minReputationBandToResist": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "wellStockedUnits": {
+          "$ref": "#/$defs/positiveInt"
+        },
+        "pressureSpawnMultPermille": {
+          "$ref": "#/$defs/positiveInt",
+          "description": "Customer spawn mult while rivals are pressuring (1000 = unchanged; lower slows arrivals)."
+        },
+        "rivals": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "description",
+              "harbors",
+              "aggressionPermille",
+              "specialtyProducts",
+              "undercutPriceMultPermille",
+              "activeDayParts"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^rival\\."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string"
+              },
+              "harbors": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              },
+              "aggressionPermille": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000
+              },
+              "specialtyProducts": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              },
+              "undercutPriceMultPermille": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000
+              },
+              "activeDayParts": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "endgame": {
+      "type": "object",
+      "description": "Finish 3.0 Phase 15 — endgame deepen board (tiers + challenges after prestige).",
+      "required": [
+        "requiresPrestigeCount",
+        "tiers",
+        "challenges"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requiresPrestigeCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tiers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "description",
+              "requiresPrestigeCount",
+              "requiresRivalBeats",
+              "requiresChallenges",
+              "catchSpeedPermille",
+              "priceBonusPermille",
+              "coins"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^endgame\\.tier\\."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string"
+              },
+              "requiresPrestigeCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "requiresRivalBeats": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "requiresChallenges": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "catchSpeedPermille": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "priceBonusPermille": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "coins": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "challenges": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "description",
+              "stat",
+              "atLeast",
+              "rewardCoins"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^endgame\\.challenge\\."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string"
+              },
+              "stat": {
+                "type": "string",
+                "pattern": "^stat\\."
+              },
+              "atLeast": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "rewardCoins": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
         }
       }
     },

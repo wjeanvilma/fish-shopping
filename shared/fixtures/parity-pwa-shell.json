@@ -1,0 +1,27 @@
+{
+  "schema": "fish.fixture.parity_pwa_shell.v1",
+  "description": "Finish 3.0 Phase 19: PWA shell vectors — SW symbols, offline fallback, gap close.",
+  "pwaShellMarker": "authored-finish-3.0-phase-19",
+  "expect": {
+    "closesGap": "pwaMissing",
+    "swMustContain": [
+      "fish-shopping-pwa-v1",
+      "offline.html",
+      "notificationclick",
+      "skipWaiting"
+    ],
+    "offlineMustContain": [
+      "You are offline",
+      "Retry"
+    ],
+    "manifestDisplay": "standalone",
+    "schemaVersion": 24,
+    "contentVersion": "2.0.0",
+    "registerExports": [
+      "registerServiceWorker",
+      "canRegisterServiceWorker",
+      "showPwaNotification",
+      "PWA_SW_SCRIPT"
+    ]
+  }
+}

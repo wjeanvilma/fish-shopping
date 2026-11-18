@@ -1,5 +1,6 @@
 package com.willio.jeanvilma.fishshopping.ui.hud
 
+import com.willio.jeanvilma.fishshopping.core.i18n.UiStrings
 /**
  * Presentation-only tap-to-move: converts a ground destination into a screen-space
  * stick vector that [com.willio.jeanvilma.fishshopping.game.CameraRig.screenToWorld]

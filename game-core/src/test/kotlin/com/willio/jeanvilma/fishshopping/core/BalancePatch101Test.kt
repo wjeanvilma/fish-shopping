@@ -35,7 +35,7 @@ class BalancePatch101Test {
     fun packAndPinCarryTweaksAt101() {
         val pack = Json.parseToJsonElement(File(root, BalancePatch101.CONTENT_PACK).readText()).jsonObject
         // Finish 2.0 Phase 30 freezes pack at 2.0.0 while retaining the 1.0.1 balance tweaks.
-        assertEquals("2.0.0", pack.getValue("contentVersion").jsonPrimitive.content)
+        assertEquals("3.0.0", pack.getValue("contentVersion").jsonPrimitive.content)
 
         val upgrades = pack.getValue("upgrades").jsonArray.map { it.jsonObject }
         val bag = upgrades.first { it.getValue("id").jsonPrimitive.content == "upgrade.bag_capacity_2" }
@@ -67,8 +67,8 @@ class BalancePatch101Test {
         )
 
         val pin = Json.parseToJsonElement(File(root, "shared/fixtures/RELEASE_PIN.json").readText()).jsonObject
-        assertEquals("2.0.0", pin.getValue("contentVersion").jsonPrimitive.content)
-        assertEquals(3, pin.getValue("versionCode").jsonPrimitive.content.toInt())
+        assertEquals("3.0.0", pin.getValue("contentVersion").jsonPrimitive.content)
+        assertEquals(4, pin.getValue("versionCode").jsonPrimitive.content.toInt())
         assertTrue(pin.getValue("schemaVersion").jsonPrimitive.content.toInt() >= 21)
         assertEquals(
             "1.0.0",

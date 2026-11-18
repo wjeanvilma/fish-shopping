@@ -1,14 +1,34 @@
 {
-  "description": "Design tokens shared by the Compose HUD and the web CSS. Values from the blueprint's visual system.",
+  "description": "Design tokens shared by the Compose HUD and the web CSS. Finish 3.0 Phase 7 adds dark theme palettes; light values stay the brand baseline.",
   "color": {
-    "ink": { "value": "#153449", "use": "Primary text and outlines" },
+    "ink": { "value": "#153449", "use": "Primary text and outlines (light)" },
     "action": { "value": "#008F95", "use": "Primary actions and active stations" },
     "reward": { "value": "#E8AF4A", "use": "Earned coins and completed goals" },
-    "surface": { "value": "#FBF7EF", "use": "Warm off-white panels" },
-    "surfaceMuted": { "value": "#EFE8DA", "use": "Secondary panel fill" },
+    "surface": { "value": "#FBF7EF", "use": "Warm off-white panels (light)" },
+    "surfaceMuted": { "value": "#EFE8DA", "use": "Secondary panel fill (light)" },
     "onAction": { "value": "#FFFFFF", "use": "Text on action color" },
     "danger": { "value": "#B3412E", "use": "Blocked states and errors" },
-    "water": { "value": "#2E7FA8", "use": "3D water tint and sky clear colour reference" }
+    "water": { "value": "#2E7FA8", "use": "3D water tint and sky clear colour reference" },
+    "muted": { "value": "#4A5D68", "use": "Secondary text (light)" },
+    "sky": { "value": "#9FD3EA", "use": "Page/sky fill behind HUD (light)" },
+    "rewardText": { "value": "#8A5A10", "use": "Dark gold text on light surfaces" }
+  },
+  "colorDark": {
+    "ink": { "value": "#E8F1F6", "use": "Primary text on dark panels" },
+    "action": { "value": "#2BB8BE", "use": "Primary actions (dark)" },
+    "reward": { "value": "#F0C15A", "use": "Coins and completed goals (dark)" },
+    "surface": { "value": "#1A2A35", "use": "Dark panel fill" },
+    "surfaceMuted": { "value": "#243744", "use": "Secondary dark panel fill" },
+    "onAction": { "value": "#082226", "use": "Text on action color (dark)" },
+    "danger": { "value": "#E57368", "use": "Blocked states and errors (dark)" },
+    "water": { "value": "#3A8FBA", "use": "Water/sky reference (dark)" },
+    "muted": { "value": "#9BB0BC", "use": "Secondary text (dark)" },
+    "sky": { "value": "#0E1A22", "use": "Page fill behind HUD (dark)" },
+    "rewardText": { "value": "#F0C15A", "use": "Gold text on dark surfaces" }
+  },
+  "theme": {
+    "preferences": ["system", "light", "dark"],
+    "defaultPreference": "system"
   },
   "size": {
     "minTouchTargetDp": 48,
@@ -21,5 +41,8 @@
     "family": "system sans-serif",
     "numeric": "tabular figures for quantities and coins",
     "scale": { "caption": 12, "body": 14, "label": 16, "title": 20, "display": 28 }
+  },
+  "designSystem": {
+    "components": ["Pill", "Panel", "PrimaryButton", "GhostButton", "Scrim", "CenterCard"]
   }
 }

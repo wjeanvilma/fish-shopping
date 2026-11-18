@@ -40,7 +40,7 @@ function validate(): string[] {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (FESTIVAL_WEEKENDS_PHASE !== 16) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
   if (catalog.weekendEventCount !== 8 || FESTIVAL_WEEKEND_FLOOR !== 8) {
     errors.push("weekendEventCount must be 8");
@@ -62,7 +62,7 @@ function validate(): string[] {
   if (pin.festivalWeekends !== "shared/ship/festival-weekends.json") {
     errors.push("RELEASE_PIN.festivalWeekends path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
 
   for (const id of FESTIVAL_WEEKENDS.events) {
     if (!content.seasonalEventsById.has(id)) errors.push(`missing event ${id}`);

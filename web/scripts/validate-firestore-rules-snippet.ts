@@ -50,7 +50,7 @@ async function validate(): Promise<string[]> {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (FIRESTORE_RULES_SNIPPET_PHASE !== 26) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
   if (catalog.firestoreSnippetMarker !== FIRESTORE_RULES_SNIPPET_MARKER) {
     errors.push("marker mismatch");
@@ -139,7 +139,7 @@ async function validate(): Promise<string[]> {
   if (pin.firestoreRulesSnippet !== "shared/ship/firestore-rules-snippet.json") {
     errors.push("RELEASE_PIN.firestoreRulesSnippet path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
   if (!pkg.scripts?.["firestoreqa:validate"]) {
     errors.push("web/package.json missing firestoreqa:validate");
   }

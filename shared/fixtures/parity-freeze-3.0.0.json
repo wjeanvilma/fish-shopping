@@ -1,0 +1,37 @@
+{
+  "schema": "fish.fixtures.parity_freeze_3.v1",
+  "freeze3Marker": "authored-finish-3.0-phase-30",
+  "phase": 30,
+  "plan": "30_finish_3.0",
+  "simHzInvariant": 20,
+  "expect": {
+    "contentVersion": "3.0.0",
+    "schemaVersion": 24,
+    "versionName": "3.0.0",
+    "versionCode": 4,
+    "releaseTag": "v3.0.0",
+    "priorFreeze": "shared/ship/freeze-2.0.0.json",
+    "contentFloors": {
+      "harbors": 8,
+      "species": 75,
+      "machines": 10,
+      "quests": 30,
+      "seasonalEvents": 8,
+      "baits": 8,
+      "cosmetics": 12,
+      "deliveryChains": 3,
+      "paritySuites": 12
+    },
+    "locEnforceMode": "freeze_anti_regression",
+    "completeTagArchived": "v1.0-complete",
+    "finish2ReleaseTagArchived": "v2.0.0",
+    "gates": [
+      "pin_at_3_0_0",
+      "content_floors_met",
+      "loc_freeze_enforced",
+      "dod_finish3_ready",
+      "finish2_historical",
+      "tag_manual_only"
+    ]
+  }
+}

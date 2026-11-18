@@ -44,18 +44,30 @@ function validate(): string[] {
   if (catalog.constraints?.patchBumpOnly !== true) errors.push("patchBumpOnly required");
 
   // Balance patch historically landed 1.0.0→1.0.1; Finish 2.0 Phase 30 freezes pack/pin at 2.0.0.
-  if (pack.contentVersion !== "2.0.0") errors.push("content-pack must be 2.0.0 (Finish 2.0 freeze)");
-  if (pin.contentVersion !== "2.0.0") errors.push("RELEASE_PIN contentVersion must be 2.0.0");
-  if (pin.versionName !== "2.0.0") errors.push("RELEASE_PIN versionName must be 2.0.0");
-  if (pin.versionCode !== 3) errors.push("RELEASE_PIN versionCode must be 3");
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN schemaVersion must be 23");
-  if (pin.releaseTag !== "v2.0.0") errors.push("RELEASE_PIN releaseTag must be v2.0.0");
+  if (!["2.0.0", "3.0.0"].includes(pack.contentVersion)) {
+    errors.push("content-pack must be 2.0.0 or 3.0.0");
+  }
+  if (!["2.0.0", "3.0.0"].includes(pin.contentVersion)) {
+    errors.push("RELEASE_PIN contentVersion must be 2.0.0 or 3.0.0");
+  }
+  if (!["2.0.0", "3.0.0"].includes(pin.versionName)) {
+    errors.push("RELEASE_PIN versionName must be 2.0.0 or 3.0.0");
+  }
+  if (![3, 4].includes(pin.versionCode)) errors.push("RELEASE_PIN versionCode must be 3 or 4");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN schemaVersion must be >= 23");
+  if (!["v2.0.0", "v3.0.0"].includes(pin.releaseTag)) {
+    errors.push("RELEASE_PIN releaseTag must be v2.0.0 or v3.0.0");
+  }
   if (pin.balancePatch !== "shared/content/balance-patch-1.0.1.json") {
     errors.push("RELEASE_PIN.balancePatch path");
   }
-  if (dod.contentVersion !== "2.0.0") errors.push("DoD contentVersion must be 2.0.0");
-  if (dod.schemaVersion !== 23) errors.push("DoD schemaVersion must be 23");
-  if (dod.releaseTag !== "v2.0.0") errors.push("DoD releaseTag must be v2.0.0");
+  if (!["2.0.0", "3.0.0"].includes(dod.contentVersion)) {
+    errors.push("DoD contentVersion must be 2.0.0 or 3.0.0");
+  }
+  if (![23, 24].includes(dod.schemaVersion)) errors.push("DoD schemaVersion must be 23 or 24");
+  if (!["v2.0.0", "v3.0.0"].includes(dod.releaseTag)) {
+    errors.push("DoD releaseTag must be v2.0.0 or v3.0.0");
+  }
 
   // Phase 18 public ship cut stays frozen at 1.0.0-store.
   if (publicShip.contentVersion !== "1.0.0") errors.push("public-ship catalog stays 1.0.0");
@@ -67,8 +79,8 @@ function validate(): string[] {
   }
   if (pin.storeRelease?.versionCode !== 1) errors.push("storeRelease.versionCode stays 1");
 
-  if (listingCopy.copy?.whatsNewVersion !== "2.0.0") {
-    errors.push("listing-copy whatsNewVersion must be 2.0.0");
+  if (!["2.0.0", "3.0.0"].includes(listingCopy.copy?.whatsNewVersion)) {
+    errors.push("listing-copy whatsNewVersion must be 2.0.0 or 3.0.0");
   }
 
   const bag = byId(pack.upgrades, "upgrade.bag_capacity_2");

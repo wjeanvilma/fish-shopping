@@ -1,0 +1,21 @@
+{
+  "schema": "fish.fixtures.parity_stripe_live_checkout.v1",
+  "stripeLiveCheckoutMarker": "authored-finish-3.0-phase-16",
+  "phase": 16,
+  "plan": "30_finish_3.0",
+  "description": "Finish 3.0 Phase 16: stub instant still completes; live without secret fails closed; live with injectable Stripe client returns checkout.stripe.com URL; webhook grants on completed.",
+  "expect": {
+    "schemaVersion": 24,
+    "contentVersion": "2.0.0",
+    "webhookPath": "/v1/stripe/webhook",
+    "closesGap": "stripeLiveCheckoutPartial",
+    "gates": [
+      "live_adapter",
+      "webhook_verify",
+      "price_map",
+      "stub_still_green",
+      "kickoff_phase16",
+      "ci_gate"
+    ]
+  }
+}

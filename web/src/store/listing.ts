@@ -56,6 +56,14 @@ export interface StoreListing {
   completeTagCatalog?: string;
   pagesLegalLivePhase?: number;
   pagesLegalLiveCatalog?: string;
+  finish3KickoffPhase?: number;
+  finish3KickoffCatalog?: string;
+  androidHudSplitPhase?: number;
+  androidHudSplitCatalog?: string;
+  webHudSplitPhase?: number;
+  webHudSplitCatalog?: string;
+  shellControllerPhase?: number;
+  shellControllerCatalog?: string;
   landingPlayCtaPhase?: number;
   landingPlayCtaCatalog?: string;
   spaHostPhase?: number;

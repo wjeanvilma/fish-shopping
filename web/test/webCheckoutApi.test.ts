@@ -29,9 +29,9 @@ describe("web checkout API (Finish 2.0 Phase 25)", () => {
     expect(listing.webCheckoutApiCatalog).toBe("shared/ship/web-checkout-api.json");
   });
 
-  it("stub handlers: completed → owned → entitlements", () => {
+  it("stub handlers: completed → owned → entitlements", async () => {
     const store = new CheckoutStore();
-    const first = handleCheckout(
+    const first = await handleCheckout(
       { webProductId: "fish.full_harbor_unlock", cloudAccountId: "u1" },
       { store, instant: true },
     );
@@ -39,7 +39,7 @@ describe("web checkout API (Finish 2.0 Phase 25)", () => {
     if ("purchaseToken" in first) {
       expect(first.purchaseToken.startsWith("stub-")).toBe(true);
     }
-    const second = handleCheckout(
+    const second = await handleCheckout(
       { webProductId: "fish.full_harbor_unlock", cloudAccountId: "u1" },
       { store, instant: true },
     );
@@ -48,9 +48,9 @@ describe("web checkout API (Finish 2.0 Phase 25)", () => {
     expect(list.entitlements.map((e) => e.webProductId)).toContain("fish.full_harbor_unlock");
   });
 
-  it("session checkout + fulfill grants product", () => {
+  it("session checkout + fulfill grants product", async () => {
     const store = new CheckoutStore();
-    const checkout = handleCheckout(
+    const checkout = await handleCheckout(
       {
         webProductId: "fish.cosmetic.pearl_string",
         cloudAccountId: "u2",

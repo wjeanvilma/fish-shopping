@@ -1,43 +1,54 @@
 /**
- * Finish 2.0 Phase 27 — content authoring CLI entry.
+ * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 — content authoring CLI entry.
  *
  * Usage (from web/):
  *   npm run content:scaffold -- species --id tide_perch --name "Tide perch"
- *   npm run content:scaffold -- quest --id morning_haul
- *   npm run content:scaffold -- harbor --id mist_cove --out ../shared/content/scaffolds/out
- *   npm run content:scaffold -- species --id x --dry-run
+ *   npm run content:scaffold -- contract --id dawn_crate --item species.dawn_anchovy
+ *   npm run content:scaffold -- bait --id kelp_chunk --dry-run
+ *   npm run content:scaffold -- decor --id pier_bunting --cost 90
+ *   npm run content:scaffold -- --list
  *
  * Does not mutate shared/content/content-pack.json — print/write fragment only.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SCAFFOLD_KINDS, type ScaffoldKind } from "./ids";
+import { ALL_SCAFFOLD_KINDS, isScaffoldKind, type ScaffoldKind } from "./ids";
+import { indexPackIds, packHasId } from "./packIds";
 import { buildScaffold, type ScaffoldRequest } from "./scaffolds";
 import { structuralScaffoldErrors } from "./validateFragment";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "../../..");
 const defaultOut = resolve(repoRoot, "shared/content/scaffolds/out");
+const defaultPack = resolve(repoRoot, "shared/content/content-pack.json");
 
 function usage(): never {
-  console.error(`Usage: content:scaffold <species|quest|harbor> --id <slug> [options]
+  console.error(`Usage: content:scaffold <${ALL_SCAFFOLD_KINDS.join("|")}> --id <slug> [options]
+       content:scaffold --list
 
 Options:
   --name <text>           Display name
-  --description <text>    Quest description
+  --description <text>    Description (quest/contract/bait/decor)
   --out <dir>             Write JSON under dir (default shared/content/scaffolds/out)
   --dry-run               Print JSON only (no write)
+  --check-pack            Fail if id already exists in content-pack.json
   --base-value <n>        Species baseValue
   --goal-stat <id>        Quest goal stat (default stat.fish_caught)
   --goal-at-least <n>     Quest goal atLeast (default 5)
-  --requires <id[,id]>    Harbor/quest requires list
+  --requires <id[,id]>    Harbor/quest/bait requires list
   --fishing-species <ids> Comma species ids for harbor fishing spot
+  --item <id>             Contract delivery item id
+  --quantity <n>          Contract quantity
+  --cost <n>              Bait/decor cost or contract payout
+  --patience-bonus <n>    Decor patienceBonusTicks
 
 Examples:
   npm run content:scaffold -- species --id tide_perch --name "Tide perch"
-  npm run content:scaffold -- quest --id morning_haul --dry-run
-  npm run content:scaffold -- harbor --id mist_cove
+  npm run content:scaffold -- contract --id dawn_crate --dry-run
+  npm run content:scaffold -- bait --id kelp_chunk --check-pack
+  npm run content:scaffold -- decor --id pier_bunting --cost 90
+  npm run content:scaffold -- --list
 `);
   process.exit(2);
 }
@@ -54,8 +65,12 @@ function hasFlag(argv: string[], name: string): boolean {
   return argv.includes(name);
 }
 
-function parseArgs(argv: string[]): ScaffoldRequest & { outDir: string; dryRun: boolean } {
-  const kindRaw = argv.find((a) => !a.startsWith("--") && SCAFFOLD_KINDS.includes(a as ScaffoldKind));
+function parseArgs(argv: string[]): ScaffoldRequest & {
+  outDir: string;
+  dryRun: boolean;
+  checkPack: boolean;
+} {
+  const kindRaw = argv.find((a) => !a.startsWith("--") && isScaffoldKind(a));
   if (!kindRaw) usage();
   const kind = kindRaw as ScaffoldKind;
   const id = takeFlag(argv, "--id");
@@ -65,6 +80,9 @@ function parseArgs(argv: string[]): ScaffoldRequest & { outDir: string; dryRun: 
   const fishingRaw = takeFlag(argv, "--fishing-species");
   const baseValueRaw = takeFlag(argv, "--base-value");
   const goalAtLeastRaw = takeFlag(argv, "--goal-at-least");
+  const quantityRaw = takeFlag(argv, "--quantity");
+  const costRaw = takeFlag(argv, "--cost");
+  const patienceRaw = takeFlag(argv, "--patience-bonus");
 
   return {
     kind,
@@ -78,14 +96,23 @@ function parseArgs(argv: string[]): ScaffoldRequest & { outDir: string; dryRun: 
     fishingSpecies: fishingRaw
       ? fishingRaw.split(",").map((s) => s.trim()).filter(Boolean)
       : undefined,
+    item: takeFlag(argv, "--item"),
+    quantity: quantityRaw ? Number(quantityRaw) : undefined,
+    cost: costRaw ? Number(costRaw) : undefined,
+    patienceBonusTicks: patienceRaw ? Number(patienceRaw) : undefined,
     outDir: resolve(takeFlag(argv, "--out") ?? defaultOut),
     dryRun: hasFlag(argv, "--dry-run"),
+    checkPack: hasFlag(argv, "--check-pack"),
   };
 }
 
 function main(): number {
   const argv = process.argv.slice(2);
   if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) usage();
+  if (hasFlag(argv, "--list")) {
+    console.log(ALL_SCAFFOLD_KINDS.join("\n"));
+    return 0;
+  }
 
   let req: ReturnType<typeof parseArgs>;
   try {
@@ -108,6 +135,15 @@ function main(): number {
     console.error("Scaffold failed structural checks:");
     for (const e of structural) console.error(`  - ${e}`);
     return 1;
+  }
+
+  if (req.checkPack) {
+    const pack = JSON.parse(readFileSync(defaultPack, "utf8")) as Record<string, unknown>;
+    const index = indexPackIds(pack);
+    if (packHasId(index, result.kind, result.id)) {
+      console.error(`Id ${result.id} already exists in content-pack.json`);
+      return 1;
+    }
   }
 
   const json = `${JSON.stringify(result.document, null, 2)}\n`;

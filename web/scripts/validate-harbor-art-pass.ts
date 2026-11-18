@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 19 — harbor art pass readiness.
+ * Finish 2.0 Phase 19 + Finish 3.0 Phase 8 — harbor art pass readiness.
  *
  * Usage:
  *   npm run harborart:validate
@@ -51,16 +51,16 @@ function validate(): string[] {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (HARBOR_ART_PHASE !== 19) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
-  if (catalog.authoredHarborMin !== 3 || AUTHORED_HARBOR_FLOOR !== 3) {
-    errors.push("authoredHarborMin must be 3");
+  if (catalog.authoredHarborMin !== 8 || AUTHORED_HARBOR_FLOOR !== 8) {
+    errors.push("authoredHarborMin must be 8");
   }
   if (catalog.harborArtMarker !== HARBOR_ART_MARKER) {
     errors.push("harborArtMarker mirror mismatch");
   }
-  if ((dod.quotas?.authoredHarborScenes ?? 0) < 3) {
-    errors.push("DoD quotas.authoredHarborScenes must be ≥ 3");
+  if ((dod.quotas?.authoredHarborScenes ?? 0) < 8) {
+    errors.push("DoD quotas.authoredHarborScenes must be ≥ 8");
   }
   if (listing.harborArtPassPhase !== 19) {
     errors.push("listing.harborArtPassPhase must be 19");
@@ -75,7 +75,7 @@ function validate(): string[] {
   if (pin.harborArtPass !== "shared/ship/harbor-art-pass.json") {
     errors.push("RELEASE_PIN.harborArtPass path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
 
   const licenseIds = new Set((licenses.records ?? []).map((r: { id: string }) => r.id));
   if (!licenseIds.has("harbor-authored-art")) {
@@ -86,8 +86,8 @@ function validate(): string[] {
     if (!existsSync(resolve(root, gate))) errors.push(`missing preflight gate ${gate}`);
   }
 
-  if (!Array.isArray(catalog.authoredHarbors) || catalog.authoredHarbors.length < 3) {
-    errors.push("authoredHarbors must list ≥ 3 harbors");
+  if (!Array.isArray(catalog.authoredHarbors) || catalog.authoredHarbors.length < 8) {
+    errors.push("authoredHarbors must list ≥ 8 harbors");
   }
   if (fixture.expect?.harbors?.length !== catalog.authoredHarbors.length) {
     errors.push("parity fixture harbor count must match catalog");

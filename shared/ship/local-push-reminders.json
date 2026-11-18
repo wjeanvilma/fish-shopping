@@ -1,0 +1,36 @@
+{
+  "phase": 18,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.local_push_reminders.v1",
+  "description": "Finish 3.0 Phase 18 — local daily-goal push reminders. Opt-in setting schedules a local evening reminder when unclaimed dailies remain. Android uses AlarmManager + NotificationCompat; web uses the Notification API while the tab is open (PWA background deepens in Phase 19). Schema stays 24 / content 2.0.0. Closes kickoff gap pushRemindersMissing.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "localPushRemindersMarker": "authored-finish-3.0-phase-18",
+  "closesGap": "pushRemindersMissing",
+  "policyCatalog": "shared/push/local-daily-goal-reminders.json",
+  "priorDailyGoalsPhase": 18,
+  "priorDailyGoalsPlan": "30_finish_2.0",
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-local-push-reminders.json",
+  "validateScript": "npm run localpush:validate",
+  "checklist": [
+    "Shared schedule math: nextFireEpochMs + shouldDeliver (opt-in + unclaimed + once/day)",
+    "Android AlarmManager receiver + notification channel; BOOT_COMPLETED reschedule",
+    "Web Notification API scheduler; settings opt-in requests permission",
+    "Kickoff gap pushRemindersMissing closed; phase 18 validate = localpush:validate",
+    "schema stays 24 / content 2.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/local-push-reminders.json",
+    "shared/fixtures/parity-local-push-reminders.json",
+    "shared/push/local-daily-goal-reminders.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "web/src/push/localPushReminders.ts",
+    "web/src/ship/localPushReminders.ts",
+    "web/scripts/validate-local-push-reminders.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/push/LocalPushSchedule.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/LocalPushReminders.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/push/DailyGoalReminderScheduler.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/push/DailyGoalReminderReceiver.kt"
+  ]
+}

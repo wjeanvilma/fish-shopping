@@ -1,0 +1,19 @@
+{
+  "schema": "fish.fixtures.parity_theme_ds.v1",
+  "themeDsMarker": "authored-finish-3.0-phase-7",
+  "phase": 7,
+  "plan": "30_finish_3.0",
+  "expect": {
+    "themePreferences": ["system", "light", "dark"],
+    "colorDarkKeyMin": 11,
+    "schemaVersion": 23,
+    "contentVersion": "2.0.0",
+    "gates": [
+      "color_dark_tokens",
+      "theme_preference_setting",
+      "ds_primitives",
+      "gap_closed",
+      "ci_gate"
+    ]
+  }
+}

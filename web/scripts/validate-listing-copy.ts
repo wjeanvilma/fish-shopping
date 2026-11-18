@@ -79,8 +79,13 @@ function validate(): string[] {
   if (catalog.category !== listing.category) errors.push("category mismatch");
   if (catalog.contentRating !== listing.contentRating) errors.push("contentRating mismatch");
 
-  if (!catalog.locales.includes("en") || !catalog.locales.includes("es") || catalog.locales.length !== 2) {
-    errors.push("locales must be [en, es] (Finish 2.0 Phase 23 scaffold)");
+  if (
+    !catalog.locales.includes("en") ||
+    !catalog.locales.includes("es") ||
+    !catalog.locales.includes("pt") ||
+    catalog.locales.length !== 3
+  ) {
+    errors.push("locales must be [en, es, pt] (Finish 3.0 third locale)");
   }
   if (en.locale !== "en" || !en.frozen) errors.push("en locale must be frozen");
   if (en.title !== copy.title) errors.push("en.title mismatch");
@@ -129,6 +134,31 @@ function validate(): string[] {
     errors.push(`missing ${esStringsPath}`);
   }
 
+  const ptPath = resolve(root, "shared/store/locales/pt.json");
+  if (!existsSync(ptPath)) {
+    errors.push("missing shared/store/locales/pt.json");
+  } else {
+    const pt = readJson(ptPath);
+    if (pt.locale !== "pt" || !pt.frozen) errors.push("pt locale must be frozen");
+    for (const key of ["title", "shortDescription", "fullDescription", "whatsNew", "webLanding"]) {
+      if (pt[key] == null) errors.push(`pt missing listing key ${key}`);
+    }
+    if (!pt.webLanding?.ctaPlay) errors.push("pt.webLanding.ctaPlay missing");
+    if (pt.shortDescription.length > lim.shortDescriptionMax) {
+      errors.push(`pt.shortDescription length ${pt.shortDescription.length} > ${lim.shortDescriptionMax}`);
+    }
+    if (pt.fullDescription.length > lim.fullDescriptionMax) {
+      errors.push(`pt.fullDescription length ${pt.fullDescription.length} > ${lim.fullDescriptionMax}`);
+    }
+    if (pt.whatsNew.length > lim.whatsNewMax) {
+      errors.push(`pt.whatsNew length ${pt.whatsNew.length} > ${lim.whatsNewMax}`);
+    }
+  }
+  const ptStringsPath = catalog.androidStringsPt ?? "app/src/main/res/values-pt/strings.xml";
+  if (!existsSync(resolve(root, ptStringsPath))) {
+    errors.push(`missing ${ptStringsPath}`);
+  }
+
   return errors;
 }
 
@@ -138,4 +168,4 @@ if (errors.length) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
-console.log("OK listing-copy:validate — frozen en + es copy within Play limits");
+console.log("OK listing-copy:validate — frozen en + es + pt copy within Play limits");

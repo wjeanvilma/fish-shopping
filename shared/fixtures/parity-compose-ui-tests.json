@@ -1,0 +1,42 @@
+{
+  "schema": "fish.fixture.parity_compose_ui_tests.v1",
+  "description": "Finish 3.0 Phase 21: Compose UI tag + suite expectations.",
+  "composeUiTestsMarker": "authored-finish-3.0-phase-21",
+  "expect": {
+    "closesGap": "composeUiTestsMissing",
+    "schemaVersion": 24,
+    "contentVersion": "2.0.0",
+    "minTagCount": 16,
+    "requiredTags": [
+      "title.root",
+      "title.continue",
+      "title.play",
+      "offline.continue",
+      "pause.resume",
+      "nav.pause"
+    ],
+    "tagsSourceMustContain": [
+      "TITLE_CONTINUE",
+      "OFFLINE_CONTINUE",
+      "PAUSE_RESUME",
+      "NAV_PAUSE"
+    ],
+    "robolectricMustContain": [
+      "RobolectricTestRunner",
+      "TitleMenuContent",
+      "OfflineSummaryPanel",
+      "PausePanel",
+      "createComposeRule"
+    ],
+    "instrumentedMustContain": [
+      "TitleMenuInstrumentedTest",
+      "TitleMenuContent",
+      "AndroidJUnit4"
+    ],
+    "buildGradleMustContain": [
+      "robolectric",
+      "isIncludeAndroidResources = true",
+      "compose.ui.test.junit4"
+    ]
+  }
+}

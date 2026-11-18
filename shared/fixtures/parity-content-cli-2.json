@@ -1,0 +1,38 @@
+{
+  "schema": "fish.fixture.parity_content_cli_2.v1",
+  "description": "Finish 3.0 Phase 28: content CLI expansion kinds + examples + features.",
+  "contentCli2Marker": "authored-finish-3.0-phase-28",
+  "scaffoldKindMin": 6,
+  "exampleFileMin": 6,
+  "featureMin": 5,
+  "simHzInvariant": 20,
+  "expect": {
+    "kinds": ["species", "quest", "harbor", "contract", "bait", "decor"],
+    "expansionKinds": ["contract", "bait", "decor"],
+    "features": ["list", "check-pack", "contract", "bait", "decor"],
+    "exampleFiles": [
+      "shared/content/scaffolds/examples/species.scaffold_tide_perch.json",
+      "shared/content/scaffolds/examples/quest.scaffold_morning_haul.json",
+      "shared/content/scaffolds/examples/harbor.scaffold_mist_cove.json",
+      "shared/content/scaffolds/examples/contract.scaffold_dawn_crate.json",
+      "shared/content/scaffolds/examples/bait.scaffold_kelp_chunk.json",
+      "shared/content/scaffolds/examples/decor.scaffold_pier_bunting.json"
+    ],
+    "exampleIds": [
+      "species.scaffold_tide_perch",
+      "quest.scaffold_morning_haul",
+      "harbor.scaffold_mist_cove",
+      "contract.scaffold_dawn_crate",
+      "bait.scaffold_kelp_chunk",
+      "decor.scaffold_pier_bunting"
+    ],
+    "moduleFiles": [
+      "shared/tools/content_cli/ids.ts",
+      "shared/tools/content_cli/scaffolds.ts",
+      "shared/tools/content_cli/validateFragment.ts",
+      "shared/tools/content_cli/packIds.ts",
+      "shared/tools/content_cli/cli.ts",
+      "web/scripts/content-scaffold.ts"
+    ]
+  }
+}

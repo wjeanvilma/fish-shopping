@@ -1,0 +1,21 @@
+{
+  "schema": "fish.fixtures.parity_staff_unlock.v1",
+  "staffUnlockMarker": "authored-finish-3.0-phase-10",
+  "phase": 10,
+  "plan": "30_finish_3.0",
+  "expect": {
+    "hireableRoleCount": 8,
+    "staffBranchTarget": 10,
+    "newBranchCount": 5,
+    "comingSoonReasons": 0,
+    "schemaVersion": 23,
+    "contentVersion": "2.0.0",
+    "gates": [
+      "all_roles_hireable",
+      "branches_for_all_roles",
+      "coming_soon_closed",
+      "kickoff_gap_closed",
+      "ci_gate"
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schema": "fish.fixtures.parity_web_hud_split.v1",
+  "webHudSplitMarker": "authored-finish-3.0-phase-3",
+  "phase": 3,
+  "plan": "30_finish_3.0",
+  "expect": {
+    "appMaxLines": 900,
+    "extractedFileMin": 12,
+    "requiredFileCount": 15,
+    "gapFlagClosed": "webHudDecomposition",
+    "schemaVersion": 23,
+    "gates": [
+      "app_slim",
+      "panels_extracted",
+      "symbols_present",
+      "kickoff_gap_closed",
+      "ci_gate"
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "phase": 30,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.freeze_3.v1",
+  "description": "Finish 3.0 Phase 30 — content/version 3.0.0 freeze & DoD closeout. RELEASE_PIN → 3.0.0 / schema 24 / versionCode 4. Content floors green at Finish 3.0 quotas. LOC enforces anti-regression freeze floors (plan targets retained; no padding). Tag v3.0.0 remains operator-manual. Finish 2.0 freeze-2.0.0 stays historical.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "versionName": "3.0.0",
+  "versionCode": 4,
+  "releaseTag": "v3.0.0",
+  "freeze3Marker": "authored-finish-3.0-phase-30",
+  "definitionOfDone": "shared/ship/definition-of-done.json",
+  "priorFreeze": "shared/ship/freeze-2.0.0.json",
+  "completeTagArchived": "v1.0-complete",
+  "finish2ReleaseTagArchived": "v2.0.0",
+  "contentFloors": {
+    "harbors": 8,
+    "species": 75,
+    "machines": 10,
+    "quests": 30,
+    "seasonalEvents": 8,
+    "baits": 8,
+    "cosmetics": 12,
+    "deliveryChains": 3,
+    "paritySuites": 12
+  },
+  "loc": {
+    "catalog": "shared/ship/loc-floors.json",
+    "enforceMode": "freeze_anti_regression",
+    "planTargetsRetained": true,
+    "note": "Plan targets game-core≥25k / app≥16k / web≥38k / product≥80k remain documented. Phase 30 enforces Finish 3.0 freeze floors at the measured cut without LOC padding."
+  },
+  "parityFixture": "shared/fixtures/parity-freeze-3.0.0.json",
+  "validateScript": "npm run freeze3:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "checklist": [
+    "RELEASE_PIN contentVersion/versionName/releaseTag = 3.0.0; versionCode = 4; schemaVersion = 24",
+    "content-pack.json contentVersion = 3.0.0; floors ≥8/75/10/30/8/8/12",
+    "DoD finish3Freeze ready_for_release_tag; finish2Freeze + post-1.0 closeout stay archived/historical",
+    "loc-floors enforceFloors=true against Finish 3.0 freeze anti-regression floors; plan targets retained",
+    "listing/listing-copy/locales/android strings whatsNewVersion = 3.0.0",
+    "freeze3:validate + freeze2:validate + dod:validate green; CI runs freeze3:validate",
+    "git tag v3.0.0 remains manual (manualCommands only)"
+  ],
+  "manualCommands": [
+    "npm run freeze3:validate",
+    "npm run freeze2:validate",
+    "npm run dod:validate",
+    "git tag -a v3.0.0 -m \"Fish Shopping 3.0.0 freeze\"",
+    "Archive Finish 3.0 plan status as finished"
+  ],
+  "preflightGates": [
+    "shared/ship/freeze-3.0.0.json",
+    "shared/fixtures/parity-freeze-3.0.0.json",
+    "shared/ship/freeze-2.0.0.json",
+    "shared/ship/definition-of-done.json",
+    "shared/ship/loc-floors.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "shared/fixtures/RELEASE_PIN.json",
+    "shared/content/content-pack.json",
+    "web/src/ship/freeze30.ts",
+    "web/scripts/validate-freeze-3.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Freeze30.kt"
+  ]
+}

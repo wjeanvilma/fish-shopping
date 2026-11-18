@@ -124,4 +124,52 @@ class CloudProductionPathTest {
         assertTrue(result.queued)
         assertEquals("snap-x", queue.load()?.snapshot)
     }
+
+    /** Finish 3.0 Phase 17 — unavailable backend queues; sync-disabled skips; flush holds. */
+    @Test
+    fun phase17UnavailableQueuesAndSyncDisabledSkips() {
+        val queue = MemoryCloudOfflineQueue()
+        val nullBackend = com.willio.jeanvilma.fishshopping.cloud.NullCloudBackend()
+        val offlineCoord = CloudSyncCoordinator(nullBackend, queue)
+        val queued = offlineCoord.push(
+            GameSettings(cloudSyncEnabled = true, cloudAccountId = "u17"),
+            "snap-offline",
+        )
+        assertFalse(queued.uploaded)
+        assertTrue(queued.queued)
+        assertEquals("snap-offline", queue.load()?.snapshot)
+
+        val held = offlineCoord.flushOfflineQueue(GameSettings(cloudSyncEnabled = true, cloudAccountId = "u17"))
+        assertFalse(held.uploaded)
+        assertTrue(held.queued)
+        assertTrue(offlineCoord.hasPendingOfflinePush())
+
+        val memory = MemoryCloudBackend()
+        val disabled = CloudSyncCoordinator(memory, MemoryCloudOfflineQueue())
+        val skipped = disabled.push(
+            GameSettings(cloudSyncEnabled = false, cloudAccountId = "u17"),
+            "snap-skip",
+        )
+        assertFalse(skipped.uploaded)
+        assertFalse(skipped.queued)
+        assertEquals(null, memory.get("u17"))
+    }
+
+    @Test
+    fun phase17CloudQa2CatalogPinned() {
+        val root = File(".").canonicalFile.let { dir ->
+            generateSequence(dir) { it.parentFile }.first { File(it, "shared/ship/cloud-qa-2.json").isFile }
+        }
+        val json = JSONObject(File(root, "shared/ship/cloud-qa-2.json").readText())
+        assertEquals(17, json.getInt("phase"))
+        assertEquals(8, json.getInt("qaScenarioMin"))
+        assertEquals(12, json.getInt("qaScenarioTotalMin"))
+        assertEquals(8, json.getJSONArray("wave2ScenarioIds").length())
+        val production = JSONObject(File(root, "shared/cloud/production-path.json").readText())
+        assertEquals(17, production.getInt("finish3CloudQa2Phase"))
+        val checklist = production.getJSONArray("cutoverChecklist")
+        assertTrue((0 until checklist.length()).any {
+            checklist.getString(it).contains("cloudqa2:validate")
+        })
+    }
 }

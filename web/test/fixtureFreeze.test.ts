@@ -20,11 +20,11 @@ describe("fixture freeze", () => {
       JSON.parse(readFileSync(shared("content/content-pack.json"), "utf8")),
     );
     expect(content.contentVersion).toBe(pin.contentVersion);
-    expect(content.contentVersion).toBe("2.0.0");
+    expect(content.contentVersion).toBe("3.0.0");
     expect(SCHEMA_VERSION).toBe(pin.schemaVersion);
     expect(TICKS_PER_SECOND).toBe(pin.ticksPerSecond);
-    expect(pin.releaseTag).toBe("v2.0.0");
-    expect(pin.versionCode).toBe(3);
+    expect(pin.releaseTag).toBe("v3.0.0");
+    expect(pin.versionCode).toBe(4);
     expect(pin.definitionOfDone).toBe("shared/ship/definition-of-done.json");
     expect(existsSync(shared("ship/definition-of-done.json"))).toBe(true);
     for (const name of pin.fixtures) {

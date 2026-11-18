@@ -1,0 +1,67 @@
+{
+  "phase": 23,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.audio_pack_3.v1",
+  "description": "Finish 3.0 Phase 23 — SFX/music pack 3: rival/travel/hire/prestige/loan/trophy stingers + night/rival beds; ducking policy frozen from music-pack.json. Extends post-1.0 sfx/music catalogs and Finish 2.0 pack 2 without schema bump.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "audioPackMarker": "authored-finish-3.0-phase-23",
+  "extendsCatalogs": {
+    "sfx": "shared/audio/sfx-pack.json",
+    "music": "shared/audio/music-pack.json"
+  },
+  "newStingerMin": 8,
+  "newBedMin": 2,
+  "duckingPolicyFrozen": true,
+  "frozenDucking": {
+    "sfxDuckFactor": 0.35,
+    "sfxDuckRecoveryMs": 280,
+    "focusLossSilence": true,
+    "focusTransientCanDuckFactor": 0.25,
+    "webHiddenSuspendsContext": true,
+    "respectMute": true,
+    "respectMusicVolume": true
+  },
+  "newStingers": [
+    "rival_open",
+    "rival_steal",
+    "rival_beat",
+    "harbor_travel",
+    "hire",
+    "prestige",
+    "loan",
+    "trophy_set"
+  ],
+  "newBeds": [
+    "night",
+    "rival"
+  ],
+  "parityFixture": "shared/fixtures/parity-audio-pack-3.json",
+  "validateScript": "npm run audiopack3:validate",
+  "generator": "shared/tools/generate_sfx_pack.py + shared/tools/generate_music_pack.py",
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "checklist": [
+    "≥8 new SFX stingers baked + mirrored (shared/web/android)",
+    "≥2 new music beds (night + rival) baked + mirrored",
+    "music-pack.json ducking object unchanged (frozen)",
+    "sfxFromEvent maps Finish 3.0 systems (rival/travel/hire/prestige/loan/trophy)",
+    "bed switch priority festival > storm > rival > night > shop > harbor",
+    "licenses.json records authored-audio-pack-3",
+    "parity-audio-pack-3 + audiopack3:validate green",
+    "CI runs audiopack3:validate",
+    "kickoff phase 23 validate=audiopack3:validate + measuredAtPhase≥23",
+    "schema stays 24 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/audio-pack-3.json",
+    "shared/fixtures/parity-audio-pack-3.json",
+    "web/src/ship/audioPack3.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/AudioPack3.kt",
+    "web/src/audio/sfxCues.ts",
+    "web/src/audio/musicBeds.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/audio/SfxCues.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/audio/AudioBus.kt",
+    "shared/audio/sfx-pack.json",
+    "shared/audio/music-pack.json"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "fish.fixture.parity_remote_analytics.v1",
+  "description": "Finish 3.0 Phase 26: remote analytics sink policy + batch contract.",
+  "remoteAnalyticsMarker": "authored-finish-3.0-phase-26",
+  "batchSchema": "fish.analytics.batch.v1",
+  "analyticsSchema": "fish.analytics.v1",
+  "batchMaxEventsMin": 10,
+  "eventNameMin": 8,
+  "simHzInvariant": 20,
+  "clientEnvKey": "VITE_ANALYTICS_API_BASE",
+  "expect": {
+    "endpointPath": "/v1/analytics/batch",
+    "healthPath": "/health",
+    "platforms": ["web", "android"],
+    "eventNames": [
+      "tutorial_step_completed",
+      "first_sale",
+      "harbor_unlocked",
+      "offline_claimed",
+      "save_recovery",
+      "frame_time_summary",
+      "session_start",
+      "crash_free_session"
+    ],
+    "batch": {
+      "maxEvents": 20,
+      "maxQueue": 100,
+      "flushIntervalMs": 15000
+    }
+  }
+}

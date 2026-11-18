@@ -48,16 +48,11 @@ import kotlin.math.min
  */
 object WorkerSystem {
 
-    private val HIREABLE = setOf(
-        WorkerRoleKind.FISHER,
-        WorkerRoleKind.PORTER,
-        WorkerRoleKind.OPERATOR,
-        WorkerRoleKind.CASHIER,
-        WorkerRoleKind.SUPERVISOR,
-        WorkerRoleKind.ICE_RUNNER,
-        WorkerRoleKind.SMOKER_SPECIALIST,
-        WorkerRoleKind.GREETER,
-    )
+    /**
+     * Finish 3.0 Phase 10 — every content-defined worker role is hireable.
+     * The old `"Coming soon"` allowlist lock is retired; requirements/cost/caps remain.
+     */
+    private val HIREABLE = WorkerRoleKind.entries.toSet()
 
     fun step(ctx: StepContext) {
         accrueWages(ctx)
@@ -448,6 +443,17 @@ object WorkerSystem {
         return WorkerHireAvailability.Purchasable
     }
 
+    /** Finish 3.0 Phase 10 — count hire rows still showing the retired Coming soon lock. */
+    fun countComingSoonReasons(
+        content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
+        s: GameState,
+    ): Int = content.workers.count { def ->
+        when (val a = availability(content, s, def)) {
+            is WorkerHireAvailability.Locked -> a.reason == "Coming soon"
+            else -> false
+        }
+    }
+
     private fun missingRequirement(
         content: com.willio.jeanvilma.fishshopping.core.content.ContentPack,
         s: GameState,
@@ -605,6 +611,7 @@ object WorkerSystem {
                         ctx.content,
                         ctx.state.tick,
                         it.id,
+                        ctx.state.harborId,
                     )
                 },
             )]
@@ -909,19 +916,63 @@ object WorkerSystem {
             WorkerTaskPhase.WALK_TO_WORK -> {
                 w.phase = WorkerTaskPhase.WORK
             }
-            WorkerTaskPhase.WORK -> Unit // on duty: boosts demand scoring for other workers
+            WorkerTaskPhase.WORK -> supervisorPatrol(ctx, w, def)
             else -> clearTask(w)
         }
     }
 
     private fun assignSupervisor(ctx: StepContext, w: WorkerState, def: WorkerDef) {
-        // Post near the busiest unlocked counter so demand overrides favour selling.
-        val cdef = bestCashierPost(ctx, w) ?: return
-        val zone = ctx.harbor.zonesById.getValue(cdef.zone)
-        startWalk(w, zone.rect.centerX, zone.rect.centerZ, moveSpeed(ctx.content, ctx.state, def, w))
+        val post = bestSupervisorPost(ctx, w) ?: return
+        startWalk(w, post.first.x, post.first.z, moveSpeed(ctx.content, ctx.state, def, w))
         w.phase = WorkerTaskPhase.WALK_TO_WORK
-        w.taskZoneId = cdef.zone
+        w.taskZoneId = post.second
         w.taskId = ctx.state.newId("task")
+    }
+
+    /** Finish 3.0 Phase 11 — re-post toward busiest counter / distressed station. */
+    private fun supervisorPatrol(ctx: StepContext, w: WorkerState, def: WorkerDef) {
+        val floorLead = StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.supervisor.floor_lead"
+        val interval = if (floorLead) 60L else 90L
+        if (ctx.state.tick % interval != 0L) return
+        val post = bestSupervisorPost(ctx, w) ?: return
+        if (post.second == w.taskZoneId) return
+        startWalk(w, post.first.x, post.first.z, moveSpeed(ctx.content, ctx.state, def, w))
+        w.phase = WorkerTaskPhase.WALK_TO_WORK
+        w.taskZoneId = post.second
+        w.taskId = ctx.state.newId("task")
+        ctx.state.bumpStat(Stats.SUPERVISOR_PATROLS)
+    }
+
+    private fun bestSupervisorPost(ctx: StepContext, w: WorkerState): Pair<PointMm, String>? {
+        val floorLead = StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.supervisor.floor_lead"
+        if (floorLead) {
+            var best: Triple<PointMm, String, Int>? = null
+            for (m in ctx.state.machines) {
+                val station = ctx.harbor.stations.firstOrNull { it.id == m.stationId } ?: continue
+                if (!ProductionSystem.isUnlocked(station, ctx.state) || m.paused) continue
+                var score = 0
+                if (m.status == MachineStatus.OUTPUT_FULL) score += 80
+                if (m.status == MachineStatus.WAITING_FOR_INPUT) score += 60
+                if (m.broken) score += 40
+                if (score <= 0) continue
+                val zone = ctx.harbor.zonesById.getValue(station.outputZone)
+                val point = PointMm(zone.rect.centerX, zone.rect.centerZ)
+                val dist = walkTicks(w.x, w.z, point.x, point.z, 160)
+                score += max(0, 40 - dist / 5)
+                val cur = best
+                if (
+                    cur == null ||
+                    score > cur.third ||
+                    (score == cur.third && station.outputZone < cur.second)
+                ) {
+                    best = Triple(point, station.outputZone, score)
+                }
+            }
+            best?.let { return it.first to it.second }
+        }
+        val cdef = bestCashierPost(ctx, w) ?: return null
+        val zone = ctx.harbor.zonesById.getValue(cdef.zone)
+        return PointMm(zone.rect.centerX, zone.rect.centerZ) to cdef.zone
     }
 
     // ---------------------------------------------------------------- ice runner (fragile / ice stock → counter)
@@ -930,11 +981,64 @@ object WorkerSystem {
         when (w.phase) {
             WorkerTaskPhase.NONE -> assignIceRunner(ctx, w, def)
             WorkerTaskPhase.WALK_TO_WORK -> w.phase = WorkerTaskPhase.PICKUP
-            WorkerTaskPhase.PICKUP -> pickupHaul(ctx, w, def)
+            WorkerTaskPhase.PICKUP -> pickupIceRunner(ctx, w, def)
             WorkerTaskPhase.WALK_TO_DROP -> w.phase = WorkerTaskPhase.DROP
             WorkerTaskPhase.DROP -> dropHaul(ctx, w, def)
             else -> clearTask(w)
         }
+    }
+
+    /** Finish 3.0 Phase 11 — chill_haul chains fragile pickups before dropping. */
+    private fun pickupIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef) {
+        if (w.transferCooldown > 0) return
+        val sourceId = w.taskSourceInvId
+        val itemId = w.taskItemId
+        if (sourceId == null || itemId == null) {
+            abortHaul(ctx, w)
+            return
+        }
+        val source = findInventory(ctx, sourceId)
+        if (source == null || source.reservedQuantity(itemId) < 1 || w.bag.roomFor(itemId) < 1) {
+            abortHaul(ctx, w)
+            return
+        }
+        source.takeReserved(itemId, 1)
+        w.bag.add(itemId, 1)
+        w.transferCooldown = transferInterval(ctx.content, def, w) - 1
+        ctx.state.bumpStat(Stats.OUTPUTS_COLLECTED)
+        ctx.state.bumpStat(Stats.WORKER_ITEMS_MOVED)
+        ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, source.id, w.bag.id, itemId, 1))
+
+        val chill = StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.ice_runner.chill_haul"
+        if (chill) {
+            val next = findIceHaul(ctx, w)
+            if (next != null && w.bag.roomFor(next.itemId) >= 1 && next.source.reserve(next.itemId, 1)) {
+                w.phase = WorkerTaskPhase.WALK_TO_WORK
+                w.taskSourceInvId = next.source.id
+                w.taskDestInvId = next.dest.id
+                w.taskItemId = next.itemId
+                w.taskQuantity = 1
+                w.leaseExpiresAt = ctx.state.tick + def.leaseTicks
+                w.taskZoneId = next.sourceZoneId
+                startWalk(w, next.sourceX, next.sourceZ, moveSpeed(ctx.content, ctx.state, def, w))
+                ctx.state.bumpStat(Stats.ICE_RUNNER_MULTI_PICKUPS)
+                return
+            }
+        }
+
+        val dest = findCounterDrop(ctx, w)
+        if (dest == null) {
+            w.phase = WorkerTaskPhase.NONE
+            w.taskSourceInvId = null
+            w.taskItemId = null
+            w.leaseExpiresAt = 0
+            return
+        }
+        startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.content, ctx.state, def, w))
+        w.phase = WorkerTaskPhase.WALK_TO_DROP
+        w.taskDestInvId = dest.first.stock.id
+        w.taskZoneId = dest.third
+        w.leaseExpiresAt = ctx.state.tick + def.leaseTicks
     }
 
     private fun assignIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef) {
@@ -979,8 +1083,11 @@ object WorkerSystem {
     }
 
     private fun assignSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef) {
+        val kilnFocus = StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.smoker_specialist.kiln_focus"
         if (!w.bag.isEmpty()) {
-            val dest = findSmokerInputDrop(ctx, w) ?: findMachineInputForBag(ctx, w) ?: return
+            val dest = findSmokerInputDrop(ctx, w)
+                ?: if (kilnFocus) null else findMachineInputForBag(ctx, w)
+            if (dest == null) return
             startWalk(w, dest.second.x, dest.second.z, moveSpeed(ctx.content, ctx.state, def, w))
             w.phase = WorkerTaskPhase.WALK_TO_DROP
             w.taskDestInvId = dest.first.input.id
@@ -1019,7 +1126,7 @@ object WorkerSystem {
         when (w.phase) {
             WorkerTaskPhase.NONE -> assignGreeter(ctx, w, def)
             WorkerTaskPhase.WALK_TO_WORK -> w.phase = WorkerTaskPhase.WORK
-            WorkerTaskPhase.WORK -> Unit
+            WorkerTaskPhase.WORK -> greeterWelcomePulse(ctx, w)
             else -> clearTask(w)
         }
     }
@@ -1030,6 +1137,22 @@ object WorkerSystem {
         w.phase = WorkerTaskPhase.WALK_TO_WORK
         w.taskZoneId = "greeter.entry"
         w.taskId = ctx.state.newId("task")
+    }
+
+    /** Finish 3.0 Phase 11 — top up low-patience queued customers while posted. */
+    private fun greeterWelcomePulse(ctx: StepContext, w: WorkerState) {
+        val desk = StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.greeter.welcome_desk"
+        val interval = if (desk) 75L else 120L
+        if (ctx.state.tick % interval != 0L) return
+        val boost = if (desk) 55 else 35
+        val threshold = if (desk) 110 else 90
+        var welcomed = 0L
+        for (c in ctx.state.customers) {
+            if (!c.arrived || c.patienceLeft <= 0 || c.patienceLeft >= threshold) continue
+            c.patienceLeft += boost
+            welcomed++
+        }
+        if (welcomed > 0) ctx.state.bumpStat(Stats.GREETER_WELCOMES, welcomed)
     }
 
     // ---------------------------------------------------------------- wages
@@ -1197,11 +1320,18 @@ object WorkerSystem {
                     if (itemId !in accepted) continue
                     if (!destHasRoom(ctx, dst.input, itemId, w.id)) continue
                     val demand = machineDemand(dst)
-                    val score = scoreHaul(
+                    var score = scoreHaul(
                         ctx, w, src.output, zone.rect.centerX, zone.rect.centerZ,
                         urgencyBonus = if (src.status == MachineStatus.OUTPUT_FULL) 50 else 0,
                         demand = demand,
                     )
+                    // Finish 3.0 Phase 11 — pad_link prioritizes starving machine inputs.
+                    if (
+                        StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.operator.pad_link" &&
+                        dst.status == MachineStatus.WAITING_FOR_INPUT
+                    ) {
+                        score += 35
+                    }
                     val offer = HaulOffer(
                         src.output, dst.input, itemId,
                         zone.rect.centerX, zone.rect.centerZ, srcStation.outputZone, score,

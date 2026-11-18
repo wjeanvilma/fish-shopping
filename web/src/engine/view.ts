@@ -5,7 +5,7 @@ import { compareStrings } from "./foundations";
 import type { MachineStatus } from "./state";
 import type { Simulation } from "./simulation";
 import { abandonPermille, topSpeciesCatchShare, wageRatioPermille } from "./telemetry";
-import { BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DailyGoalsSystem, DecorSystem, EconomySystem, FishingSystem, HarborTravelSystem, MasterySystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, ReputationSystem, SeasonalEventSystem, StaffTreesSystem, UpgradeSystem, WeatherSystem, WorkerSystem } from "./systems";
+import { BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DailyGoalsSystem, DecorSystem, EconomySystem, EndgameSystem, FishingSystem, HarborTravelSystem, MasterySystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, ReputationSystem, RivalMarketSystem, SeasonalEventSystem, StaffTreesSystem, UpgradeSystem, WeatherSystem, WorkerSystem } from "./systems";
 import { Warehouse, type WarehouseView } from "./warehouse";
 export type { WarehouseView, WarehouseLineView, WarehouseLocationView } from "./warehouse";
 import { SpeciesBook, type SpeciesBookView } from "./speciesBook";
@@ -242,6 +242,31 @@ export interface PrestigeView {
   reason: string | null;
 }
 
+/** unlocked | locked — Finish 3.0 Phase 15 endgame tiers. */
+export interface EndgameTierView {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  requiresPrestigeCount: number;
+  requiresRivalBeats: number;
+  requiresChallenges: number;
+  catchSpeedPermille: number;
+  priceBonusPermille: number;
+  coins: number;
+}
+
+/** completed | active — Finish 3.0 Phase 15 endgame challenges. */
+export interface EndgameChallengeView {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  progress: number;
+  goalAtLeast: number;
+  rewardCoins: number;
+}
+
 /** unlocked | active — Finish 2.0 Phase 11 achievements. */
 export interface AchievementView {
   id: string;
@@ -449,7 +474,17 @@ export interface SimView {
   reputationBand: number;
   /** Short band label for the HUD strip. */
   reputationLabel: string;
+  /** Finish 3.0 Phase 14 — active rival NPC market ids at this harbor. */
+  activeRivalIds: string[];
+  /** True when rivals are siphoning demand / undercutting. */
+  rivalPressureActive: boolean;
   prestige: PrestigeView[];
+  /** Finish 3.0 Phase 15 — endgame deepen board. */
+  endgameUnlocked: boolean;
+  endgameLockedReason: string | null;
+  beatenRivalCount: number;
+  endgameTiers: EndgameTierView[];
+  endgameChallenges: EndgameChallengeView[];
   /** Finish 2.0 Phase 11 — lifetime achievements for Settings / HUD. */
   achievements: AchievementView[];
   unlockedAchievementsCount: number;
@@ -603,7 +638,7 @@ export function buildView(sim: Simulation): SimView {
       : `Queue: ${queue.slice(0, 3).map((r) => ProductionSystem.recipeLabel(r.id)).join(" → ")}${queue.length > 3 ? "…" : ""}`;
     const mode = m.preferredRecipeId ? ProductionSystem.recipeLabel(m.preferredRecipeId) : "Auto";
     context = {
-      title: c.machinesById.get(m.machineId)!.name,
+      title: (() => { const mdef = c.machinesById.get(m.machineId)!; return c.displayName(mdef.id, mdef.name); })(),
       lines: [
         v.statusText,
         `In: ${m.input.usedUnits()}/${m.input.capacityUnits}   Out: ${m.output.usedUnits()}/${m.output.capacityUnits}`,
@@ -703,7 +738,7 @@ export function buildView(sim: Simulation): SimView {
             : null;
       return {
         id: b.id,
-        name: b.name,
+        name: c.displayName(b.id, b.name),
         description: b.description,
         cost: b.cost,
         packQuantity: b.packQuantity,
@@ -719,7 +754,7 @@ export function buildView(sim: Simulation): SimView {
     tick: s.tick,
     coins: s.coins,
     harborId: s.harborId,
-    harborName: h.name,
+    harborName: c.displayName(h.id, h.name),
     harborSpecializationName: h.specialization?.name ?? null,
     harborSpecializationDescription: h.specialization?.description ?? null,
     blockoutAsset: h.blockoutAsset,
@@ -728,7 +763,7 @@ export function buildView(sim: Simulation): SimView {
       const current = harbor.id === s.harborId;
       return {
         harborId: harbor.id,
-        name: harbor.name,
+        name: c.displayName(harbor.id, harbor.name),
         blockoutAsset: harbor.blockoutAsset,
         current,
         unlocked,
@@ -788,21 +823,21 @@ export function buildView(sim: Simulation): SimView {
     dayPartName: FishingSystem.dayPartAt(c, s.tick).name,
     tideChartOwned: FishingSystem.hasTideChart(s),
     weatherId: WeatherSystem.weatherAt(c, s.tick).id,
-    weatherName: WeatherSystem.weatherAt(c, s.tick).name,
+    weatherName: (() => { const w = WeatherSystem.weatherAt(c, s.tick); return c.displayName(w.id, w.name); })(),
     weatherDescription: WeatherSystem.weatherAt(c, s.tick).description,
     weatherTicksRemaining: WeatherSystem.ticksUntilWeatherChange(c, s.tick),
     tidePhaseId: WeatherSystem.tidePhaseAt(c, s.tick).id,
-    tidePhaseName: WeatherSystem.tidePhaseAt(c, s.tick).name,
+    tidePhaseName: (() => { const w = WeatherSystem.tidePhaseAt(c, s.tick); return c.displayName(w.id, w.name); })(),
     tideTicksRemaining: WeatherSystem.ticksUntilTideChange(c, s.tick),
     activeTechniqueId: MasterySystem.technique(c, s).id,
-    activeTechniqueName: MasterySystem.technique(c, s).name,
+    activeTechniqueName: (() => { const tech = MasterySystem.technique(c, s); return c.displayName(tech.id, tech.name); })(),
     masteryGlobalLevel: MasterySystem.globalLevel(c, s),
     techniques: c.fishingMastery.techniques.map((tech) => {
       const unlocked = MasterySystem.isUnlocked(c, s, tech);
       const active = MasterySystem.technique(c, s).id === tech.id;
       return {
         id: tech.id,
-        name: tech.name,
+        name: c.displayName(tech.id, tech.name),
         description: tech.description,
         requiresMasteryLevel: tech.requiresMasteryLevel,
         unlocked,
@@ -849,7 +884,7 @@ export function buildView(sim: Simulation): SimView {
       const onPlot = PlotSystem.standingOnUpgradePlot(h, s, u.id);
       const plotReady = a.kind === "purchasable" && (!needsPlot || onPlot);
       return {
-        id: u.id, name: u.name, description: u.description, cost: u.cost,
+        id: u.id, name: c.displayName(u.id, u.name), description: u.description, cost: u.cost,
         owned: a.kind === "owned",
         purchasable: plotReady,
         reason: a.kind === "locked" ? a.reason
@@ -860,14 +895,14 @@ export function buildView(sim: Simulation): SimView {
     }),
     rush: (() => {
       const r = CustomerSystem.activeRush(h, s.tick);
-      return r ? { rushId: r.id, name: r.name, ticksRemaining: CustomerSystem.ticksRemaining(r, s.tick) } : null;
+      return r ? { rushId: r.id, name: c.displayName(r.id, r.name), ticksRemaining: CustomerSystem.ticksRemaining(r, s.tick) } : null;
     })(),
     seasonalEvent: (() => {
       const e = SeasonalEventSystem.active(c, s.tick);
       return e
         ? {
           eventId: e.id,
-          name: e.name,
+          name: c.displayName(e.id, e.name),
           description: e.description,
           ticksRemaining: SeasonalEventSystem.ticksRemaining(e, s.tick),
           banner: e.banner ?? null,
@@ -921,12 +956,12 @@ export function buildView(sim: Simulation): SimView {
       const activeBranch = w.activeBranchId ? c.staffBranchesById.get(w.activeBranchId) : undefined;
       const activeSchedule = w.scheduleId ? c.staffSchedulesById.get(w.scheduleId) : undefined;
       return {
-        id: w.id, roleId: w.roleId, roleName: def?.name ?? w.roleId, roleKind: roleWire,
+        id: w.id, roleId: w.roleId, roleName: def ? c.displayName(def.id, def.name) : w.roleId, roleKind: roleWire,
         xMm: w.x, zMm: w.z, bagUsedUnits: w.bag.usedUnits(), bagCapacityUnits: w.bag.capacityUnits, phase: w.phase,
         level: w.level,
         xp: w.xp,
         xpToNext,
-        traitNames: w.traits.map((tid) => c.workerTraitsById.get(tid)?.name ?? tid),
+        traitNames: w.traits.map((tid) => { const tr = c.workerTraitsById.get(tid); return tr ? c.displayName(tr.id, tr.name) : tid; }),
         onShift: w.onShift,
         equipment: prog.loadouts.slots.flatMap((slot) => {
           const uid = w.equipment[slot.id];
@@ -935,7 +970,7 @@ export function buildView(sim: Simulation): SimView {
             slotId: slot.id,
             slotName: slot.name,
             upgradeId: uid,
-            upgradeName: c.upgradesById.get(uid)?.name ?? uid,
+            upgradeName: (() => { const u = c.upgradesById.get(uid); return u ? c.displayName(u.id, u.name) : uid; })(),
           }];
         }),
         blockedReason: WorkerSystem.blockedReason(c, s, h, w),
@@ -948,7 +983,7 @@ export function buildView(sim: Simulation): SimView {
           const trainReason = unlocked ? null : StaffTreesSystem.canTrain(c, s, w, branch.id);
           return {
             id: branch.id,
-            name: branch.name,
+            name: c.displayName(branch.id, branch.name),
             description: branch.description,
             parentId: branch.parentId,
             requiresWorkerLevel: branch.requiresWorkerLevel,
@@ -965,7 +1000,7 @@ export function buildView(sim: Simulation): SimView {
         }),
         schedules: c.staffTrees.schedules.map((sch) => ({
           id: sch.id,
-          name: sch.name,
+          name: c.displayName(sch.id, sch.name),
           description: sch.description,
           dayParts: sch.dayParts,
           wageMultPermille: sch.wageMultPermille,
@@ -977,7 +1012,7 @@ export function buildView(sim: Simulation): SimView {
       const a = WorkerSystem.availability(c, s, def);
       const hired = s.workers.filter((w) => w.roleId === def.id).length;
       return {
-        roleId: def.id, name: def.name, roleKind: def.role, cost: def.hireCost, hired, maxHired: def.maxHired,
+        roleId: def.id, name: c.displayName(def.id, def.name), roleKind: def.role, cost: def.hireCost, hired, maxHired: def.maxHired,
         purchasable: a.kind === "purchasable",
         reason: a.kind === "locked" ? a.reason
           : a.kind === "too_expensive" ? `Need ${a.missing} more coins`
@@ -991,7 +1026,7 @@ export function buildView(sim: Simulation): SimView {
         const wearer = s.workers.find((w) => w.equipment[slot.id] === uid);
         return [{
           upgradeId: uid,
-          name: c.upgradesById.get(uid)?.name ?? uid,
+          name: (() => { const u = c.upgradesById.get(uid); return u ? c.displayName(u.id, u.name) : uid; })(),
           slotId: slot.id,
           slotName: slot.name,
           equippedOnWorkerId: wearer?.id ?? null,
@@ -1009,7 +1044,7 @@ export function buildView(sim: Simulation): SimView {
       const missing = locked ? ProgressionSystem.missingRequirement(c, s, q) : null;
       return {
         id: q.id,
-        name: q.name,
+        name: c.displayName(q.id, q.name),
         description: q.description,
         status: completed ? "completed" : locked ? "locked" : "active",
         progress: completed ? q.goal.atLeast : progress,
@@ -1111,6 +1146,8 @@ export function buildView(sim: Simulation): SimView {
     reputationScorePermille: ReputationSystem.scorePermille(c, s),
     reputationBand: ReputationSystem.band(c, s),
     reputationLabel: ReputationSystem.bandLabel(c, s),
+    activeRivalIds: RivalMarketSystem.activeRivals(c, s, s.harborId).map((r) => r.id),
+    rivalPressureActive: RivalMarketSystem.isPressuring(c, s, s.harborId),
     prestige: c.prestige.milestones.map((m) => {
       const completed = s.completedPrestige.has(m.id);
       const locked = !completed && !PrestigeSystem.requirementsMet(s, m);
@@ -1128,6 +1165,40 @@ export function buildView(sim: Simulation): SimView {
         catchSpeedPermille: m.reward.catchSpeedPermille,
         priceBonusPermille: m.reward.priceBonusPermille,
         reason: missing ? `Requires: ${missing}` : null,
+      };
+    }),
+    endgameUnlocked: EndgameSystem.boardUnlocked(c, s),
+    endgameLockedReason: (() => {
+      const missing = EndgameSystem.missingBoardRequirement(c, s);
+      return missing ? `Requires: ${missing}` : null;
+    })(),
+    beatenRivalCount: s.beatenRivalIds.size,
+    endgameTiers: c.endgame.tiers.map((t) => {
+      const unlocked = s.unlockedEndgameTiers.has(t.id);
+      return {
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        status: unlocked ? "unlocked" : EndgameSystem.tierRequirementsMet(s, t) ? "ready" : "locked",
+        requiresPrestigeCount: t.requiresPrestigeCount,
+        requiresRivalBeats: t.requiresRivalBeats,
+        requiresChallenges: t.requiresChallenges,
+        catchSpeedPermille: t.catchSpeedPermille,
+        priceBonusPermille: t.priceBonusPermille,
+        coins: t.coins,
+      };
+    }),
+    endgameChallenges: c.endgame.challenges.map((ch) => {
+      const completed = s.completedEndgameChallenges.has(ch.id);
+      const progress = Math.min(s.stat(ch.stat), ch.atLeast);
+      return {
+        id: ch.id,
+        name: ch.name,
+        description: ch.description,
+        status: completed ? "completed" : "active",
+        progress: completed ? ch.atLeast : progress,
+        goalAtLeast: ch.atLeast,
+        rewardCoins: ch.rewardCoins,
       };
     }),
     achievements: c.achievements.entries.map((a) => {

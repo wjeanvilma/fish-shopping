@@ -1,0 +1,49 @@
+{
+  "phase": 16,
+  "plan": "30_finish_3.0",
+  "schema": "fish.ship.stripe_live_checkout.v1",
+  "description": "Finish 3.0 Phase 16 — live Stripe web checkout. CHECKOUT_API_MODE=live creates Stripe Checkout Sessions and verifies webhooks; stub/instant remains the default. Schema stays 24 / content 2.0.0. Secrets never committed.",
+  "contentVersion": "2.0.0",
+  "schemaVersion": 24,
+  "stripeLiveCheckoutMarker": "authored-finish-3.0-phase-16",
+  "webhookPath": "/v1/stripe/webhook",
+  "checkoutHost": "https://checkout.stripe.com/",
+  "closesGap": "stripeLiveCheckoutPartial",
+  "priorCheckoutApiPhase": 25,
+  "authorModules": [
+    "checkout-api/src/stripeLive.ts",
+    "checkout-api/src/handlers.ts",
+    "checkout-api/src/server.ts"
+  ],
+  "envPlaceholders": [
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET"
+  ],
+  "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "billingContract": "shared/billing/web-billing.json",
+  "productsCatalog": "shared/billing/web-checkout-products.json",
+  "parityFixture": "shared/fixtures/parity-stripe-live-checkout.json",
+  "validateScript": "npm run stripe:validate",
+  "checklist": [
+    "Live mode creates Stripe Checkout URLs (injectable adapter); refuses live without STRIPE_SECRET_KEY",
+    "POST /v1/stripe/webhook verifies signatures and grants on checkout.session.completed",
+    "Active SKUs have stripePriceId placeholders; stub/instant path still green",
+    "Kickoff gap stripeLiveCheckoutPartial closed; phase 16 validate = stripe:validate",
+    "checkoutapi:validate + billing:validate stay green; no secrets in .env.example",
+    "schema stays 24 / content 2.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/stripe-live-checkout.json",
+    "shared/fixtures/parity-stripe-live-checkout.json",
+    "shared/ship/finish-3.0-kickoff.json",
+    "checkout-api/src/stripeLive.ts",
+    "checkout-api/src/handlers.ts",
+    "checkout-api/src/server.ts",
+    "checkout-api/.env.example",
+    "web/src/ship/stripeLiveCheckout.ts",
+    "web/scripts/validate-stripe-live-checkout.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/StripeLiveCheckout.kt",
+    "shared/billing/web-billing.json",
+    "shared/billing/web-checkout-products.json"
+  ]
+}

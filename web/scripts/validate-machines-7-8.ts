@@ -40,13 +40,13 @@ function validate(): string[] {
   if (MACHINES_78_PHASE !== 10) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 21) errors.push("schemaVersion must be 21");
   if (catalog.machineCount !== 8 || MACHINE_COUNT_FLOOR !== 8) {
-    errors.push("machineCount must be 8");
+    errors.push("machineCount catalog floor must be 8");
   }
-  if (dod.quotas?.machineClasses !== 8) {
-    errors.push("DoD quotas.machineClasses must be 8");
+  if ((dod.quotas?.machineClasses ?? 0) < 8) {
+    errors.push("DoD quotas.machineClasses must be ≥ 8");
   }
-  if (content.machines.length !== 8) {
-    errors.push(`content machines ${content.machines.length} ≠ 8`);
+  if (content.machines.length < 8) {
+    errors.push(`content machines ${content.machines.length} < 8`);
   }
 
   if (listing.machines78Phase !== 10) errors.push("listing.machines78Phase must be 10");
@@ -107,8 +107,13 @@ function validate(): string[] {
     }
   }
 
-  if (fixture.expectFinal?.machineCount !== 8) {
-    errors.push("fixture expectFinal.machineCount must be 8");
+  if ((fixture.expectFinal?.machineCount ?? 0) < 8) {
+    errors.push("fixture expectFinal.machineCount must be ≥ 8");
+  }
+  if (fixture.expectFinal?.machineCount !== content.machines.length) {
+    errors.push(
+      `fixture expectFinal.machineCount ${fixture.expectFinal?.machineCount} ≠ content ${content.machines.length}`,
+    );
   }
   if (fixture.build?.plotId !== "plot.sunrise_steamer") {
     errors.push("fixture must build plot.sunrise_steamer");

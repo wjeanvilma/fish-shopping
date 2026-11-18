@@ -263,6 +263,16 @@ object ContentLoader {
                         catchSpeedMultPermille = p["catchSpeedMultPermille"].int(min = 1),
                     )
                 },
+                habitats = e.optional("habitats")?.list { h ->
+                    EcologyHabitatDef(
+                        id = h["id"].string(),
+                        name = h["name"].string(),
+                        harbors = h["harbors"].list { it.string() },
+                        favoredDayParts = h["favoredDayParts"].list { it.string() },
+                        speciesWeightMultPermille =
+                            h.optional("speciesWeightMultPermille")?.stringIntMap() ?: emptyMap(),
+                    )
+                } ?: emptyList(),
             )
         },
         trophies = r["trophies"].let { t ->
@@ -442,6 +452,56 @@ object ContentLoader {
                 unmetPreferencePenaltyPermille = rep["unmetPreferencePenaltyPermille"].int(min = 0),
                 coachingLostRatioPermille = rep["coachingLostRatioPermille"].int(min = 0, max = 1000),
                 coachingPraiseScorePermille = rep["coachingPraiseScorePermille"].int(min = 1),
+            )
+        },
+        rivalMarkets = r["rivalMarkets"].let { rm ->
+            RivalMarketsCatalog(
+                tickInterval = rm["tickInterval"].int(min = 1),
+                emptyStockSiphonChancePermille = rm["emptyStockSiphonChancePermille"].int(min = 0, max = 1000),
+                lowRepSiphonBonusPermille = rm["lowRepSiphonBonusPermille"].int(min = 0, max = 1000),
+                minReputationBandToResist = rm["minReputationBandToResist"].int(min = 0),
+                wellStockedUnits = rm["wellStockedUnits"].int(min = 1),
+                pressureSpawnMultPermille = rm["pressureSpawnMultPermille"].int(min = 1),
+                rivals = rm["rivals"].list { rival ->
+                    RivalMarketDef(
+                        id = rival["id"].string(),
+                        name = rival["name"].string(),
+                        description = rival["description"].string(),
+                        harbors = rival["harbors"].list { it.string() },
+                        aggressionPermille = rival["aggressionPermille"].int(min = 1, max = 1000),
+                        specialtyProducts = rival["specialtyProducts"].list { it.string() },
+                        undercutPriceMultPermille = rival["undercutPriceMultPermille"].int(min = 1, max = 1000),
+                        activeDayParts = rival["activeDayParts"].list { it.string() },
+                    )
+                },
+            )
+        },
+        endgame = r["endgame"].let { eg ->
+            EndgameCatalog(
+                requiresPrestigeCount = eg["requiresPrestigeCount"].int(min = 0),
+                tiers = eg["tiers"].list { tier ->
+                    EndgameTierDef(
+                        id = tier["id"].string(),
+                        name = tier["name"].string(),
+                        description = tier["description"].string(),
+                        requiresPrestigeCount = tier["requiresPrestigeCount"].int(min = 0),
+                        requiresRivalBeats = tier["requiresRivalBeats"].int(min = 0),
+                        requiresChallenges = tier["requiresChallenges"].int(min = 0),
+                        catchSpeedPermille = tier["catchSpeedPermille"].int(min = 1),
+                        priceBonusPermille = tier["priceBonusPermille"].int(min = 1),
+                        coins = tier["coins"].long(min = 0),
+                    )
+                },
+                challenges = eg["challenges"].list { ch ->
+                    EndgameChallengeDef(
+                        id = ch["id"].string(),
+                        name = ch["name"].string(),
+                        description = ch["description"].string(),
+                        stat = ch["stat"].string(),
+                        atLeast = ch["atLeast"].long(min = 1),
+                        rewardCoins = ch["rewardCoins"].long(min = 0),
+                    )
+                },
             )
         },
         contracts = r["contracts"].let { c ->

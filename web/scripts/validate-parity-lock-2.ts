@@ -49,7 +49,7 @@ function validate(): string[] {
   if (ship.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (PARITY_LOCK_2_PHASE !== 29) errors.push("phase mirror mismatch");
   if (ship.schemaVersion !== 23) errors.push("ship schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
   if (ship.parityLock2Marker !== PARITY_LOCK_2_MARKER) errors.push("ship marker mismatch");
   if (fixture.parityLock2Marker !== PARITY_LOCK_2_MARKER) errors.push("fixture marker mismatch");
@@ -135,7 +135,7 @@ function validate(): string[] {
   if (pin.parityLock2 !== "shared/ship/parity-lock-2.0.json") {
     errors.push("RELEASE_PIN.parityLock2 path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
   if (!pkg.scripts?.["parity2:validate"]) errors.push("web/package.json missing parity2:validate");
   if (PARITY_LOCK_2.parityLockCatalog !== "shared/fixtures/parity-lock.json") {
     errors.push("ship parityLockCatalog mismatch");

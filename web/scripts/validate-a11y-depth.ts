@@ -47,8 +47,22 @@ function validate(): string[] {
   const ci = readFileSync(resolve(root, ".github/workflows/ci.yml"), "utf8");
   const css = readFileSync(resolve(root, "web/src/ui/styles.css"), "utf8");
   const app = readFileSync(resolve(root, "web/src/ui/App.tsx"), "utf8");
+  const contractsWeb = readFileSync(resolve(root, "web/src/ui/ContractsPanel.tsx"), "utf8");
+  const speciesWeb = readFileSync(resolve(root, "web/src/ui/SpeciesBookPanel.tsx"), "utf8");
   const gameScreen = readFileSync(
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt"),
+    "utf8",
+  );
+  const hudPrim = readFileSync(
+    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/HudPrimitives.kt"),
+    "utf8",
+  );
+  const contractsKt = readFileSync(
+    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/ContractsPanel.kt"),
+    "utf8",
+  );
+  const speciesKt = readFileSync(
+    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/SpeciesBookPanel.kt"),
     "utf8",
   );
 
@@ -57,7 +71,7 @@ function validate(): string[] {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (A11Y_DEPTH_PHASE !== 24) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
-  if (SCHEMA_VERSION !== 23) errors.push("engine SCHEMA_VERSION must be 23");
+  if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
   if (catalog.a11yDepthMarker !== A11Y_DEPTH_MARKER) errors.push("marker mismatch");
   if (catalog.simHzInvariant !== 20) errors.push("simHzInvariant must be 20");
@@ -112,17 +126,26 @@ function validate(): string[] {
   if (!css.includes("--reward-text") && !css.includes("reward-text")) {
     errors.push("styles.css must define --reward-text for AA reward copy");
   }
-  if (!app.includes('t("hud.weatherTide")') || !app.includes('t("panels.codex")')) {
-    errors.push("App.tsx missing weather/codex a11y labels");
+  if (!app.includes('t("hud.weatherTide")')) {
+    errors.push("App.tsx missing weather a11y label");
   }
-  if (!app.includes('t("nav.jobs")') || !app.includes('t("a11y.failStreak"')) {
-    errors.push("App.tsx missing jobs/fail-streak a11y");
+  if (!speciesWeb.includes('t("panels.codex")') && !app.includes('t("panels.codex")')) {
+    errors.push("Species book / App missing panels.codex a11y label");
+  }
+  if (!app.includes('t("nav.jobs")')) {
+    errors.push("App.tsx missing jobs nav a11y");
+  }
+  if (!contractsWeb.includes('t("a11y.failStreak"') && !app.includes('t("a11y.failStreak"')) {
+    errors.push("Contracts / App missing fail-streak a11y");
   }
   if (!app.includes("festival_hud") || !app.includes('aria-live="polite"')) {
     errors.push("App.tsx missing festival live region wiring");
   }
-  if (!gameScreen.includes("a11yPane") || !gameScreen.includes("paneTitle")) {
-    errors.push("GameScreen missing a11yPane / paneTitle");
+  if (!hudPrim.includes("a11yPane") || !hudPrim.includes("paneTitle")) {
+    errors.push("HudPrimitives missing a11yPane / paneTitle");
+  }
+  if (!speciesKt.includes("a11yPane") && !contractsKt.includes("a11yPane")) {
+    errors.push("Android panels missing a11yPane wiring");
   }
   if (!gameScreen.includes("hud.weatherTide") || !gameScreen.includes("LiveRegionMode")) {
     errors.push("GameScreen missing weather live region");
@@ -146,7 +169,7 @@ function validate(): string[] {
   if (pin.a11yDepth !== "shared/ship/a11y-depth.json") {
     errors.push("RELEASE_PIN.a11yDepth path mismatch");
   }
-  if (pin.schemaVersion !== 23) errors.push("RELEASE_PIN.schemaVersion must be 23");
+  if (pin.schemaVersion < 23) errors.push("RELEASE_PIN.schemaVersion must be >= 23");
   if (accessibilityDepth.simHzInvariant !== 20) errors.push("depth simHzInvariant must be 20");
   if (A11Y_DEPTH.depthCatalog !== "shared/a11y/accessibility-depth.json") {
     errors.push("depthCatalog path mismatch");

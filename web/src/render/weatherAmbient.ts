@@ -1,5 +1,6 @@
 /**
  * Finish 2.0 Phase 22 — weather ambient profiles for harbor presentation.
+ * Finish 3.0 Phase 24 adds tide + rival ambient mixes (still not burst-pool).
  * Presentation-only; does not consume the VfxBurst pool or change 20 Hz sim.
  */
 import type { PresenterQuality } from "./presenters";
@@ -11,6 +12,8 @@ export type WeatherAmbientId =
   | "fog"
   | "gale"
   | "default";
+
+export type TideAmbientId = "dawn" | "day" | "dusk" | "night";
 
 export interface WeatherAmbientProfile {
   id: WeatherAmbientId;
@@ -82,6 +85,14 @@ const PROFILES: Record<WeatherAmbientId, WeatherAmbientProfile> = {
   },
 };
 
+/** Tide sky/water tint targets + bob scale multipliers (Finish 3.0 Phase 24). */
+const TIDE_MIX: Record<TideAmbientId, { sky: string; water: string; amount: number; bob: number }> = {
+  dawn: { sky: "#f2c4a0", water: "#3a7a90", amount: 0.22, bob: 0.95 },
+  day: { sky: "#9fd3ea", water: "#1a5f7a", amount: 0.0, bob: 1.0 },
+  dusk: { sky: "#e08958", water: "#2a4860", amount: 0.28, bob: 0.9 },
+  night: { sky: "#1a2848", water: "#0c2030", amount: 0.42, bob: 0.75 },
+};
+
 export const WEATHER_AMBIENT_PATTERN_IDS = [
   "weather.clear",
   "weather.overcast",
@@ -89,6 +100,8 @@ export const WEATHER_AMBIENT_PATTERN_IDS = [
   "weather.fog",
   "weather.gale",
 ] as const;
+
+export const TIDE_AMBIENT_PHASE_IDS: readonly TideAmbientId[] = ["dawn", "day", "dusk", "night"];
 
 export function weatherAmbientIdForWeatherId(weatherId: string): WeatherAmbientId {
   if (weatherId.includes("gale")) return "gale";
@@ -99,18 +112,38 @@ export function weatherAmbientIdForWeatherId(weatherId: string): WeatherAmbientI
   return "default";
 }
 
+export function tideAmbientIdForPhaseId(tidePhaseId: string): TideAmbientId {
+  if (tidePhaseId === "dawn") return "dawn";
+  if (tidePhaseId === "dusk") return "dusk";
+  if (tidePhaseId === "night") return "night";
+  return "day";
+}
+
 export function weatherAmbientProfile(
   weatherId: string,
   festivalActive = false,
   quality: PresenterQuality = "medium",
   reducedMotion = false,
+  tidePhaseId = "day",
+  rivalActive = false,
 ): WeatherAmbientProfile {
   const base = { ...PROFILES[weatherAmbientIdForWeatherId(weatherId)] };
   const qScale = quality === "low" ? 0.55 : quality === "medium" ? 0.85 : 1.0;
-  base.bobScale *= reducedMotion ? 0 : qScale;
+  const tide = TIDE_MIX[tideAmbientIdForPhaseId(tidePhaseId)];
+  base.bobScale *= (reducedMotion ? 0 : qScale) * tide.bob;
+  if (tide.amount > 0) {
+    base.skyHex = mixHex(base.skyHex, tide.sky, tide.amount * qScale);
+    base.waterDeepHex = mixHex(base.waterDeepHex, tide.water, tide.amount * 0.65 * qScale);
+    base.waterShallowHex = mixHex(base.waterShallowHex, tide.water, tide.amount * 0.45 * qScale);
+  }
   if (festivalActive) {
     // Warm the sky slightly toward a festival gold without overriding weather identity.
     base.skyHex = mixHex(base.skyHex, "#f0c878", base.festivalWarmth * qScale);
+  }
+  if (rivalActive) {
+    // Cool magenta tension tint when rival pressure is active.
+    base.skyHex = mixHex(base.skyHex, "#8a4068", 0.18 * qScale);
+    base.waterDeepHex = mixHex(base.waterDeepHex, "#3a2040", 0.12 * qScale);
   }
   return base;
 }
@@ -120,8 +153,17 @@ export function weatherWaterTintRgb(
   weatherId: string,
   festivalActive = false,
   quality: PresenterQuality = "medium",
+  tidePhaseId = "day",
+  rivalActive = false,
 ): { r: number; g: number; b: number; bobScale: number } {
-  const p = weatherAmbientProfile(weatherId, festivalActive, quality, false);
+  const p = weatherAmbientProfile(
+    weatherId,
+    festivalActive,
+    quality,
+    false,
+    tidePhaseId,
+    rivalActive,
+  );
   const c = hexToRgb(p.waterDeepHex);
   return { r: c.r, g: c.g, b: c.b, bobScale: p.bobScale };
 }

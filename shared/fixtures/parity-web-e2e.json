@@ -1,0 +1,43 @@
+{
+  "schema": "fish.fixture.parity_web_e2e.v1",
+  "description": "Finish 3.0 Phase 22: Playwright E2E id + suite expectations.",
+  "webE2eMarker": "authored-finish-3.0-phase-22",
+  "expect": {
+    "closesGap": "webE2eMissing",
+    "schemaVersion": 24,
+    "contentVersion": "2.0.0",
+    "minIdCount": 18,
+    "requiredIds": [
+      "title.root",
+      "title.play",
+      "title.analytics.decline",
+      "nav.pause",
+      "pause.resume",
+      "hud.toolbar"
+    ],
+    "idsSourceMustContain": [
+      "TITLE_PLAY",
+      "NAV_PAUSE",
+      "PAUSE_RESUME",
+      "HUD_TOOLBAR",
+      "WEB_E2E_SETTINGS_KEY"
+    ],
+    "smokeMustContain": [
+      "title play reaches ready HUD",
+      "analytics decline then play",
+      "getByTestId",
+      "WEB_E2E_IDS"
+    ],
+    "configMustContain": [
+      "swiftshader",
+      "webServer",
+      "testDir: \"./e2e\""
+    ],
+    "packageMustContain": [
+      "@playwright/test",
+      "e2e:smoke",
+      "e2e:install",
+      "webe2e:validate"
+    ]
+  }
+}

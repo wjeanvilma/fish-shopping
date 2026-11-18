@@ -178,6 +178,128 @@ jobs:
         working-directory: web
         run: npm run freeze2:validate
 
+      - name: Finish 3.0 Phase 1 kickoff + gap scoreboard
+        working-directory: web
+        run: |
+          npm run finish3:validate
+          npm run finish3:smoke
+
+      - name: Finish 3.0 Phase 2 Android HUD split
+        working-directory: web
+        run: npm run androidhud:validate
+
+      - name: Finish 3.0 Phase 3 web HUD split
+        working-directory: web
+        run: npm run webhud:validate
+
+      - name: Finish 3.0 Phase 4 shared shell controller
+        working-directory: web
+        run: npm run shellctrl:validate
+
+      - name: Finish 3.0 Phase 5 Android i18n
+        working-directory: web
+        run: npm run androidi18n:validate
+
+      - name: Finish 3.0 Phase 6 content i18n + third locale
+        working-directory: web
+        run: npm run contenti18n:validate
+
+      - name: Finish 3.0 Phase 7 dark theme + design system
+        working-directory: web
+        run: npm run themeds:validate
+
+      - name: Finish 3.0 Phase 8 harbor art pass 2
+        working-directory: web
+        run: npm run harborart2:validate
+
+      - name: Finish 3.0 Phase 9 fish art pass 2
+        working-directory: web
+        run: npm run fishart2:validate
+
+      - name: Finish 3.0 Phase 10 staff unlock
+        working-directory: web
+        run: npm run staffunlock:validate
+
+      - name: Finish 3.0 Phase 11 worker AI depth
+        working-directory: web
+        run: npm run workerai:validate
+
+      - name: Finish 3.0 Phase 12 species 51–75 + ecology
+        working-directory: web
+        run: npm run species5175:validate
+
+      - name: Finish 3.0 Phase 13 machines 9–10 + recipes
+        working-directory: web
+        run: npm run machines910:validate
+
+      - name: Finish 3.0 Phase 14 rival NPC markets
+        working-directory: web
+        run: npm run rivalmarkets:validate
+
+      - name: Finish 3.0 Phase 15 schema 24 + endgame
+        working-directory: web
+        run: npm run schema24:validate
+
+      - name: Finish 3.0 Phase 16 live Stripe checkout
+        working-directory: web
+        run: npm run stripe:validate
+
+      - name: Finish 3.0 Phase 17 cloud QA harness 2
+        working-directory: web
+        run: npm run cloudqa2:validate
+
+      - name: Finish 3.0 Phase 18 local daily-goal push reminders
+        working-directory: web
+        run: npm run localpush:validate
+
+      - name: Finish 3.0 Phase 19 web PWA / service worker shell
+        working-directory: web
+        run: npm run pwa:validate
+
+      - name: Finish 3.0 Phase 20 Android App Links + web deep links
+        working-directory: web
+        run: npm run deeplink:validate
+
+      - name: Finish 3.0 Phase 21 Compose UI integration tests
+        working-directory: web
+        run: npm run composeui:validate
+
+      - name: Finish 3.0 Phase 22 Web Playwright E2E catalog
+        working-directory: web
+        run: npm run webe2e:validate
+
+      - name: Finish 3.0 Phase 23 SFX/music pack 3
+        working-directory: web
+        run: npm run audiopack3:validate
+
+      - name: Finish 3.0 Phase 24 VFX/juice 3
+        working-directory: web
+        run: npm run vfx3:validate
+
+      - name: Finish 3.0 Phase 25 A11y depth 2
+        working-directory: web
+        run: npm run a11ydepth2:validate
+
+      - name: Finish 3.0 Phase 26 remote analytics sink
+        working-directory: web
+        run: npm run remoteanalytics:validate
+
+      - name: Finish 3.0 Phase 27 quests/contracts expansion
+        working-directory: web
+        run: npm run quests3:validate
+
+      - name: Finish 3.0 Phase 28 content CLI expansion
+        working-directory: web
+        run: npm run contentcli2:validate
+
+      - name: Finish 3.0 Phase 29 parity lock 3.0
+        working-directory: web
+        run: npm run parity3:validate
+
+      - name: Finish 3.0 Phase 30 freeze 3.0.0
+        working-directory: web
+        run: npm run freeze3:validate
+
       - name: Schema 21 kickoff + v20 migration
         working-directory: web
         run: npm run schema21:validate
@@ -283,6 +405,15 @@ jobs:
 
       - name: Kotlin sim + shared fixtures
         run: ./gradlew :game-core:test --no-daemon
+
+      - name: Finish 3.0 Phase 21 Compose UI Robolectric suite
+        run: ./gradlew :app:testDebugUnitTest --tests '*ComposeUiIntegrationTest*' --no-daemon
+
+      - name: Finish 3.0 Phase 22 Playwright E2E smoke
+        working-directory: web
+        run: |
+          npx playwright install --with-deps chromium
+          npm run e2e:smoke
 
       - name: Web engine + parity fixtures
         working-directory: web

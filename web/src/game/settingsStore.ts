@@ -9,10 +9,36 @@ import { clampHudTextScale, type HudTextScale } from "../presenters/accessibilit
 
 export type QualityPreset = "low" | "medium" | "high";
 export type JoystickSide = "left" | "right";
+/** Finish 3.0 Phase 7 — HUD chrome theme preference. */
+export type ThemePreference = "system" | "light" | "dark";
 /** Multiplier on the 140px design-token diameter. */
 export type JoystickScale = 0.75 | 1 | 1.25;
 export type { VolumeStep, HudTextScale };
 export type { AppLocale };
+
+export function isThemePreference(v: unknown): v is ThemePreference {
+  return v === "system" || v === "light" || v === "dark";
+}
+
+/** Resolve system/light/dark into an effective light|dark mode. */
+export function resolveThemeMode(
+  preference: ThemePreference,
+  systemDark: boolean = typeof window !== "undefined"
+    ? window.matchMedia("(prefers-color-scheme: dark)").matches
+    : false,
+): "light" | "dark" {
+  if (preference === "light") return "light";
+  if (preference === "dark") return "dark";
+  return systemDark ? "dark" : "light";
+}
+
+/** Apply data-theme on documentElement for CSS token overrides. */
+export function applyThemeFromSettings(settings: { themePreference: ThemePreference }): void {
+  if (typeof document === "undefined") return;
+  const mode = resolveThemeMode(settings.themePreference);
+  document.documentElement.dataset.theme = mode;
+  document.documentElement.style.colorScheme = mode;
+}
 
 export interface GameSettings {
   muted: boolean;
@@ -52,8 +78,12 @@ export interface GameSettings {
   cloudRefreshToken: string | null;
   /** Phase 24: equipped harbor banner cosmetic id (presentation-only). */
   equippedCosmeticId: string | null;
-  /** Finish 2.0 Phase 23: UI chrome locale (en | es). */
+  /** Finish 2.0 Phase 23 + Finish 3.0 Phase 6: UI/content locale (en | es | pt). */
   locale: AppLocale;
+  /** Finish 3.0 Phase 7: HUD chrome light/dark/system. */
+  themePreference: ThemePreference;
+  /** Finish 3.0 Phase 18: opt-in local daily-goal push reminders. */
+  dailyGoalRemindersEnabled: boolean;
 }
 
 /** Presentation-only save / cloud status for the Settings panel. */
@@ -90,6 +120,8 @@ const DEFAULTS: GameSettings = {
   cloudRefreshToken: null,
   equippedCosmeticId: null,
   locale: resolveLocale(null),
+  themePreference: "system",
+  dailyGoalRemindersEnabled: false,
 };
 
 function parseScale(v: unknown): JoystickScale {
@@ -136,6 +168,10 @@ export function loadSettings(): GameSettings {
         ? parsed.equippedCosmeticId
         : null,
       locale: isAppLocale(parsed.locale) ? parsed.locale : resolveLocale(null),
+      themePreference: isThemePreference(parsed.themePreference) ? parsed.themePreference : DEFAULTS.themePreference,
+      dailyGoalRemindersEnabled: typeof parsed.dailyGoalRemindersEnabled === "boolean"
+        ? parsed.dailyGoalRemindersEnabled
+        : DEFAULTS.dailyGoalRemindersEnabled,
     };
   } catch {
     return { ...DEFAULTS };
@@ -145,6 +181,7 @@ export function loadSettings(): GameSettings {
 export function saveSettings(settings: GameSettings): void {
   try {
     setLocale(settings.locale);
+    applyThemeFromSettings(settings);
     localStorage.setItem(KEY, JSON.stringify(settings));
   } catch {
     // private mode / quota — ignore

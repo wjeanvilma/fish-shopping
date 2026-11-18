@@ -68,7 +68,7 @@ describe("Machines 7–8 (Finish 2.0 Phase 10)", () => {
     expect(MACHINES_78_PHASE).toBe(10);
     expect(MACHINES_78_SCHEMA).toBe("fish.ship.machines_7_8.v1");
     expect(MACHINE_COUNT_FLOOR).toBe(8);
-    expect(content.machines).toHaveLength(8);
+    expect(content.machines.length).toBeGreaterThanOrEqual(8);
     expect((storeListing as { machines78Phase?: number }).machines78Phase).toBe(10);
     for (const entry of MACHINES_78.newMachines) {
       expect(content.machinesById.has(entry.id)).toBe(true);

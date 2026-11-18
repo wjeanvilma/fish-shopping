@@ -1,0 +1,15 @@
+{
+  "name": "fishshopping-analytics-api",
+  "private": true,
+  "version": "0.0.26",
+  "type": "module",
+  "description": "Finish 3.0 Phase 26 — local analytics batch API emulator (no secrets).",
+  "scripts": {
+    "dev": "npx --prefix ../web vite-node src/server.ts",
+    "start": "npx --prefix ../web vite-node src/server.ts",
+    "validate": "npx --prefix ../web vite-node ../web/scripts/validate-remote-analytics.ts"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

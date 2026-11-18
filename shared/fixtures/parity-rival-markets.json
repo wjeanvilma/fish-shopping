@@ -1,0 +1,35 @@
+{
+  "schema": "fish.fixtures.parity_rival_markets.v1",
+  "rivalMarketsMarker": "authored-finish-3.0-phase-14",
+  "phase": 14,
+  "plan": "30_finish_3.0",
+  "description": "Finish 3.0 Phase 14: at sunrise dawn, Dockside Dolly is active and pressuring empty shelves; after stocking specialty and selling, player can beat the rival.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1414,
+  "setup": {
+    "coins": 200,
+    "advanceTicks": 80
+  },
+  "expectActive": {
+    "rivalId": "rival.dockside_dolly",
+    "pressureWhenEmpty": true
+  },
+  "stockAndSell": {
+    "counterId": "counter.portions_1",
+    "productId": "product.basic_portion",
+    "quantity": 4,
+    "expectBeatRivalId": "rival.dockside_dolly"
+  },
+  "expectFinal": {
+    "rivalCount": 8,
+    "schemaVersion": 23,
+    "contentVersion": "2.0.0",
+    "gates": [
+      "rivals_8",
+      "system_parity",
+      "stats_wired",
+      "kickoff_phase14",
+      "ci_gate"
+    ]
+  }
+}

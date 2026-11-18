@@ -1,0 +1,26 @@
+{
+  "schema": "fish.fixtures.parity_schema_24_endgame.v1",
+  "schema24EndgameMarker": "authored-finish-3.0-phase-15",
+  "phase": 15,
+  "plan": "30_finish_3.0",
+  "description": "Finish 3.0 Phase 15: schema 24 persists endgame progress; Deep Harbor unlocks after eight prestige milestones.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1515,
+  "expect": {
+    "schemaVersion": 24,
+    "contentVersion": "2.0.0",
+    "tierCount": 4,
+    "challengeCount": 4,
+    "fromSchema": 23,
+    "toSchema": 24,
+    "firstTierId": "endgame.tier.deep_harbor",
+    "gates": [
+      "schema_24",
+      "endgame_content",
+      "system_parity",
+      "legacy_v23",
+      "kickoff_phase15",
+      "ci_gate"
+    ]
+  }
+}
