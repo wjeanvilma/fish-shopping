@@ -15,6 +15,7 @@ import {
 import { contrastFailures } from "../src/presenters/accessibilitySweep";
 
 const root = resolve(__dirname, "../..");
+const sharedView = resolve(__dirname, "../..");
 
 describe("a11y depth (Finish 2.0 Phase 24)", () => {
   it("locks floors and keeps Phase 16 sweep green", () => {
