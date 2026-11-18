@@ -26,6 +26,11 @@ export const WEB_E2E_IDS = {
   NAV_DASH: "nav.dash",
   NAV_UPGRADES: "nav.upgrades",
   NAV_BAG: "nav.bag",
+  NAV_MENU: "nav.menu",
+  NAV_PHOTO: "nav.photo",
+  NAV_DECOR: "nav.decor",
+  PHOTO_SNAP: "photo.snap",
+  DECOR_PLACE: "decor.place",
   HUD_TOOLBAR: "hud.toolbar",
   DEEPLINK_READY: "deeplink.ready",
 } as const;

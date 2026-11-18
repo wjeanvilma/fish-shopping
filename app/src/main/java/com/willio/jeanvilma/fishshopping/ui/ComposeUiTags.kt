@@ -31,6 +31,11 @@ object ComposeUiTags {
     const val NAV_DASH = "nav.dash"
     const val NAV_UPGRADES = "nav.upgrades"
     const val NAV_BAG = "nav.bag"
+    const val NAV_MENU = "nav.menu"
+    const val NAV_PHOTO = "nav.photo"
+    const val NAV_DECOR = "nav.decor"
+    const val PHOTO_SNAP = "photo.snap"
+    const val DECOR_PLACE = "decor.place"
     const val HUD_TOOLBAR = "hud.toolbar"
     const val DEEPLINK_READY = "deeplink.ready"
 
@@ -57,6 +62,11 @@ object ComposeUiTags {
         NAV_DASH,
         NAV_UPGRADES,
         NAV_BAG,
+        NAV_MENU,
+        NAV_PHOTO,
+        NAV_DECOR,
+        PHOTO_SNAP,
+        DECOR_PLACE,
         HUD_TOOLBAR,
         DEEPLINK_READY,
     )

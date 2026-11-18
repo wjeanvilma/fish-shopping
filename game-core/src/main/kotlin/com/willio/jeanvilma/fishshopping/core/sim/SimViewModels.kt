@@ -42,6 +42,8 @@ data class SimView(
     /** Current harbor day-part id (dawn/day/dusk/night). */
     val dayPartId: String,
     val dayPartName: String,
+    /** Cozy art pass 5: continuous position in the day cycle, 0..999 (presentation only). */
+    val dayProgressPermille: Int = 400,
     /** True when tide chart is owned (night regen eases + dawn/dusk cast bonus). */
     val tideChartOwned: Boolean,
     /** Finish 2.0 Phase 13 — current weather pattern. */
@@ -158,6 +160,8 @@ data class SimView(
     val cosmeticIapOffers: List<CosmeticIapOfferView>,
     /** Summed patience bonus from owned decor. */
     val decorPatienceBonusTicks: Int,
+    /** Cozy art pass 5: decor standing in the active harbor (sorted by decor id). */
+    val decorPlacements: List<DecorPlacementView> = emptyList(),
     /** Museum personal bests (sorted by species id). */
     val trophies: List<TrophyEntryView>,
     /** Curated gallery progress for the Goals panel. */
@@ -626,6 +630,17 @@ data class DecorOfferView(
     val status: String,
     val reason: String?,
     val canAfford: Boolean,
+    /** Cozy art pass 5: placed somewhere in the active harbor. */
+    val placed: Boolean = false,
+)
+
+/** Cozy art pass 5: a decor item standing in the active harbor. */
+data class DecorPlacementView(
+    val decorId: String,
+    val name: String,
+    val xMm: Int,
+    val zMm: Int,
+    val rotationQuarter: Int,
 )
 
 /** Phase 24 optional IAP cosmetic row (power-neutral). */

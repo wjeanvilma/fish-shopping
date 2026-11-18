@@ -325,6 +325,7 @@ fun Simulation.view(): SimView {
         },
         dayPartId = FishingSystem.dayPartAt(c, s.tick).id,
         dayPartName = FishingSystem.dayPartAt(c, s.tick).name,
+        dayProgressPermille = ((s.tick % c.ecology.dayLengthTicks) * 1000 / c.ecology.dayLengthTicks).toInt(),
         tideChartOwned = FishingSystem.hasTideChart(s),
         weatherId = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.weatherAt(c, s.tick).id,
         weatherName = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.weatherAt(c, s.tick).let { c.displayName(it.id, it.name) },
@@ -746,6 +747,7 @@ fun Simulation.view(): SimView {
                     else -> null
                 },
                 canAfford = !owned && miss == null && s.coins >= d.cost,
+                placed = s.decorPlacements[s.harborId]?.containsKey(d.id) == true,
             )
         },
         cosmeticIapOffers = com.willio.jeanvilma.fishshopping.core.progression.CosmeticsIapSystem.CATALOG.map { sku ->
@@ -759,6 +761,9 @@ fun Simulation.view(): SimView {
             )
         },
         decorPatienceBonusTicks = com.willio.jeanvilma.fishshopping.core.world.DecorSystem.patienceBonusTicks(c, s),
+        decorPlacements = (s.decorPlacements[s.harborId] ?: emptyMap()).map { (decorId, p) ->
+            DecorPlacementView(decorId, c.decorById[decorId]?.name ?: decorId, p.xMm, p.zMm, p.rotationQuarter)
+        },
         trophies = s.trophies.entries.map { (id, rec) ->
             TrophyEntryView(
                 speciesId = id,

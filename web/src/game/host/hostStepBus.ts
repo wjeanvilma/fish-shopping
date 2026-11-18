@@ -172,6 +172,19 @@ export function processHostStep(
             transaction = true;
           }
           break;
+        case "decor_placed":
+          sink.say(`${e.moved ? "Moved" : "Placed"} ${sim.content.decorById.get(e.decorId)?.name ?? e.decorId}`);
+          decorBurst = true;
+          transaction = true;
+          break;
+        case "decor_stored":
+          sink.say(`Stored ${sim.content.decorById.get(e.decorId)?.name ?? e.decorId}`);
+          transaction = true;
+          break;
+        case "decor_place_rejected":
+          sink.say(e.reason);
+          transaction = true;
+          break;
         case "endgame_tier_unlocked":
           sink.say(`Endgame tier unlocked (+${e.coinsRewarded})`);
           endgameTierBurst = true;

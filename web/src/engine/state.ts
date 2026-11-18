@@ -359,6 +359,8 @@ export class GameState {
   readonly unlockedCosmetics = new Set<string>();
   /** Phase 23 owned shop decor (placable cosmetics). */
   readonly ownedDecor = new Set<string>();
+  /** Cozy art pass 5: placed decor per harbor id → decor id → ground placement. */
+  readonly decorPlacements = new Map<string, Map<string, DecorPlacement>>();
   /**
    * Phase 23 one-time IAP: unlocks travel to every harbor (power-neutral access).
    * Sunrise Pier stays free; grant is idempotent via purchase receipts.
@@ -484,8 +486,19 @@ export class GameState {
   }
 }
 
+/** Cozy art pass 5: where an owned decor item stands in a harbor (millimetres, quarter turns). */
+export interface DecorPlacement {
+  xMm: number;
+  zMm: number;
+  rotationQuarter: number;
+}
+
 export type Command =
   | { type: "move"; x: number; z: number }
+  /** Cozy art pass 5: place (or move) an owned decor item on open quay ground in the active harbor. */
+  | { type: "place_decor"; decorId: string; xMm: number; zMm: number; rotationQuarter: number }
+  /** Cozy art pass 5: put a placed decor item back in storage (stays owned). */
+  | { type: "store_decor"; decorId: string }
   | { type: "purchase_upgrade"; upgradeId: string; requestId: string }
   /** Phase 6: confirm spend while standing on an expansion plot marker. */
   | { type: "build_plot"; plotId: string; requestId: string }
@@ -557,6 +570,9 @@ export type GameEvent =
   | { type: "plot_build_rejected"; tick: number; plotId: string; requestId: string; reason: string }
   | { type: "decor_purchased"; tick: number; decorId: string; receipt: Receipt; replayed: boolean }
   | { type: "decor_purchase_rejected"; tick: number; decorId: string; requestId: string; reason: string }
+  | { type: "decor_placed"; tick: number; decorId: string; harborId: string; xMm: number; zMm: number; rotationQuarter: number; moved: boolean }
+  | { type: "decor_stored"; tick: number; decorId: string; harborId: string }
+  | { type: "decor_place_rejected"; tick: number; decorId: string; reason: string }
   | { type: "full_harbor_unlock_granted"; tick: number; receipt: Receipt; replayed: boolean }
   | { type: "iap_cosmetic_granted"; tick: number; cosmeticId: string; receipt: Receipt; replayed: boolean }
   | { type: "iap_cosmetic_rejected"; tick: number; cosmeticId: string; requestId: string; reason: string }

@@ -168,6 +168,21 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
       return o;
     })(),
   };
+  // Cozy art pass 5: optional field, written only when something is placed, so schema-25
+  // goldens and older saves stay byte-identical.
+  if (s.decorPlacements.size > 0) {
+    const o: Record<string, Json> = {};
+    for (const harborId of sortedKeys(s.decorPlacements)) {
+      const placed = s.decorPlacements.get(harborId)!;
+      const inner: Record<string, Json> = {};
+      for (const decorId of sortedKeys(placed)) {
+        const p = placed.get(decorId)!;
+        inner[decorId] = { xMm: p.xMm, zMm: p.zMm, rotationQuarter: p.rotationQuarter };
+      }
+      o[harborId] = inner;
+    }
+    (state as Record<string, Json>).decorPlacements = o;
+  }
   const stateJson = JSON.stringify(state);
   // Splice the already-serialised state in so the checksum covers exactly those bytes.
   // Omitting savedAt keeps fixture/parity encodes byte-identical to prior versions.
@@ -230,6 +245,7 @@ export function decodeSnapshotEnvelope(content: ContentPack, text: string): Deco
  *  - v17 -> v18: loanOwed / loanDueTick / coinGoal / coinGoalCelebrated (Phase 26 bank).
  *  - v18 -> v19: speciesCatches map (Phase 27 telemetry v2).
  *  - v19 -> v20: fullHarborUnlock (Phase 23 one-time IAP entitlement).
+ *  - v25 (cozy art pass 5): optional decorPlacements, omitted when nothing is placed.
  *  - v20 -> v21: unlockedAchievements (Finish 2.0 Phase 7 achievements scaffold).
  *  - v21 -> v22: speciesMasteryXp + activeTechniqueId (Finish 2.0 Phase 14 fishing mastery).
  *  - v22 -> v23: worker activeBranchId / unlockedBranchIds / branchTrainingXp / scheduleId (Phase 15).
@@ -513,6 +529,22 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
     for (const [stashHarborId, node] of n.get("harborStashes").entries()) {
       if (!content.harborsById.has(stashHarborId) || stashHarborId === harborId) continue;
       s.harborStashes.set(stashHarborId, readStash(content, stashHarborId, node, version));
+    }
+  }
+  const decorNode = n.optional("decorPlacements");
+  if (decorNode) {
+    for (const [placedHarborId, inner] of decorNode.entries()) {
+      if (!content.harborsById.has(placedHarborId)) continue;
+      const placed = new Map<string, { xMm: number; zMm: number; rotationQuarter: number }>();
+      for (const [decorId, p] of inner.entries()) {
+        if (!content.decorById.has(decorId) || !s.ownedDecor.has(decorId)) continue;
+        placed.set(decorId, {
+          xMm: p.get("xMm").int(),
+          zMm: p.get("zMm").int(),
+          rotationQuarter: ((p.get("rotationQuarter").int() % 4) + 4) % 4,
+        });
+      }
+      if (placed.size > 0) s.decorPlacements.set(placedHarborId, placed);
     }
   }
 

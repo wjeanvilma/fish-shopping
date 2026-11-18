@@ -46,7 +46,10 @@ function validate(): string[] {
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/persistence/SettingsStore.kt"),
     "utf8",
   );
-  const appTsx = readFileSync(resolve(root, "web/src/ui/App.tsx"), "utf8");
+  // Cozy art pass 5: HUD nav chrome lives in HudShell.tsx (rendered by App.tsx).
+  const appTsx =
+    readFileSync(resolve(root, "web/src/ui/App.tsx"), "utf8") +
+    readFileSync(resolve(root, "web/src/ui/HudShell.tsx"), "utf8");
   const gameScreen = readFileSync(
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt"),
     "utf8",

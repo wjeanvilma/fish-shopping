@@ -11,7 +11,21 @@
  * Phase 26 also caps medium quality toward 1080 CSS px and cancels stale loads.
  */
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
+
+/**
+ * Load a harbor GLB. Self-contained builds (FISH_INLINE_GLB=1) inline GLBs as base64 data URIs;
+ * decode those in-process so hosts with a strict connect-src still load them.
+ */
+async function loadGltf(url: string): Promise<GLTF> {
+  const loader = new GLTFLoader();
+  if (!url.startsWith("data:")) return loader.loadAsync(url);
+  const b64 = url.slice(url.indexOf(",") + 1);
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return loader.parseAsync(bytes.buffer, "");
+}
 import type { SimView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
 import type { QualityPreset } from "../game/settingsStore";
@@ -55,8 +69,18 @@ import {
   type ShakeKind,
   type WorldBurstCue,
 } from "./presenters";
-import { createWaterMaterial } from "./waterMaterial";
 import { weatherAmbientProfile } from "./weatherAmbient";
+import { atmosphereFrame } from "./atmosphere";
+import {
+  applyAtmosphereToWater,
+  createCozyWaterMaterial,
+  LampLights,
+  patchGroundMaterial,
+  RainField,
+  subdivideWater,
+  updateBobbers,
+  type Bobber,
+} from "./cozyScene";
 
 interface HarborCacheEntry {
   root: THREE.Object3D;
@@ -76,7 +100,19 @@ interface HarborCacheEntry {
   water: THREE.Object3D | null;
   waterMat: THREE.ShaderMaterial | null;
   fadeZones: { obj: THREE.Object3D; x: number; z: number }[];
+  /** Cozy art pass 5: lamp posts, their shared glow materials, bobbing boats, foam. */
+  lamps: THREE.Object3D[];
+  lampGlowMats: THREE.MeshStandardMaterial[];
+  bobbers: Bobber[];
+  foamMat: THREE.MeshStandardMaterial | null;
+  /** Placeable decor nodes by decor id short name (Decor_<short>). */
+  decor: Map<string, THREE.Object3D>;
 }
+
+/** Cozy art pass 5 quality budgets (presentation only). */
+const LAMP_LIGHTS_BY_QUALITY: Record<QualityPreset, number> = { low: 0, medium: 3, high: 6 };
+const RAIN_DROPS_BY_QUALITY: Record<QualityPreset, number> = { low: 220, medium: 460, high: 700 };
+const WATER_SEGMENTS = 128;
 
 export function hasWebGL2(): boolean {
   try {
@@ -91,6 +127,17 @@ export class HarborScene {
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(CameraRig.FOV_DEGREES, 16 / 9, 0.1, 300);
   private readonly sun = new THREE.DirectionalLight(0xfff7e6, 2.6);
+  private readonly hemi = new THREE.HemisphereLight(0xdcefff, 0x8a7a5a, 1.3);
+  private readonly fog = new THREE.Fog(0xb9dff0, 34, 85);
+  private readonly rain = new RainField(700);
+  private readonly lampLights: LampLights;
+  private lamps: THREE.Object3D[] = [];
+  private lampGlowMats: THREE.MeshStandardMaterial[] = [];
+  private bobbers: Bobber[] = [];
+  private foamMat: THREE.MeshStandardMaterial | null = null;
+  private decorNodes = new Map<string, THREE.Object3D>();
+  /** Photo mode: free orbit camera offset (null = normal follow camera). */
+  private photoCam: { yaw: number; pitch: number; dist: number } | null = null;
   private root: THREE.Object3D | null = null;
   private player: THREE.Object3D | null = null;
   private playerBody: THREE.Object3D | null = null;
@@ -151,14 +198,22 @@ export class HarborScene {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+    // Cozy art pass 5: filmic tone mapping, distance fog and atmosphere-driven lights.
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.05;
     this.scene.background = new THREE.Color("#9fd3ea");
-    this.scene.add(new THREE.HemisphereLight(0xdcefff, 0x8a7a5a, 1.3));
+    this.scene.fog = this.fog;
+    this.scene.add(this.hemi);
+    this.scene.add(this.rain.object);
+    this.lampLights = new LampLights(this.scene, 6);
     // Sun direction matches the Android renderer (0.35, -1, 0.55).
     this.sun.position.set(-0.35, 1, -0.55).multiplyScalar(30);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
     const sc = this.sun.shadow.camera;
-    sc.left = -20; sc.right = 20; sc.top = 20; sc.bottom = -20; sc.near = 1; sc.far = 80;
+    sc.left = -22; sc.right = 22; sc.top = 22; sc.bottom = -22; sc.near = 1; sc.far = 90;
+    this.sun.shadow.bias = -0.0004;
+    this.sun.shadow.normalBias = 0.02;
     this.scene.add(this.sun, this.sun.target);
 
     canvas.addEventListener("webglcontextlost", this.onContextLost);
@@ -221,7 +276,7 @@ export class HarborScene {
       this.beginTransition();
       return;
     }
-    const gltf = await new GLTFLoader().loadAsync(url);
+    const gltf = await loadGltf(url);
     if (gen !== this.loadGen) {
       // Stale travel — dispose the freshly parsed scene so it cannot leak.
       gltf.scene.traverse((o) => {
@@ -282,6 +337,11 @@ export class HarborScene {
     this.fadeZones = [];
     this.water = null;
     this.waterMat = null;
+    this.lamps = [];
+    this.lampGlowMats = [];
+    this.bobbers = [];
+    this.foamMat = null;
+    this.decorNodes = new Map();
     this.loadedUrl = null;
   }
 
@@ -391,16 +451,57 @@ export class HarborScene {
         }
       }
     });
-    let water = sceneRoot.getObjectByName("Water") ?? null;
+    const water = sceneRoot.getObjectByName("Water") ?? null;
     let waterMat: THREE.ShaderMaterial | null = null;
     if (water && (water as THREE.Mesh).isMesh) {
       const mesh = water as THREE.Mesh;
       const prev = mesh.material;
-      waterMat = createWaterMaterial();
+      waterMat = createCozyWaterMaterial();
+      subdivideWater(mesh, WATER_SEGMENTS);
       mesh.material = waterMat;
+      mesh.receiveShadow = false;
+      mesh.castShadow = false;
       if (Array.isArray(prev)) prev.forEach((m) => m.dispose());
       else prev.dispose();
     }
+    // Cozy art pass 5 sockets: lamps + glow, boats, foam, quay tiles, placeable decor.
+    const lamps: THREE.Object3D[] = [];
+    const lampGlowMats = new Set<THREE.MeshStandardMaterial>();
+    const bobbers: Bobber[] = [];
+    const decor = new Map<string, THREE.Object3D>();
+    let foamMat: THREE.MeshStandardMaterial | null = null;
+    const patched = new Set<THREE.Material>();
+    sceneRoot.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (/^Lamp_\d+$/.test(o.name)) lamps.push(o);
+      if (/^LampGlow_\d+$/.test(o.name) && mesh.isMesh) {
+        const m = mesh.material as THREE.MeshStandardMaterial;
+        m.emissive = m.emissive ?? new THREE.Color(0xffc977);
+        lampGlowMats.add(m);
+        mesh.castShadow = false;
+      }
+      if (/^Boat_\d+$/.test(o.name)) {
+        bobbers.push({ obj: o, baseY: o.position.y, baseRotZ: o.rotation.z, phase: bobbers.length * 1.37 });
+      }
+      if (o.name === "Foam" && mesh.isMesh) {
+        foamMat = mesh.material as THREE.MeshStandardMaterial;
+        foamMat.depthWrite = false;
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+        mesh.renderOrder = 2;
+      }
+      if (o.name.startsWith("Decor_")) {
+        o.visible = false;
+        decor.set(o.name.slice("Decor_".length), o);
+      }
+      if ((o.name.startsWith("Ground_") || o.name === "Pier") && mesh.isMesh) {
+        const m = mesh.material as THREE.MeshStandardMaterial;
+        if (o.name.startsWith("Ground_") && !patched.has(m)) {
+          patchGroundMaterial(m);
+          patched.add(m);
+        }
+      }
+    });
     return {
       root: sceneRoot,
       player: sceneRoot.getObjectByName("Player") ?? null,
@@ -419,6 +520,11 @@ export class HarborScene {
       water,
       waterMat,
       fadeZones,
+      lamps,
+      lampGlowMats: [...lampGlowMats],
+      bobbers,
+      foamMat,
+      decor,
     };
   }
 
@@ -448,6 +554,11 @@ export class HarborScene {
     this.water = entry.water;
     this.waterMat = entry.waterMat;
     this.fadeZones = entry.fadeZones;
+    this.lamps = entry.lamps;
+    this.lampGlowMats = entry.lampGlowMats;
+    this.bobbers = entry.bobbers;
+    this.foamMat = entry.foamMat;
+    this.decorNodes = entry.decor;
     this.crowd = new CustomerCrowd(this.customers.length);
     this.workerCrowd = new WorkerCrowd(this.workers.length);
     this.crowd.setDrawCap(crowdDrawCapForQuality(this.sessionQuality, this.customers.length));
@@ -557,32 +668,31 @@ export class HarborScene {
     const [r, g, b] = cosmeticSwatchRgb(cosmeticId);
     const color = new THREE.Color(r / 255, g / 255, b / 255);
     if (!this.cosmeticBanner) {
+      // Cozy art pass 5: round pole, gold finial, crossbar and a hanging (swaying) cloth.
+      const h = cosmeticPresentation.anchor.heightM;
       const group = new THREE.Group();
       group.name = "CosmeticBanner";
-      const pole = new THREE.Mesh(
-        new THREE.BoxGeometry(0.08, cosmeticPresentation.anchor.heightM, 0.08),
-        new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 0.8, metalness: 0.05 }),
-      );
-      pole.position.set(0, cosmeticPresentation.anchor.heightM * 0.5, 0);
+      const wood = new THREE.MeshStandardMaterial({ color: 0x6b4a2e, roughness: 0.8 });
+      const gold = new THREE.MeshStandardMaterial({ color: 0xe8b04a, roughness: 0.4, metalness: 0.4 });
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, h, 10), wood);
+      pole.position.set(0, h * 0.5, 0);
       pole.castShadow = true;
+      const finial = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 6), gold);
+      finial.position.set(0, h + 0.06, 0);
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.2, 8), wood);
+      bar.rotation.z = Math.PI / 2;
+      bar.position.set(0.6, h * 0.92, 0);
+      const clothGeo = new THREE.PlaneGeometry(1.1, h * 0.5, 8, 2);
+      clothGeo.translate(0.6, -h * 0.25, 0);
       const cloth = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, cosmeticPresentation.anchor.heightM * 0.55, 0.04),
-        new THREE.MeshStandardMaterial({
-          color,
-          side: THREE.DoubleSide,
-          roughness: 0.85,
-          metalness: 0.05,
-        }),
+        clothGeo,
+        new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide, roughness: 0.85, metalness: 0.0 }),
       );
-      cloth.position.set(0.65, cosmeticPresentation.anchor.heightM * 0.62, 0);
+      cloth.position.set(0, h * 0.92, 0);
       cloth.castShadow = true;
-      const crest = new THREE.Mesh(
-        new THREE.BoxGeometry(0.32, 0.32, 0.06),
-        new THREE.MeshStandardMaterial({ color: 0xc4a35a, roughness: 0.55, metalness: 0.15 }),
-      );
-      crest.position.set(0.65, cosmeticPresentation.anchor.heightM * 0.72, 0.05);
-      crest.castShadow = true;
-      group.add(pole, cloth, crest);
+      const crest = new THREE.Mesh(new THREE.CircleGeometry(0.16, 16), gold);
+      crest.position.set(0.6, h * 0.72, 0.012);
+      group.add(pole, finial, bar, cloth, crest);
       this.cosmeticBanner = group;
       this.cosmeticBannerCloth = cloth;
       this.scene.add(group);
@@ -747,25 +857,54 @@ export class HarborScene {
       : (v.endgameMarkCount ?? 0) > 0
         ? "crowned"
         : "active";
+    // The profile's `tidePhaseId` slot keys dawn/day/dusk/night tints; the sim's tide phase ids
+    // never matched those keys, so feed it the day part instead (cozy art pass 5 fix).
+    const tidePhaseId = v.dayPartId || "day";
     const ambient = weatherAmbientProfile(
       v.weatherId,
       !!v.seasonalEvent,
       this.sessionQuality,
       reducedMotion,
-      v.tidePhaseId || "day",
+      tidePhaseId,
       !!v.rivalPressureActive || (v.activeRivalIds?.length ?? 0) > 0,
       endgameMode,
     );
-    this.scene.background = new THREE.Color(ambient.skyHex);
+    // Cozy art pass 5: continuous day/night + weather lighting.
+    const atm = atmosphereFrame(v.dayProgressPermille ?? 400, v.weatherId, reducedMotion);
+    this.photoAtmosphereOverride?.(atm);
+    const sky = new THREE.Color(atm.skyHex).lerp(new THREE.Color(ambient.skyHex), 0.2);
+    this.scene.background = sky;
+    this.fog.color.set(atm.fogHex);
+    this.fog.near = atm.fogNear;
+    this.fog.far = atm.fogFar;
+    this.sun.color.set(atm.sunHex);
+    this.sun.intensity = atm.sunIntensity;
+    this.hemi.color.set(atm.hemiSkyHex);
+    this.hemi.groundColor.set(atm.hemiGroundHex);
+    this.hemi.intensity = atm.hemiIntensity;
+    this.renderer.toneMappingExposure = atm.night ? 1.25 : 1.05;
     if (this.waterMat) {
-      this.waterMat.uniforms.uTime!.value = this.elapsed;
       (this.waterMat.uniforms.uDeep!.value as THREE.Color).set(ambient.waterDeepHex);
       (this.waterMat.uniforms.uShallow!.value as THREE.Color).set(ambient.waterShallowHex);
       (this.waterMat.uniforms.uSparkle!.value as THREE.Color).set(ambient.waterSparkleHex);
+      applyAtmosphereToWater(this.waterMat, atm, reducedMotion ? 0 : this.elapsed, reducedMotion ? 0 : ambient.bobScale);
     }
-    const bobAmp = 0.02 * ambient.bobScale;
-    if (this.water) {
-      this.water.position.y = -0.65 + (bobAmp <= 0 ? 0 : Math.sin(this.elapsed * 0.7) * bobAmp);
+    if (this.foamMat) {
+      this.foamMat.opacity = reducedMotion ? 0.22 : 0.16 + 0.1 * (0.5 + 0.5 * Math.sin(this.elapsed * 1.1));
+    }
+    updateBobbers(this.bobbers, this.elapsed, atm.wind, reducedMotion);
+    this.lampLights.update(
+      this.lamps,
+      this.lampGlowMats,
+      atm.lampGlow,
+      LAMP_LIGHTS_BY_QUALITY[this.sessionQuality],
+      pose.x,
+      pose.z,
+    );
+    this.rain.update(dt, atm.rain, atm.wind, pose.x, pose.z, RAIN_DROPS_BY_QUALITY[this.sessionQuality]);
+    this.syncDecor(v);
+    if (this.cosmeticBannerCloth && !reducedMotion) {
+      this.cosmeticBannerCloth.rotation.y = Math.sin(this.elapsed * (1.4 + atm.wind * 2.2)) * (0.08 + 0.18 * atm.wind);
     }
 
     // Phase 31 harbor crossfade + Zone_* distance occlusion.
@@ -783,17 +922,107 @@ export class HarborScene {
       }
     }
 
-    const shake = reducedMotion ? { x: 0, y: 0 } : this.screenShake.update(dt);
-    const camX = pose.x + shake.x;
-    const camY = CameraRig.HEIGHT_M + shake.y;
-    const camZ = pose.z - CameraRig.BACK_M;
-    this.camera.position.set(camX, camY, camZ);
-    this.camera.lookAt(pose.x + shake.x, 0, pose.z + CameraRig.LOOK_AHEAD_M);
+    const shake = reducedMotion || this.photoCam ? { x: 0, y: 0 } : this.screenShake.update(dt);
+    if (this.photoCam) {
+      // Photo mode: orbit around the player.
+      const pc = this.photoCam;
+      const cx = pose.x + Math.sin(pc.yaw) * Math.cos(pc.pitch) * pc.dist;
+      const cz = pose.z - Math.cos(pc.yaw) * Math.cos(pc.pitch) * pc.dist;
+      const cy = 0.8 + Math.sin(pc.pitch) * pc.dist;
+      this.camera.position.set(cx, cy, cz);
+      this.camera.lookAt(pose.x, 0.9, pose.z);
+    } else {
+      const camX = pose.x + shake.x;
+      const camY = CameraRig.HEIGHT_M + shake.y;
+      const camZ = pose.z - CameraRig.BACK_M;
+      this.camera.position.set(camX, camY, camZ);
+      this.camera.lookAt(pose.x + shake.x, 0, pose.z + CameraRig.LOOK_AHEAD_M);
+    }
     this.sun.target.position.set(pose.x, 0, pose.z);
-    this.sun.position.set(pose.x - 10.5, 30, pose.z - 16.5);
+    this.sun.position.set(pose.x - atm.sunDir[0] * 35, -atm.sunDir[1] * 35, pose.z - atm.sunDir[2] * 35);
+  }
+
+  /** Optional hook (photo mode "time of day" scrubber) that may rewrite the frame's atmosphere. */
+  photoAtmosphereOverride: ((a: import("./atmosphere").AtmosphereFrame) => void) | null = null;
+
+  /** Photo mode: enable/disable the orbit camera. */
+  setPhotoMode(on: boolean): void {
+    this.photoCam = on ? { yaw: 0, pitch: 0.55, dist: 9 } : null;
+  }
+
+  /** Photo mode: orbit by deltas (radians / metres). */
+  orbitPhoto(dYaw: number, dPitch: number, dDist: number): void {
+    if (!this.photoCam) return;
+    const pc = this.photoCam;
+    pc.yaw += dYaw;
+    pc.pitch = Math.min(1.35, Math.max(0.08, pc.pitch + dPitch));
+    pc.dist = Math.min(26, Math.max(3, pc.dist + dDist));
+  }
+
+  /** Photo mode: render one frame now and return it as a PNG data URL (HUD is not part of the canvas). */
+  capturePng(): string {
+    this.renderer.render(this.scene, this.camera);
+    return this.canvas.toDataURL("image/png");
+  }
+
+  private decorGhost: { short: string; obj: THREE.Object3D; mats: THREE.MeshStandardMaterial[] } | null = null;
+
+  /**
+   * Decorating: show a translucent preview of decor [short] at (x, z) mm, tinted green when the
+   * spot is valid and red when it is not. Pass null to remove the preview.
+   */
+  setDecorGhost(short: string | null, xMm = 0, zMm = 0, rotationQuarter = 0, valid = true): void {
+    if (!short) {
+      if (this.decorGhost) {
+        this.scene.remove(this.decorGhost.obj);
+        this.decorGhost.mats.forEach((m) => m.dispose());
+        this.decorGhost = null;
+      }
+      return;
+    }
+    if (!this.decorGhost || this.decorGhost.short !== short) {
+      this.setDecorGhost(null);
+      const src = this.decorNodes.get(short);
+      if (!src) return;
+      const obj = src.clone(true);
+      const mats: THREE.MeshStandardMaterial[] = [];
+      obj.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const m = (mesh.material as THREE.MeshStandardMaterial).clone();
+        m.transparent = true;
+        m.opacity = 0.6;
+        m.depthWrite = false;
+        mats.push(m);
+        mesh.material = m;
+        mesh.castShadow = false;
+      });
+      obj.visible = true;
+      this.scene.add(obj);
+      this.decorGhost = { short, obj, mats };
+    }
+    const g = this.decorGhost;
+    g.obj.position.set(xMm / 1000, 0.02, zMm / 1000);
+    g.obj.rotation.set(0, (rotationQuarter * Math.PI) / 2, 0);
+    for (const m of g.mats) m.emissive.set(valid ? 0x1f8f4a : 0xb3412e).multiplyScalar(0.6);
+  }
+
+  /** Placeable decor: show each placed item at its simulation position. */
+  private syncDecor(v: SimView): void {
+    if (this.decorNodes.size === 0) return;
+    const placed = new Map((v.decorPlacements ?? []).map((p) => [p.decorId.slice(p.decorId.indexOf(".") + 1), p]));
+    for (const [short, obj] of this.decorNodes) {
+      const p = placed.get(short);
+      obj.visible = !!p;
+      if (!p) continue;
+      obj.position.set(p.xMm / 1000, 0, p.zMm / 1000);
+      obj.rotation.set(0, (p.rotationQuarter * Math.PI) / 2, 0);
+    }
   }
 
   dispose(): void {
+    this.setDecorGhost(null);
+    this.rain.dispose();
     this.canvas.removeEventListener("webglcontextlost", this.onContextLost);
     this.canvas.removeEventListener("webglcontextrestored", this.onContextRestored);
     this.clearHarbor();

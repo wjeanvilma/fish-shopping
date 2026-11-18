@@ -315,6 +315,17 @@ object StarterLineFixture {
                 put("decorId", c.decorId)
                 put("requestId", c.requestId)
             }
+            is Command.PlaceDecor -> {
+                put("type", "place_decor")
+                put("decorId", c.decorId)
+                put("xMm", c.xMm)
+                put("zMm", c.zMm)
+                put("rotationQuarter", c.rotationQuarter)
+            }
+            is Command.StoreDecor -> {
+                put("type", "store_decor")
+                put("decorId", c.decorId)
+            }
             is Command.GrantFullHarborUnlock -> {
                 put("type", "grant_full_harbor_unlock")
                 put("requestId", c.requestId)
@@ -396,6 +407,13 @@ object StarterLineFixture {
             o["scheduleId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
         )
         "purchase_decor" -> Command.PurchaseDecor(o["decorId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "place_decor" -> Command.PlaceDecor(
+            o["decorId"]!!.jsonPrimitive.content,
+            o["xMm"]!!.jsonPrimitive.content.toInt(),
+            o["zMm"]!!.jsonPrimitive.content.toInt(),
+            o["rotationQuarter"]!!.jsonPrimitive.content.toInt(),
+        )
+        "store_decor" -> Command.StoreDecor(o["decorId"]!!.jsonPrimitive.content)
         "grant_full_harbor_unlock" -> Command.GrantFullHarborUnlock(o["requestId"]!!.jsonPrimitive.content)
         "grant_iap_cosmetic" -> Command.GrantIapCosmetic(
             o["cosmeticId"]!!.jsonPrimitive.content,

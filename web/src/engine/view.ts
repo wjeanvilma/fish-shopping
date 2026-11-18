@@ -1,7 +1,7 @@
 /** Immutable presentation snapshot for the HUD and renderer. Mirrors game-core sim/SimView.kt. */
 import { coachingObjective, type ObjectiveView } from "./coaching";
 import { bankProductRepayAmount, bankProductsOrLegacy, queueSlot, rectCenterX, rectCenterZ } from "./content";
-import { compareStrings } from "./foundations";
+import { compareStrings, idiv } from "./foundations";
 import type { MachineStatus } from "./state";
 import type { Simulation } from "./simulation";
 import { abandonPermille, topSpeciesCatchShare, wageRatioPermille } from "./telemetry";
@@ -220,7 +220,18 @@ export interface AutomationIssueView {
 }
 
 /** Phase 23 shop decor offer row. */
+/** Cozy art pass 5: a decor item standing in the active harbor. */
+export interface DecorPlacementView {
+  decorId: string;
+  name: string;
+  xMm: number;
+  zMm: number;
+  rotationQuarter: number;
+}
+
 export interface DecorOfferView {
+  /** Cozy art pass 5: placed somewhere in the active harbor. */
+  placed: boolean;
   id: string;
   name: string;
   description: string;
@@ -413,6 +424,8 @@ export interface SimView {
   fishingRegenProgress: number | null;
   dayPartId: string;
   dayPartName: string;
+  /** Cozy art pass 5: continuous position in the day cycle, 0..999 (presentation only). */
+  dayProgressPermille: number;
   tideChartOwned: boolean;
   /** Finish 2.0 Phase 13 — current weather pattern. */
   weatherId: string;
@@ -510,6 +523,8 @@ export interface SimView {
   unlockedCosmetics: string[];
   /** Phase 23 shop decor offers for the Goals panel. */
   decorOffers: DecorOfferView[];
+  /** Cozy art pass 5: decor standing in the active harbor (sorted by decor id). */
+  decorPlacements: DecorPlacementView[];
   /** Phase 24 optional IAP cosmetics (power-neutral). */
   cosmeticIapOffers: CosmeticIapOfferView[];
   /** Summed patience bonus from owned decor. */
@@ -840,6 +855,7 @@ export function buildView(sim: Simulation): SimView {
     })(),
     dayPartId: FishingSystem.dayPartAt(c, s.tick).id,
     dayPartName: FishingSystem.dayPartAt(c, s.tick).name,
+    dayProgressPermille: idiv((s.tick % c.ecology.dayLengthTicks) * 1000, c.ecology.dayLengthTicks),
     tideChartOwned: FishingSystem.hasTideChart(s),
     weatherId: WeatherSystem.weatherAt(c, s.tick).id,
     weatherName: (() => { const w = WeatherSystem.weatherAt(c, s.tick); return c.displayName(w.id, w.name); })(),
@@ -1269,6 +1285,7 @@ export function buildView(sim: Simulation): SimView {
       const owned = s.ownedDecor.has(d.id);
       const miss = DecorSystem.missingRequirement(c, s, d);
       return {
+        placed: !!s.decorPlacements.get(s.harborId)?.has(d.id),
         id: d.id,
         name: d.name,
         description: d.description,
@@ -1295,6 +1312,15 @@ export function buildView(sim: Simulation): SimView {
       status: s.unlockedCosmetics.has(sku.grantsCosmetic) ? "owned" : "available",
     })),
     decorPatienceBonusTicks: DecorSystem.patienceBonusTicks(c, s),
+    decorPlacements: [...(s.decorPlacements.get(s.harborId) ?? new Map()).entries()]
+      .sort(([a], [b]) => compareStrings(a, b))
+      .map(([decorId, p]) => ({
+        decorId,
+        name: c.decorById.get(decorId)?.name ?? decorId,
+        xMm: p.xMm,
+        zMm: p.zMm,
+        rotationQuarter: p.rotationQuarter,
+      })),
     trophies: [...s.trophies.entries()]
       .sort(([a], [b]) => compareStrings(a, b))
       .map(([id, rec]) => ({

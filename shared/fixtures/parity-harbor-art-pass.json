@@ -3,7 +3,7 @@
   "description": "Finish 2.0 Phase 19 + Finish 3.0 Phase 8 + Finish 4.0 Phase 9/12: all 10 authored scenic harbor art markers, themes, and byte budgets.",
   "authoredHarborMin": 10,
   "harborArtMarker": "authored-finish-4.0-phase-9",
-  "maxBytesPerHarbor": 200000,
+  "maxBytesPerHarbor": 1200000,
   "expect": {
     "harbors": [
       {

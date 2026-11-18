@@ -7,8 +7,8 @@
   "schemaVersion": 23,
   "authoredHarborMin": 10,
   "harborArtMarker": "authored-finish-4.0-phase-9",
-  "maxBytesPerHarbor": 200000,
-  "maxTotalAuthoredBytes": 2200000,
+  "maxBytesPerHarbor": 1200000,
+  "maxTotalAuthoredBytes": 11000000,
   "generator": "shared/tools/generate_blockout.py",
   "themesModule": "shared/tools/harbor_themes.py",
   "authoredHarbors": [

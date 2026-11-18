@@ -496,7 +496,7 @@ THEME_PALETTE = {
     "sunrise": {
         "water": "#3A8FB8",
         "pier": "#C9A66B",
-        "ground": "#8FA37A",
+        "ground": "#C9B48C",
     },
     "coral": {
         "water": "#2BB8C4",

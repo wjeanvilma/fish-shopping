@@ -101,12 +101,12 @@ export function measureSpecies5175(repoRoot: string): Species5175Measure {
   const missingAssets: string[] = [];
   for (const entry of SPECIES_5175.newBaseSpecies) {
     const sp = content.speciesById.get(entry.id);
-    if (sp && !existsSync(resolve(repoRoot, "shared/assets", sp.asset))) {
+    if (sp?.asset && !existsSync(resolve(repoRoot, "shared/assets", sp.asset))) {
       missingAssets.push(sp.asset);
     }
     if (entry.rareUpgrade) {
       const rare = content.speciesById.get(entry.rareUpgrade);
-      if (rare && !existsSync(resolve(repoRoot, "shared/assets", rare.asset))) {
+      if (rare?.asset && !existsSync(resolve(repoRoot, "shared/assets", rare.asset))) {
         missingAssets.push(rare.asset);
       }
     }

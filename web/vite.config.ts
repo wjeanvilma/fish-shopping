@@ -18,6 +18,10 @@ export default defineConfig({
     // Three.js changes rarely: keep it in its own long-cached chunk.
     rollupOptions: { output: { manualChunks: { three: ["three"] } } },
     chunkSizeWarningLimit: 800,
+    // FISH_INLINE_GLB=1: one self-contained bundle (hosts that only serve web file types).
+    ...(process.env.FISH_INLINE_GLB === "1"
+      ? { assetsInlineLimit: (file: string) => (file.endsWith(".glb") ? true : undefined) }
+      : {}),
   },
   test: { include: ["test/**/*.test.ts"], environment: "node" },
 });

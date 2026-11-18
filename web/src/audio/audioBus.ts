@@ -13,6 +13,12 @@ import {
 } from "./musicBeds";
 import { HAPTIC_CUES, SFX_CUES, sfxPublicPath, type SfxCue } from "./sfxCues";
 
+/** Resolve a root-relative public path against Vite's base (sub-path hosting, e.g. /play/ or ./). */
+function withBase(path: string): string {
+  const base = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? "/";
+  return base === "/" ? path : `${base.replace(/\/?$/, "/")}${path.replace(/^\//, "")}`;
+}
+
 /** Max concurrent authored SFX voices (Phase 17 / 19). */
 export const MAX_SFX_VOICES = 6;
 
@@ -257,7 +263,7 @@ export class AudioBus {
     this.sfxLoadPromise = Promise.all(
       SFX_CUES.map(async (cue) => {
         if (this.sfxBuffers.has(cue)) return;
-        const res = await fetch(sfxPublicPath(cue));
+        const res = await fetch(withBase(sfxPublicPath(cue)));
         if (!res.ok) throw new Error(`sfx fetch failed ${cue}: ${res.status}`);
         const raw = await res.arrayBuffer();
         const buffer = await ctx.decodeAudioData(raw.slice(0));
@@ -277,7 +283,7 @@ export class AudioBus {
     this.musicLoadPromise = Promise.all(
       (MUSIC_BED_IDS as readonly MusicBedId[]).map(async (bed) => {
         if (this.musicBuffers.has(bed)) return;
-        const res = await fetch(musicPublicPath(bed));
+        const res = await fetch(withBase(musicPublicPath(bed)));
         if (!res.ok) throw new Error(`music fetch failed ${bed}: ${res.status}`);
         const raw = await res.arrayBuffer();
         const buffer = await ctx.decodeAudioData(raw.slice(0));

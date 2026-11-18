@@ -7,7 +7,7 @@
 import type { AchievementDef, BaitDef, ContentPack, ContractTemplateDef, CounterDef, DailyObjectiveDef, DayPartDef, DecorDef, EndgameChallengeDef, EndgameTierDef, FishingSpotDef, HarborDef, ItemQuantity, PlotDef, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RivalMarketDef, RushWindowDef, SeasonalEventDef, SpeciesDef, TidePhaseDef, UpgradeDef, UpgradeEffect, WeatherPatternDef, WorkerDef } from "./content";
 import { bankProductById, bankProductRepayAmount, bankRepayAmount } from "./content";
 import type { TimingTier, TrophyRecord } from "./state";
-import { counterAccepts, freeSlot, queueSlot, rectCenterX, rectCenterZ, rectContains } from "./content";
+import { counterAccepts, queueSlot, rectCenterX, rectCenterZ, rectContains } from "./content";
 import { INPUT_SCALE, Prng, SafeMath, TICKS_PER_SECOND, compareStrings, idiv, type OfflineReport } from "./foundations";
 import { Inventory, Transfers } from "./inventory";
 import { ContractState, CounterState, CustomerState, FishingSpotState, GameState, MachineState, PlayerState, Receipt, Stats, WorkerState, type ContractOffer, type GameEvent, type HarborWorldStash } from "./state";
@@ -397,11 +397,105 @@ export const SeasonalEventSystem = {
   },
 };
 
+/** Cozy art pass 5 decor placement rules (shared contract with Kotlin DecorSystem). */
+export const DECOR_PLACEMENT = {
+  /** Positions snap to this grid. */
+  GRID_MM: 250,
+  /** Footprint radius of any placed decor item. */
+  RADIUS_MM: 600,
+  /** Extra clearance from zones and machine/counter footprints. */
+  CLEARANCE_MM: 400,
+  /** Keep this far inside the quay edge (the edge band holds scenery props). */
+  EDGE_INSET_MM: 1300,
+  /** Minimum centre-to-centre spacing between placed decor items. */
+  SPACING_MM: 1300,
+  /** Keep-out radius around the player spawn and customer entry. */
+  KEEP_OUT_MM: 1600,
+  /** Keep-out radius around each queue slot. */
+  QUEUE_KEEP_OUT_MM: 1100,
+} as const;
+
 /**
  * Phase 23 shop decor: buy-once placable cosmetics that add a tiny customer
  * patience buff. Banner-gated pieces reuse prestige cosmetic IDs.
+ * Cozy art pass 5: owned decor can be placed on open quay ground per harbor (cosmetic only).
  */
 export const DecorSystem = {
+  snap(mm: number): number {
+    const g = DECOR_PLACEMENT.GRID_MM;
+    return Math.round(mm / g) * g;
+  },
+
+  /** Why [decorId] cannot stand at (x, z) mm in the active harbor, or null if it can. */
+  placementProblem(content: ContentPack, s: GameState, decorId: string, xMm: number, zMm: number): string | null {
+    if (!content.decorById.has(decorId)) return "Unknown decor";
+    if (!s.ownedDecor.has(decorId)) return "Buy it first";
+    const h = content.harbor(s.harborId);
+    const P = DECOR_PLACEMENT;
+    const land = h.walkable.filter((w) => w.id.includes("land"));
+    const inside = land.some((r) =>
+      xMm >= r.minX + P.EDGE_INSET_MM && xMm <= r.maxX - P.EDGE_INSET_MM &&
+      zMm >= r.minZ + P.EDGE_INSET_MM && zMm <= r.maxZ - P.EDGE_INSET_MM);
+    if (!inside) return "Place it on open quay ground";
+    const reach = P.RADIUS_MM + P.CLEARANCE_MM;
+    const near = (r: { minX: number; minZ: number; maxX: number; maxZ: number }) => {
+      const dx = Math.max(r.minX - xMm, 0, xMm - r.maxX);
+      const dz = Math.max(r.minZ - zMm, 0, zMm - r.maxZ);
+      return dx * dx + dz * dz < reach * reach;
+    };
+    if (h.obstacles.some(near)) return "Too close to a station";
+    if (h.zones.some(near)) return "Too close to a work area";
+    const far = (x: number, z: number, r: number) => (x - xMm) * (x - xMm) + (z - zMm) * (z - zMm) >= r * r;
+    if (!far(h.playerSpawn.x, h.playerSpawn.z, P.KEEP_OUT_MM)) return "Keep the spawn point clear";
+    if (!far(h.customerEntry.x, h.customerEntry.z, P.KEEP_OUT_MM)) return "Keep the entrance clear";
+    for (const c of h.counters) {
+      for (let i = 0; i < c.maxQueue; i++) {
+        const q = queueSlot(c, i);
+        if (!far(q.x, q.z, P.QUEUE_KEEP_OUT_MM)) return "Keep the queue clear";
+      }
+    }
+    const placed = s.decorPlacements.get(s.harborId);
+    if (placed) {
+      for (const [id, p] of placed) {
+        if (id !== decorId && !far(p.xMm, p.zMm, P.SPACING_MM)) return "Too close to other decor";
+      }
+    }
+    return null;
+  },
+
+  place(ctx: StepContext, decorId: string, xMm: number, zMm: number, rotationQuarter: number): void {
+    const s = ctx.state;
+    const x = DecorSystem.snap(Math.trunc(xMm));
+    const z = DecorSystem.snap(Math.trunc(zMm));
+    const rot = ((Math.trunc(rotationQuarter) % 4) + 4) % 4;
+    const problem = DecorSystem.placementProblem(ctx.content, s, decorId, x, z);
+    if (problem) {
+      ctx.emit({ type: "decor_place_rejected", tick: s.tick, decorId, reason: problem });
+      return;
+    }
+    let placed = s.decorPlacements.get(s.harborId);
+    if (!placed) {
+      placed = new Map();
+      s.decorPlacements.set(s.harborId, placed);
+    }
+    const moved = placed.has(decorId);
+    placed.set(decorId, { xMm: x, zMm: z, rotationQuarter: rot });
+    ctx.emit({ type: "decor_placed", tick: s.tick, decorId, harborId: s.harborId, xMm: x, zMm: z, rotationQuarter: rot, moved });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "decor" });
+  },
+
+  store(ctx: StepContext, decorId: string): void {
+    const s = ctx.state;
+    const placed = s.decorPlacements.get(s.harborId);
+    if (!placed || !placed.delete(decorId)) {
+      ctx.emit({ type: "decor_place_rejected", tick: s.tick, decorId, reason: "Not placed here" });
+      return;
+    }
+    if (placed.size === 0) s.decorPlacements.delete(s.harborId);
+    ctx.emit({ type: "decor_stored", tick: s.tick, decorId, harborId: s.harborId });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "decor" });
+  },
+
   patienceBonusTicks(content: ContentPack, s: GameState): number {
     let sum = 0;
     for (const d of content.decor.items) {

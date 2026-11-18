@@ -111,6 +111,9 @@ class Simulation(val content: ContentPack, val state: GameState) {
             is Command.SelectWorkerBranch -> com.willio.jeanvilma.fishshopping.core.workers.StaffTreesSystem.selectBranch(ctx, c.workerId, c.branchId)
             is Command.SetWorkerSchedule -> com.willio.jeanvilma.fishshopping.core.workers.StaffTreesSystem.setSchedule(ctx, c.workerId, c.scheduleId)
             is Command.PurchaseDecor -> com.willio.jeanvilma.fishshopping.core.world.DecorSystem.purchase(ctx, c.decorId, c.requestId)
+            is Command.PlaceDecor ->
+                com.willio.jeanvilma.fishshopping.core.world.DecorSystem.place(ctx, c.decorId, c.xMm, c.zMm, c.rotationQuarter)
+            is Command.StoreDecor -> com.willio.jeanvilma.fishshopping.core.world.DecorSystem.store(ctx, c.decorId)
             is Command.GrantFullHarborUnlock -> FullUnlockSystem.grant(ctx, c.requestId)
             is Command.GrantIapCosmetic -> CosmeticsIapSystem.grant(ctx, c.cosmeticId, c.requestId)
             is Command.RepairMachine -> EconomySystem.repair(ctx, c.stationId, c.requestId)

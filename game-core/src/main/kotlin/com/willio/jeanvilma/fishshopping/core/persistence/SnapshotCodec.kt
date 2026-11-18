@@ -164,6 +164,22 @@ object SnapshotCodec {
                     put(id, encodeStash(stash))
                 }
             })
+            // Cozy art pass 5: optional; omitted when nothing is placed so schema-25 goldens hold.
+            if (s.decorPlacements.isNotEmpty()) {
+                put("decorPlacements", buildJsonObject {
+                    for ((harborId, placed) in s.decorPlacements) {
+                        put(harborId, buildJsonObject {
+                            for ((decorId, p) in placed) {
+                                put(decorId, buildJsonObject {
+                                    put("xMm", p.xMm)
+                                    put("zMm", p.zMm)
+                                    put("rotationQuarter", p.rotationQuarter)
+                                })
+                            }
+                        })
+                    }
+                })
+            }
         }
         val envelope = buildJsonObject {
             put("schemaVersion", SimConstants.SCHEMA_VERSION)
@@ -487,6 +503,22 @@ object SnapshotCodec {
                 val stashNode = Node(el, "$.state.harborStashes.$stashHarborId")
                 s.harborStashes[stashHarborId] = readStash(content, stashHarborId, stashNode, version)
             }
+        }
+
+        (n.optional("decorPlacements")?.el as? JsonObject)?.forEach { (placedHarborId, el) ->
+            if (placedHarborId !in content.harborsById) return@forEach
+            val inner = el as? JsonObject ?: return@forEach
+            val placed = java.util.TreeMap<String, com.willio.jeanvilma.fishshopping.core.sim.DecorPlacement>()
+            inner.forEach { (decorId, pe) ->
+                if (decorId !in content.decorById || decorId !in s.ownedDecor) return@forEach
+                val pn = Node(pe, "$.state.decorPlacements.$placedHarborId.$decorId")
+                placed[decorId] = com.willio.jeanvilma.fishshopping.core.sim.DecorPlacement(
+                    pn["xMm"].int(),
+                    pn["zMm"].int(),
+                    Math.floorMod(pn["rotationQuarter"].int(), 4),
+                )
+            }
+            if (placed.isNotEmpty()) s.decorPlacements[placedHarborId] = placed
         }
 
         // Rebuild derived limits from content + owned upgrades / prestige (idempotent effects).

@@ -59,7 +59,7 @@ export function missingKeyboardActions(): string[] {
     "Close panel / pause": ["Close panel / pause"],
   };
   return accessibilitySweep.controls.requiredActions.filter((action) => {
-    if (have.has(action)) return false;
+    if (have.has(action as typeof KEYBOARD_SHORTCUTS[number]["action"])) return false;
     const al = aliases[action];
     return !al?.some((a) => have.has(a as typeof KEYBOARD_SHORTCUTS[number]["action"]));
   });

@@ -6,7 +6,7 @@
  */
 import contentJson from "../../../shared/content/content-pack.json";
 import {
-  type Command, type ContentPack, FixedStepClock, GameState, INPUT_SCALE, NewerSaveError,
+  type Command, type ContentPack, DecorSystem, FixedStepClock, GameState, INPUT_SCALE, NewerSaveError,
   type OfflineReport, Simulation, type SimView, applyOffline, buildView,
   decodeSnapshotEnvelope, encodeBalanceExport, encodeSnapshot, encodeTelemetry, loadContent,
 } from "../engine";
@@ -651,10 +651,47 @@ export class GameHost {
   }
 
   private get panelOpen(): boolean {
-    return ShellModalPolicy.blocksWorldInput(
+    return this.worldHold || ShellModalPolicy.blocksWorldInput(
       this.panels.snapshot(),
       this.pendingOfflineReport !== null,
     );
+  }
+
+  /** Cozy art pass 5: client-only modes (photo mode, decorating) that pause the world like a panel. */
+  private worldHold = false;
+
+  setWorldHold(on: boolean): void {
+    if (this.worldHold === on) return;
+    this.worldHold = on;
+    if (on) this.enqueueMove(0, 0);
+    this.publish(true);
+  }
+
+  isWorldHeld(): boolean {
+    return this.worldHold;
+  }
+
+  /** Queue a command and, while the world is held or a panel is open, commit it with one tick now. */
+  commitNow(command: Command): void {
+    this.commands.push(command);
+    if (this.sim && this.panelOpen && this.pendingOfflineReport === null) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  /** Cozy art pass 5 decor placement preview: null when [decorId] may stand at (x, z) mm. */
+  decorPlacementProblem(decorId: string, xMm: number, zMm: number): string | null {
+    if (!this.sim) return "Loading";
+    return DecorSystem.placementProblem(this.sim.content, this.sim.state, decorId, DecorSystem.snap(xMm), DecorSystem.snap(zMm));
+  }
+
+  placeDecor(decorId: string, xMm: number, zMm: number, rotationQuarter: number): void {
+    this.commitNow({ type: "place_decor", decorId, xMm, zMm, rotationQuarter });
+  }
+
+  storeDecor(decorId: string): void {
+    this.commitNow({ type: "store_decor", decorId });
   }
 
   private clearPanels(): void {

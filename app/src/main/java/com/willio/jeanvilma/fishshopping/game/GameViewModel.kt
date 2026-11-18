@@ -242,10 +242,35 @@ class GameViewModel(app: Application) :
     @Volatile
     private var stickActive = false
 
-    private val panelOpen get() = ShellModalPolicy.blocksWorldInput(
+    private val panelOpen get() = worldHold || ShellModalPolicy.blocksWorldInput(
         panels.snapshot(),
         pendingOfflineReport != null,
     )
+
+    /** Cozy art pass 5: photo / decorate modes freeze the world without opening a shell panel. */
+    @Volatile private var worldHold = false
+
+    fun setWorldHold(on: Boolean) {
+        if (on) setMove(0f, 0f)
+        worldHold = on
+    }
+
+    /** Why [decorId] cannot stand at (x, z) mm right now, or null if it can (presentation preview). */
+    fun decorPlacementProblem(decorId: String, xMm: Int, zMm: Int): String? {
+        val s = sim ?: return "Loading"
+        return com.willio.jeanvilma.fishshopping.core.world.DecorSystem.placementProblem(s.content, s.state, decorId, xMm, zMm)
+    }
+
+    fun placeDecor(decorId: String, xMm: Int, zMm: Int, rotationQuarter: Int) =
+        commitNow(Command.PlaceDecor(decorId, xMm, zMm, rotationQuarter))
+
+    fun storeDecor(decorId: String) = commitNow(Command.StoreDecor(decorId))
+
+    /** Apply one command immediately even while the world is held (decorating). */
+    private fun commitNow(command: Command) {
+        commands += command
+        viewModelScope.launch(simDispatcher) { sim?.let { step(it); publish(force = true) } }
+    }
 
 
     // --- Finish 4.0 Phase 4 intent-host surface ---
@@ -1193,6 +1218,11 @@ class GameViewModel(app: Application) :
                     cosmeticBurst = true
                     transaction = true
                 }
+                is GameEvent.DecorPlaced -> _messages.tryEmit(
+                    "${if (e.moved) "Moved" else "Placed"} ${s.content.decorById[e.decorId]?.name ?: e.decorId}",
+                )
+                is GameEvent.DecorStored -> _messages.tryEmit("Stored ${s.content.decorById[e.decorId]?.name ?: e.decorId}")
+                is GameEvent.DecorPlaceRejected -> _messages.tryEmit(e.reason)
                 is GameEvent.DecorPurchased -> if (!e.replayed) {
                     _messages.tryEmit("Decor: ${s.content.decorById[e.decorId]?.name ?: e.decorId}")
                     decorBurst = true

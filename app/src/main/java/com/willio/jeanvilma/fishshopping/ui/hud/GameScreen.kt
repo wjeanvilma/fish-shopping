@@ -178,6 +178,19 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
     }
     val frictionNudge = TutorialFriction.nudgeText(tutorialStepId, tutorialDwellMs)
     val v = state.view
+    // Cozy art pass 5: photo / decorate modes replace the HUD while active.
+    var cozyMode by remember { mutableStateOf(CozyMode.PLAY) }
+    when (cozyMode) {
+        CozyMode.PHOTO -> { PhotoModeOverlay(v, vm) { cozyMode = CozyMode.PLAY }; return }
+        CozyMode.DECOR -> {
+            DecorModeOverlay(v, vm, onExit = { cozyMode = CozyMode.PLAY }) {
+                cozyMode = CozyMode.PLAY
+                vm.setQuestsOpen(true)
+            }
+            return
+        }
+        CozyMode.PLAY -> Unit
+    }
     val focus = remember { FocusRequester() }
     val keys = remember { mutableStateListOf<Key>() }
     var harborSize by remember { mutableStateOf(IntSize.Zero) }
@@ -513,6 +526,9 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
             modifier = Modifier.align(Alignment.TopEnd),
             actionsMax = actionsMax,
             actionMinHeight = actionMinHeight,
+            onDecor = { cozyMode = CozyMode.DECOR },
+            onPhoto = { cozyMode = CozyMode.PHOTO },
+            compact = portrait,
         )
         // Coaching: mid-left in landscape; above the stick in portrait (Phase 28).
         v.objective?.let { obj ->

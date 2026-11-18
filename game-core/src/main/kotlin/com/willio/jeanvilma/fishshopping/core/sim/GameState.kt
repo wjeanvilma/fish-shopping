@@ -394,6 +394,8 @@ class GameState(
     val unlockedCosmetics = TreeSet<String>()
     /** Phase 23 owned shop decor (placable cosmetics). */
     val ownedDecor = TreeSet<String>()
+    /** Cozy art pass 5: placed decor per harbor id → decor id → ground placement (optional in saves). */
+    val decorPlacements = java.util.TreeMap<String, java.util.TreeMap<String, DecorPlacement>>()
     /**
      * Phase 23 one-time IAP: unlocks travel to every harbor (power-neutral access).
      * Sunrise Pier stays free; grant is idempotent via purchase receipts.
@@ -580,6 +582,10 @@ sealed interface Command {
     data class SetWorkerSchedule(val workerId: String, val scheduleId: String?) : Command
     /** Buy shop decor; [requestId] makes retries idempotent (Phase 23). */
     data class PurchaseDecor(val decorId: String, val requestId: String) : Command
+    /** Cozy art pass 5: place (or move) an owned decor item on open quay ground in the active harbor. */
+    data class PlaceDecor(val decorId: String, val xMm: Int, val zMm: Int, val rotationQuarter: Int) : Command
+    /** Cozy art pass 5: put a placed decor item back in storage (stays owned). */
+    data class StoreDecor(val decorId: String) : Command
     /**
      * Phase 23: grant the one-time full-harbor unlock entitlement.
      * [requestId] should be stable per store purchase token (`full-unlock:{token}`).
@@ -704,6 +710,17 @@ sealed interface GameEvent {
         val reason: String,
     ) : GameEvent
     data class DecorPurchaseRejected(override val tick: Long, val decorId: String, val requestId: String, val reason: String) : GameEvent
+    data class DecorPlaced(
+        override val tick: Long,
+        val decorId: String,
+        val harborId: String,
+        val xMm: Int,
+        val zMm: Int,
+        val rotationQuarter: Int,
+        val moved: Boolean,
+    ) : GameEvent
+    data class DecorStored(override val tick: Long, val decorId: String, val harborId: String) : GameEvent
+    data class DecorPlaceRejected(override val tick: Long, val decorId: String, val reason: String) : GameEvent
     data class MachineBroke(override val tick: Long, val stationId: String, val machineId: String) : GameEvent
     data class MachineSlowed(override val tick: Long, val stationId: String, val machineId: String, val untilTick: Long) : GameEvent
     data class MachineRepaired(
@@ -935,3 +952,6 @@ sealed interface GameEvent {
         val scheduleId: String?,
     ) : GameEvent
 }
+
+/** Cozy art pass 5: where an owned decor item stands in a harbor (millimetres, quarter turns). */
+data class DecorPlacement(val xMm: Int, val zMm: Int, val rotationQuarter: Int)

@@ -74,6 +74,12 @@ export class Simulation {
       case "purchase_decor":
         DecorSystem.purchase(ctx, c.decorId, c.requestId);
         break;
+      case "place_decor":
+        DecorSystem.place(ctx, c.decorId, c.xMm, c.zMm, c.rotationQuarter);
+        break;
+      case "store_decor":
+        DecorSystem.store(ctx, c.decorId);
+        break;
       case "grant_full_harbor_unlock":
         FullUnlockSystem.grant(ctx, c.requestId);
         break;
