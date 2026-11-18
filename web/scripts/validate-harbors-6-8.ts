@@ -40,8 +40,8 @@ function validate(): string[] {
   if (HARBORS_68_PHASE !== 8) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 21) errors.push("schemaVersion must be 21");
   if (catalog.harborCount !== 8 || HARBOR_COUNT_FLOOR !== 8) errors.push("harborCount must be 8");
-  if (dod.quotas?.harbors !== 8) errors.push("DoD quotas.harbors must be 8");
-  if (content.harbors.length !== 8) errors.push(`content harbors ${content.harbors.length} ≠ 8`);
+  if ((dod.quotas?.harbors ?? 0) < 8) errors.push("DoD quotas.harbors must be ≥ 8");
+  if (content.harbors.length < 8) errors.push(`content harbors ${content.harbors.length} < 8`);
 
   if (listing.harbors68Phase !== 8) errors.push("listing.harbors68Phase must be 8");
   if (listing.harbors68Catalog !== "shared/ship/harbors-6-8.json") {

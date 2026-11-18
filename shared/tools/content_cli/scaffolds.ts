@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 — content JSON scaffolds.
+ * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 + Finish 4.0 Phase 28 — content JSON scaffolds.
  * Generates schema-shaped fragments; does not mutate content-pack.json.
  */
 import { normalizeSlug, qualifyId, titleFromSlug, type ScaffoldKind } from "./ids";
@@ -27,6 +27,22 @@ export interface ScaffoldRequest {
   cost?: number;
   /** Decor patience bonus ticks (default 20). */
   patienceBonusTicks?: number;
+  /** Machine recipe ids (default recipe.basic_portions). */
+  recipes?: string[];
+  /** Machine input capacity (default 8). */
+  inputCapacityUnits?: number;
+  /** Machine output capacity (default 12). */
+  outputCapacityUnits?: number;
+  /** Rival harbor ids (default harbor.sunrise_pier). */
+  harbors?: string[];
+  /** Rival specialty product ids. */
+  specialtyProducts?: string[];
+  /** Rival aggression permille (default 400). */
+  aggressionPermille?: number;
+  /** Rival undercut price mult permille (default 900). */
+  undercutPriceMultPermille?: number;
+  /** Rival AI profile. */
+  aiProfile?: "siphon" | "undercut" | "adaptive" | "roamer";
 }
 
 export interface ScaffoldResult {
@@ -262,11 +278,53 @@ export function scaffoldDecor(req: ScaffoldRequest): ScaffoldResult {
   return { kind: "decor", id, fileName: `${id}.json`, document };
 }
 
+/** Finish 4.0 Phase 28 — machine fragment. */
+export function scaffoldMachine(req: ScaffoldRequest): ScaffoldResult {
+  const slug = normalizeSlug(req.id);
+  const id = qualifyId("machine", slug);
+  const name = req.name?.trim() || titleFromSlug(slug);
+  const recipes = req.recipes?.length ? req.recipes : ["recipe.basic_portions"];
+  const document = {
+    id,
+    name,
+    recipes,
+    inputCapacityUnits: req.inputCapacityUnits ?? 8,
+    outputCapacityUnits: req.outputCapacityUnits ?? 12,
+  };
+  return { kind: "machine", id, fileName: `${id}.json`, document };
+}
+
+/** Finish 4.0 Phase 28 — rival market NPC fragment. */
+export function scaffoldRival(req: ScaffoldRequest): ScaffoldResult {
+  const slug = normalizeSlug(req.id);
+  const id = qualifyId("rival", slug);
+  const name = req.name?.trim() || titleFromSlug(slug);
+  const description =
+    req.description?.trim() ||
+    `Authoring scaffold rival for ${name}. Tune harbors/specialty before merge.`;
+  const document = {
+    id,
+    name,
+    description,
+    harbors: req.harbors?.length ? req.harbors : ["harbor.sunrise_pier"],
+    aggressionPermille: req.aggressionPermille ?? 400,
+    specialtyProducts: req.specialtyProducts?.length
+      ? req.specialtyProducts
+      : ["product.basic_portion", "product.fillet"],
+    undercutPriceMultPermille: req.undercutPriceMultPermille ?? 900,
+    activeDayParts: ["dawn", "day"],
+    aiProfile: req.aiProfile ?? "siphon",
+  };
+  return { kind: "rival", id, fileName: `${id}.json`, document };
+}
+
 export function buildScaffold(req: ScaffoldRequest): ScaffoldResult {
   if (req.kind === "species") return scaffoldSpecies(req);
   if (req.kind === "quest") return scaffoldQuest(req);
   if (req.kind === "harbor") return scaffoldHarbor(req);
   if (req.kind === "contract") return scaffoldContract(req);
   if (req.kind === "bait") return scaffoldBait(req);
-  return scaffoldDecor(req);
+  if (req.kind === "decor") return scaffoldDecor(req);
+  if (req.kind === "machine") return scaffoldMachine(req);
+  return scaffoldRival(req);
 }

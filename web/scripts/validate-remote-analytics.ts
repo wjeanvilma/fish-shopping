@@ -134,11 +134,21 @@ function validate(): string[] {
   if (!remoteTs.includes("FanoutAnalyticsSink") || !remoteTs.includes("flush")) {
     errors.push("remoteAnalyticsSink.ts missing fanout/flush");
   }
+  // Finish 4.0 Phase 21 soft-floor: requeue-on-failure hardening.
+  if (policy.batch?.requeueOnFlushFailure !== true) {
+    errors.push("batch.requeueOnFlushFailure must be true");
+  }
+  if (!remoteTs.includes("requeueRemoteFlushSlice") && !remoteTs.includes("REQUEUE")) {
+    errors.push("remoteAnalyticsSink.ts missing requeue wiring");
+  }
   if (!busKt.includes("attachRemote") || !busKt.includes("RemoteAnalyticsSink")) {
     errors.push("AnalyticsBus.kt missing remote attach");
   }
   if (!remoteKt.includes("FanoutAnalyticsSink") || !remoteKt.includes("flushBlocking")) {
     errors.push("RemoteAnalyticsSink.kt missing fanout/flush");
+  }
+  if (!remoteKt.includes("requeueFlushSlice") && !policyKt.includes("REQUEUE_ON_FLUSH_FAILURE")) {
+    errors.push("Kotlin remote analytics missing requeue policy");
   }
   if (!manifest.includes("fish.analytics.apiBase")) {
     errors.push("AndroidManifest missing fish.analytics.apiBase meta-data");

@@ -162,6 +162,39 @@ def rival_bed(sr: int, seconds: float) -> list[float]:
     return normalize(out)
 
 
+def endgame_bed(sr: int, seconds: float) -> list[float]:
+    n = int(sr * seconds)
+    out = [0.0] * n
+    for i in range(n):
+        t = i / sr
+        pad = (
+            0.18 * math.sin(2 * math.pi * 130.81 * t)
+            + 0.14 * math.sin(2 * math.pi * 164.81 * t)
+            + 0.12 * math.sin(2 * math.pi * 196.0 * t)
+            + 0.08 * math.sin(2 * math.pi * 261.63 * t)
+        )
+        horn = 0.05 * math.sin(2 * math.pi * 98.0 * t + 0.3 * math.sin(2 * math.pi * t / seconds))
+        swell = 0.86 + 0.14 * math.sin(2 * math.pi * t / seconds)
+        out[i] = (pad + horn) * swell * 0.54
+    return normalize(out)
+
+
+def ledger_bed(sr: int, seconds: float) -> list[float]:
+    n = int(sr * seconds)
+    out = [0.0] * n
+    for i in range(n):
+        t = i / sr
+        pad = (
+            0.16 * math.sin(2 * math.pi * 110.0 * t)
+            + 0.12 * math.sin(2 * math.pi * 146.83 * t)
+            + 0.08 * math.sin(2 * math.pi * 174.61 * t)
+        )
+        tick = 0.04 * math.sin(2 * math.pi * 880 * t) * max(0.0, math.sin(2 * math.pi * 8 * t / seconds))
+        pulse = 0.84 + 0.16 * math.sin(2 * math.pi * 2 * t / seconds)
+        out[i] = (pad * pulse + tick) * 0.52
+    return normalize(out)
+
+
 RENDERERS = {
     "harbor": harbor_bed,
     "shop": shop_bed,
@@ -169,6 +202,8 @@ RENDERERS = {
     "storm": storm_bed,
     "night": night_bed,
     "rival": rival_bed,
+    "endgame": endgame_bed,
+    "ledger": ledger_bed,
 }
 
 

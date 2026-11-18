@@ -23,8 +23,8 @@ function parseGlbJson(buf: Buffer): Record<string, unknown> {
 describe("harbor art pass (Finish 2.0 Phase 19 + Finish 3.0 Phase 8)", () => {
   it("locks catalog floors", () => {
     expect(HARBOR_ART_PHASE).toBe(19);
-    expect(AUTHORED_HARBOR_FLOOR).toBe(8);
-    expect(HARBOR_ART_PASS.authoredHarbors.length).toBeGreaterThanOrEqual(8);
+    expect(AUTHORED_HARBOR_FLOOR).toBeGreaterThanOrEqual(8);
+    expect(HARBOR_ART_PASS.authoredHarbors.length).toBeGreaterThanOrEqual(AUTHORED_HARBOR_FLOOR);
     expect(
       (JSON.parse(readFileSync(resolve(root, "shared/store/listing.json"), "utf8")) as {
         harborArtPassPhase?: number;

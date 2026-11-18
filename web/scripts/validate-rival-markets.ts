@@ -48,11 +48,12 @@ function validate(): string[] {
   if (fixture.rivalMarketsMarker !== RIVAL_MARKETS_MARKER) errors.push("fixture marker mismatch");
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
   if (catalog.schemaVersion !== 23) errors.push("schemaVersion must stay 23");
-  if (catalog.rivalCount !== 8 || RIVAL_COUNT !== 8) errors.push("rivalCount must be 8");
+  if (catalog.rivalCount !== 8 || RIVAL_COUNT !== 8) errors.push("catalog rivalCount must stay 8");
   if (catalog.rivalIds?.length !== 8) errors.push("rivalIds must list 8");
 
   const measure = measureRivalMarkets(root);
-  if (measure.rivalCount !== 8) errors.push(`rivals ${measure.rivalCount} ≠ 8`);
+  // Finish 4.0 Phase 15 soft floor — content may exceed Finish 3.0's 8 rivals.
+  if (measure.rivalCount < 8) errors.push(`rivals ${measure.rivalCount} < 8`);
   if (!measure.rivalsPresent) {
     errors.push(`missing rivals: ${measure.missingRivals.join(", ")}`);
   }

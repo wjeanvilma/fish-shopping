@@ -58,7 +58,7 @@ function validate(): string[] {
   if (catalog.newRareSpecies?.length !== 12) errors.push("newRareSpecies must list 12");
 
   const measure = measureSpecies5175(root);
-  if (measure.speciesCount !== 75) errors.push(`species ${measure.speciesCount} ≠ 75`);
+  if (measure.speciesCount < 75) errors.push(`species ${measure.speciesCount} < 75`);
   if (measure.habitatCount !== 8) errors.push(`habitats ${measure.habitatCount} ≠ 8`);
   if (!measure.newBasesPresent) errors.push("new base species missing");
   if (!measure.newRaresPresent) errors.push("new rare species / rare gallery missing");

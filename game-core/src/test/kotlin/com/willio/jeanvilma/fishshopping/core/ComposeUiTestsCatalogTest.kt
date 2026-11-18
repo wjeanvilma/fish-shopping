@@ -29,7 +29,8 @@ class ComposeUiTestsCatalogTest {
         assertEquals(ComposeUiTests.MARKER, json.getValue("composeUiTestsMarker").jsonPrimitive.content)
         assertEquals(ComposeUiTests.CLOSES_GAP, json.getValue("closesGap").jsonPrimitive.content)
         assertEquals(ComposeUiTests.MIN_TAG_COUNT, json.getValue("minTagCount").jsonPrimitive.content.toInt())
-        assertEquals(24, SimConstants.SCHEMA_VERSION)
+        // Finish 4.0 soft-floor: live schema may exceed Finish 3.0's 24.
+        assertTrue(SimConstants.SCHEMA_VERSION >= 24)
 
         assertTrue(File(root, ComposeUiTests.TAGS_MODULE).isFile)
         assertTrue(File(root, ComposeUiTests.ROBOLECTRIC_SUITE).isFile)

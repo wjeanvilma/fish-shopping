@@ -43,17 +43,22 @@ function validate(): string[] {
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
   if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
-  if (catalog.dailyObjectiveCount !== 6 || DAILY_OBJECTIVE_FLOOR !== 6) {
-    errors.push("dailyObjectiveCount must be 6");
+  // Finish 4.0 Phase 21 soft-floor: catalog floors stay historical; content may grow.
+  if (catalog.dailyObjectiveCount < 6 || DAILY_OBJECTIVE_FLOOR < 6) {
+    errors.push("dailyObjectiveCount floor must be >= 6");
   }
-  if (catalog.boardSlots !== 3 || DAILY_BOARD_SLOTS_FLOOR !== 3) {
-    errors.push("boardSlots must be 3");
+  if (catalog.boardSlots < 3 || DAILY_BOARD_SLOTS_FLOOR < 3) {
+    errors.push("boardSlots floor must be >= 3");
   }
-  if (dod.quotas?.dailyObjectives !== 6) errors.push("DoD quotas.dailyObjectives must be 6");
+  if ((dod.quotas?.dailyObjectives ?? 0) < 6) {
+    errors.push("DoD quotas.dailyObjectives must be >= 6");
+  }
   if (content.dailyGoals.objectives.length < 6) {
     errors.push(`objectives ${content.dailyGoals.objectives.length} < 6`);
   }
-  if (content.dailyGoals.boardSlots !== 3) errors.push("content boardSlots must be 3");
+  if (content.dailyGoals.boardSlots < 3) {
+    errors.push("content boardSlots must be >= 3");
+  }
 
   if (listing.offlineJournalDailyGoalsPhase !== 18) {
     errors.push("listing.offlineJournalDailyGoalsPhase must be 18");

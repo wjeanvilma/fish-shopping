@@ -103,6 +103,39 @@ export function BusinessDashboardPanel({
               </li>
               <li>
                 <div className="grow">
+                  <strong>{t("dashboard.operatingCosts")}</strong>
+                  <div className="small muted">
+                    {formatCoins(dash.wagesPaid)} wages
+                    {dash.maintenancePaid > 0 ? ` · ${formatCoins(dash.maintenancePaid)} upkeep` : ""}
+                    {dash.repairSpent > 0 ? ` · ${formatCoins(dash.repairSpent)} repairs` : ""}
+                  </div>
+                </div>
+                <span className="num">{formatCoins(dash.operatingCosts)}</span>
+              </li>
+              <li>
+                <div className="grow">
+                  <strong>{t("dashboard.netOperating")}</strong>
+                  <div className="small muted">
+                    Committed sales − wages/upkeep/repairs
+                    {dash.itemsSpoiled > 0 ? ` · ${dash.itemsSpoiled} spoiled` : ""}
+                    {dash.loanInterestAccrued > 0 ? ` · ${formatCoins(dash.loanInterestAccrued)} loan interest` : ""}
+                    {dash.loanCollected > 0 ? ` · ${formatCoins(dash.loanCollected)} loan collected` : ""}
+                  </div>
+                </div>
+                <span className="num">{formatCoins(dash.netOperatingProfit)}</span>
+              </li>
+              <li>
+                <div className="grow">
+                  <strong>{t("dashboard.marketTip")}</strong>
+                  <div className="small muted">
+                    Scarcity tip {Math.trunc(dash.activeScarcityTipPermille / 10)}%
+                    {dash.reputationLabel ? ` · reputation ${dash.reputationLabel}` : ""}
+                  </div>
+                </div>
+                <span className="num">{Math.trunc(dash.reputationScorePermille / 10)}%</span>
+              </li>
+              <li>
+                <div className="grow">
                   <strong>Sales pace</strong>
                   <div className="small muted">{dash.rateIntervalLabel}</div>
                 </div>

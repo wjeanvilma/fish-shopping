@@ -1,0 +1,69 @@
+{
+  "phase": 21,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.offline_cloud_2.v1",
+  "description": "Finish 4.0 Phase 21 — offline journal/daily goals deepen (10 objectives, boardSlots 4), cloud conflict reasonCode + diffHints UX, analytics batch requeue/retry. Schema stays 25 / content 3.0.0.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 25,
+  "offlineCloud2Marker": "authored-finish-4.0-phase-21",
+  "dailyObjectiveMin": 10,
+  "boardSlotsMin": 4,
+  "objectiveIds": [
+    "daily.catch_five",
+    "daily.sell_three",
+    "daily.stock_counter",
+    "daily.feed_machines",
+    "daily.contract_one",
+    "daily.perfect_reel",
+    "daily.hire_help",
+    "daily.rare_catch",
+    "daily.loan_care",
+    "daily.rival_beat"
+  ],
+  "journalDeltaFields": [
+    "contractsCompleted",
+    "maintenancePaid",
+    "itemsSpoiled",
+    "rivalBeats"
+  ],
+  "conflictFields": [
+    "reasonCode",
+    "diffHints"
+  ],
+  "analyticsRetry": {
+    "requeueOnFlushFailure": true,
+    "maxFlushRetries": 3,
+    "retryBackoffMs": 2000
+  },
+  "parityFixture": "shared/fixtures/parity-offline-cloud-2.json",
+  "authorTool": "shared/tools/author_offline_cloud_2.py",
+  "validateScript": "npm run offlinecloud2:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "checklist": [
+    "≥10 daily objectives with boardSlots ≥4",
+    "OfflineReport journal deltas: contracts/maintenance/spoil/rivals",
+    "CloudConflictOffer reasonCode + diffHints surfaced in web+Android UI",
+    "Remote analytics requeueOnFlushFailure + retry backoff",
+    "Soft-floor dailygoals:validate / DoD historical floors",
+    "offlinecloud2:validate green in CI",
+    "schema stays 25"
+  ],
+  "preflightGates": [
+    "shared/ship/offline-cloud-2.json",
+    "shared/fixtures/parity-offline-cloud-2.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "shared/content/content-pack.json",
+    "shared/ops/remote-analytics-sink.json",
+    "web/src/engine/cloudSync.ts",
+    "web/src/engine/offline.ts",
+    "web/src/analytics/remoteAnalyticsSink.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/persistence/CloudSync.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/OfflineEarnings.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/RemoteAnalyticsPolicy.kt",
+    "web/src/ship/offlineCloud2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/OfflineCloud2.kt",
+    "web/scripts/validate-offline-cloud-2.ts",
+    "shared/tools/author_offline_cloud_2.py"
+  ]
+}

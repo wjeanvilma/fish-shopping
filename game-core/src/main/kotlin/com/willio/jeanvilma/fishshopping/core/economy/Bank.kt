@@ -37,12 +37,32 @@ object BankSystem {
 
     fun repayAmount(content: ContentPack): Long = content.bank.repayAmount()
 
+    fun productUnlocked(
+        content: ContentPack,
+        s: GameState,
+        product: com.willio.jeanvilma.fishshopping.core.content.BankLoanProductDef,
+    ): Boolean =
+        product.requires.all { it in s.ownedUpgrades || it in s.completedQuests }
+
+    fun productMissingRequirement(
+        content: ContentPack,
+        s: GameState,
+        product: com.willio.jeanvilma.fishshopping.core.content.BankLoanProductDef,
+    ): String? {
+        val missing = product.requires.firstOrNull {
+            it !in s.ownedUpgrades && it !in s.completedQuests
+        } ?: return null
+        return content.upgradesById[missing]?.name
+            ?: content.questsById[missing]?.name
+            ?: missing
+    }
+
     fun step(ctx: StepContext) {
         checkCoinGoal(ctx)
         collectOverdue(ctx)
     }
 
-    fun takeLoan(ctx: StepContext, requestId: String) {
+    fun takeLoan(ctx: StepContext, requestId: String, productId: String? = null) {
         val s = ctx.state
         s.purchaseReceipts[requestId]?.let { prior ->
             ctx.emit(GameEvent.LoanTaken(s.tick, prior.coinDelta, s.loanOwed, s.loanDueTick, prior, replayed = true))
@@ -55,11 +75,16 @@ object BankSystem {
             return reject("Requires: ${missingRequirement(ctx.content, s)}")
         }
         if (hasLoan(s)) return reject("Loan already outstanding")
-        val principal = ctx.content.bank.loanPrincipal
-        val owed = repayAmount(ctx.content)
+        val product = ctx.content.bank.productById(productId)
+            ?: return reject("Unknown loan product")
+        if (!productUnlocked(ctx.content, s, product)) {
+            return reject("Requires: ${productMissingRequirement(ctx.content, s, product)}")
+        }
+        val principal = product.principal
+        val owed = product.repayAmount()
         s.coins += principal
         s.loanOwed = owed
-        s.loanDueTick = s.tick + ctx.content.bank.termTicks
+        s.loanDueTick = s.tick + product.termTicks
         s.loanCollectionAccrualTicks = 0
         s.bumpStat(Stats.LOANS_TAKEN)
         val interest = owed - principal

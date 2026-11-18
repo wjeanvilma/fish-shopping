@@ -1,0 +1,9 @@
+{
+  "id": "machine.scaffold_dock_press",
+  "name": "Dock press",
+  "recipes": [
+    "recipe.basic_portions"
+  ],
+  "inputCapacityUnits": 8,
+  "outputCapacityUnits": 12
+}

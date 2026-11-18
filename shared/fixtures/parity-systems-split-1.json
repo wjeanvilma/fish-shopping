@@ -1,0 +1,22 @@
+{
+  "schema": "fish.fixtures.parity_systems_split_1.v1",
+  "systemsSplit1Marker": "authored-finish-4.0-phase-2",
+  "phase": 2,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "systemsFacadeMaxLines": 4700,
+    "extractedFileMin": 5,
+    "requiredFileCount": 5,
+    "gapFlagClosed": "systemsSplitIncomplete",
+    "schemaVersion": 24,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "systems_facade_slim",
+      "modules_extracted",
+      "symbols_present",
+      "bridge_bound",
+      "kickoff_gap_closed",
+      "ci_gate"
+    ]
+  }
+}

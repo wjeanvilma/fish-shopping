@@ -629,7 +629,7 @@ data class PrestigeDef(
     val milestones: List<PrestigeMilestoneDef>,
 )
 
-/** Finish 3.0 Phase 14 — single-player rival NPC market stall. */
+/** Finish 3.0 Phase 14 / Finish 4.0 Phase 15 — single-player rival NPC market stall. */
 data class RivalMarketDef(
     val id: String,
     val name: String,
@@ -639,9 +639,11 @@ data class RivalMarketDef(
     val specialtyProducts: List<String>,
     val undercutPriceMultPermille: Int,
     val activeDayParts: List<String>,
+    /** Finish 4.0 Phase 15 — siphon | undercut | adaptive | roamer. */
+    val aiProfile: String = "siphon",
 )
 
-/** Finish 3.0 Phase 14 — rival NPC markets catalog. */
+/** Finish 3.0 Phase 14 / Finish 4.0 Phase 15 — rival NPC markets catalog. */
 data class RivalMarketsCatalog(
     val tickInterval: Int,
     val emptyStockSiphonChancePermille: Int,
@@ -649,6 +651,10 @@ data class RivalMarketsCatalog(
     val minReputationBandToResist: Int,
     val wellStockedUnits: Int,
     val pressureSpawnMultPermille: Int,
+    /** Finish 4.0 Phase 15 — adaptive/roamer revenge aggression boost. */
+    val adaptiveAggressionBoostPermille: Int = 0,
+    /** Finish 4.0 Phase 15 — extra spawn mult when 2+ rivals pressuring. */
+    val multiRivalPressureExtraMultPermille: Int = 1000,
     val rivals: List<RivalMarketDef>,
 )
 
@@ -663,6 +669,8 @@ data class EndgameTierDef(
     val catchSpeedPermille: Int,
     val priceBonusPermille: Int,
     val coins: Long,
+    /** Finish 4.0 Phase 17 — legend marks required (default 0). */
+    val requiresMarks: Int = 0,
 )
 
 /** Finish 3.0 Phase 15 — endgame challenge. */
@@ -673,6 +681,8 @@ data class EndgameChallengeDef(
     val stat: String,
     val atLeast: Long,
     val rewardCoins: Long,
+    /** Finish 4.0 Phase 17 — optional legend mark granted on complete. */
+    val grantsMark: String? = null,
 )
 
 /** Finish 3.0 Phase 15 — endgame deepen catalog. */
@@ -958,6 +968,19 @@ data class RushWindowDef(
     val endTick: Int get() = startTick + durationTicks
 }
 
+/** Finish 4.0 Phase 20 — selectable pier loan product (still one outstanding loan). */
+data class BankLoanProductDef(
+    val id: String,
+    val name: String,
+    val description: String,
+    val principal: Long,
+    val repayPermille: Int,
+    val termTicks: Int,
+    val requires: List<String> = emptyList(),
+) {
+    fun repayAmount(): Long = (principal * repayPermille.toLong()) / 1000L
+}
+
 /** Phase 26 pier bank: one short-term loan at a time + coin-goal presets. */
 data class BankDef(
     val requires: List<String>,
@@ -968,9 +991,30 @@ data class BankDef(
     /** While overdue, seize owed coins this often. */
     val collectionPeriodTicks: Int,
     val goalPresets: List<Long>,
+    /** Finish 4.0 Phase 20 — authored loan products (falls back to legacy principal). */
+    val loanProducts: List<BankLoanProductDef> = emptyList(),
 ) {
     fun repayAmount(): Long =
         (loanPrincipal * repayPermille.toLong()) / 1000L
+
+    fun productsOrLegacy(): List<BankLoanProductDef> =
+        if (loanProducts.isNotEmpty()) loanProducts
+        else listOf(
+            BankLoanProductDef(
+                id = "loan.legacy",
+                name = "Pier loan",
+                description = "Short-term pier float",
+                principal = loanPrincipal,
+                repayPermille = repayPermille,
+                termTicks = termTicks,
+            ),
+        )
+
+    fun productById(id: String?): BankLoanProductDef? {
+        val products = productsOrLegacy()
+        if (id.isNullOrBlank()) return products.firstOrNull()
+        return products.firstOrNull { it.id == id }
+    }
 }
 
 /** Phase 24 seasonal event catalog (sim-clock overlays). */

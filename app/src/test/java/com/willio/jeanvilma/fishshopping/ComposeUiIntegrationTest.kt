@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import com.willio.jeanvilma.fishshopping.core.sim.OfflineReport
 import com.willio.jeanvilma.fishshopping.ui.ComposeUiTags
+import com.willio.jeanvilma.fishshopping.ui.hud.HudNavToolbarContent
 import com.willio.jeanvilma.fishshopping.ui.hud.OfflineSummaryPanel
 import com.willio.jeanvilma.fishshopping.ui.hud.PausePanel
 import com.willio.jeanvilma.fishshopping.ui.hud.TitleAnalyticsConsentContent
@@ -21,7 +22,8 @@ import org.robolectric.annotation.Config
 
 /**
  * Finish 3.0 Phase 21 — Compose UI integration tests (Robolectric / JVM).
- * Covers title menu, analytics consent, offline summary, and pause panel flows.
+ * Finish 4.0 Phase 26 — HUD nav toolbar + expanded tag floor.
+ * Covers title menu, analytics consent, offline summary, pause, and HUD nav.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -140,9 +142,43 @@ class ComposeUiIntegrationTest {
 
     @Test
     fun composeUiTagsCatalogIsStable() {
-        assertTrue(ComposeUiTags.ALL.size >= 16)
+        assertTrue(ComposeUiTags.ALL.size >= 24)
         assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.TITLE_CONTINUE))
         assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.NAV_PAUSE))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.NAV_JOBS))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.NAV_DASH))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.HUD_TOOLBAR))
         assertEquals(ComposeUiTags.ALL.size, ComposeUiTags.ALL.toSet().size)
+    }
+
+    @Test
+    fun hudNavToolbarTagsFire() {
+        var pause = 0
+        var map = 0
+        var jobs = 0
+        var dash = 0
+        composeRule.setContent {
+            FishShoppingTheme {
+                HudNavToolbarContent(
+                    onPause = { pause++ },
+                    onMap = { map++ },
+                    onWarehouse = {},
+                    onGoals = {},
+                    onJobs = { jobs++ },
+                    onStaff = {},
+                    onDash = { dash++ },
+                    onUpgrades = {},
+                )
+            }
+        }
+        composeRule.onNodeWithTag(ComposeUiTags.HUD_TOOLBAR).assertIsDisplayed()
+        composeRule.onNodeWithTag(ComposeUiTags.NAV_PAUSE).performClick()
+        composeRule.onNodeWithTag(ComposeUiTags.NAV_MAP).performClick()
+        composeRule.onNodeWithTag(ComposeUiTags.NAV_JOBS).performClick()
+        composeRule.onNodeWithTag(ComposeUiTags.NAV_DASH).performClick()
+        assertEquals(1, pause)
+        assertEquals(1, map)
+        assertEquals(1, jobs)
+        assertEquals(1, dash)
     }
 }

@@ -820,7 +820,10 @@ internal fun AchievementsPanel(
 @Composable
 internal fun LicensesPanel(onClose: () -> Unit) {
     Surface(
-        Modifier.managementSheet(maxWidth = 400.dp, maxHeight = 520.dp).then(rememberSheetClicks()),
+        Modifier
+            .managementSheet(maxWidth = 400.dp, maxHeight = 520.dp)
+            .then(rememberSheetClicks())
+            .a11yPane("panels.licenses"),
         shape = PanelShape,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,
@@ -828,19 +831,22 @@ internal fun LicensesPanel(onClose: () -> Unit) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    LicensesNotice.SCREEN_TITLE,
+                    UiStrings.t("panels.licenses"),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f),
                 )
                 TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text(UiStrings.t("common.close")) }
             }
             LazyColumn(
-                modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+                    .semantics { contentDescription = UiStrings.t("a11y.licensesSection") },
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 item {
                     Text(
-                        LicensesNotice.SCREEN_INTRO,
+                        UiStrings.t("settings.licensesIntro"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
                     )

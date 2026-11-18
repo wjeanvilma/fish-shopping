@@ -1,0 +1,112 @@
+{
+  "phase": 23,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.vfx_juice_4.v1",
+  "description": "Finish 4.0 Phase 23 \u2014 decor/cosmetic/endgame/contract/bait/unlock bursts + endgame shakes + endgame ambient; extends juice 3; presentation-only; schema stays 25.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 25,
+  "extendsCatalog": "shared/perf/vfx-juice.json",
+  "extendsJuice3Catalog": "shared/ship/vfx-juice-3.json",
+  "budgetGateCatalog": "shared/perf/budget-gate.json",
+  "simHzInvariant": 20,
+  "vfxJuice4Marker": "authored-finish-4.0-phase-23",
+  "eventBurstMin": 7,
+  "eventShakeMin": 2,
+  "endgameAmbientMin": 3,
+  "eventBursts": {
+    "kinds": [
+      "decor",
+      "cosmetic",
+      "endgame_tier",
+      "endgame_challenge",
+      "contract_accept",
+      "bait",
+      "full_unlock"
+    ],
+    "durationSec": {
+      "decor": 0.35,
+      "cosmetic": 0.45,
+      "endgame_tier": 0.6,
+      "endgame_challenge": 0.55,
+      "contract_accept": 0.35,
+      "bait": 0.3,
+      "full_unlock": 0.65
+    },
+    "sharesBurstPool": true
+  },
+  "eventShake": {
+    "kinds": [
+      "endgame_tier",
+      "endgame_challenge"
+    ],
+    "durationSec": 0.18,
+    "maxAmplitudeM": 0.12,
+    "amplitudeM": {
+      "endgame_tier": 0.08,
+      "endgame_challenge": 0.07
+    },
+    "scaleByQuality": {
+      "low": 0.5,
+      "medium": 0.85,
+      "high": 1.0
+    },
+    "disabledWhenReducedMotion": true
+  },
+  "ambientEndgame": {
+    "modes": [
+      "locked",
+      "active",
+      "crowned"
+    ],
+    "consumesBurstPool": false
+  },
+  "eventMap": {
+    "decor_purchased": {
+      "burst": "decor"
+    },
+    "iap_cosmetic_granted": {
+      "burst": "cosmetic"
+    },
+    "endgame_tier_unlocked": {
+      "burst": "endgame_tier",
+      "shake": "endgame_tier"
+    },
+    "endgame_challenge_completed": {
+      "burst": "endgame_challenge",
+      "shake": "endgame_challenge"
+    },
+    "contract_accepted": {
+      "burst": "contract_accept"
+    },
+    "bait_purchased": {
+      "burst": "bait"
+    },
+    "full_harbor_unlock_granted": {
+      "burst": "full_unlock"
+    }
+  },
+  "parityFixture": "shared/fixtures/parity-vfx-juice-4.json",
+  "validateScript": "npm run audiovfx4:validate",
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "checklist": [
+    "\u22657 new event burst kinds",
+    "\u22652 new shake kinds (endgame_tier/endgame_challenge)",
+    "\u22653 endgame ambient modes",
+    "GameHost + GameViewModel wire Finish 4.0 events",
+    "HarborScene + HarborRenderer apply endgame ambient",
+    "audiovfx4:validate green in CI",
+    "schema stays 25"
+  ],
+  "preflightGates": [
+    "shared/ship/vfx-juice-4.json",
+    "shared/fixtures/parity-vfx-juice-4.json",
+    "shared/perf/budget-gate.json",
+    "web/src/ship/vfxJuice4.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/VfxJuice4.kt",
+    "web/src/render/presenters/vfx.ts",
+    "web/src/render/weatherAmbient.ts",
+    "web/src/game/host/hostStepBus.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersVfx.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt"
+  ]
+}

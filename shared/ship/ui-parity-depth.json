@@ -1,0 +1,211 @@
+{
+  "phase": 22,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.ui_parity_depth.v1",
+  "description": "Finish 4.0 Phase 22 — Web↔Android panel feature parity depth. Locks paired HUD panel markers for Goals/bank, dashboard cashflow, staff trainReason, cloud conflict, offline journal, contracts reputation, map specialty, licenses, rival HUD. Schema stays 25 / content 3.0.0.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 25,
+  "uiParityMarker": "authored-finish-4.0-phase-22",
+  "panelPairMin": 12,
+  "panelPairs": [
+    {
+      "id": "goals",
+      "web": "web/src/ui/QuestLogPanel.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/QuestLogPanel.kt"
+    },
+    {
+      "id": "dashboard",
+      "web": "web/src/ui/BusinessDashboardPanel.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/BusinessDashboardPanel.kt"
+    },
+    {
+      "id": "staff",
+      "web": "web/src/ui/StaffPanel.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/StaffPanel.kt"
+    },
+    {
+      "id": "contracts",
+      "web": "web/src/ui/ContractsPanel.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/ContractsPanel.kt"
+    },
+    {
+      "id": "offline",
+      "web": "web/src/ui/OfflineSummaryPanel.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/OfflineSummaryPanel.kt"
+    },
+    {
+      "id": "settings",
+      "web": "web/src/ui/PauseSettingsPanels.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/PauseSettingsPanels.kt"
+    },
+    {
+      "id": "map",
+      "web": "web/src/ui/MapWarehousePanels.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/MapWarehousePanels.kt"
+    },
+    {
+      "id": "species",
+      "web": "web/src/ui/SpeciesBookPanel.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/SpeciesBookPanel.kt"
+    },
+    {
+      "id": "upgrades",
+      "web": "web/src/ui/UpgradePanel.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/UpgradePanel.kt"
+    },
+    {
+      "id": "title",
+      "web": "web/src/ui/TitlePanels.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/TitlePanels.kt"
+    },
+    {
+      "id": "stations",
+      "web": "web/src/ui/StationBagPanels.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/StationBagPanels.kt"
+    },
+    {
+      "id": "host",
+      "web": "web/src/ui/App.tsx",
+      "android": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt"
+    }
+  ],
+  "featureFloors": [
+    {
+      "id": "bank_loan_products",
+      "webFile": "web/src/ui/QuestLogPanel.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/QuestLogPanel.kt",
+      "webMarkers": ["loanProducts", "lockedReason", "formatRushSeconds(product.termTicks)", "onTakeLoan"],
+      "androidMarkers": ["loanProducts", "lockedReason", "formatRushSeconds(product.termTicks)", "onTakeLoan"]
+    },
+    {
+      "id": "bank_goal_presets",
+      "webFile": "web/src/ui/QuestLogPanel.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/QuestLogPanel.kt",
+      "webMarkers": ["goalPresets", "onSetCoinGoal"],
+      "androidMarkers": ["goalPresets", "onSetCoinGoal"]
+    },
+    {
+      "id": "daily_goals_claim",
+      "webFile": "web/src/ui/QuestLogPanel.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/QuestLogPanel.kt",
+      "webMarkers": ["onClaimDailyGoal", "aria-valuenow"],
+      "androidMarkers": ["onClaimDailyGoal", "LinearProgressIndicator"]
+    },
+    {
+      "id": "cosmetics_equip",
+      "webFile": "web/src/ui/QuestLogPanel.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/QuestLogPanel.kt",
+      "webMarkers": ["onEquipCosmetic", "onPreviewCosmetic", "onUnequipCosmetic"],
+      "androidMarkers": ["onEquipCosmetic", "onPreviewCosmetic", "onUnequipCosmetic"]
+    },
+    {
+      "id": "dashboard_cashflow",
+      "webFile": "web/src/ui/BusinessDashboardPanel.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/BusinessDashboardPanel.kt",
+      "webMarkers": [
+        "loanInterestAccrued",
+        "loanCollected",
+        "maintenancePaid",
+        "netOperatingProfit",
+        "activeScarcityTipPermille",
+        "reputationLabel"
+      ],
+      "androidMarkers": [
+        "loanInterestAccrued",
+        "loanCollected",
+        "maintenancePaid",
+        "netOperatingProfit",
+        "activeScarcityTipPermille",
+        "reputationLabel"
+      ]
+    },
+    {
+      "id": "dashboard_journal",
+      "webFile": "web/src/ui/BusinessDashboardPanel.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/BusinessDashboardPanel.kt",
+      "webMarkers": ["journalLines", "offlineJournalLines"],
+      "androidMarkers": ["journalLines", "offlineJournalLines"]
+    },
+    {
+      "id": "staff_train_reason",
+      "webFile": "web/src/ui/StaffPanel.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/StaffPanel.kt",
+      "webMarkers": ["trainReason"],
+      "androidMarkers": ["trainReason"]
+    },
+    {
+      "id": "cloud_conflict",
+      "webFile": "web/src/ui/TitlePanels.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/TitlePanels.kt",
+      "webMarkers": ["diffHints", "reasonCode"],
+      "androidMarkers": ["diffHints", "reasonCode"]
+    },
+    {
+      "id": "offline_journal",
+      "webFile": "web/src/ui/OfflineSummaryPanel.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/OfflineSummaryPanel.kt",
+      "webMarkers": ["journalLines"],
+      "androidMarkers": ["journalLines"]
+    },
+    {
+      "id": "map_specialty",
+      "webFile": "web/src/ui/MapWarehousePanels.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/MapWarehousePanels.kt",
+      "webMarkers": ["specializationName"],
+      "androidMarkers": ["specializationName"]
+    },
+    {
+      "id": "contracts_reputation",
+      "webFile": "web/src/ui/ContractsPanel.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/ContractsPanel.kt",
+      "webMarkers": ["requiresReputationBand"],
+      "androidMarkers": ["requiresReputationBand"]
+    },
+    {
+      "id": "hud_rival",
+      "webFile": "web/src/ui/App.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt",
+      "webMarkers": ["rivalPressureActive", "activeRivalIds"],
+      "androidMarkers": ["rivalPressureActive", "activeRivalIds"]
+    },
+    {
+      "id": "licenses",
+      "webFile": "web/src/ui/PauseSettingsPanels.tsx",
+      "androidFile": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/PauseSettingsPanels.kt",
+      "webMarkers": ["licensesCatalog", "showLicenses"],
+      "androidMarkers": ["LicensesPanel", "showLicenses"]
+    }
+  ],
+  "goalPresetMin": 8,
+  "loanProductMin": 3,
+  "dailyObjectiveMin": 10,
+  "parityFixture": "shared/fixtures/parity-ui-parity-depth.json",
+  "authorTool": "shared/tools/author_ui_parity_depth.py",
+  "validateScript": "npm run uiparity:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "checklist": [
+    "≥12 paired web↔Android panel paths present",
+    "≥13 shared feature marker floors green on both sides",
+    "Android dashboard loanInterestAccrued + loanCollected parity",
+    "Android Goals loan termTicks + Reward: label fix",
+    "Staff trainReason surfaced web+Android",
+    "uiparity:validate green in CI",
+    "schema stays 25"
+  ],
+  "preflightGates": [
+    "shared/ship/ui-parity-depth.json",
+    "shared/fixtures/parity-ui-parity-depth.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "web/src/ui/QuestLogPanel.tsx",
+    "web/src/ui/BusinessDashboardPanel.tsx",
+    "web/src/ui/StaffPanel.tsx",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/QuestLogPanel.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/BusinessDashboardPanel.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/StaffPanel.kt",
+    "web/src/ship/uiParity.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/UiParity.kt",
+    "web/scripts/validate-ui-parity-depth.ts",
+    "shared/tools/author_ui_parity_depth.py"
+  ]
+}

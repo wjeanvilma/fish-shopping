@@ -19,9 +19,10 @@ function validate(): string[] {
   const errors: string[] = [];
   const catalog = readJson(resolve(root, "shared/perf/vfx-juice.json"));
   const gate = readJson(resolve(root, "shared/perf/budget-gate.json"));
-  const webPr = readFileSync(resolve(root, "web/src/render/presenters.ts"), "utf8");
+  // Finish 4.0 soft-floor: VFX lives in presenters/vfx + PresentersVfx; step bus hosts bursts.
+  const webPr = readFileSync(resolve(root, "web/src/render/presenters/vfx.ts"), "utf8");
   const androidPr = readFileSync(
-    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/render/Presenters.kt"),
+    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersVfx.kt"),
     "utf8",
   );
   const webScene = readFileSync(resolve(root, "web/src/render/HarborScene.ts"), "utf8");
@@ -29,7 +30,10 @@ function validate(): string[] {
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRenderer.kt"),
     "utf8",
   );
-  const host = readFileSync(resolve(root, "web/src/game/GameHost.ts"), "utf8");
+  const host =
+    readFileSync(resolve(root, "web/src/game/GameHost.ts"), "utf8") +
+    "\n" +
+    readFileSync(resolve(root, "web/src/game/host/hostStepBus.ts"), "utf8");
   const vm = readFileSync(
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt"),
     "utf8",

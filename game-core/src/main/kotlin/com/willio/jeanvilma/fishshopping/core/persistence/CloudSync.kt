@@ -47,6 +47,10 @@ data class CloudConflictOffer(
     val remote: SnapshotSummary,
     val recommended: SyncSource,
     val reason: String,
+    /** Finish 4.0 Phase 21 — stable machine code for the human [reason]. */
+    val reasonCode: String,
+    /** Finish 4.0 Phase 21 — short UX hints describing local vs remote diffs. */
+    val diffHints: List<String>,
     val localText: String,
     val remoteText: String,
 )
@@ -150,13 +154,50 @@ object CloudSync {
             SyncSource.REMOTE -> SyncSource.REMOTE
             else -> SyncSource.LOCAL
         }
+        val localSummary = summaryOf(local, SyncSource.LOCAL)
+        val remoteSummary = summaryOf(remote, SyncSource.REMOTE)
         return CloudConflictOffer(
-            local = summaryOf(local, SyncSource.LOCAL),
-            remote = summaryOf(remote, SyncSource.REMOTE),
+            local = localSummary,
+            remote = remoteSummary,
             recommended = recommended,
             reason = decision.reason,
+            reasonCode = reasonCodeOf(decision.reason),
+            diffHints = diffHints(localSummary, remoteSummary),
             localText = local.text,
             remoteText = remote.text,
         )
+    }
+
+    /** Finish 4.0 Phase 21 — map human reason → stable code. */
+    fun reasonCodeOf(reason: String): String = when (reason) {
+        "remote newer" -> "remote_newer"
+        "local newer" -> "local_newer"
+        "equal age; keep local" -> "equal_age"
+        else -> "conflict"
+    }
+
+    /** Finish 4.0 Phase 21 — coin / harbor / playtime / age hints for conflict UX. */
+    fun diffHints(local: SnapshotSummary, remote: SnapshotSummary): List<String> {
+        val hints = mutableListOf<String>()
+        val coinDelta = remote.coins - local.coins
+        when {
+            coinDelta > 0L -> hints += "Cloud has ${coinDelta} more coins"
+            coinDelta < 0L -> hints += "This device has ${-coinDelta} more coins"
+        }
+        if (local.harborId.isNotBlank() && remote.harborId.isNotBlank() && local.harborId != remote.harborId) {
+            hints += "Different harbors (${local.harborId} vs ${remote.harborId})"
+        }
+        val tickDelta = remote.tick - local.tick
+        when {
+            tickDelta > 0L -> hints += "Cloud has more playtime"
+            tickDelta < 0L -> hints += "This device has more playtime"
+        }
+        val ageDelta = remote.savedAtEpochMs - local.savedAtEpochMs
+        when {
+            ageDelta > 0L -> hints += "Cloud save is newer"
+            ageDelta < 0L -> hints += "This device save is newer"
+            else -> hints += "Same save age; prefer this device"
+        }
+        return hints
     }
 }

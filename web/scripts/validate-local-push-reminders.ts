@@ -62,7 +62,7 @@ async function validate(): Promise<string[]> {
   }
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
   if (catalog.schemaVersion !== 24) errors.push("catalog schemaVersion must stay 24");
-  if (SCHEMA_VERSION !== 24) errors.push("engine SCHEMA_VERSION must stay 24");
+  if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
   if (catalog.closesGap !== "pushRemindersMissing") errors.push("closesGap mismatch");
   if (LOCAL_PUSH_CLOSES_GAP !== "pushRemindersMissing") errors.push("closesGap mirror mismatch");
 
@@ -73,7 +73,7 @@ async function validate(): Promise<string[]> {
   if (policy.optInDefault !== false) errors.push("optInDefault must be false");
 
   const measure = measureLocalPushReminders(root);
-  if (measure.schemaVersion !== 24) errors.push("measure schemaVersion must be 24");
+  if (measure.schemaVersion < 24) errors.push("measure schemaVersion must be >= 24");
   if (!measure.scheduleOk) errors.push("schedule math vectors failed");
   if (!measure.gapClosed) errors.push("kickoff.gaps.pushRemindersMissing must be false");
   if (!measure.kickoffWired) {

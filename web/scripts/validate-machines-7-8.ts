@@ -110,9 +110,9 @@ function validate(): string[] {
   if ((fixture.expectFinal?.machineCount ?? 0) < 8) {
     errors.push("fixture expectFinal.machineCount must be ≥ 8");
   }
-  if (fixture.expectFinal?.machineCount !== content.machines.length) {
+  if ((fixture.expectFinal?.machineCount ?? 0) > content.machines.length) {
     errors.push(
-      `fixture expectFinal.machineCount ${fixture.expectFinal?.machineCount} ≠ content ${content.machines.length}`,
+      `fixture expectFinal.machineCount ${fixture.expectFinal?.machineCount} > content ${content.machines.length}`,
     );
   }
   if (fixture.build?.plotId !== "plot.sunrise_steamer") {

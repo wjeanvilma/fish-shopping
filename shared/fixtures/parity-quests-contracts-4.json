@@ -1,0 +1,38 @@
+{
+  "schema": "fish.fixture.parity_quests_contracts_4.v1",
+  "description": "Finish 4.0 Phase 14: quest floor 50 + mist/prism chains + rep-gate depth.",
+  "questsContracts4Marker": "authored-finish-4.0-phase-14",
+  "phase": 14,
+  "plan": "30_finish_4.0",
+  "questsMin": 50,
+  "deliveryChainsMin": 5,
+  "reputationGatedMin": 6,
+  "contractTemplatesMin": 55,
+  "newChainIds": [
+    "chain.mist_runner",
+    "chain.prism_relay"
+  ],
+  "newChainHeadIds": [
+    "contract.chain_mist_catch",
+    "contract.chain_prism_catch"
+  ],
+  "newChainLength": 3,
+  "newRepGatedId": "contract.braise_trust",
+  "newRepGatedBand": 2,
+  "terminalQuestId": "quest.market_legend",
+  "simHzInvariant": 20,
+  "expect": {
+    "contentVersion": "3.0.0",
+    "schemaVersion": 24,
+    "newQuests": 18,
+    "newChains": 2,
+    "gates": [
+      "quests_50",
+      "chains_5",
+      "rep_gated_6",
+      "templates_55",
+      "kickoff_quests_met",
+      "ci_gate"
+    ]
+  }
+}

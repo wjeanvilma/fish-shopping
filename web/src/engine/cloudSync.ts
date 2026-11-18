@@ -42,6 +42,10 @@ export interface CloudConflictOffer {
   remote: SnapshotSummary;
   recommended: SyncSource;
   reason: string;
+  /** Finish 4.0 Phase 21 — stable machine code for the human reason. */
+  reasonCode: string;
+  /** Finish 4.0 Phase 21 — short UX hints describing local vs remote diffs. */
+  diffHints: string[];
   localText: string;
   remoteText: string;
 }
@@ -109,6 +113,39 @@ export function chooseCloudSnapshot(localText: string | null | undefined, remote
   return { text: local.text, source: "local", reason: "equal age; keep local" };
 }
 
+/** Finish 4.0 Phase 21 — map human reason → stable code. */
+export function cloudConflictReasonCode(reason: string): string {
+  switch (reason) {
+    case "remote newer":
+      return "remote_newer";
+    case "local newer":
+      return "local_newer";
+    case "equal age; keep local":
+      return "equal_age";
+    default:
+      return "conflict";
+  }
+}
+
+/** Finish 4.0 Phase 21 — coin / harbor / playtime / age hints for conflict UX. */
+export function cloudConflictDiffHints(local: SnapshotSummary, remote: SnapshotSummary): string[] {
+  const hints: string[] = [];
+  const coinDelta = remote.coins - local.coins;
+  if (coinDelta > 0) hints.push(`Cloud has ${coinDelta} more coins`);
+  else if (coinDelta < 0) hints.push(`This device has ${-coinDelta} more coins`);
+  if (local.harborId && remote.harborId && local.harborId !== remote.harborId) {
+    hints.push(`Different harbors (${local.harborId} vs ${remote.harborId})`);
+  }
+  const tickDelta = remote.tick - local.tick;
+  if (tickDelta > 0) hints.push("Cloud has more playtime");
+  else if (tickDelta < 0) hints.push("This device has more playtime");
+  const ageDelta = remote.savedAtEpochMs - local.savedAtEpochMs;
+  if (ageDelta > 0) hints.push("Cloud save is newer");
+  else if (ageDelta < 0) hints.push("This device save is newer");
+  else hints.push("Same save age; prefer this device");
+  return hints;
+}
+
 /**
  * Phase 11: when both sides are checksum-valid and differ, return a dual-choice
  * offer. Recommended side follows chooseCloudSnapshot. Null means auto-apply is fine.
@@ -123,11 +160,15 @@ export function cloudConflictOffer(
   if (local.checksum === remote.checksum) return null;
   const decision = chooseCloudSnapshot(localText, remoteText);
   const recommended: SyncSource = decision.source === "remote" ? "remote" : "local";
+  const localSummary = summaryOf(local, "local");
+  const remoteSummary = summaryOf(remote, "remote");
   return {
-    local: summaryOf(local, "local"),
-    remote: summaryOf(remote, "remote"),
+    local: localSummary,
+    remote: remoteSummary,
     recommended,
     reason: decision.reason,
+    reasonCode: cloudConflictReasonCode(decision.reason),
+    diffHints: cloudConflictDiffHints(localSummary, remoteSummary),
     localText: local.text,
     remoteText: remote.text,
   };

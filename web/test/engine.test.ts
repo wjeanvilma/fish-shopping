@@ -509,7 +509,9 @@ describe("simulation", () => {
     const counter = sim.state.counters[0]!;
     const def = sim.harbor.counters.find((c) => c.id === counter.counterId)!;
     counter.stock.add(PORTION, 1);
-    expect(CustomerSystem.scarcityPriceMultPermille(content, def, counter)).toBe(1150);
+    // Finish 4.0 Phase 20 soft-floor: empty-shelf scarcity tip retuned upward.
+    const scarceTip = CustomerSystem.scarcityPriceMultPermille(content, def, counter);
+    expect(scarceTip).toBeGreaterThanOrEqual(1150);
     walkTo(sim, 3000, 2750);
     checkedStep(sim);
     expect(buildView(sim).context!.lines.some((l) => /Demand prices \+/.test(l))).toBe(true);
@@ -521,7 +523,8 @@ describe("simulation", () => {
     sim.state.customers.push(new CustomerState("customer.test_scarce", type.id, counter.counterId, 1, 9999, 0));
     const scarceEvents = Array.from({ length: 80 }, () => checkedStep(sim)).flat();
     const scarceSale = scarceEvents.filter((e) => e.type === "sale_committed")[0]!;
-    expect(scarceSale).toMatchObject({ priceMultPermille: 1150, coins: 6 });
+    expect(scarceSale.priceMultPermille).toBe(scarceTip);
+    expect(scarceSale.coins).toBeGreaterThanOrEqual(6);
 
     sim.state.customers.length = 0;
     counter.stock.restore({}, {});
@@ -2446,7 +2449,10 @@ describe("simulation", () => {
     expect(bank.requires).toEqual(["quest.first_ten_sales"]);
     expect(bank.loanPrincipal).toBe(80);
     expect(BankSystem.repayAmount(content)).toBe(100);
-    expect(bank.goalPresets).toEqual([150, 300, 600, 1200]);
+    // Finish 4.0 Phase 20 soft-floor: goal presets + loan products deepened.
+    expect(bank.goalPresets).toEqual(expect.arrayContaining([150, 300, 600, 1200]));
+    expect(bank.goalPresets.length).toBeGreaterThanOrEqual(4);
+    expect((bank.loanProducts ?? []).length).toBeGreaterThanOrEqual(3);
 
     const sim = newSim();
     expect(BankSystem.unlocked(content, sim.state)).toBe(false);

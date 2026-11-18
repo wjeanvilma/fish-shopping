@@ -1,0 +1,20 @@
+{
+  "schema": "fish.fixtures.parity_vfx_juice_4.v1",
+  "vfxJuice4Marker": "authored-finish-4.0-phase-23",
+  "phase": 23,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "eventBurstMin": 7,
+    "eventShakeMin": 2,
+    "endgameAmbientMin": 3,
+    "schemaVersion": 25,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "bursts",
+      "shakes",
+      "endgame_ambient",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

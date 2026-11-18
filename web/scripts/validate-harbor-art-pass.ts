@@ -53,8 +53,8 @@ function validate(): string[] {
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
   if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
-  if (catalog.authoredHarborMin !== 8 || AUTHORED_HARBOR_FLOOR !== 8) {
-    errors.push("authoredHarborMin must be 8");
+  if (catalog.authoredHarborMin < 8 || AUTHORED_HARBOR_FLOOR < 8) {
+    errors.push("authoredHarborMin must be ≥ 8");
   }
   if (catalog.harborArtMarker !== HARBOR_ART_MARKER) {
     errors.push("harborArtMarker mirror mismatch");
@@ -129,6 +129,12 @@ function validate(): string[] {
     }
     if (!String(extras.envArt ?? "").includes("harbor-art-19")) {
       errors.push(`${entry.asset} extras.envArt must note harbor-art-19`);
+    }
+    if (!String(extras.envArt ?? "").includes("harbor-art-3")) {
+      errors.push(`${entry.asset} extras.envArt must note harbor-art-3 scenic pass`);
+    }
+    if (extras.harborScenic !== "harbor-art-3") {
+      errors.push(`${entry.asset} extras.harborScenic expected harbor-art-3`);
     }
     const nodes = ((gltf.nodes ?? []) as { name: string }[]).map((n) => n.name);
     const nameSet = new Set(nodes);

@@ -1,0 +1,46 @@
+{
+  "schema": "fish.fixture.parity_deeplink_e2e_4.v1",
+  "description": "Finish 4.0 Phase 26: deep-link + E2E/Compose expansion expectations.",
+  "deeplinkE2e4Marker": "authored-finish-4.0-phase-26",
+  "expect": {
+    "closesGap": "deeplinkE2eThin",
+    "schemaVersion": 25,
+    "contentVersion": "3.0.0",
+    "panelAliasFloor": 28,
+    "hashAliasFloor": 18,
+    "minIdCount": 24,
+    "minTagCount": 24,
+    "webScenarioFloor": 5,
+    "composeScenarioFloor": 7,
+    "uriVectorFloor": 8,
+    "requiredAliases": [
+      "bag",
+      "bank",
+      "pause",
+      "station",
+      "crew",
+      "inventory"
+    ],
+    "requiredIds": [
+      "nav.jobs",
+      "nav.dash",
+      "nav.warehouse",
+      "hud.toolbar"
+    ],
+    "requiredTags": [
+      "nav.jobs",
+      "nav.dash",
+      "nav.warehouse",
+      "hud.toolbar"
+    ],
+    "smokeMustContain": [
+      "deep link panel=staff",
+      "staff and map nav open",
+      "jobs and dash nav open"
+    ],
+    "robolectricMustContain": [
+      "HudNavToolbarContent",
+      "hudNavToolbarTagsFire"
+    ]
+  }
+}

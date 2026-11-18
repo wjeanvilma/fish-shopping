@@ -1,7 +1,7 @@
 {
   "phase": 6,
   "schema": "fish.billing.web_checkout_catalog.v1",
-  "description": "Expected web checkout API product ids. Keep in lockstep with the billing API / Stripe catalog; validate-store-catalog fails if it drifts from entitlements.json. Finish 3.0 Phase 16 adds stripePriceId placeholders for live Checkout (override via STRIPE_PRICE_* env).",
+  "description": "Expected web checkout API product ids. Keep in lockstep with the billing API / Stripe catalog; validate-store-catalog fails if it drifts from entitlements.json. Finish 3.0 Phase 16 adds stripePriceId placeholders; Finish 4.0 Phase 25 syncs unlock + 18 cosmetics for live-ready ops.",
   "provider": "checkout_api",
   "productType": "non_consumable",
   "products": [
@@ -108,6 +108,54 @@
       "status": "active",
       "type": "non_consumable",
       "stripePriceId": "price_test_fish_cosmetic_moonlit_bunting"
+    },
+    {
+      "webProductId": "fish.cosmetic.mist_bunting",
+      "sku": "fish.cosmetic.mist_bunting",
+      "androidProductId": "fish_cosmetic_mist_bunting",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_mist_bunting"
+    },
+    {
+      "webProductId": "fish.cosmetic.prism_pennant",
+      "sku": "fish.cosmetic.prism_pennant",
+      "androidProductId": "fish_cosmetic_prism_pennant",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_prism_pennant"
+    },
+    {
+      "webProductId": "fish.cosmetic.plaza_flag",
+      "sku": "fish.cosmetic.plaza_flag",
+      "androidProductId": "fish_cosmetic_plaza_flag",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_plaza_flag"
+    },
+    {
+      "webProductId": "fish.cosmetic.rime_streamer",
+      "sku": "fish.cosmetic.rime_streamer",
+      "androidProductId": "fish_cosmetic_rime_streamer",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_rime_streamer"
+    },
+    {
+      "webProductId": "fish.cosmetic.brine_ribbon",
+      "sku": "fish.cosmetic.brine_ribbon",
+      "androidProductId": "fish_cosmetic_brine_ribbon",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_brine_ribbon"
+    },
+    {
+      "webProductId": "fish.cosmetic.aurora_crest",
+      "sku": "fish.cosmetic.aurora_crest",
+      "androidProductId": "fish_cosmetic_aurora_crest",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_aurora_crest"
     }
   ]
 }

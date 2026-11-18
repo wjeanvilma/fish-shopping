@@ -210,6 +210,20 @@ object ContentValidator {
         for (goal in bank.goalPresets) {
             check(goal >= 1) { "bank.goalPresets entries must be >= 1" }
         }
+        val loanProductIds = mutableSetOf<String>()
+        for (product in bank.loanProducts) {
+            check(product.id.startsWith("loan.")) { "bank.loanProducts ${product.id} must start with 'loan.'" }
+            check(product.id !in loanProductIds) { "bank.loanProducts duplicate '${product.id}'" }
+            loanProductIds += product.id
+            check(product.name.isNotBlank()) { "${product.id}: name must not be blank" }
+            check(product.description.isNotBlank()) { "${product.id}: description must not be blank" }
+            check(product.principal >= 1) { "${product.id}: principal must be >= 1" }
+            check(product.repayPermille >= 1000) { "${product.id}: repayPermille must be >= 1000" }
+            check(product.termTicks >= 1) { "${product.id}: termTicks must be >= 1" }
+            product.requires.forEach { req ->
+                check(req in economyRequirable) { "${product.id}: unknown requirement '$req'" }
+            }
+        }
         bank.requires.forEach { req ->
             check(req in economyRequirable) { "bank: unknown requirement '$req'" }
         }
@@ -460,10 +474,17 @@ object ContentValidator {
         check(rivalsCat.pressureSpawnMultPermille >= 1) {
             "rivalMarkets.pressureSpawnMultPermille must be >= 1"
         }
+        check(rivalsCat.adaptiveAggressionBoostPermille in 0..1000) {
+            "rivalMarkets.adaptiveAggressionBoostPermille must be 0..1000"
+        }
+        check(rivalsCat.multiRivalPressureExtraMultPermille in 1..1000) {
+            "rivalMarkets.multiRivalPressureExtraMultPermille must be 1..1000"
+        }
         check(rivalsCat.rivals.isNotEmpty()) { "rivalMarkets.rivals must not be empty" }
         check(rivalsCat.rivals.map { it.id }.toSet().size == rivalsCat.rivals.size) {
             "rivalMarkets.rivals ids must be unique"
         }
+        val aiProfiles = setOf("siphon", "undercut", "adaptive", "roamer")
         for (rival in rivalsCat.rivals) {
             check(rival.id.startsWith("rival.")) { "${rival.id}: id must start with 'rival.'" }
             check(rival.harbors.isNotEmpty()) { "${rival.id}: harbors must not be empty" }
@@ -488,6 +509,9 @@ object ContentValidator {
             for (part in rival.activeDayParts) {
                 check(part in dayParts) { "${rival.id}: unknown day part '$part'" }
             }
+            check(rival.aiProfile in aiProfiles) {
+                "${rival.id}: aiProfile must be siphon|undercut|adaptive|roamer"
+            }
         }
 
         val endgame = p.endgame
@@ -505,6 +529,7 @@ object ContentValidator {
             }
             check(tier.requiresRivalBeats >= 0) { "${tier.id}: requiresRivalBeats must be >= 0" }
             check(tier.requiresChallenges >= 0) { "${tier.id}: requiresChallenges must be >= 0" }
+            check(tier.requiresMarks >= 0) { "${tier.id}: requiresMarks must be >= 0" }
             check(tier.catchSpeedPermille >= 1) { "${tier.id}: catchSpeedPermille must be >= 1" }
             check(tier.priceBonusPermille >= 1) { "${tier.id}: priceBonusPermille must be >= 1" }
             check(tier.coins >= 0) { "${tier.id}: coins must be >= 0" }
@@ -520,6 +545,11 @@ object ContentValidator {
             check(ch.stat.startsWith("stat.")) { "${ch.id}: stat must start with 'stat.'" }
             check(ch.atLeast >= 1) { "${ch.id}: atLeast must be >= 1" }
             check(ch.rewardCoins >= 0) { "${ch.id}: rewardCoins must be >= 0" }
+            ch.grantsMark?.let { mark ->
+                check(mark.startsWith("endgame.mark.")) {
+                    "${ch.id}: grantsMark must start with 'endgame.mark.'"
+                }
+            }
         }
 
         val rep = p.reputation

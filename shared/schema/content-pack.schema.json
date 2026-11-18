@@ -51,8 +51,8 @@
     },
     "saveSchemaVersion": {
       "type": "integer",
-      "const": 24,
-      "description": "Finish 3.0 Phase 15 \u2014 save schema this content pack targets (migrations from \u226423)."
+      "const": 25,
+      "description": "Finish 4.0 Phase 17 \u2014 save schema this content pack targets (migrations from \u226424)."
     },
     "ticksPerSecond": {
       "const": 20
@@ -1745,7 +1745,7 @@
     },
     "rivalMarkets": {
       "type": "object",
-      "description": "Finish 3.0 Phase 14 — single-player rival NPC markets that siphon demand and undercut specialty SKUs.",
+      "description": "Finish 3.0 Phase 14 / Finish 4.0 Phase 15 — single-player rival NPC markets that siphon demand and undercut specialty SKUs, with optional AI depth knobs.",
       "required": [
         "tickInterval",
         "emptyStockSiphonChancePermille",
@@ -1781,6 +1781,18 @@
         "pressureSpawnMultPermille": {
           "$ref": "#/$defs/positiveInt",
           "description": "Customer spawn mult while rivals are pressuring (1000 = unchanged; lower slows arrivals)."
+        },
+        "adaptiveAggressionBoostPermille": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "Finish 4.0 Phase 15 — extra aggression for adaptive/roamer revenge AI."
+        },
+        "multiRivalPressureExtraMultPermille": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Finish 4.0 Phase 15 — extra spawn mult applied when 2+ rivals pressuring (1000 = no extra)."
         },
         "rivals": {
           "type": "array",
@@ -1840,6 +1852,11 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "aiProfile": {
+                "type": "string",
+                "enum": ["siphon", "undercut", "adaptive", "roamer"],
+                "description": "Finish 4.0 Phase 15 — rival AI behavior profile."
               }
             }
           }
@@ -1901,6 +1918,11 @@
                 "type": "integer",
                 "minimum": 0
               },
+              "requiresMarks": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Finish 4.0 Phase 17 — legend marks required to unlock."
+              },
               "catchSpeedPermille": {
                 "$ref": "#/$defs/positiveInt"
               },
@@ -1950,6 +1972,11 @@
               "rewardCoins": {
                 "type": "integer",
                 "minimum": 0
+              },
+              "grantsMark": {
+                "type": "string",
+                "pattern": "^endgame\\.mark\\.",
+                "description": "Finish 4.0 Phase 17 — optional legend mark granted on complete."
               }
             }
           }
@@ -2209,6 +2236,53 @@
             "minimum": 1
           },
           "description": "Coin-goal targets offered in the Goals panel."
+        },
+        "loanProducts": {
+          "type": "array",
+          "description": "Finish 4.0 Phase 20 — selectable pier loan products (one outstanding loan).",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "description",
+              "principal",
+              "repayPermille",
+              "termTicks"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^loan\\."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "principal": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "repayPermille": {
+                "type": "integer",
+                "minimum": 1000
+              },
+              "termTicks": {
+                "$ref": "#/$defs/positiveInt"
+              },
+              "requires": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              }
+            }
+          }
         }
       }
     },

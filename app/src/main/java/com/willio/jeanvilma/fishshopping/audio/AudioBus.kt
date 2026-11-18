@@ -92,9 +92,9 @@ class AudioBus(context: Context) {
         hapticsEnabled = enabled
     }
 
-    /** Phase 20: switch harbor ↔ shop bed. */
+    /** Phase 20+: switch authored music beds (all MusicPack ids). */
     fun setMusicBed(bedId: String) {
-        val bed = if (bedId == "shop") "shop" else "harbor"
+        val bed = if (bedId in MusicPack.BED_IDS) bedId else MusicPack.DEFAULT_BED
         main.post {
             if (currentBed == bed && musicPlayer != null) return@post
             currentBed = bed
@@ -110,6 +110,8 @@ class AudioBus(context: Context) {
         stormActive: Boolean = false,
         rivalActive: Boolean = false,
         nightActive: Boolean = false,
+        endgameActive: Boolean = false,
+        ledgerActive: Boolean = false,
     ) {
         setMusicBed(
             MusicPack.bedForContext(
@@ -118,6 +120,8 @@ class AudioBus(context: Context) {
                 stormActive,
                 rivalActive,
                 nightActive,
+                endgameActive,
+                ledgerActive,
             ),
         )
     }
@@ -238,6 +242,15 @@ class AudioBus(context: Context) {
         SfxCue.PRESTIGE -> 400L
         SfxCue.LOAN -> 260L
         SfxCue.TROPHY_SET -> 320L
+        SfxCue.DECOR -> 240L
+        SfxCue.COSMETIC -> 260L
+        SfxCue.ENDGAME_TIER -> 360L
+        SfxCue.ENDGAME_CHALLENGE -> 380L
+        SfxCue.CONTRACT_ACCEPT -> 200L
+        SfxCue.BAIT -> 180L
+        SfxCue.FULL_UNLOCK -> 400L
+        SfxCue.MACHINE_BREAK -> 280L
+        SfxCue.SPOIL -> 220L
     }
 
     private fun pulseHaptic(cue: SfxCue) {

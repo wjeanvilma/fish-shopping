@@ -1,8 +1,8 @@
 {
   "schema": "fish.fixture.parity_harbor_art_pass.v1",
-  "description": "Finish 2.0 Phase 19 + Finish 3.0 Phase 8: all 8 authored harbor art markers, themes, and byte budgets.",
-  "authoredHarborMin": 8,
-  "harborArtMarker": "authored-phase-19",
+  "description": "Finish 2.0 Phase 19 + Finish 3.0 Phase 8 + Finish 4.0 Phase 9/12: all 10 authored scenic harbor art markers, themes, and byte budgets.",
+  "authoredHarborMin": 10,
+  "harborArtMarker": "authored-finish-4.0-phase-9",
   "maxBytesPerHarbor": 200000,
   "expect": {
     "harbors": [
@@ -10,49 +10,61 @@
         "harborId": "harbor.sunrise_pier",
         "theme": "sunrise",
         "asset": "sunrise_pier_blockout.glb",
-        "minHarborArtNodes": 6
+        "minHarborArtNodes": 10
       },
       {
         "harborId": "harbor.coral_lagoon",
         "theme": "coral",
         "asset": "coral_lagoon_blockout.glb",
-        "minHarborArtNodes": 7
+        "minHarborArtNodes": 10
       },
       {
         "harborId": "harbor.storm_quay",
         "theme": "storm",
         "asset": "storm_quay_blockout.glb",
-        "minHarborArtNodes": 7
+        "minHarborArtNodes": 10
       },
       {
         "harborId": "harbor.moon_cove",
         "theme": "moon",
         "asset": "moon_cove_blockout.glb",
-        "minHarborArtNodes": 7
+        "minHarborArtNodes": 10
       },
       {
         "harborId": "harbor.obsidian_jetty",
         "theme": "obsidian",
         "asset": "obsidian_jetty_blockout.glb",
-        "minHarborArtNodes": 7
+        "minHarborArtNodes": 10
       },
       {
         "harborId": "harbor.northlight_harbor",
         "theme": "northlight",
         "asset": "northlight_harbor_blockout.glb",
-        "minHarborArtNodes": 7
+        "minHarborArtNodes": 10
       },
       {
         "harborId": "harbor.grand_marina",
         "theme": "marina",
         "asset": "grand_marina_blockout.glb",
-        "minHarborArtNodes": 7
+        "minHarborArtNodes": 10
       },
       {
         "harborId": "harbor.ember_wharf",
         "theme": "ember",
         "asset": "ember_wharf_blockout.glb",
-        "minHarborArtNodes": 7
+        "minHarborArtNodes": 10
+      },
+      {
+        "harborId": "harbor.mist_cove",
+        "theme": "mist",
+        "asset": "mist_cove_blockout.glb",
+        "minHarborArtNodes": 10
+      },
+      {
+        "harborId": "harbor.prism_reach",
+        "theme": "prism",
+        "asset": "prism_reach_blockout.glb",
+        "minHarborArtNodes": 10
       }
     ]
   }

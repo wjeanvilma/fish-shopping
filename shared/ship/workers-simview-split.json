@@ -1,0 +1,63 @@
+{
+  "phase": 5,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.workers_simview_split.v1",
+  "description": "Finish 4.0 Phase 5 — decompose Workers.kt + SimView.kt into WorkerAi / decision hooks / SimViewModels / builders, with explainable haul decision traces for later staff-AI depth. Schema stays 24 / content 3.0.0.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "workersSimViewSplitMarker": "authored-finish-4.0-phase-5",
+  "workersPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/Workers.kt",
+  "simViewPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/SimView.kt",
+  "workersMaxLines": 600,
+  "simViewMaxLines": 800,
+  "extractedFileMin": 5,
+  "requiredFiles": [
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerDecisionHooks.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/SimViewModels.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/SimViewBuilders.kt",
+    "web/src/engine/systems/workerDecisionHooks.ts"
+  ],
+  "requiredSymbols": {
+    "Workers.kt": ["WorkerAi.stepFisher", "WorkerDecisionHooks"],
+    "WorkerAi.kt": ["internal object WorkerAi", "fun findHaul", "WorkerDecisionHooks.record"],
+    "WorkerDecisionHooks.kt": ["data class WorkerDecisionTrace", "object WorkerDecisionHooks", "fun record", "fun lastForWorker"],
+    "SimView.kt": ["fun Simulation.view", "SimViewModels", "SimViewBuilders"],
+    "SimViewModels.kt": ["data class SimView", "data class WorkerView", "data class StationView"],
+    "SimViewBuilders.kt": ["customerViews", "automationIssueViews", "buildTransferAnchors"],
+    "workerDecisionHooks.ts": ["WorkerDecisionHooks", "WorkerDecisionTrace", "lastForWorker"]
+  },
+  "facadeMustNotDefine": {
+    "Workers.kt": ["fun stepFisher", "fun findHaul", "data class HaulOffer"],
+    "SimView.kt": ["data class WorkerView", "data class StationView", "data class QuestView"]
+  },
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "gapFlagClosed": "workersSimViewSplitIncomplete",
+  "parityFixture": "shared/fixtures/parity-workers-simview-split.json",
+  "validateScript": "npm run workersplit:validate",
+  "checklist": [
+    "Workers.kt ≤600 lines; role/haul AI in WorkerAi + decision hooks",
+    "SimView.kt ≤800 lines; models + builders extracted",
+    "WorkerDecisionHooks record haul best_score/none_available traces (Kotlin+TS)",
+    "Kickoff gaps.workersSimViewSplitIncomplete = false",
+    "game-core compiles; engine.test.ts green",
+    "parity fixture + workersplit:validate green",
+    "CI runs workersplit:validate",
+    "schema stays 24 / content 3.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/workers-simview-split.json",
+    "shared/fixtures/parity-workers-simview-split.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/Workers.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerDecisionHooks.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/SimView.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/SimViewModels.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/SimViewBuilders.kt",
+    "web/src/engine/systems/workerDecisionHooks.ts",
+    "web/src/ship/workersSimViewSplit.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/WorkersSimViewSplit.kt",
+    "web/scripts/validate-workers-simview-split.ts"
+  ]
+}

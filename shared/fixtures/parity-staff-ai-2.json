@@ -1,0 +1,23 @@
+{
+  "schema": "fish.fixtures.parity_staff_ai_2.v1",
+  "staffAi2Marker": "authored-finish-4.0-phase-19",
+  "phase": 19,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "depthBehaviorCount": 5,
+    "depthStatCount": 3,
+    "decisionReasonCount": 5,
+    "schemaVersion": 25,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "ts_workers_markers",
+      "kotlin_workers_markers",
+      "stats_present",
+      "branches_present",
+      "decision_reasons",
+      "kickoff_phase_wired",
+      "soft_workerai_path",
+      "ci_gate"
+    ]
+  }
+}

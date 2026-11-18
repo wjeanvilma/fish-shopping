@@ -1,0 +1,22 @@
+{
+  "schema": "fish.fixtures.parity_harbor_art_3.v1",
+  "harborArt3Marker": "authored-finish-4.0-phase-9",
+  "phase": 9,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "authoredHarborTarget": 8,
+    "scenicHarborTarget": 8,
+    "minHarborArtNodes": 10,
+    "harborBlockoutPresent": false,
+    "harborBlockouts": 0,
+    "schemaVersion": 24,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "eight_scenic_harbors",
+      "harbor_art_nodes_ge_10",
+      "blockout_gap_closed",
+      "licenses_ok",
+      "ci_gate"
+    ]
+  }
+}

@@ -37,16 +37,16 @@ class DefinitionOfDoneTest {
         assertEquals("v3.0.0", dod.getValue("releaseTag").jsonPrimitive.content)
 
         val quotas = dod.getValue("quotas").jsonObject
-        assertEquals(8, quotas.getValue("harbors").jsonPrimitive.int)
-        assertEquals(75, quotas.getValue("speciesMin").jsonPrimitive.int)
-        assertEquals(10, quotas.getValue("machineClasses").jsonPrimitive.int)
-        assertEquals(30, quotas.getValue("quests").jsonPrimitive.int)
+        assertEquals(10, quotas.getValue("harbors").jsonPrimitive.int)
+        assertEquals(100, quotas.getValue("speciesMin").jsonPrimitive.int)
+        assertEquals(12, quotas.getValue("machineClasses").jsonPrimitive.int)
+        assertTrue(quotas.getValue("quests").jsonPrimitive.int >= 32)
         assertEquals(12, quotas.getValue("cosmetics").jsonPrimitive.int)
 
-        assertEquals(8, Shared.content.harbors.size)
-        assertTrue(Shared.content.species.size >= 75)
-        assertEquals(10, Shared.content.machines.size)
-        assertTrue(Shared.content.quests.size >= 30)
+        assertEquals(10, Shared.content.harbors.size)
+        assertTrue(Shared.content.species.size >= 100)
+        assertEquals(12, Shared.content.machines.size)
+        assertTrue(Shared.content.quests.size >= 50)
         assertEquals("3.0.0", Shared.content.contentVersion)
         assertTrue(SimConstants.SCHEMA_VERSION >= 24)
 

@@ -1,31 +1,38 @@
 {
   "schema": "fish.fixture.parity_compose_ui_tests.v1",
-  "description": "Finish 3.0 Phase 21: Compose UI tag + suite expectations.",
+  "description": "Finish 3.0 Phase 21: Compose UI tag + suite expectations. Finish 4.0 Phase 26 soft-floors minTagCount≥24.",
   "composeUiTestsMarker": "authored-finish-3.0-phase-21",
   "expect": {
     "closesGap": "composeUiTestsMissing",
     "schemaVersion": 24,
     "contentVersion": "2.0.0",
-    "minTagCount": 16,
+    "minTagCount": 24,
     "requiredTags": [
       "title.root",
       "title.continue",
       "title.play",
       "offline.continue",
       "pause.resume",
-      "nav.pause"
+      "nav.pause",
+      "nav.jobs",
+      "nav.dash",
+      "hud.toolbar"
     ],
     "tagsSourceMustContain": [
       "TITLE_CONTINUE",
       "OFFLINE_CONTINUE",
       "PAUSE_RESUME",
-      "NAV_PAUSE"
+      "NAV_PAUSE",
+      "NAV_JOBS",
+      "NAV_DASH",
+      "HUD_TOOLBAR"
     ],
     "robolectricMustContain": [
       "RobolectricTestRunner",
       "TitleMenuContent",
       "OfflineSummaryPanel",
       "PausePanel",
+      "HudNavToolbarContent",
       "createComposeRule"
     ],
     "instrumentedMustContain": [

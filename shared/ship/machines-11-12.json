@@ -1,0 +1,65 @@
+{
+  "phase": 13,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.machines_11_12.v1",
+  "description": "Finish 4.0 Phase 13 \u2014 author machine classes 11\u201312 (Harbor braiser + Harbor glazer) with recipe graphs, unlock plots on all 10 harbors, and product SKUs. Schema stays 24.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "machineCount": 12,
+  "newMachineCount": 2,
+  "machines1112Marker": "authored-finish-4.0-phase-13",
+  "newMachines": [
+    {
+      "id": "machine.harbor_braiser",
+      "name": "Harbor braiser",
+      "unlockUpgrade": "upgrade.harbor_braiser",
+      "recipeCount": 6,
+      "sampleRecipe": "recipe.braise_fillet",
+      "products": [
+        "product.braised_fillet",
+        "product.braise_stew",
+        "product.braise_carton"
+      ],
+      "moduleGlb": "shared/assets/models/modules/braiser.glb"
+    },
+    {
+      "id": "machine.harbor_glazer",
+      "name": "Harbor glazer",
+      "unlockUpgrade": "upgrade.harbor_glazer",
+      "recipeCount": 6,
+      "sampleRecipe": "recipe.glaze_fillet",
+      "products": [
+        "product.glazed_fillet",
+        "product.glaze_skewer",
+        "product.glaze_carton"
+      ],
+      "moduleGlb": "shared/assets/models/modules/glazer.glb"
+    }
+  ],
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-machines-11-12.json",
+  "authorTool": "shared/tools/author_machines_11_12.py",
+  "validateScript": "npm run machines1112:validate",
+  "checklist": [
+    "content-pack has 12 machine classes including harbor_braiser and harbor_glazer",
+    "Unlock upgrades + expansion plots on all 10 harbors",
+    "Recipe graph produces new retail/wholesale SKUs",
+    "Product + module GLBs regenerated; harbor blockouts refreshed",
+    "Kickoff baseline.machines = 12; machinesRemaining = 0",
+    "machines1112:validate green in CI",
+    "schema stays 24"
+  ],
+  "preflightGates": [
+    "shared/ship/machines-11-12.json",
+    "shared/fixtures/parity-machines-11-12.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "shared/tools/author_machines_11_12.py",
+    "shared/assets/models/modules/braiser.glb",
+    "shared/assets/models/modules/glazer.glb",
+    "shared/assets/models/product_braised_fillet.glb",
+    "shared/assets/models/product_glazed_fillet.glb",
+    "web/src/ship/machines1112.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Machines1112.kt",
+    "web/scripts/validate-machines-11-12.ts"
+  ]
+}

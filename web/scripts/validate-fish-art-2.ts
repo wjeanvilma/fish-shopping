@@ -49,17 +49,17 @@ function validate(): string[] {
 
   if (catalog.authoredSpeciesTarget !== 50) errors.push("authoredSpeciesTarget must be 50");
   if (catalog.newAuthoredCount !== 40) errors.push("newAuthoredCount must be 40");
-  if (AUTHORED_FISH_FLOOR !== 50) errors.push("fish-art-pass authoredSpeciesMin must be 50");
-  if (FISH_ART_PASS.authoredSpecies.length !== 50) {
-    errors.push("fish-art-pass authoredSpecies must list 50");
+  if (AUTHORED_FISH_FLOOR < 50) errors.push("fish-art-pass authoredSpeciesMin must be ≥ 50");
+  if (FISH_ART_PASS.authoredSpecies.length < 50) {
+    errors.push("fish-art-pass authoredSpecies must list ≥ 50");
   }
 
   const measure = measureFishArt2(root);
   if (measure.authoredCount < 50) {
     errors.push(`authored species count ${measure.authoredCount} < 50`);
   }
-  if (measure.newAuthoredCount !== 40) {
-    errors.push(`new authored count ${measure.newAuthoredCount} ≠ 40`);
+  if (measure.newAuthoredCount < 40) {
+    errors.push(`new authored count ${measure.newAuthoredCount} < 40`);
   }
   if (!measure.gapClosed) errors.push("kickoff gaps.authoredFishRemaining must be 0");
   if (!measure.licensesOk) errors.push("licenses fish-authored-art must list all authored paths");

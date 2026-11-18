@@ -1,0 +1,33 @@
+{
+  "schema": "fish.fixture.parity_seasonal_bait_4.v1",
+  "seasonalBait4Marker": "authored-finish-4.0-phase-16",
+  "phase": 16,
+  "plan": "30_finish_4.0",
+  "description": "Finish 4.0 Phase 16: enter Mist Fog Festival window; assert crowd/price, festival customer gate, bait kiosk size ≥12, mastery maxLevel 7 + pulse_jig.",
+  "harborId": "harbor.mist_cove",
+  "seed": 1616,
+  "eventId": "event.mist_fog_festival",
+  "tickInWindow": 12050,
+  "festivalCustomerId": "customer.mist_fog_lantern",
+  "gatedContractId": "contract.mist_fog_braise",
+  "sampleBaitId": "bait.mist_morsel",
+  "sampleTechniqueId": "technique.pulse_jig",
+  "expect": {
+    "customerSpawnMultPermille": 1500,
+    "priceMultPermille": 1250,
+    "seasonalEventsMin": 12,
+    "baitsMin": 12,
+    "masteryMaxLevel": 7,
+    "techniquesMin": 6,
+    "coachingTipsMin": 8,
+    "schemaVersion": 24,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "seasonal_12",
+      "baits_12",
+      "mastery_depth",
+      "kickoff_floors",
+      "ci_gate"
+    ]
+  }
+}

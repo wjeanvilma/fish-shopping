@@ -1,0 +1,128 @@
+{
+  "phase": 6,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.gamehost_split.v1",
+  "description": "Finish 4.0 Phase 6 — split GameHost.ts into host intent/step modules; split web + Android presenters; HarborRenderer companion math cleanup. Schema stays 24 / content 3.0.0.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "gameHostSplitMarker": "authored-finish-4.0-phase-6",
+  "gameHostPath": "web/src/game/GameHost.ts",
+  "gameHostMaxLines": 1400,
+  "presentersFacadePath": "web/src/render/presenters.ts",
+  "harborRendererPath": "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRenderer.kt",
+  "harborRendererMaxLines": 780,
+  "extractedFileMin": 12,
+  "requiredFiles": [
+    "web/src/game/host/hostState.ts",
+    "web/src/game/host/hostIntentHost.ts",
+    "web/src/game/host/hostShellIntents.ts",
+    "web/src/game/host/hostEconomyIntents.ts",
+    "web/src/game/host/hostTravelIntents.ts",
+    "web/src/game/host/hostIapIntents.ts",
+    "web/src/game/host/hostStepBus.ts",
+    "web/src/render/presenters/quality.ts",
+    "web/src/render/presenters/locomotion.ts",
+    "web/src/render/presenters/crowd.ts",
+    "web/src/render/presenters/vfx.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersQuality.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersLocomotion.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersCrowd.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersVfx.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRendererMath.kt"
+  ],
+  "requiredSymbols": {
+    "GameHost.ts": [
+      "HostShellIntents",
+      "HostEconomyIntents",
+      "HostTravelIntents",
+      "HostIapIntents",
+      "processHostStep",
+      "enqueuePanelCommand"
+    ],
+    "hostState.ts": ["export type HostState"],
+    "hostIntentHost.ts": [
+      "HostPanelCommand",
+      "HostShellIntentHost",
+      "HostTravelIntentHost",
+      "HostIapIntentHost",
+      "HostStationIntentHost"
+    ],
+    "hostShellIntents.ts": ["class HostShellIntents", "setUpgradesOpen", "openFromDeepLink"],
+    "hostEconomyIntents.ts": ["class HostEconomyIntents", "purchase", "hire", "acceptContract", "reel"],
+    "hostTravelIntents.ts": ["class HostTravelIntents", "travelToHarbor", "applyDeepLink", "consumeDeepLink"],
+    "hostIapIntents.ts": [
+      "class HostIapIntents",
+      "purchaseFullHarborUnlock",
+      "purchaseIapCosmetic",
+      "restorePurchases"
+    ],
+    "hostStepBus.ts": ["processHostStep", "HostStepSink"],
+    "presenters.ts": ["export * from \"./presenters/quality\"", "export * from \"./presenters/vfx\""],
+    "HarborRendererMath.kt": ["internal object HarborRendererMath", "fun yawTranslation", "fun localBody"],
+    "PresentersQuality.kt": ["enum class PresenterQuality", "fun occlusionOpacity"],
+    "PresentersVfx.kt": ["class FlyingTransfers", "class WorldBursts", "class ScreenShake"]
+  },
+  "facadeMustNotDefine": {
+    "GameHost.ts": [
+      "export type HostState =",
+      "class HostEconomyIntents",
+      "class HostIapIntents",
+      "class HostShellIntents",
+      "class HostTravelIntents",
+      "function processHostStep"
+    ],
+    "presenters.ts": [
+      "export class PlayerSmoother",
+      "export class FlyingTransfers",
+      "export function resolveCatchBurst"
+    ],
+    "HarborRenderer.kt": [
+      "private fun yawTranslation",
+      "private const val BODY_SX",
+      "private val FLY_SLOT"
+    ]
+  },
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "gapFlagClosed": "gameHostSplitIncomplete",
+  "parityFixture": "shared/fixtures/parity-gamehost-split.json",
+  "validateScript": "npm run gamehostsplit:validate",
+  "checklist": [
+    "GameHost.ts ≤1400 lines; delegates shell/economy/travel/IAP + step bus",
+    "≥12 extracted host/presenter/renderer modules",
+    "Web presenters facade re-exports quality/locomotion/crowd/vfx",
+    "Android Presenters* + HarborRendererMath companion cleanup",
+    "Kickoff gaps.gameHostSplitIncomplete = false",
+    "app compiles (:app:compileDebugKotlin)",
+    "parity fixture + gamehostsplit:validate green",
+    "CI runs gamehostsplit:validate",
+    "schema stays 24 / content 3.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/gamehost-split.json",
+    "shared/fixtures/parity-gamehost-split.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "web/src/game/GameHost.ts",
+    "web/src/game/host/hostState.ts",
+    "web/src/game/host/hostIntentHost.ts",
+    "web/src/game/host/hostShellIntents.ts",
+    "web/src/game/host/hostEconomyIntents.ts",
+    "web/src/game/host/hostTravelIntents.ts",
+    "web/src/game/host/hostIapIntents.ts",
+    "web/src/game/host/hostStepBus.ts",
+    "web/src/render/presenters.ts",
+    "web/src/render/presenters/quality.ts",
+    "web/src/render/presenters/locomotion.ts",
+    "web/src/render/presenters/crowd.ts",
+    "web/src/render/presenters/vfx.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/Presenters.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersQuality.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersLocomotion.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersCrowd.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersVfx.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRenderer.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRendererMath.kt",
+    "web/src/ship/gameHostSplit.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/GameHostSplit.kt",
+    "web/scripts/validate-gamehost-split.ts"
+  ]
+}

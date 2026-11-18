@@ -1,12 +1,12 @@
 /**
- * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 — content authoring CLI entry.
+ * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 + Finish 4.0 Phase 28 — content authoring CLI entry.
  *
  * Usage (from web/):
  *   npm run content:scaffold -- species --id tide_perch --name "Tide perch"
- *   npm run content:scaffold -- contract --id dawn_crate --item species.dawn_anchovy
- *   npm run content:scaffold -- bait --id kelp_chunk --dry-run
- *   npm run content:scaffold -- decor --id pier_bunting --cost 90
+ *   npm run content:scaffold -- machine --id dock_press --dry-run
+ *   npm run content:scaffold -- rival --id mist_hawker --check-pack
  *   npm run content:scaffold -- --list
+ *   npm run content:scaffold -- --check-floors
  *
  * Does not mutate shared/content/content-pack.json — print/write fragment only.
  */
@@ -15,6 +15,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ALL_SCAFFOLD_KINDS, isScaffoldKind, type ScaffoldKind } from "./ids";
 import { indexPackIds, packHasId } from "./packIds";
+import { FINISH4_PACK_FLOORS, measurePackFloors } from "./packFloors";
 import { buildScaffold, type ScaffoldRequest } from "./scaffolds";
 import { structuralScaffoldErrors } from "./validateFragment";
 
@@ -26,13 +27,15 @@ const defaultPack = resolve(repoRoot, "shared/content/content-pack.json");
 function usage(): never {
   console.error(`Usage: content:scaffold <${ALL_SCAFFOLD_KINDS.join("|")}> --id <slug> [options]
        content:scaffold --list
+       content:scaffold --check-floors
 
 Options:
   --name <text>           Display name
-  --description <text>    Description (quest/contract/bait/decor)
+  --description <text>    Description (quest/contract/bait/decor/rival)
   --out <dir>             Write JSON under dir (default shared/content/scaffolds/out)
   --dry-run               Print JSON only (no write)
   --check-pack            Fail if id already exists in content-pack.json
+  --check-floors          Verify content-pack meets Finish 4.0 floors (no scaffold)
   --base-value <n>        Species baseValue
   --goal-stat <id>        Quest goal stat (default stat.fish_caught)
   --goal-at-least <n>     Quest goal atLeast (default 5)
@@ -42,13 +45,21 @@ Options:
   --quantity <n>          Contract quantity
   --cost <n>              Bait/decor cost or contract payout
   --patience-bonus <n>    Decor patienceBonusTicks
+  --recipes <ids>         Machine recipe ids (comma)
+  --input-cap <n>         Machine inputCapacityUnits
+  --output-cap <n>        Machine outputCapacityUnits
+  --harbors <ids>         Rival harbor ids (comma)
+  --specialty <ids>       Rival specialty product ids (comma)
+  --aggression <n>        Rival aggressionPermille
+  --undercut <n>          Rival undercutPriceMultPermille
+  --ai-profile <id>       Rival aiProfile (siphon|undercut|adaptive|roamer)
 
 Examples:
   npm run content:scaffold -- species --id tide_perch --name "Tide perch"
-  npm run content:scaffold -- contract --id dawn_crate --dry-run
-  npm run content:scaffold -- bait --id kelp_chunk --check-pack
-  npm run content:scaffold -- decor --id pier_bunting --cost 90
+  npm run content:scaffold -- machine --id dock_press --dry-run
+  npm run content:scaffold -- rival --id mist_hawker --check-pack
   npm run content:scaffold -- --list
+  npm run content:scaffold -- --check-floors
 `);
   process.exit(2);
 }
@@ -83,6 +94,19 @@ function parseArgs(argv: string[]): ScaffoldRequest & {
   const quantityRaw = takeFlag(argv, "--quantity");
   const costRaw = takeFlag(argv, "--cost");
   const patienceRaw = takeFlag(argv, "--patience-bonus");
+  const recipesRaw = takeFlag(argv, "--recipes");
+  const inputCapRaw = takeFlag(argv, "--input-cap");
+  const outputCapRaw = takeFlag(argv, "--output-cap");
+  const harborsRaw = takeFlag(argv, "--harbors");
+  const specialtyRaw = takeFlag(argv, "--specialty");
+  const aggressionRaw = takeFlag(argv, "--aggression");
+  const undercutRaw = takeFlag(argv, "--undercut");
+  const aiProfileRaw = takeFlag(argv, "--ai-profile") as
+    | "siphon"
+    | "undercut"
+    | "adaptive"
+    | "roamer"
+    | undefined;
 
   return {
     kind,
@@ -100,6 +124,16 @@ function parseArgs(argv: string[]): ScaffoldRequest & {
     quantity: quantityRaw ? Number(quantityRaw) : undefined,
     cost: costRaw ? Number(costRaw) : undefined,
     patienceBonusTicks: patienceRaw ? Number(patienceRaw) : undefined,
+    recipes: recipesRaw ? recipesRaw.split(",").map((s) => s.trim()).filter(Boolean) : undefined,
+    inputCapacityUnits: inputCapRaw ? Number(inputCapRaw) : undefined,
+    outputCapacityUnits: outputCapRaw ? Number(outputCapRaw) : undefined,
+    harbors: harborsRaw ? harborsRaw.split(",").map((s) => s.trim()).filter(Boolean) : undefined,
+    specialtyProducts: specialtyRaw
+      ? specialtyRaw.split(",").map((s) => s.trim()).filter(Boolean)
+      : undefined,
+    aggressionPermille: aggressionRaw ? Number(aggressionRaw) : undefined,
+    undercutPriceMultPermille: undercutRaw ? Number(undercutRaw) : undefined,
+    aiProfile: aiProfileRaw,
     outDir: resolve(takeFlag(argv, "--out") ?? defaultOut),
     dryRun: hasFlag(argv, "--dry-run"),
     checkPack: hasFlag(argv, "--check-pack"),
@@ -111,6 +145,21 @@ function main(): number {
   if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) usage();
   if (hasFlag(argv, "--list")) {
     console.log(ALL_SCAFFOLD_KINDS.join("\n"));
+    return 0;
+  }
+  if (hasFlag(argv, "--check-floors")) {
+    const pack = JSON.parse(readFileSync(defaultPack, "utf8")) as Record<string, unknown>;
+    const measure = measurePackFloors(pack, FINISH4_PACK_FLOORS);
+    console.log(
+      `pack floors species=${measure.species} quests=${measure.quests} harbors=${measure.harbors} ` +
+        `machines=${measure.machines} rivals=${measure.rivals} baits=${measure.baits}`,
+    );
+    if (!measure.met) {
+      console.error("Finish 4.0 pack floors short:");
+      for (const s of measure.shortfalls) console.error(`  - ${s}`);
+      return 1;
+    }
+    console.log("OK content pack meets Finish 4.0 floors");
     return 0;
   }
 

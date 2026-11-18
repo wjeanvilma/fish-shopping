@@ -47,7 +47,7 @@ describe("Local push reminders (Finish 3.0 Phase 18)", () => {
 
   it("measures wiring + closed gap", () => {
     const m = measureLocalPushReminders(root);
-    expect(m.schemaVersion).toBe(24);
+    expect(m.schemaVersion).toBeGreaterThanOrEqual(24);
     expect(m.scheduleOk).toBe(true);
     expect(m.gapClosed).toBe(true);
     expect(m.kickoffWired).toBe(true);

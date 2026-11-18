@@ -52,12 +52,12 @@ function validate(): string[] {
   if (fixture.webE2eMarker !== WEB_E2E_MARKER) errors.push("fixture marker mismatch");
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
   if (catalog.schemaVersion !== 24) errors.push("catalog schemaVersion must stay 24");
-  if (SCHEMA_VERSION !== 24) errors.push("engine SCHEMA_VERSION must stay 24");
+  if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
   if (catalog.closesGap !== "webE2eMissing") errors.push("closesGap mismatch");
   if (WEB_E2E_CLOSES_GAP !== "webE2eMissing") errors.push("closesGap mirror mismatch");
 
   const measure = measureWebE2e(root);
-  if (measure.schemaVersion !== 24) errors.push("measure schemaVersion must be 24");
+  if (measure.schemaVersion < 24) errors.push("measure schemaVersion must be >= 24");
   if (!measure.idsPresent) errors.push("webE2eIds incomplete");
   if (!measure.idCountOk) errors.push(`id count must be ≥ ${catalog.minIdCount}`);
   if (!measure.smokePresent) errors.push("e2e/smoke.spec.ts incomplete");
@@ -105,6 +105,7 @@ function validate(): string[] {
     errors.push("package.json missing @playwright/test");
   }
 
+  // Finish 4.0 Phase 26 soft-floor: scenario list may grow past Finish 3.0's 2.
   if ((catalog.scenarios as string[]).length < 2) {
     errors.push("catalog must list ≥2 scenarios");
   }

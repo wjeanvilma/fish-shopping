@@ -23,7 +23,7 @@ function parseGlbJson(buf: Buffer): Record<string, unknown> {
 describe("fish art pass (Finish 2.0 Phase 20 + Finish 3.0 Phase 9)", () => {
   it("locks catalog floors", () => {
     expect(FISH_ART_PHASE).toBe(20);
-    expect(AUTHORED_FISH_FLOOR).toBe(50);
+    expect(AUTHORED_FISH_FLOOR).toBe(100);
     expect(FISH_ART_PASS.authoredSpecies.length).toBeGreaterThanOrEqual(50);
     expect(
       (JSON.parse(readFileSync(resolve(root, "shared/store/listing.json"), "utf8")) as {

@@ -53,22 +53,6 @@ class HarborRenderer(private val context: Context) {
         init {
             Utils.init() // loads filament, gltfio and utils native libraries
         }
-
-        private val FLY_SLOT = Regex("""^Fly_(\d+)_(fish|portion)$""")
-        private val BURST_SLOT = Regex("""^VfxBurst_(\d+)$""")
-        // Phase 15 character modules bake extents; presenters only tweak T/R (scale = 1).
-        private const val BODY_SX = 1f
-        private const val BODY_SY = 1f
-        private const val BODY_SZ = 1f
-        private const val PLAYER_NOSE_SX = 0.18f
-        private const val PLAYER_NOSE_SY = 0.12f
-        private const val PLAYER_NOSE_SZ = 0.12f
-        private const val WATER_SX = 80f
-        private const val WATER_SY = 0.1f
-        private const val WATER_SZ = 80f
-        private const val WATER_REST_X = -20.0
-        private const val WATER_REST_Y = -0.65
-        private const val WATER_REST_Z = 0.0
     }
 
     private val engine: Engine = Engine.create()
@@ -388,14 +372,14 @@ class HarborRenderer(private val context: Context) {
                     zones += FadeZone(e, m[12].toDouble(), m[14].toDouble())
                 }
             }
-            FLY_SLOT.matchEntire(name)?.let { m ->
+            HarborRendererMath.FLY_SLOT.matchEntire(name)?.let { m ->
                 val idx = m.groupValues[1].toInt()
                 when (m.groupValues[2]) {
                     "fish" -> fish[idx] = e
                     "portion" -> portion[idx] = e
                 }
             }
-            BURST_SLOT.matchEntire(name)?.let { m ->
+            HarborRendererMath.BURST_SLOT.matchEntire(name)?.let { m ->
                 bursts[m.groupValues[1].toInt()] = e
             }
         }
@@ -501,12 +485,26 @@ class HarborRenderer(private val context: Context) {
         val dt = if (lastFrameNanos == 0L) 0.0 else ((frameTimeNanos - lastFrameNanos) / 1e9).coerceIn(0.0, 0.25)
         lastFrameNanos = frameTimeNanos
         elapsed += dt
-        if (dt > 0.0 && frameTiming.sample(dt, FrameTiming.targetMs(sessionQuality))) {
-            val next = FrameTiming.downgrade(sessionQuality)
-            if (next != sessionQuality) {
-                sessionQuality = next
-                appliedQuality = null
-                applyQuality(next)
+        if (dt > 0.0) {
+            when (frameTiming.sample(dt, FrameTiming.targetMs(sessionQuality))) {
+                FrameBudgetAction.DOWNGRADE -> {
+                    val next = FrameTiming.downgrade(sessionQuality)
+                    if (next != sessionQuality) {
+                        sessionQuality = next
+                        appliedQuality = null
+                        applyQuality(next)
+                    }
+                }
+                FrameBudgetAction.UPGRADE -> {
+                    val next = FrameTiming.upgrade(sessionQuality)
+                    // Never exceed the player-requested preset.
+                    if (next != sessionQuality && next.ordinal <= requestedQuality.ordinal) {
+                        sessionQuality = next
+                        appliedQuality = null
+                        applyQuality(next)
+                    }
+                }
+                FrameBudgetAction.HOLD -> Unit
             }
         }
         if (dt > 0.0) {
@@ -521,25 +519,25 @@ class HarborRenderer(private val context: Context) {
         )
         val tm = engine.transformManager
         if (playerEntity != 0) {
-            tm.setTransform(tm.getInstance(playerEntity), yawTranslation(pose.yaw, pose.x, 0.0, pose.z))
+            tm.setTransform(tm.getInstance(playerEntity), HarborRendererMath.yawTranslation(pose.yaw, pose.x, 0.0, pose.z))
         }
         if (playerBodyEntity != 0) {
             tm.setTransform(
                 tm.getInstance(playerBodyEntity),
-                localBody(
+                HarborRendererMath.localBody(
                     PLAYER_BODY_REST_Y + pose.bobY,
                     pose.leanRad + pose.swayRad * 0.35,
                     pose.swayRad,
-                    BODY_SX, BODY_SY, BODY_SZ,
+                    HarborRendererMath.BODY_SX, HarborRendererMath.BODY_SY, HarborRendererMath.BODY_SZ,
                 ),
             )
         }
         if (playerNoseEntity != 0) {
             tm.setTransform(
                 tm.getInstance(playerNoseEntity),
-                localNose(
+                HarborRendererMath.localNose(
                     PLAYER_NOSE_REST_Y + pose.bobY * 0.4, PLAYER_NOSE_REST_Z, -pose.swayRad * 0.5,
-                    PLAYER_NOSE_SX, PLAYER_NOSE_SY, PLAYER_NOSE_SZ,
+                    HarborRendererMath.PLAYER_NOSE_SX, HarborRendererMath.PLAYER_NOSE_SY, HarborRendererMath.PLAYER_NOSE_SZ,
                 ),
             )
         }
@@ -548,7 +546,7 @@ class HarborRenderer(private val context: Context) {
             setVisible(playerRodEntity, true)
             tm.setTransform(
                 tm.getInstance(playerRodEntity),
-                localRod(
+                HarborRendererMath.localRod(
                     PLAYER_ROD_REST_X,
                     PLAYER_ROD_REST_Y + pose.bobY * 0.2,
                     PLAYER_ROD_REST_Z,
@@ -564,16 +562,16 @@ class HarborRenderer(private val context: Context) {
         crowd.update(sim, dt).forEachIndexed { i, member ->
             setVisible(customerBodies[i], member != null)
             if (member != null) {
-                tm.setTransform(tm.getInstance(customerRoots[i]), yawTranslation(member.yaw, member.x, 0.0, member.z))
+                tm.setTransform(tm.getInstance(customerRoots[i]), HarborRendererMath.yawTranslation(member.yaw, member.x, 0.0, member.z))
                 val body = customerBodies[i]
                 if (body != 0) {
                     tm.setTransform(
                         tm.getInstance(body),
-                        localBody(
+                        HarborRendererMath.localBody(
                             CUSTOMER_BODY_REST_Y + member.bobY,
                             member.leanRad + member.swayRad * 0.35,
                             member.swayRad,
-                            BODY_SX, BODY_SY, BODY_SZ,
+                            HarborRendererMath.BODY_SX, HarborRendererMath.BODY_SY, HarborRendererMath.BODY_SZ,
                         ),
                     )
                 }
@@ -583,16 +581,16 @@ class HarborRenderer(private val context: Context) {
             setVisible(workerRoots[i], member != null)
             setVisible(workerBodies[i], member != null)
             if (member != null) {
-                tm.setTransform(tm.getInstance(workerRoots[i]), yawTranslation(member.yaw, member.x, 0.0, member.z))
+                tm.setTransform(tm.getInstance(workerRoots[i]), HarborRendererMath.yawTranslation(member.yaw, member.x, 0.0, member.z))
                 val body = workerBodies[i]
                 if (body != 0) {
                     tm.setTransform(
                         tm.getInstance(body),
-                        localBody(
+                        HarborRendererMath.localBody(
                             WORKER_BODY_REST_Y + member.bobY,
                             member.leanRad + member.swayRad * 0.35,
                             member.swayRad,
-                            BODY_SX, BODY_SY, BODY_SZ,
+                            HarborRendererMath.BODY_SX, HarborRendererMath.BODY_SY, HarborRendererMath.BODY_SZ,
                         ),
                     )
                 }
@@ -631,7 +629,7 @@ class HarborRenderer(private val context: Context) {
                 setVisible(entity, true)
                 tm.setTransform(
                     tm.getInstance(entity),
-                    yawScaleTranslation(flyPose.yaw, flyPose.x, flyPose.y, flyPose.z, flyPose.scale.toFloat()),
+                    HarborRendererMath.yawScaleTranslation(flyPose.yaw, flyPose.x, flyPose.y, flyPose.z, flyPose.scale.toFloat()),
                 )
             }
             worldBursts.update(dt).forEachIndexed { i, burstPose ->
@@ -641,7 +639,7 @@ class HarborRenderer(private val context: Context) {
                 if (burstPose == null) return@forEachIndexed
                 tm.setTransform(
                     tm.getInstance(entity),
-                    scaleTranslation(burstPose.x, burstPose.y, burstPose.z, burstPose.scale.toFloat(), burstPose.scale.toFloat(), burstPose.scale.toFloat()),
+                    HarborRendererMath.scaleTranslation(burstPose.x, burstPose.y, burstPose.z, burstPose.scale.toFloat(), burstPose.scale.toFloat(), burstPose.scale.toFloat()),
                 )
                 val rm = engine.renderableManager
                 val ri = rm.getInstance(entity)
@@ -677,7 +675,7 @@ class HarborRenderer(private val context: Context) {
             }
         }
 
-        // Finish 2.0 Phase 22 + Finish 3.0 Phase 24 — weather/festival/tide/rival ambient.
+        // Finish 2.0/3.0/4.0 — weather/festival/tide/rival/endgame ambient.
         val ambient = weatherAmbientProfile(
             weatherId = sim.weatherId,
             festivalActive = sim.seasonalEvent != null,
@@ -685,6 +683,7 @@ class HarborRenderer(private val context: Context) {
             reducedMotion = reducedMotion,
             tidePhaseId = sim.tidePhaseId.ifBlank { "day" },
             rivalActive = sim.rivalPressureActive || sim.activeRivalIds.isNotEmpty(),
+            endgameMode = endgameAmbientIdForView(sim.endgameUnlocked, sim.endgameMarkCount),
         )
         try {
             skybox.setColor(floatArrayOf(ambient.skyR, ambient.skyG, ambient.skyB, 1f))
@@ -693,10 +692,10 @@ class HarborRenderer(private val context: Context) {
         }
         if (waterEntity != 0) {
             val bobAmp = 0.02 * ambient.bobScale
-            val waterY = if (bobAmp <= 0.0) WATER_REST_Y else WATER_REST_Y + sin(elapsed * 0.7) * bobAmp
+            val waterY = if (bobAmp <= 0.0) HarborRendererMath.WATER_REST_Y else HarborRendererMath.WATER_REST_Y + sin(elapsed * 0.7) * bobAmp
             tm.setTransform(
                 tm.getInstance(waterEntity),
-                scaleTranslation(WATER_REST_X, waterY, WATER_REST_Z, WATER_SX, WATER_SY, WATER_SZ),
+                HarborRendererMath.scaleTranslation(HarborRendererMath.WATER_REST_X, waterY, HarborRendererMath.WATER_REST_Z, HarborRendererMath.WATER_SX, HarborRendererMath.WATER_SY, HarborRendererMath.WATER_SZ),
             )
             // Soft colour pulse on the ubershader baseColorFactor (presentation-only water pass).
             val rm = engine.renderableManager
@@ -735,88 +734,6 @@ class HarborRenderer(private val context: Context) {
         val rm = engine.renderableManager
         val inst = rm.getInstance(entity)
         if (inst != 0) rm.setLayerMask(inst, 0xff, if (visible) 0xff else 0x00)
-    }
-
-    /** Column-major 4x4: rotation about +y by [yaw] (0 faces +z), then translation. */
-    private fun yawTranslation(yaw: Double, x: Double, y: Double, z: Double): FloatArray {
-        val c = cos(yaw).toFloat()
-        val s = sin(yaw).toFloat()
-        return floatArrayOf(
-            c, 0f, -s, 0f,
-            0f, 1f, 0f, 0f,
-            s, 0f, c, 0f,
-            x.toFloat(), y.toFloat(), z.toFloat(), 1f,
-        )
-    }
-
-    /** Column-major 4x4: Ry(yaw) * uniform S, then translation (flying transfer spin/pulse). */
-    private fun yawScaleTranslation(yaw: Double, x: Double, y: Double, z: Double, scale: Float): FloatArray {
-        val c = cos(yaw).toFloat() * scale
-        val s = sin(yaw).toFloat() * scale
-        return floatArrayOf(
-            c, 0f, -s, 0f,
-            0f, scale, 0f, 0f,
-            s, 0f, c, 0f,
-            x.toFloat(), y.toFloat(), z.toFloat(), 1f,
-        )
-    }
-
-    /** Local body: T(0,y,0) * Rx(lean) * Rz(sway) * S — Phase 15 clip lean + walk sway. */
-    private fun localBody(
-        y: Double,
-        lean: Double,
-        sway: Double,
-        sx: Float,
-        sy: Float,
-        sz: Float,
-    ): FloatArray {
-        val cl = cos(lean).toFloat()
-        val sl = sin(lean).toFloat()
-        val cz = cos(sway).toFloat()
-        val szr = sin(sway).toFloat()
-        // Column-major: Rx(lean) * Rz(sway) * S
-        return floatArrayOf(
-            cz * sx, cl * szr * sx, sl * szr * sx, 0f,
-            -szr * sy, cl * cz * sy, sl * cz * sy, 0f,
-            0f, -sl * sz, cl * sz, 0f,
-            0f, y.toFloat(), 0f, 1f,
-        )
-    }
-
-    /** Local nose: T(0,y,z) * Rz(sway) * S. */
-    private fun localNose(y: Double, z: Double, sway: Double, sx: Float, sy: Float, sz: Float): FloatArray {
-        val c = cos(sway).toFloat()
-        val s = sin(sway).toFloat()
-        return floatArrayOf(
-            c * sx, s * sx, 0f, 0f,
-            -s * sy, c * sy, 0f, 0f,
-            0f, 0f, sz, 0f,
-            0f, y.toFloat(), z.toFloat(), 1f,
-        )
-    }
-
-    /** Local rod: T(x,y,z) * Rx(tip) * Rz(sway). */
-    private fun localRod(x: Double, y: Double, z: Double, tip: Double, sway: Double): FloatArray {
-        val cl = cos(tip).toFloat()
-        val sl = sin(tip).toFloat()
-        val cz = cos(sway).toFloat()
-        val szr = sin(sway).toFloat()
-        return floatArrayOf(
-            cz, cl * szr, sl * szr, 0f,
-            -szr, cl * cz, sl * cz, 0f,
-            0f, -sl, cl, 0f,
-            x.toFloat(), y.toFloat(), z.toFloat(), 1f,
-        )
-    }
-
-    /** Uniform-axes scale then translation (for Water slab). */
-    private fun scaleTranslation(x: Double, y: Double, z: Double, sx: Float, sy: Float, sz: Float): FloatArray {
-        return floatArrayOf(
-            sx, 0f, 0f, 0f,
-            0f, sy, 0f, 0f,
-            0f, 0f, sz, 0f,
-            x.toFloat(), y.toFloat(), z.toFloat(), 1f,
-        )
     }
 
     fun destroy() {

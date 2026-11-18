@@ -1,0 +1,43 @@
+{
+  "schema": "fish.fixtures.parity_rival_markets_2.v1",
+  "rivalMarkets2Marker": "authored-finish-4.0-phase-15",
+  "phase": 15,
+  "plan": "30_finish_4.0",
+  "description": "Finish 4.0 Phase 15: mist dawn activates Mist Monger + Shelf Syndicate; multi-rival pressure applies AI depth spawn mult; stocking beats mist monger.",
+  "harborId": "harbor.mist_cove",
+  "seed": 1515,
+  "setup": {
+    "coins": 300,
+    "advanceTicks": 80,
+    "completedQuests": [
+      "quest.mist_cove_landing"
+    ]
+  },
+  "expectActive": {
+    "rivalIds": [
+      "rival.mist_monger",
+      "rival.shelf_syndicate"
+    ],
+    "pressureWhenEmpty": true,
+    "multiRivalPressure": true
+  },
+  "stockAndSell": {
+    "counterId": "counter.mist_1",
+    "productId": "product.braised_fillet",
+    "quantity": 4,
+    "expectBeatRivalId": "rival.mist_monger"
+  },
+  "expectFinal": {
+    "rivalCount": 12,
+    "schemaVersion": 24,
+    "contentVersion": "3.0.0",
+    "aiProfilesPresent": true,
+    "gates": [
+      "rivals_12",
+      "ai_depth",
+      "harbors_covered",
+      "kickoff_rivals_met",
+      "ci_gate"
+    ]
+  }
+}

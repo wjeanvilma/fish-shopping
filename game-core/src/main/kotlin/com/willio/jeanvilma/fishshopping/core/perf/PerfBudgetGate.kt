@@ -14,11 +14,17 @@ object PerfBudgetGate {
 
     const val ANDROID_TARGET_FPS = 30
     const val WEB_TARGET_FPS = 60
-    const val OVER_BUDGET_MULT = 1.15
-    const val HARBOR_CACHE_LIMIT = 2
+    /** Finish 4.0 Phase 27 soft-floor (was 1.15). */
+    const val OVER_BUDGET_MULT = 1.12
+    const val UNDER_BUDGET_MULT = 0.85
+    /** Finish 4.0 Phase 27 soft-floor (was 2). */
+    const val HARBOR_CACHE_LIMIT = 3
     const val WEB_MEDIUM_MAX_CSS_HEIGHT = 1080
-    const val ANDROID_DOWNGRADE_STREAK = 45
-    const val WEB_DOWNGRADE_STREAK = 90
+    /** Finish 4.0 Phase 27 soft-floor (was 45 / 90). */
+    const val ANDROID_DOWNGRADE_STREAK = 40
+    const val WEB_DOWNGRADE_STREAK = 75
+    const val ANDROID_UPGRADE_STREAK = 60
+    const val WEB_UPGRADE_STREAK = 120
 
     const val ANDROID_MEDIUM_MS = 33.3
     const val ANDROID_LOW_MS = 40.0

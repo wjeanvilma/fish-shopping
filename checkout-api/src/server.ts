@@ -28,11 +28,14 @@ import {
   applyStripeCheckoutCompleted,
   isLiveMode,
   stripeConfigured,
+  stripeOpsReadiness,
   stripeWebhookSecret,
   STRIPE_WEBHOOK_PATH,
   verifyStripeWebhook,
 } from "./stripeLive";
 import { sharedStore } from "./store";
+
+export const STRIPE_OPS_READINESS_PATH = "/v1/ops/readiness";
 
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -79,12 +82,20 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       ok: true,
       phase: 25,
       finish3StripeLivePhase: 16,
+      finish4StripeOpsPhase: 25,
       mode: process.env.CHECKOUT_API_MODE ?? "stub",
       instant: instantCheckoutEnabled(),
       live: isLiveMode(),
       stripeConfigured: stripeConfigured(),
       webhookPath: STRIPE_WEBHOOK_PATH,
+      readinessPath: STRIPE_OPS_READINESS_PATH,
     });
+    return;
+  }
+
+  if (method === "GET" && path === STRIPE_OPS_READINESS_PATH) {
+    const readiness = stripeOpsReadiness();
+    sendJson(res, readiness.ok ? 200 : 503, readiness);
     return;
   }
 
@@ -114,7 +125,11 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       sendJson(res, applied.status, { error: applied.error });
       return;
     }
-    sendJson(res, 200, { received: true, webProductId: applied.webProductId || null });
+    sendJson(res, 200, {
+      received: true,
+      duplicate: applied.duplicate === true,
+      webProductId: applied.webProductId || null,
+    });
     return;
   }
 
@@ -181,4 +196,5 @@ server.listen(port, () => {
   console.log(`[checkout-api] GET  ${BILLING_API.entitlements.path}`);
   console.log(`[checkout-api] POST ${BILLING_API.fulfill.path}`);
   console.log(`[checkout-api] POST ${STRIPE_WEBHOOK_PATH}`);
+  console.log(`[checkout-api] GET  ${STRIPE_OPS_READINESS_PATH}`);
 });

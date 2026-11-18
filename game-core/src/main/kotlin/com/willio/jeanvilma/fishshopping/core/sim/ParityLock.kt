@@ -5,18 +5,21 @@ package com.willio.jeanvilma.fishshopping.core.sim
  * `shared/fixtures/parity-lock.json`.
  * Finish 2.0 Phase 29 adds achievements / weather / mastery / festival suites.
  * Finish 3.0 Phase 29 adds rivals / schema24 endgame / machines 9–10 / quests-contracts-3.
+ * Finish 4.0 Phase 29 adds machines 11–12 / quests-contracts-4 / rivals-2 / endgame-2.
  */
 object ParityLock {
     const val PHASE = 27
     const val SCHEMA = "fish.fixtures.parity_lock.v1"
     const val CATALOG = "shared/fixtures/parity-lock.json"
-    const val CONTENT_VERSION = "2.0.0"
-    const val SCHEMA_VERSION = 24
+    const val CONTENT_VERSION = "3.0.0"
+    const val SCHEMA_VERSION = 25
     const val FINISH2_PARITY_LOCK_PHASE = 29
     const val FINISH3_PARITY_LOCK_PHASE = 29
-    const val SUITE_FLOOR = 12
+    const val FINISH4_PARITY_LOCK_PHASE = 29
+    const val SUITE_FLOOR = 16
     const val FINISH2_SUITE_FLOOR = 4
     const val FINISH3_SUITE_FLOOR = 4
+    const val FINISH4_SUITE_FLOOR = 4
 
     val SUITE_IDS = listOf(
         "prng",
@@ -31,6 +34,10 @@ object ParityLock {
         "schema24_endgame",
         "machines_9_10",
         "quests_contracts_3",
+        "machines_11_12",
+        "quests_contracts_4",
+        "rival_markets_2",
+        "endgame_2",
     )
 
     val FINISH2_SUITE_IDS = listOf(
@@ -45,6 +52,13 @@ object ParityLock {
         "schema24_endgame",
         "machines_9_10",
         "quests_contracts_3",
+    )
+
+    val FINISH4_SUITE_IDS = listOf(
+        "machines_11_12",
+        "quests_contracts_4",
+        "rival_markets_2",
+        "endgame_2",
     )
 
     val EXPANDED_EXPECT_FIELDS = listOf(

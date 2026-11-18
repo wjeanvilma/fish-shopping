@@ -14,12 +14,19 @@ data class OfflineReport(
     val itemsSold: Long,
     val workerFishCaught: Long,
     val workerItemsMoved: Long,
+    /** Finish 4.0 Phase 21 — deeper away deltas for journal lines. */
+    val contractsCompleted: Long = 0,
+    val maintenancePaid: Long = 0,
+    val itemsSpoiled: Long = 0,
+    val rivalBeats: Long = 0,
     /** Finish 2.0 Phase 18 — narrative lines for the away summary / dashboard. */
     val journalLines: List<String> = emptyList(),
 ) {
     val hadActivity: Boolean
         get() = coinsDelta != 0L || fishCaught > 0L || sales > 0L ||
-            workerFishCaught > 0L || workerItemsMoved > 0L || journalLines.isNotEmpty()
+            workerFishCaught > 0L || workerItemsMoved > 0L ||
+            contractsCompleted > 0L || maintenancePaid > 0L || itemsSpoiled > 0L ||
+            rivalBeats > 0L || journalLines.isNotEmpty()
 }
 
 /**
@@ -38,6 +45,10 @@ fun applyOffline(sim: Simulation, elapsedMillis: Long): OfflineReport {
     val beforeItems = sim.state.stat(Stats.ITEMS_SOLD)
     val beforeWorkerFish = sim.state.stat(Stats.WORKER_FISH_CAUGHT)
     val beforeWorkerMoved = sim.state.stat(Stats.WORKER_ITEMS_MOVED)
+    val beforeContracts = sim.state.stat(Stats.CONTRACTS_COMPLETED)
+    val beforeMaintenance = sim.state.stat(Stats.MAINTENANCE_PAID)
+    val beforeSpoiled = sim.state.stat(Stats.ITEMS_SPOILED)
+    val beforeRivalBeats = sim.state.stat(Stats.RIVAL_BEATS)
 
     if (ticks > 0L) {
         val player = sim.state.player
@@ -71,5 +82,9 @@ fun applyOffline(sim: Simulation, elapsedMillis: Long): OfflineReport {
         itemsSold = sim.state.stat(Stats.ITEMS_SOLD) - beforeItems,
         workerFishCaught = sim.state.stat(Stats.WORKER_FISH_CAUGHT) - beforeWorkerFish,
         workerItemsMoved = sim.state.stat(Stats.WORKER_ITEMS_MOVED) - beforeWorkerMoved,
+        contractsCompleted = sim.state.stat(Stats.CONTRACTS_COMPLETED) - beforeContracts,
+        maintenancePaid = sim.state.stat(Stats.MAINTENANCE_PAID) - beforeMaintenance,
+        itemsSpoiled = sim.state.stat(Stats.ITEMS_SPOILED) - beforeSpoiled,
+        rivalBeats = sim.state.stat(Stats.RIVAL_BEATS) - beforeRivalBeats,
     )
 }

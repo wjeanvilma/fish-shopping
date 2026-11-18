@@ -64,6 +64,10 @@ describe("chooseCloudSnapshot", () => {
     const offer = cloudConflictOffer(older, newer)!;
     expect(offer.recommended).toBe("remote");
     expect(offer.reason).toBe("remote newer");
+    expect(offer.reasonCode).toBe("remote_newer");
+    expect(offer.diffHints.some((h) => /coins/i.test(h))).toBe(true);
+    expect(offer.diffHints.some((h) => /harbor/i.test(h))).toBe(true);
+    expect(offer.diffHints.some((h) => /newer/i.test(h))).toBe(true);
     expect(offer.local.coins).toBe(50);
     expect(offer.remote.coins).toBe(200);
     expect(offer.local.harborId).toBe("harbor.sunrise_pier");
@@ -77,6 +81,8 @@ describe("chooseCloudSnapshot", () => {
     expect(view.remote.sourceLabel).toBe("Cloud");
     expect(view.remote.recommended).toBe(true);
     expect(view.local.recommended).toBe(false);
+    expect(view.reasonCode).toBe("remote_newer");
+    expect(view.diffHints.length).toBeGreaterThan(0);
     expect(view.local.playtimeLabel).toContain("s");
     expect(view.remote.harborName.length).toBeGreaterThan(0);
   });

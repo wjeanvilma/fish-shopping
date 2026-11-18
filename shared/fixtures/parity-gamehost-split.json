@@ -1,0 +1,23 @@
+{
+  "schema": "fish.fixtures.parity_gamehost_split.v1",
+  "gameHostSplitMarker": "authored-finish-4.0-phase-6",
+  "phase": 6,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "gameHostMaxLines": 1400,
+    "harborRendererMaxLines": 780,
+    "extractedFileMin": 12,
+    "requiredFileCount": 16,
+    "gapFlagClosed": "gameHostSplitIncomplete",
+    "schemaVersion": 24,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "gamehost_slim",
+      "presenters_split",
+      "harbor_renderer_math",
+      "symbols_present",
+      "kickoff_gap_closed",
+      "ci_gate"
+    ]
+  }
+}

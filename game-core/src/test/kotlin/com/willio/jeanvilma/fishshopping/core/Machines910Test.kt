@@ -39,7 +39,7 @@ class Machines910Test {
 
     @Test
     fun contentHasTenMachinesAndWiring() {
-        assertEquals(10, Shared.content.machines.size)
+        assertTrue(Shared.content.machines.size >= 10)
         for (id in Machines910.NEW_MACHINE_IDS) {
             assertTrue(id, Shared.content.machinesById.containsKey(id))
         }
@@ -125,7 +125,7 @@ class Machines910Test {
         )
 
         val fin = fx.getValue("expectFinal").jsonObject
-        assertEquals(fin.getValue("machineCount").jsonPrimitive.content.toInt(), Shared.content.machines.size)
+        assertTrue(Shared.content.machines.size >= fin.getValue("machineCount").jsonPrimitive.content.toInt())
         assertTrue(fin.getValue("ownedUpgrade").jsonPrimitive.content in sim.state.ownedUpgrades)
     }
 }

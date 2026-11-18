@@ -119,16 +119,26 @@ export class AudioBus {
     this.ensureMusic();
   }
 
-  /** Host helper: pick bed from station / festival / storm / rival / night context. */
+  /** Host helper: pick bed from station / festival / storm / rival / night / endgame / ledger. */
   syncMusicBedFromPanels(
     stationOpen: boolean,
     festivalActive = false,
     stormActive = false,
     rivalActive = false,
     nightActive = false,
+    endgameActive = false,
+    ledgerActive = false,
   ): void {
     this.setMusicBed(
-      musicBedForPanels(stationOpen, festivalActive, stormActive, rivalActive, nightActive),
+      musicBedForPanels(
+        stationOpen,
+        festivalActive,
+        stormActive,
+        rivalActive,
+        nightActive,
+        endgameActive,
+        ledgerActive,
+      ),
     );
   }
 

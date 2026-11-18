@@ -5,8 +5,8 @@
   "description": "Finish 2.0 Phase 12 — species codex / journal: lore blurbs, habitat hints, family filters, catch stats, and book UI depth beyond a flat list.",
   "contentVersion": "1.0.1",
   "schemaVersion": 21,
-  "speciesCount": 75,
-  "codexEntryCount": 75,
+  "speciesCount": 100,
+  "codexEntryCount": 100,
   "familyCount": 9,
   "families": [
     "cove",
@@ -20,7 +20,7 @@
     "trophy"
   ],
   "parityFixture": "shared/fixtures/parity-species-codex.json",
-  "definitionOfDoneCodexEntries": 75,
+  "definitionOfDoneCodexEntries": 100,
   "validateScript": "npm run codex:validate",
   "checklist": [
     "content-pack.codex has one entry per species with lore/habitat/family",

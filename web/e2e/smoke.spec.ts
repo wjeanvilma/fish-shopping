@@ -8,6 +8,7 @@ import {
 /**
  * Finish 3.0 Phase 22 — Playwright E2E smoke:
  * title → play → HUD toolbar → pause → goals.
+ * Finish 4.0 Phase 26 — expanded nav + deep-link scenarios.
  */
 
 async function seedFreshSession(page: Page, decidedAnalytics = true): Promise<void> {
@@ -60,6 +61,12 @@ async function seedFreshSession(page: Page, decidedAnalytics = true): Promise<vo
   );
 }
 
+async function playToHud(page: Page): Promise<void> {
+  await expect(page.getByTestId(WEB_E2E_IDS.TITLE_PLAY)).toBeVisible();
+  await page.getByTestId(WEB_E2E_IDS.TITLE_PLAY).click();
+  await expect(page.getByTestId(WEB_E2E_IDS.HUD_TOOLBAR)).toBeVisible({ timeout: 45_000 });
+}
+
 test.describe("web E2E smoke", () => {
   test("title play reaches ready HUD and pause works", async ({ page }) => {
     await seedFreshSession(page, true);
@@ -92,5 +99,35 @@ test.describe("web E2E smoke", () => {
     await expect(page.getByTestId(WEB_E2E_IDS.HUD_TOOLBAR)).toBeVisible({ timeout: 45_000 });
     await page.getByTestId(WEB_E2E_IDS.NAV_GOALS).click();
     await expect(page.getByRole("dialog").first()).toBeVisible();
+  });
+
+  test("staff and map nav open panels", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/");
+    await playToHud(page);
+    await expect(page.getByTestId(WEB_E2E_IDS.NAV_STAFF)).toBeVisible();
+    await page.getByTestId(WEB_E2E_IDS.NAV_STAFF).click();
+    await expect(page.getByRole("dialog").first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByTestId(WEB_E2E_IDS.NAV_MAP).click();
+    await expect(page.getByRole("dialog").first()).toBeVisible();
+  });
+
+  test("jobs and dash nav open panels", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/");
+    await playToHud(page);
+    await page.getByTestId(WEB_E2E_IDS.NAV_JOBS).click();
+    await expect(page.getByRole("dialog").first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByTestId(WEB_E2E_IDS.NAV_DASH).click();
+    await expect(page.getByRole("dialog").first()).toBeVisible();
+  });
+
+  test("deep link panel=staff opens after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=staff");
+    await playToHud(page);
+    await expect(page.getByRole("dialog").first()).toBeVisible({ timeout: 20_000 });
   });
 });

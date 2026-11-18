@@ -185,6 +185,28 @@ def pickler_module():
     return _finish(pos, nrm, idx)
 
 
+def braiser_module():
+    """Harbor braiser: shallow pan, lid, heat ring."""
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.28, 0.0), (0.95, 0.45, 0.80))  # base
+    add_box(pos, nrm, idx, (0.0, 0.55, 0.0), (0.85, 0.18, 0.70))  # pan
+    add_box(pos, nrm, idx, (0.0, 0.72, 0.0), (0.78, 0.08, 0.62))  # lid
+    add_box(pos, nrm, idx, (0.0, 0.20, 0.0), (1.00, 0.08, 0.85))  # heat ring
+    add_box(pos, nrm, idx, (0.35, 0.90, -0.10), (0.16, 0.35, 0.16))  # vent
+    return _finish(pos, nrm, idx)
+
+
+def glazer_module():
+    """Harbor glazer: trough, drip rails, glaze pot."""
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.35, 0.0), (0.90, 0.55, 0.70))  # trough
+    add_box(pos, nrm, idx, (0.0, 0.70, 0.0), (0.75, 0.10, 0.55))  # glaze surface
+    add_box(pos, nrm, idx, (-0.32, 0.95, 0.0), (0.08, 0.35, 0.45))  # drip rail
+    add_box(pos, nrm, idx, (0.32, 0.95, 0.0), (0.08, 0.35, 0.45))
+    add_box(pos, nrm, idx, (0.0, 0.55, 0.38), (0.35, 0.40, 0.18))  # glaze pot
+    return _finish(pos, nrm, idx)
+
+
 MODULE_BUILDERS = {
     "pier": pier_deck_module,
     "ground": ground_module,
@@ -200,6 +222,8 @@ MODULE_BUILDERS = {
     "kiln": kiln_module,
     "press": press_module,
     "pickler": pickler_module,
+    "braiser": braiser_module,
+    "glazer": glazer_module,
 }
 
 MODULE_COLORS = {
@@ -217,6 +241,8 @@ MODULE_COLORS = {
     "kiln": "#A04828",
     "press": "#7A6A58",
     "pickler": "#5A8A6A",
+    "braiser": "#A06040",
+    "glazer": "#6A90B0",
 }
 
 # World Y height (metres) when node scale Y = height / 1.0 after normalize.
@@ -235,4 +261,6 @@ MODULE_HEIGHTS = {
     "kiln": 1.50,
     "press": 1.45,
     "pickler": 1.40,
+    "braiser": 1.35,
+    "glazer": 1.35,
 }

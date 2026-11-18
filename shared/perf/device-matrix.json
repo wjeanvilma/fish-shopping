@@ -1,10 +1,11 @@
 {
   "phase": 26,
   "schema": "fish.perf.device_matrix.v1",
-  "description": "Blueprint device budgets for quality presets and soft auto-downgrade. Presentation-only — never changes the 20 Hz sim.",
+  "description": "Blueprint device budgets for quality presets and soft auto-downgrade/upgrade. Finish 4.0 Phase 27 tightens streaks, over-budget mult, and harbor LRU for 10 harbors. Presentation-only — never changes the 20 Hz sim.",
   "budgetGatePhase": 15,
   "budgetGateCatalog": "shared/perf/budget-gate.json",
-  "harborCacheLimit": 2,
+  "finish4Phase": 27,
+  "harborCacheLimit": 3,
   "platforms": {
     "android": {
       "label": "Android mid-tier",
@@ -15,8 +16,10 @@
         "medium": 33.3,
         "high": 33.3
       },
-      "downgradeStreakFrames": 45,
-      "downgradeWindowSeconds": 1.5
+      "downgradeStreakFrames": 40,
+      "upgradeStreakFrames": 60,
+      "downgradeWindowSeconds": 1.33,
+      "upgradeWindowSeconds": 2.0
     },
     "web": {
       "label": "Web mid desktop @1080p",
@@ -28,8 +31,10 @@
         "medium": 16.7,
         "high": 16.7
       },
-      "downgradeStreakFrames": 90,
-      "downgradeWindowSeconds": 1.5
+      "downgradeStreakFrames": 75,
+      "upgradeStreakFrames": 120,
+      "downgradeWindowSeconds": 1.25,
+      "upgradeWindowSeconds": 2.0
     }
   },
   "qualityCosts": {
@@ -47,7 +52,12 @@
     }
   },
   "autoDowngrade": {
-    "overBudgetMultiplier": 1.15,
+    "overBudgetMultiplier": 1.12,
     "steps": ["high→medium", "medium→low", "low stays"]
+  },
+  "autoUpgrade": {
+    "underBudgetMultiplier": 0.85,
+    "steps": ["low→medium", "medium→high", "capped at requested preset"],
+    "note": "Finish 4.0 Phase 27 — recover quality after sustained under-budget frames without exceeding player preset."
   }
 }

@@ -36,10 +36,13 @@ function validate(): string[] {
   for (const need of ["chrome", "firefox", "safari"]) {
     if (!browsers.includes(need)) errors.push(`missing browser ${need}`);
   }
+  // Finish 4.0 Phase 27 soft-floor: browser/scenario lists may grow past historical mins.
+  if (browsers.length < 3) errors.push("browsers must stay ≥3");
   const scenarios = (matrix.scenarios as any[]).map((s) => s.id);
   for (const need of ["webgl2_gate", "context_loss", "storage_quota", "audio_unlock"]) {
     if (!scenarios.includes(need)) errors.push(`missing scenario ${need}`);
   }
+  if (scenarios.length < 4) errors.push("browser scenarios must stay ≥4");
 
   const unlock = matrix.audioUnlockEvents as string[];
   if (!unlock.includes("touchstart")) errors.push("audioUnlockEvents must include touchstart for Safari");

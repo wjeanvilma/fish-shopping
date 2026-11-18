@@ -127,14 +127,24 @@ internal fun UpgradePanel(
     onClose: () -> Unit,
     modifier: Modifier,
 ) {
-    Surface(modifier.managementSheet(maxHeight = 320.dp), shape = PanelShape, color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp) {
+    Surface(
+        modifier.managementSheet(maxHeight = 320.dp).a11yPane("panels.upgrades"),
+        shape = PanelShape,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 8.dp,
+    ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(UiStrings.t("panels.upgrades"), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 Text(UiStrings.t("hud.coinsAmount", mapOf("amount" to formatCoins(coins))), style = Tabular, color = MaterialTheme.colorScheme.onSurface)
                 TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text(UiStrings.t("common.close")) }
             }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.semantics {
+                    contentDescription = UiStrings.t("a11y.upgradesSection")
+                },
+            ) {
                 items(upgrades, key = { it.id }) { u ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -144,7 +154,7 @@ internal fun UpgradePanel(
                             u.reason?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
                         }
                         when {
-                            u.owned -> Text(UiStrings.t("common.owned"), color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 12.dp))
+                            u.owned -> Text(UiStrings.t("upgrades.owned"), color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 12.dp))
                             else -> Button(
                                 onClick = { onBuy(u.id) },
                                 enabled = u.purchasable,

@@ -14,9 +14,10 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Finish 3.0 Phase 14 — single-player rival NPC markets.
+ * Finish 3.0 Phase 14 / Finish 4.0 Phase 15 — single-player rival NPC markets.
  * Active rivals siphon demand when specialty shelves are empty, undercut sale
- * prices, and can be beaten by well-stocked specialty sales. Schema 23 stats only.
+ * prices, and can be beaten by well-stocked specialty sales. Phase 15 adds AI
+ * profiles, adaptive revenge aggression, and multi-rival pressure stacking.
  */
 object RivalMarketSystem {
     /** Keep the scripted tutorial free of rival siphon / undercut RNG. */
@@ -42,22 +43,52 @@ object RivalMarketSystem {
         return units
     }
 
-    fun isPressuring(content: ContentPack, state: GameState, harborId: String): Boolean {
-        val active = activeRivals(content, state, harborId)
-        if (active.isEmpty()) return false
-        if (ReputationSystem.band(content, state) >= content.rivalMarkets.minReputationBandToResist) {
-            return false
+    /** Finish 4.0 Phase 15 — effective aggression after AI profile / revenge boosts. */
+    fun effectiveAggressionPermille(
+        content: ContentPack,
+        state: GameState,
+        rival: RivalMarketDef,
+    ): Int {
+        val cat = content.rivalMarkets
+        val boost = cat.adaptiveAggressionBoostPermille
+        val profile = rival.aiProfile
+        var aggression = rival.aggressionPermille
+        val beaten = rival.id in state.beatenRivalIds
+        if (profile == "adaptive" || (profile == "roamer" && beaten)) {
+            aggression = min(1000, aggression + boost)
         }
-        for (rival in active) {
-            if (specialtyStockUnits(state, rival.specialtyProducts) < content.rivalMarkets.wellStockedUnits) {
-                return true
-            }
+        if (beaten && (profile == "adaptive" || profile == "undercut")) {
+            aggression = min(1000, aggression + boost)
         }
-        return false
+        if (profile == "siphon") {
+            aggression = min(1000, aggression + boost / 2)
+        }
+        return aggression
     }
 
-    fun customerSpawnMultPermille(content: ContentPack, state: GameState, harborId: String): Int =
-        if (isPressuring(content, state, harborId)) content.rivalMarkets.pressureSpawnMultPermille else 1000
+    fun pressuringRivals(content: ContentPack, state: GameState, harborId: String): List<RivalMarketDef> {
+        val active = activeRivals(content, state, harborId)
+        if (active.isEmpty()) return emptyList()
+        if (ReputationSystem.band(content, state) >= content.rivalMarkets.minReputationBandToResist) {
+            return emptyList()
+        }
+        return active.filter {
+            specialtyStockUnits(state, it.specialtyProducts) < content.rivalMarkets.wellStockedUnits
+        }
+    }
+
+    fun isPressuring(content: ContentPack, state: GameState, harborId: String): Boolean =
+        pressuringRivals(content, state, harborId).isNotEmpty()
+
+    fun customerSpawnMultPermille(content: ContentPack, state: GameState, harborId: String): Int {
+        val pressuring = pressuringRivals(content, state, harborId)
+        if (pressuring.isEmpty()) return 1000
+        var mult = content.rivalMarkets.pressureSpawnMultPermille
+        if (pressuring.size >= 2) {
+            mult = ((mult.toLong() * content.rivalMarkets.multiRivalPressureExtraMultPermille) / 1000L).toInt()
+        }
+        return max(1, min(1000, mult))
+    }
 
     fun salePriceMultPermille(
         content: ContentPack,
@@ -74,7 +105,14 @@ object RivalMarketSystem {
             if (!specialtyOnPad) continue
             val stocked = specialtyStockUnits(state, rival.specialtyProducts)
             if (stocked >= content.rivalMarkets.wellStockedUnits) continue
-            if (rival.undercutPriceMultPermille < best) best = rival.undercutPriceMultPermille
+            var undercut = rival.undercutPriceMultPermille
+            val profile = rival.aiProfile
+            if ((profile == "undercut" || profile == "adaptive") && rival.id in state.beatenRivalIds) {
+                undercut = max(1, ((undercut.toLong() * 900L) / 1000L).toInt())
+            } else if (profile == "undercut") {
+                undercut = max(1, ((undercut.toLong() * 950L) / 1000L).toInt())
+            }
+            if (undercut < best) best = undercut
         }
         return best
     }
@@ -129,11 +167,18 @@ object RivalMarketSystem {
         for (rival in active) {
             val stocked = specialtyStockUnits(s, rival.specialtyProducts)
             if (stocked >= cat.wellStockedUnits) continue
+            val profile = rival.aiProfile
+            // Undercut specialists skip siphon rolls when any stock remains.
+            if (profile == "undercut" && stocked > 0) continue
             var chance = cat.emptyStockSiphonChancePermille
+            val aggression = effectiveAggressionPermille(ctx.content, s, rival)
             chance = min(
                 1000,
-                chance + ((rival.aggressionPermille.toLong() * cat.lowRepSiphonBonusPermille) / 1000L).toInt(),
+                chance + ((aggression.toLong() * cat.lowRepSiphonBonusPermille) / 1000L).toInt(),
             )
+            if (profile == "siphon") {
+                chance = min(1000, chance + 40)
+            }
             if (s.rng.nextInRange(0, 999) >= chance) continue
             val productId = rival.specialtyProducts[s.rng.nextInRange(0, rival.specialtyProducts.lastIndex)]
             s.bumpStat(Stats.RIVAL_SALES_STOLEN)

@@ -32,7 +32,7 @@ class Schema24EndgameTest {
         assertEquals(Schema24Endgame.SCHEMA_VERSION, json.getValue("schemaVersion").jsonPrimitive.int)
         assertEquals(Schema24Endgame.TIER_COUNT, json.getValue("tierCount").jsonPrimitive.int)
         assertEquals(Schema24Endgame.CHALLENGE_COUNT, json.getValue("challengeCount").jsonPrimitive.int)
-        assertEquals(24, SimConstants.SCHEMA_VERSION)
+        assertTrue(SimConstants.SCHEMA_VERSION >= 24)
 
         val listing = Json.parseToJsonElement(File(root, "shared/store/listing.json").readText()).jsonObject
         assertEquals(15, listing.getValue("schema24EndgamePhase").jsonPrimitive.content.toInt())
@@ -41,8 +41,8 @@ class Schema24EndgameTest {
 
     @Test
     fun contentHasFourTiersAndChallenges() {
-        assertEquals(4, Shared.content.endgame.tiers.size)
-        assertEquals(4, Shared.content.endgame.challenges.size)
+        assertTrue(Shared.content.endgame.tiers.size >= 4)
+        assertTrue(Shared.content.endgame.challenges.size >= 4)
         for (id in Schema24Endgame.TIER_IDS) {
             assertTrue(id, Shared.content.endgameTiersById.containsKey(id))
         }
@@ -65,9 +65,11 @@ class Schema24EndgameTest {
         assertTrue(migrated.beatenRivalIds.isEmpty())
         assertTrue(migrated.unlockedEndgameTiers.isEmpty())
         assertTrue(migrated.completedEndgameChallenges.isEmpty())
+        assertTrue(migrated.endgameMarks.isEmpty())
         val encoded = SnapshotCodec.encode(Shared.content, migrated)
-        assertTrue(encoded.startsWith("{\"schemaVersion\":24,"))
+        assertTrue(encoded.startsWith("{\"schemaVersion\":${SimConstants.SCHEMA_VERSION},"))
         assertTrue(encoded.contains("\"beatenRivalIds\":[]"))
+        assertTrue(encoded.contains("\"endgameMarks\":[]"))
 
         val sim = Simulation(
             Shared.content,

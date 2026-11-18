@@ -1,0 +1,321 @@
+{
+  "phase": 1,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.finish4_kickoff.v1",
+  "description": "Finish 4.0 Phase 1 — kickoff + gap scoreboard from frozen 3.0.0. Pins Finish 3.0 as finished, locks measured gaps, and opens the 30-phase path to content 4.0.0 / ≥100k product LOC without padding.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "kickoffMarker": "authored-finish-4.0-phase-1",
+  "priorPlan": {
+    "id": "30_finish_3.0",
+    "status": "finished",
+    "freezeCatalog": "shared/ship/freeze-3.0.0.json",
+    "releaseTag": "v3.0.0",
+    "contentVersion": "3.0.0",
+    "schemaVersion": 24
+  },
+  "endState": {
+    "contentVersion": "4.0.0",
+    "schemaVersionMin": 25,
+    "releaseTag": "v4.0.0",
+    "versionName": "4.0.0",
+    "versionCode": 5,
+    "productLocMin": 100000,
+    "gameCoreLocMin": 32000,
+    "appLocMin": 20000,
+    "webSrcLocMin": 48000,
+    "harborsMin": 10,
+    "speciesMin": 100,
+    "authoredFishMin": 100,
+    "machinesMin": 12,
+    "questsMin": 50,
+    "seasonalMin": 12,
+    "baitsMin": 12,
+    "cosmeticsMin": 18,
+    "chainsMin": 5,
+    "rivalsMin": 12,
+    "paritySuitesMin": 16
+  },
+  "baseline": {
+    "measuredAtPhase": 30,
+    "contentVersion": "4.0.0",
+    "schemaVersion": 25,
+    "gameCoreLoc": 23675,
+    "appLoc": 13947,
+    "webSrcLoc": 35851,
+    "productLoc": 73473,
+    "harbors": 10,
+    "species": 100,
+    "machines": 12,
+    "quests": 50,
+    "seasonalEvents": 12,
+    "baits": 12,
+    "cosmetics": 18,
+    "deliveryChains": 5,
+    "rivalMarkets": 12,
+    "authoredHarbors": 10,
+    "authoredFish": 100,
+    "harborBlockouts": 0,
+    "i18nLocales": 3,
+    "i18nUiKeys": 280,
+    "androidUiStringsCalls": 214,
+    "androidTextLiterals": 0,
+    "staffComingSoonReasons": 0,
+    "paritySuites": 16
+  },
+  "gaps": {
+    "authoredHarborsRemaining": 0,
+    "authoredFishRemaining": 0,
+    "productLocRemaining": 26527,
+    "speciesRemaining": 0,
+    "machinesRemaining": 0,
+    "questsRemaining": 0,
+    "systemsSplitIncomplete": false,
+    "viewModelSplitIncomplete": false,
+    "workersSimViewSplitIncomplete": false,
+    "gameHostSplitIncomplete": false,
+    "harborBlockoutPresent": false,
+    "productArtIncomplete": false,
+    "contentFloorsShort": false,
+    "endgameSchema25Pending": false,
+    "stripeOpsIncomplete": false,
+    "deeplinkE2eThin": false,
+    "devicePerfIncomplete": false,
+    "contentCli3Missing": false,
+    "parityLock4Missing": false
+  },
+  "gapTargets": {
+    "authoredHarbors": 10,
+    "authoredFish": 100,
+    "i18nLocales": 3,
+    "i18nUiKeysMin": 120,
+    "androidTextLiteralsMax": 0,
+    "staffComingSoonReasons": 0,
+    "productLoc": 100000,
+    "speciesMin": 100,
+    "machinesMin": 12,
+    "questsMin": 50,
+    "harborsMin": 10,
+    "seasonalMin": 12,
+    "baitsMin": 12,
+    "cosmeticsMin": 18,
+    "chainsMin": 5,
+    "rivalsMin": 12,
+    "paritySuitesMin": 16
+  },
+  "phases": [
+    {
+      "phase": 1,
+      "id": "kickoff",
+      "title": "Kickoff + gap scoreboard",
+      "validate": "finish4:validate"
+    },
+    {
+      "phase": 2,
+      "id": "systems-split-1",
+      "title": "systems.ts split — fishing/production/inventory",
+      "validate": "systemssplit1:validate"
+    },
+    {
+      "phase": 3,
+      "id": "systems-split-2",
+      "title": "systems.ts split — customers/contracts/quests/progression",
+      "validate": "systemssplit2:validate"
+    },
+    {
+      "phase": 4,
+      "id": "viewmodel-split",
+      "title": "Android GameViewModel intent/handler decomposition",
+      "validate": "viewmodelsplit:validate"
+    },
+    {
+      "phase": 5,
+      "id": "workers-simview-split",
+      "title": "Workers.kt + SimView.kt module split + AI hooks",
+      "validate": "workersplit:validate"
+    },
+    {
+      "phase": 6,
+      "id": "gamehost-split",
+      "title": "GameHost.ts + renderer presenter cleanup",
+      "validate": "gamehostsplit:validate"
+    },
+    {
+      "phase": 7,
+      "id": "fish-art-3a",
+      "title": "Fish art 3a — author meshes 51–75",
+      "validate": "fishart3a:validate"
+    },
+    {
+      "phase": 8,
+      "id": "fish-art-3b",
+      "title": "Fish art 3b — author meshes toward 100",
+      "validate": "fishart3b:validate"
+    },
+    {
+      "phase": 9,
+      "id": "harbor-art-3",
+      "title": "Harbor art beyond blockout for 8 harbors",
+      "validate": "harborart3:validate"
+    },
+    {
+      "phase": 10,
+      "id": "product-art",
+      "title": "Product/cosmetic art presentation pass",
+      "validate": "productart:validate"
+    },
+    {
+      "phase": 11,
+      "id": "species-76-100",
+      "title": "Species 76–100 + ecology + i18n",
+      "validate": "species76100:validate"
+    },
+    {
+      "phase": 12,
+      "id": "harbors-9-10",
+      "title": "Harbors 9–10 with travel/prestige gates",
+      "validate": "harbors910:validate"
+    },
+    {
+      "phase": 13,
+      "id": "machines-11-12",
+      "title": "Machines 11–12 + recipes/UI",
+      "validate": "machines1112:validate"
+    },
+    {
+      "phase": 14,
+      "id": "quests-contracts-4",
+      "title": "Quests→50, chains→5, contracts depth",
+      "validate": "quests4:validate"
+    },
+    {
+      "phase": 15,
+      "id": "rivals-2",
+      "title": "Rival markets 8→12 + AI depth",
+      "validate": "rivals2:validate"
+    },
+    {
+      "phase": 16,
+      "id": "seasonal-bait-4",
+      "title": "Seasonal→12, baits→12, mastery depth",
+      "validate": "seasonalbait4:validate"
+    },
+    {
+      "phase": 17,
+      "id": "endgame-2",
+      "title": "Endgame deepen + schema 25",
+      "validate": "endgame2:validate"
+    },
+    {
+      "phase": 18,
+      "id": "cosmetics-iap-4",
+      "title": "Cosmetics/IAP 12→18 power-neutral",
+      "validate": "cosmetics4:validate"
+    },
+    {
+      "phase": 19,
+      "id": "staff-ai-2",
+      "title": "Staff/worker AI depth wave 2",
+      "validate": "staffai2:validate"
+    },
+    {
+      "phase": 20,
+      "id": "economy-bank-2",
+      "title": "Economy/bank/dashboard depth",
+      "validate": "economy2:validate"
+    },
+    {
+      "phase": 21,
+      "id": "offline-cloud-2",
+      "title": "Offline/cloud/analytics hardening",
+      "validate": "offlinecloud2:validate"
+    },
+    {
+      "phase": 22,
+      "id": "ui-parity-depth",
+      "title": "Web↔Android panel feature parity depth",
+      "validate": "uiparity:validate"
+    },
+    {
+      "phase": 23,
+      "id": "audio-vfx-4",
+      "title": "Audio pack 4 + VFX juice 4",
+      "validate": "audiovfx4:validate"
+    },
+    {
+      "phase": 24,
+      "id": "a11y-i18n-4",
+      "title": "A11y depth 3 + i18n key growth",
+      "validate": "a11yi18n4:validate"
+    },
+    {
+      "phase": 25,
+      "id": "stripe-ops-4",
+      "title": "Stripe/checkout live-ready catalog ops",
+      "validate": "stripeops4:validate"
+    },
+    {
+      "phase": 26,
+      "id": "deeplink-e2e-4",
+      "title": "Deep links + expanded E2E/Compose",
+      "validate": "deeplinke2e4:validate"
+    },
+    {
+      "phase": 27,
+      "id": "device-perf-4",
+      "title": "Device/browser/perf matrix tighten",
+      "validate": "deviceperf4:validate"
+    },
+    {
+      "phase": 28,
+      "id": "content-cli-3",
+      "title": "Content authoring CLI wave 3",
+      "validate": "contentcli3:validate"
+    },
+    {
+      "phase": 29,
+      "id": "parity-lock-4",
+      "title": "Parity lock 4.0 (≥16 suites)",
+      "validate": "parity4:validate"
+    },
+    {
+      "phase": 30,
+      "id": "freeze-4",
+      "title": "4.0.0 freeze & DoD",
+      "validate": "freeze4:validate"
+    }
+  ],
+  "definitionOfDone": "shared/ship/definition-of-done.json",
+  "locCatalog": "shared/ship/loc-floors.json",
+  "harborArtCatalog": "shared/ship/harbor-art-pass.json",
+  "fishArtCatalog": "shared/ship/fish-art-pass.json",
+  "priorFreezeCatalog": "shared/ship/freeze-3.0.0.json",
+  "i18nScaffold": "shared/ship/i18n-scaffold.json",
+  "parityFixture": "shared/fixtures/parity-finish-4.0-kickoff.json",
+  "validateScript": "npm run finish4:validate",
+  "smokeScript": "npm run finish4:smoke",
+  "checklist": [
+    "Finish 3.0 priorPlan marked finished; freeze-3.0.0.json still green",
+    "Kickoff catalog locks live baseline LOC from freeze 3.0 cut (64488)",
+    "Gap scoreboard lists authored fish 50→100, harbors 8→10, product LOC →100k",
+    "30 Finish 4.0 phase ids present and ordered 1–30 kickoff→freeze-4",
+    "Kotlin + TS mirrors match catalog; parity fixture marker locked",
+    "listing + RELEASE_PIN + DoD finish4Kickoff wired",
+    "CI runs finish4:validate + finish4:smoke",
+    "Content/version stays 3.0.0 / schema 24 until later Finish 4.0 bumps",
+    "loc-floors freezeCut refreshed to live 3.0 measure; plan targets raised to 32k/20k/48k/100k"
+  ],
+  "preflightGates": [
+    "shared/ship/finish-4.0-kickoff.json",
+    "shared/fixtures/parity-finish-4.0-kickoff.json",
+    "shared/ship/freeze-3.0.0.json",
+    "shared/ship/loc-floors.json",
+    "shared/ship/harbor-art-pass.json",
+    "shared/ship/fish-art-pass.json",
+    "shared/ship/definition-of-done.json",
+    "web/src/ship/finish4Kickoff.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Finish4Kickoff.kt",
+    "web/scripts/validate-finish-4-kickoff.ts",
+    "web/scripts/smoke-finish-4-kickoff.ts"
+  ]
+}

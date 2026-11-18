@@ -1,0 +1,54 @@
+{
+  "schema": "fish.fixtures.parity_machines_11_12.v1",
+  "machines1112Marker": "authored-finish-4.0-phase-13",
+  "phase": 13,
+  "plan": "30_finish_4.0",
+  "description": "Finish 4.0 Phase 13: unlock harbor braiser via sunrise plot, process fillet \u2192 braised_fillet; assert 12 machine classes.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 41313,
+  "setup": {
+    "coins": 1200,
+    "completedQuests": [
+      "quest.specialty_kitchen"
+    ],
+    "ownedUpgrades": [
+      "upgrade.harbor_steamer",
+      "upgrade.harbor_press"
+    ]
+  },
+  "build": {
+    "plotId": "plot.sunrise_braiser",
+    "requestId": "p13-braiser-build",
+    "expectUpgrade": "upgrade.harbor_braiser",
+    "stationId": "station.braiser_1"
+  },
+  "process": {
+    "walkTo": {
+      "x": 10700,
+      "z": -14500,
+      "expectZone": "zone.braiser_in"
+    },
+    "bagAfterUnlock": {
+      "product.fillet": 1
+    },
+    "preferredRecipeId": "recipe.braise_fillet",
+    "expectOutput": {
+      "item": "product.braised_fillet",
+      "quantity": 1
+    }
+  },
+  "expectFinal": {
+    "machineCount": 12,
+    "ownedUpgrade": "upgrade.harbor_braiser",
+    "schemaVersion": 24,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "machines_12",
+      "plots_wired",
+      "recipes_and_products",
+      "module_glbs",
+      "kickoff_machines_met",
+      "ci_gate"
+    ]
+  }
+}

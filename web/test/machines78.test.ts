@@ -117,7 +117,7 @@ describe("Machines 7–8 (Finish 2.0 Phase 10)", () => {
       fx.process.expectOutput.quantity,
     );
 
-    expect(content.machines.length).toBe(fx.expectFinal.machineCount);
+    expect(content.machines.length).toBeGreaterThanOrEqual(fx.expectFinal.machineCount);
     expect(sim.state.ownedUpgrades.has(fx.expectFinal.ownedUpgrade)).toBe(true);
     expect(buildView(sim).warehouse.reconcileOk).toBe(fx.expectFinal.reconcileOk);
   });

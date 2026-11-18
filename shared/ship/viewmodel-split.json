@@ -1,0 +1,83 @@
+{
+  "phase": 4,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.viewmodel_split.v1",
+  "description": "Finish 4.0 Phase 4 — decompose Android GameViewModel into shell / economy / travel / IAP intent modules under game/vm/, with GameUiState extracted. Schema stays 24 / content 3.0.0.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "viewModelSplitMarker": "authored-finish-4.0-phase-4",
+  "viewModelPackageRoot": "app/src/main/java/com/willio/jeanvilma/fishshopping/game",
+  "viewModelPath": "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt",
+  "viewModelMaxLines": 1500,
+  "extractedFileMin": 6,
+  "requiredFiles": [
+    "GameUiState.kt",
+    "vm/VmIntentHost.kt",
+    "vm/VmShellIntents.kt",
+    "vm/VmEconomyIntents.kt",
+    "vm/VmTravelIntents.kt",
+    "vm/VmIapIntents.kt"
+  ],
+  "requiredSymbols": {
+    "GameUiState.kt": ["sealed interface GameUiState", "data class Ready", "data class Title"],
+    "vm/VmIntentHost.kt": [
+      "VmPanelCommandHost",
+      "VmShellIntentHost",
+      "VmTravelIntentHost",
+      "VmIapIntentHost",
+      "VmStationIntentHost"
+    ],
+    "vm/VmShellIntents.kt": ["class VmShellIntents", "setUpgradesOpen", "openFromDeepLink"],
+    "vm/VmEconomyIntents.kt": ["class VmEconomyIntents", "purchase", "hire", "acceptContract", "reel"],
+    "vm/VmTravelIntents.kt": ["class VmTravelIntents", "travelToHarbor", "applyDeepLink", "consumeDeepLink"],
+    "vm/VmIapIntents.kt": [
+      "class VmIapIntents",
+      "purchaseFullHarborUnlock",
+      "purchaseIapCosmetic",
+      "restorePurchases"
+    ],
+    "GameViewModel.kt": [
+      "VmShellIntents",
+      "VmEconomyIntents",
+      "VmTravelIntents",
+      "VmIapIntents",
+      "enqueuePanelCommand"
+    ]
+  },
+  "viewModelMustNotDefine": [
+    "sealed interface GameUiState",
+    "class VmEconomyIntents",
+    "class VmIapIntents",
+    "class VmShellIntents",
+    "class VmTravelIntents"
+  ],
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "gapFlagClosed": "viewModelSplitIncomplete",
+  "parityFixture": "shared/fixtures/parity-viewmodel-split.json",
+  "validateScript": "npm run viewmodelsplit:validate",
+  "checklist": [
+    "GameViewModel.kt ≤1500 lines; delegates shell/economy/travel/IAP intents",
+    "≥6 extracted modules (GameUiState + 5 vm/*)",
+    "Required host/intent symbols present",
+    "Kickoff gaps.viewModelSplitIncomplete = false",
+    "app compiles (:app:compileDebugKotlin)",
+    "parity fixture + viewmodelsplit:validate green",
+    "CI runs viewmodelsplit:validate",
+    "schema stays 24 / content 3.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/viewmodel-split.json",
+    "shared/fixtures/parity-viewmodel-split.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameUiState.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmIntentHost.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmShellIntents.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmEconomyIntents.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmTravelIntents.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmIapIntents.kt",
+    "web/src/ship/viewModelSplit.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ViewModelSplit.kt",
+    "web/scripts/validate-viewmodel-split.ts"
+  ]
+}

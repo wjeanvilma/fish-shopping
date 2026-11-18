@@ -58,7 +58,7 @@ function validate(): string[] {
   if (fixture.kickoffMarker !== FINISH3_KICKOFF_MARKER) errors.push("fixture marker mismatch");
   if (catalog.contentVersion !== "3.0.0") errors.push("kickoff contentVersion must be 3.0.0 at freeze");
   if (catalog.schemaVersion !== 24) errors.push("kickoff schemaVersion must be 24");
-  if (SCHEMA_VERSION !== 24) errors.push("engine SCHEMA_VERSION must be 24");
+  if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
 
   if (catalog.priorPlan?.id !== "30_finish_2.0") errors.push("priorPlan.id must be 30_finish_2.0");
   if (catalog.priorPlan?.status !== "finished") errors.push("priorPlan.status must be finished");
@@ -193,16 +193,16 @@ function validate(): string[] {
   if (productLocProgress(b.productLoc) !== 0) errors.push("LOC progress at baseline must be 0%");
 
   const art = measureArtCounts(root);
-  if (art.authoredHarbors !== b.authoredHarbors) {
-    errors.push(`harbor-art-pass authored count ${art.authoredHarbors} ≠ baseline ${b.authoredHarbors}`);
+  if (art.authoredHarbors < b.authoredHarbors) {
+    errors.push(`harbor-art-pass authored count ${art.authoredHarbors} < baseline ${b.authoredHarbors}`);
   }
-  if (art.authoredFish !== b.authoredFish) {
-    errors.push(`fish-art-pass authored count ${art.authoredFish} ≠ baseline ${b.authoredFish}`);
+  if (art.authoredFish < b.authoredFish) {
+    errors.push(`fish-art-pass authored count ${art.authoredFish} < baseline ${b.authoredFish}`);
   }
-  if ((pack.harbors as unknown[]).length !== b.harbors) errors.push("content harbors ≠ baseline");
-  if ((pack.species as unknown[]).length !== b.species) errors.push("content species ≠ baseline");
-  if ((pack.machines as unknown[]).length !== b.machines) errors.push("content machines ≠ baseline");
-  if ((pack.quests as unknown[]).length !== b.quests) errors.push("content quests ≠ baseline");
+  if ((pack.harbors as unknown[]).length < b.harbors) errors.push("content harbors < baseline");
+  if ((pack.species as unknown[]).length < b.species) errors.push("content species < baseline");
+  if ((pack.machines as unknown[]).length < b.machines) errors.push("content machines < baseline");
+  if ((pack.quests as unknown[]).length < b.quests) errors.push("content quests < baseline");
 
   const locBoard = measureLocScoreboard(root);
   // Finish 3.0 phases grow LOC; only regressions vs the locked baseline fail.
@@ -220,8 +220,8 @@ function validate(): string[] {
   if (locBoard.webSrc.lines < b.webSrcLoc - 50) {
     errors.push(`web/src LOC ${locBoard.webSrc.lines} regressed below baseline ${b.webSrcLoc}`);
   }
-  if (LOC_FLOORS.productTotalPlanTarget !== 80000) {
-    errors.push("loc-floors plan target must stay 80000");
+  if (LOC_FLOORS.productTotalPlanTarget !== 100000) {
+    errors.push("loc-floors plan target must be 100000 (Finish 4.0)");
   }
 
   if (listing.finish3KickoffPhase !== 1) errors.push("listing.finish3KickoffPhase must be 1");

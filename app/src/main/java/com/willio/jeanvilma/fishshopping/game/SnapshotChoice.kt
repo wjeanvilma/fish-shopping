@@ -22,6 +22,10 @@ data class SnapshotChoiceRow(
 
 data class CloudConflictView(
     val reason: String,
+    /** Finish 4.0 Phase 21 — stable machine code for [reason]. */
+    val reasonCode: String,
+    /** Finish 4.0 Phase 21 — short UX hints describing local vs remote diffs. */
+    val diffHints: List<String>,
     val recommended: SyncSource,
     val local: SnapshotChoiceRow,
     val remote: SnapshotChoiceRow,
@@ -74,6 +78,8 @@ object SnapshotChoice {
     fun conflictView(offer: CloudConflictOffer, content: ContentPack, nowMs: Long = System.currentTimeMillis()): CloudConflictView =
         CloudConflictView(
             reason = offer.reason,
+            reasonCode = offer.reasonCode,
+            diffHints = offer.diffHints,
             recommended = offer.recommended,
             local = row(offer.local, "This device", content, offer.recommended == SyncSource.LOCAL, nowMs),
             remote = row(offer.remote, "Cloud", content, offer.recommended == SyncSource.REMOTE, nowMs),

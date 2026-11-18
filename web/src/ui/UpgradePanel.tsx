@@ -31,13 +31,19 @@ export function UpgradePanel({ upgrades, coins, onBuy, onClose }: {
   useEffect(() => closeRef.current?.focus(), []);
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Upgrades" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="panel sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("panels.upgrades")}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sheet-header">
-          <h2>Upgrades</h2>
-          <span className="num">{formatCoins(coins)} coins</span>
-          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+          <h2>{t("panels.upgrades")}</h2>
+          <span className="num">{t("common.coins", { count: formatCoins(coins) })}</span>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>{t("common.close")}</button>
         </div>
-        <ul className="upgrade-list">
+        <ul className="upgrade-list" aria-label={t("a11y.upgradesSection")}>
           {upgrades.map((u) => (
             <li key={u.id}>
               <div className="grow">
@@ -45,7 +51,7 @@ export function UpgradePanel({ upgrades, coins, onBuy, onClose }: {
                 <div className="small">{u.description}</div>
                 {u.reason && <div className="small danger">{u.reason}</div>}
               </div>
-              {u.owned ? <span className="owned">Owned</span> : (
+              {u.owned ? <span className="owned">{t("upgrades.owned")}</span> : (
                 <button className="button num" disabled={!u.purchasable} onClick={() => onBuy(u.id)}>{formatCoins(u.cost)}</button>
               )}
             </li>

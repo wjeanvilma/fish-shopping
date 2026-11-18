@@ -1,7 +1,7 @@
 {
   "phase": 19,
   "schema": "fish.audio.sfx_pack.v1",
-  "description": "Post-1.0 Phase 19 — authored mono WAV stingers for catch / cut / sell / UI (plus abandon, upgrade, rush). Buses keep mute, SFX gain, voice cap, and Android/Web focus-lifecycle policy. Phase 20 replaces procedural ambience with authored music beds. Finish 2.0 Phase 21 adds pack-2 stingers; Finish 3.0 Phase 23 adds pack-3 rival/travel/hire/prestige/loan/trophy stingers.",
+  "description": "Post-1.0 Phase 19 \u2014 authored mono WAV stingers for catch / cut / sell / UI (plus abandon, upgrade, rush). Buses keep mute, SFX gain, voice cap, and Android/Web focus-lifecycle policy. Phase 20 replaces procedural ambience with authored music beds. Finish 2.0 Phase 21 adds pack-2 stingers; Finish 3.0 Phase 23 adds pack-3 rival/travel/hire/prestige/loan/trophy stingers; Finish 4.0 Phase 23 adds pack-4 decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers.",
   "sampleRate": 22050,
   "channels": 1,
   "encoding": "pcm_s16le",
@@ -14,7 +14,7 @@
   "androidRawDir": "app/src/main/res/raw",
   "androidRawPrefix": "sfx_",
   "maxBytesPerClip": 24576,
-  "maxTotalBytes": 320000,
+  "maxTotalBytes": 480000,
   "maxDurationMs": 420,
   "voiceCostPerClip": 1,
   "maxSfxVoices": 6,
@@ -217,6 +217,87 @@
       "haptic": true,
       "design": "bright metal trophy clink arpeggio",
       "pack3": true
+    },
+    {
+      "id": "decor",
+      "file": "decor.wav",
+      "androidRaw": "sfx_decor",
+      "role": "ui",
+      "haptic": false,
+      "design": "soft placard hang + wood tap",
+      "pack4": true
+    },
+    {
+      "id": "cosmetic",
+      "file": "cosmetic.wav",
+      "androidRaw": "sfx_cosmetic",
+      "role": "feedback",
+      "haptic": true,
+      "design": "sparkle unlock chime for cosmetics",
+      "pack4": true
+    },
+    {
+      "id": "endgame_tier",
+      "file": "endgame_tier.wav",
+      "androidRaw": "sfx_endgame_tier",
+      "role": "feedback",
+      "haptic": true,
+      "design": "deep tier-unlock brass swell",
+      "pack4": true
+    },
+    {
+      "id": "endgame_challenge",
+      "file": "endgame_challenge.wav",
+      "androidRaw": "sfx_endgame_challenge",
+      "role": "feedback",
+      "haptic": true,
+      "design": "bright challenge clear fanfare",
+      "pack4": true
+    },
+    {
+      "id": "contract_accept",
+      "file": "contract_accept.wav",
+      "androidRaw": "sfx_contract_accept",
+      "role": "ui",
+      "haptic": false,
+      "design": "paper stamp accept click",
+      "pack4": true
+    },
+    {
+      "id": "bait",
+      "file": "bait.wav",
+      "androidRaw": "sfx_bait",
+      "role": "ui",
+      "haptic": false,
+      "design": "tackle box click + soft plink",
+      "pack4": true
+    },
+    {
+      "id": "full_unlock",
+      "file": "full_unlock.wav",
+      "androidRaw": "sfx_full_unlock",
+      "role": "feedback",
+      "haptic": true,
+      "design": "harbor-wide unlock fanfare",
+      "pack4": true
+    },
+    {
+      "id": "machine_break",
+      "file": "machine_break.wav",
+      "androidRaw": "sfx_machine_break",
+      "role": "feedback",
+      "haptic": false,
+      "design": "metal clank + short spark",
+      "pack4": true
+    },
+    {
+      "id": "spoil",
+      "file": "spoil.wav",
+      "androidRaw": "sfx_spoil",
+      "role": "feedback",
+      "haptic": false,
+      "design": "wet flop + descending sigh",
+      "pack4": true
     }
   ],
   "eventMap": {
@@ -241,7 +322,16 @@
     "worker_hired": "hire",
     "prestige_unlocked": "prestige",
     "loan_taken": "loan",
-    "trophy_set_completed": "trophy_set"
+    "trophy_set_completed": "trophy_set",
+    "decor_purchased": "decor",
+    "iap_cosmetic_granted": "cosmetic",
+    "endgame_tier_unlocked": "endgame_tier",
+    "endgame_challenge_completed": "endgame_challenge",
+    "contract_accepted": "contract_accept",
+    "bait_purchased": "bait",
+    "full_harbor_unlock_granted": "full_unlock",
+    "machine_broke": "machine_break",
+    "items_spoiled": "spoil"
   },
   "preflightGates": [
     "shared/audio/sfx-pack.json",

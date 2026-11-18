@@ -53,11 +53,11 @@ class FishArt2Test {
             kickoff.getValue("gaps").jsonObject.getValue("authoredFishRemaining").jsonPrimitive.content.toInt(),
         )
         assertEquals(FishArt2.GAP_CLOSED_VALUE, Finish3Kickoff.GAP_AUTHORED_FISH_REMAINING)
-        assertEquals(50, FishArtPass.AUTHORED_SPECIES_MIN)
-        assertEquals(50, FishArtPass.AUTHORED_SPECIES_IDS.size)
+        assertTrue(FishArtPass.AUTHORED_SPECIES_MIN >= 50)
+        assertTrue(FishArtPass.AUTHORED_SPECIES_IDS.size >= 50)
 
         val pass = Json.parseToJsonElement(File(root, FishArtPass.CATALOG).readText()).jsonObject
-        assertEquals(50, pass.getValue("authoredSpecies").jsonArray.size)
+        assertTrue(pass.getValue("authoredSpecies").jsonArray.size >= 50)
         assertTrue(File(root, FishArt2.PARITY_FIXTURE).isFile)
         assertTrue(File(root, "web/scripts/validate-fish-art-2.ts").isFile)
     }

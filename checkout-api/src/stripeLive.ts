@@ -222,8 +222,13 @@ export function verifyStripeWebhook(
 export function applyStripeCheckoutCompleted(
   event: StripeWebhookEvent,
   store: CheckoutStore,
-): { ok: true; webProductId: string } | { error: string; status: number } {
+): { ok: true; webProductId: string; duplicate?: boolean } | { error: string; status: number } {
+  const eventId = String(event.id ?? "").trim();
+  if (eventId && store.hasProcessedStripeEvent(eventId)) {
+    return { ok: true, webProductId: "", duplicate: true };
+  }
   if (event.type !== "checkout.session.completed") {
+    if (eventId) store.markStripeEventProcessed(eventId);
     return { ok: true, webProductId: "" };
   }
   const obj = event.data?.object ?? {};
@@ -238,9 +243,49 @@ export function applyStripeCheckoutCompleted(
     // Prefer fulfill via our session id when Stripe client_reference_id is our sess_…
     const rows = store.fulfillSession(clientRef, cloudAccountId);
     if (rows.some((r) => r.webProductId === webProductId)) {
+      if (eventId) store.markStripeEventProcessed(eventId);
       return { ok: true, webProductId };
     }
   }
   store.grant(cloudAccountId, webProductId, `stripe-${String(obj["id"] ?? event.id)}`);
+  if (eventId) store.markStripeEventProcessed(eventId);
   return { ok: true, webProductId };
+}
+
+/** Finish 4.0 Phase 25 — live-ready catalog ops readiness snapshot. */
+export function stripeOpsReadiness(
+  env: Record<string, string | undefined> = process.env,
+  priceMap: Map<string, string> = loadStripePriceMap(),
+): {
+  ok: boolean;
+  catalogOk: boolean;
+  priceMapOk: boolean;
+  priceMapSize: number;
+  skuFloor: number;
+  live: boolean;
+  stripeConfigured: boolean;
+  liveReady: boolean;
+  webhookSecretConfigured: boolean;
+  mode: string;
+} {
+  const skuFloor = 19;
+  const priceMapSize = priceMap.size;
+  const catalogOk = priceMapSize >= skuFloor;
+  const priceMapOk = catalogOk;
+  const live = isLiveMode(env);
+  const configured = stripeConfigured(env);
+  const webhookSecretConfigured = stripeWebhookSecret(env).length > 0;
+  const liveReady = live && configured && webhookSecretConfigured && priceMapOk;
+  return {
+    ok: catalogOk && priceMapOk,
+    catalogOk,
+    priceMapOk,
+    priceMapSize,
+    skuFloor,
+    live,
+    stripeConfigured: configured,
+    liveReady,
+    webhookSecretConfigured,
+    mode: (env.CHECKOUT_API_MODE ?? "stub").trim().toLowerCase() || "stub",
+  };
 }

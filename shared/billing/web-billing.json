@@ -195,9 +195,47 @@
       "webProductId": "fish.cosmetic.moonlit_bunting",
       "androidProductId": "fish_cosmetic_moonlit_bunting",
       "grantsCosmetic": "banner.iap_moonlit_bunting"
+    },
+    {
+      "sku": "fish.cosmetic.mist_bunting",
+      "webProductId": "fish.cosmetic.mist_bunting",
+      "androidProductId": "fish_cosmetic_mist_bunting",
+      "grantsCosmetic": "banner.iap_mist_bunting"
+    },
+    {
+      "sku": "fish.cosmetic.prism_pennant",
+      "webProductId": "fish.cosmetic.prism_pennant",
+      "androidProductId": "fish_cosmetic_prism_pennant",
+      "grantsCosmetic": "banner.iap_prism_pennant"
+    },
+    {
+      "sku": "fish.cosmetic.plaza_flag",
+      "webProductId": "fish.cosmetic.plaza_flag",
+      "androidProductId": "fish_cosmetic_plaza_flag",
+      "grantsCosmetic": "banner.iap_plaza_flag"
+    },
+    {
+      "sku": "fish.cosmetic.rime_streamer",
+      "webProductId": "fish.cosmetic.rime_streamer",
+      "androidProductId": "fish_cosmetic_rime_streamer",
+      "grantsCosmetic": "banner.iap_rime_streamer"
+    },
+    {
+      "sku": "fish.cosmetic.brine_ribbon",
+      "webProductId": "fish.cosmetic.brine_ribbon",
+      "androidProductId": "fish_cosmetic_brine_ribbon",
+      "grantsCosmetic": "banner.iap_brine_ribbon"
+    },
+    {
+      "sku": "fish.cosmetic.aurora_crest",
+      "webProductId": "fish.cosmetic.aurora_crest",
+      "androidProductId": "fish_cosmetic_aurora_crest",
+      "grantsCosmetic": "banner.iap_aurora_crest"
     }
   ],
   "sandbox": {
     "note": "Point VITE_BILLING_API_BASE at a test checkout API; FakeWebStoreBridge covers unit tests without network. CHECKOUT_API_MODE=stub keeps /sandbox/pay; live mode never uses it."
-  }
+  },
+  "finish4StripeOpsPhase": 25,
+  "stripeOpsCatalog": "shared/ship/stripe-ops-4.json"
 }

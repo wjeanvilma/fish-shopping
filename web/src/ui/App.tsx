@@ -7,6 +7,8 @@ import grandMarinaSceneUrl from "../../../shared/assets/models/grand_marina_bloc
 import coralLagoonSceneUrl from "../../../shared/assets/models/coral_lagoon_blockout.glb?url";
 import stormQuaySceneUrl from "../../../shared/assets/models/storm_quay_blockout.glb?url";
 import emberWharfSceneUrl from "../../../shared/assets/models/ember_wharf_blockout.glb?url";
+import mistCoveSceneUrl from "../../../shared/assets/models/mist_cove_blockout.glb?url";
+import prismReachSceneUrl from "../../../shared/assets/models/prism_reach_blockout.glb?url";
 import type { SimView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
 import { t } from "../i18n/strings";
@@ -64,6 +66,8 @@ const BLOCKOUT_URLS: Record<string, string> = {
   "coral_lagoon_blockout.glb": coralLagoonSceneUrl,
   "storm_quay_blockout.glb": stormQuaySceneUrl,
   "ember_wharf_blockout.glb": emberWharfSceneUrl,
+  "mist_cove_blockout.glb": mistCoveSceneUrl,
+  "prism_reach_blockout.glb": prismReachSceneUrl,
 };
 
 /** Track viewport aspect so portrait chrome follows resized windows, not only OS orientation. */
@@ -478,7 +482,11 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
         >
           {t("nav.map")}{!portrait && <> <kbd>M</kbd></>}
         </button>
-        <button className="button" onClick={() => host.setWarehouseOpen(true)}>
+        <button
+          className="button"
+          data-testid={WEB_E2E_IDS.NAV_WAREHOUSE}
+          onClick={() => host.setWarehouseOpen(true)}
+        >
           {t("nav.warehouse")}{!portrait && <> <kbd>I</kbd></>}
         </button>
         <button
@@ -488,7 +496,11 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
         >
           {t("nav.goals")}{!portrait && <> <kbd>G</kbd></>}
         </button>
-        <button className="button" onClick={() => host.setContractsOpen(true)}>
+        <button
+          className="button"
+          data-testid={WEB_E2E_IDS.NAV_JOBS}
+          onClick={() => host.setContractsOpen(true)}
+        >
           {t("nav.jobs")}{!portrait && <> <kbd>J</kbd></>}
         </button>
         <button
@@ -498,7 +510,11 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
         >
           {t("nav.staff")}{!portrait && <> <kbd>H</kbd></>}
         </button>
-        <button className="button" onClick={() => host.setDashboardOpen(true)}>
+        <button
+          className="button"
+          data-testid={WEB_E2E_IDS.NAV_DASH}
+          onClick={() => host.setDashboardOpen(true)}
+        >
           {t("nav.dash")}{!portrait && <> <kbd>Y</kbd></>}
         </button>
         <button
@@ -640,7 +656,7 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           onUnequipCosmetic={() => host.setEquippedCosmeticId(null)}
           onPreviewCosmetic={(id) => host.setPreviewCosmeticId(id)}
           onClearPreview={() => host.setPreviewCosmeticId(null)}
-          onTakeLoan={() => host.takeLoan()}
+          onTakeLoan={(productId) => host.takeLoan(productId)}
           onRepayLoan={() => host.repayLoan()}
           onSetCoinGoal={(amount) => host.setCoinGoal(amount)}
           dailyLoginStreak={v.dailyLoginStreak}

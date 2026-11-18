@@ -175,6 +175,16 @@ export function buildBalanceExport(content: ContentPack): Record<string, unknown
       collectionPeriodTicks: raw.bank.collectionPeriodTicks,
       goalPresets: [...raw.bank.goalPresets],
       requires: [...raw.bank.requires],
+      loanProducts: (raw.bank.loanProducts ?? []).map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        principal: p.principal,
+        repayPermille: p.repayPermille,
+        repayAmount: Math.trunc((p.principal * p.repayPermille) / 1000),
+        termTicks: p.termTicks,
+        requires: [...(p.requires ?? [])],
+      })),
     },
     harborRushes: raw.harbors.flatMap((h) =>
       (h.rushes ?? []).map((ru) => ({

@@ -1,7 +1,7 @@
 {
   "phase": 11,
   "schema": "fish.store.listing_copy.v1",
-  "description": "Frozen Play / web listing copy for store ship. Finish 3.0 Phase 30 freezes whatsNew at 3.0.0; English remains the canonical en freeze for pin/whatsNewVersion.",
+  "description": "Frozen Play / web listing copy for store ship. Finish 4.0 Phase 30 freezes whatsNew at 4.0.0; English remains the canonical en freeze for pin/whatsNewVersion.",
   "frozen": true,
   "packageName": "com.willio.jeanvilma.fishshopping",
   "releasePin": "shared/fixtures/RELEASE_PIN.json",
@@ -21,13 +21,13 @@
   "copy": {
     "title": "Fish Shopping",
     "shortDescription": "Catch, cut, and sell fish in a cozy 3D harbor market.",
-    "fullDescription": "Run your own waterfront fish market. Cast from the pier, process catches on the cutter, stock the counter, and serve a growing crowd. Hire staff, unlock upgrades, take delivery contracts, and expand to new harbors \u2014 all with a fixed 20 Hz simulation shared by Android and web.\n\nFirst session loop: fish \u2192 cut \u2192 stock \u2192 sell.\n\nOptional cloud sync and privacy-safe analytics are off until you opt in. One-time harbor unlock and power-neutral cosmetics are available via in-app purchase; Restore purchases recovers entitlements on a new device.",
-    "whatsNew": "3.0.0 freeze \u2014 seventy-five species, thirty quests, ten machines, rival markets, schema 24 endgame, parity lock 3.0, remote analytics, and Finish 3.0 ops. Schema 24; prior 2.0 saves still load.",
-    "whatsNewVersion": "3.0.0"
+    "fullDescription": "Run your own waterfront fish market. Cast from the pier, process catches on the cutter, stock the counter, and serve a growing crowd. Hire staff, unlock upgrades, take delivery contracts, and expand to new harbors — all with a fixed 20 Hz simulation shared by Android and web.\n\nFirst session loop: fish → cut → stock → sell.\n\nOptional cloud sync and privacy-safe analytics are off until you opt in. One-time harbor unlock and power-neutral cosmetics are available via in-app purchase; Restore purchases recovers entitlements on a new device.",
+    "whatsNew": "4.0.0 freeze — one hundred species, fifty quests, twelve machines, ten harbors, twelve rival markets, schema 25 endgame, parity lock 4.0, and Finish 4.0 ops. Schema 25; prior 3.0 saves still load.",
+    "whatsNewVersion": "4.0.0"
   },
   "webLanding": {
     "title": "Fish Shopping",
-    "tagline": "Catch, cut, sell \u2014 run your harbor market",
+    "tagline": "Catch, cut, sell — run your harbor market",
     "description": "Catch, cut, and sell fish in a cozy 3D harbor market.",
     "ctaPlay": "Play in browser",
     "ctaPrivacy": "Privacy",
@@ -61,7 +61,7 @@
     "Paste es locale from shared/store/locales/es.json when publishing Spanish listing",
     "Paste pt locale from shared/store/locales/pt.json when publishing Portuguese listing",
     "Paste whatsNew into Release notes for versionName from RELEASE_PIN",
-    "Category Simulation \u00b7 content rating Everyone",
+    "Category Simulation · content rating Everyone",
     "Finish 3.0 locales: en + es + pt present"
   ]
 }

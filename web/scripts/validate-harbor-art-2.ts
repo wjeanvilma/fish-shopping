@@ -49,9 +49,9 @@ function validate(): string[] {
 
   if (catalog.authoredHarborTarget !== 8) errors.push("authoredHarborTarget must be 8");
   if (catalog.newAuthoredHarbors?.length !== 5) errors.push("newAuthoredHarbors must list 5");
-  if (AUTHORED_HARBOR_FLOOR !== 8) errors.push("harbor-art-pass authoredHarborMin must be 8");
-  if (HARBOR_ART_PASS.authoredHarbors.length !== 8) {
-    errors.push("harbor-art-pass authoredHarbors must list 8");
+  if (AUTHORED_HARBOR_FLOOR < 8) errors.push("harbor-art-pass authoredHarborMin must be ≥ 8");
+  if (HARBOR_ART_PASS.authoredHarbors.length < 8) {
+    errors.push("harbor-art-pass authoredHarbors must list ≥ 8");
   }
 
   const measure = measureHarborArt2(root);

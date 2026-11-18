@@ -57,9 +57,12 @@ class EnvArtTest {
             val envArt = extras["envArt"]!!.jsonPrimitive.contentOrNull!!
             assertTrue("$harbor envArt", envArt.startsWith("modular-phase-14"))
             assertEquals("stylized-phase-13", extras["itemArt"]!!.jsonPrimitive.contentOrNull)
-            if (harbor == "sunrise_pier" || harbor == "coral_lagoon" || harbor == "storm_quay") {
-                assertEquals("authored-phase-19", extras["harborArt"]!!.jsonPrimitive.contentOrNull)
-            }
+            assertEquals(
+                "authored-finish-4.0-phase-9",
+                extras["harborArt"]!!.jsonPrimitive.contentOrNull,
+            )
+            assertEquals("harbor-art-3", extras["harborScenic"]!!.jsonPrimitive.contentOrNull)
+            assertTrue("$harbor scenic", envArt.contains("harbor-art-3"))
 
             val names = gltf["nodes"]!!.jsonArray.map {
                 it.jsonObject["name"]!!.jsonPrimitive.contentOrNull!!

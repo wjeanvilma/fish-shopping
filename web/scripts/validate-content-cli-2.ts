@@ -26,6 +26,9 @@ import {
 import { indexPackIds, packHasId } from "../../shared/tools/content_cli/packIds";
 import { buildScaffold } from "../../shared/tools/content_cli/scaffolds";
 
+/** Soft floor: Finish 3.0 Phase 28 kinds only (wave-3 validated by contentcli3). */
+const CONTENT_CLI2_LIVE_KINDS = [...SCAFFOLD_KINDS, ...SCAFFOLD_KINDS_2] as const;
+
 const here = fileURLToPath(new URL(".", import.meta.url));
 const root = resolve(here, "../..");
 
@@ -85,11 +88,14 @@ function validate(): string[] {
   if (ALL_SCAFFOLD_KINDS.length < CONTENT_CLI2_KIND_FLOOR) {
     errors.push(`ALL_SCAFFOLD_KINDS ${ALL_SCAFFOLD_KINDS.length} < ${CONTENT_CLI2_KIND_FLOOR}`);
   }
+  if (CONTENT_CLI2_LIVE_KINDS.length < CONTENT_CLI2_KIND_FLOOR) {
+    errors.push(`contentcli2 live kinds ${CONTENT_CLI2_LIVE_KINDS.length} < ${CONTENT_CLI2_KIND_FLOOR}`);
+  }
   if (SCAFFOLD_KINDS.length !== 3) errors.push("core SCAFFOLD_KINDS must stay length 3");
   if (SCAFFOLD_KINDS_2.length !== 3) errors.push("SCAFFOLD_KINDS_2 must be contract/bait/decor");
 
   for (const kind of fixture.expect.kinds as string[]) {
-    if (!(ALL_SCAFFOLD_KINDS as readonly string[]).includes(kind)) {
+    if (!(CONTENT_CLI2_LIVE_KINDS as readonly string[]).includes(kind)) {
       errors.push(`missing scaffold kind ${kind}`);
     }
   }
@@ -134,7 +140,7 @@ function validate(): string[] {
     for (const e of schemaErrors) errors.push(`example ${path}: ${e}`);
   }
 
-  for (const kind of ALL_SCAFFOLD_KINDS) {
+  for (const kind of CONTENT_CLI2_LIVE_KINDS) {
     const built = buildScaffold({ kind, id: `validate_${kind}_tmp` });
     const schemaErrors = validateScaffoldFragment(kind, built.document);
     for (const e of schemaErrors) errors.push(`live ${kind}: ${e}`);

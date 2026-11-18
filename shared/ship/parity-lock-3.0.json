@@ -33,6 +33,11 @@
   "validateScript": "npm run parity3:validate",
   "simHzInvariant": 20,
   "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "softFloors": {
+    "historicalSuiteFloor": 12,
+    "historicalFinish3SuiteFloor": 4,
+    "note": "Finish 4.0 Phase 29 raises live parity-lock suiteFloor to 16; parity3:validate soft-floors live checks to ≥12."
+  },
   "checklist": [
     "parity-lock.json lists ≥12 suites including 4 Finish 3.0 system suites",
     "rival_markets / schema24_endgame / machines_9_10 / quests_contracts_3 fixtures exist",

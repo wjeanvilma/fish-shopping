@@ -41,9 +41,16 @@ class ItemArtTest {
             val extras = gltf["extras"]!!.jsonObject
             assertEquals("$id stylized", true, extras["stylized"]!!.jsonPrimitive.booleanOrNull)
             val phase = extras["phase"]!!.jsonPrimitive.intOrNull
-            assertTrue("$id phase $phase", phase == 13 || phase == 20)
+            assertTrue("$id phase $phase", phase == 10 || phase == 13 || phase == 20)
             if (phase == 20) {
                 assertEquals("$id fishArt", "authored-phase-20", extras["fishArt"]!!.jsonPrimitive.contentOrNull)
+            }
+            if (phase == 10) {
+                assertEquals(
+                    "$id productArt",
+                    "authored-finish-4.0-phase-10",
+                    extras["productArt"]!!.jsonPrimitive.contentOrNull,
+                )
             }
             val verts = gltf["accessors"]!!.jsonArray[0].jsonObject["count"]!!.jsonPrimitive.intOrNull!!
             assertTrue("$id still grey-box cube ($verts verts)", verts > 24)
@@ -63,8 +70,12 @@ class ItemArtTest {
                 .startsWith("modular-phase-14"),
         )
         assertEquals(
-            "authored-phase-19",
+            "authored-finish-4.0-phase-9",
             gltf["extras"]!!.jsonObject["harborArt"]!!.jsonPrimitive.contentOrNull,
+        )
+        assertEquals(
+            "harbor-art-3",
+            gltf["extras"]!!.jsonObject["harborScenic"]!!.jsonPrimitive.contentOrNull,
         )
         assertEquals(
             "clips-phase-15",

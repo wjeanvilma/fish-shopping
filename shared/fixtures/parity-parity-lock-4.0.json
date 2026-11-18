@@ -1,0 +1,48 @@
+{
+  "schema": "fish.fixture.parity_parity_lock_4.v1",
+  "description": "Finish 4.0 Phase 29: parity-lock 4.0 suite floors and required Finish 4.0 system fixtures.",
+  "parityLock4Marker": "authored-finish-4.0-phase-29",
+  "suiteFloor": 16,
+  "finish2SuiteFloor": 4,
+  "finish3SuiteFloor": 4,
+  "finish4SuiteFloor": 4,
+  "simHzInvariant": 20,
+  "expect": {
+    "baselineSuiteIds": [
+      "prng",
+      "starter_line",
+      "entitlements_unlock",
+      "legacy_migrations"
+    ],
+    "finish2SuiteIds": [
+      "achievements",
+      "weather_tide",
+      "fishing_mastery",
+      "festival_weekends"
+    ],
+    "finish3SuiteIds": [
+      "rival_markets",
+      "schema24_endgame",
+      "machines_9_10",
+      "quests_contracts_3"
+    ],
+    "finish4SuiteIds": [
+      "machines_11_12",
+      "quests_contracts_4",
+      "rival_markets_2",
+      "endgame_2"
+    ],
+    "finish4Fixtures": [
+      "shared/fixtures/parity-machines-11-12.json",
+      "shared/fixtures/parity-quests-contracts-4.json",
+      "shared/fixtures/parity-rival-markets-2.json",
+      "shared/fixtures/parity-endgame-2.json"
+    ],
+    "gates": [
+      "machines1112RecipesParity",
+      "questsContracts4FloorsMet",
+      "rivalMarkets2PressureDeterministic",
+      "endgameSchema25Persisted"
+    ]
+  }
+}

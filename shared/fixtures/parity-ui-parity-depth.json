@@ -1,0 +1,21 @@
+{
+  "schema": "fish.fixtures.parity_ui_parity_depth.v1",
+  "uiParityMarker": "authored-finish-4.0-phase-22",
+  "phase": 22,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "panelPairMin": 12,
+    "featureFloorCount": 13,
+    "goalPresetMin": 8,
+    "loanProductMin": 3,
+    "dailyObjectiveMin": 10,
+    "schemaVersion": 25,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "panel_pairs",
+      "feature_markers",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

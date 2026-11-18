@@ -1,0 +1,24 @@
+{
+  "schema": "fish.fixture.parity_cosmetics_iap_4.v1",
+  "cosmetics4Marker": "authored-finish-4.0-phase-18",
+  "phase": 18,
+  "plan": "30_finish_4.0",
+  "description": "Finish 4.0 Phase 18: grant mist_bunting IAP cosmetic; assert power-neutral and catalog size ≥18.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1818,
+  "sampleSku": "fish.cosmetic.mist_bunting",
+  "sampleCosmeticId": "banner.iap_mist_bunting",
+  "expect": {
+    "cosmeticsMin": 18,
+    "powerNeutral": true,
+    "schemaVersion": 25,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "cosmetics_18",
+      "power_neutral",
+      "banner_meshes",
+      "kickoff_floors",
+      "ci_gate"
+    ]
+  }
+}

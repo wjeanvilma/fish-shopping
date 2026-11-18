@@ -65,7 +65,7 @@ function validate(): string[] {
   if (AUDIO_PACK_3_PHASE !== 23) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 24) errors.push("catalog schemaVersion must be 24");
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
-  if (SCHEMA_VERSION !== 24) errors.push("engine SCHEMA_VERSION must stay 24");
+  if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
   if (catalog.audioPackMarker !== AUDIO_PACK_3_MARKER) errors.push("marker mismatch");
   if (fixture.audioPackMarker !== AUDIO_PACK_3_MARKER) errors.push("fixture marker mismatch");
   if (catalog.newStingerMin !== 8 || NEW_STINGER_FLOOR_3 !== 8) {

@@ -84,7 +84,7 @@ export class Simulation {
         EconomySystem.repair(ctx, c.stationId, c.requestId);
         break;
       case "take_loan":
-        BankSystem.takeLoan(ctx, c.requestId);
+        BankSystem.takeLoan(ctx, c.requestId, c.productId ?? null);
         break;
       case "repay_loan":
         BankSystem.repayLoan(ctx, c.requestId);

@@ -24,13 +24,13 @@ describe("LOC floors (Finish 2.0 Phase 6 → Phase 30 freeze)", () => {
     expect(LOC_ENFORCE_MODE).toBe("freeze_anti_regression");
     expect(LOC_FLOORS.enforceAtPhase).toBe(30);
     expect(LOC_PRODUCT_TOTAL_FLOOR).toBe(64_200);
-    expect(LOC_PRODUCT_TOTAL_PLAN_TARGET).toBe(80_000);
+    expect(LOC_PRODUCT_TOTAL_PLAN_TARGET).toBe(100_000);
     expect(LOC_FLOORS.scopes.gameCore.phase30Floor).toBe(20_900);
     expect(LOC_FLOORS.scopes.app.phase30Floor).toBe(13_100);
     expect(LOC_FLOORS.scopes.webSrc.phase30Floor).toBe(30_200);
-    expect(LOC_FLOORS.scopes.gameCore.planTarget).toBe(25_000);
-    expect(LOC_FLOORS.scopes.app.planTarget).toBe(16_000);
-    expect(LOC_FLOORS.scopes.webSrc.planTarget).toBe(38_000);
+    expect(LOC_FLOORS.scopes.gameCore.planTarget).toBe(32_000);
+    expect(LOC_FLOORS.scopes.app.planTarget).toBe(20_000);
+    expect(LOC_FLOORS.scopes.webSrc.planTarget).toBe(48_000);
     expect((storeListing as { locFloorsPhase?: number }).locFloorsPhase).toBe(6);
   });
 

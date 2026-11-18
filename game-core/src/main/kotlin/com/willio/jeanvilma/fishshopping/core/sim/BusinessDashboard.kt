@@ -1,12 +1,16 @@
 package com.willio.jeanvilma.fishshopping.core.sim
 
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
+import com.willio.jeanvilma.fishshopping.core.content.HarborDef
+import com.willio.jeanvilma.fishshopping.core.customers.CustomerSystem
+import com.willio.jeanvilma.fishshopping.core.customers.ReputationSystem
 import com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem
 
 /**
  * Phase 9 business dashboard: committed sales/revenue only (never wallet coins),
  * abandon + wage rates, session interval labels, and live bottlenecks.
  * Finish 2.0 Phase 18 adds daily streak / objectives.
+ * Finish 4.0 Phase 20 adds cashflow / scarcity / reputation surfaces.
  */
 object BusinessDashboard {
 
@@ -15,6 +19,7 @@ object BusinessDashboard {
         state: GameState,
         bottlenecks: List<AutomationIssueView>,
         topSpecies: List<SpeciesCatchShareView>,
+        harbor: HarborDef? = null,
     ): BusinessDashboardView {
         val tps = content.ticksPerSecond.coerceAtLeast(1)
         val sessionTicks = state.tick.coerceAtLeast(0L)
@@ -25,6 +30,13 @@ object BusinessDashboard {
         val contractRevenue = state.stat(Stats.CONTRACT_REVENUE)
         val lost = state.stat(Stats.LOST_CUSTOMERS)
         val wages = state.stat(Stats.WAGES_PAID)
+        val maintenance = state.stat(Stats.MAINTENANCE_PAID)
+        val repairs = state.stat(Stats.REPAIR_SPENT)
+        val spoiled = state.stat(Stats.ITEMS_SPOILED)
+        val loanInterest = state.stat(Stats.LOAN_INTEREST_ACCRUED)
+        val loanCollected = state.stat(Stats.LOAN_COLLECTED)
+        val operatingCosts = wages + maintenance + repairs
+        val gross = committedRevenue + contractRevenue
         val minutes = sessionSeconds / 60L
         val revenuePerMinute = if (minutes > 0L) committedRevenue / minutes else 0L
         val salesPerMinute = if (minutes > 0L) sales / minutes else 0L
@@ -44,6 +56,7 @@ object BusinessDashboard {
                 claimEnabled = complete && !claimed,
             )
         }
+        val scarcityTip = harbor?.let { activeScarcityTipPermille(content, state, it) } ?: 1000
         return BusinessDashboardView(
             sessionTicks = sessionTicks,
             sessionLabel = formatSession(sessionSeconds),
@@ -64,7 +77,28 @@ object BusinessDashboard {
             dailyLoginStreak = DailyGoalsSystem.streak(state),
             dailyGoals = daily,
             offlineJournalLines = emptyList(),
+            maintenancePaid = maintenance,
+            repairSpent = repairs,
+            itemsSpoiled = spoiled,
+            loanInterestAccrued = loanInterest,
+            loanCollected = loanCollected,
+            operatingCosts = operatingCosts,
+            netOperatingProfit = gross - operatingCosts,
+            activeScarcityTipPermille = scarcityTip,
+            reputationScorePermille = ReputationSystem.scorePermille(content, state),
+            reputationLabel = ReputationSystem.bandLabel(content, state),
         )
+    }
+
+    fun activeScarcityTipPermille(content: ContentPack, state: GameState, harbor: HarborDef): Int {
+        var best = 1000
+        for (cdef in harbor.counters) {
+            if (!CustomerSystem.isUnlocked(cdef, state)) continue
+            val counter = state.counters.firstOrNull { it.counterId == cdef.id } ?: continue
+            val tip = CustomerSystem.scarcityPriceMultPermille(content, cdef, counter)
+            if (tip > best) best = tip
+        }
+        return best
     }
 
     fun formatSession(totalSeconds: Long): String {

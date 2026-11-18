@@ -42,9 +42,10 @@ class WorkerAiDepthTest {
     @Test
     fun workersContainDepthMarkersAndStats() {
         val root = repoRoot()
+        // Finish 4.0 Phase 19 soft-floor: wave-1 markers live in WorkerAi.kt after the Phase 5 split.
         val workers = File(
             root,
-            "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/Workers.kt",
+            "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
         ).readText()
         for (marker in WorkerAiDepth.KOTLIN_MARKERS) {
             assertTrue("missing marker $marker", workers.contains(marker))

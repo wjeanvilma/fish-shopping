@@ -39,9 +39,16 @@ describe("Phase 13 item art", () => {
       expect(asset.generator, row.id).toContain("generate_item_art");
       const extras = gltf.extras as { stylized?: boolean; phase?: number; fishArt?: string } | undefined;
       expect(extras?.stylized, row.id).toBe(true);
-      expect([13, 20]).toContain(extras?.phase);
+      expect([10, 13, 20]).toContain(extras?.phase);
       if (extras?.phase === 20) {
         expect(extras.fishArt, row.id).toBe("authored-phase-20");
+      }
+      if (extras?.phase === 10) {
+        expect(
+          (extras as { productArt?: string }).productArt ??
+            (extras as { cosmeticArt?: string }).cosmeticArt,
+          row.id,
+        ).toBeTruthy();
       }
       const accessors = gltf.accessors as { count: number }[];
       expect(accessors[0].count, row.id).toBeGreaterThan(24);

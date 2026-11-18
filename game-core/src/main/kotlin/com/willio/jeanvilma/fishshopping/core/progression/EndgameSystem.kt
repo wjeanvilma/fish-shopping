@@ -28,7 +28,8 @@ object EndgameSystem {
     fun tierRequirementsMet(s: GameState, tier: EndgameTierDef): Boolean =
         s.completedPrestige.size >= tier.requiresPrestigeCount &&
             s.beatenRivalIds.size >= tier.requiresRivalBeats &&
-            s.completedEndgameChallenges.size >= tier.requiresChallenges
+            s.completedEndgameChallenges.size >= tier.requiresChallenges &&
+            s.endgameMarks.size >= tier.requiresMarks
 
     fun step(ctx: StepContext) {
         if (!boardUnlocked(ctx.content, ctx.state)) return
@@ -57,6 +58,11 @@ object EndgameSystem {
         val s = ctx.state
         s.completedEndgameChallenges += ch.id
         s.bumpStat(Stats.ENDGAME_CHALLENGES_COMPLETED)
+        val mark = ch.grantsMark
+        if (mark != null && mark !in s.endgameMarks) {
+            s.endgameMarks += mark
+            s.bumpStat(Stats.ENDGAME_MARKS_EARNED)
+        }
         if (ch.rewardCoins > 0L) {
             s.coins = SafeMath.creditCoins(s.coins, ch.rewardCoins)
             s.record(

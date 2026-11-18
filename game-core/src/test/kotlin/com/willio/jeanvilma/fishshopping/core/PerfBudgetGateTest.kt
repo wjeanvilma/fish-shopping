@@ -81,6 +81,8 @@ class PerfBudgetGateTest {
 
         val androidFt = File(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/render/FrameTiming.kt").readText()
         assertTrue(androidFt.contains("33.3"))
-        assertTrue(androidFt.contains("FRAME_DOWNGRADE_STREAK = 45"))
+        // Finish 4.0 Phase 27 soft-floor (was 45).
+        assertTrue(androidFt.contains("FRAME_DOWNGRADE_STREAK = 40"))
+        assertTrue(androidFt.contains("FRAME_UPGRADE_STREAK = 60"))
     }
 }

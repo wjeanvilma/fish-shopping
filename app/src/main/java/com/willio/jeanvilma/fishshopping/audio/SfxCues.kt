@@ -7,6 +7,7 @@ import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
  * Hosts map events → cue; [AudioBus] plays authored clips (or stays silent when muted).
  * Finish 2.0 Phase 21 adds achievement/festival/contract/goal/mastery/quest stingers.
  * Finish 3.0 Phase 23 adds rival/travel/hire/prestige/loan/trophy stingers.
+ * Finish 4.0 Phase 23 adds decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers.
  */
 enum class SfxCue {
     CATCH,
@@ -31,33 +32,19 @@ enum class SfxCue {
     PRESTIGE,
     LOAN,
     TROPHY_SET,
+    DECOR,
+    COSMETIC,
+    ENDGAME_TIER,
+    ENDGAME_CHALLENGE,
+    CONTRACT_ACCEPT,
+    BAIT,
+    FULL_UNLOCK,
+    MACHINE_BREAK,
+    SPOIL,
     ;
 
     /** Android `res/raw` name without extension (sfx_catch, …). */
-    fun androidRawName(): String = when (this) {
-        CATCH -> "sfx_catch"
-        MACHINE_DONE -> "sfx_machine_done"
-        SALE -> "sfx_sale"
-        UI -> "sfx_ui"
-        ABANDON -> "sfx_abandon"
-        UPGRADE -> "sfx_upgrade"
-        RUSH -> "sfx_rush"
-        ACHIEVEMENT -> "sfx_achievement"
-        FESTIVAL -> "sfx_festival"
-        CONTRACT_DONE -> "sfx_contract_done"
-        CONTRACT_FAIL -> "sfx_contract_fail"
-        GOAL_CLAIM -> "sfx_goal_claim"
-        MASTERY_UP -> "sfx_mastery_up"
-        QUEST_DONE -> "sfx_quest_done"
-        RIVAL_OPEN -> "sfx_rival_open"
-        RIVAL_STEAL -> "sfx_rival_steal"
-        RIVAL_BEAT -> "sfx_rival_beat"
-        HARBOR_TRAVEL -> "sfx_harbor_travel"
-        HIRE -> "sfx_hire"
-        PRESTIGE -> "sfx_prestige"
-        LOAN -> "sfx_loan"
-        TROPHY_SET -> "sfx_trophy_set"
-    }
+    fun androidRawName(): String = "sfx_" + catalogId()
 
     fun catalogId(): String = when (this) {
         CATCH -> "catch"
@@ -82,6 +69,15 @@ enum class SfxCue {
         PRESTIGE -> "prestige"
         LOAN -> "loan"
         TROPHY_SET -> "trophy_set"
+        DECOR -> "decor"
+        COSMETIC -> "cosmetic"
+        ENDGAME_TIER -> "endgame_tier"
+        ENDGAME_CHALLENGE -> "endgame_challenge"
+        CONTRACT_ACCEPT -> "contract_accept"
+        BAIT -> "bait"
+        FULL_UNLOCK -> "full_unlock"
+        MACHINE_BREAK -> "machine_break"
+        SPOIL -> "spoil"
     }
 }
 
@@ -92,7 +88,11 @@ fun SfxCue.wantsHaptic(): Boolean =
         this == SfxCue.ACHIEVEMENT ||
         this == SfxCue.RIVAL_BEAT ||
         this == SfxCue.PRESTIGE ||
-        this == SfxCue.TROPHY_SET
+        this == SfxCue.TROPHY_SET ||
+        this == SfxCue.COSMETIC ||
+        this == SfxCue.ENDGAME_TIER ||
+        this == SfxCue.ENDGAME_CHALLENGE ||
+        this == SfxCue.FULL_UNLOCK
 
 fun sfxFromEvent(e: GameEvent): SfxCue? = when (e) {
     is GameEvent.FishCaught -> SfxCue.CATCH
@@ -116,5 +116,14 @@ fun sfxFromEvent(e: GameEvent): SfxCue? = when (e) {
     is GameEvent.PrestigeUnlocked -> SfxCue.PRESTIGE
     is GameEvent.LoanTaken -> if (e.replayed) null else SfxCue.LOAN
     is GameEvent.TrophySetCompleted -> SfxCue.TROPHY_SET
+    is GameEvent.DecorPurchased -> if (e.replayed) null else SfxCue.DECOR
+    is GameEvent.IapCosmeticGranted -> if (e.replayed) null else SfxCue.COSMETIC
+    is GameEvent.EndgameTierUnlocked -> SfxCue.ENDGAME_TIER
+    is GameEvent.EndgameChallengeCompleted -> SfxCue.ENDGAME_CHALLENGE
+    is GameEvent.ContractAccepted -> if (e.replayed) null else SfxCue.CONTRACT_ACCEPT
+    is GameEvent.BaitPurchased -> if (e.replayed) null else SfxCue.BAIT
+    is GameEvent.FullHarborUnlockGranted -> if (e.replayed) null else SfxCue.FULL_UNLOCK
+    is GameEvent.MachineBroke -> SfxCue.MACHINE_BREAK
+    is GameEvent.ItemsSpoiled -> SfxCue.SPOIL
     else -> null
 }

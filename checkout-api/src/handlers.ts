@@ -140,4 +140,5 @@ export const ROUTE_PATHS = {
   entitlements: BILLING_API.entitlements.path,
   fulfill: BILLING_API.fulfill.path,
   stripeWebhook: "/v1/stripe/webhook",
+  opsReadiness: "/v1/ops/readiness",
 } as const;

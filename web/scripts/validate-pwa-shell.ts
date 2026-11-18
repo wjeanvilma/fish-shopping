@@ -60,7 +60,7 @@ async function validate(): Promise<string[]> {
   if (fixture.pwaShellMarker !== PWA_SHELL_MARKER) errors.push("fixture marker mismatch");
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
   if (catalog.schemaVersion !== 24) errors.push("catalog schemaVersion must stay 24");
-  if (SCHEMA_VERSION !== 24) errors.push("engine SCHEMA_VERSION must stay 24");
+  if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
   if (catalog.closesGap !== "pwaMissing") errors.push("closesGap mismatch");
   if (PWA_CLOSES_GAP !== "pwaMissing") errors.push("closesGap mirror mismatch");
   if (PWA_SW_SCRIPT !== "./sw.js") errors.push("PWA_SW_SCRIPT must be ./sw.js");
@@ -70,7 +70,7 @@ async function validate(): Promise<string[]> {
   if (policy.offlineFallback !== "offline.html") errors.push("policy offlineFallback mismatch");
 
   const measure = measurePwaShell(root);
-  if (measure.schemaVersion !== 24) errors.push("measure schemaVersion must be 24");
+  if (measure.schemaVersion < 24) errors.push("measure schemaVersion must be >= 24");
   if (!measure.swPresent) errors.push("sw.js missing required shell symbols");
   if (!measure.offlinePresent) errors.push("offline.html incomplete");
   if (!measure.manifestStandalone) errors.push("manifest must be standalone with icons");

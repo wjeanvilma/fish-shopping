@@ -7,9 +7,13 @@ import {
   enqueueRemoteEvent,
   normalizeAnalyticsBaseUrl,
   remoteBatchUrl,
+  requeueRemoteFlushSlice,
   REMOTE_FLUSH_INTERVAL_MS,
+  REMOTE_MAX_FLUSH_RETRIES,
+  REMOTE_REQUEUE_ON_FLUSH_FAILURE,
+  REMOTE_RETRY_BACKOFF_MS,
   REMOTE_ANALYTICS_POLICY,
-  takeRemoteFlushSlice,
+  takeRemoteFlushSliceDetailed,
   type QueuedRemoteEvent,
   type RemoteBatchEnvelope,
 } from "../engine/remoteAnalytics";
@@ -45,6 +49,8 @@ export class RemoteAnalyticsSink implements AnalyticsTrackSink {
   private lastFlushOk = true;
   private batchesSent = 0;
   private eventsAccepted = 0;
+  private flushFailures = 0;
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(opts: {
     baseUrl?: string | null;
@@ -85,23 +91,45 @@ export class RemoteAnalyticsSink implements AnalyticsTrackSink {
   async flush(): Promise<boolean> {
     if (!this.baseUrl || this.flushing || this.queue.length === 0) return true;
     this.flushing = true;
+    let taken: QueuedRemoteEvent[] = [];
     try {
-      const envelope = takeRemoteFlushSlice(this.queue, this.nowMs(), this.platform);
-      if (!envelope) return true;
-      const result = await this.poster(remoteBatchUrl(this.baseUrl), envelope);
+      const slice = takeRemoteFlushSliceDetailed(this.queue, this.nowMs(), this.platform);
+      if (!slice) return true;
+      taken = slice.taken;
+      const result = await this.poster(remoteBatchUrl(this.baseUrl), slice.envelope);
       this.lastFlushOk = result.ok;
       if (result.ok) {
         this.batchesSent += 1;
+        this.flushFailures = 0;
         return true;
       }
-      // Fail closed: drop the attempted slice (already removed); do not crash.
+      // Finish 4.0 Phase 21 — requeue failed slice and schedule retry.
+      if (REMOTE_REQUEUE_ON_FLUSH_FAILURE) {
+        requeueRemoteFlushSlice(this.queue, taken);
+        this.scheduleRetry();
+      }
       return false;
     } catch {
       this.lastFlushOk = false;
+      if (REMOTE_REQUEUE_ON_FLUSH_FAILURE && taken.length > 0) {
+        requeueRemoteFlushSlice(this.queue, taken);
+        this.scheduleRetry();
+      }
       return false;
     } finally {
       this.flushing = false;
     }
+  }
+
+  private scheduleRetry(): void {
+    if (this.flushFailures >= REMOTE_MAX_FLUSH_RETRIES) return;
+    if (this.retryTimer) return;
+    this.flushFailures += 1;
+    const delay = REMOTE_RETRY_BACKOFF_MS * this.flushFailures;
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      void this.flush();
+    }, delay);
   }
 
   async onSessionEnd(): Promise<void> {
@@ -116,14 +144,25 @@ export class RemoteAnalyticsSink implements AnalyticsTrackSink {
       clearInterval(this.timer);
       this.timer = null;
     }
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
   }
 
-  stats(): { queued: number; batchesSent: number; eventsAccepted: number; lastFlushOk: boolean } {
+  stats(): {
+    queued: number;
+    batchesSent: number;
+    eventsAccepted: number;
+    lastFlushOk: boolean;
+    flushFailures: number;
+  } {
     return {
       queued: this.queue.length,
       batchesSent: this.batchesSent,
       eventsAccepted: this.eventsAccepted,
       lastFlushOk: this.lastFlushOk,
+      flushFailures: this.flushFailures,
     };
   }
 }

@@ -125,6 +125,7 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
     beatenRivalIds: [...s.beatenRivalIds].sort(compareStrings),
     unlockedEndgameTiers: [...s.unlockedEndgameTiers].sort(compareStrings),
     completedEndgameChallenges: [...s.completedEndgameChallenges].sort(compareStrings),
+    endgameMarks: [...s.endgameMarks].sort(compareStrings),
     unlockedCosmetics: [...s.unlockedCosmetics].sort(compareStrings),
     ownedDecor: [...s.ownedDecor].sort(compareStrings),
     fullHarborUnlock: s.fullHarborUnlock,
@@ -233,6 +234,7 @@ export function decodeSnapshotEnvelope(content: ContentPack, text: string): Deco
  *  - v21 -> v22: speciesMasteryXp + activeTechniqueId (Finish 2.0 Phase 14 fishing mastery).
  *  - v22 -> v23: worker activeBranchId / unlockedBranchIds / branchTrainingXp / scheduleId (Phase 15).
  *  - v23 -> v24: beatenRivalIds + unlockedEndgameTiers + completedEndgameChallenges (Finish 3.0 Phase 15).
+ *  - v24 -> v25: endgameMarks (Finish 4.0 Phase 17 endgame deepen).
  */
 function readState(content: ContentPack, n: Reader, version: number): GameState {
   const harborId = n.get("harborId").string();
@@ -435,6 +437,11 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
     n.get("completedEndgameChallenges").list().map((x) => x.string())
       .filter((id) => content.endgameChallengesById.has(id))
       .forEach((id) => s.completedEndgameChallenges.add(id));
+  }
+  if (version >= 25) {
+    n.get("endgameMarks").list().map((x) => x.string())
+      .filter((id) => id.startsWith("endgame.mark."))
+      .forEach((id) => s.endgameMarks.add(id));
   }
   if (version >= 16) {
     n.get("ownedDecor").list().map((x) => x.string()).filter((id) => content.decorById.has(id))

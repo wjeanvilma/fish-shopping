@@ -1,16 +1,20 @@
 """
-Finish 2.0 Phase 19 + Finish 3.0 Phase 8 — authored low-poly harbor theme props + palettes.
+Finish 2.0 Phase 19 + Finish 3.0 Phase 8 + Finish 4.0 Phase 9/12 — authored harbor
+theme props + scenic pass beyond grey-box blockout density.
 
 Each theme adds distinct decorative meshes (HarborArt_* nodes) and palette
-overrides so all 8 harbor GLBs are visibly authored while keeping presenter
-socket names unchanged.
+overrides so all harbor GLBs are visibly authored while keeping presenter
+socket names unchanged. Phase 9 raises prop density / scenic accents so
+scenes are no longer mere blockouts. Phase 12 adds Mist Cove + Prism Reach.
 """
 from __future__ import annotations
 
 from glb_geometry import add_box, mesh_bounds
 
-HARBOR_ART_MARKER = "authored-phase-19"
-HARBOR_ART_MIN = 8
+HARBOR_ART_MARKER = "authored-finish-4.0-phase-9"
+HARBOR_ART_MIN = 10
+HARBOR_SCENIC_MARKER = "harbor-art-3"
+HARBOR_SCENIC_MIN_NODES = 10
 
 # Harbor id suffix → theme key (content-pack harbor.id after "harbor.").
 AUTHORED_THEMES = {
@@ -22,6 +26,8 @@ AUTHORED_THEMES = {
     "northlight_harbor": "northlight",
     "grand_marina": "marina",
     "ember_wharf": "ember",
+    "mist_cove": "mist",
+    "prism_reach": "prism",
 }
 
 
@@ -205,6 +211,81 @@ def prop_ash_crate():
     return _finish_prop(pos, nrm, idx)
 
 
+def prop_market_stall():
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.45, 0.0), (1.20, 0.90, 0.70))
+    add_box(pos, nrm, idx, (0.0, 1.05, 0.0), (1.35, 0.10, 0.85))
+    add_box(pos, nrm, idx, (0.0, 1.25, 0.0), (1.40, 0.35, 0.90))
+    add_box(pos, nrm, idx, (-0.55, 0.70, 0.38), (0.08, 1.20, 0.08))
+    add_box(pos, nrm, idx, (0.55, 0.70, 0.38), (0.08, 1.20, 0.08))
+    add_box(pos, nrm, idx, (0.0, 0.55, 0.40), (0.90, 0.08, 0.35))
+    return _finish_prop(pos, nrm, idx)
+
+
+def prop_canopy():
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (-0.55, 0.70, 0.0), (0.08, 1.40, 0.08))
+    add_box(pos, nrm, idx, (0.55, 0.70, 0.0), (0.08, 1.40, 0.08))
+    add_box(pos, nrm, idx, (0.0, 1.45, 0.0), (1.40, 0.08, 0.90))
+    add_box(pos, nrm, idx, (0.0, 1.55, 0.0), (1.50, 0.18, 1.00))
+    return _finish_prop(pos, nrm, idx)
+
+
+def prop_crate_stack():
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.20, 0.0), (0.55, 0.35, 0.45))
+    add_box(pos, nrm, idx, (0.05, 0.50, 0.05), (0.50, 0.30, 0.40))
+    add_box(pos, nrm, idx, (-0.05, 0.78, -0.04), (0.45, 0.28, 0.38))
+    return _finish_prop(pos, nrm, idx)
+
+
+def prop_dock_ladder():
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (-0.18, 0.55, 0.0), (0.06, 1.10, 0.06))
+    add_box(pos, nrm, idx, (0.18, 0.55, 0.0), (0.06, 1.10, 0.06))
+    for y in (0.20, 0.45, 0.70, 0.95):
+        add_box(pos, nrm, idx, (0.0, y, 0.0), (0.42, 0.05, 0.05))
+    return _finish_prop(pos, nrm, idx)
+
+
+def prop_signal_bell():
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.70, 0.0), (0.08, 1.40, 0.08))
+    add_box(pos, nrm, idx, (0.0, 1.45, 0.0), (0.35, 0.08, 0.08))
+    add_box(pos, nrm, idx, (0.22, 1.30, 0.0), (0.22, 0.22, 0.22))
+    add_box(pos, nrm, idx, (0.22, 1.15, 0.0), (0.12, 0.12, 0.12))
+    return _finish_prop(pos, nrm, idx)
+
+
+def prop_kelp_cluster():
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (-0.12, 0.40, 0.0), (0.10, 0.80, 0.10))
+    add_box(pos, nrm, idx, (0.10, 0.50, 0.08), (0.09, 1.00, 0.09))
+    add_box(pos, nrm, idx, (0.0, 0.55, -0.10), (0.08, 1.10, 0.08))
+    add_box(pos, nrm, idx, (0.18, 0.35, -0.05), (0.08, 0.70, 0.08))
+    return _finish_prop(pos, nrm, idx)
+
+
+def prop_crane_arm():
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.90, 0.0), (0.14, 1.80, 0.14))
+    add_box(pos, nrm, idx, (0.55, 1.70, 0.0), (1.10, 0.12, 0.12))
+    add_box(pos, nrm, idx, (1.05, 1.40, 0.0), (0.08, 0.55, 0.08))
+    add_box(pos, nrm, idx, (1.05, 1.10, 0.0), (0.22, 0.18, 0.22))
+    add_box(pos, nrm, idx, (0.0, 0.10, 0.0), (0.45, 0.16, 0.45))
+    return _finish_prop(pos, nrm, idx)
+
+
+def prop_tide_gauge():
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.70, 0.0), (0.10, 1.40, 0.10))
+    add_box(pos, nrm, idx, (0.12, 0.90, 0.0), (0.18, 0.08, 0.04))
+    add_box(pos, nrm, idx, (0.12, 0.60, 0.0), (0.18, 0.08, 0.04))
+    add_box(pos, nrm, idx, (0.12, 0.30, 0.0), (0.18, 0.08, 0.04))
+    add_box(pos, nrm, idx, (0.0, 1.45, 0.0), (0.22, 0.12, 0.22))
+    return _finish_prop(pos, nrm, idx)
+
+
 HARBOR_ART_BUILDERS = {
     "art_lantern": prop_lantern,
     "art_buoy": prop_buoy,
@@ -226,6 +307,14 @@ HARBOR_ART_BUILDERS = {
     "art_planter": prop_planter,
     "art_brazier": prop_brazier,
     "art_ash_crate": prop_ash_crate,
+    "art_market_stall": prop_market_stall,
+    "art_canopy": prop_canopy,
+    "art_crate_stack": prop_crate_stack,
+    "art_dock_ladder": prop_dock_ladder,
+    "art_signal_bell": prop_signal_bell,
+    "art_kelp_cluster": prop_kelp_cluster,
+    "art_crane_arm": prop_crane_arm,
+    "art_tide_gauge": prop_tide_gauge,
 }
 
 HARBOR_ART_COLORS = {
@@ -249,9 +338,18 @@ HARBOR_ART_COLORS = {
     "art_planter": "#5A8A4A",
     "art_brazier": "#E07030",
     "art_ash_crate": "#5A4A40",
+    "art_market_stall": "#C4A070",
+    "art_canopy": "#D4543A",
+    "art_crate_stack": "#8B6914",
+    "art_dock_ladder": "#6A7380",
+    "art_signal_bell": "#C4A35A",
+    "art_kelp_cluster": "#3FA76A",
+    "art_crane_arm": "#5A6670",
+    "art_tide_gauge": "#7A8590",
 }
 
 # Theme → list of (mesh_key, world xyz metres, uniform scale).
+# Phase 9 scenic pass appends market/canopy/crane/ladder accents beyond blockout density.
 THEME_PLACEMENTS = {
     "sunrise": [
         ("art_lantern", (-6.5, 0.0, 1.2), 1.0),
@@ -260,6 +358,11 @@ THEME_PLACEMENTS = {
         ("art_bait_shed", (5.5, 0.0, -5.5), 1.2),
         ("art_buoy", (-14.0, -0.2, 2.5), 0.9),
         ("art_buoy", (-15.5, -0.2, -1.8), 0.85),
+        ("art_market_stall", (7.5, 0.0, 1.5), 1.15),
+        ("art_canopy", (1.0, 0.0, -4.0), 1.1),
+        ("art_crate_stack", (4.0, 0.0, 2.8), 1.0),
+        ("art_dock_ladder", (-13.0, -0.1, 0.5), 1.05),
+        ("art_signal_bell", (-4.0, 0.0, -2.0), 0.95),
     ],
     "coral": [
         ("art_coral_stack", (-8.0, -0.4, 3.0), 1.3),
@@ -269,6 +372,11 @@ THEME_PLACEMENTS = {
         ("art_buoy", (-6.0, -0.15, 4.0), 0.8),
         ("art_buoy", (1.5, -0.15, 5.0), 0.75),
         ("art_lantern", (3.0, 0.0, -3.5), 0.95),
+        ("art_kelp_cluster", (-10.5, -0.45, 1.5), 1.2),
+        ("art_kelp_cluster", (-4.5, -0.4, 5.0), 1.05),
+        ("art_canopy", (6.0, 0.0, -1.5), 1.0),
+        ("art_crate_stack", (2.0, 0.0, -4.5), 0.95),
+        ("art_dock_ladder", (-14.0, -0.2, 2.5), 1.0),
     ],
     "storm": [
         ("art_breakwater", (-16.0, -0.2, 4.0), 1.5),
@@ -278,6 +386,11 @@ THEME_PLACEMENTS = {
         ("art_storm_lamp", (6.0, 0.0, -2.5), 1.05),
         ("art_wind_vane", (10.5, 0.0, -3.0), 1.2),
         ("art_buoy", (-14.5, -0.25, 5.5), 0.9),
+        ("art_crane_arm", (8.5, 0.0, 2.0), 1.15),
+        ("art_tide_gauge", (-3.0, 0.0, -3.5), 1.05),
+        ("art_crate_stack", (3.5, 0.0, 1.5), 1.1),
+        ("art_signal_bell", (-8.0, 0.0, -1.0), 1.0),
+        ("art_dock_ladder", (-15.0, -0.15, 2.0), 1.05),
     ],
     "moon": [
         ("art_moon_lantern", (-7.0, 0.0, 2.0), 1.1),
@@ -287,6 +400,11 @@ THEME_PLACEMENTS = {
         ("art_cove_rock", (-16.5, -0.25, -2.0), 1.2),
         ("art_buoy", (-9.0, -0.2, 4.0), 0.85),
         ("art_bench", (2.0, 0.0, 1.5), 1.0),
+        ("art_kelp_cluster", (-13.5, -0.35, 1.0), 1.15),
+        ("art_canopy", (6.5, 0.0, 0.5), 1.05),
+        ("art_crate_stack", (0.5, 0.0, -3.5), 1.0),
+        ("art_tide_gauge", (-4.5, 0.0, -2.5), 0.95),
+        ("art_dock_ladder", (-14.5, -0.2, -0.5), 1.0),
     ],
     "obsidian": [
         ("art_obsidian_pylon", (-8.0, 0.0, 2.5), 1.2),
@@ -296,6 +414,11 @@ THEME_PLACEMENTS = {
         ("art_basalt_stack", (-17.0, -0.2, -3.5), 1.35),
         ("art_storm_lamp", (8.0, 0.0, 1.0), 1.0),
         ("art_buoy", (-14.0, -0.25, 4.5), 0.9),
+        ("art_crane_arm", (9.5, 0.0, -1.5), 1.1),
+        ("art_crate_stack", (2.5, 0.0, 2.0), 1.05),
+        ("art_signal_bell", (-5.5, 0.0, -2.5), 1.0),
+        ("art_tide_gauge", (-10.0, 0.0, 1.5), 0.95),
+        ("art_dock_ladder", (-15.5, -0.2, 3.0), 1.05),
     ],
     "northlight": [
         ("art_aurora_pole", (-6.0, 0.0, 2.0), 1.15),
@@ -305,6 +428,11 @@ THEME_PLACEMENTS = {
         ("art_ice_marker", (-16.0, -0.1, -2.5), 1.2),
         ("art_ice_marker", (3.0, -0.05, 4.0), 1.0),
         ("art_buoy", (-9.5, -0.2, 4.5), 0.8),
+        ("art_canopy", (7.0, 0.0, 1.0), 1.05),
+        ("art_crate_stack", (1.5, 0.0, -3.0), 1.0),
+        ("art_signal_bell", (-3.5, 0.0, -2.0), 0.95),
+        ("art_tide_gauge", (8.5, 0.0, -1.5), 1.0),
+        ("art_dock_ladder", (-14.0, -0.15, 1.0), 1.05),
     ],
     "marina": [
         ("art_bollard", (-5.0, 0.0, 2.0), 1.1),
@@ -314,6 +442,11 @@ THEME_PLACEMENTS = {
         ("art_flagpole", (-12.0, 0.0, 1.0), 1.1),
         ("art_planter", (2.5, 0.0, 2.5), 1.2),
         ("art_planter", (6.0, 0.0, 2.0), 1.1),
+        ("art_market_stall", (-2.0, 0.0, -4.0), 1.15),
+        ("art_canopy", (9.5, 0.0, 1.5), 1.05),
+        ("art_crane_arm", (-14.0, 0.0, -2.5), 1.1),
+        ("art_crate_stack", (0.5, 0.0, 3.0), 1.0),
+        ("art_signal_bell", (5.0, 0.0, -3.5), 0.95),
     ],
     "ember": [
         ("art_brazier", (-6.5, 0.0, 1.5), 1.15),
@@ -323,6 +456,39 @@ THEME_PLACEMENTS = {
         ("art_ash_crate", (7.0, 0.0, -3.0), 1.1),
         ("art_lantern", (-9.0, 0.0, 2.5), 0.95),
         ("art_buoy", (-14.5, -0.2, 3.5), 0.85),
+        ("art_market_stall", (1.5, 0.0, -4.5), 1.1),
+        ("art_crate_stack", (-3.0, 0.0, 2.8), 1.05),
+        ("art_crane_arm", (9.0, 0.0, 0.5), 1.1),
+        ("art_signal_bell", (-8.5, 0.0, -3.0), 1.0),
+        ("art_dock_ladder", (-15.0, -0.15, 1.5), 1.05),
+    ],
+    "mist": [
+        ("art_lantern", (-7.0, 0.0, 2.0), 1.05),
+        ("art_lantern", (4.5, 0.0, -2.5), 1.0),
+        ("art_kelp_cluster", (-14.0, -0.35, 1.5), 1.2),
+        ("art_kelp_cluster", (-15.5, -0.35, -2.0), 1.1),
+        ("art_buoy", (-12.0, -0.25, 4.0), 0.9),
+        ("art_bench", (2.5, 0.0, 1.8), 1.05),
+        ("art_canopy", (7.0, 0.0, 0.5), 1.1),
+        ("art_crate_stack", (0.5, 0.0, -3.2), 1.0),
+        ("art_tide_gauge", (-4.0, 0.0, -2.2), 0.95),
+        ("art_dock_ladder", (-15.0, -0.2, -0.5), 1.0),
+        ("art_bait_shed", (5.5, 0.0, -4.0), 1.05),
+        ("art_signal_bell", (-8.0, 0.0, 1.0), 0.95),
+    ],
+    "prism": [
+        ("art_aurora_pole", (-6.5, 0.0, 2.2), 1.2),
+        ("art_aurora_pole", (5.0, 0.0, -2.0), 1.15),
+        ("art_aurora_pole", (-11.5, 0.0, -1.2), 1.1),
+        ("art_ice_marker", (-15.5, -0.1, 2.5), 1.25),
+        ("art_ice_marker", (3.5, -0.05, 3.5), 1.05),
+        ("art_planter", (2.0, 0.0, 2.2), 1.15),
+        ("art_flagpole", (8.5, 0.0, -1.5), 1.1),
+        ("art_canopy", (7.5, 0.0, 1.2), 1.05),
+        ("art_crate_stack", (1.0, 0.0, -3.5), 1.0),
+        ("art_signal_bell", (-3.0, 0.0, -2.5), 0.95),
+        ("art_tide_gauge", (9.0, 0.0, -2.0), 1.0),
+        ("art_dock_ladder", (-14.5, -0.15, 1.2), 1.05),
     ],
 }
 
@@ -373,6 +539,18 @@ THEME_PALETTE = {
         "pier": "#A07050",
         "ground": "#6A5040",
         "zone_fishing": "#E08050",
+    },
+    "mist": {
+        "water": "#4A7088",
+        "pier": "#9AA8B0",
+        "ground": "#6A7880",
+        "zone_fishing": "#8AB0C0",
+    },
+    "prism": {
+        "water": "#3A78A8",
+        "pier": "#D0C8E0",
+        "ground": "#90A8C0",
+        "zone_fishing": "#70E0D8",
     },
 }
 

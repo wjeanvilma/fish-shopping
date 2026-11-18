@@ -39,19 +39,19 @@ function validate(): string[] {
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (SPECIES_CODEX_PHASE !== 12) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 21) errors.push("schemaVersion must be 21");
-  if (catalog.codexEntryCount !== 75 || CODEX_ENTRY_FLOOR !== 75) {
-    errors.push("codexEntryCount must be 75");
+  if (catalog.codexEntryCount !== 100 || CODEX_ENTRY_FLOOR !== 100) {
+    errors.push("codexEntryCount must be 100");
   }
   if (catalog.familyCount !== 9) errors.push("familyCount must be 9");
-  if ((dod.quotas?.codexEntries ?? 0) < 75) {
-    errors.push("DoD quotas.codexEntries must be ≥ 75");
+  if ((dod.quotas?.codexEntries ?? 0) < 100) {
+    errors.push("DoD quotas.codexEntries must be ≥ 100");
   }
   if (!Array.isArray(dod.screensPresent) || !dod.screensPresent.includes("species_journal")) {
     errors.push("DoD screensPresent must include species_journal");
   }
-  if (content.species.length !== 75) errors.push(`species ${content.species.length} ≠ 75`);
-  if (content.codex.entries.length !== 75) {
-    errors.push(`codex entries ${content.codex.entries.length} ≠ 75`);
+  if (content.species.length !== 100) errors.push(`species ${content.species.length} ≠ 100`);
+  if (content.codex.entries.length !== 100) {
+    errors.push(`codex entries ${content.codex.entries.length} ≠ 100`);
   }
   if (content.codex.families.length !== 9) {
     errors.push(`codex families ${content.codex.families.length} ≠ 9`);
@@ -76,7 +76,7 @@ function validate(): string[] {
     if (!content.codexBySpeciesId.has(sp.id)) errors.push(`missing codex for ${sp.id}`);
   }
 
-  if (fixture.expect?.total !== 75) errors.push("fixture expect.total must be 75");
+  if (fixture.expect?.total !== 100) errors.push("fixture expect.total must be 100");
   if (fixture.expect?.familyCount !== 9) errors.push("fixture expect.familyCount must be 9");
   if (fixture.expect?.sprat?.family !== "pier") errors.push("fixture sprat family must be pier");
 

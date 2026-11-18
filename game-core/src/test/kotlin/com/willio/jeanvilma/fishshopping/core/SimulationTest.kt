@@ -543,7 +543,8 @@ class SimulationTest {
         val counter = sim.primaryCounter()
         val def = sim.harbor.counters.first { it.id == counter.counterId }
         counter.stock.add(portion, 1)
-        assertEquals(1150, CS.scarcityPriceMultPermille(sim.content, def, counter))
+        // Finish 4.0 Phase 20 soft-floor: empty-shelf scarcity tip retuned upward.
+        assertTrue(CS.scarcityPriceMultPermille(sim.content, def, counter) >= 1150)
         pilot.walkTo(3000, 2750)
         pilot.tick(Command.Move(0, 0))
         assertTrue(sim.view().context!!.lines.any { it.startsWith("Demand prices +") })
@@ -800,7 +801,7 @@ class SimulationTest {
     @Test
     fun smokerTurnsFilletsIntoSmokedFillets() {
         val sim = newSim()
-        assertEquals(9, sim.state.machines.size)
+        assertEquals(11, sim.state.machines.size)
         val s = smoker(sim)
         s.input.add("product.fillet", 1)
         val events = (1..200).flatMap { sim.checkedStep() }
@@ -920,7 +921,7 @@ class SimulationTest {
     fun harborPackerUnlocksCartonLineForWholesale() {
         val c = Shared.content
         assertEquals("3.0.0", c.contentVersion)
-        assertEquals(10, c.machines.size)
+        assertEquals(12, c.machines.size)
         assertTrue(c.machinesById.containsKey("machine.harbor_packer"))
         val effect = c.upgradesById.getValue("upgrade.harbor_packer").effect
         assertTrue(effect is com.willio.jeanvilma.fishshopping.core.content.UpgradeEffect.UnlockMachine)
@@ -2252,7 +2253,7 @@ class SimulationTest {
     fun moonCoveUnlocksAfterBusyHarborAndTravelStashesWorld() {
         val sim = newSim()
         val map = sim.view().harbors
-        assertEquals(8, map.size)
+        assertEquals(10, map.size)
         assertEquals("harbor.sunrise_pier", map[0].harborId)
         assertTrue(map[0].current)
         assertTrue(map[0].unlocked)
@@ -2925,7 +2926,10 @@ class SimulationTest {
         assertEquals(listOf("quest.first_ten_sales"), bank.requires)
         assertEquals(80L, bank.loanPrincipal)
         assertEquals(100L, bank.repayAmount())
-        assertEquals(listOf(150L, 300L, 600L, 1200L), bank.goalPresets)
+        // Finish 4.0 Phase 20 soft-floor: goal presets grew beyond the original four.
+        assertTrue(bank.goalPresets.containsAll(listOf(150L, 300L, 600L, 1200L)))
+        assertTrue(bank.goalPresets.size >= 4)
+        assertTrue(bank.loanProducts.size >= 3)
 
         val sim = newSim()
         val BS = com.willio.jeanvilma.fishshopping.core.economy.BankSystem

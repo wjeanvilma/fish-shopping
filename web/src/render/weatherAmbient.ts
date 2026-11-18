@@ -1,6 +1,7 @@
 /**
  * Finish 2.0 Phase 22 — weather ambient profiles for harbor presentation.
  * Finish 3.0 Phase 24 adds tide + rival ambient mixes (still not burst-pool).
+ * Finish 4.0 Phase 23 adds endgame ambient modes (still not burst-pool).
  * Presentation-only; does not consume the VfxBurst pool or change 20 Hz sim.
  */
 import type { PresenterQuality } from "./presenters";
@@ -14,6 +15,7 @@ export type WeatherAmbientId =
   | "default";
 
 export type TideAmbientId = "dawn" | "day" | "dusk" | "night";
+export type EndgameAmbientId = "locked" | "active" | "crowned";
 
 export interface WeatherAmbientProfile {
   id: WeatherAmbientId;
@@ -102,6 +104,23 @@ export const WEATHER_AMBIENT_PATTERN_IDS = [
 ] as const;
 
 export const TIDE_AMBIENT_PHASE_IDS: readonly TideAmbientId[] = ["dawn", "day", "dusk", "night"];
+export const ENDGAME_AMBIENT_MODE_IDS: readonly EndgameAmbientId[] = ["locked", "active", "crowned"];
+
+/** Endgame sky/water tint targets (Finish 4.0 Phase 23). */
+const ENDGAME_MIX: Record<EndgameAmbientId, { sky: string; water: string; amount: number }> = {
+  locked: { sky: "#9fd3ea", water: "#1a5f7a", amount: 0.0 },
+  active: { sky: "#c8a060", water: "#3a5068", amount: 0.16 },
+  crowned: { sky: "#e8c878", water: "#4a6080", amount: 0.24 },
+};
+
+export function endgameAmbientIdForView(
+  endgameUnlocked: boolean,
+  endgameMarkCount: number,
+): EndgameAmbientId {
+  if (!endgameUnlocked) return "locked";
+  if (endgameMarkCount > 0) return "crowned";
+  return "active";
+}
 
 export function weatherAmbientIdForWeatherId(weatherId: string): WeatherAmbientId {
   if (weatherId.includes("gale")) return "gale";
@@ -126,6 +145,7 @@ export function weatherAmbientProfile(
   reducedMotion = false,
   tidePhaseId = "day",
   rivalActive = false,
+  endgameMode: EndgameAmbientId = "locked",
 ): WeatherAmbientProfile {
   const base = { ...PROFILES[weatherAmbientIdForWeatherId(weatherId)] };
   const qScale = quality === "low" ? 0.55 : quality === "medium" ? 0.85 : 1.0;
@@ -145,6 +165,12 @@ export function weatherAmbientProfile(
     base.skyHex = mixHex(base.skyHex, "#8a4068", 0.18 * qScale);
     base.waterDeepHex = mixHex(base.waterDeepHex, "#3a2040", 0.12 * qScale);
   }
+  const endgame = ENDGAME_MIX[endgameMode];
+  if (endgame.amount > 0) {
+    base.skyHex = mixHex(base.skyHex, endgame.sky, endgame.amount * qScale);
+    base.waterDeepHex = mixHex(base.waterDeepHex, endgame.water, endgame.amount * 0.55 * qScale);
+    base.waterShallowHex = mixHex(base.waterShallowHex, endgame.water, endgame.amount * 0.35 * qScale);
+  }
   return base;
 }
 
@@ -155,6 +181,7 @@ export function weatherWaterTintRgb(
   quality: PresenterQuality = "medium",
   tidePhaseId = "day",
   rivalActive = false,
+  endgameMode: EndgameAmbientId = "locked",
 ): { r: number; g: number; b: number; bobScale: number } {
   const p = weatherAmbientProfile(
     weatherId,
@@ -163,6 +190,7 @@ export function weatherWaterTintRgb(
     false,
     tidePhaseId,
     rivalActive,
+    endgameMode,
   );
   const c = hexToRgb(p.waterDeepHex);
   return { r: c.r, g: c.g, b: c.b, bobScale: p.bobScale };

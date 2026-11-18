@@ -59,6 +59,10 @@ export const Stats = {
   SUPERVISOR_PATROLS: "stat.supervisor_patrols",
   GREETER_WELCOMES: "stat.greeter_welcomes",
   ICE_RUNNER_MULTI_PICKUPS: "stat.ice_runner_multi_pickups",
+  /** Finish 4.0 Phase 19 — fisher trophy casts / porter relay pickups / cashier quick tills. */
+  FISHER_TROPHY_CASTS: "stat.fisher_trophy_casts",
+  PORTER_RELAY_PICKUPS: "stat.porter_relay_pickups",
+  CASHIER_QUICK_TILLS: "stat.cashier_quick_tills",
   /** Finish 3.0 Phase 14 — rival NPC market siphon / player beat counters. */
   RIVAL_SALES_STOLEN: "stat.rival_sales_stolen",
   RIVAL_UNDERCUTS: "stat.rival_undercuts",
@@ -66,6 +70,8 @@ export const Stats = {
   /** Finish 3.0 Phase 15 — endgame deepen unlocks. */
   ENDGAME_TIERS_UNLOCKED: "stat.endgame_tiers_unlocked",
   ENDGAME_CHALLENGES_COMPLETED: "stat.endgame_challenges_completed",
+  /** Finish 4.0 Phase 17 — legend marks granted by deepen challenges. */
+  ENDGAME_MARKS_EARNED: "stat.endgame_marks_earned",
   DECOR_BOUGHT: "stat.decor_bought",
   MACHINES_BROKEN: "stat.machines_broken",
   MACHINES_SLOWED: "stat.machines_slowed",
@@ -101,8 +107,9 @@ export const STAT_KEYS: readonly string[] = [
   Stats.PRESTIGE_COMPLETED, Stats.TROPHY_SPECIES, Stats.TROPHY_RECORDS, Stats.TROPHY_SETS_COMPLETE, Stats.ACHIEVEMENTS_UNLOCKED,
   Stats.MASTERY_XP, Stats.MASTERY_LEVEL_UPS, Stats.STAFF_BRANCH_TRAINING, Stats.STAFF_BRANCHES_UNLOCKED,
   Stats.SUPERVISOR_PATROLS, Stats.GREETER_WELCOMES, Stats.ICE_RUNNER_MULTI_PICKUPS,
+  Stats.FISHER_TROPHY_CASTS, Stats.PORTER_RELAY_PICKUPS, Stats.CASHIER_QUICK_TILLS,
   Stats.RIVAL_SALES_STOLEN, Stats.RIVAL_UNDERCUTS, Stats.RIVAL_BEATS,
-  Stats.ENDGAME_TIERS_UNLOCKED, Stats.ENDGAME_CHALLENGES_COMPLETED, Stats.DECOR_BOUGHT,
+  Stats.ENDGAME_TIERS_UNLOCKED, Stats.ENDGAME_CHALLENGES_COMPLETED, Stats.ENDGAME_MARKS_EARNED, Stats.DECOR_BOUGHT,
   Stats.MACHINES_BROKEN, Stats.MACHINES_SLOWED, Stats.MACHINES_REPAIRED, Stats.REPAIR_SPENT,
   Stats.LOANS_TAKEN, Stats.LOAN_INTEREST_ACCRUED, Stats.LOAN_REPAID, Stats.LOAN_COLLECTED, Stats.COIN_GOALS_REACHED,
   Stats.DAILY_LOGIN_STREAK, Stats.DAILY_GOALS_CLAIMED,
@@ -347,6 +354,8 @@ export class GameState {
   readonly unlockedEndgameTiers = new Set<string>();
   /** Finish 3.0 Phase 15 / schema 24 — completed endgame challenge ids. */
   readonly completedEndgameChallenges = new Set<string>();
+  /** Finish 4.0 Phase 17 / schema 25 — legend marks from deepen challenges. */
+  readonly endgameMarks = new Set<string>();
   readonly unlockedCosmetics = new Set<string>();
   /** Phase 23 owned shop decor (placable cosmetics). */
   readonly ownedDecor = new Set<string>();
@@ -486,7 +495,7 @@ export type Command =
   /** Phase 24: grant power-neutral IAP cosmetic; requestId stable per purchase token. */
   | { type: "grant_iap_cosmetic"; cosmeticId: string; requestId: string }
   | { type: "repair_machine"; stationId: string; requestId: string }
-  | { type: "take_loan"; requestId: string }
+  | { type: "take_loan"; requestId: string; productId?: string | null }
   | { type: "repay_loan"; requestId: string }
   | { type: "set_coin_goal"; amount: number }
   | { type: "buy_bait"; baitId: string; requestId: string }

@@ -1,0 +1,332 @@
+{
+  "phase": 10,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.product_art.v1",
+  "description": "Finish 4.0 Phase 10/13/18 — product/cosmetic art presentation. Authors multi-part ProductArt meshes for all products, authored cosmetic banner GLBs for 18 IAP banners, and counter tray presentation depth. Schema stays 25 / content 3.0.0.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "productArtMarker": "authored-finish-4.0-phase-10",
+  "cosmeticBannerMarker": "cosmetic-banner-phase-10",
+  "authoredProductTarget": 40,
+  "cosmeticBannerTarget": 18,
+  "minProductArtNodes": 4,
+  "minCosmeticArtNodes": 4,
+  "themesModule": "shared/tools/product_themes.py",
+  "generator": "shared/tools/generate_fish_stubs.py",
+  "cosmeticPresentationCatalog": "shared/content/cosmetic-presentation.json",
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "gapClosed": "productArtIncomplete",
+  "gapClosedValue": false,
+  "parityFixture": "shared/fixtures/parity-product-art.json",
+  "validateScript": "npm run productart:validate",
+  "maxBytesPerProduct": 48000,
+  "maxTotalProductBytes": 1600000,
+  "maxBytesPerBanner": 32000,
+  "counterPresentation": {
+    "layoutId": "counter.tray.v1",
+    "slotsVisibleMax": 8,
+    "preferKinds": [
+      "carton",
+      "crate",
+      "fillet",
+      "portion",
+      "skewer"
+    ],
+    "stackYStepM": 0.08
+  },
+  "authoredProducts": [
+    {
+      "productId": "product.basic_portion",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_basic_portion.glb"
+    },
+    {
+      "productId": "product.fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_fillet.glb"
+    },
+    {
+      "productId": "product.premium_portion",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_premium_portion.glb"
+    },
+    {
+      "productId": "product.smoked_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_smoked_fillet.glb"
+    },
+    {
+      "productId": "product.diced_fish",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_diced_fish.glb"
+    },
+    {
+      "productId": "product.skewer",
+      "kind": "skewer",
+      "asset": "shared/assets/models/product_skewer.glb"
+    },
+    {
+      "productId": "product.soup_stock",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_soup_stock.glb"
+    },
+    {
+      "productId": "product.ice_packed_crate",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_ice_packed_crate.glb"
+    },
+    {
+      "productId": "product.fillet_crate",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_fillet_crate.glb"
+    },
+    {
+      "productId": "product.grilled_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_grilled_fillet.glb"
+    },
+    {
+      "productId": "product.grilled_skewer",
+      "kind": "skewer",
+      "asset": "shared/assets/models/product_grilled_skewer.glb"
+    },
+    {
+      "productId": "product.chilled_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_chilled_fillet.glb"
+    },
+    {
+      "productId": "product.chilled_premium",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_chilled_premium.glb"
+    },
+    {
+      "productId": "product.chilled_crate",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_chilled_crate.glb"
+    },
+    {
+      "productId": "product.fried_portion",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_fried_portion.glb"
+    },
+    {
+      "productId": "product.fish_and_chips",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_fish_and_chips.glb"
+    },
+    {
+      "productId": "product.crispy_skewer",
+      "kind": "skewer",
+      "asset": "shared/assets/models/product_crispy_skewer.glb"
+    },
+    {
+      "productId": "product.fried_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_fried_carton.glb"
+    },
+    {
+      "productId": "product.chips_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_chips_carton.glb"
+    },
+    {
+      "productId": "product.grill_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_grill_carton.glb"
+    },
+    {
+      "productId": "product.skewer_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_skewer_carton.glb"
+    },
+    {
+      "productId": "product.steamed_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_steamed_fillet.glb"
+    },
+    {
+      "productId": "product.steamed_portion",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_steamed_portion.glb"
+    },
+    {
+      "productId": "product.harbor_broth",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_harbor_broth.glb"
+    },
+    {
+      "productId": "product.steam_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_steam_carton.glb"
+    },
+    {
+      "productId": "product.cured_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_cured_fillet.glb"
+    },
+    {
+      "productId": "product.dried_strip",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_dried_strip.glb"
+    },
+    {
+      "productId": "product.kiln_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_kiln_carton.glb"
+    },
+    {
+      "productId": "product.pressed_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_pressed_fillet.glb"
+    },
+    {
+      "productId": "product.fish_cake",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_fish_cake.glb"
+    },
+    {
+      "productId": "product.press_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_press_carton.glb"
+    },
+    {
+      "productId": "product.pickled_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_pickled_fillet.glb"
+    },
+    {
+      "productId": "product.relish_jar",
+      "kind": "portion",
+      "asset": "shared/assets/models/product_relish_jar.glb"
+    },
+    {
+      "productId": "product.pickle_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_pickle_carton.glb"
+    },
+    {
+      "productId": "product.braised_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_braised_fillet.glb"
+    },
+    {
+      "productId": "product.braise_stew",
+      "kind": "soup",
+      "asset": "shared/assets/models/product_braise_stew.glb"
+    },
+    {
+      "productId": "product.braise_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_braise_carton.glb"
+    },
+    {
+      "productId": "product.glazed_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_glazed_fillet.glb"
+    },
+    {
+      "productId": "product.glaze_skewer",
+      "kind": "skewer",
+      "asset": "shared/assets/models/product_glaze_skewer.glb"
+    },
+    {
+      "productId": "product.glaze_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_glaze_carton.glb"
+    }
+  ],
+  "cosmeticBanners": [
+    {
+      "cosmeticId": "banner.iap_sunset_bunting",
+      "asset": "shared/assets/models/cosmetic_banner_sunset_bunting.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_pearl_string",
+      "asset": "shared/assets/models/cosmetic_banner_pearl_string.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_captain_crest",
+      "asset": "shared/assets/models/cosmetic_banner_captain_crest.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_harbor_lantern",
+      "asset": "shared/assets/models/cosmetic_banner_harbor_lantern.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_tide_ribbon",
+      "asset": "shared/assets/models/cosmetic_banner_tide_ribbon.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_fog_pennant",
+      "asset": "shared/assets/models/cosmetic_banner_fog_pennant.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_coral_streamer",
+      "asset": "shared/assets/models/cosmetic_banner_coral_streamer.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_storm_flag",
+      "asset": "shared/assets/models/cosmetic_banner_storm_flag.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_ember_pennant",
+      "asset": "shared/assets/models/cosmetic_banner_ember_pennant.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_northlight_banner",
+      "asset": "shared/assets/models/cosmetic_banner_northlight_banner.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_marina_pennant",
+      "asset": "shared/assets/models/cosmetic_banner_marina_pennant.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_moonlit_bunting",
+      "asset": "shared/assets/models/cosmetic_banner_moonlit_bunting.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_mist_bunting",
+      "asset": "shared/assets/models/cosmetic_banner_mist_bunting.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_prism_pennant",
+      "asset": "shared/assets/models/cosmetic_banner_prism_pennant.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_plaza_flag",
+      "asset": "shared/assets/models/cosmetic_banner_plaza_flag.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_rime_streamer",
+      "asset": "shared/assets/models/cosmetic_banner_rime_streamer.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_brine_ribbon",
+      "asset": "shared/assets/models/cosmetic_banner_brine_ribbon.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_aurora_crest",
+      "asset": "shared/assets/models/cosmetic_banner_aurora_crest.glb"
+    }
+  ],
+  "checklist": [
+    "All 34 product GLBs carry ProductArt_* (≥4) + productArt marker",
+    "All 12 cosmetic banner GLBs carry CosmeticArt_* + cosmeticArt marker",
+    "cosmetic-presentation.json meshAsset + counterPresentation wired",
+    "HarborScene multi-part banner presentation",
+    "kickoff gaps.productArtIncomplete = false",
+    "productart:validate green in CI",
+    "schema stays 24 / content 3.0.0 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/product-art.json",
+    "shared/fixtures/parity-product-art.json",
+    "shared/tools/product_themes.py",
+    "shared/tools/generate_fish_stubs.py",
+    "shared/content/cosmetic-presentation.json",
+    "web/src/ship/productArt.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ProductArt.kt",
+    "web/scripts/validate-product-art.ts"
+  ]
+}

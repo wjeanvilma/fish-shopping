@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -78,7 +76,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.willio.jeanvilma.fishshopping.core.i18n.UiStrings
-import com.willio.jeanvilma.fishshopping.ui.ComposeUiTags
 import com.willio.jeanvilma.fishshopping.core.store.LicensesNotice
 import com.willio.jeanvilma.fishshopping.core.store.StoreListing
 import com.willio.jeanvilma.fishshopping.core.sim.ContextCard
@@ -503,54 +500,20 @@ private fun Hud(state: GameUiState.Ready, vm: GameViewModel) {
                 )
             }
         }
-        // Top right: management (wraps in portrait — Phase 28).
-        FlowRow(
-            Modifier
-                .align(Alignment.TopEnd)
-                .widthIn(max = actionsMax),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Button(
-                onClick = { vm.setPauseOpen(true) },
-                modifier = Modifier.heightIn(min = actionMinHeight).testTag(ComposeUiTags.NAV_PAUSE),
-            ) {
-                Text(com.willio.jeanvilma.fishshopping.core.i18n.UiStrings.t("nav.pause"))
-            }
-            Button(
-                onClick = { vm.setMapOpen(true) },
-                modifier = Modifier.heightIn(min = actionMinHeight).testTag(ComposeUiTags.NAV_MAP),
-            ) {
-                Text(com.willio.jeanvilma.fishshopping.core.i18n.UiStrings.t("nav.map"))
-            }
-            Button(onClick = { vm.setWarehouseOpen(true) }, modifier = Modifier.heightIn(min = actionMinHeight)) {
-                Text(com.willio.jeanvilma.fishshopping.core.i18n.UiStrings.t("nav.warehouse"))
-            }
-            Button(
-                onClick = { vm.setQuestsOpen(true) },
-                modifier = Modifier.heightIn(min = actionMinHeight).testTag(ComposeUiTags.NAV_GOALS),
-            ) {
-                Text(com.willio.jeanvilma.fishshopping.core.i18n.UiStrings.t("nav.goals"))
-            }
-            Button(onClick = { vm.setContractsOpen(true) }, modifier = Modifier.heightIn(min = actionMinHeight)) {
-                Text(com.willio.jeanvilma.fishshopping.core.i18n.UiStrings.t("nav.jobs"))
-            }
-            Button(
-                onClick = { vm.setStaffOpen(true) },
-                modifier = Modifier.heightIn(min = actionMinHeight).testTag(ComposeUiTags.NAV_STAFF),
-            ) {
-                Text(com.willio.jeanvilma.fishshopping.core.i18n.UiStrings.t("nav.staff"))
-            }
-            Button(onClick = { vm.setDashboardOpen(true) }, modifier = Modifier.heightIn(min = actionMinHeight)) {
-                Text(com.willio.jeanvilma.fishshopping.core.i18n.UiStrings.t("nav.dash"))
-            }
-            Button(
-                onClick = { vm.setUpgradesOpen(true) },
-                modifier = Modifier.heightIn(min = actionMinHeight).testTag(ComposeUiTags.NAV_UPGRADES),
-            ) {
-                Text(com.willio.jeanvilma.fishshopping.core.i18n.UiStrings.t("nav.upgrades"))
-            }
-        }
+        // Top right: management (wraps in portrait — Phase 28). Finish 4.0 Phase 26 extract.
+        HudNavToolbarContent(
+            onPause = { vm.setPauseOpen(true) },
+            onMap = { vm.setMapOpen(true) },
+            onWarehouse = { vm.setWarehouseOpen(true) },
+            onGoals = { vm.setQuestsOpen(true) },
+            onJobs = { vm.setContractsOpen(true) },
+            onStaff = { vm.setStaffOpen(true) },
+            onDash = { vm.setDashboardOpen(true) },
+            onUpgrades = { vm.setUpgradesOpen(true) },
+            modifier = Modifier.align(Alignment.TopEnd),
+            actionsMax = actionsMax,
+            actionMinHeight = actionMinHeight,
+        )
         // Coaching: mid-left in landscape; above the stick in portrait (Phase 28).
         v.objective?.let { obj ->
             val objectiveAlign = if (portrait) Alignment.BottomStart else Alignment.CenterStart

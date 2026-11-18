@@ -17,6 +17,10 @@ export interface SnapshotChoiceRow {
 
 export interface CloudConflictView {
   reason: string;
+  /** Finish 4.0 Phase 21 — stable machine code for reason. */
+  reasonCode: string;
+  /** Finish 4.0 Phase 21 — short UX hints describing local vs remote diffs. */
+  diffHints: string[];
   recommended: SyncSource;
   local: SnapshotChoiceRow;
   remote: SnapshotChoiceRow;
@@ -61,12 +65,16 @@ export function cloudConflictView(
     remote: SnapshotSummary;
     recommended: SyncSource;
     reason: string;
+    reasonCode?: string;
+    diffHints?: string[];
   },
   content: ContentPack,
   nowMs = Date.now(),
 ): CloudConflictView {
   return {
     reason: offer.reason,
+    reasonCode: offer.reasonCode ?? "conflict",
+    diffHints: offer.diffHints ?? [],
     recommended: offer.recommended,
     local: snapshotChoiceRow(offer.local, {
       sourceLabel: "This device",

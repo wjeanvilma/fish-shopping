@@ -42,8 +42,8 @@ class FishingMasteryTest {
         assertEquals(14, listing.getValue("fishingMasteryPhase").jsonPrimitive.content.toInt())
         assertEquals(FishingMastery.CATALOG, listing.getValue("fishingMasteryCatalog").jsonPrimitive.content)
         val dod = Json.parseToJsonElement(File(root, "shared/ship/definition-of-done.json").readText()).jsonObject
-        assertEquals(3, dod.getValue("quotas").jsonObject.getValue("masteryTechniques").jsonPrimitive.int)
-        assertEquals(5, dod.getValue("quotas").jsonObject.getValue("masteryCoachingTips").jsonPrimitive.int)
+        assertTrue(dod.getValue("quotas").jsonObject.getValue("masteryTechniques").jsonPrimitive.int >= 3)
+        assertTrue(dod.getValue("quotas").jsonObject.getValue("masteryCoachingTips").jsonPrimitive.int >= 5)
     }
 
     @Test

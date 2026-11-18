@@ -1,0 +1,21 @@
+{
+  "schema": "fish.fixtures.parity_economy_bank_2.v1",
+  "economy2Marker": "authored-finish-4.0-phase-20",
+  "phase": 20,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "loanProductMin": 3,
+    "goalPresetMin": 8,
+    "dashboardFieldCount": 10,
+    "schemaVersion": 25,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "loan_products",
+      "goal_presets",
+      "scarcity_curve",
+      "dashboard_fields",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

@@ -33,7 +33,10 @@
     "flushIntervalMs": 15000,
     "flushOnSessionEnd": true,
     "dropOldestOnOverflow": true,
-    "resyncSanitizeOnFlush": true
+    "resyncSanitizeOnFlush": true,
+    "requeueOnFlushFailure": true,
+    "maxFlushRetries": 3,
+    "retryBackoffMs": 2000
   },
   "envelope": {
     "requiredFields": ["schema", "platform", "sentAtMs", "events"],

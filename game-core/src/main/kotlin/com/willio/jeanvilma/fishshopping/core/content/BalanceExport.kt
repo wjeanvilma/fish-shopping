@@ -258,6 +258,25 @@ object BalanceExport {
                 put("collectionPeriodTicks", content.bank.collectionPeriodTicks)
                 put("goalPresets", JsonArray(content.bank.goalPresets.map { JsonPrimitive(it) }))
                 put("requires", JsonArray(content.bank.requires.map { JsonPrimitive(it) }))
+                put(
+                    "loanProducts",
+                    buildJsonArray {
+                        for (p in content.bank.loanProducts) {
+                            add(
+                                buildJsonObject {
+                                    put("id", p.id)
+                                    put("name", p.name)
+                                    put("description", p.description)
+                                    put("principal", p.principal)
+                                    put("repayPermille", p.repayPermille)
+                                    put("repayAmount", p.repayAmount())
+                                    put("termTicks", p.termTicks)
+                                    put("requires", JsonArray(p.requires.map { JsonPrimitive(it) }))
+                                },
+                            )
+                        }
+                    },
+                )
             },
         )
         put(

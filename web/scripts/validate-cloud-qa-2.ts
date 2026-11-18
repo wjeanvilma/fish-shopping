@@ -57,7 +57,7 @@ async function validate(): Promise<string[]> {
   if (fixture.cloudQa2Marker !== CLOUD_QA_2_MARKER) errors.push("fixture marker mismatch");
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
   if (catalog.schemaVersion !== 24) errors.push("catalog schemaVersion must stay 24");
-  if (SCHEMA_VERSION !== 24) errors.push("engine SCHEMA_VERSION must stay 24");
+  if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
   if (catalog.qaScenarioMin !== 8 || CLOUD_QA_2_SCENARIO_FLOOR !== 8) {
     errors.push("qaScenarioMin must be 8");
   }
@@ -69,7 +69,7 @@ async function validate(): Promise<string[]> {
   }
 
   const measure = measureCloudQa2(root);
-  if (measure.schemaVersion !== 24) errors.push("measure schemaVersion must be 24");
+  if (measure.schemaVersion < 24) errors.push("measure schemaVersion must be >= 24");
   if (!measure.wave2Complete) {
     errors.push(`wave-2 incomplete: missing ${measure.missingWave2.join(", ") || "count"}`);
   }

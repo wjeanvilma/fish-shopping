@@ -83,11 +83,23 @@ function validate(): string[] {
 
   if (!web.includes("SUPPORT_RESTORE_HELP")) errors.push("web supportRunbook missing SUPPORT_RESTORE_HELP");
   if (!kotlin.includes("RESTORE_HELP_LINE")) errors.push("Kotlin SupportRunbook missing RESTORE_HELP_LINE");
-  if (!app.includes("SUPPORT_RESTORE_HELP") || !app.includes("#restore")) {
-    errors.push("App.tsx missing restore help / support anchor");
+  // Finish 4.0 UI splits moved restore help out of App.tsx / GameScreen.kt into settings panels.
+  const webSettings = readFileSync(resolve(root, "web/src/ui/PauseSettingsPanels.tsx"), "utf8");
+  const androidSettings = readFileSync(
+    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/PauseSettingsPanels.kt"),
+    "utf8",
+  );
+  if (
+    !(app.includes("SUPPORT_RESTORE_HELP") || webSettings.includes("SUPPORT_RESTORE_HELP")) ||
+    !(app.includes("#restore") || webSettings.includes("#restore"))
+  ) {
+    errors.push("web UI missing restore help / support anchor");
   }
-  if (!hud.includes("RESTORE_HELP_LINE") || !hud.includes("SUPPORT_RESTORE_URL")) {
-    errors.push("GameScreen.kt missing restore help / support URL");
+  if (
+    !(hud.includes("RESTORE_HELP_LINE") || androidSettings.includes("RESTORE_HELP_LINE")) ||
+    !(hud.includes("SUPPORT_RESTORE_URL") || androidSettings.includes("SUPPORT_RESTORE_URL"))
+  ) {
+    errors.push("Android UI missing restore help / support URL");
   }
   if (!ci.includes("support:validate")) errors.push("ci.yml missing support:validate");
 

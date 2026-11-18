@@ -1,0 +1,23 @@
+{
+  "schema": "fish.fixtures.parity_species_76_100.v1",
+  "species76100Marker": "authored-finish-4.0-phase-11",
+  "phase": 11,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "speciesCount": 100,
+    "newSpeciesCount": 25,
+    "habitatCount": 16,
+    "newHabitatCount": 8,
+    "schemaVersion": 24,
+    "schemaPrepTarget": 25,
+    "i18nLocales": 3,
+    "gates": [
+      "hundred_species",
+      "sixteen_habitats",
+      "wave_weighted",
+      "i18n_translated",
+      "schema25_prep",
+      "ci_gate"
+    ]
+  }
+}

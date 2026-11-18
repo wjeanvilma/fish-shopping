@@ -1,16 +1,20 @@
 /**
  * Phase 15 (post-1.0) — perf budget gate catalog + synthetic CI smoke helper.
+ * Finish 4.0 Phase 27 — soft auto-upgrade smoke + tightened floors.
  */
 import gateJson from "../../../shared/perf/budget-gate.json";
 import matrixJson from "../../../shared/perf/device-matrix.json";
 import {
   FRAME_DOWNGRADE_STREAK,
   FRAME_OVER_BUDGET_MULT,
+  FRAME_UNDER_BUDGET_MULT,
+  FRAME_UPGRADE_STREAK,
   FRAME_TARGET_MS,
   FrameTiming,
   HARBOR_CACHE_LIMIT,
   WEB_MEDIUM_MAX_CSS_HEIGHT,
   downgradeQuality,
+  upgradeQuality,
 } from "./frameTiming";
 import {
   CROWD_DRAW_CAP_BY_QUALITY,
@@ -28,13 +32,17 @@ export interface PerfBudgetGateCatalog {
       targetFps: number;
       frameTargetMs: { low: number; medium: number; high: number };
       downgradeStreakFrames: number;
+      upgradeStreakFrames: number;
       overBudgetMultiplier: number;
+      underBudgetMultiplier: number;
     };
     web: {
       targetFps: number;
       frameTargetMs: { low: number; medium: number; high: number };
       downgradeStreakFrames: number;
+      upgradeStreakFrames: number;
       overBudgetMultiplier: number;
+      underBudgetMultiplier: number;
       maxCssHeightMedium: number;
     };
   };
@@ -50,9 +58,11 @@ export interface PerfBudgetGateCatalog {
   harborCacheLimit: number;
   smoke: {
     syntheticDowngradeStreak: number;
+    syntheticUpgradeStreak: number;
     overBudgetDtSeconds: number;
     underBudgetDtSeconds: number;
     expectDowngradeAfterStreak: boolean;
+    expectUpgradeAfterStreak: boolean;
   };
   failCriteria: string[];
   deviceChecklist: string[];
@@ -70,7 +80,9 @@ export function webBudgetsMatchRuntime(): string[] {
   if (FRAME_TARGET_MS.medium !== web.frameTargetMs.medium) errors.push("FRAME_TARGET_MS.medium drift");
   if (FRAME_TARGET_MS.high !== web.frameTargetMs.high) errors.push("FRAME_TARGET_MS.high drift");
   if (FRAME_DOWNGRADE_STREAK !== web.downgradeStreakFrames) errors.push("downgrade streak drift");
+  if (FRAME_UPGRADE_STREAK !== web.upgradeStreakFrames) errors.push("upgrade streak drift");
   if (FRAME_OVER_BUDGET_MULT !== web.overBudgetMultiplier) errors.push("over-budget mult drift");
+  if (FRAME_UNDER_BUDGET_MULT !== web.underBudgetMultiplier) errors.push("under-budget mult drift");
   if (WEB_MEDIUM_MAX_CSS_HEIGHT !== web.maxCssHeightMedium) errors.push("1080 CSS height drift");
   if (HARBOR_CACHE_LIMIT !== perfBudgetGate.harborCacheLimit) errors.push("harbor cache drift");
   if (matrixWeb.frameTargetMs.medium !== web.frameTargetMs.medium) {
@@ -93,12 +105,12 @@ export function presenterCapsMatchRuntime(): string[] {
 /** Synthetic CI smoke: sustained over-budget frames must request a downgrade. */
 export function runSyntheticDowngradeSmoke(): { ok: boolean; detail: string } {
   const smoke = perfBudgetGate.smoke;
-  const timing = new FrameTiming(1, smoke.syntheticDowngradeStreak);
+  const timing = new FrameTiming(1, smoke.syntheticDowngradeStreak, smoke.syntheticUpgradeStreak);
   const target = FRAME_TARGET_MS.medium;
   timing.sample(smoke.underBudgetDtSeconds, target);
   let downgraded = false;
   for (let i = 0; i < smoke.syntheticDowngradeStreak; i++) {
-    if (timing.sample(smoke.overBudgetDtSeconds, target)) downgraded = true;
+    if (timing.sample(smoke.overBudgetDtSeconds, target) === "downgrade") downgraded = true;
   }
   if (smoke.expectDowngradeAfterStreak && !downgraded) {
     return { ok: false, detail: "expected downgrade after over-budget streak" };
@@ -107,4 +119,22 @@ export function runSyntheticDowngradeSmoke(): { ok: boolean; detail: string } {
     return { ok: false, detail: "medium must downgrade to low" };
   }
   return { ok: true, detail: "synthetic downgrade smoke passed" };
+}
+
+/** Finish 4.0 Phase 27 — sustained under-budget frames must request an upgrade. */
+export function runSyntheticUpgradeSmoke(): { ok: boolean; detail: string } {
+  const smoke = perfBudgetGate.smoke;
+  const timing = new FrameTiming(1, smoke.syntheticDowngradeStreak, smoke.syntheticUpgradeStreak);
+  const target = FRAME_TARGET_MS.medium;
+  let upgraded = false;
+  for (let i = 0; i < smoke.syntheticUpgradeStreak; i++) {
+    if (timing.sample(smoke.underBudgetDtSeconds, target) === "upgrade") upgraded = true;
+  }
+  if (smoke.expectUpgradeAfterStreak && !upgraded) {
+    return { ok: false, detail: "expected upgrade after under-budget streak" };
+  }
+  if (upgradeQuality("low") !== "medium") {
+    return { ok: false, detail: "low must upgrade to medium" };
+  }
+  return { ok: true, detail: "synthetic upgrade smoke passed" };
 }

@@ -158,6 +158,19 @@ object DailyGoalsSystem {
         } else if (report.coinsDelta < 0L) {
             lines += "Away-time upkeep cost ${-report.coinsDelta} coins."
         }
+        // Finish 4.0 Phase 21 — deeper offline journal categories.
+        if (report.contractsCompleted > 0L) {
+            lines += "Crew finished ${report.contractsCompleted} delivery contract${if (report.contractsCompleted == 1L) "" else "s"} offline."
+        }
+        if (report.maintenancePaid > 0L) {
+            lines += "Station upkeep took ${report.maintenancePaid} coins while away."
+        }
+        if (report.itemsSpoiled > 0L) {
+            lines += "${report.itemsSpoiled} stock spoiled on the pads."
+        }
+        if (report.rivalBeats > 0L) {
+            lines += "Harbor beat rival pressure ${report.rivalBeats} time${if (report.rivalBeats == 1L) "" else "s"}."
+        }
         val streak = streak(state)
         if (streak > 0) {
             lines += "Harbor streak: $streak day${if (streak == 1) "" else "s"}."
@@ -166,6 +179,9 @@ object DailyGoalsSystem {
         val claimable = board.count { isComplete(content, state, it) && !isClaimed(content, state, it) }
         if (claimable > 0) {
             lines += "$claimable daily objective${if (claimable == 1) "" else "s"} ready to claim."
+        }
+        if (board.isNotEmpty()) {
+            lines += "Today's board has ${board.size} daily slot${if (board.size == 1) "" else "s"}."
         }
         if (lines.isEmpty() && report.hadActivity) {
             lines += "Harbor kept a quiet watch while you were away."

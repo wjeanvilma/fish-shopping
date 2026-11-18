@@ -1,0 +1,23 @@
+{
+  "schema": "fish.fixtures.parity_workers_simview_split.v1",
+  "workersSimViewSplitMarker": "authored-finish-4.0-phase-5",
+  "phase": 5,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "workersMaxLines": 600,
+    "simViewMaxLines": 800,
+    "extractedFileMin": 5,
+    "requiredFileCount": 5,
+    "gapFlagClosed": "workersSimViewSplitIncomplete",
+    "schemaVersion": 24,
+    "contentVersion": "3.0.0",
+    "decisionReasons": ["best_score", "none_available"],
+    "gates": [
+      "workers_slim",
+      "simview_slim",
+      "ai_hooks_present",
+      "kickoff_gap_closed",
+      "ci_gate"
+    ]
+  }
+}

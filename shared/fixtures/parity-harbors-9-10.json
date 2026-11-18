@@ -1,0 +1,64 @@
+{
+  "name": "parity-harbors-9-10",
+  "description": "Finish 4.0 Phase 12: from eight-harbor prestige, travel Mist Cove \u2192 Prism Reach; landing quests + nine/ten prestige unlock.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "harbors910Marker": "authored-finish-4.0-phase-12",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 41210,
+  "setup": {
+    "completedQuests": [
+      "quest.busy_harbor",
+      "quest.moon_crossing",
+      "quest.obsidian_landing",
+      "quest.northlight_landing",
+      "quest.grand_marina_landing",
+      "quest.coral_lagoon_landing",
+      "quest.storm_quay_landing",
+      "quest.ember_wharf_landing"
+    ],
+    "completedPrestige": [
+      "prestige.twin_harbors",
+      "prestige.triple_harbors",
+      "prestige.quad_harbors",
+      "prestige.five_harbors",
+      "prestige.six_harbors",
+      "prestige.seven_harbors",
+      "prestige.eight_harbors"
+    ],
+    "unlockedCosmetics": [
+      "banner.twin_harbors",
+      "banner.triple_harbors",
+      "banner.quad_harbors",
+      "banner.five_harbors",
+      "banner.six_harbors",
+      "banner.seven_harbors",
+      "banner.eight_harbors"
+    ],
+    "harborsTraveled": 8
+  },
+  "travels": [
+    {
+      "harborId": "harbor.mist_cove",
+      "requestId": "p12-mist-1",
+      "expectQuest": "quest.mist_cove_landing",
+      "expectPrestige": "prestige.nine_harbors",
+      "expectBanner": "banner.nine_harbors",
+      "expectBlockout": "mist_cove_blockout.glb"
+    },
+    {
+      "harborId": "harbor.prism_reach",
+      "requestId": "p12-prism-1",
+      "expectQuest": "quest.prism_reach_landing",
+      "expectPrestige": "prestige.ten_harbors",
+      "expectBanner": "banner.ten_harbors",
+      "expectBlockout": "prism_reach_blockout.glb"
+    }
+  ],
+  "expectFinal": {
+    "harborId": "harbor.prism_reach",
+    "harborsTraveled": 10,
+    "specializationId": "spec.prism_shelf",
+    "blockoutAsset": "prism_reach_blockout.glb"
+  }
+}

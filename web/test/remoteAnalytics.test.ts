@@ -7,7 +7,10 @@ import {
   enqueueRemoteEvent,
   REMOTE_BATCH_SCHEMA,
   REMOTE_MAX_EVENTS,
+  REMOTE_REQUEUE_ON_FLUSH_FAILURE,
+  requeueRemoteFlushSlice,
   takeRemoteFlushSlice,
+  takeRemoteFlushSliceDetailed,
 } from "../src/engine/remoteAnalytics";
 import {
   REMOTE_ANALYTICS_MARKER,
@@ -75,6 +78,33 @@ describe("remote analytics (Finish 3.0 Phase 26)", () => {
     const slice = takeRemoteFlushSlice(queue, 9, "web");
     expect(slice?.events[0]?.name).toBe("crash_free_session");
     expect(slice?.platform).toBe("web");
+  });
+
+  it("requeues failed flush slices (Finish 4.0 Phase 21)", async () => {
+    expect(REMOTE_REQUEUE_ON_FLUSH_FAILURE).toBe(true);
+    const queue: Parameters<typeof enqueueRemoteEvent>[0] = [];
+    enqueueRemoteEvent(queue, Analytics.sessionStart("web"), 1);
+    enqueueRemoteEvent(queue, Analytics.firstSale(12), 2);
+    const detailed = takeRemoteFlushSliceDetailed(queue, 3, "web");
+    expect(detailed?.taken).toHaveLength(2);
+    expect(queue).toHaveLength(0);
+    requeueRemoteFlushSlice(queue, detailed!.taken);
+    expect(queue).toHaveLength(2);
+
+    const remote = new RemoteAnalyticsSink({
+      baseUrl: "http://localhost:8788",
+      platform: "web",
+      autoFlush: false,
+      nowMs: () => 1000,
+      poster: async () => ({ ok: false, status: 503 }),
+    });
+    remote.setConsent(true);
+    remote.track(Analytics.sessionStart("web"));
+    remote.track(Analytics.firstSale(9));
+    expect(await remote.flush()).toBe(false);
+    expect(remote.stats().queued).toBe(2);
+    expect(remote.stats().lastFlushOk).toBe(false);
+    remote.dispose();
   });
 
   it("remoteanalytics:validate script passes", () => {

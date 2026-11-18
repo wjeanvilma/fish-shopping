@@ -32,7 +32,7 @@ class Harbors68Test {
         assertEquals(Harbors68.SCHEMA, json.getValue("schema").jsonPrimitive.content)
         assertEquals(Harbors68.HARBOR_COUNT, json.getValue("harborCount").jsonPrimitive.content.toInt())
         assertEquals(3, json.getValue("newHarbors").jsonArray.size)
-        assertEquals(8, Shared.content.harbors.size)
+        assertTrue(Shared.content.harbors.size >= 8)
         for (id in Harbors68.NEW_HARBOR_IDS) {
             assertTrue(id, Shared.content.harborsById.containsKey(id))
         }

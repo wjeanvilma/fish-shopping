@@ -1,8 +1,8 @@
 package com.willio.jeanvilma.fishshopping.core.ship
 
 /**
- * Finish 2.0 Phase 20 + Finish 3.0 Phase 9 — fish art pass ship constants
- * (mirrors shared/ship/fish-art-pass.json).
+ * Finish 2.0 Phase 20 + Finish 3.0 Phase 9 + Finish 4.0 Phase 7 — fish art pass ship constants
+ * (mirrors shared/ship/fish-art-pass.json; floor 100 after fish-art-3b).
  */
 object FishArtPass {
     const val PHASE = 20
@@ -10,23 +10,23 @@ object FishArtPass {
     const val SCHEMA = "fish.ship.fish_art_pass.v1"
     const val CONTENT_VERSION = "2.0.0"
     const val SCHEMA_VERSION = 23
-    const val AUTHORED_SPECIES_MIN = 50
+    const val AUTHORED_SPECIES_MIN = 100
     const val FISH_ART_MARKER = "authored-phase-20"
     const val MAX_BYTES_PER_FISH = 32_000
-    const val MAX_TOTAL_AUTHORED_BYTES = 1_600_000
+    const val MAX_TOTAL_AUTHORED_BYTES = 3_200_000
     const val PARITY_FIXTURE = "shared/fixtures/parity-fish-art-pass.json"
     const val CATALOG = "shared/ship/fish-art-pass.json"
 
     val AUTHORED_SPECIES_IDS = listOf(
-        "species.dawn_anchovy",
         "species.silver_sprat",
         "species.harbor_herring",
-        "species.sail_needlefish",
         "species.blue_mackerel",
         "species.copper_mullet",
-        "species.tide_bass",
         "species.amber_snapper",
         "species.king_grouper",
+        "species.dawn_anchovy",
+        "species.sail_needlefish",
+        "species.tide_bass",
         "species.reef_perch",
         "species.moon_flounder",
         "species.ink_squid",
@@ -68,5 +68,55 @@ object FishArtPass {
         "species.magma_pike",
         "species.tropic_ray",
         "species.pearl_ray",
+        "species.mangrove_snapper",
+        "species.gilt_mangrove",
+        "species.glass_goby",
+        "species.prism_goby",
+        "species.shear_drum",
+        "species.thunder_drum",
+        "species.foam_skater",
+        "species.crystal_skater",
+        "species.slag_loach",
+        "species.magma_loach",
+        "species.kiln_perch",
+        "species.gilt_kiln",
+        "species.drift_icefish",
+        "species.aurora_icefish",
+        "species.rime_bream",
+        "species.crystal_bream",
+        "species.silk_amberjack",
+        "species.gilt_amberjack",
+        "species.parade_scad",
+        "species.opal_scad",
+        "species.veil_skate",
+        "species.pearl_skate",
+        "species.dusk_cuttle",
+        "species.opal_cuttle",
+        "species.basalt_gurnard",
+        "species.cedar_smelt",
+        "species.gilt_cedar",
+        "species.lantern_shad",
+        "species.prism_shad",
+        "species.brine_mullet",
+        "species.bronze_brine",
+        "species.canyon_bass",
+        "species.crown_canyon",
+        "species.tidepool_blenny",
+        "species.opal_blenny",
+        "species.reef_hawkfish",
+        "species.ruby_hawk",
+        "species.squall_smelt",
+        "species.thunder_smelt",
+        "species.gale_herring",
+        "species.prism_gale",
+        "species.cinder_smelt",
+        "species.magma_cinder",
+        "species.slag_perch",
+        "species.gilt_slag",
+        "species.frost_jack",
+        "species.aurora_jack",
+        "species.rime_herring",
+        "species.crystal_rime",
+        "species.plaza_tuna",
     )
 }

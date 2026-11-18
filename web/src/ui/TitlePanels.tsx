@@ -122,13 +122,35 @@ export function SnapshotChoiceCard({ row }: { row: SnapshotChoiceRow }) {
 
 export function CloudConflictPanel({ host, conflict }: { host: GameHost; conflict: CloudConflictView }) {
   const recommendedRemote = conflict.recommended === "remote";
+  const reasonLabel = conflict.reasonCode
+    ? `${conflict.reason} · ${conflict.reasonCode}`
+    : conflict.reason;
   return (
     <div className="center">
-      <div className="panel center-card" role="dialog" aria-modal="true" aria-label="Choose a save">
-        <h2>Choose a save</h2>
-        <p className="small muted">
-          This device and the cloud both have valid saves that differ ({conflict.reason}).
+      <div
+        className="panel center-card"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("cloud.chooseSave")}
+        aria-describedby="cloud-conflict-live"
+      >
+        <h2>{t("cloud.chooseSave")}</h2>
+        <p
+          id="cloud-conflict-live"
+          className="small muted"
+          role="alert"
+          aria-live="assertive"
+          aria-label={t("a11y.cloudConflictLive")}
+        >
+          {t("cloud.differsHint", { reason: reasonLabel })}
         </p>
+        {conflict.diffHints.length > 0 ? (
+          <ul className="small muted conflict-diff-hints" aria-label={t("a11y.cloudConflictSection")}>
+            {conflict.diffHints.map((hint) => (
+              <li key={hint}>{hint}</li>
+            ))}
+          </ul>
+        ) : null}
         <div className="snapshot-choice-list">
           <SnapshotChoiceCard row={conflict.local} />
           <SnapshotChoiceCard row={conflict.remote} />
@@ -138,13 +160,13 @@ export function CloudConflictPanel({ host, conflict }: { host: GameHost; conflic
             className="button"
             onClick={() => void host.resolveCloudConflict(recommendedRemote ? "remote" : "local")}
           >
-            {recommendedRemote ? "Use cloud (recommended)" : "Use this device (recommended)"}
+            {recommendedRemote ? t("cloud.useCloudRecommended") : t("cloud.useDeviceRecommended")}
           </button>
           <button
             className="button ghost"
             onClick={() => void host.resolveCloudConflict(recommendedRemote ? "local" : "remote")}
           >
-            {recommendedRemote ? "Use this device instead" : "Use cloud instead"}
+            {recommendedRemote ? t("cloud.useDeviceInstead") : t("cloud.useCloudInstead")}
           </button>
         </div>
       </div>

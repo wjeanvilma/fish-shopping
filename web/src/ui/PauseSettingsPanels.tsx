@@ -119,15 +119,17 @@ export function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryR
           className="panel sheet settings-sheet"
           role="dialog"
           aria-modal="true"
-          aria-label={LICENSES_SCREEN_TITLE}
+          aria-label={t("panels.licenses")}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="sheet-header">
-            <h2>{LICENSES_SCREEN_TITLE}</h2>
-            <button ref={closeRef} className="button ghost" onClick={() => setShowLicenses(false)}>Close</button>
+            <h2>{t("panels.licenses")}</h2>
+            <button ref={closeRef} className="button ghost" onClick={() => setShowLicenses(false)}>{t("common.close")}</button>
           </div>
-          <div className="small muted" style={{ marginBottom: 12 }}>{LICENSES_SCREEN_INTRO}</div>
-          <div className="small" style={{ marginBottom: 8 }}><strong>First-party assets</strong></div>
+          <div className="small muted" style={{ marginBottom: 12 }} aria-label={t("a11y.licensesSection")}>
+            {t("settings.licensesIntro")}
+          </div>
+          <div className="small" style={{ marginBottom: 8 }}><strong>{t("settings.firstPartyAssets")}</strong></div>
           <div className="small muted" style={{ marginBottom: 16 }}>{licensesCatalog.defaultLicense.spdx}</div>
           <div style={{ display: "grid", gap: 12, maxHeight: "50vh", overflow: "auto" }}>
             {licensesCatalog.ossNotices.map((n) => (

@@ -71,6 +71,10 @@ object Stats {
     const val SUPERVISOR_PATROLS = "stat.supervisor_patrols"
     const val GREETER_WELCOMES = "stat.greeter_welcomes"
     const val ICE_RUNNER_MULTI_PICKUPS = "stat.ice_runner_multi_pickups"
+    /** Finish 4.0 Phase 19 — fisher trophy casts / porter relay pickups / cashier quick tills. */
+    const val FISHER_TROPHY_CASTS = "stat.fisher_trophy_casts"
+    const val PORTER_RELAY_PICKUPS = "stat.porter_relay_pickups"
+    const val CASHIER_QUICK_TILLS = "stat.cashier_quick_tills"
     /** Finish 3.0 Phase 14 — rival NPC market siphon / player beat counters. */
     const val RIVAL_SALES_STOLEN = "stat.rival_sales_stolen"
     const val RIVAL_UNDERCUTS = "stat.rival_undercuts"
@@ -78,6 +82,8 @@ object Stats {
     /** Finish 3.0 Phase 15 — endgame deepen unlocks. */
     const val ENDGAME_TIERS_UNLOCKED = "stat.endgame_tiers_unlocked"
     const val ENDGAME_CHALLENGES_COMPLETED = "stat.endgame_challenges_completed"
+    /** Finish 4.0 Phase 17 — legend marks granted by deepen challenges. */
+    const val ENDGAME_MARKS_EARNED = "stat.endgame_marks_earned"
     const val DECOR_BOUGHT = "stat.decor_bought"
     const val MACHINES_BROKEN = "stat.machines_broken"
     const val MACHINES_SLOWED = "stat.machines_slowed"
@@ -104,8 +110,9 @@ object Stats {
         PRESTIGE_COMPLETED, TROPHY_SPECIES, TROPHY_RECORDS, TROPHY_SETS_COMPLETE, ACHIEVEMENTS_UNLOCKED,
         MASTERY_XP, MASTERY_LEVEL_UPS, STAFF_BRANCH_TRAINING, STAFF_BRANCHES_UNLOCKED,
         SUPERVISOR_PATROLS, GREETER_WELCOMES, ICE_RUNNER_MULTI_PICKUPS,
+        FISHER_TROPHY_CASTS, PORTER_RELAY_PICKUPS, CASHIER_QUICK_TILLS,
         RIVAL_SALES_STOLEN, RIVAL_UNDERCUTS, RIVAL_BEATS,
-        ENDGAME_TIERS_UNLOCKED, ENDGAME_CHALLENGES_COMPLETED, DECOR_BOUGHT,
+        ENDGAME_TIERS_UNLOCKED, ENDGAME_CHALLENGES_COMPLETED, ENDGAME_MARKS_EARNED, DECOR_BOUGHT,
         MACHINES_BROKEN, MACHINES_SLOWED, MACHINES_REPAIRED, REPAIR_SPENT,
         LOANS_TAKEN, LOAN_INTEREST_ACCRUED, LOAN_REPAID, LOAN_COLLECTED, COIN_GOALS_REACHED,
     )
@@ -382,6 +389,8 @@ class GameState(
     val unlockedEndgameTiers = TreeSet<String>()
     /** Finish 3.0 Phase 15 / schema 24 — completed endgame challenge ids. */
     val completedEndgameChallenges = TreeSet<String>()
+    /** Finish 4.0 Phase 17 / schema 25 — legend marks from deepen challenges. */
+    val endgameMarks = TreeSet<String>()
     val unlockedCosmetics = TreeSet<String>()
     /** Phase 23 owned shop decor (placable cosmetics). */
     val ownedDecor = TreeSet<String>()
@@ -584,7 +593,7 @@ sealed interface Command {
     /** Pay to clear machine wear (Phase 25); [requestId] makes retries idempotent. */
     data class RepairMachine(val stationId: String, val requestId: String) : Command
     /** Take the content bank loan (Phase 26); [requestId] makes retries idempotent. */
-    data class TakeLoan(val requestId: String) : Command
+    data class TakeLoan(val requestId: String, val productId: String? = null) : Command
     /** Repay as much outstanding loan as coins allow (Phase 26). */
     data class RepayLoan(val requestId: String) : Command
     /** Set or clear a coin goal from bank presets (0 clears). */

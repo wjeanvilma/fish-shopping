@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Finish 2.0 Phase 27 + Finish 3.0 Phase 28 — thin wrapper around the TS scaffold CLI.
+"""Finish 2.0/3.0/4.0 content CLI — thin wrapper around the TS scaffold CLI.
 
 Prefer: cd web && npm run content:scaffold -- <kind> --id <slug> [...]
-Kinds: species|quest|harbor|contract|bait|decor (also --list / --check-pack).
+Kinds: species|quest|harbor|contract|bait|decor|machine|rival
+Also: --list / --check-pack / --check-floors.
 This script forwards argv to that npm entry so shared/tools stays discoverable.
 """
 from __future__ import annotations

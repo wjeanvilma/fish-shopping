@@ -1,0 +1,73 @@
+{
+  "phase": 15,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.rival_markets_2.v1",
+  "description": "Finish 4.0 Phase 15 — raise rival markets to ≥12 covering mist/prism, and deepen rival AI (profiles, adaptive aggression, multi-rival pressure). Schema stays 24 / content 3.0.0.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "rivalCount": 12,
+  "rivalMarkets2Marker": "authored-finish-4.0-phase-15",
+  "stats": [
+    "stat.rival_sales_stolen",
+    "stat.rival_undercuts",
+    "stat.rival_beats"
+  ],
+  "aiProfiles": [
+    "siphon",
+    "undercut",
+    "adaptive",
+    "roamer"
+  ],
+  "aiCatalog": {
+    "adaptiveAggressionBoostPermille": 120,
+    "multiRivalPressureExtraMultPermille": 900
+  },
+  "rivalIds": [
+    "rival.dockside_dolly",
+    "rival.moon_mariner",
+    "rival.obsidian_cart",
+    "rival.northlight_nook",
+    "rival.marina_monger",
+    "rival.coral_crock",
+    "rival.storm_hawker",
+    "rival.ember_emporium",
+    "rival.mist_monger",
+    "rival.prism_peddler",
+    "rival.fog_roamer",
+    "rival.shelf_syndicate"
+  ],
+  "newRivalIds": [
+    "rival.mist_monger",
+    "rival.prism_peddler",
+    "rival.fog_roamer",
+    "rival.shelf_syndicate"
+  ],
+  "extendsRivalMarkets": "shared/ship/rival-markets.json",
+  "parityFixture": "shared/fixtures/parity-rival-markets-2.json",
+  "authorTool": "shared/tools/author_rivals_2.py",
+  "validateScript": "npm run rivals2:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "checklist": [
+    "≥12 rivals covering all 10 harbors including mist_cove + prism_reach",
+    "aiProfile stamped on every rival; catalog adaptive/multi-rival knobs wired",
+    "RivalMarketSystem TS + Kotlin apply AI depth (adaptive aggression, multi pressure)",
+    "Finish 3.0 rivalmarkets:validate soft ≥8 floors still green",
+    "parity-rival-markets-2 + rivals2:validate green",
+    "CI runs rivals2:validate",
+    "kickoff baseline.rivalMarkets = 12",
+    "schema stays 24 / content 3.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/rival-markets-2.json",
+    "shared/fixtures/parity-rival-markets-2.json",
+    "shared/ship/rival-markets.json",
+    "shared/content/content-pack.json",
+    "shared/tools/author_rivals_2.py",
+    "web/src/ship/rivalMarkets2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/RivalMarkets2.kt",
+    "web/scripts/validate-rival-markets-2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/customers/RivalMarketSystem.kt",
+    "web/src/engine/systems.ts"
+  ]
+}

@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 — content authoring id helpers.
+ * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 + Finish 4.0 Phase 28 — content authoring id helpers.
  */
 
 const SLUG = /^[a-z][a-z0-9_]*$/;
@@ -10,13 +10,22 @@ export type CoreScaffoldKind = "species" | "quest" | "harbor";
 /** Finish 3.0 Phase 28 expansion kinds. */
 export type ExpansionScaffoldKind = "contract" | "bait" | "decor";
 
-export type ScaffoldKind = CoreScaffoldKind | ExpansionScaffoldKind;
+/** Finish 4.0 Phase 28 wave-3 kinds. */
+export type Wave3ScaffoldKind = "machine" | "rival";
+
+export type ScaffoldKind = CoreScaffoldKind | ExpansionScaffoldKind | Wave3ScaffoldKind;
 
 export const SCAFFOLD_KINDS: CoreScaffoldKind[] = ["species", "quest", "harbor"];
 
 export const SCAFFOLD_KINDS_2: ExpansionScaffoldKind[] = ["contract", "bait", "decor"];
 
-export const ALL_SCAFFOLD_KINDS: ScaffoldKind[] = [...SCAFFOLD_KINDS, ...SCAFFOLD_KINDS_2];
+export const SCAFFOLD_KINDS_3: Wave3ScaffoldKind[] = ["machine", "rival"];
+
+export const ALL_SCAFFOLD_KINDS: ScaffoldKind[] = [
+  ...SCAFFOLD_KINDS,
+  ...SCAFFOLD_KINDS_2,
+  ...SCAFFOLD_KINDS_3,
+];
 
 const PREFIXES: Record<ScaffoldKind, string> = {
   species: "species.",
@@ -25,6 +34,8 @@ const PREFIXES: Record<ScaffoldKind, string> = {
   contract: "contract.",
   bait: "bait.",
   decor: "decor.",
+  machine: "machine.",
+  rival: "rival.",
 };
 
 export function normalizeSlug(raw: string): string {

@@ -147,7 +147,7 @@ internal fun QuestLogPanel(
     onUnequipCosmetic: () -> Unit,
     onPreviewCosmetic: (String) -> Unit,
     onClearPreview: () -> Unit,
-    onTakeLoan: () -> Unit,
+    onTakeLoan: (String?) -> Unit,
     onRepayLoan: () -> Unit,
     onSetCoinGoal: (Long) -> Unit,
     dailyLoginStreak: Int,
@@ -215,7 +215,11 @@ internal fun QuestLogPanel(
                                 }
                             }
                             Text(g.description, style = MaterialTheme.typography.bodySmall)
-                            Text(buildString { append("MaterialTheme.colorScheme.secondary: "); append((formatCoins(g.rewardCoins)).toString()) },
+                            Text(
+                                buildString {
+                                    append("Reward: ")
+                                    append(formatCoins(g.rewardCoins))
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.secondary,
                             )
@@ -283,15 +287,55 @@ internal fun QuestLogPanel(
                                     Text(buildString { append("Repay · up to "); append((formatCoins(minOf(coins, bank.loanOwed))).toString()) })
                                 }
                             } else {
-                                Text(buildString { append("Borrow "); append((formatCoins(bank.loanPrincipal)).toString()); append(" · repay "); append((formatCoins(bank.repayAmount)).toString()); append(" in "); append((formatRushSeconds(bank.termTicks)).toString()); append("s") },
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
-                                Button(
-                                    onClick = onTakeLoan,
-                                    enabled = bank.canTakeLoan,
-                                    modifier = Modifier.padding(top = 4.dp).heightIn(min = 48.dp),
-                                ) {
-                                    Text(buildString { append("Take loan · "); append((formatCoins(bank.loanPrincipal)).toString()) })
+                                val products = bank.loanProducts.ifEmpty {
+                                    listOf(
+                                        com.willio.jeanvilma.fishshopping.core.sim.BankLoanProductView(
+                                            id = "loan.legacy",
+                                            name = "Pier loan",
+                                            description = "",
+                                            principal = bank.loanPrincipal,
+                                            repayAmount = bank.repayAmount,
+                                            termTicks = bank.termTicks,
+                                            unlocked = bank.canTakeLoan,
+                                            lockedReason = null,
+                                            canTake = bank.canTakeLoan,
+                                        ),
+                                    )
+                                }
+                                products.forEach { product ->
+                                    Text(
+                                        buildString {
+                                            append(product.name)
+                                            append(" · borrow ")
+                                            append(formatCoins(product.principal))
+                                            append(" · repay ")
+                                            append(formatCoins(product.repayAmount))
+                                            append(" in ")
+                                            append(formatRushSeconds(product.termTicks))
+                                            append("s")
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(top = 4.dp),
+                                    )
+                                    product.lockedReason?.let { reason ->
+                                        Text(
+                                            reason,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.error,
+                                        )
+                                    }
+                                    Button(
+                                        onClick = { onTakeLoan(product.id) },
+                                        enabled = product.canTake,
+                                        modifier = Modifier.padding(top = 4.dp).heightIn(min = 48.dp),
+                                    ) {
+                                        Text(buildString {
+                                            append("Take ")
+                                            append(product.name)
+                                            append(" · ")
+                                            append(formatCoins(product.principal))
+                                        })
+                                    }
                                 }
                             }
                         }

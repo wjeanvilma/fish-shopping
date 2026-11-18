@@ -2,9 +2,9 @@
   "phase": 6,
   "plan": "30_finish_2.0",
   "schema": "fish.ship.loc_floors.v1",
-  "description": "Finish 2.0 Phase 6 scoreboard \u2192 Finish 3.0 Phase 30 freeze. Measures real source only (no padding). Phase 30 enforces Finish 3.0 freeze anti-regression floors; plan targets (25k/16k/38k/80k) retained as documentation.",
-  "contentVersion": "3.0.0",
-  "schemaVersion": 24,
+  "description": "Finish 2.0 Phase 6 scoreboard → Finish 3.0 Phase 30 freeze → Finish 4.0 Phase 30 freeze. Measures real source only (no padding). Freeze floors stay anti-regression at the 4.0 cut; Finish 4.0 plan targets remain 32k/20k/48k/100k.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
   "metric": {
     "unit": "physical_lines",
     "note": "Count every physical line in product source files (including blanks/comments). Matches the ~42k baseline used in the Finish 2.0 plan.",
@@ -21,33 +21,26 @@
     "gameCore": {
       "id": "game-core",
       "root": "game-core/src/main",
-      "extensions": [
-        ".kt"
-      ],
-      "phase30Floor": 20900,
-      "planTarget": 25000
+      "extensions": [".kt"],
+      "phase30Floor": 23500,
+      "planTarget": 32000
     },
     "app": {
       "id": "app",
       "root": "app/src/main",
-      "extensions": [
-        ".kt"
-      ],
-      "phase30Floor": 13100,
-      "planTarget": 16000
+      "extensions": [".kt"],
+      "phase30Floor": 13800,
+      "planTarget": 20000
     },
     "webSrc": {
       "id": "web/src",
       "root": "web/src",
-      "extensions": [
-        ".ts",
-        ".tsx"
-      ],
-      "phase30Floor": 30200,
-      "planTarget": 38000
+      "extensions": [".ts", ".tsx"],
+      "phase30Floor": 35600,
+      "planTarget": 48000
     }
   },
-  "productTotalFloor": 64200,
+  "productTotalFloor": 73100,
   "enforceFloors": true,
   "enforceAtPhase": 30,
   "baseline": {
@@ -56,7 +49,7 @@
     "app": 9287,
     "webSrc": 20114,
     "productTotal": 42677,
-    "note": "Phase 6 cut baseline (physical lines). Growth must come from real systems/content \u2014 never copy-paste padding."
+    "note": "Phase 6 cut baseline (physical lines). Growth must come from real systems/content — never copy-paste padding."
   },
   "testScopesInformational": {
     "gameCoreTests": "game-core/src/test",
@@ -71,7 +64,7 @@
     "npm run loc:smoke enforces freeze floors (enforceFloors=true)",
     "CI runs loc:validate + loc:smoke",
     "No LOC inflation via duplicated files or generated sources in product roots",
-    "Plan targets 25k/16k/38k/80k retained; not padded to force-meet"
+    "Finish 4.0 plan targets 32k/20k/48k/100k; not padded to force-meet"
   ],
   "preflightGates": [
     "shared/ship/loc-floors.json",
@@ -81,13 +74,20 @@
     "web/scripts/smoke-loc-floors.ts"
   ],
   "enforceMode": "freeze_anti_regression",
-  "productTotalPlanTarget": 80000,
+  "productTotalPlanTarget": 100000,
   "freezeCut": {
     "measuredAtPhase": 30,
-    "gameCore": 16459,
-    "app": 10189,
-    "webSrc": 24247,
-    "productTotal": 50895,
-    "note": "Phase 30 freeze cut (physical lines). Floors sit slightly under measured to avoid flake; growth must remain real systems/content."
+    "gameCore": 23675,
+    "app": 13947,
+    "webSrc": 35851,
+    "productTotal": 73473,
+    "note": "Finish 4.0 Phase 30 freeze cut (physical lines). Floors sit slightly under measured to avoid flake; growth must remain real systems/content. Finish 3.0 cut (64488) remains historical via prior freeze catalogs."
+  },
+  "softFloors": {
+    "finish3HistoricalProductTotalFloor": 64200,
+    "finish3HistoricalGameCoreFloor": 20900,
+    "finish3HistoricalAppFloor": 13100,
+    "finish3HistoricalWebSrcFloor": 30200,
+    "note": "Finish 3.0 anti-regression floors remain documented; live floors raised to Finish 4.0 cut."
   }
 }

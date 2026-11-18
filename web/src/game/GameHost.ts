@@ -6,12 +6,11 @@
  */
 import contentJson from "../../../shared/content/content-pack.json";
 import {
-  type Command, type ContentPack, CosmeticsIapSystem, FixedStepClock, FullUnlockSystem, GameState, INPUT_SCALE, NewerSaveError,
-  type OfflineReport, ProductionSystem, Simulation, type SimView, applyOffline, buildView,
+  type Command, type ContentPack, FixedStepClock, GameState, INPUT_SCALE, NewerSaveError,
+  type OfflineReport, Simulation, type SimView, applyOffline, buildView,
   decodeSnapshotEnvelope, encodeBalanceExport, encodeSnapshot, encodeTelemetry, loadContent,
 } from "../engine";
 import { AudioBus } from "../audio/audioBus";
-import { sfxFromEvent } from "../audio/sfxCues";
 import { sharedAnalyticsBus } from "../analytics/analyticsBus";
 import {
   createEntitlementBilling,
@@ -61,55 +60,19 @@ import {
 } from "../shell/shellPanels";
 import { OfflineShell } from "../shell/offlineShell";
 import {
-  resolveAchievementBurst,
-  resolveCatchBurst,
-  resolveCelebrateBurst,
-  resolveContractDoneBurst,
-  resolveFestivalBurst,
-  resolveFlyingTransfer,
-  resolveGoalClaimBurst,
-  resolveHarborTravelBurst,
-  resolveHireBurst,
-  resolveLoanBurst,
-  resolveMachineDoneBurst,
-  resolvePayBurst,
-  resolvePrestigeBurst,
-  resolveRivalBeatBurst,
-  resolveTrophySetBurst,
   type FlyingTransferCue,
   type ShakeKind,
   type WorldBurstCue,
 } from "../render/presenters";
+import { HostEconomyIntents } from "./host/hostEconomyIntents";
+import { HostIapIntents } from "./host/hostIapIntents";
+import { HostShellIntents } from "./host/hostShellIntents";
+import { HostTravelIntents } from "./host/hostTravelIntents";
+import { processHostStep } from "./host/hostStepBus";
 import { stickFromTapTarget, type TapTarget } from "../presenters/tapToMove";
 
-export type HostState =
-  | { status: "loading" }
-  | {
-      status: "title";
-      hasSave: boolean;
-      cloudConflict: CloudConflictView | null;
-      localRecovery: LocalRecoveryView | null;
-      settings: GameSettings;
-    }
-  | {
-      status: "ready";
-      view: SimView;
-      upgradesOpen: boolean;
-      staffOpen: boolean;
-      questsOpen: boolean;
-      contractsOpen: boolean;
-      mapOpen: boolean;
-      warehouseOpen: boolean;
-      speciesBookOpen: boolean;
-      dashboardOpen: boolean;
-      pauseOpen: boolean;
-      settingsOpen: boolean;
-      bagOpen: boolean;
-      stationOpen: boolean;
-      offlineReport: OfflineReport | null;
-      settings: GameSettings;
-    }
-  | { status: "failed"; message: string };
+export type { HostState } from "./host/hostState";
+import type { HostState } from "./host/hostState";
 
 
 const START_HARBOR = "harbor.sunrise_pier";
@@ -131,8 +94,8 @@ export class GameHost {
   })();
   private readonly audio = new AudioBus();
   private readonly cloud = new CloudSyncCoordinator();
-  private readonly billing: EntitlementBilling = createEntitlementBilling();
-  private readonly pendingEntitlements = new PendingEntitlementLedger();
+  readonly billing: EntitlementBilling = createEntitlementBilling();
+  readonly pendingEntitlements = new PendingEntitlementLedger();
   private allowSaving = true;
   private rotateOnNextSave = true;
   private readonly panels = new ShellPanelController();
@@ -165,6 +128,11 @@ export class GameHost {
   private pendingBursts: WorldBurstCue[] = [];
   /** Phase 21 screen-shake kinds (drained each frame by the scene). */
   private pendingShakes: ShakeKind[] = [];
+
+  private readonly shellIntents = new HostShellIntents(this);
+  private readonly economyIntents = new HostEconomyIntents(this);
+  private readonly travelIntents = new HostTravelIntents(this, this.shellIntents);
+  private readonly iapIntents = new HostIapIntents(this);
 
   private starting: Promise<void> | null = null;
 
@@ -209,7 +177,7 @@ export class GameHost {
     this.syncMusicBed();
   }
 
-  /** Finish 2.0 Phase 21 + Finish 3.0 Phase 23: festival/storm/rival/night beds; ducking unchanged. */
+  /** Finish 2.0/3.0/4.0: festival/storm/rival/night/endgame/ledger beds; ducking unchanged. */
   private syncMusicBed(): void {
     const v = this.latestView;
     const festivalActive = !!v?.seasonalEvent;
@@ -219,12 +187,16 @@ export class GameHost {
       !!v?.rivalPressureActive || (v?.activeRivalIds?.length ?? 0) > 0;
     const tide = v?.tidePhaseId ?? "";
     const nightActive = tide === "night" || tide === "dusk";
+    const endgameActive = !!v?.endgameUnlocked;
+    const ledgerActive = (v?.bank?.loanOwed ?? 0) > 0;
     this.audio.syncMusicBedFromPanels(
       this.panels.isOpen("station"),
       festivalActive,
       stormActive,
       rivalActive,
       nightActive,
+      endgameActive,
+      ledgerActive,
     );
   }
 
@@ -465,71 +437,28 @@ export class GameHost {
    * Queues until Ready; soft auto-continues from Title when a save exists.
    */
   applyDeepLink(intent: DeepLinkIntent): void {
-    if (!intent.panel && !intent.harborId) return;
-    if (this.state.status === "ready" && this.sim) {
-      this.consumeDeepLink(intent);
-      return;
-    }
-    this.pendingDeepLink = intent;
-    if (
+    const canAuto =
       this.state.status === "title" &&
       this.state.hasSave &&
       !this.state.cloudConflict &&
       !this.state.localRecovery &&
-      !this.booting
-    ) {
-      void this.continueGame();
-    }
+      !this.booting;
+    this.travelIntents.applyDeepLink(intent, canAuto, (queued) => {
+      this.pendingDeepLink = queued;
+    });
   }
 
   private flushPendingDeepLink(): void {
     const pending = this.pendingDeepLink;
     this.pendingDeepLink = null;
-    if (pending && (pending.panel || pending.harborId)) this.consumeDeepLink(pending);
+    if (pending && (pending.panel || pending.harborId)) {
+      this.travelIntents.consumeDeepLink(pending);
+      if (typeof location !== "undefined") stripDeepLinkQuery(location.search);
+    }
   }
 
   private consumeDeepLink(intent: DeepLinkIntent): void {
-    switch (intent.panel) {
-      case "quests":
-        this.setQuestsOpen(true);
-        break;
-      case "contracts":
-        this.setContractsOpen(true);
-        break;
-      case "staff":
-        this.setStaffOpen(true);
-        break;
-      case "map":
-        this.setMapOpen(true);
-        break;
-      case "upgrades":
-        this.setUpgradesOpen(true);
-        break;
-      case "dashboard":
-        this.setDashboardOpen(true);
-        break;
-      case "settings":
-        this.setSettingsOpen(true);
-        break;
-      case "speciesBook":
-        this.setSpeciesBookOpen(true);
-        break;
-      case "warehouse":
-        this.setWarehouseOpen(true);
-        break;
-      case "bag":
-        this.setBagOpen(true);
-        break;
-      case "station":
-        this.setStationOpen(true);
-        break;
-      case "pause":
-        this.setPauseOpen(true);
-        break;
-      default:
-        break;
-    }
-    if (intent.harborId) this.travelToHarbor(intent.harborId);
+    this.travelIntents.consumeDeepLink(intent);
     if (typeof location !== "undefined") stripDeepLinkQuery(location.search);
   }
 
@@ -661,295 +590,18 @@ export class GameHost {
   }
 
   private step(sim: Simulation): void {
-    const batch = this.commands.splice(0);
-    let transaction = false;
-    const transferred: { from: string; to: string; itemId: string }[] = [];
-    const payCustomers: string[] = [];
-    const machineDone: string[] = [];
-    let celebrate = false;
-    let catchCount = 0;
-    let achievementBurst = false;
-    let festivalBurst = false;
-    let contractDoneBurst = false;
-    let goalClaimBurst = false;
-    let rivalBeatBurst = false;
-    let prestigeBurst = false;
-    let trophySetBurst = false;
-    let harborTravelBurst = false;
-    let hireBurst = false;
-    let loanBurst = false;
-    const events = sim.step(batch);
-    sharedAnalyticsBus.onGameEvents(events, sim.state);
-    for (const e of events) {
-      const cue = sfxFromEvent(e);
-      if (cue) this.audio.play(cue);
-      switch (e.type) {
-        case "items_transferred":
-          transferred.push({ from: e.from, to: e.to, itemId: e.itemId });
-          break;
-        case "batch_completed":
-          machineDone.push(e.stationId);
-          this.pendingShakes.push("cut");
-          break;
-        case "sale_committed": {
-          const tip = e.preferenceMet === false ? " (substituted)"
-            : (e.priceMultPermille ?? 1000) > 1000 ? " Premium tip!" : "";
-          this.say(`+${e.coins} coins${tip}`);
-          payCustomers.push(e.customerId);
-          this.pendingShakes.push("sale");
-          transaction = true;
-          break;
-        }
-        case "fish_caught":
-          catchCount += 1;
-          this.pendingShakes.push("catch");
-          if (e.personalBest) {
-            const name = sim.content.itemName(e.speciesId);
-            this.say(`New trophy: ${name} · ${e.sizePermille}%`);
-            celebrate = true;
-            transaction = true;
-          } else if (e.timingBonus) {
-            const tip = sim.content.speciesById.get(e.speciesId)?.baseValue ?? 0;
-            this.say(`Perfect reel! +${tip}`);
-            celebrate = true;
-            transaction = true;
-          }
-          if (e.rareUpgrade) {
-            this.say(`Rare catch: ${sim.content.speciesById.get(e.speciesId)?.name ?? e.speciesId}`);
-            celebrate = true;
-            transaction = true;
-          }
-          break;
-        case "trophy_set_completed": {
-          const setName = sim.content.trophySetsById.get(e.setId)?.name ?? e.setId;
-          this.say(`Gallery complete: ${setName}`);
-          trophySetBurst = true;
-          transaction = true;
-          break;
-        }
-        case "coin_goal_reached":
-          this.say(`Coin goal reached!`);
-          celebrate = true;
-          transaction = true;
-          break;
-        case "fishing_spot_depleted":
-          this.say("Pier empty — fish are returning");
-          transaction = true;
-          break;
-        case "rush_started":
-          this.say(`${e.name}!`);
-          celebrate = true;
-          transaction = true;
-          break;
-        case "machine_idle_alert": {
-          const name = sim.content.machinesById.get(e.machineId)?.name ?? e.stationId;
-          this.say(`${name}: ${e.reason}`);
-          transaction = true;
-          break;
-        }
-        case "upgrade_purchased":
-          if (!e.replayed) { this.say(`Bought ${sim.content.upgradesById.get(e.upgradeId)?.name ?? e.upgradeId}`); transaction = true; }
-          break;
-        case "full_harbor_unlock_granted":
-          if (!e.replayed) { this.say("All harbors unlocked"); transaction = true; }
-          break;
-        case "iap_cosmetic_granted":
-          if (!e.replayed) { this.say(`Unlocked ${e.cosmeticId}`); transaction = true; }
-          break;
-        case "iap_cosmetic_rejected":
-          this.say(e.reason);
-          transaction = true;
-          break;
-        case "purchase_rejected": this.say(e.reason); transaction = true; break;
-        case "worker_hired":
-          if (!e.replayed) {
-            this.say(`Hired ${sim.content.workersById.get(e.roleId)?.name ?? e.roleId}`);
-            hireBurst = true;
-            transaction = true;
-          }
-          break;
-        case "worker_leveled_up": {
-          const name = sim.content.workersById.get(e.roleId)?.name ?? e.roleId;
-          this.say(`${name} reached level ${e.level}`);
-          break;
-        }
-        case "worker_shift_changed": {
-          const name = sim.content.workersById.get(e.roleId)?.name ?? e.roleId;
-          this.say(e.onShift ? `${name} on shift` : `${name} off shift`);
-          break;
-        }
-        case "hire_rejected": this.say(e.reason); transaction = true; break;
-        case "worker_branch_unlocked": {
-          const name = sim.content.staffBranchesById.get(e.branchId)?.name ?? e.branchId;
-          this.say(`Unlocked ${name}`);
-          transaction = true;
-          break;
-        }
-        case "worker_branch_train_rejected":
-          this.say(e.reason);
-          transaction = true;
-          break;
-        case "wages_paid":
-          this.say(`Paid ${e.coins} coins in wages`);
-          transaction = true;
-          break;
-        case "quest_completed": {
-          const name = sim.content.questsById.get(e.questId)?.name ?? e.questId;
-          const tip = e.coinsRewarded && e.coinsRewarded > 0
-            ? `Goal complete: ${name} (+${e.coinsRewarded})`
-            : `Goal complete: ${name}`;
-          this.say(tip);
-          transaction = true;
-          break;
-        }
-        case "prestige_unlocked": {
-          const name = sim.content.prestigeMilestonesById.get(e.prestigeId)?.name ?? e.prestigeId;
-          const tip = e.coinsRewarded > 0
-            ? `Prestige: ${name} (+${e.coinsRewarded})`
-            : `Prestige: ${name}`;
-          this.say(tip);
-          prestigeBurst = true;
-          transaction = true;
-          break;
-        }
-        case "rival_market_opened":
-          this.say(`Rival open: ${e.name}`);
-          transaction = true;
-          break;
-        case "rival_sale_stolen":
-          this.say("Rival stole a sale");
-          transaction = true;
-          break;
-        case "rival_beaten":
-          this.say("Rival beaten!");
-          rivalBeatBurst = true;
-          transaction = true;
-          break;
-        case "loan_taken":
-          if (!e.replayed) {
-            this.say(`Loan +${e.principal}`);
-            loanBurst = true;
-            transaction = true;
-          }
-          break;
-        case "achievement_unlocked": {
-          const name = sim.content.achievementsById.get(e.achievementId)?.name ?? e.achievementId;
-          const tip = e.coinsRewarded > 0
-            ? `Achievement: ${name} (+${e.coinsRewarded})`
-            : `Achievement: ${name}`;
-          this.say(tip);
-          achievementBurst = true;
-          transaction = true;
-          break;
-        }
-        case "seasonal_event_started":
-          this.say(`${e.name}!`);
-          festivalBurst = true;
-          transaction = true;
-          break;
-        case "weather_changed":
-          this.say(`Weather: ${e.name}`);
-          break;
-        case "tide_changed":
-          this.say(`Tide: ${e.name}`);
-          break;
-        case "mastery_level_up": {
-          const name = sim.content.speciesById.get(e.speciesId)?.name ?? e.speciesId;
-          this.say(`Mastery: ${name} Lv ${e.level}`);
-          break;
-        }
-        case "contract_accepted":
-          if (!e.replayed) { this.say("Contract accepted"); transaction = true; }
-          break;
-        case "contract_completed":
-          this.say(`Contract complete +${e.payout}`);
-          contractDoneBurst = true;
-          transaction = true;
-          break;
-        case "contract_failed":
-          this.say(e.penaltyPaid > 0 ? `Contract failed −${e.penaltyPaid}` : "Contract failed");
-          transaction = true;
-          break;
-        case "contract_rejected": this.say(e.reason); transaction = true; break;
-        case "daily_goal_claimed":
-          if (!e.replayed) {
-            const name = sim.content.dailyObjectivesById.get(e.objectiveId)?.name ?? e.objectiveId;
-            this.say(`Daily claimed: ${name} (+${e.payout})`);
-            goalClaimBurst = true;
-            transaction = true;
-          }
-          break;
-        case "daily_goal_rejected": this.say(e.reason); transaction = true; break;
-        case "harbor_traveled":
-          if (!e.replayed) {
-            const name = sim.content.harborsById.get(e.toHarborId)?.name ?? e.toHarborId;
-            this.say(`Traveled to ${name}`);
-            this.panels.close("map");
-            this.pendingFlying = [];
-            this.pendingBursts = [];
-            this.pendingShakes = [];
-            harborTravelBurst = true;
-            transaction = true;
-          }
-          break;
-        case "travel_rejected": this.say(e.reason); transaction = true; break;
-        case "maintenance_paid":
-          this.say(`Upkeep −${e.coins} coins`);
-          transaction = true;
-          break;
-        case "items_spoiled": {
-          const n = e.items.reduce((sum, it) => sum + it.quantity, 0);
-          this.say(`Spoiled ${n} ${e.location === "bag" ? "in bag" : "on counter"}`);
-          transaction = true;
-          break;
-        }
-        case "checkpoint_requested": this.save(); break;
-        default: break;
-      }
-    }
-    this.latestView = buildView(sim);
-    this.syncMusicBed();
-    const view = this.latestView;
-    if (view) {
-      for (const t of transferred) {
-        const cue = resolveFlyingTransfer(view, t.from, t.to, t.itemId);
-        if (cue) this.pendingFlying.push(cue);
-      }
-      for (let i = 0; i < catchCount; i++) this.pendingBursts.push(resolveCatchBurst(view));
-      for (const customerId of payCustomers) this.pendingBursts.push(resolvePayBurst(view, customerId));
-      for (const stationId of machineDone) {
-        const cue = resolveMachineDoneBurst(view, stationId);
-        if (cue) this.pendingBursts.push(cue);
-      }
-      if (celebrate) {
-        this.pendingBursts.push(resolveCelebrateBurst(view));
-        this.pendingShakes.push("celebrate");
-      }
-      // Finish 2.0 Phase 22 + Finish 3.0 Phase 24 visual juice (shared burst pool).
-      if (achievementBurst) {
-        this.pendingBursts.push(resolveAchievementBurst(view));
-        this.pendingShakes.push("achievement");
-      }
-      if (festivalBurst) {
-        this.pendingBursts.push(resolveFestivalBurst(view));
-        this.pendingShakes.push("festival");
-      }
-      if (contractDoneBurst) this.pendingBursts.push(resolveContractDoneBurst(view));
-      if (goalClaimBurst) this.pendingBursts.push(resolveGoalClaimBurst(view));
-      if (rivalBeatBurst) {
-        this.pendingBursts.push(resolveRivalBeatBurst(view));
-        this.pendingShakes.push("rival_beat");
-      }
-      if (prestigeBurst) {
-        this.pendingBursts.push(resolvePrestigeBurst(view));
-        this.pendingShakes.push("prestige");
-      }
-      if (trophySetBurst) this.pendingBursts.push(resolveTrophySetBurst(view));
-      if (harborTravelBurst) this.pendingBursts.push(resolveHarborTravelBurst(view));
-      if (hireBurst) this.pendingBursts.push(resolveHireBurst(view));
-      if (loanBurst) this.pendingBursts.push(resolveLoanBurst(view));
-    }
-    if (transaction) this.publish(true);
+    processHostStep(sim, this.commands, {
+      say: (m) => this.say(m),
+      save: () => this.save(),
+      publish: (force) => this.publish(force),
+      syncMusicBed: () => this.syncMusicBed(),
+      audio: this.audio,
+      panels: this.panels,
+      pendingFlying: this.pendingFlying,
+      pendingBursts: this.pendingBursts,
+      pendingShakes: this.pendingShakes,
+      setLatestView: (v) => { this.latestView = v; },
+    });
   }
 
   // ---- intent ------------------------------------------------------------------------
@@ -1009,8 +661,67 @@ export class GameHost {
     this.panels.closeAll();
   }
 
+
+  // ---- host intent surface (Finish 4.0 Phase 6) --------------------------------------
+
+  enqueuePanelCommand(command: Command): void {
+    this.commands.push(command);
+    if (
+      this.sim &&
+      ShellModalPolicy.shouldCommitPanelCommand(
+        this.panels.snapshot(),
+        this.pendingOfflineReport !== null,
+      )
+    ) {
+      this.step(this.sim);
+      this.publish(true);
+    }
+  }
+
+  enqueueCommand(command: Command): void {
+    this.commands.push(command);
+  }
+
+  panelBlocksWorld(): boolean {
+    return this.panelOpen;
+  }
+
+  hasPendingOffline(): boolean {
+    return this.pendingOfflineReport !== null;
+  }
+
+  isPanelOpen(id: ShellPanelId): boolean {
+    return this.panels.isOpen(id);
+  }
+
+  syncWallClockNow(): void {
+    this.syncWallClock(Date.now());
+  }
+
+  isReadyWithSim(): boolean {
+    return this.state.status === "ready" && !!this.sim;
+  }
+
+  continueGameFromTitle(): void {
+    void this.continueGame();
+  }
+
+  cloudAccountId(): string | null {
+    return this.settings.cloudAccountId;
+  }
+
+  withSim(block: (sim: Simulation) => void): void {
+    if (!this.sim) return;
+    block(this.sim);
+  }
+
+  buildLatestView(): void {
+    if (!this.sim) return;
+    this.latestView = buildView(this.sim);
+  }
+
   /** Opening one panel closes the others. Closing only clears that panel. */
-  private setPanelOpen(which: ShellPanelId, open: boolean): void {
+  setPanelOpen(which: ShellPanelId, open: boolean): void {
     if (open) {
       this.panels.open(which);
       this.tapTarget = null;
@@ -1025,12 +736,18 @@ export class GameHost {
     this.publish(true);
   }
 
-  setUpgradesOpen(open: boolean): void { this.setPanelOpen("upgrades", open); }
-  setStaffOpen(open: boolean): void { this.setPanelOpen("staff", open); }
-  setQuestsOpen(open: boolean): void {
-    if (open && this.sim) this.syncWallClock(Date.now());
-    this.setPanelOpen("quests", open);
-  }
+  setUpgradesOpen(open: boolean): void { this.shellIntents.setUpgradesOpen(open); }
+  setStaffOpen(open: boolean): void { this.shellIntents.setStaffOpen(open); }
+  setQuestsOpen(open: boolean): void { this.shellIntents.setQuestsOpen(open); }
+  setContractsOpen(open: boolean): void { this.shellIntents.setContractsOpen(open); }
+  setMapOpen(open: boolean): void { this.shellIntents.setMapOpen(open); }
+  setWarehouseOpen(open: boolean): void { this.shellIntents.setWarehouseOpen(open); }
+  setSpeciesBookOpen(open: boolean): void { this.shellIntents.setSpeciesBookOpen(open); }
+  setDashboardOpen(open: boolean): void { this.shellIntents.setDashboardOpen(open); }
+  setPauseOpen(open: boolean): void { this.shellIntents.setPauseOpen(open); }
+  setSettingsOpen(open: boolean): void { this.shellIntents.setSettingsOpen(open); }
+  setBagOpen(open: boolean): void { this.shellIntents.setBagOpen(open); }
+  setStationOpen(open: boolean): void { this.shellIntents.setStationOpen(open); }
 
   syncWallClock(epochMs: number): void {
     if (!this.sim) return;
@@ -1039,22 +756,7 @@ export class GameHost {
     this.publish(true);
   }
 
-  claimDailyGoal(objectiveId: string): void {
-    this.commands.push({ type: "claim_daily_goal", objectiveId, requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
-  setContractsOpen(open: boolean): void { this.setPanelOpen("contracts", open); }
-  setMapOpen(open: boolean): void { this.setPanelOpen("map", open); }
-  setWarehouseOpen(open: boolean): void { this.setPanelOpen("warehouse", open); }
-  setSpeciesBookOpen(open: boolean): void { this.setPanelOpen("speciesBook", open); }
-  setDashboardOpen(open: boolean): void { this.setPanelOpen("dashboard", open); }
-  setPauseOpen(open: boolean): void { this.setPanelOpen("pause", open); }
-  setSettingsOpen(open: boolean): void { this.setPanelOpen("settings", open); }
-  setBagOpen(open: boolean): void { this.setPanelOpen("bag", open); }
-  setStationOpen(open: boolean): void { this.setPanelOpen("station", open); }
+  claimDailyGoal(objectiveId: string): void { this.economyIntents.claimDailyGoal(objectiveId); }
 
   /** Presentation settings (mute, volumes, haptics, quality, a11y, cloud). Not part of the parity save. */
   updateSettings(partial: Partial<GameSettings>): void {
@@ -1230,68 +932,21 @@ export class GameHost {
   }
 
   setMachinePaused(stationId: string, paused: boolean): void {
-    this.commands.push({ type: "set_machine_paused", stationId, paused });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
+    this.economyIntents.setMachinePaused(stationId, paused);
   }
 
-  purchase(upgradeId: string): void {
-    this.commands.push({ type: "purchase_upgrade", upgradeId, requestId: crypto.randomUUID() });
-    // Management panels pause the world; advance a single tick so the command commits now.
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  purchase(upgradeId: string): void { this.economyIntents.purchase(upgradeId); }
 
   /** Phase 6: confirm spend while standing on an expansion plot marker. */
-  buildPlot(plotId: string): void {
-    this.commands.push({ type: "build_plot", plotId, requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  buildPlot(plotId: string): void { this.economyIntents.buildPlot(plotId); }
 
-  purchaseDecor(decorId: string): void {
-    this.commands.push({ type: "purchase_decor", decorId, requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  purchaseDecor(decorId: string): void { this.economyIntents.purchaseDecor(decorId); }
 
   /** Phase 23 / post-1.0 Phase 2+3: one-time full-harbor unlock via web billing. */
-  purchaseFullHarborUnlock(): void {
-    void this.billing.purchaseFullUnlock(this.settings.cloudAccountId).then((result) => {
-      if (!result.ok) {
-        this.say(result.reason);
-        return;
-      }
-      this.pendingEntitlements.enqueue(FullUnlockSystem.SKU, result.purchaseToken, null);
-      this.applyStoreOwned(
-        [{ sku: FullUnlockSystem.SKU, purchaseToken: result.purchaseToken, grantsCosmetic: null }],
-        false,
-      );
-    });
-  }
+  purchaseFullHarborUnlock(): void { this.iapIntents.purchaseFullHarborUnlock(); }
 
   /** Phase 23: restore purchases and grant if the store says owned. */
-  restoreFullHarborUnlock(): void {
-    void this.billing.restore(this.settings.cloudAccountId).then((result) => {
-      if (!result.owned || !result.purchaseToken) {
-        this.say("No harbor unlock to restore");
-        return;
-      }
-      this.pendingEntitlements.enqueue(FullUnlockSystem.SKU, result.purchaseToken, null);
-      this.applyStoreOwned(
-        [{ sku: FullUnlockSystem.SKU, purchaseToken: result.purchaseToken, grantsCosmetic: null }],
-        true,
-      );
-    });
-  }
+  restoreFullHarborUnlock(): void { this.iapIntents.restoreFullHarborUnlock(); }
 
   /**
    * Phase 2 (post-1.0): after hosted checkout redirect (`?billing=success&session_id=`),
@@ -1344,38 +999,10 @@ export class GameHost {
   }
 
   /** Phase 24: purchase a power-neutral cosmetic SKU. */
-  purchaseIapCosmetic(sku: string): void {
-    void this.billing.purchaseCosmetic(sku, this.settings.cloudAccountId).then((result) => {
-      if (!result.ok) {
-        this.say(result.reason);
-        return;
-      }
-      const cosmeticId = CosmeticsIapSystem.BY_SKU.get(sku)?.grantsCosmetic;
-      if (!cosmeticId) {
-        this.say("Unknown cosmetic SKU");
-        return;
-      }
-      this.pendingEntitlements.enqueue(sku, result.purchaseToken, cosmeticId);
-      this.applyStoreOwned(
-        [{ sku, purchaseToken: result.purchaseToken, grantsCosmetic: cosmeticId }],
-        false,
-      );
-    });
-  }
+  purchaseIapCosmetic(sku: string): void { this.iapIntents.purchaseIapCosmetic(sku); }
 
   /** Phase 24 / post-1.0 Phase 2+3: restore all entitlements (full unlock + cosmetics). */
-  restorePurchases(): void {
-    void this.billing.restoreAll(this.settings.cloudAccountId).then((owned) => {
-      if (owned.length === 0 && this.pendingEntitlements.all().length === 0) {
-        this.say("No purchases to restore");
-        return;
-      }
-      for (const row of owned) {
-        this.pendingEntitlements.enqueue(row.sku, row.purchaseToken, row.grantsCosmetic);
-      }
-      this.applyStoreOwned(owned, true);
-    });
-  }
+  restorePurchases(): void { this.iapIntents.restorePurchases(); }
 
   /**
    * Phase 3: store is SoT for paid SKUs — merge restore + pending ledger into the live save,
@@ -1386,7 +1013,7 @@ export class GameHost {
     this.applyStoreOwned(owned, false);
   }
 
-  private applyStoreOwned(owned: RestoredEntitlement[], announceRestore: boolean): void {
+  applyStoreOwned(owned: RestoredEntitlement[], announceRestore: boolean): void {
     const sim = this.sim;
     if (!sim) return;
     const storeRows: StoreOwned[] = owned.map((row) => ({
@@ -1430,156 +1057,59 @@ export class GameHost {
     }
   }
 
-  repairMachine(stationId: string): void {
-    this.commands.push({ type: "repair_machine", stationId, requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  repairMachine(stationId: string): void { this.economyIntents.repairMachine(stationId); }
 
-  takeLoan(): void {
-    this.commands.push({ type: "take_loan", requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  takeLoan(productId?: string | null): void { this.economyIntents.takeLoan(productId); }
 
-  repayLoan(): void {
-    this.commands.push({ type: "repay_loan", requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  repayLoan(): void { this.economyIntents.repayLoan(); }
 
-  setCoinGoal(amount: number): void {
-    this.commands.push({ type: "set_coin_goal", amount });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  setCoinGoal(amount: number): void { this.economyIntents.setCoinGoal(amount); }
 
-  hire(roleId: string): void {
-    this.commands.push({ type: "hire_worker", roleId, requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  hire(roleId: string): void { this.economyIntents.hire(roleId); }
 
   setWorkerShift(workerId: string, onShift: boolean): void {
-    this.commands.push({ type: "set_worker_shift", workerId, onShift });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
+    this.economyIntents.setWorkerShift(workerId, onShift);
   }
 
   trainWorkerBranch(workerId: string, branchId: string): void {
-    this.commands.push({ type: "train_worker_branch", workerId, branchId, requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
+    this.economyIntents.trainWorkerBranch(workerId, branchId);
   }
 
   selectWorkerBranch(workerId: string, branchId: string | null): void {
-    this.commands.push({ type: "select_worker_branch", workerId, branchId });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
+    this.economyIntents.selectWorkerBranch(workerId, branchId);
   }
 
   setWorkerSchedule(workerId: string, scheduleId: string | null): void {
-    this.commands.push({ type: "set_worker_schedule", workerId, scheduleId });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
+    this.economyIntents.setWorkerSchedule(workerId, scheduleId);
   }
 
   assignWorkerGear(workerId: string, upgradeId: string): void {
-    this.commands.push({ type: "assign_worker_gear", workerId, upgradeId });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
+    this.economyIntents.assignWorkerGear(workerId, upgradeId);
   }
 
   unequipWorkerGear(workerId: string, slotId: string): void {
-    this.commands.push({ type: "unequip_worker_gear", workerId, slotId });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
+    this.economyIntents.unequipWorkerGear(workerId, slotId);
   }
 
-  acceptContract(offerId: string): void {
-    this.commands.push({ type: "accept_contract", offerId, requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  acceptContract(offerId: string): void { this.economyIntents.acceptContract(offerId); }
 
-  deliverContract(contractId: string): void {
-    this.commands.push({ type: "deliver_contract", contractId, requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  deliverContract(contractId: string): void { this.economyIntents.deliverContract(contractId); }
 
-  travelToHarbor(harborId: string): void {
-    this.commands.push({ type: "travel_to_harbor", harborId, requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  travelToHarbor(harborId: string): void { this.travelIntents.travelToHarbor(harborId); }
 
-  buyBait(baitId: string): void {
-    this.commands.push({ type: "buy_bait", baitId, requestId: crypto.randomUUID() });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  buyBait(baitId: string): void { this.economyIntents.buyBait(baitId); }
 
-  selectBait(baitId: string | null): void {
-    this.commands.push({ type: "select_bait", baitId });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
-  }
+  selectBait(baitId: string | null): void { this.economyIntents.selectBait(baitId); }
 
   selectTechnique(techniqueId: string | null): void {
-    this.commands.push({ type: "select_technique", techniqueId });
-    if (this.sim && ShellModalPolicy.shouldCommitPanelCommand(this.panels.snapshot(), this.pendingOfflineReport !== null)) {
-      this.step(this.sim);
-      this.publish(true);
-    }
+    this.economyIntents.selectTechnique(techniqueId);
   }
 
-  reel(): void {
-    if (this.panelOpen) return;
-    this.commands.push({ type: "reel" });
-  }
+  reel(): void { this.economyIntents.reel(); }
 
   /** Cycle Auto → each recipe → Auto for a station (no tick advance). */
   cycleStationRecipe(stationId: string): void {
-    if (!this.sim || this.pendingOfflineReport) return;
-    if (this.panelOpen && !this.panels.isOpen("station")) return;
-    const m = this.sim.state.machines.find((mm) => mm.stationId === stationId);
-    if (!m) return;
-    ProductionSystem.cyclePreferredRecipe(this.sim.content, m);
-    this.latestView = buildView(this.sim);
-    this.publish(true);
+    this.economyIntents.cycleStationRecipe(stationId);
   }
 
   // ---- persistence -------------------------------------------------------------------
@@ -1627,11 +1157,11 @@ export class GameHost {
     return () => this.messageListeners.delete(l);
   }
 
-  private say(m: string): void {
+  say(m: string): void {
     this.messageListeners.forEach((l) => l(m));
   }
 
-  private publish(force: boolean): void {
+  publish(force: boolean): void {
     if (!this.latestView) return;
     const now = performance.now();
     if (!force && now - this.lastHudPublishMs < ShellHudPolicy.PUBLISH_INTERVAL_MS) return;

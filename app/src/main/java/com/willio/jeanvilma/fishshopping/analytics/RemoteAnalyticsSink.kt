@@ -34,10 +34,14 @@ class RemoteAnalyticsSink(
         private set
     var eventsAccepted: Int = 0
         private set
+    var flushFailures: Int = 0
+        private set
 
     private val executor = Executors.newSingleThreadExecutor { r ->
         Thread(r, "fish-remote-analytics").apply { isDaemon = true }
     }
+    private val retryLock = Any()
+    @Volatile private var retryScheduled: Boolean = false
 
     fun enabled(): Boolean = RemoteAnalyticsPolicy.normalizeBaseUrl(baseUrl) != null
 
@@ -66,21 +70,59 @@ class RemoteAnalyticsSink(
 
     fun flushBlocking(): Boolean {
         if (!enabled() || !flushing.compareAndSet(false, true)) return true
+        var taken: List<RemoteAnalyticsPolicy.QueuedEvent> = emptyList()
         return try {
-            val envelope = synchronized(lock) {
-                RemoteAnalyticsPolicy.takeFlushSlice(queue, nowMs(), platform)
+            val slice = synchronized(lock) {
+                RemoteAnalyticsPolicy.takeFlushSliceDetailed(queue, nowMs(), platform)
             } ?: return true
-            val body = encodeEnvelope(envelope)
+            taken = slice.taken
+            val body = encodeEnvelope(slice.envelope)
             val url = RemoteAnalyticsPolicy.batchUrl(baseUrl!!)
             val ok = poster(url, body)
             lastFlushOk = ok
-            if (ok) batchesSent += 1
+            if (ok) {
+                batchesSent += 1
+                flushFailures = 0
+            } else if (RemoteAnalyticsPolicy.REQUEUE_ON_FLUSH_FAILURE) {
+                // Finish 4.0 Phase 21 — requeue failed slice and schedule retry.
+                synchronized(lock) {
+                    RemoteAnalyticsPolicy.requeueFlushSlice(queue, taken)
+                }
+                scheduleRetry()
+            }
             ok
         } catch (_: Exception) {
             lastFlushOk = false
+            if (RemoteAnalyticsPolicy.REQUEUE_ON_FLUSH_FAILURE && taken.isNotEmpty()) {
+                synchronized(lock) {
+                    RemoteAnalyticsPolicy.requeueFlushSlice(queue, taken)
+                }
+                scheduleRetry()
+            }
             false
         } finally {
             flushing.set(false)
+        }
+    }
+
+    private fun scheduleRetry() {
+        if (flushFailures >= RemoteAnalyticsPolicy.MAX_FLUSH_RETRIES) return
+        synchronized(retryLock) {
+            if (retryScheduled) return
+            retryScheduled = true
+            flushFailures += 1
+            val delay = RemoteAnalyticsPolicy.RETRY_BACKOFF_MS * flushFailures
+            executor.execute {
+                try {
+                    Thread.sleep(delay)
+                } catch (_: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    return@execute
+                } finally {
+                    synchronized(retryLock) { retryScheduled = false }
+                }
+                flushBlocking()
+            }
         }
     }
 

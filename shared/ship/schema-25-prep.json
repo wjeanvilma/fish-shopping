@@ -1,0 +1,25 @@
+{
+  "phase": 11,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.schema_25_prep.v1",
+  "description": "Finish 4.0 Phase 17 applied — live SCHEMA_VERSION is 25. Phase 11 prep notes retained; endgame-2 owns the bump (endgameMarks + deepen tiers/challenges).",
+  "contentVersion": "3.0.0",
+  "currentSchemaVersion": 25,
+  "targetSchemaVersion": 25,
+  "status": "applied",
+  "ownedByPhase": 17,
+  "ownedByValidate": "endgame2:validate",
+  "plannedConsumers": [
+    "ecology habitat weight caches in save",
+    "harbor 9–10 travel/prestige gate progress",
+    "endgame challenge / prestige deepen"
+  ],
+  "nonGoals": [
+    "Do not bump engine SCHEMA_VERSION in Phase 11",
+    "Do not write v24→v25 migration yet",
+    "Do not change content-pack.schemaVersion yet"
+  ],
+  "validateScript": "npm run species76100:validate",
+  "appliedBy": "endgame2:validate",
+  "appliedMarker": "authored-finish-4.0-phase-17"
+}

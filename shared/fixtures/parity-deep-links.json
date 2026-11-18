@@ -40,6 +40,30 @@
         "panel": "staff",
         "harborId": null,
         "source": "query"
+      },
+      {
+        "uri": "https://wjeanvilma.github.io/fish-shopping/play/?panel=bag",
+        "panel": "bag",
+        "harborId": null,
+        "source": "query"
+      },
+      {
+        "uri": "https://wjeanvilma.github.io/fish-shopping/play/?go=bank",
+        "panel": "dashboard",
+        "harborId": null,
+        "source": "query"
+      },
+      {
+        "uri": "https://wjeanvilma.github.io/fish-shopping/play/#pause",
+        "panel": "pause",
+        "harborId": null,
+        "source": "hash"
+      },
+      {
+        "uri": "fishshopping://open?panel=station",
+        "panel": "station",
+        "harborId": null,
+        "source": "query"
       }
     ],
     "manifestMustContain": [

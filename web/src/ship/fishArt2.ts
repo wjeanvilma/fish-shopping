@@ -86,7 +86,7 @@ export function measureFishArt2(repoRoot: string): FishArt2Measure {
   let dodQuotaOk = false;
   if (existsSync(dodPath)) {
     const dod = readJson(dodPath);
-    dodQuotaOk = (dod.quotas?.authoredFishSpecies ?? 0) >= FISH_ART_2.authoredSpeciesTarget;
+    dodQuotaOk = (dod.quotas?.authoredFishSpecies ?? 0) >= FISH_ART_2.authoredSpeciesTarget; // raised further by Finish 4.0 fish-art-3a
   }
 
   const missingGates: string[] = [];

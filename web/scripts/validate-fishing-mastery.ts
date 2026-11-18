@@ -49,8 +49,9 @@ function validate(): string[] {
   if (catalog.coachingTipCount !== 5 || MASTERY_COACHING_TIP_FLOOR !== 5) {
     errors.push("coachingTipCount must be 5");
   }
-  if (dod.quotas?.masteryTechniques !== 3) errors.push("DoD quotas.masteryTechniques must be 3");
-  if (dod.quotas?.masteryCoachingTips !== 5) errors.push("DoD quotas.masteryCoachingTips must be 5");
+  // Finish 4.0 Phase 16 soft floors — live DoD may exceed Finish 2.0 mastery quotas.
+  if ((dod.quotas?.masteryTechniques ?? 0) < 3) errors.push("DoD quotas.masteryTechniques must be ≥ 3");
+  if ((dod.quotas?.masteryCoachingTips ?? 0) < 5) errors.push("DoD quotas.masteryCoachingTips must be ≥ 5");
   if (content.fishingMastery.techniques.length < 3) {
     errors.push(`techniques ${content.fishingMastery.techniques.length} < 3`);
   }
@@ -94,22 +95,24 @@ function validate(): string[] {
     "utf8",
   );
   const systemsTs = readFileSync(resolve(root, "web/src/engine/systems.ts"), "utf8");
-  const hostTs = readFileSync(resolve(root, "web/src/game/GameHost.ts"), "utf8");
+  const hostStepBusTs = readFileSync(resolve(root, "web/src/game/host/hostStepBus.ts"), "utf8");
   const vmKt = readFileSync(
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt"),
     "utf8",
   );
   const appTsx = readFileSync(resolve(root, "web/src/ui/App.tsx"), "utf8");
-  const screenKt = readFileSync(
-    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt"),
+  const speciesBookTsx = readFileSync(resolve(root, "web/src/ui/SpeciesBookPanel.tsx"), "utf8");
+  const speciesBookKt = readFileSync(
+    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/SpeciesBookPanel.kt"),
     "utf8",
   );
   if (!masteryKt.includes("object MasterySystem")) errors.push("Kotlin MasterySystem missing");
   if (!systemsTs.includes("export const MasterySystem")) errors.push("web MasterySystem missing");
-  if (!hostTs.includes("mastery_level_up")) errors.push("GameHost missing mastery toast");
+  // Finish 4.0 splits — toast bus / species journal / technique select live in host modules + panels.
+  if (!hostStepBusTs.includes("mastery_level_up")) errors.push("GameHost missing mastery toast");
   if (!vmKt.includes("MasteryLevelUp")) errors.push("GameViewModel missing MasteryLevelUp toast");
-  if (!appTsx.includes("masteryLevel")) errors.push("web journal missing mastery");
-  if (!screenKt.includes("masteryLevel")) errors.push("Android journal missing mastery");
+  if (!speciesBookTsx.includes("masteryLevel")) errors.push("web journal missing mastery");
+  if (!speciesBookKt.includes("masteryLevel")) errors.push("Android journal missing mastery");
   if (!appTsx.includes("onSelectTechnique")) errors.push("web missing technique select UI");
   if (!vmKt.includes("fun selectTechnique")) errors.push("Android missing selectTechnique");
 

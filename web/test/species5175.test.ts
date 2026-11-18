@@ -26,7 +26,7 @@ describe("Species 51–75 + ecology (Finish 3.0 Phase 12)", () => {
 
   it("measures 75 species + habitats + wiring", () => {
     const m = measureSpecies5175(root);
-    expect(m.speciesCount).toBe(75);
+    expect(m.speciesCount).toBeGreaterThanOrEqual(75);
     expect(m.habitatCount).toBe(8);
     expect(m.newBasesPresent).toBe(true);
     expect(m.newRaresPresent).toBe(true);

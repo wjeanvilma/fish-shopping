@@ -3,13 +3,14 @@ Finish 2.0 Phase 20 + Finish 3.0 Phase 9/12 — authored low-poly fish themes.
 
 All content-pack species get multi-part FishArt_* meshes + distinct
 palettes while keeping the models/fish_*.glb path contract.
+Finish 4.0 Phase 8 raises the authored floor to 100 (species 76–100).
 """
 from __future__ import annotations
 
 from glb_geometry import add_box, fish_silhouette, mesh_bounds, normalize_mesh
 
 FISH_ART_MARKER = "authored-phase-20"
-FISH_ART_MIN = 50  # Finish 2.0 / fish-art-2 floor; Phase 12 grows beyond
+FISH_ART_MIN = 100  # Finish 4.0 Phase 8 floor (meshes 76–100 locked)
 
 # species.id → theme key (must be unique; specialty geometry + palette differ).
 AUTHORED_SPECIES = {
@@ -89,6 +90,32 @@ AUTHORED_SPECIES = {
     "species.dusk_cuttle": "dusk_cuttle",
     "species.opal_cuttle": "opal_cuttle",
     "species.basalt_gurnard": "basalt_gurnard",
+    # Finish 4.0 Phase 8 — species 76–100
+    "species.cedar_smelt": "cedar_smelt",
+    "species.gilt_cedar": "gilt_cedar",
+    "species.lantern_shad": "lantern_shad",
+    "species.prism_shad": "prism_shad",
+    "species.brine_mullet": "brine_mullet",
+    "species.bronze_brine": "bronze_brine",
+    "species.canyon_bass": "canyon_bass",
+    "species.crown_canyon": "crown_canyon",
+    "species.tidepool_blenny": "tidepool_blenny",
+    "species.opal_blenny": "opal_blenny",
+    "species.reef_hawkfish": "reef_hawkfish",
+    "species.ruby_hawk": "ruby_hawk",
+    "species.squall_smelt": "squall_smelt",
+    "species.thunder_smelt": "thunder_smelt",
+    "species.gale_herring": "gale_herring",
+    "species.prism_gale": "prism_gale",
+    "species.cinder_smelt": "cinder_smelt",
+    "species.magma_cinder": "magma_cinder",
+    "species.slag_perch": "slag_perch",
+    "species.gilt_slag": "gilt_slag",
+    "species.frost_jack": "frost_jack",
+    "species.aurora_jack": "aurora_jack",
+    "species.rime_herring": "rime_herring",
+    "species.crystal_rime": "crystal_rime",
+    "species.plaza_tuna": "plaza_tuna",
 }
 
 THEME_COLORS = {
@@ -167,6 +194,31 @@ THEME_COLORS = {
     "dusk_cuttle": {"body": "#6A5080", "fin": "#403060", "accent": "#A080C0"},
     "opal_cuttle": {"body": "#90C0B0", "fin": "#609080", "accent": "#C0E8D8"},
     "basalt_gurnard": {"body": "#5A5858", "fin": "#3A3838", "accent": "#8A8888"},
+    "cedar_smelt": {"body": "#C8A070", "fin": "#907050", "accent": "#E0C090"},
+    "gilt_cedar": {"body": "#D4B060", "fin": "#A08840", "accent": "#F0D080"},
+    "lantern_shad": {"body": "#E0C070", "fin": "#A89040", "accent": "#FFF0A0"},
+    "prism_shad": {"body": "#C0A0E0", "fin": "#8060B0", "accent": "#E0D0F8"},
+    "brine_mullet": {"body": "#8AA0A8", "fin": "#607880", "accent": "#C0D0D8"},
+    "bronze_brine": {"body": "#C89050", "fin": "#906030", "accent": "#E0B070"},
+    "canyon_bass": {"body": "#5A7060", "fin": "#3A5040", "accent": "#90B090"},
+    "crown_canyon": {"body": "#C9A040", "fin": "#907028", "accent": "#E8C860"},
+    "tidepool_blenny": {"body": "#70B0A0", "fin": "#408878", "accent": "#A0E0D0"},
+    "opal_blenny": {"body": "#90D0C0", "fin": "#609890", "accent": "#C0F0E8"},
+    "reef_hawkfish": {"body": "#E07060", "fin": "#A04030", "accent": "#F0A090"},
+    "ruby_hawk": {"body": "#C03040", "fin": "#801020", "accent": "#E07080"},
+    "squall_smelt": {"body": "#7090A8", "fin": "#486878", "accent": "#A0C0D0"},
+    "thunder_smelt": {"body": "#7060C8", "fin": "#4838A0", "accent": "#A898F0"},
+    "gale_herring": {"body": "#608098", "fin": "#405868", "accent": "#90B0C0"},
+    "prism_gale": {"body": "#9080C0", "fin": "#6050A0", "accent": "#C0B0E8"},
+    "cinder_smelt": {"body": "#C07050", "fin": "#904030", "accent": "#E09870"},
+    "magma_cinder": {"body": "#E04020", "fin": "#A02010", "accent": "#F07050"},
+    "slag_perch": {"body": "#A07050", "fin": "#704830", "accent": "#C09870"},
+    "gilt_slag": {"body": "#D09848", "fin": "#A07028", "accent": "#F0B870"},
+    "frost_jack": {"body": "#90B8D0", "fin": "#608898", "accent": "#C0E0F0"},
+    "aurora_jack": {"body": "#60C0C0", "fin": "#389090", "accent": "#A0E8E0"},
+    "rime_herring": {"body": "#A0B8C8", "fin": "#708898", "accent": "#D0E8F0"},
+    "crystal_rime": {"body": "#B0E0F0", "fin": "#78B0C0", "accent": "#E0F8FF"},
+    "plaza_tuna": {"body": "#2E6080", "fin": "#1A4058", "accent": "#6098B8"},
 }
 
 # Unique specialty box layouts — ensures pairwise-distinct authored digests.
@@ -246,6 +298,31 @@ THEME_SPECIALTY = {
     "dusk_cuttle": [((-0.18, -0.06, 0.06), (0.08, 0.24, 0.05)), ((-0.18, -0.06, -0.06), (0.08, 0.24, 0.05))],
     "opal_cuttle": [((-0.20, -0.08, 0.08), (0.08, 0.26, 0.05)), ((-0.20, -0.08, -0.08), (0.08, 0.26, 0.05)), ((-0.26, -0.10, 0.0), (0.08, 0.20, 0.05))],
     "basalt_gurnard": [((0.12, -0.08, 0.10), (0.10, 0.08, 0.18)), ((0.12, -0.08, -0.10), (0.10, 0.08, 0.18)), ((0.20, 0.04, 0.0), (0.12, 0.10, 0.10))],
+    "cedar_smelt": [((0.18, 0.03, 0.0), (0.14, 0.06, 0.06)), ((-0.1, -0.04, 0.0), (0.16, 0.04, 0.08))],
+    "gilt_cedar": [((0.2, 0.04, 0.0), (0.14, 0.06, 0.06)), ((-0.08, -0.03, 0.06), (0.14, 0.04, 0.08))],
+    "lantern_shad": [((0.22, 0.08, 0.0), (0.12, 0.12, 0.1)), ((0.22, 0.08, 0.0), (0.06, 0.06, 0.16))],
+    "prism_shad": [((0.2, 0.1, 0.06), (0.1, 0.1, 0.08)), ((0.2, 0.1, -0.06), (0.1, 0.1, 0.08))],
+    "brine_mullet": [((0.1, 0.0, 0.0), (0.18, 0.18, 0.18)), ((0.16, 0.06, 0.0), (0.08, 0.1, 0.1))],
+    "bronze_brine": [((0.12, 0.02, 0.0), (0.18, 0.18, 0.18)), ((0.18, 0.08, 0.0), (0.08, 0.1, 0.1))],
+    "canyon_bass": [((0.04, 0.0, 0.1), (0.16, 0.14, 0.08)), ((0.04, 0.0, -0.1), (0.16, 0.14, 0.08))],
+    "crown_canyon": [((0.0, 0.16, 0.0), (0.16, 0.12, 0.16)), ((0.0, 0.24, 0.0), (0.08, 0.1, 0.08))],
+    "tidepool_blenny": [((0.16, 0.06, 0.0), (0.12, 0.1, 0.08)), ((-0.08, -0.04, 0.0), (0.14, 0.06, 0.08))],
+    "opal_blenny": [((0.14, 0.08, 0.04), (0.12, 0.1, 0.08)), ((0.14, 0.08, -0.04), (0.12, 0.1, 0.08))],
+    "reef_hawkfish": [((0.0, 0.14, 0.0), (0.16, 0.16, 0.08)), ((0.12, 0.0, 0.08), (0.1, 0.1, 0.08))],
+    "ruby_hawk": [((0.0, 0.15, 0.0), (0.16, 0.16, 0.08)), ((0.18, -0.02, 0.0), (0.12, 0.1, 0.1))],
+    "squall_smelt": [((0.22, 0.02, 0.0), (0.18, 0.05, 0.05)), ((-0.14, -0.03, 0.0), (0.16, 0.04, 0.08))],
+    "thunder_smelt": [((0.2, 0.04, 0.0), (0.18, 0.05, 0.05)), ((0.0, 0.12, 0.0), (0.1, 0.08, 0.08))],
+    "gale_herring": [((0.0, -0.08, 0.0), (0.3, 0.05, 0.1)), ((0.1, 0.08, 0.0), (0.12, 0.06, 0.08))],
+    "prism_gale": [((0.0, -0.06, 0.0), (0.28, 0.05, 0.1)), ((0.08, 0.1, 0.06), (0.1, 0.06, 0.08))],
+    "cinder_smelt": [((0.18, -0.02, 0.0), (0.2, 0.06, 0.06)), ((-0.12, 0.04, 0.0), (0.16, 0.04, 0.08))],
+    "magma_cinder": [((0.2, -0.02, 0.0), (0.22, 0.06, 0.06)), ((-0.1, 0.05, 0.0), (0.14, 0.04, 0.08))],
+    "slag_perch": [((0.0, 0.12, 0.0), (0.18, 0.12, 0.14)), ((0.1, -0.04, 0.0), (0.12, 0.1, 0.1))],
+    "gilt_slag": [((0.0, 0.13, 0.0), (0.18, 0.12, 0.14)), ((-0.08, -0.04, 0.0), (0.12, 0.1, 0.1))],
+    "frost_jack": [((0.1, 0.0, 0.0), (0.3, 0.14, 0.12)), ((-0.12, 0.06, 0.0), (0.12, 0.1, 0.08))],
+    "aurora_jack": [((0.08, 0.02, 0.0), (0.28, 0.14, 0.12)), ((0.0, 0.14, 0.0), (0.1, 0.1, 0.1))],
+    "rime_herring": [((0.0, -0.07, 0.0), (0.28, 0.05, 0.1)), ((0.08, 0.07, 0.0), (0.12, 0.06, 0.08))],
+    "crystal_rime": [((0.0, -0.05, 0.0), (0.26, 0.05, 0.1)), ((0.0, 0.1, 0.0), (0.14, 0.04, 0.12))],
+    "plaza_tuna": [((0.05, 0.0, 0.0), (0.42, 0.24, 0.2)), ((0.18, 0.1, 0.0), (0.12, 0.12, 0.12))],
 }
 
 

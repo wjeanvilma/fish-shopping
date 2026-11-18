@@ -462,6 +462,10 @@ object ContentLoader {
                 minReputationBandToResist = rm["minReputationBandToResist"].int(min = 0),
                 wellStockedUnits = rm["wellStockedUnits"].int(min = 1),
                 pressureSpawnMultPermille = rm["pressureSpawnMultPermille"].int(min = 1),
+                adaptiveAggressionBoostPermille =
+                    rm.optional("adaptiveAggressionBoostPermille")?.int(min = 0, max = 1000) ?: 0,
+                multiRivalPressureExtraMultPermille =
+                    rm.optional("multiRivalPressureExtraMultPermille")?.int(min = 1, max = 1000) ?: 1000,
                 rivals = rm["rivals"].list { rival ->
                     RivalMarketDef(
                         id = rival["id"].string(),
@@ -472,6 +476,7 @@ object ContentLoader {
                         specialtyProducts = rival["specialtyProducts"].list { it.string() },
                         undercutPriceMultPermille = rival["undercutPriceMultPermille"].int(min = 1, max = 1000),
                         activeDayParts = rival["activeDayParts"].list { it.string() },
+                        aiProfile = rival.optional("aiProfile")?.string() ?: "siphon",
                     )
                 },
             )
@@ -490,6 +495,7 @@ object ContentLoader {
                         catchSpeedPermille = tier["catchSpeedPermille"].int(min = 1),
                         priceBonusPermille = tier["priceBonusPermille"].int(min = 1),
                         coins = tier["coins"].long(min = 0),
+                        requiresMarks = tier.optional("requiresMarks")?.int(min = 0) ?: 0,
                     )
                 },
                 challenges = eg["challenges"].list { ch ->
@@ -500,6 +506,7 @@ object ContentLoader {
                         stat = ch["stat"].string(),
                         atLeast = ch["atLeast"].long(min = 1),
                         rewardCoins = ch["rewardCoins"].long(min = 0),
+                        grantsMark = ch.optional("grantsMark")?.string(),
                     )
                 },
             )
@@ -612,6 +619,17 @@ object ContentLoader {
                 termTicks = b["termTicks"].int(min = 1),
                 collectionPeriodTicks = b["collectionPeriodTicks"].int(min = 1),
                 goalPresets = b["goalPresets"].list { it.long(min = 1) },
+                loanProducts = b.optional("loanProducts")?.list { p ->
+                    com.willio.jeanvilma.fishshopping.core.content.BankLoanProductDef(
+                        id = p["id"].string(),
+                        name = p["name"].string(),
+                        description = p["description"].string(),
+                        principal = p["principal"].long(min = 1),
+                        repayPermille = p["repayPermille"].int(min = 1000),
+                        termTicks = p["termTicks"].int(min = 1),
+                        requires = p.optional("requires")?.list { it.string() } ?: emptyList(),
+                    )
+                } ?: emptyList(),
             )
         },
         harbors = r["harbors"].list(::harbor),

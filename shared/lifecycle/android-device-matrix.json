@@ -1,8 +1,9 @@
 {
   "phase": 13,
   "schema": "fish.lifecycle.android_device_matrix.v1",
-  "description": "Post-1.0 Phase 13 — Android device lifecycle QA matrix against Phase 28 browser-lifecycle catalog. Covers background, resume, rotate (no recreate), process-death restore, and low-memory checkpoint.",
+  "description": "Post-1.0 Phase 13 — Android device lifecycle QA matrix. Finish 4.0 Phase 27 expands foldable class + multi-window / deep-trim scenarios.",
   "phase28Catalog": "shared/lifecycle/browser-lifecycle.json",
+  "finish4Phase": 27,
   "packageName": "com.willio.jeanvilma.fishshopping",
   "activity": "com.willio.jeanvilma.fishshopping.MainActivity",
   "deviceClasses": [
@@ -26,6 +27,13 @@
       "maxWidthDp": 10000,
       "orientations": ["portrait", "landscape"],
       "note": "10-inch+ tablet class; same lifecycle contracts."
+    },
+    {
+      "id": "foldable",
+      "minWidthDp": 600,
+      "maxWidthDp": 10000,
+      "orientations": ["portrait", "landscape"],
+      "note": "Finish 4.0 Phase 27 — foldable / large-screen class; configChanges covers hinge/size without recreate."
     }
   ],
   "scenarios": [
@@ -88,6 +96,30 @@
       ],
       "hostHooks": ["MainActivity.onTrimMemory", "GameViewModel.onTrimMemory"],
       "phase28Keys": ["android.checkpointOnStop"]
+    },
+    {
+      "id": "multi_window",
+      "title": "Multi-window / split-screen size change",
+      "trigger": "Enter split-screen or freeform; width/height change without recreate",
+      "expects": [
+        "noActivityRecreate",
+        "configChangesHandled",
+        "hudReflow",
+        "glContextRetained"
+      ],
+      "hostHooks": ["AndroidManifest.configChanges", "MainActivity.onConfigurationChanged"],
+      "phase28Keys": ["android.configChangesHandled"]
+    },
+    {
+      "id": "deep_trim",
+      "title": "Deep trim / TRIM_MEMORY_COMPLETE",
+      "trigger": "TRIM_MEMORY_COMPLETE or UI_HIDDEN while backgrounded",
+      "expects": [
+        "checkpointWithoutDestroy",
+        "keepSimStateInMemoryIfPossible"
+      ],
+      "hostHooks": ["MainActivity.onTrimMemory", "GameViewModel.onTrimMemory"],
+      "phase28Keys": ["android.checkpointOnStop"]
     }
   ],
   "trimMemoryCheckpointFrom": "TRIM_MEMORY_RUNNING_LOW",
@@ -99,13 +131,16 @@
     "Phone: Play → Home → Recent → resume; coins/tick unchanged except offline catch-up",
     "Phone: rotate portrait↔landscape mid-sale; no title reload",
     "Tablet: same rotate + background matrix",
+    "Foldable: hinge open/close or split-screen; no Activity recreate; HUD reflows",
     "Developer options → Don't keep activities: leave and return restores from AtomicFile",
-    "Low memory: adb shell am send-trim-memory <pkg> RUNNING_LOW → no crash; save slots updated"
+    "Low memory: adb shell am send-trim-memory <pkg> RUNNING_LOW → no crash; save slots updated",
+    "Deep trim: adb shell am send-trim-memory <pkg> COMPLETE → checkpoint, no ANR"
   ],
   "failCriteria": [
     "Activity recreate on rotate (loses Filament / billing host)",
     "Missing checkpoint on background (empty save after process death)",
     "Crash or ANR on TRIM_MEMORY_RUNNING_CRITICAL",
-    "Double offline credit after pause/resume"
+    "Double offline credit after pause/resume",
+    "Split-screen size change recreates Activity"
   ]
 }

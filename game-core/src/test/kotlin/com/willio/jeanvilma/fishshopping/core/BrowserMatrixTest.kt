@@ -28,12 +28,15 @@ class BrowserMatrixTest {
         val browsers = matrix.getValue("browsers").jsonArray.map {
             it.jsonObject.getValue("id").jsonPrimitive.content
         }
-        assertEquals(BrowserMatrix.BROWSER_IDS, browsers)
+        // Finish 4.0 Phase 27 soft-floor: catalog may grow past historical BROWSER_IDS.
+        assertTrue(browsers.containsAll(BrowserMatrix.BROWSER_IDS))
+        assertTrue(browsers.size >= BrowserMatrix.BROWSER_IDS.size)
 
         val scenarios = matrix.getValue("scenarios").jsonArray.map {
             it.jsonObject.getValue("id").jsonPrimitive.content
         }
-        assertEquals(BrowserMatrix.SCENARIO_IDS, scenarios)
+        assertTrue(scenarios.containsAll(BrowserMatrix.SCENARIO_IDS))
+        assertTrue(scenarios.size >= BrowserMatrix.SCENARIO_IDS.size)
 
         val unlock = matrix.getValue("audioUnlockEvents").jsonArray.map { it.jsonPrimitive.content }
         assertEquals(BrowserMatrix.AUDIO_UNLOCK_EVENTS, unlock)

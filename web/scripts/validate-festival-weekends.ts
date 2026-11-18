@@ -45,7 +45,8 @@ function validate(): string[] {
   if (catalog.weekendEventCount !== 8 || FESTIVAL_WEEKEND_FLOOR !== 8) {
     errors.push("weekendEventCount must be 8");
   }
-  if (dod.quotas?.seasonalEvents !== 8) errors.push("DoD quotas.seasonalEvents must be 8");
+  // Finish 4.0 Phase 16 soft floor — live DoD may exceed Finish 2.0's 8 festivals.
+  if ((dod.quotas?.seasonalEvents ?? 0) < 8) errors.push("DoD quotas.seasonalEvents must be ≥ 8");
   if (content.seasonalEvents.events.length < 8) {
     errors.push(`events ${content.seasonalEvents.events.length} < 8`);
   }
@@ -114,9 +115,9 @@ function validate(): string[] {
     "utf8",
   );
   const systemsTs = readFileSync(resolve(root, "web/src/engine/systems.ts"), "utf8");
-  const appTsx = readFileSync(resolve(root, "web/src/ui/App.tsx"), "utf8");
-  const screenKt = readFileSync(
-    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt"),
+  const questLogTsx = readFileSync(resolve(root, "web/src/ui/QuestLogPanel.tsx"), "utf8");
+  const questLogKt = readFileSync(
+    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/QuestLogPanel.kt"),
     "utf8",
   );
   if (!seasonalKt.includes("fun customerSpawnMultPermille")) {
@@ -134,10 +135,11 @@ function validate(): string[] {
   if (!systemsTs.includes("SeasonalEventSystem.priceMultPermille")) {
     errors.push("web CustomerSystem missing festival price stack");
   }
-  if (!appTsx.includes("customerSpawnMultPermille")) {
+  // Finish 4.0 UI split — festival crowd tip lives on QuestLogPanel (web + Android).
+  if (!questLogTsx.includes("customerSpawnMultPermille")) {
     errors.push("web Goals panel missing festival crowd tip");
   }
-  if (!screenKt.includes("customerSpawnMultPermille")) {
+  if (!questLogKt.includes("customerSpawnMultPermille")) {
     errors.push("Android Goals panel missing festival crowd tip");
   }
 

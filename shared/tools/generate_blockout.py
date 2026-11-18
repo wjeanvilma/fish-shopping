@@ -6,8 +6,9 @@ matches the simulation's walkable areas, footprints and zones.
 Phase 14 replaces grey-box pier / machine / counter boxes with authored modules
 (shared/tools/env_modules.py → models/modules/*.glb). Phase 15 replaces grey-box
 characters with stylized player / customer / worker meshes (models/characters/*.glb)
-and adds a Worker_* pool. Finish 2.0 Phase 19 adds per-harbor HarborArt_* props +
-palette themes (shared/tools/harbor_themes.py) for ≥3 authored harbors.
+and adds a Worker_* pool. Finish 2.0 Phase 19 / Finish 3.0 Phase 8 / Finish 4.0
+Phase 9 add per-harbor HarborArt_* scenic props + palette themes
+(shared/tools/harbor_themes.py) so all 8 harbors are beyond grey-box blockout.
 Presenter socket names:
 
     Player / PlayerBody / PlayerNose / PlayerRod
@@ -48,6 +49,7 @@ from harbor_themes import (  # noqa: E402
     HARBOR_ART_BUILDERS,
     HARBOR_ART_COLORS,
     HARBOR_ART_MARKER,
+    HARBOR_SCENIC_MARKER,
     THEME_PALETTE,
     THEME_PLACEMENTS,
     theme_for_harbor,
@@ -82,7 +84,7 @@ def _machine_key(obstacle_id: str) -> str:
     oid = obstacle_id.lower()
     for key in (
         "smoker", "grill", "chiller", "fryer", "packer", "steamer", "kiln",
-        "press", "pickler", "cutter", "counter",
+        "press", "pickler", "braiser", "glazer", "cutter", "counter",
     ):
         if key in oid:
             return key
@@ -108,6 +110,7 @@ def build(content, harbor):
     for name in (
         "pier", "ground", "zone", "counter", "cutter", "smoker", "grill",
         "chiller", "fryer", "packer", "steamer", "kiln", "press", "pickler",
+        "braiser", "glazer",
     ):
         pos, nrm, idx, bounds = MODULE_BUILDERS[name]()
         geom_index[name] = (next_acc, next_acc + 1, next_acc + 2)
@@ -145,9 +148,10 @@ def build(content, harbor):
         "machineVfx": "phase-16",
     }
     if theme:
-        extras["envArt"] = "modular-phase-14+harbor-art-19"
+        extras["envArt"] = f"modular-phase-14+harbor-art-19+{HARBOR_SCENIC_MARKER}"
         extras["harborArt"] = HARBOR_ART_MARKER
         extras["harborTheme"] = theme
+        extras["harborScenic"] = HARBOR_SCENIC_MARKER
 
     gltf = {
         "asset": {"version": "2.0", "generator": "fish-shopping generate_blockout.py"},
@@ -320,7 +324,7 @@ def build(content, harbor):
     for i in range(VFX_BURST_POOL):
         node(f"VfxBurst_{i}", [0, -10, 0], VFX_BURST_SIZE, "vfx_burst")
 
-    # Finish 2.0 Phase 19: authored low-poly harbor props (theme-specific).
+    # Finish 2.0/3.0/4.0: authored + scenic harbor props (theme-specific).
     if theme:
         for i, (mesh_key, translation, scale) in enumerate(THEME_PLACEMENTS[theme]):
             s = float(scale)

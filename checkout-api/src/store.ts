@@ -25,10 +25,23 @@ function accountKey(cloudAccountId: string | null): string {
 export class CheckoutStore {
   private readonly byAccount = new Map<string, Map<string, OwnedEntitlement>>();
   private readonly sessions = new Map<string, CheckoutSession>();
+  /** Finish 4.0 Phase 25 — Stripe webhook event idempotency. */
+  private readonly processedStripeEventIds = new Set<string>();
 
   list(cloudAccountId: string | null): OwnedEntitlement[] {
     const bag = this.byAccount.get(accountKey(cloudAccountId));
     return bag ? [...bag.values()] : [];
+  }
+
+  hasProcessedStripeEvent(eventId: string): boolean {
+    return this.processedStripeEventIds.has(eventId);
+  }
+
+  markStripeEventProcessed(eventId: string): boolean {
+    if (!eventId) return false;
+    if (this.processedStripeEventIds.has(eventId)) return false;
+    this.processedStripeEventIds.add(eventId);
+    return true;
   }
 
   getOwned(cloudAccountId: string | null, webProductId: string): OwnedEntitlement | null {
@@ -96,6 +109,7 @@ export class CheckoutStore {
   clear(): void {
     this.byAccount.clear();
     this.sessions.clear();
+    this.processedStripeEventIds.clear();
   }
 }
 

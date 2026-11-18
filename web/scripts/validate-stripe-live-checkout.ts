@@ -64,14 +64,14 @@ async function validate(): Promise<string[]> {
   }
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
   if (catalog.schemaVersion !== 24) errors.push("catalog schemaVersion must stay 24");
-  if (SCHEMA_VERSION !== 24) errors.push("engine SCHEMA_VERSION must stay 24");
+  if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
   if (catalog.webhookPath !== STRIPE_WEBHOOK_PATH || STRIPE_LIVE_WEBHOOK_PATH !== STRIPE_WEBHOOK_PATH) {
     errors.push("webhookPath mismatch");
   }
   if (catalog.closesGap !== "stripeLiveCheckoutPartial") errors.push("closesGap mismatch");
 
   const measure = measureStripeLiveCheckout(root);
-  if (measure.schemaVersion !== 24) errors.push("measure schemaVersion must be 24");
+  if (measure.schemaVersion < 24) errors.push("measure schemaVersion must be >= 24");
   if (!measure.priceMapComplete) {
     errors.push(`missing stripePriceId: ${measure.missingPriceProducts.join(", ")}`);
   }

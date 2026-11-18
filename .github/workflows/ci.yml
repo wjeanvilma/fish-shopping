@@ -300,6 +300,128 @@ jobs:
         working-directory: web
         run: npm run freeze3:validate
 
+      - name: Finish 4.0 Phase 1 kickoff + gap scoreboard
+        working-directory: web
+        run: |
+          npm run finish4:validate
+          npm run finish4:smoke
+
+      - name: Finish 4.0 Phase 2 systems split 1
+        working-directory: web
+        run: npm run systemssplit1:validate
+
+      - name: Finish 4.0 Phase 3 systems split 2
+        working-directory: web
+        run: npm run systemssplit2:validate
+
+      - name: Finish 4.0 Phase 4 ViewModel intent split
+        working-directory: web
+        run: npm run viewmodelsplit:validate
+
+      - name: Finish 4.0 Phase 5 Workers + SimView split
+        working-directory: web
+        run: npm run workersplit:validate
+
+      - name: Finish 4.0 Phase 6 GameHost + presenter split
+        working-directory: web
+        run: npm run gamehostsplit:validate
+
+      - name: Finish 4.0 Phase 7 fish art 3a (meshes 51–75)
+        working-directory: web
+        run: npm run fishart3a:validate
+
+      - name: Finish 4.0 Phase 8 fish art 3b (meshes 76–100)
+        working-directory: web
+        run: npm run fishart3b:validate
+
+      - name: Finish 4.0 Phase 9 harbor art scenic (beyond blockout)
+        working-directory: web
+        run: npm run harborart3:validate
+
+      - name: Finish 4.0 Phase 10 product/cosmetic art presentation
+        working-directory: web
+        run: npm run productart:validate
+
+      - name: Finish 4.0 Phase 11 species 76–100 ecology + i18n
+        working-directory: web
+        run: npm run species76100:validate
+
+      - name: Finish 4.0 Phase 12 harbors 9–10 travel/prestige
+        working-directory: web
+        run: npm run harbors910:validate
+
+      - name: Finish 4.0 Phase 13 machines 11–12 recipes/UI
+        working-directory: web
+        run: npm run machines1112:validate
+
+      - name: Finish 4.0 Phase 14 quests/contracts depth
+        working-directory: web
+        run: npm run quests4:validate
+
+      - name: Finish 4.0 Phase 15 rival markets AI depth
+        working-directory: web
+        run: npm run rivals2:validate
+
+      - name: Finish 4.0 Phase 16 seasonal/bait/mastery depth
+        working-directory: web
+        run: npm run seasonalbait4:validate
+
+      - name: Finish 4.0 Phase 17 endgame deepen + schema 25
+        working-directory: web
+        run: npm run endgame2:validate
+
+      - name: Finish 4.0 Phase 18 cosmetics/IAP 12→18
+        working-directory: web
+        run: npm run cosmetics4:validate
+
+      - name: Finish 4.0 Phase 19 staff/worker AI depth wave 2
+        working-directory: web
+        run: npm run staffai2:validate
+
+      - name: Finish 4.0 Phase 20 economy/bank/dashboard depth
+        working-directory: web
+        run: npm run economy2:validate
+
+      - name: Finish 4.0 Phase 21 offline/cloud/analytics hardening
+        working-directory: web
+        run: npm run offlinecloud2:validate
+
+      - name: Finish 4.0 Phase 22 Web↔Android panel feature parity depth
+        working-directory: web
+        run: npm run uiparity:validate
+
+      - name: Finish 4.0 Phase 23 audio pack 4 + VFX juice 4
+        working-directory: web
+        run: npm run audiovfx4:validate
+
+      - name: Finish 4.0 Phase 24 a11y depth 3 + i18n growth
+        working-directory: web
+        run: npm run a11yi18n4:validate
+
+      - name: Finish 4.0 Phase 25 Stripe/checkout live-ready catalog ops
+        working-directory: web
+        run: npm run stripeops4:validate
+
+      - name: Finish 4.0 Phase 26 Deep links + expanded E2E/Compose
+        working-directory: web
+        run: npm run deeplinke2e4:validate
+
+      - name: Finish 4.0 Phase 27 Device/browser/perf matrix tighten
+        working-directory: web
+        run: npm run deviceperf4:validate
+
+      - name: Finish 4.0 Phase 28 content CLI wave 3
+        working-directory: web
+        run: npm run contentcli3:validate
+
+      - name: Finish 4.0 Phase 29 parity lock 4.0
+        working-directory: web
+        run: npm run parity4:validate
+
+      - name: Finish 4.0 Phase 30 freeze 4.0.0
+        working-directory: web
+        run: npm run freeze4:validate
+
       - name: Schema 21 kickoff + v20 migration
         working-directory: web
         run: npm run schema21:validate

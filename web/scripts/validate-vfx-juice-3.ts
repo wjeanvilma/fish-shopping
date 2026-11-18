@@ -47,9 +47,10 @@ function validate(): string[] {
   const kickoff = readJson(resolve(root, "shared/ship/finish-3.0-kickoff.json"));
   const pkg = readJson(resolve(root, "web/package.json"));
   const ci = readFileSync(resolve(root, ".github/workflows/ci.yml"), "utf8");
-  const webPr = readFileSync(resolve(root, "web/src/render/presenters.ts"), "utf8");
+  // Finish 4.0 soft-floor: VFX lives in presenters/vfx + PresentersVfx; step bus hosts bursts.
+  const webPr = readFileSync(resolve(root, "web/src/render/presenters/vfx.ts"), "utf8");
   const androidPr = readFileSync(
-    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/render/Presenters.kt"),
+    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersVfx.kt"),
     "utf8",
   );
   const webScene = readFileSync(resolve(root, "web/src/render/HarborScene.ts"), "utf8");
@@ -57,7 +58,10 @@ function validate(): string[] {
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRenderer.kt"),
     "utf8",
   );
-  const host = readFileSync(resolve(root, "web/src/game/GameHost.ts"), "utf8");
+  const host =
+    readFileSync(resolve(root, "web/src/game/GameHost.ts"), "utf8") +
+    "\n" +
+    readFileSync(resolve(root, "web/src/game/host/hostStepBus.ts"), "utf8");
   const vm = readFileSync(
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt"),
     "utf8",
@@ -82,7 +86,7 @@ function validate(): string[] {
   if (VFX_JUICE_3_PHASE !== 24) errors.push("phase mirror mismatch");
   if (catalog.schemaVersion !== 24) errors.push("catalog schemaVersion must be 24");
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
-  if (SCHEMA_VERSION !== 24) errors.push("engine SCHEMA_VERSION must stay 24");
+  if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
   if (catalog.vfxJuice3Marker !== VFX_JUICE_3_MARKER) errors.push("marker mismatch");
   if (fixture.vfxJuice3Marker !== VFX_JUICE_3_MARKER) errors.push("fixture marker mismatch");
   if (catalog.simHzInvariant !== 20) errors.push("simHzInvariant must be 20");

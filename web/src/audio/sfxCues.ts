@@ -3,6 +3,7 @@
  * Hosts map events → cue; AudioBus plays authored clips (or stays silent when muted).
  * Finish 2.0 Phase 21 adds achievement/festival/contract/goal/mastery/quest stingers.
  * Finish 3.0 Phase 23 adds rival/travel/hire/prestige/loan/trophy stingers.
+ * Finish 4.0 Phase 23 adds decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers.
  */
 export type SfxCue =
   | "catch"
@@ -26,9 +27,18 @@ export type SfxCue =
   | "hire"
   | "prestige"
   | "loan"
-  | "trophy_set";
+  | "trophy_set"
+  | "decor"
+  | "cosmetic"
+  | "endgame_tier"
+  | "endgame_challenge"
+  | "contract_accept"
+  | "bait"
+  | "full_unlock"
+  | "machine_break"
+  | "spoil";
 
-/** All authored pack cue ids (post-1.0 Phase 19 + Finish 2.0 Phase 21 + Finish 3.0 Phase 23). */
+/** All authored pack cue ids (post-1.0 + Finish 2.0/3.0/4.0 packs). */
 export const SFX_CUES: readonly SfxCue[] = [
   "catch",
   "machine_done",
@@ -52,6 +62,15 @@ export const SFX_CUES: readonly SfxCue[] = [
   "prestige",
   "loan",
   "trophy_set",
+  "decor",
+  "cosmetic",
+  "endgame_tier",
+  "endgame_challenge",
+  "contract_accept",
+  "bait",
+  "full_unlock",
+  "machine_break",
+  "spoil",
 ] as const;
 
 /** Pack-2 cue ids (Finish 2.0 Phase 21). */
@@ -77,6 +96,19 @@ export const SFX_PACK3_CUES: readonly SfxCue[] = [
   "trophy_set",
 ] as const;
 
+/** Pack-4 cue ids (Finish 4.0 Phase 23). */
+export const SFX_PACK4_CUES: readonly SfxCue[] = [
+  "decor",
+  "cosmetic",
+  "endgame_tier",
+  "endgame_challenge",
+  "contract_accept",
+  "bait",
+  "full_unlock",
+  "machine_break",
+  "spoil",
+] as const;
+
 /** Cues that should also pulse a short haptic on Android / vibrate on web. */
 export const HAPTIC_CUES: ReadonlySet<SfxCue> = new Set([
   "catch",
@@ -85,6 +117,10 @@ export const HAPTIC_CUES: ReadonlySet<SfxCue> = new Set([
   "rival_beat",
   "prestige",
   "trophy_set",
+  "cosmetic",
+  "endgame_tier",
+  "endgame_challenge",
+  "full_unlock",
 ]);
 
 /** Minimal event shape so Kotlin/TS hosts can share the mapping rules. */
@@ -111,6 +147,15 @@ export type SfxEvent =
   | { type: "prestige_unlocked" }
   | { type: "loan_taken"; replayed?: boolean }
   | { type: "trophy_set_completed" }
+  | { type: "decor_purchased"; replayed?: boolean }
+  | { type: "iap_cosmetic_granted"; replayed?: boolean }
+  | { type: "endgame_tier_unlocked" }
+  | { type: "endgame_challenge_completed" }
+  | { type: "contract_accepted"; replayed?: boolean }
+  | { type: "bait_purchased"; replayed?: boolean }
+  | { type: "full_harbor_unlock_granted"; replayed?: boolean }
+  | { type: "machine_broke" }
+  | { type: "items_spoiled" }
   | { type: string; [k: string]: unknown };
 
 export function sfxFromEvent(e: SfxEvent): SfxCue | null {
@@ -159,6 +204,24 @@ export function sfxFromEvent(e: SfxEvent): SfxCue | null {
       return e.replayed ? null : "loan";
     case "trophy_set_completed":
       return "trophy_set";
+    case "decor_purchased":
+      return e.replayed ? null : "decor";
+    case "iap_cosmetic_granted":
+      return e.replayed ? null : "cosmetic";
+    case "endgame_tier_unlocked":
+      return "endgame_tier";
+    case "endgame_challenge_completed":
+      return "endgame_challenge";
+    case "contract_accepted":
+      return e.replayed ? null : "contract_accept";
+    case "bait_purchased":
+      return e.replayed ? null : "bait";
+    case "full_harbor_unlock_granted":
+      return e.replayed ? null : "full_unlock";
+    case "machine_broke":
+      return "machine_break";
+    case "items_spoiled":
+      return "spoil";
     default:
       return null;
   }

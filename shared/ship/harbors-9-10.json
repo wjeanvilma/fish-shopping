@@ -1,0 +1,68 @@
+{
+  "phase": 12,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.harbors_9_10.v1",
+  "description": "Finish 4.0 Phase 12 \u2014 author harbors 9\u201310 (Mist Cove, Prism Reach) with layouts, specializations, nine/ten prestige circuit, landing quests, trophy galleries, and regenerated scenic blockouts. Schema stays 24.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "harborCount": 10,
+  "newHarborCount": 2,
+  "harbors910Marker": "authored-finish-4.0-phase-12",
+  "newHarbors": [
+    {
+      "id": "harbor.mist_cove",
+      "name": "Mist Cove",
+      "requires": [
+        "prestige.eight_harbors"
+      ],
+      "specialization": "spec.mist_banks",
+      "blockout": "shared/assets/models/mist_cove_blockout.glb",
+      "landingQuest": "quest.mist_cove_landing",
+      "prestigeUnlock": "prestige.nine_harbors",
+      "gallery": "gallery.mist_cove",
+      "theme": "mist"
+    },
+    {
+      "id": "harbor.prism_reach",
+      "name": "Prism Reach",
+      "requires": [
+        "prestige.nine_harbors"
+      ],
+      "specialization": "spec.prism_shelf",
+      "blockout": "shared/assets/models/prism_reach_blockout.glb",
+      "landingQuest": "quest.prism_reach_landing",
+      "prestigeUnlock": "prestige.ten_harbors",
+      "gallery": "gallery.prism_reach",
+      "theme": "prism"
+    }
+  ],
+  "circuitPrestige": [
+    "prestige.nine_harbors",
+    "prestige.ten_harbors"
+  ],
+  "travelFixture": "shared/fixtures/parity-harbors-9-10.json",
+  "blockoutTool": "shared/tools/generate_blockout.py",
+  "themesModule": "shared/tools/harbor_themes.py",
+  "authorTool": "shared/tools/author_harbors_9_10.py",
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "definitionOfDoneQuota": 10,
+  "validateScript": "npm run harbors910:validate",
+  "checklist": [
+    "content-pack has 10 harbors including mist_cove + prism_reach",
+    "Blockouts regenerated for mist_cove + prism_reach GLBs",
+    "Prestige nine/ten + landing quests + galleries/curators wired",
+    "kickoff authoredHarbors=10 and authoredHarborsRemaining=0",
+    "DoD quotas.harbors = 10",
+    "parity-harbors-9-10 fixture + harbors910:validate green",
+    "CI runs harbors910:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/harbors-9-10.json",
+    "shared/fixtures/parity-harbors-9-10.json",
+    "shared/assets/models/mist_cove_blockout.glb",
+    "shared/assets/models/prism_reach_blockout.glb",
+    "shared/tools/author_harbors_9_10.py",
+    "web/src/ship/harbors910.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Harbors910.kt"
+  ]
+}

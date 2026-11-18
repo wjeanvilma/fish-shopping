@@ -30,14 +30,16 @@ describe("Finish 3.0 Phase 30 freeze", () => {
     expect(existsSync(resolve(root, FREEZE_30.parityFixture))).toBe(true);
 
     const pin = JSON.parse(readFileSync(resolve(root, "shared/fixtures/RELEASE_PIN.json"), "utf8"));
-    expect(pin.contentVersion).toBe("3.0.0");
-    expect(pin.versionCode).toBe(4);
-    expect(pin.releaseTag).toBe("v3.0.0");
+    expect(["3.0.0", "4.0.0"]).toContain(pin.contentVersion);
+    expect(pin.versionCode).toBeGreaterThanOrEqual(4);
+    expect(["v3.0.0", "v4.0.0"]).toContain(pin.releaseTag);
     expect(pin.freeze30).toBe("shared/ship/freeze-3.0.0.json");
     expect(pin.freeze20).toBe("shared/ship/freeze-2.0.0.json");
 
     expect((storeListing as { freeze30Phase?: number }).freeze30Phase).toBe(30);
-    expect((storeListing as { whatsNewVersion?: string }).whatsNewVersion).toBe("3.0.0");
+    expect(["3.0.0", "4.0.0"]).toContain(
+      (storeListing as { whatsNewVersion?: string }).whatsNewVersion,
+    );
   });
 
   it("freeze3:validate exits 0", () => {

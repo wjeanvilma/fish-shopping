@@ -1,5 +1,5 @@
 /**
- * Finish 3.0 Phase 28 — content-pack id collision helpers for scaffolds.
+ * Finish 3.0 Phase 28 + Finish 4.0 Phase 28 — content-pack id collision helpers for scaffolds.
  * Read-only; never mutates content-pack.json.
  */
 import type { ScaffoldKind } from "./ids";
@@ -11,6 +11,8 @@ export interface PackIdIndex {
   contracts: Set<string>;
   bait: Set<string>;
   decor: Set<string>;
+  machines: Set<string>;
+  rivals: Set<string>;
 }
 
 function asArray(value: unknown): any[] {
@@ -20,6 +22,7 @@ function asArray(value: unknown): any[] {
 export function indexPackIds(pack: Record<string, unknown>): PackIdIndex {
   const decorRoot = (pack.decor as { items?: unknown } | undefined) ?? {};
   const contractsRoot = (pack.contracts as { templates?: unknown } | undefined) ?? {};
+  const rivalsRoot = (pack.rivalMarkets as { rivals?: unknown } | undefined) ?? {};
   return {
     species: new Set(asArray(pack.species).map((x) => String(x.id))),
     quests: new Set(asArray(pack.quests).map((x) => String(x.id))),
@@ -27,6 +30,8 @@ export function indexPackIds(pack: Record<string, unknown>): PackIdIndex {
     contracts: new Set(asArray(contractsRoot.templates).map((x) => String(x.id))),
     bait: new Set(asArray(pack.bait).map((x) => String(x.id))),
     decor: new Set(asArray(decorRoot.items).map((x) => String(x.id))),
+    machines: new Set(asArray(pack.machines).map((x) => String(x.id))),
+    rivals: new Set(asArray(rivalsRoot.rivals).map((x) => String(x.id))),
   };
 }
 
@@ -36,5 +41,7 @@ export function packHasId(index: PackIdIndex, kind: ScaffoldKind, id: string): b
   if (kind === "harbor") return index.harbors.has(id);
   if (kind === "contract") return index.contracts.has(id);
   if (kind === "bait") return index.bait.has(id);
-  return index.decor.has(id);
+  if (kind === "decor") return index.decor.has(id);
+  if (kind === "machine") return index.machines.has(id);
+  return index.rivals.has(id);
 }

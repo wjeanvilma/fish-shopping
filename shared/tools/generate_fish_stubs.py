@@ -3,9 +3,12 @@
 Phase 13 — stylized species / product GLBs for every content-pack asset path.
 Finish 2.0 Phase 20 + Finish 3.0 Phase 9 — authored multi-part FishArt_* meshes
 for all species (shared/tools/fish_themes.py) while keeping the path contract.
+Finish 4.0 Phase 10 — multi-part ProductArt_* products + cosmetic banner meshes
+(shared/tools/product_themes.py).
 
-Keeps the path contract (`models/fish_*.glb`, `models/product_*.glb`). Clients load
-these as standard glTF 2.0 (Three.js GLTFLoader / Filament AssetLoader).
+Keeps the path contract (`models/fish_*.glb`, `models/product_*.glb`,
+`models/cosmetic_banner_*.glb`). Clients load these as standard glTF 2.0
+(Three.js GLTFLoader / Filament AssetLoader).
 
     python3 shared/tools/generate_fish_stubs.py
 """
@@ -36,6 +39,15 @@ from glb_geometry import (  # noqa: E402
     build_multi_mesh_glb,
     fish_silhouette,
     product_silhouette,
+)
+from product_themes import (  # noqa: E402
+    COSMETIC_BANNER_MARKER,
+    PRODUCT_ART_MARKER,
+    accent_for,
+    cosmetic_banner_parts,
+    product_kind_for,
+    product_parts,
+    rgb_to_hex,
 )
 
 GENERATOR = "fish-shopping generate_item_art.py"
@@ -132,24 +144,7 @@ def fish_color(species_id: str, name: str) -> str:
 
 
 def product_kind(product_id: str) -> str:
-    pid = product_id.lower()
-    if "crate" in pid:
-        return "crate"
-    if "carton" in pid:
-        return "carton"
-    if "skewer" in pid:
-        return "skewer"
-    if "soup" in pid or "broth" in pid:
-        return "soup"
-    if "diced" in pid or "dried_strip" in pid:
-        return "diced"
-    if "fish_and_chips" in pid or "chips" in pid:
-        return "chips"
-    if "fried" in pid or "crispy" in pid or "grilled" in pid or "cured" in pid or "steamed" in pid:
-        return "fried"
-    if "fillet" in pid:
-        return "fillet"
-    return "portion"
+    return product_kind_for(product_id)
 
 
 def product_color(product_id: str) -> str:
@@ -233,29 +228,61 @@ def write_authored_fish(
 
 
 def write_product(out_dir: Path, item_id: str, asset: str, color: str, kind: str) -> Path:
+    """Finish 4.0 Phase 10 — multi-part ProductArt_* product meshes."""
     rel = asset[len("models/"):] if asset.startswith("models/") else asset
     out = out_dir / rel
-    pos, nrm, idx, bounds = product_silhouette(kind)
+    accent = accent_for(color)
+    parts = product_parts(kind, color, accent)
     scale = CRATE_SCALE if kind == "crate" else PRODUCT_SCALE
-    out.write_bytes(build_glb(
+    out.write_bytes(build_multi_mesh_glb(
         name=item_id,
         generator=GENERATOR,
-        color=color,
-        pos=pos,
-        nrm=nrm,
-        idx=idx,
-        bounds=bounds,
+        parts=parts,
         scale=scale,
-        extras={"stylized": True, "silhouette": kind, "phase": 13, "itemArt": "stylized-phase-13"},
+        extras={
+            "stylized": True,
+            "silhouette": kind,
+            "phase": 10,
+            "itemArt": PRODUCT_ART_MARKER,
+            "productArt": PRODUCT_ART_MARKER,
+            "productKind": kind,
+        },
+    ))
+    return out
+
+
+def write_cosmetic_banner(
+    out_dir: Path,
+    cosmetic_id: str,
+    swatch_rgb: list[int],
+) -> Path:
+    short = cosmetic_id.replace("banner.", "").replace("iap_", "")
+    out = out_dir / f"cosmetic_banner_{short}.glb"
+    cloth = rgb_to_hex(swatch_rgb)
+    crest = accent_for(cloth)
+    parts = cosmetic_banner_parts(cloth, crest)
+    out.write_bytes(build_multi_mesh_glb(
+        name=cosmetic_id,
+        generator=GENERATOR,
+        parts=parts,
+        scale=[1.0, 1.0, 1.0],
+        extras={
+            "stylized": True,
+            "phase": 10,
+            "itemArt": PRODUCT_ART_MARKER,
+            "cosmeticArt": COSMETIC_BANNER_MARKER,
+            "cosmeticId": cosmetic_id,
+        },
     ))
     return out
 
 
 def main() -> int:
     content = json.loads((ROOT / "content" / "content-pack.json").read_text())
+    presentation = json.loads((ROOT / "content" / "cosmetic-presentation.json").read_text())
     out_dir = ROOT / "assets" / "models"
     out_dir.mkdir(parents=True, exist_ok=True)
-    fish_n = authored_n = product_n = 0
+    fish_n = authored_n = product_n = banner_n = 0
     for sp in content["species"]:
         asset = sp.get("asset")
         if not asset:
@@ -282,11 +309,17 @@ def main() -> int:
             product_kind(prod["id"]),
         )
         product_n += 1
+    for item in presentation.get("items", []):
+        write_cosmetic_banner(out_dir, item["cosmeticId"], item["swatchRgb"])
+        banner_n += 1
     print(
         f"{fish_n} fish ({authored_n} authored Phase 20 / "
-        f"{fish_n - authored_n} stub Phase 13), {product_n} products → {GENERATOR}"
+        f"{fish_n - authored_n} stub Phase 13), {product_n} products "
+        f"(ProductArt Phase 10), {banner_n} cosmetic banners → {GENERATOR}"
     )
     assert authored_n >= len(AUTHORED_SPECIES), "authored species missing from content-pack"
+    assert product_n >= 34, "expected ≥34 authored products"
+    assert banner_n >= 12, "expected ≥12 cosmetic banners"
     return 0
 
 

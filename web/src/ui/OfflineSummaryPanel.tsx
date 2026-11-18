@@ -29,23 +29,43 @@ export function OfflineSummaryPanel({ report, onContinue }: { report: OfflineRep
   const continueRef = useRef<HTMLButtonElement>(null);
   useEffect(() => continueRef.current?.focus(), []);
   const lines: string[] = [];
-  if (report.coinsDelta !== 0) lines.push(`${report.coinsDelta > 0 ? "+" : ""}${formatCoins(report.coinsDelta)} coins`);
-  if (report.sales > 0) lines.push(`${report.sales} sales`);
-  if (report.workerFishCaught > 0) lines.push(`${report.workerFishCaught} fish caught by staff`);
-  if (report.workerItemsMoved > 0) lines.push(`${report.workerItemsMoved} items moved by staff`);
+  if (report.coinsDelta !== 0) {
+    const delta = `${report.coinsDelta > 0 ? "+" : ""}${formatCoins(report.coinsDelta)}`;
+    lines.push(t("offline.coinsLine", { delta }));
+  }
+  if (report.sales > 0) lines.push(t("offline.salesLine", { count: report.sales }));
+  if (report.workerFishCaught > 0) {
+    lines.push(t("offline.staffFish", { count: report.workerFishCaught }));
+  }
+  if (report.workerItemsMoved > 0) {
+    lines.push(t("offline.staffMoved", { count: report.workerItemsMoved }));
+  }
   if (report.journalLines?.length) lines.push(...report.journalLines);
-  if (lines.length === 0 && !report.hadActivity) lines.push("Quiet shift — hire staff to earn while away");
+  if (lines.length === 0 && !report.hadActivity) lines.push(t("offline.quietShift"));
   return (
     <div className="scrim" data-testid={WEB_E2E_IDS.OFFLINE_ROOT}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="While you were away" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="panel sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("offline.title")}
+        aria-describedby="offline-summary-live"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sheet-header">
-          <h2>While you were away</h2>
+          <h2>{t("offline.title")}</h2>
         </div>
-        <p className="small muted">
+        <p
+          id="offline-summary-live"
+          className="small muted"
+          role="status"
+          aria-live="polite"
+          aria-label={t("a11y.offlineSummaryLive")}
+        >
           {formatAwayDuration(report.elapsedMillis)}
-          {report.capped ? " · capped at max offline time" : ""}
+          {report.capped ? ` · ${t("offline.capped")}` : ""}
         </p>
-        <p>Your staff kept the harbor running.</p>
+        <p aria-label={t("a11y.offlineSection")}>{t("offline.staffKeptRunning")}</p>
         <ul className="upgrade-list">
           {lines.map((l) => <li key={l}><strong className="num">{l}</strong></li>)}
         </ul>
@@ -56,7 +76,7 @@ export function OfflineSummaryPanel({ report, onContinue }: { report: OfflineRep
           data-testid={WEB_E2E_IDS.OFFLINE_CONTINUE}
           onClick={onContinue}
         >
-          Continue
+          {t("common.continue")}
         </button>
       </div>
     </div>

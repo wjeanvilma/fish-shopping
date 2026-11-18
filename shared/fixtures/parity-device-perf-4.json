@@ -1,0 +1,38 @@
+{
+  "schema": "fish.fixture.parity_device_perf_4.v1",
+  "description": "Finish 4.0 Phase 27: device/browser/perf matrix tighten expectations.",
+  "devicePerf4Marker": "authored-finish-4.0-phase-27",
+  "expect": {
+    "closesGap": "devicePerfIncomplete",
+    "schemaVersion": 25,
+    "contentVersion": "3.0.0",
+    "harborCacheFloor": 3,
+    "overBudgetMultMax": 1.12,
+    "underBudgetMult": 0.85,
+    "androidDeviceClassFloor": 4,
+    "androidScenarioFloor": 7,
+    "browserTargetFloor": 4,
+    "browserScenarioFloor": 7,
+    "requiredAndroidClasses": ["phone", "tablet7", "tablet10", "foldable"],
+    "requiredAndroidScenarios": ["multi_window", "deep_trim"],
+    "requiredBrowsers": ["chrome", "edge", "firefox", "safari"],
+    "requiredBrowserScenarios": ["visibility_hidden", "pwa_offline", "reduced_motion"],
+    "frameTimingMustContain": [
+      "FRAME_UPGRADE_STREAK",
+      "FRAME_UNDER_BUDGET_MULT",
+      "upgradeQuality",
+      "FrameBudgetAction"
+    ],
+    "androidFrameTimingMustContain": [
+      "FRAME_UPGRADE_STREAK",
+      "UNDER_BUDGET_MULT",
+      "FrameBudgetAction",
+      "HARBOR_CACHE_LIMIT = 3"
+    ],
+    "analyticsContractMustContain": [
+      "consent fail-closed",
+      "batch schema",
+      "retry backoff"
+    ]
+  }
+}

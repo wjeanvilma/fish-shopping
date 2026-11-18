@@ -52,7 +52,7 @@ describe("definition of done (Phase 30)", () => {
     expect(content.contentVersion).toBe("3.0.0");
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(24);
     expect(content.harbors.length).toBe(dod.quotas.harbors);
-    expect(content.harbors.length).toBe(8);
+    expect(content.harbors.length).toBe(10);
     expect(content.raw.species.length).toBeGreaterThanOrEqual(dod.quotas.speciesMin);
     expect(content.raw.machines.length).toBe(dod.quotas.machineClasses);
     expect(content.raw.quests.length).toBeGreaterThanOrEqual(20);

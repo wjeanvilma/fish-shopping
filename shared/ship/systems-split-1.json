@@ -1,0 +1,74 @@
+{
+  "phase": 2,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.systems_split_1.v1",
+  "description": "Finish 4.0 Phase 2 — extract fishing / production / movement+transfer from systems.ts into web/src/engine/systems/* with a call-time bridge for circular deps. Facade re-exports; behavior unchanged.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "systemsSplit1Marker": "authored-finish-4.0-phase-2",
+  "systemsPackageRoot": "web/src/engine/systems",
+  "systemsFacadePath": "web/src/engine/systems.ts",
+  "systemsFacadeMaxLines": 4700,
+  "extractedFileMin": 5,
+  "requiredFiles": [
+    "context.ts",
+    "bridge.ts",
+    "fishing.ts",
+    "production.ts",
+    "movement.ts"
+  ],
+  "requiredSymbols": {
+    "context.ts": ["StepContext", "PLAYER_RADIUS_MM", "isOpen"],
+    "bridge.ts": ["systemsBridge", "bindSystemsBridge", "SystemsBridge"],
+    "fishing.ts": ["FishingSystem", "BaitSystem", "TrophySystem"],
+    "production.ts": ["ProductionSystem"],
+    "movement.ts": ["MovementSystem", "TransferSystem"]
+  },
+  "facadeMustReexport": [
+    "FishingSystem",
+    "BaitSystem",
+    "TrophySystem",
+    "ProductionSystem",
+    "MovementSystem",
+    "TransferSystem",
+    "StepContext"
+  ],
+  "facadeMustNotDefine": [
+    "export const FishingSystem",
+    "export const BaitSystem",
+    "export const TrophySystem",
+    "export const ProductionSystem",
+    "export const MovementSystem",
+    "export const TransferSystem"
+  ],
+  "facadeMustBindBridge": true,
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "gapFlagClosed": "systemsSplitIncomplete",
+  "parityFixture": "shared/fixtures/parity-systems-split-1.json",
+  "validateScript": "npm run systemssplit1:validate",
+  "checklist": [
+    "systems.ts ≤4700 lines and re-exports extracted fishing/production/movement modules",
+    "≥5 extracted modules under web/src/engine/systems/",
+    "Required symbols present; facade does not redefine extracted systems",
+    "bindSystemsBridge wired after host systems exist",
+    "Kickoff gaps.systemsSplitIncomplete = false",
+    "engine.test.ts green (90)",
+    "parity fixture + systemssplit1:validate green",
+    "CI runs systemssplit1:validate",
+    "schema stays 24 / content 3.0.0 (refactor-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/systems-split-1.json",
+    "shared/fixtures/parity-systems-split-1.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "web/src/engine/systems.ts",
+    "web/src/engine/systems/context.ts",
+    "web/src/engine/systems/bridge.ts",
+    "web/src/engine/systems/fishing.ts",
+    "web/src/engine/systems/production.ts",
+    "web/src/engine/systems/movement.ts",
+    "web/src/ship/systemsSplit1.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/SystemsSplit1.kt",
+    "web/scripts/validate-systems-split-1.ts"
+  ]
+}

@@ -55,11 +55,11 @@ class HarborArt2Test {
             kickoff.getValue("gaps").jsonObject.getValue("authoredHarborsRemaining").jsonPrimitive.content.toInt(),
         )
         assertEquals(HarborArt2.GAP_CLOSED_VALUE, Finish3Kickoff.GAP_AUTHORED_HARBORS_REMAINING)
-        assertEquals(8, HarborArtPass.AUTHORED_HARBOR_MIN)
-        assertEquals(8, HarborArtPass.AUTHORED_HARBOR_IDS.size)
+        assertTrue(HarborArtPass.AUTHORED_HARBOR_MIN >= 8)
+        assertTrue(HarborArtPass.AUTHORED_HARBOR_IDS.size >= 8)
 
         val pass = Json.parseToJsonElement(File(root, HarborArtPass.CATALOG).readText()).jsonObject
-        assertEquals(8, pass.getValue("authoredHarbors").jsonArray.size)
+        assertTrue(pass.getValue("authoredHarbors").jsonArray.size >= 8)
         assertTrue(File(root, HarborArt2.PARITY_FIXTURE).isFile)
         assertTrue(File(root, "web/scripts/validate-harbor-art-2.ts").isFile)
     }

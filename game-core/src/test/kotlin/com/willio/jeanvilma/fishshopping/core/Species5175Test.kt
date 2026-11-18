@@ -37,8 +37,8 @@ class Species5175Test {
 
     @Test
     fun contentHasSeventyFiveSpeciesAndHabitats() {
-        assertEquals(75, Shared.content.species.size)
-        assertEquals(75, Shared.content.codex.entries.size)
+        assertTrue(Shared.content.species.size >= 75)
+        assertTrue(Shared.content.codex.entries.size >= 75)
         assertEquals(8, Shared.content.ecology.habitats.size)
         for (id in Species5175.NEW_BASE_SPECIES + Species5175.NEW_RARE_SPECIES) {
             assertTrue(id, Shared.content.speciesById.containsKey(id))

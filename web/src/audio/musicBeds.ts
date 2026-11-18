@@ -2,10 +2,19 @@
  * Phase 20 (post-1.0) — authored harbor/shop music beds + ducking helpers.
  * Finish 2.0 Phase 21 adds festival + storm beds; ducking policy unchanged.
  * Finish 3.0 Phase 23 adds night + rival beds; ducking stays frozen.
+ * Finish 4.0 Phase 23 adds endgame + ledger beds; ducking stays frozen.
  */
 import musicPackJson from "../../../shared/audio/music-pack.json";
 
-export type MusicBedId = "harbor" | "shop" | "festival" | "storm" | "night" | "rival";
+export type MusicBedId =
+  | "harbor"
+  | "shop"
+  | "festival"
+  | "storm"
+  | "night"
+  | "rival"
+  | "endgame"
+  | "ledger";
 
 export interface MusicPackCatalog {
   phase: number;
@@ -30,6 +39,8 @@ export interface MusicPackCatalog {
     stormWhen?: string[];
     rivalWhen?: string[];
     nightWhen?: string[];
+    endgameWhen?: string[];
+    ledgerWhen?: string[];
     shopWhen: string[];
     harborOtherwise: boolean;
   };
@@ -51,6 +62,7 @@ export const MUSIC_PACK_SCHEMA = musicPack.schema;
 export const MUSIC_BED_IDS: readonly MusicBedId[] = musicPack.beds.map((b) => b.id);
 export const MUSIC_PACK2_BED_IDS: readonly MusicBedId[] = ["festival", "storm"];
 export const MUSIC_PACK3_BED_IDS: readonly MusicBedId[] = ["night", "rival"];
+export const MUSIC_PACK4_BED_IDS: readonly MusicBedId[] = ["endgame", "ledger"];
 
 export function musicPublicPath(bed: MusicBedId): string {
   return `/music/${bed}.wav`;
@@ -58,7 +70,7 @@ export function musicPublicPath(bed: MusicBedId): string {
 
 /**
  * Resolve music bed from presentation context.
- * Priority: festival > storm > rival > night > shop > harbor.
+ * Priority: festival > storm > rival > night > endgame > ledger > shop > harbor.
  */
 export function musicBedForPanels(
   stationOpen: boolean,
@@ -66,11 +78,15 @@ export function musicBedForPanels(
   stormActive = false,
   rivalActive = false,
   nightActive = false,
+  endgameActive = false,
+  ledgerActive = false,
 ): MusicBedId {
   if (festivalActive) return "festival";
   if (stormActive) return "storm";
   if (rivalActive) return "rival";
   if (nightActive) return "night";
+  if (endgameActive) return "endgame";
+  if (ledgerActive) return "ledger";
   return stationOpen ? "shop" : "harbor";
 }
 

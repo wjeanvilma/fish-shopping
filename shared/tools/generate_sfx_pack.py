@@ -385,6 +385,139 @@ def trophy_set_clip(sr: int) -> list[float]:
     return synth(sr, 320, render)
 
 
+def decor_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        hang = math.sin(2 * math.pi * 420 * t) * math.exp(-t * 22) * 0.45
+        tap = 0.0
+        if t > 0.05:
+            local = t - 0.05
+            tap = math.sin(2 * math.pi * 180 * local) * math.exp(-local * 30) * 0.35
+        return hang + tap
+
+    return synth(sr, 220, render)
+
+
+def cosmetic_clip(sr: int) -> list[float]:
+    notes = [(880.0, 0.0), (1174.66, 0.05), (1567.98, 0.11)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.12:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.12 * rate)), 0.04, 0.2, 0.35, 0.45)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.34
+            total += math.sin(2 * math.pi * freq * 2 * local) * e * 0.08
+        return total
+
+    return synth(sr, 300, render)
+
+
+def endgame_tier_clip(sr: int) -> list[float]:
+    notes = [(196.0, 0.0), (246.94, 0.08), (293.66, 0.16), (392.0, 0.24)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.18:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.18 * rate)), 0.08, 0.25, 0.45, 0.35)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.36
+        return total
+
+    return synth(sr, 400, render)
+
+
+def endgame_challenge_clip(sr: int) -> list[float]:
+    notes = [(523.25, 0.0), (659.25, 0.06), (783.99, 0.12), (1046.5, 0.18)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.12:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.12 * rate)), 0.04, 0.2, 0.35, 0.45)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.32
+        return total
+
+    return synth(sr, 340, render)
+
+
+def contract_accept_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        stamp = math.sin(2 * math.pi * 240 * t) * math.exp(-t * 28) * 0.5
+        click = 0.0
+        if t > 0.04:
+            local = t - 0.04
+            click = math.sin(2 * math.pi * 980 * local) * math.exp(-local * 35) * 0.3
+        return stamp + click
+
+    return synth(sr, 200, render)
+
+
+def bait_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        box = math.sin(2 * math.pi * 160 * t) * math.exp(-t * 20) * 0.4
+        plink = 0.0
+        if t > 0.06:
+            local = t - 0.06
+            plink = math.sin(2 * math.pi * 1320 * local) * math.exp(-local * 32) * 0.35
+        return box + plink
+
+    return synth(sr, 220, render)
+
+
+def full_unlock_clip(sr: int) -> list[float]:
+    notes = [(261.63, 0.0), (329.63, 0.07), (392.0, 0.14), (523.25, 0.22), (659.25, 0.3)]
+
+    def render(i, n, rate):
+        t = i / rate
+        total = 0.0
+        for freq, delay in notes:
+            local = t - delay
+            if local < 0 or local > 0.14:
+                continue
+            e = env_adsr(int(local * rate), max(1, int(0.14 * rate)), 0.05, 0.22, 0.4, 0.4)
+            total += math.sin(2 * math.pi * freq * local) * e * 0.3
+        return total
+
+    return synth(sr, 420, render)
+
+
+def machine_break_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        clank = math.sin(2 * math.pi * 120 * t) * math.exp(-t * 16) * 0.55
+        spark = (((i * 7919) & 255) / 255 - 0.5) * math.exp(-t * 18) * 0.35
+        ping = 0.0
+        if t > 0.05:
+            local = t - 0.05
+            ping = math.sin(2 * math.pi * 1760 * local) * math.exp(-local * 40) * 0.2
+        return clank + spark + ping
+
+    return synth(sr, 260, render)
+
+
+def spoil_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        flop = math.sin(2 * math.pi * (180 - 60 * t) * t) * math.exp(-t * 10) * 0.45
+        sigh = math.sin(2 * math.pi * (320 - 140 * t) * t) * env_adsr(i, n, 0.1, 0.3, 0.25, 0.45) * 0.3
+        wet = (((i * 1103515245 + 12345) & 0x7FFF) / 0x7FFF - 0.5) * math.exp(-t * 9) * 0.2
+        return flop + sigh + wet
+
+    return synth(sr, 300, render)
+
+
 RENDERERS = {
     "catch": catch_clip,
     "machine_done": machine_done_clip,
@@ -408,6 +541,15 @@ RENDERERS = {
     "prestige": prestige_clip,
     "loan": loan_clip,
     "trophy_set": trophy_set_clip,
+    "decor": decor_clip,
+    "cosmetic": cosmetic_clip,
+    "endgame_tier": endgame_tier_clip,
+    "endgame_challenge": endgame_challenge_clip,
+    "contract_accept": contract_accept_clip,
+    "bait": bait_clip,
+    "full_unlock": full_unlock_clip,
+    "machine_break": machine_break_clip,
+    "spoil": spoil_clip,
 }
 
 

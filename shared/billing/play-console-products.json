@@ -82,6 +82,42 @@
       "sku": "fish.cosmetic.moonlit_bunting",
       "status": "active",
       "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_mist_bunting",
+      "sku": "fish.cosmetic.mist_bunting",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_prism_pennant",
+      "sku": "fish.cosmetic.prism_pennant",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_plaza_flag",
+      "sku": "fish.cosmetic.plaza_flag",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_rime_streamer",
+      "sku": "fish.cosmetic.rime_streamer",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_brine_ribbon",
+      "sku": "fish.cosmetic.brine_ribbon",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_aurora_crest",
+      "sku": "fish.cosmetic.aurora_crest",
+      "status": "active",
+      "type": "non_consumable"
     }
   ]
 }

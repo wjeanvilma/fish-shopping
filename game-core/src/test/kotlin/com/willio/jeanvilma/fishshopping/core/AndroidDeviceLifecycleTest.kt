@@ -30,12 +30,15 @@ class AndroidDeviceLifecycleTest {
         val scenarios = matrix.getValue("scenarios").jsonArray.map {
             it.jsonObject.getValue("id").jsonPrimitive.content
         }
-        assertEquals(AndroidDeviceLifecycle.SCENARIO_IDS, scenarios)
+        // Finish 4.0 Phase 27 soft-floor: catalog may grow past historical floors.
+        assertTrue(scenarios.containsAll(AndroidDeviceLifecycle.SCENARIO_IDS))
+        assertTrue(scenarios.size >= AndroidDeviceLifecycle.SCENARIO_IDS.size)
 
         val classes = matrix.getValue("deviceClasses").jsonArray.map {
             it.jsonObject.getValue("id").jsonPrimitive.content
         }
-        assertEquals(AndroidDeviceLifecycle.DEVICE_CLASS_IDS, classes)
+        assertTrue(classes.containsAll(AndroidDeviceLifecycle.DEVICE_CLASS_IDS))
+        assertTrue(classes.size >= AndroidDeviceLifecycle.DEVICE_CLASS_IDS.size)
 
         val slots = matrix.getValue("restoreSlots").jsonArray.map { it.jsonPrimitive.content }
         assertEquals(AndroidDeviceLifecycle.RESTORE_SLOTS, slots)

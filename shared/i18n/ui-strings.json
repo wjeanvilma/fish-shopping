@@ -2,7 +2,7 @@
   "schema": "fish.i18n.ui_strings.v1",
   "phase": 23,
   "plan": "30_finish_2.0",
-  "description": "Finish 2.0 Phase 23 + Finish 3.0 Phase 6 — UI chrome string catalogs (en + es + pt).",
+  "description": "Finish 2.0 Phase 23 + Finish 3.0 Phase 6 \u2014 UI chrome string catalogs (en + es + pt).",
   "defaultLocale": "en",
   "supportedLocales": [
     "en",
@@ -14,7 +14,7 @@
     "es": "shared/i18n/ui-strings.es.json",
     "pt": "shared/i18n/ui-strings.pt.json"
   },
-  "keyMin": 120,
+  "keyMin": 280,
   "namespaces": [
     "a11y",
     "achievements",

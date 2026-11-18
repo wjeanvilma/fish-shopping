@@ -11,8 +11,10 @@ object BrowserMatrix {
     const val CATALOG = "shared/lifecycle/browser-matrix.json"
     const val PHASE28_CATALOG = "shared/lifecycle/browser-lifecycle.json"
 
+    /** Historical floor ids; Finish 4.0 Phase 27 may add more (edge, …). */
     val BROWSER_IDS: List<String> = listOf("chrome", "firefox", "safari")
 
+    /** Historical floor scenarios; Finish 4.0 Phase 27 may add more. */
     val SCENARIO_IDS: List<String> = listOf(
         "webgl2_gate",
         "context_loss",

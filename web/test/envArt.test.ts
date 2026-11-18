@@ -45,12 +45,17 @@ describe("Phase 14 environment art", () => {
     for (const harbor of harbors) {
       const path = resolve(root, `shared/assets/models/${harbor}_blockout.glb`);
       const gltf = parseGlbJson(readFileSync(path));
-      const extras = gltf.extras as { envArt?: string; itemArt?: string; harborArt?: string };
+      const extras = gltf.extras as {
+        envArt?: string;
+        itemArt?: string;
+        harborArt?: string;
+        harborScenic?: string;
+      };
       expect(extras.envArt ?? "", harbor).toMatch(/^modular-phase-14/);
       expect(extras.itemArt, harbor).toBe("stylized-phase-13");
-      if (["sunrise_pier", "coral_lagoon", "storm_quay"].includes(harbor)) {
-        expect(extras.harborArt, harbor).toBe("authored-phase-19");
-      }
+      expect(extras.harborArt, harbor).toBe("authored-finish-4.0-phase-9");
+      expect(extras.harborScenic, harbor).toBe("harbor-art-3");
+      expect(extras.envArt ?? "", harbor).toContain("harbor-art-3");
 
       const nodes = (gltf.nodes as { name: string }[]).map((n) => n.name);
       const nameSet = new Set(nodes);

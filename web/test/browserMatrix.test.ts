@@ -23,13 +23,18 @@ describe("browser matrix (post-1.0 Phase 14)", () => {
   it("covers Chrome / Safari / Firefox for WebGL2, context loss, quota, audio", () => {
     expect(BROWSER_MATRIX_PHASE).toBe(14);
     expect(BROWSER_MATRIX_SCHEMA).toBe("fish.lifecycle.browser_matrix.v1");
-    expect(browserIds()).toEqual(["chrome", "firefox", "safari"]);
-    expect(scenarioIds()).toEqual([
-      "webgl2_gate",
-      "context_loss",
-      "storage_quota",
-      "audio_unlock",
-    ]);
+    // Finish 4.0 Phase 27 soft-floor: browser/scenario lists may grow.
+    expect(browserIds()).toEqual(expect.arrayContaining(["chrome", "firefox", "safari"]));
+    expect(browserIds().length).toBeGreaterThanOrEqual(3);
+    expect(scenarioIds()).toEqual(
+      expect.arrayContaining([
+        "webgl2_gate",
+        "context_loss",
+        "storage_quota",
+        "audio_unlock",
+      ]),
+    );
+    expect(scenarioIds().length).toBeGreaterThanOrEqual(4);
     expect(browserMatrix.audioUnlockEvents).toEqual(["pointerdown", "keydown", "touchstart"]);
     expect(audioUnlockEvents()).toEqual(browserMatrix.audioUnlockEvents);
     expect(audioUnlockMatchesPolicy()).toBe(true);

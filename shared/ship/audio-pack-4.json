@@ -1,0 +1,67 @@
+{
+  "phase": 23,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.audio_pack_4.v1",
+  "description": "Finish 4.0 Phase 23 \u2014 SFX/music pack 4: decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers + endgame/ledger beds; ducking frozen. Combined validate audiovfx4:validate with vfx-juice-4.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 25,
+  "audioPackMarker": "authored-finish-4.0-phase-23",
+  "extendsCatalogs": {
+    "sfx": "shared/audio/sfx-pack.json",
+    "music": "shared/audio/music-pack.json"
+  },
+  "newStingerMin": 9,
+  "newBedMin": 2,
+  "duckingPolicyFrozen": true,
+  "frozenDucking": {
+    "sfxDuckFactor": 0.35,
+    "sfxDuckRecoveryMs": 280,
+    "focusLossSilence": true,
+    "focusTransientCanDuckFactor": 0.25,
+    "webHiddenSuspendsContext": true,
+    "respectMute": true,
+    "respectMusicVolume": true
+  },
+  "newStingers": [
+    "decor",
+    "cosmetic",
+    "endgame_tier",
+    "endgame_challenge",
+    "contract_accept",
+    "bait",
+    "full_unlock",
+    "machine_break",
+    "spoil"
+  ],
+  "newBeds": [
+    "endgame",
+    "ledger"
+  ],
+  "parityFixture": "shared/fixtures/parity-audio-pack-4.json",
+  "validateScript": "npm run audiovfx4:validate",
+  "generator": "shared/tools/generate_sfx_pack.py + shared/tools/generate_music_pack.py",
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "checklist": [
+    "\u22659 new SFX stingers baked + mirrored",
+    "\u22652 new music beds (endgame + ledger)",
+    "ducking policy frozen",
+    "sfxFromEvent maps Finish 4.0 events",
+    "bed priority festival > storm > rival > night > endgame > ledger > shop > harbor",
+    "licenses.json records authored-audio-pack-4",
+    "audiovfx4:validate green in CI",
+    "schema stays 25"
+  ],
+  "preflightGates": [
+    "shared/ship/audio-pack-4.json",
+    "shared/fixtures/parity-audio-pack-4.json",
+    "shared/ship/vfx-juice-4.json",
+    "web/src/ship/audioPack4.ts",
+    "web/src/ship/vfxJuice4.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/AudioPack4.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/VfxJuice4.kt",
+    "web/src/audio/sfxCues.ts",
+    "web/src/audio/musicBeds.ts",
+    "shared/audio/sfx-pack.json",
+    "shared/audio/music-pack.json"
+  ]
+}

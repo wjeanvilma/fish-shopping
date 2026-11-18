@@ -1,0 +1,19 @@
+{
+  "id": "rival.scaffold_mist_hawker",
+  "name": "Mist hawker",
+  "description": "Authoring scaffold rival for Mist hawker. Tune harbors/specialty before merge.",
+  "harbors": [
+    "harbor.sunrise_pier"
+  ],
+  "aggressionPermille": 400,
+  "specialtyProducts": [
+    "product.basic_portion",
+    "product.fillet"
+  ],
+  "undercutPriceMultPermille": 900,
+  "activeDayParts": [
+    "dawn",
+    "day"
+  ],
+  "aiProfile": "siphon"
+}

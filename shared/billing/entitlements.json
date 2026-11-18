@@ -148,6 +148,72 @@
       "powerNeutral": true,
       "title": "Moonlit bunting",
       "description": "Moon Cove silver bunting. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.mist_bunting",
+      "sku": "fish.cosmetic.mist_bunting",
+      "androidProductId": "fish_cosmetic_mist_bunting",
+      "webProductId": "fish.cosmetic.mist_bunting",
+      "grantsCosmetic": "banner.iap_mist_bunting",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Mist bunting",
+      "description": "Mist Cove lantern bunting. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.prism_pennant",
+      "sku": "fish.cosmetic.prism_pennant",
+      "androidProductId": "fish_cosmetic_prism_pennant",
+      "webProductId": "fish.cosmetic.prism_pennant",
+      "grantsCosmetic": "banner.iap_prism_pennant",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Prism pennant",
+      "description": "Prism Shelf light pennant. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.plaza_flag",
+      "sku": "fish.cosmetic.plaza_flag",
+      "androidProductId": "fish_cosmetic_plaza_flag",
+      "webProductId": "fish.cosmetic.plaza_flag",
+      "grantsCosmetic": "banner.iap_plaza_flag",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Plaza flag",
+      "description": "Plaza market day flag. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.rime_streamer",
+      "sku": "fish.cosmetic.rime_streamer",
+      "androidProductId": "fish_cosmetic_rime_streamer",
+      "webProductId": "fish.cosmetic.rime_streamer",
+      "grantsCosmetic": "banner.iap_rime_streamer",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Rime streamer",
+      "description": "Rime Harbor ice streamers. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.brine_ribbon",
+      "sku": "fish.cosmetic.brine_ribbon",
+      "androidProductId": "fish_cosmetic_brine_ribbon",
+      "webProductId": "fish.cosmetic.brine_ribbon",
+      "grantsCosmetic": "banner.iap_brine_ribbon",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Brine ribbon",
+      "description": "Brine shelf salt ribbon. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.aurora_crest",
+      "sku": "fish.cosmetic.aurora_crest",
+      "androidProductId": "fish_cosmetic_aurora_crest",
+      "webProductId": "fish.cosmetic.aurora_crest",
+      "grantsCosmetic": "banner.iap_aurora_crest",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Aurora crest",
+      "description": "Aurora vigil crest plaque. Visual only — never changes rates, wages, or sale prices."
     }
   ]
 }

@@ -8,7 +8,7 @@
   "title": "Fish Shopping",
   "shortDescription": "Catch, cut, and sell fish in a cozy 3D harbor market.",
   "fullDescription": "Run your own waterfront fish market. Cast from the pier, process catches on the cutter, stock the counter, and serve a growing crowd. Hire staff, unlock upgrades, take delivery contracts, and expand to new harbors — all with a fixed 20 Hz simulation shared by Android and web.\n\nFirst session loop: fish → cut → stock → sell.\n\nOptional cloud sync and privacy-safe analytics are off until you opt in. One-time harbor unlock and power-neutral cosmetics are available via in-app purchase; Restore purchases recovers entitlements on a new device.",
-  "whatsNew": "3.0.0 freeze — seventy-five species, thirty quests, ten machines, rival markets, schema 24 endgame, parity lock 3.0, remote analytics, and Finish 3.0 ops. Schema 24; prior 2.0 saves still load.",
+  "whatsNew": "4.0.0 freeze — one hundred species, fifty quests, twelve machines, ten harbors, twelve rival markets, schema 25 endgame, parity lock 4.0, and Finish 4.0 ops. Schema 25; prior 3.0 saves still load.",
   "webLanding": {
     "title": "Fish Shopping",
     "tagline": "Catch, cut, sell — run your harbor market",

@@ -22,6 +22,11 @@
   "validateScript": "npm run contentcli2:validate",
   "simHzInvariant": 20,
   "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
+  "softFloors": {
+    "historicalScaffoldKindMin": 6,
+    "historicalExampleFileMin": 6,
+    "note": "Finish 4.0 Phase 28 adds machine/rival to ALL_SCAFFOLD_KINDS; contentcli2:validate soft-floors live checks to the historical 6 kinds."
+  },
   "manualCommands": [
     "cd web && npm run content:scaffold -- --list",
     "cd web && npm run content:scaffold -- contract --id my_crate --dry-run",

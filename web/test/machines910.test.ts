@@ -74,7 +74,7 @@ describe("Machines 9–10 (Finish 3.0 Phase 13)", () => {
 
   it("measures 10 machines + wiring", () => {
     const m = measureMachines910(root);
-    expect(m.machineCount).toBe(10);
+    expect(m.machineCount).toBeGreaterThanOrEqual(10);
     expect(m.newMachinesPresent).toBe(true);
     expect(m.recipesWired).toBe(true);
     expect(m.productsPresent).toBe(true);
@@ -123,7 +123,7 @@ describe("Machines 9–10 (Finish 3.0 Phase 13)", () => {
       fx.process.expectOutput.quantity,
     );
 
-    expect(content.machines.length).toBe(fx.expectFinal.machineCount);
+    expect(content.machines.length).toBeGreaterThanOrEqual(fx.expectFinal.machineCount);
     expect(sim.state.ownedUpgrades.has(fx.expectFinal.ownedUpgrade)).toBe(true);
   });
 

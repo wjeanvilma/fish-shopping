@@ -1,0 +1,21 @@
+{
+  "schema": "fish.fixtures.parity_viewmodel_split.v1",
+  "viewModelSplitMarker": "authored-finish-4.0-phase-4",
+  "phase": 4,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "viewModelMaxLines": 1500,
+    "extractedFileMin": 6,
+    "requiredFileCount": 6,
+    "gapFlagClosed": "viewModelSplitIncomplete",
+    "schemaVersion": 24,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "viewmodel_slim",
+      "intents_extracted",
+      "symbols_present",
+      "kickoff_gap_closed",
+      "ci_gate"
+    ]
+  }
+}

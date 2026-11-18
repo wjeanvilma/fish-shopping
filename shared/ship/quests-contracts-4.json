@@ -1,0 +1,88 @@
+{
+  "phase": 14,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.quests_contracts_4.v1",
+  "description": "Finish 4.0 Phase 14 — raise authored quests to ≥50, delivery chains to ≥5 (mist runner + prism relay), and deepen reputation-gated / board contracts. Schema stays 24 / content 3.0.0.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "questsContracts4Marker": "authored-finish-4.0-phase-14",
+  "questsMin": 50,
+  "deliveryChainsMin": 5,
+  "reputationGatedMin": 6,
+  "contractTemplatesMin": 55,
+  "newQuests": [
+    "quest.braise_line",
+    "quest.glaze_glamour",
+    "quest.mist_curator",
+    "quest.prism_curator",
+    "quest.bulk_board",
+    "quest.chain_admiral",
+    "quest.harbor_decade",
+    "quest.bait_stockist",
+    "quest.night_shift",
+    "quest.wholesaler_wave",
+    "quest.staff_academy",
+    "quest.ice_logistics",
+    "quest.critic_table",
+    "quest.tourist_tide",
+    "quest.loan_cleared",
+    "quest.endgame_trials",
+    "quest.rival_undercut",
+    "quest.market_legend"
+  ],
+  "newChains": [
+    "chain.mist_runner",
+    "chain.prism_relay"
+  ],
+  "newChainHeads": [
+    "contract.chain_mist_catch",
+    "contract.chain_prism_catch"
+  ],
+  "newReputationGated": [
+    "contract.braise_trust",
+    "contract.plaza_vip",
+    "contract.glaze_legend"
+  ],
+  "newBoardContracts": [
+    "contract.braise_stew_order",
+    "contract.glaze_skewer_platter",
+    "contract.prism_shad_basket"
+  ],
+  "extendsQuestsContracts3": "shared/ship/quests-contracts-3.json",
+  "parityFixture": "shared/fixtures/parity-quests-contracts-4.json",
+  "authorTool": "shared/tools/author_quests_contracts_4.py",
+  "validateScript": "npm run quests4:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "checklist": [
+    "≥50 authored quests chained past endgame_beacon",
+    "≥5 delivery chains including mist_runner + prism_relay",
+    "≥6 reputation-gated contract templates",
+    "≥55 contract templates with board depth SKUs",
+    "content-strings en/es/pt + ContentStrings.kt for new ids",
+    "Finish 3.0 quests3:validate still green (historical floors)",
+    "parity-quests-contracts-4 + quests4:validate green",
+    "CI runs quests4:validate",
+    "kickoff baseline.quests=50 / deliveryChains=5 / questsRemaining=0",
+    "schema stays 24 / content 3.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/quests-contracts-4.json",
+    "shared/fixtures/parity-quests-contracts-4.json",
+    "shared/ship/quests-contracts-3.json",
+    "shared/content/content-pack.json",
+    "shared/i18n/content-strings.en.json",
+    "shared/i18n/content-strings.es.json",
+    "shared/i18n/content-strings.pt.json",
+    "shared/tools/author_quests_contracts_4.py",
+    "web/src/ship/questsContracts4.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/QuestsContracts4.kt",
+    "web/scripts/validate-quests-contracts-4.ts"
+  ],
+  "measured": {
+    "quests": 50,
+    "deliveryChains": 5,
+    "reputationGated": 7,
+    "contractTemplates": 55
+  }
+}

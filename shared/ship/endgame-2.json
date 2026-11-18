@@ -1,0 +1,99 @@
+{
+  "phase": 17,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.endgame_2.v1",
+  "description": "Finish 4.0 Phase 17 — deepen endgame (6 tiers / 8 challenges + legend marks) and bump live save schema 24→25 with endgameMarks persistence + v24→v25 migration.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 25,
+  "fromSchema": 24,
+  "toSchema": 25,
+  "endgame2Marker": "authored-finish-4.0-phase-17",
+  "tierCountMin": 6,
+  "challengeCountMin": 8,
+  "markCountMin": 3,
+  "tierIds": [
+    "endgame.tier.deep_harbor",
+    "endgame.tier.rival_warden",
+    "endgame.tier.legend_pier",
+    "endgame.tier.crown_market",
+    "endgame.tier.mist_sovereign",
+    "endgame.tier.prism_crown"
+  ],
+  "challengeIds": [
+    "endgame.challenge.rival_sweep",
+    "endgame.challenge.prestige_surge",
+    "endgame.challenge.codex_depth",
+    "endgame.challenge.market_master",
+    "endgame.challenge.rival_armada",
+    "endgame.challenge.chain_admiral",
+    "endgame.challenge.harbor_decade",
+    "endgame.challenge.mastery_legend"
+  ],
+  "newTierIds": [
+    "endgame.tier.mist_sovereign",
+    "endgame.tier.prism_crown"
+  ],
+  "newChallengeIds": [
+    "endgame.challenge.rival_armada",
+    "endgame.challenge.chain_admiral",
+    "endgame.challenge.harbor_decade",
+    "endgame.challenge.mastery_legend"
+  ],
+  "markIds": [
+    "endgame.mark.rival_armada",
+    "endgame.mark.chain_admiral",
+    "endgame.mark.harbor_decade",
+    "endgame.mark.mastery_legend"
+  ],
+  "stats": [
+    "stat.endgame_tiers_unlocked",
+    "stat.endgame_challenges_completed",
+    "stat.endgame_marks_earned"
+  ],
+  "migration": {
+    "fields": [
+      {
+        "field": "endgameMarks",
+        "type": "string[]",
+        "default": []
+      }
+    ]
+  },
+  "extendsSchema24Endgame": "shared/ship/schema-24-endgame.json",
+  "schema25Prep": "shared/ship/schema-25-prep.json",
+  "parityFixture": "shared/fixtures/parity-endgame-2.json",
+  "authorTool": "shared/tools/author_endgame_2.py",
+  "validateScript": "npm run endgame2:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "legacyFixture": "shared/fixtures/legacy/snapshot-v24-starter-line-t2500.json",
+  "checklist": [
+    "≥6 endgame tiers including mist_sovereign + prism_crown",
+    "≥8 endgame challenges with grantsMark legend marks",
+    "SCHEMA_VERSION / saveSchemaVersion / RELEASE_PIN / lifecycle = 25",
+    "v24→v25 migration defaults endgameMarks=[]",
+    "schema24:validate soft floors (≥4 tiers/challenges, schema≥24)",
+    "kickoff gaps.endgameSchema25Pending = false",
+    "parity-endgame-2 + endgame2:validate green",
+    "CI runs endgame2:validate",
+    "content stays 3.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/endgame-2.json",
+    "shared/fixtures/parity-endgame-2.json",
+    "shared/ship/schema-24-endgame.json",
+    "shared/ship/schema-25-prep.json",
+    "shared/fixtures/legacy/snapshot-v24-starter-line-t2500.json",
+    "shared/fixtures/snapshot-starter-line-t2500.json",
+    "shared/content/content-pack.json",
+    "shared/tools/author_endgame_2.py",
+    "web/src/ship/endgame2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Endgame2.kt",
+    "web/scripts/validate-endgame-2.ts"
+  ],
+  "measured": {
+    "tiers": 6,
+    "challenges": 8,
+    "marks": 4
+  }
+}

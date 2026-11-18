@@ -54,16 +54,17 @@ function validate(): string[] {
   }
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
   if (catalog.schemaVersion !== 24) errors.push("catalog schemaVersion must stay 24");
-  if (SCHEMA_VERSION !== 24) errors.push("engine SCHEMA_VERSION must stay 24");
+  if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
   if (catalog.closesGap !== "composeUiTestsMissing") errors.push("closesGap mismatch");
   if (COMPOSE_UI_CLOSES_GAP !== "composeUiTestsMissing") {
     errors.push("closesGap mirror mismatch");
   }
 
   const measure = measureComposeUiTests(root);
-  if (measure.schemaVersion !== 24) errors.push("measure schemaVersion must be 24");
+  if (measure.schemaVersion < 24) errors.push("measure schemaVersion must be >= 24");
   if (!measure.tagsPresent) errors.push("ComposeUiTags incomplete");
   if (!measure.tagCountOk) errors.push(`tag count must be ≥ ${catalog.minTagCount}`);
+  // Finish 4.0 Phase 26 soft-floor: tag/scenario floors may exceed Finish 3.0 mins.
   if (!measure.robolectricPresent) errors.push("Robolectric ComposeUiIntegrationTest incomplete");
   if (!measure.instrumentedPresent) errors.push("TitleMenuInstrumentedTest incomplete");
   if (!measure.titleMenuExtracted) errors.push("TitleMenuContent extract missing");

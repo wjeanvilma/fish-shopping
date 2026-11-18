@@ -215,11 +215,14 @@ internal fun StaffPanel(
                                 if (w.branches.isNotEmpty()) {
                                     Text(
                                         buildString {
-                                            append("Branch")
+                                            append(UiStrings.t("staff.trainSection"))
                                             w.activeBranchName?.let { append(": $it") }
                                         },
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                        modifier = Modifier.semantics {
+                                            contentDescription = UiStrings.t("a11y.staffTrainSection")
+                                        },
                                     )
                                     w.branches.forEach { b ->
                                         TextButton(
@@ -236,6 +239,13 @@ internal fun StaffPanel(
                                                     b.unlocked -> "Use ${b.name}"
                                                     else -> "Train ${b.name} · ${formatCoins(b.trainingCostCoins.toLong())}"
                                                 },
+                                            )
+                                        }
+                                        if (!b.unlocked && !b.canTrain && !b.trainReason.isNullOrBlank()) {
+                                            Text(
+                                                b.trainReason!!,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.error,
                                             )
                                         }
                                     }

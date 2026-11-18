@@ -242,6 +242,83 @@ internal fun BusinessDashboardPanel(
                     item {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
+                                Text(UiStrings.t("dashboard.operatingCosts"), fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    buildString {
+                                        append(formatCoins(dash.wagesPaid))
+                                        append(" wages")
+                                        if (dash.maintenancePaid > 0L) {
+                                            append(" · ")
+                                            append(formatCoins(dash.maintenancePaid))
+                                            append(" upkeep")
+                                        }
+                                        if (dash.repairSpent > 0L) {
+                                            append(" · ")
+                                            append(formatCoins(dash.repairSpent))
+                                            append(" repairs")
+                                        }
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text(formatCoins(dash.operatingCosts), style = Tabular)
+                        }
+                    }
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(UiStrings.t("dashboard.netOperating"), fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    buildString {
+                                        append("Committed sales − wages/upkeep/repairs")
+                                        if (dash.itemsSpoiled > 0L) {
+                                            append(" · ")
+                                            append(dash.itemsSpoiled)
+                                            append(" spoiled")
+                                        }
+                                        if (dash.loanInterestAccrued > 0L) {
+                                            append(" · ")
+                                            append(formatCoins(dash.loanInterestAccrued))
+                                            append(" loan interest")
+                                        }
+                                        if (dash.loanCollected > 0L) {
+                                            append(" · ")
+                                            append(formatCoins(dash.loanCollected))
+                                            append(" loan collected")
+                                        }
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text(formatCoins(dash.netOperatingProfit), style = Tabular)
+                        }
+                    }
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(UiStrings.t("dashboard.marketTip"), fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    buildString {
+                                        append("Scarcity tip ")
+                                        append(dash.activeScarcityTipPermille / 10)
+                                        append("%")
+                                        if (dash.reputationLabel.isNotBlank()) {
+                                            append(" · reputation ")
+                                            append(dash.reputationLabel)
+                                        }
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text(buildString { append((dash.reputationScorePermille / 10).toString()); append("%") }, style = Tabular)
+                        }
+                    }
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
                                 Text(UiStrings.t("dashboard.salesPace"), fontWeight = FontWeight.SemiBold)
                                 Text(
                                     dash.rateIntervalLabel,

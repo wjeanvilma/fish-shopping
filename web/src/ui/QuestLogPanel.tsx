@@ -86,7 +86,7 @@ export function QuestLogPanel({
   onUnequipCosmetic: () => void;
   onPreviewCosmetic: (cosmeticId: string) => void;
   onClearPreview: () => void;
-  onTakeLoan: () => void;
+  onTakeLoan: (productId?: string | null) => void;
   onRepayLoan: () => void;
   onSetCoinGoal: (amount: number) => void;
   dailyLoginStreak: number;
@@ -185,17 +185,35 @@ export function QuestLogPanel({
                 </>
               ) : (
                 <>
-                  <div className="small">
-                    Borrow {formatCoins(bank.loanPrincipal)} · repay {formatCoins(bank.repayAmount)}
-                    {" "}in {formatRushSeconds(bank.termTicks)}s
-                  </div>
-                  <button
-                    className="button"
-                    disabled={!bank.canTakeLoan}
-                    onClick={onTakeLoan}
-                  >
-                    Take loan · {formatCoins(bank.loanPrincipal)}
-                  </button>
+                  {(bank.loanProducts?.length ? bank.loanProducts : [{
+                    id: "loan.legacy",
+                    name: "Pier loan",
+                    description: "",
+                    principal: bank.loanPrincipal,
+                    repayAmount: bank.repayAmount,
+                    termTicks: bank.termTicks,
+                    unlocked: bank.canTakeLoan,
+                    lockedReason: null,
+                    canTake: bank.canTakeLoan,
+                  }]).map((product) => (
+                    <div key={product.id} style={{ marginTop: 6 }}>
+                      <div className="small">
+                        <strong>{product.name}</strong>
+                        {" · "}Borrow {formatCoins(product.principal)} · repay {formatCoins(product.repayAmount)}
+                        {" "}in {formatRushSeconds(product.termTicks)}s
+                      </div>
+                      {product.lockedReason && (
+                        <div className="small danger">{product.lockedReason}</div>
+                      )}
+                      <button
+                        className="button"
+                        disabled={!product.canTake}
+                        onClick={() => onTakeLoan(product.id)}
+                      >
+                        Take {product.name} · {formatCoins(product.principal)}
+                      </button>
+                    </div>
+                  ))}
                 </>
               )}
             </div>

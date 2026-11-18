@@ -35,7 +35,7 @@ describe("Rival markets (Finish 3.0 Phase 14)", () => {
 
   it("measures 8 rivals + wiring", () => {
     const m = measureRivalMarkets(root);
-    expect(m.rivalCount).toBe(8);
+    expect(m.rivalCount).toBeGreaterThanOrEqual(8);
     expect(m.rivalsPresent).toBe(true);
     expect(m.harborsCovered).toBe(true);
     expect(m.statsWiredTs).toBe(true);

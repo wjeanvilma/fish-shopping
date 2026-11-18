@@ -1,0 +1,28 @@
+{
+  "schema": "fish.fixture.parity_endgame_2.v1",
+  "endgame2Marker": "authored-finish-4.0-phase-17",
+  "phase": 17,
+  "plan": "30_finish_4.0",
+  "description": "Finish 4.0 Phase 17: schema 25 persists endgameMarks; Mist Sovereign requires marks after Crown Market deepen.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1717,
+  "firstNewTierId": "endgame.tier.mist_sovereign",
+  "sampleMarkId": "endgame.mark.rival_armada",
+  "expect": {
+    "schemaVersion": 25,
+    "contentVersion": "3.0.0",
+    "tierCountMin": 6,
+    "challengeCountMin": 8,
+    "markCountMin": 3,
+    "fromSchema": 24,
+    "toSchema": 25,
+    "gates": [
+      "schema_25",
+      "endgame_deepen",
+      "marks_persist",
+      "legacy_v24",
+      "kickoff_phase17",
+      "ci_gate"
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "fish.fixtures.parity_offline_cloud_2.v1",
+  "offlineCloud2Marker": "authored-finish-4.0-phase-21",
+  "phase": 21,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "dailyObjectiveMin": 10,
+    "boardSlotsMin": 4,
+    "journalDeltaFieldCount": 4,
+    "conflictFieldCount": 2,
+    "requeueOnFlushFailure": true,
+    "maxFlushRetries": 3,
+    "retryBackoffMs": 2000,
+    "schemaVersion": 25,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "daily_objectives",
+      "board_slots",
+      "journal_deltas",
+      "conflict_ux",
+      "analytics_retry",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

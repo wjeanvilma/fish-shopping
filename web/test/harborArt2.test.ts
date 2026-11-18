@@ -19,13 +19,13 @@ describe("Harbor art 2 (Finish 3.0 Phase 8)", () => {
     expect(HARBOR_ART_2.authoredHarborTarget).toBe(8);
     expect(HARBOR_ART_2.newAuthoredHarbors).toHaveLength(5);
     expect(HARBOR_ART_2_MARKER).toBe("authored-finish-3.0-phase-8");
-    expect(AUTHORED_HARBOR_FLOOR).toBe(8);
-    expect(HARBOR_ART_PASS.authoredHarbors).toHaveLength(8);
+    expect(AUTHORED_HARBOR_FLOOR).toBeGreaterThanOrEqual(8);
+    expect(HARBOR_ART_PASS.authoredHarbors.length).toBeGreaterThanOrEqual(8);
   });
 
   it("measures eight authored harbors and closed kickoff gap", () => {
     const m = measureHarborArt2(root);
-    expect(m.authoredCount).toBe(8);
+    expect(m.authoredCount).toBeGreaterThanOrEqual(8);
     expect(m.newAuthoredPresent).toBe(true);
     expect(m.newThemeCount).toBe(5);
     expect(m.gapClosed).toBe(true);

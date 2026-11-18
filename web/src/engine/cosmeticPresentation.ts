@@ -11,6 +11,17 @@ export interface CosmeticPresentationItem {
   swatchRgb: [number, number, number];
   source: string;
   powerNeutral: boolean;
+  /** Finish 4.0 Phase 10 — authored banner GLB under shared/assets/. */
+  meshAsset?: string;
+  minCosmeticArtNodes?: number;
+}
+
+export interface CounterPresentation {
+  layoutId: string;
+  slotsVisibleMax: number;
+  preferKinds: string[];
+  stackYStepM: number;
+  productArtMarker: string;
 }
 
 export interface CosmeticPresentationCatalog {
@@ -18,6 +29,9 @@ export interface CosmeticPresentationCatalog {
   schema: string;
   contentVersion: string;
   schemaVersion: number;
+  productArtPhase?: number;
+  productArtMarker?: string;
+  cosmeticBannerMarker?: string;
   constraints: {
     powerNeutral: boolean;
     noSchemaBreak: boolean;
@@ -27,6 +41,7 @@ export interface CosmeticPresentationCatalog {
   slot: { id: string; maxEquipped: number; unequipAllowed: boolean; previewUnownedAllowed: boolean };
   anchor: { xMm: number; zMm: number; heightM: number };
   items: CosmeticPresentationItem[];
+  counterPresentation?: CounterPresentation;
   fallback: { swatchRgb: [number, number, number]; powerNeutral: boolean };
   ui: Record<string, string>;
 }
@@ -49,6 +64,14 @@ export function cosmeticTitle(cosmeticId: string): string {
 
 export function cosmeticSwatchRgb(cosmeticId: string): [number, number, number] {
   return COSMETIC_ITEMS_BY_ID.get(cosmeticId)?.swatchRgb ?? cosmeticPresentation.fallback.swatchRgb;
+}
+
+export function cosmeticMeshAsset(cosmeticId: string): string | null {
+  return COSMETIC_ITEMS_BY_ID.get(cosmeticId)?.meshAsset ?? null;
+}
+
+export function counterPresentationLayout(): CounterPresentation | null {
+  return cosmeticPresentation.counterPresentation ?? null;
 }
 
 export function sanitizeEquippedCosmetic(

@@ -17,6 +17,10 @@ object RemoteAnalyticsPolicy {
     const val DROP_OLDEST_ON_OVERFLOW = true
     const val FLUSH_ON_SESSION_END = true
     const val RESYNC_SANITIZE_ON_FLUSH = true
+    /** Finish 4.0 Phase 21 — requeue failed flush slices instead of dropping. */
+    const val REQUEUE_ON_FLUSH_FAILURE = true
+    const val MAX_FLUSH_RETRIES = 3
+    const val RETRY_BACKOFF_MS = 2_000L
 
     const val WEB_ENV_KEY = "VITE_ANALYTICS_API_BASE"
     const val ANDROID_META_KEY = "fish.analytics.apiBase"
@@ -36,6 +40,12 @@ object RemoteAnalyticsPolicy {
         val events: List<Map<String, Any?>>,
     )
 
+    /** Finish 4.0 Phase 21 — flush take that retains originals for requeue. */
+    data class FlushSlice(
+        val envelope: BatchEnvelope,
+        val taken: List<QueuedEvent>,
+    )
+
     fun normalizeBaseUrl(raw: String?): String? {
         val trimmed = raw?.trim()?.trimEnd('/') ?: return null
         if (trimmed.isEmpty()) return null
@@ -52,9 +62,18 @@ object RemoteAnalyticsPolicy {
         nowMs: Long,
         platform: String,
         maxEvents: Int = MAX_EVENTS,
-    ): BatchEnvelope? {
+    ): BatchEnvelope? = takeFlushSliceDetailed(queue, nowMs, platform, maxEvents)?.envelope
+
+    /** Finish 4.0 Phase 21 — take with retained queue items for failed-flush requeue. */
+    fun takeFlushSliceDetailed(
+        queue: MutableList<QueuedEvent>,
+        nowMs: Long,
+        platform: String,
+        maxEvents: Int = MAX_EVENTS,
+    ): FlushSlice? {
         if (queue.isEmpty()) return null
         val slice = mutableListOf<Map<String, Any?>>()
+        val takenEvents = mutableListOf<QueuedEvent>()
         var taken = 0
         while (queue.isNotEmpty() && taken < maxEvents) {
             val head = queue.removeAt(0)
@@ -63,6 +82,7 @@ object RemoteAnalyticsPolicy {
             } else {
                 head.event
             }
+            takenEvents += head
             slice += mapOf(
                 "name" to clean.name,
                 "props" to clean.props,
@@ -72,11 +92,32 @@ object RemoteAnalyticsPolicy {
             taken += 1
         }
         if (slice.isEmpty()) return null
-        return BatchEnvelope(
-            platform = platform,
-            sentAtMs = nowMs,
-            events = slice,
+        return FlushSlice(
+            envelope = BatchEnvelope(
+                platform = platform,
+                sentAtMs = nowMs,
+                events = slice,
+            ),
+            taken = takenEvents,
         )
+    }
+
+    /** Finish 4.0 Phase 21 — prepend failed flush items back onto the queue. */
+    fun requeueFlushSlice(
+        queue: MutableList<QueuedEvent>,
+        taken: List<QueuedEvent>,
+        maxQueue: Int = MAX_QUEUE,
+        dropOldest: Boolean = DROP_OLDEST_ON_OVERFLOW,
+    ) {
+        if (taken.isEmpty()) return
+        queue.addAll(0, taken)
+        while (queue.size > maxQueue) {
+            if (!dropOldest) {
+                queue.removeAt(queue.lastIndex)
+            } else {
+                queue.removeAt(0)
+            }
+        }
     }
 
     fun enqueue(

@@ -17,6 +17,10 @@ export function applyOffline(sim: Simulation, elapsedMillis: number): OfflineRep
   const beforeItems = sim.state.stat(Stats.ITEMS_SOLD);
   const beforeWorkerFish = sim.state.stat(Stats.WORKER_FISH_CAUGHT);
   const beforeWorkerMoved = sim.state.stat(Stats.WORKER_ITEMS_MOVED);
+  const beforeContracts = sim.state.stat(Stats.CONTRACTS_COMPLETED);
+  const beforeMaintenance = sim.state.stat(Stats.MAINTENANCE_PAID);
+  const beforeSpoiled = sim.state.stat(Stats.ITEMS_SPOILED);
+  const beforeRivalBeats = sim.state.stat(Stats.RIVAL_BEATS);
 
   if (ticks > 0) {
     const player = sim.state.player;
@@ -45,6 +49,10 @@ export function applyOffline(sim: Simulation, elapsedMillis: number): OfflineRep
   const itemsSold = sim.state.stat(Stats.ITEMS_SOLD) - beforeItems;
   const workerFishCaught = sim.state.stat(Stats.WORKER_FISH_CAUGHT) - beforeWorkerFish;
   const workerItemsMoved = sim.state.stat(Stats.WORKER_ITEMS_MOVED) - beforeWorkerMoved;
+  const contractsCompleted = sim.state.stat(Stats.CONTRACTS_COMPLETED) - beforeContracts;
+  const maintenancePaid = sim.state.stat(Stats.MAINTENANCE_PAID) - beforeMaintenance;
+  const itemsSpoiled = sim.state.stat(Stats.ITEMS_SPOILED) - beforeSpoiled;
+  const rivalBeats = sim.state.stat(Stats.RIVAL_BEATS) - beforeRivalBeats;
 
   return {
     elapsedMillis: Math.max(0, elapsedMillis),
@@ -56,6 +64,13 @@ export function applyOffline(sim: Simulation, elapsedMillis: number): OfflineRep
     itemsSold,
     workerFishCaught,
     workerItemsMoved,
-    hadActivity: coinsDelta !== 0 || fishCaught > 0 || sales > 0 || workerFishCaught > 0 || workerItemsMoved > 0,
+    contractsCompleted,
+    maintenancePaid,
+    itemsSpoiled,
+    rivalBeats,
+    hadActivity:
+      coinsDelta !== 0 || fishCaught > 0 || sales > 0 || workerFishCaught > 0 ||
+      workerItemsMoved > 0 || contractsCompleted > 0 || maintenancePaid > 0 ||
+      itemsSpoiled > 0 || rivalBeats > 0,
   };
 }

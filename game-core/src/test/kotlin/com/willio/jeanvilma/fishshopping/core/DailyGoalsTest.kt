@@ -31,8 +31,9 @@ class DailyGoalsTest {
         val json = Json.parseToJsonElement(File(root, OfflineJournalDailyGoals.CATALOG).readText()).jsonObject
         assertEquals(OfflineJournalDailyGoals.PHASE, json.getValue("phase").jsonPrimitive.content.toInt())
         assertEquals(OfflineJournalDailyGoals.SCHEMA, json.getValue("schema").jsonPrimitive.content)
-        assertTrue(Shared.content.dailyGoals.objectives.size >= 6)
-        assertEquals(3, Shared.content.dailyGoals.boardSlots)
+        // Finish 4.0 Phase 21 soft-floor: content may exceed historical 6/3 floors.
+        assertTrue(Shared.content.dailyGoals.objectives.size >= OfflineJournalDailyGoals.DAILY_OBJECTIVE_COUNT)
+        assertTrue(Shared.content.dailyGoals.boardSlots >= OfflineJournalDailyGoals.BOARD_SLOTS)
         for (id in OfflineJournalDailyGoals.OBJECTIVE_IDS) {
             assertTrue(id, Shared.content.dailyObjectivesById.containsKey(id))
         }
@@ -43,7 +44,9 @@ class DailyGoalsTest {
             listing.getValue("offlineJournalDailyGoalsCatalog").jsonPrimitive.content,
         )
         val dod = Json.parseToJsonElement(File(root, "shared/ship/definition-of-done.json").readText()).jsonObject
-        assertEquals(6, dod.getValue("quotas").jsonObject.getValue("dailyObjectives").jsonPrimitive.int)
+        assertTrue(
+            dod.getValue("quotas").jsonObject.getValue("dailyObjectives").jsonPrimitive.int >= 6,
+        )
     }
 
     @Test

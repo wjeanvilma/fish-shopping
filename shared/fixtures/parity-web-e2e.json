@@ -1,23 +1,27 @@
 {
   "schema": "fish.fixture.parity_web_e2e.v1",
-  "description": "Finish 3.0 Phase 22: Playwright E2E id + suite expectations.",
+  "description": "Finish 3.0 Phase 22: Playwright E2E id + suite expectations. Finish 4.0 Phase 26 soft-floors minIdCount≥24.",
   "webE2eMarker": "authored-finish-3.0-phase-22",
   "expect": {
     "closesGap": "webE2eMissing",
     "schemaVersion": 24,
     "contentVersion": "2.0.0",
-    "minIdCount": 18,
+    "minIdCount": 24,
     "requiredIds": [
       "title.root",
       "title.play",
       "title.analytics.decline",
       "nav.pause",
+      "nav.jobs",
+      "nav.dash",
       "pause.resume",
       "hud.toolbar"
     ],
     "idsSourceMustContain": [
       "TITLE_PLAY",
       "NAV_PAUSE",
+      "NAV_JOBS",
+      "NAV_DASH",
       "PAUSE_RESUME",
       "HUD_TOOLBAR",
       "WEB_E2E_SETTINGS_KEY"
@@ -25,6 +29,9 @@
     "smokeMustContain": [
       "title play reaches ready HUD",
       "analytics decline then play",
+      "staff and map nav open",
+      "jobs and dash nav open",
+      "deep link panel=staff",
       "getByTestId",
       "WEB_E2E_IDS"
     ],

@@ -46,8 +46,10 @@ object SimConstants {
      * 21: unlockedAchievements (Finish 2.0 Phase 7 — achievements engine scaffold).
      * 22: speciesMasteryXp + activeTechniqueId (Finish 2.0 Phase 14 — fishing mastery).
      * 23: worker branch/schedule fields (Finish 2.0 Phase 15 — staff trees).
+     * 24: beatenRivalIds + unlockedEndgameTiers + completedEndgameChallenges (Finish 3.0 Phase 15).
+     * 25: endgameMarks (Finish 4.0 Phase 17 — endgame deepen).
      */
-    const val SCHEMA_VERSION = 24
+    const val SCHEMA_VERSION = 25
 }
 
 /** Integer arithmetic that refuses to leave the shared safe range. */

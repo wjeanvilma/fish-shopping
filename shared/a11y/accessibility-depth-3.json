@@ -1,0 +1,122 @@
+{
+  "phase": 24,
+  "plan": "30_finish_4.0",
+  "schema": "fish.a11y.accessibility_depth_3.v1",
+  "description": "Finish 4.0 Phase 24 — a11y depth 3 for offline summary, upgrades, licenses, cloud conflict, and staff training. Extends depth-2; presentation-only; schema 25.",
+  "extendsCatalog": "shared/a11y/accessibility-depth-2.json",
+  "extendsDepth1Catalog": "shared/a11y/accessibility-depth.json",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 25,
+  "simHzInvariant": 20,
+  "wcag": {
+    "normalTextMin": 4.5,
+    "largeOrUiMin": 3.0
+  },
+  "screenSurfaceMin": 5,
+  "contrastPairMin": 2,
+  "uiA11yStringKeyMin": 20,
+  "liveRegionMin": 2,
+  "screenSurfaces": [
+    {
+      "id": "offline_summary",
+      "webDialogLabelKey": "offline.title",
+      "androidPaneTitleKey": "offline.title",
+      "sectionLabelKey": "a11y.offlineSection",
+      "initialFocus": "continue",
+      "keyboardPath": "Offline report → Continue"
+    },
+    {
+      "id": "upgrades_panel",
+      "webDialogLabelKey": "panels.upgrades",
+      "androidPaneTitleKey": "panels.upgrades",
+      "sectionLabelKey": "a11y.upgradesSection",
+      "initialFocus": "close",
+      "keyboardPath": "KeyU Upgrades"
+    },
+    {
+      "id": "settings_licenses",
+      "webDialogLabelKey": "panels.licenses",
+      "androidPaneTitleKey": "settings.licenses",
+      "sectionLabelKey": "a11y.licensesSection",
+      "initialFocus": "close",
+      "keyboardPath": "Pause → Settings → Licenses"
+    },
+    {
+      "id": "cloud_conflict",
+      "webDialogLabelKey": "cloud.chooseSave",
+      "androidPaneTitleKey": "cloud.chooseSave",
+      "sectionLabelKey": "a11y.cloudConflictSection",
+      "initialFocus": "recommended",
+      "keyboardPath": "Title → Cloud conflict"
+    },
+    {
+      "id": "staff_training",
+      "webDialogLabelKey": "nav.staff",
+      "androidPaneTitleKey": "nav.staff",
+      "sectionLabelKey": "a11y.staffTrainSection",
+      "initialFocus": "close",
+      "keyboardPath": "KeyS Staff → Training"
+    }
+  ],
+  "contrastPairs": [
+    {
+      "id": "light_ink_on_surface",
+      "fg": "#153449",
+      "bg": "#FBF7EF",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Light theme primary ink on surface"
+    },
+    {
+      "id": "light_focus_on_surface",
+      "fg": "#153449",
+      "bg": "#EFE8DA",
+      "role": "large_or_ui",
+      "minRatio": 3.0,
+      "use": "Light theme focus-visible / muted surface outline contrast"
+    }
+  ],
+  "liveRegions": [
+    "offline_summary",
+    "cloud_conflict"
+  ],
+  "talkBack": {
+    "android": {
+      "requirePaneTitleOnOfflineUpgrades": true,
+      "licensesSemantics": true,
+      "cloudConflictLiveRegion": true,
+      "staffTrainSectionLabels": true
+    },
+    "web": {
+      "offlineAriaLive": "polite",
+      "cloudConflictAriaLive": "assertive",
+      "dialogRoleOnOfflineUpgradesLicenses": true,
+      "staffTrainAriaLabel": true,
+      "initialFocusCloseOrContinue": true
+    }
+  },
+  "reducedMotion": {
+    "honorsSettingsToggle": true,
+    "crossRef": "shared/ship/vfx-juice-4.json"
+  },
+  "keyboardDocumentedSurfaces": [
+    "Offline summary Continue",
+    "Upgrades (U)",
+    "Settings → Licenses",
+    "Cloud conflict choose-save",
+    "Staff training section (S)"
+  ],
+  "sourcePins": {
+    "depth2": "shared/a11y/accessibility-depth-2.json",
+    "webApp": "web/src/ui/App.tsx",
+    "androidGameScreen": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt",
+    "webCss": "web/src/ui/styles.css"
+  },
+  "manualChecklist": [
+    "TalkBack: Offline summary + Upgrades pane titles",
+    "TalkBack: Settings → Licenses; Staff training section",
+    "Keyboard: U/S + Esc; cloud conflict recommended button",
+    "Live regions announce offline summary + cloud conflict",
+    "Contrast: light ink/focus on #FBF7EF / #EFE8DA"
+  ]
+}

@@ -3,6 +3,7 @@ package com.willio.jeanvilma.fishshopping.render
 /**
  * Finish 2.0 Phase 22 — weather ambient profiles for harbor presentation.
  * Finish 3.0 Phase 24 adds tide + rival ambient mixes (still not burst-pool).
+ * Finish 4.0 Phase 23 adds endgame ambient modes (still not burst-pool).
  * Presentation-only; does not consume the VfxBurst pool or change 20 Hz sim.
  */
 enum class WeatherAmbientId {
@@ -11,6 +12,10 @@ enum class WeatherAmbientId {
 
 enum class TideAmbientId {
     DAWN, DAY, DUSK, NIGHT,
+}
+
+enum class EndgameAmbientId {
+    LOCKED, ACTIVE, CROWNED,
 }
 
 data class WeatherAmbientProfile(
@@ -46,6 +51,12 @@ private data class TideMix(
     val bob: Double,
 )
 
+private data class EndgameMix(
+    val sky: Int,
+    val water: Int,
+    val amount: Float,
+)
+
 private val PROFILES = mapOf(
     WeatherAmbientId.CLEAR to AmbientBase(WeatherAmbientId.CLEAR, 0x9fd3ea, 0x1a5f7a, 0x3a9fc4, 1.0, 0.18f),
     WeatherAmbientId.OVERCAST to AmbientBase(WeatherAmbientId.OVERCAST, 0x8aa0b0, 0x2a4a5a, 0x4a7080, 0.7, 0.12f),
@@ -62,6 +73,12 @@ private val TIDE_MIX = mapOf(
     TideAmbientId.NIGHT to TideMix(0x1a2848, 0x0c2030, 0.42f, 0.75),
 )
 
+private val ENDGAME_MIX = mapOf(
+    EndgameAmbientId.LOCKED to EndgameMix(0x9fd3ea, 0x1a5f7a, 0.0f),
+    EndgameAmbientId.ACTIVE to EndgameMix(0xc8a060, 0x3a5068, 0.16f),
+    EndgameAmbientId.CROWNED to EndgameMix(0xe8c878, 0x4a6080, 0.24f),
+)
+
 val WEATHER_AMBIENT_PATTERN_IDS = listOf(
     "weather.clear",
     "weather.overcast",
@@ -71,6 +88,7 @@ val WEATHER_AMBIENT_PATTERN_IDS = listOf(
 )
 
 val TIDE_AMBIENT_PHASE_IDS = listOf("dawn", "day", "dusk", "night")
+val ENDGAME_AMBIENT_MODE_IDS = listOf("locked", "active", "crowned")
 
 fun weatherAmbientIdForWeatherId(weatherId: String): WeatherAmbientId = when {
     weatherId.contains("gale") -> WeatherAmbientId.GALE
@@ -88,6 +106,12 @@ fun tideAmbientIdForPhaseId(tidePhaseId: String): TideAmbientId = when (tidePhas
     else -> TideAmbientId.DAY
 }
 
+fun endgameAmbientIdForView(endgameUnlocked: Boolean, endgameMarkCount: Int): EndgameAmbientId = when {
+    !endgameUnlocked -> EndgameAmbientId.LOCKED
+    endgameMarkCount > 0 -> EndgameAmbientId.CROWNED
+    else -> EndgameAmbientId.ACTIVE
+}
+
 fun weatherAmbientProfile(
     weatherId: String,
     festivalActive: Boolean = false,
@@ -95,6 +119,7 @@ fun weatherAmbientProfile(
     reducedMotion: Boolean = false,
     tidePhaseId: String = "day",
     rivalActive: Boolean = false,
+    endgameMode: EndgameAmbientId = EndgameAmbientId.LOCKED,
 ): WeatherAmbientProfile {
     val base = PROFILES.getValue(weatherAmbientIdForWeatherId(weatherId))
     val qScale = when (quality) {
@@ -122,6 +147,12 @@ fun weatherAmbientProfile(
     if (rivalActive) {
         sky = mixRgb(packRgb(sky), 0x8a4068, 0.18f * qScale)
         deep = mixRgb(packRgb(deep), 0x3a2040, 0.12f * qScale)
+    }
+    val endgame = ENDGAME_MIX.getValue(endgameMode)
+    if (endgame.amount > 0f) {
+        sky = mixRgb(packRgb(sky), endgame.sky, endgame.amount * qScale)
+        deep = mixRgb(packRgb(deep), endgame.water, endgame.amount * 0.55f * qScale)
+        shallow = mixRgb(packRgb(shallow), endgame.water, endgame.amount * 0.35f * qScale)
     }
     return WeatherAmbientProfile(
         id = base.id,

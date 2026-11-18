@@ -40,11 +40,17 @@ function validate(): string[] {
   for (const need of ["background", "resume", "rotate", "process_death", "low_memory"]) {
     if (!scenarioIds.includes(need)) errors.push(`missing scenario ${need}`);
   }
+  // Finish 4.0 Phase 27 soft-floor: expanded scenarios/device classes may grow.
+  if (scenarioIds.length < 5) errors.push("android scenarios must stay ≥5");
+  if (scenarioIds.includes("multi_window") === false && matrix.finish4Phase === 27) {
+    /* optional until Phase 27 catalog ships — enforced by deviceperf4 */
+  }
 
   const classIds = (matrix.deviceClasses as any[]).map((c) => c.id);
   for (const need of ["phone", "tablet7", "tablet10"]) {
     if (!classIds.includes(need)) errors.push(`missing device class ${need}`);
   }
+  if (classIds.length < 3) errors.push("android deviceClasses must stay ≥3");
 
   for (const change of phase28.android.configChangesHandled as string[]) {
     if (!manifest.includes(change)) errors.push(`manifest missing configChange ${change}`);

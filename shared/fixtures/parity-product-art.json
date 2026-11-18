@@ -1,0 +1,21 @@
+{
+  "schema": "fish.fixtures.parity_product_art.v1",
+  "productArtMarker": "authored-finish-4.0-phase-10",
+  "phase": 10,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "authoredProductTarget": 40,
+    "cosmeticBannerTarget": 12,
+    "minProductArtNodes": 4,
+    "productArtIncomplete": false,
+    "schemaVersion": 24,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "thirty_four_products",
+      "twelve_banners",
+      "product_art_nodes_ge_4",
+      "product_art_gap_closed",
+      "ci_gate"
+    ]
+  }
+}

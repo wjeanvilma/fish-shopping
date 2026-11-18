@@ -39,6 +39,14 @@ import com.willio.jeanvilma.fishshopping.core.shell.ShellPanelController
 import com.willio.jeanvilma.fishshopping.core.shell.ShellModalPolicy
 import com.willio.jeanvilma.fishshopping.core.shell.ShellHudPolicy
 import com.willio.jeanvilma.fishshopping.core.shell.OfflineShell
+import com.willio.jeanvilma.fishshopping.game.vm.VmEconomyIntents
+import com.willio.jeanvilma.fishshopping.game.vm.VmIapIntentHost
+import com.willio.jeanvilma.fishshopping.game.vm.VmIapIntents
+import com.willio.jeanvilma.fishshopping.game.vm.VmShellIntentHost
+import com.willio.jeanvilma.fishshopping.game.vm.VmShellIntents
+import com.willio.jeanvilma.fishshopping.game.vm.VmStationIntentHost
+import com.willio.jeanvilma.fishshopping.game.vm.VmTravelIntentHost
+import com.willio.jeanvilma.fishshopping.game.vm.VmTravelIntents
 import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import com.willio.jeanvilma.fishshopping.core.sim.Simulation
@@ -55,11 +63,18 @@ import com.willio.jeanvilma.fishshopping.render.FlyingTransferCue
 import com.willio.jeanvilma.fishshopping.render.ShakeKind
 import com.willio.jeanvilma.fishshopping.render.WorldBurstCue
 import com.willio.jeanvilma.fishshopping.render.resolveAchievementBurst
+import com.willio.jeanvilma.fishshopping.render.resolveBaitBurst
 import com.willio.jeanvilma.fishshopping.render.resolveCatchBurst
 import com.willio.jeanvilma.fishshopping.render.resolveCelebrateBurst
+import com.willio.jeanvilma.fishshopping.render.resolveContractAcceptBurst
 import com.willio.jeanvilma.fishshopping.render.resolveContractDoneBurst
+import com.willio.jeanvilma.fishshopping.render.resolveCosmeticBurst
+import com.willio.jeanvilma.fishshopping.render.resolveDecorBurst
+import com.willio.jeanvilma.fishshopping.render.resolveEndgameChallengeBurst
+import com.willio.jeanvilma.fishshopping.render.resolveEndgameTierBurst
 import com.willio.jeanvilma.fishshopping.render.resolveFestivalBurst
 import com.willio.jeanvilma.fishshopping.render.resolveFlyingTransfer
+import com.willio.jeanvilma.fishshopping.render.resolveFullUnlockBurst
 import com.willio.jeanvilma.fishshopping.render.resolveGoalClaimBurst
 import com.willio.jeanvilma.fishshopping.render.resolveHarborTravelBurst
 import com.willio.jeanvilma.fishshopping.render.resolveHireBurst
@@ -89,43 +104,28 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
-sealed interface GameUiState {
-    data object Loading : GameUiState
-    data class Title(
-        val hasSave: Boolean,
-        val cloudConflict: CloudConflictView? = null,
-        val localRecovery: LocalRecoveryView? = null,
-        val settings: GameSettings = GameSettings(),
-    ) : GameUiState
-    data class Ready(
-        val view: SimView,
-        val upgradesOpen: Boolean,
-        val staffOpen: Boolean,
-        val questsOpen: Boolean = false,
-        val contractsOpen: Boolean = false,
-        val mapOpen: Boolean = false,
-        val warehouseOpen: Boolean = false,
-        val speciesBookOpen: Boolean = false,
-        val dashboardOpen: Boolean = false,
-        val pauseOpen: Boolean = false,
-        val settingsOpen: Boolean = false,
-        val bagOpen: Boolean = false,
-        val stationOpen: Boolean = false,
-        val offlineReport: OfflineReport? = null,
-        val settings: GameSettings = GameSettings(),
-    ) : GameUiState
-    data class Failed(val message: String) : GameUiState
-}
-
 /**
  * Hosts the canonical simulation on one dedicated thread (blueprint "Concurrency").
  * The UI sends intent as [Command]s; it never mutates game state directly.
  *
+ * Finish 4.0 Phase 4: shell / economy / travel / IAP intents live under game/vm/.
  * - The renderer reads [latestView] every frame (updated every tick).
  * - The HUD observes [ui], published ~10 times per second and immediately after transactions.
  * - One-off feedback (coins earned, rejected purchases) goes through [messages].
  */
-class GameViewModel(app: Application) : AndroidViewModel(app) {
+class GameViewModel(app: Application) :
+    AndroidViewModel(app),
+    VmShellIntentHost,
+    VmTravelIntentHost,
+    VmStationIntentHost,
+    VmIapIntentHost {
+
+    // Finish 4.0 Phase 4 — intent modules (shell / economy / travel / IAP).
+    private val shellIntents = VmShellIntents(this)
+    private val economyIntents = VmEconomyIntents(this)
+    private val travelIntents = VmTravelIntents(this, shellIntents)
+    private val iapIntents = VmIapIntents(this)
+
 
     private val simExecutor = Executors.newSingleThreadExecutor { Thread(it, "fish-sim") }
     private val simDispatcher = simExecutor.asCoroutineDispatcher()
@@ -135,8 +135,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val settingsStore = SettingsStore(app)
     private val audio = AudioBus(app)
     private val cloud = CloudSyncCoordinator(app)
-    private val billing = EntitlementBillings.create(app)
-    private val pendingEntitlements = PendingEntitlementLedger(app)
+    override val billing = EntitlementBillings.create(app)
+    override val pendingEntitlements = PendingEntitlementLedger(app)
 
     private val _ui = MutableStateFlow<GameUiState>(GameUiState.Loading)
     val ui: StateFlow<GameUiState> = _ui
@@ -246,6 +246,60 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         panels.snapshot(),
         pendingOfflineReport != null,
     )
+
+
+    // --- Finish 4.0 Phase 4 intent-host surface ---
+    override fun enqueueCommand(command: Command) {
+        commands += command
+    }
+
+    override fun enqueuePanelCommand(command: Command) {
+        commands += command
+        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) {
+            viewModelScope.launch(simDispatcher) {
+                sim?.let { step(it); publish(force = true) }
+            }
+        }
+    }
+
+    override fun launchSim(block: suspend () -> Unit) {
+        viewModelScope.launch(simDispatcher) { block() }
+    }
+
+    override fun launchMain(block: suspend () -> Unit) {
+        viewModelScope.launch { block() }
+    }
+
+    override fun emitMessage(text: String) {
+        _messages.tryEmit(text)
+    }
+
+    override fun panelBlocksWorld(): Boolean = panelOpen
+
+    override fun hasPendingOffline(): Boolean = pendingOfflineReport != null
+
+    override fun isPanelOpen(id: ShellPanelId): Boolean = panels.isOpen(id)
+
+    override fun syncWallClockNow() = syncWallClock(System.currentTimeMillis())
+
+    override fun cloudAccountId(): String? = settings.cloudAccountId
+
+    override fun travelToHarbor(harborId: String) = travelIntents.travelToHarbor(harborId)
+
+    override fun continueGameFromTitle() = continueGame()
+
+    override fun isReadyWithSim(): Boolean = _ui.value is GameUiState.Ready && sim != null
+
+    override fun launchSimConsume(block: suspend () -> Unit) = launchSim(block)
+
+    override fun withSimOnSimThread(block: suspend (Simulation) -> Unit) {
+        viewModelScope.launch(simDispatcher) {
+            val s = sim ?: return@launch
+            block(s)
+            latestView = s.view()
+            publish(force = true)
+        }
+    }
 
     /** Phase 25: flush offline cloud queue when connectivity returns (online_event). */
     private val connectivityManager =
@@ -466,21 +520,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
      * Queues until Ready; soft auto-continues from Title when a save exists.
      */
     fun applyDeepLink(intent: DeepLinkRoutes.Intent) {
-        if (intent.isEmpty) return
-        if (_ui.value is GameUiState.Ready && sim != null) {
-            viewModelScope.launch(simDispatcher) { consumeDeepLink(intent) }
-            return
-        }
-        pendingDeepLink = intent
         val title = _ui.value as? GameUiState.Title
-        if (title != null &&
+        val canAuto = title != null &&
             title.hasSave &&
             title.cloudConflict == null &&
             title.localRecovery == null &&
             !booting
-        ) {
-            continueGame()
-        }
+        travelIntents.applyDeepLink(intent, canAuto) { pendingDeepLink = it }
     }
 
     private fun flushPendingDeepLink() {
@@ -490,23 +536,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun consumeDeepLink(intent: DeepLinkRoutes.Intent) {
-        when (intent.panel) {
-            ShellPanelId.QUESTS -> setQuestsOpen(true)
-            ShellPanelId.CONTRACTS -> setContractsOpen(true)
-            ShellPanelId.STAFF -> setStaffOpen(true)
-            ShellPanelId.MAP -> setMapOpen(true)
-            ShellPanelId.UPGRADES -> setUpgradesOpen(true)
-            ShellPanelId.DASHBOARD -> setDashboardOpen(true)
-            ShellPanelId.SETTINGS -> setSettingsOpen(true)
-            ShellPanelId.SPECIES_BOOK -> setSpeciesBookOpen(true)
-            ShellPanelId.WAREHOUSE -> setWarehouseOpen(true)
-            ShellPanelId.BAG -> setBagOpen(true)
-            ShellPanelId.STATION -> setStationOpen(true)
-            ShellPanelId.PAUSE -> setPauseOpen(true)
-            null -> Unit
-        }
-        val harbor = intent.harborId?.trim().orEmpty()
-        if (harbor.isNotEmpty()) travelToHarbor(harbor)
+        travelIntents.consumeDeepLink(intent)
     }
 
     private fun publishTitle(hasSave: Boolean) {
@@ -686,12 +716,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(simDispatcher) { publish(force = true) }
     }
 
-    fun claimDailyGoal(objectiveId: String) {
-        commands += Command.ClaimDailyGoal(objectiveId, UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun claimDailyGoal(objectiveId: String) = economyIntents.claimDailyGoal(objectiveId)
 
     /** Joystick in screen space: x right, y down, each -1..1. */
     fun setMove(screenX: Float, screenY: Float) {
@@ -734,24 +759,21 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun setUpgradesOpen(open: Boolean) = setPanelOpen(ShellPanelId.UPGRADES, open)
-    fun setStaffOpen(open: Boolean) = setPanelOpen(ShellPanelId.STAFF, open)
-    fun setQuestsOpen(open: Boolean) {
-        if (open) syncWallClock(System.currentTimeMillis())
-        setPanelOpen(ShellPanelId.QUESTS, open)
-    }
-    fun setContractsOpen(open: Boolean) = setPanelOpen(ShellPanelId.CONTRACTS, open)
-    fun setMapOpen(open: Boolean) = setPanelOpen(ShellPanelId.MAP, open)
-    fun setWarehouseOpen(open: Boolean) = setPanelOpen(ShellPanelId.WAREHOUSE, open)
-    fun setSpeciesBookOpen(open: Boolean) = setPanelOpen(ShellPanelId.SPECIES_BOOK, open)
-    fun setDashboardOpen(open: Boolean) = setPanelOpen(ShellPanelId.DASHBOARD, open)
-    fun setPauseOpen(open: Boolean) = setPanelOpen(ShellPanelId.PAUSE, open)
-    fun setSettingsOpen(open: Boolean) = setPanelOpen(ShellPanelId.SETTINGS, open)
-    fun setBagOpen(open: Boolean) = setPanelOpen(ShellPanelId.BAG, open)
-    fun setStationOpen(open: Boolean) = setPanelOpen(ShellPanelId.STATION, open)
+    fun setUpgradesOpen(open: Boolean) = shellIntents.setUpgradesOpen(open)
+    fun setStaffOpen(open: Boolean) = shellIntents.setStaffOpen(open)
+    fun setQuestsOpen(open: Boolean) = shellIntents.setQuestsOpen(open)
+    fun setContractsOpen(open: Boolean) = shellIntents.setContractsOpen(open)
+    fun setMapOpen(open: Boolean) = shellIntents.setMapOpen(open)
+    fun setWarehouseOpen(open: Boolean) = shellIntents.setWarehouseOpen(open)
+    fun setSpeciesBookOpen(open: Boolean) = shellIntents.setSpeciesBookOpen(open)
+    fun setDashboardOpen(open: Boolean) = shellIntents.setDashboardOpen(open)
+    fun setPauseOpen(open: Boolean) = shellIntents.setPauseOpen(open)
+    fun setSettingsOpen(open: Boolean) = shellIntents.setSettingsOpen(open)
+    fun setBagOpen(open: Boolean) = shellIntents.setBagOpen(open)
+    fun setStationOpen(open: Boolean) = shellIntents.setStationOpen(open)
 
     /** Opening one panel closes the others. Closing only clears that panel. */
-    private fun setPanelOpen(which: ShellPanelId, open: Boolean) {
+    override fun setPanelOpen(which: ShellPanelId, open: Boolean) {
         if (open) {
             panels.open(which)
             tapTarget = null
@@ -907,7 +929,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         syncMusicBed()
     }
 
-    /** Finish 2.0 Phase 21 + Finish 3.0 Phase 23: festival/storm/rival/night beds; ducking unchanged. */
+    /** Finish 2.0/3.0/4.0: festival/storm/rival/night/endgame/ledger beds; ducking unchanged. */
     private fun syncMusicBed() {
         val v = latestView
         val festivalActive = v?.seasonalEvent != null
@@ -916,12 +938,16 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val rivalActive = v?.rivalPressureActive == true || (v?.activeRivalIds?.isNotEmpty() == true)
         val tide = v?.tidePhaseId.orEmpty()
         val nightActive = tide == "night" || tide == "dusk"
+        val endgameActive = v?.endgameUnlocked == true
+        val ledgerActive = (v?.bank?.loanOwed ?: 0L) > 0L
         audio.syncMusicBedFromPanels(
             panels.isOpen(ShellPanelId.STATION),
             festivalActive,
             stormActive,
             rivalActive,
             nightActive,
+            endgameActive,
+            ledgerActive,
         )
     }
 
@@ -940,132 +966,27 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         return BalanceExport.encode(pack)
     }
 
-    fun setMachinePaused(stationId: String, paused: Boolean) {
-        commands += Command.SetMachinePaused(stationId, paused)
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun setMachinePaused(stationId: String, paused: Boolean) =
+        economyIntents.setMachinePaused(stationId, paused)
 
-    fun purchase(upgradeId: String) {
-        commands += Command.PurchaseUpgrade(upgradeId, UUID.randomUUID().toString())
-        // Management panels pause the world; advance a single tick so the command commits now.
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun purchase(upgradeId: String) = economyIntents.purchase(upgradeId)
 
     /** Phase 6: confirm spend while standing on an expansion plot marker. */
-    fun buildPlot(plotId: String) {
-        commands += Command.BuildPlot(plotId, UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun buildPlot(plotId: String) = economyIntents.buildPlot(plotId)
 
-    fun purchaseDecor(decorId: String) {
-        commands += Command.PurchaseDecor(decorId, UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun purchaseDecor(decorId: String) = economyIntents.purchaseDecor(decorId)
 
     /** Phase 23 / post-1.0 Phase 1: one-time full-harbor unlock via Play Billing (stub on debug). */
-    fun purchaseFullHarborUnlock() {
-        viewModelScope.launch {
-            when (val result = billing.purchaseFullUnlock(settings.cloudAccountId)) {
-                is PurchaseOutcome.Err -> _messages.tryEmit(result.reason)
-                is PurchaseOutcome.Ok -> {
-                    pendingEntitlements.enqueue(
-                        sku = com.willio.jeanvilma.fishshopping.core.progression.FullUnlockSystem.SKU,
-                        purchaseToken = result.purchaseToken,
-                        grantsCosmetic = null,
-                    )
-                    viewModelScope.launch(simDispatcher) {
-                        applyStoreOwned(
-                            listOf(
-                                RestoredEntitlement(
-                                    sku = com.willio.jeanvilma.fishshopping.core.progression.FullUnlockSystem.SKU,
-                                    purchaseToken = result.purchaseToken,
-                                    grantsCosmetic = null,
-                                ),
-                            ),
-                            announceRestore = false,
-                        )
-                    }
-                }
-            }
-        }
-    }
+    fun purchaseFullHarborUnlock() = iapIntents.purchaseFullHarborUnlock()
 
     /** Phase 23: restore purchases and grant if the store says owned. */
-    fun restoreFullHarborUnlock() {
-        viewModelScope.launch {
-            val (owned, token) = billing.restore(settings.cloudAccountId)
-            if (!owned || token.isNullOrBlank()) {
-                _messages.tryEmit("No harbor unlock to restore")
-                return@launch
-            }
-            pendingEntitlements.enqueue(
-                sku = com.willio.jeanvilma.fishshopping.core.progression.FullUnlockSystem.SKU,
-                purchaseToken = token,
-                grantsCosmetic = null,
-            )
-            viewModelScope.launch(simDispatcher) {
-                applyStoreOwned(
-                    listOf(
-                        RestoredEntitlement(
-                            sku = com.willio.jeanvilma.fishshopping.core.progression.FullUnlockSystem.SKU,
-                            purchaseToken = token,
-                            grantsCosmetic = null,
-                        ),
-                    ),
-                    announceRestore = true,
-                )
-            }
-        }
-    }
+    fun restoreFullHarborUnlock() = iapIntents.restoreFullHarborUnlock()
 
     /** Phase 24: purchase a power-neutral cosmetic SKU. */
-    fun purchaseIapCosmetic(sku: String) {
-        viewModelScope.launch {
-            when (val result = billing.purchaseCosmetic(sku, settings.cloudAccountId)) {
-                is PurchaseOutcome.Err -> _messages.tryEmit(result.reason)
-                is PurchaseOutcome.Ok -> {
-                    val cosmeticId =
-                        com.willio.jeanvilma.fishshopping.core.progression.CosmeticsIapSystem.BY_SKU[sku]?.grantsCosmetic
-                    if (cosmeticId == null) {
-                        _messages.tryEmit("Unknown cosmetic SKU")
-                        return@launch
-                    }
-                    pendingEntitlements.enqueue(sku, result.purchaseToken, cosmeticId)
-                    viewModelScope.launch(simDispatcher) {
-                        applyStoreOwned(
-                            listOf(RestoredEntitlement(sku, result.purchaseToken, cosmeticId)),
-                            announceRestore = false,
-                        )
-                    }
-                }
-            }
-        }
-    }
+    fun purchaseIapCosmetic(sku: String) = iapIntents.purchaseIapCosmetic(sku)
 
     /** Phase 24 / post-1.0 Phase 1+3: restore all entitlements (full unlock + cosmetics). */
-    fun restorePurchases() {
-        viewModelScope.launch {
-            val owned = billing.restoreAll(settings.cloudAccountId)
-            if (owned.isEmpty() && pendingEntitlements.all().isEmpty()) {
-                _messages.tryEmit("No purchases to restore")
-                return@launch
-            }
-            for (row in owned) {
-                pendingEntitlements.enqueue(row.sku, row.purchaseToken, row.grantsCosmetic)
-            }
-            viewModelScope.launch(simDispatcher) {
-                applyStoreOwned(owned, announceRestore = true)
-            }
-        }
-    }
+    fun restorePurchases() = iapIntents.restorePurchases()
 
     /**
      * Phase 3: store is SoT for paid SKUs — merge restore + pending ledger into the live save,
@@ -1076,7 +997,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         applyStoreOwned(owned, announceRestore = false)
     }
 
-    private fun applyStoreOwned(owned: List<RestoredEntitlement>, announceRestore: Boolean) {
+    override fun applyStoreOwned(owned: List<RestoredEntitlement>, announceRestore: Boolean) {
+
         val s = sim ?: return
         val storeRows = owned.map {
             EntitlementReconcile.StoreOwned(it.sku, it.purchaseToken, it.grantsCosmetic)
@@ -1118,143 +1040,48 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         pendingEntitlements.ackRequestIds(receiptIds)
     }
 
-    fun repairMachine(stationId: String) {
-        commands += Command.RepairMachine(stationId, UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun repairMachine(stationId: String) = economyIntents.repairMachine(stationId)
 
-    fun takeLoan() {
-        commands += Command.TakeLoan(UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun takeLoan(productId: String? = null) = economyIntents.takeLoan(productId)
 
-    fun repayLoan() {
-        commands += Command.RepayLoan(UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun repayLoan() = economyIntents.repayLoan()
 
-    fun setCoinGoal(amount: Long) {
-        commands += Command.SetCoinGoal(amount)
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun setCoinGoal(amount: Long) = economyIntents.setCoinGoal(amount)
 
-    fun hire(roleId: String) {
-        commands += Command.HireWorker(roleId, UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun hire(roleId: String) = economyIntents.hire(roleId)
 
-    fun setWorkerShift(workerId: String, onShift: Boolean) {
-        commands += Command.SetWorkerShift(workerId, onShift)
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun setWorkerShift(workerId: String, onShift: Boolean) =
+        economyIntents.setWorkerShift(workerId, onShift)
 
-    fun assignWorkerGear(workerId: String, upgradeId: String) {
-        commands += Command.AssignWorkerGear(workerId, upgradeId)
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun assignWorkerGear(workerId: String, upgradeId: String) =
+        economyIntents.assignWorkerGear(workerId, upgradeId)
 
-    fun unequipWorkerGear(workerId: String, slotId: String) {
-        commands += Command.UnequipWorkerGear(workerId, slotId)
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun unequipWorkerGear(workerId: String, slotId: String) =
+        economyIntents.unequipWorkerGear(workerId, slotId)
 
-    fun acceptContract(offerId: String) {
-        commands += Command.AcceptContract(offerId, UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun acceptContract(offerId: String) = economyIntents.acceptContract(offerId)
 
-    fun deliverContract(contractId: String) {
-        commands += Command.DeliverContract(contractId, UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun deliverContract(contractId: String) = economyIntents.deliverContract(contractId)
 
-    fun travelToHarbor(harborId: String) {
-        commands += Command.TravelToHarbor(harborId, UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun buyBait(baitId: String) = economyIntents.buyBait(baitId)
 
-    fun buyBait(baitId: String) {
-        commands += Command.BuyBait(baitId, UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun selectBait(baitId: String?) = economyIntents.selectBait(baitId)
 
-    fun selectBait(baitId: String?) {
-        commands += Command.SelectBait(baitId)
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun selectTechnique(techniqueId: String?) = economyIntents.selectTechnique(techniqueId)
 
-    fun selectTechnique(techniqueId: String?) {
-        commands += Command.SelectTechnique(techniqueId)
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun trainWorkerBranch(workerId: String, branchId: String) =
+        economyIntents.trainWorkerBranch(workerId, branchId)
 
-    fun trainWorkerBranch(workerId: String, branchId: String) {
-        commands += Command.TrainWorkerBranch(workerId, branchId, UUID.randomUUID().toString())
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun selectWorkerBranch(workerId: String, branchId: String?) =
+        economyIntents.selectWorkerBranch(workerId, branchId)
 
-    fun selectWorkerBranch(workerId: String, branchId: String?) {
-        commands += Command.SelectWorkerBranch(workerId, branchId)
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
+    fun setWorkerSchedule(workerId: String, scheduleId: String?) =
+        economyIntents.setWorkerSchedule(workerId, scheduleId)
 
-    fun setWorkerSchedule(workerId: String, scheduleId: String?) {
-        commands += Command.SetWorkerSchedule(workerId, scheduleId)
-        if (ShellModalPolicy.shouldCommitPanelCommand(panels.snapshot(), pendingOfflineReport != null)) viewModelScope.launch(simDispatcher) {
-            sim?.let { step(it); publish(force = true) }
-        }
-    }
-
-    fun reel() {
-        if (panelOpen) return
-        commands += Command.Reel
-    }
+    fun reel() = economyIntents.reel()
 
     /** Cycle Auto → each recipe → Auto for a station (no tick advance). */
-    fun cycleStationRecipe(stationId: String) {
-        if (pendingOfflineReport != null) return
-        if (panelOpen && !panels.isOpen(ShellPanelId.STATION)) return
-        viewModelScope.launch(simDispatcher) {
-            val s = sim ?: return@launch
-            val m = s.state.machines.firstOrNull { it.stationId == stationId } ?: return@launch
-            com.willio.jeanvilma.fishshopping.core.production.ProductionSystem
-                .cyclePreferredRecipe(s.content, m)
-            latestView = s.view()
-            publish(force = true)
-        }
-    }
+    fun cycleStationRecipe(stationId: String) = economyIntents.cycleStationRecipe(stationId)
 
     private fun step(s: Simulation) {
         val batch = ArrayList<Command>()
@@ -1281,6 +1108,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         var harborTravelBurst = false
         var hireBurst = false
         var loanBurst = false
+        var decorBurst = false
+        var cosmeticBurst = false
+        var endgameTierBurst = false
+        var endgameChallengeBurst = false
+        var contractAcceptBurst = false
+        var baitBurst = false
+        var fullUnlockBurst = false
         for (e in events) {
             sfxFromEvent(e)?.let { audio.play(it) }
             when (e) {
@@ -1351,10 +1185,36 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 is GameEvent.FullHarborUnlockGranted -> if (!e.replayed) {
                     _messages.tryEmit("All harbors unlocked")
+                    fullUnlockBurst = true
                     transaction = true
                 }
                 is GameEvent.IapCosmeticGranted -> if (!e.replayed) {
                     _messages.tryEmit("Unlocked ${e.cosmeticId}")
+                    cosmeticBurst = true
+                    transaction = true
+                }
+                is GameEvent.DecorPurchased -> if (!e.replayed) {
+                    _messages.tryEmit("Decor: ${s.content.decorById[e.decorId]?.name ?: e.decorId}")
+                    decorBurst = true
+                    transaction = true
+                }
+                is GameEvent.EndgameTierUnlocked -> {
+                    _messages.tryEmit("Endgame tier unlocked (+${e.coinsRewarded})")
+                    endgameTierBurst = true
+                    transaction = true
+                }
+                is GameEvent.EndgameChallengeCompleted -> {
+                    _messages.tryEmit("Endgame challenge cleared (+${e.coinsRewarded})")
+                    endgameChallengeBurst = true
+                    transaction = true
+                }
+                is GameEvent.BaitPurchased -> if (!e.replayed) {
+                    _messages.tryEmit("Bait purchased")
+                    baitBurst = true
+                    transaction = true
+                }
+                is GameEvent.MachineBroke -> {
+                    _messages.tryEmit("Machine broke: ${s.content.machinesById[e.machineId]?.name ?: e.stationId}")
                     transaction = true
                 }
                 is GameEvent.IapCosmeticRejected -> {
@@ -1448,6 +1308,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 is GameEvent.ContractAccepted -> if (!e.replayed) {
                     _messages.tryEmit("Contract accepted")
+                    contractAcceptBurst = true
                     transaction = true
                 }
                 is GameEvent.ContractCompleted -> {
@@ -1533,6 +1394,20 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             if (harborTravelBurst) worldBursts.offer(resolveHarborTravelBurst(view))
             if (hireBurst) worldBursts.offer(resolveHireBurst(view))
             if (loanBurst) worldBursts.offer(resolveLoanBurst(view))
+            // Finish 4.0 Phase 23 visual juice.
+            if (decorBurst) worldBursts.offer(resolveDecorBurst(view))
+            if (cosmeticBurst) worldBursts.offer(resolveCosmeticBurst(view))
+            if (endgameTierBurst) {
+                worldBursts.offer(resolveEndgameTierBurst(view))
+                pendingShakes.offer(ShakeKind.ENDGAME_TIER)
+            }
+            if (endgameChallengeBurst) {
+                worldBursts.offer(resolveEndgameChallengeBurst(view))
+                pendingShakes.offer(ShakeKind.ENDGAME_CHALLENGE)
+            }
+            if (contractAcceptBurst) worldBursts.offer(resolveContractAcceptBurst(view))
+            if (baitBurst) worldBursts.offer(resolveBaitBurst(view))
+            if (fullUnlockBurst) worldBursts.offer(resolveFullUnlockBurst(view))
         }
         if (transaction) publish(force = true)
     }

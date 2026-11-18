@@ -1,7 +1,7 @@
 {
   "phase": 24,
   "schema": "fish.content.cosmetic_presentation.v1",
-  "description": "Post-1.0 Phase 24 — equip/preview UX for power-neutral harbor banners. Presentation-only: equipped id lives in client settings (not sim schema). Preview is ephemeral UI state.",
+  "description": "Finish 4.0 Phase 10 + post-1.0 Phase 24 — equip/preview UX for power-neutral harbor banners with authored banner meshes + counter product presentation depth. Presentation-only: equipped id lives in client settings (not sim schema).",
   "contentVersion": "2.0.0",
   "schemaVersion": 21,
   "entitlements": "shared/billing/entitlements.json",
@@ -35,7 +35,9 @@
         64
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_sunset_bunting.glb",
+      "minCosmeticArtNodes": 4
     },
     {
       "cosmeticId": "banner.iap_pearl_string",
@@ -47,7 +49,9 @@
         245
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_pearl_string.glb",
+      "minCosmeticArtNodes": 4
     },
     {
       "cosmeticId": "banner.iap_captain_crest",
@@ -59,7 +63,9 @@
         168
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_captain_crest.glb",
+      "minCosmeticArtNodes": 4
     },
     {
       "cosmeticId": "banner.iap_harbor_lantern",
@@ -71,7 +77,9 @@
         70
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_harbor_lantern.glb",
+      "minCosmeticArtNodes": 4
     },
     {
       "cosmeticId": "banner.iap_tide_ribbon",
@@ -83,7 +91,9 @@
         180
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_tide_ribbon.glb",
+      "minCosmeticArtNodes": 4
     },
     {
       "cosmeticId": "banner.iap_fog_pennant",
@@ -95,7 +105,9 @@
         190
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_fog_pennant.glb",
+      "minCosmeticArtNodes": 4
     },
     {
       "cosmeticId": "banner.iap_coral_streamer",
@@ -107,7 +119,9 @@
         120
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_coral_streamer.glb",
+      "minCosmeticArtNodes": 4
     },
     {
       "cosmeticId": "banner.iap_storm_flag",
@@ -119,7 +133,9 @@
         130
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_storm_flag.glb",
+      "minCosmeticArtNodes": 4
     },
     {
       "cosmeticId": "banner.iap_ember_pennant",
@@ -131,7 +147,9 @@
         40
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_ember_pennant.glb",
+      "minCosmeticArtNodes": 4
     },
     {
       "cosmeticId": "banner.iap_northlight_banner",
@@ -143,7 +161,9 @@
         220
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_northlight_banner.glb",
+      "minCosmeticArtNodes": 4
     },
     {
       "cosmeticId": "banner.iap_marina_pennant",
@@ -155,7 +175,9 @@
         160
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_marina_pennant.glb",
+      "minCosmeticArtNodes": 4
     },
     {
       "cosmeticId": "banner.iap_moonlit_bunting",
@@ -167,7 +189,93 @@
         230
       ],
       "source": "iap",
-      "powerNeutral": true
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_moonlit_bunting.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_mist_bunting",
+      "sku": "fish.cosmetic.mist_bunting",
+      "title": "Mist bunting",
+      "swatchRgb": [
+        150,
+        175,
+        190
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_mist_bunting.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_prism_pennant",
+      "sku": "fish.cosmetic.prism_pennant",
+      "title": "Prism pennant",
+      "swatchRgb": [
+        180,
+        120,
+        220
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_prism_pennant.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_plaza_flag",
+      "sku": "fish.cosmetic.plaza_flag",
+      "title": "Plaza flag",
+      "swatchRgb": [
+        210,
+        150,
+        70
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_plaza_flag.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_rime_streamer",
+      "sku": "fish.cosmetic.rime_streamer",
+      "title": "Rime streamer",
+      "swatchRgb": [
+        170,
+        210,
+        230
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_rime_streamer.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_brine_ribbon",
+      "sku": "fish.cosmetic.brine_ribbon",
+      "title": "Brine ribbon",
+      "swatchRgb": [
+        90,
+        150,
+        140
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_brine_ribbon.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_aurora_crest",
+      "sku": "fish.cosmetic.aurora_crest",
+      "title": "Aurora crest",
+      "swatchRgb": [
+        100,
+        180,
+        160
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_aurora_crest.glb",
+      "minCosmeticArtNodes": 4
     }
   ],
   "fallback": {
@@ -195,5 +303,21 @@
     "shared/billing/entitlements.json",
     "web/src/engine/cosmeticPresentation.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/CosmeticPresentation.kt"
-  ]
+  ],
+  "productArtPhase": 10,
+  "productArtMarker": "authored-finish-4.0-phase-10",
+  "cosmeticBannerMarker": "cosmetic-banner-phase-10",
+  "counterPresentation": {
+    "layoutId": "counter.tray.v1",
+    "slotsVisibleMax": 8,
+    "preferKinds": [
+      "carton",
+      "crate",
+      "fillet",
+      "portion",
+      "skewer"
+    ],
+    "stackYStepM": 0.08,
+    "productArtMarker": "authored-finish-4.0-phase-10"
+  }
 }

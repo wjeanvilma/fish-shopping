@@ -1,0 +1,59 @@
+{
+  "phase": 20,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.economy_bank_2.v1",
+  "description": "Finish 4.0 Phase 20 — economy/bank/dashboard depth. Loan products (3), coin goals 4→8, scarcity/reputation retune, dashboard cashflow/scarcity/reputation surfaces. Schema stays 25 / content 3.0.0 (no new save fields).",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 25,
+  "economy2Marker": "authored-finish-4.0-phase-20",
+  "loanProductMin": 3,
+  "goalPresetMin": 8,
+  "loanProductIds": [
+    "loan.starter",
+    "loan.expansion",
+    "loan.fleet"
+  ],
+  "goalPresets": [150, 300, 600, 1200, 2400, 4800, 9600, 15000],
+  "scarcityCurve": [1250, 1160, 1080, 1000, 970],
+  "dashboardFields": [
+    "maintenancePaid",
+    "repairSpent",
+    "itemsSpoiled",
+    "loanInterestAccrued",
+    "loanCollected",
+    "operatingCosts",
+    "netOperatingProfit",
+    "activeScarcityTipPermille",
+    "reputationScorePermille",
+    "reputationLabel"
+  ],
+  "parityFixture": "shared/fixtures/parity-economy-bank-2.json",
+  "authorTool": "shared/tools/author_economy_2.py",
+  "validateScript": "npm run economy2:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "checklist": [
+    "≥3 loan products with gated expansion/fleet notes",
+    "≥8 coin goal presets",
+    "Scarcity curve retuned (empty tip ≥1250)",
+    "Reputation high-band premium/critic sharpen",
+    "Dashboard cashflow + scarcity tip + reputation surfaces",
+    "Web↔Android Goals bank product buttons",
+    "economy2:validate green in CI",
+    "schema stays 25"
+  ],
+  "preflightGates": [
+    "shared/ship/economy-bank-2.json",
+    "shared/fixtures/parity-economy-bank-2.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "shared/content/content-pack.json",
+    "web/src/engine/businessDashboard.ts",
+    "web/src/engine/systems.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/economy/Bank.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/BusinessDashboard.kt",
+    "web/src/ship/economy2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Economy2.kt",
+    "web/scripts/validate-economy-2.ts",
+    "shared/tools/author_economy_2.py"
+  ]
+}

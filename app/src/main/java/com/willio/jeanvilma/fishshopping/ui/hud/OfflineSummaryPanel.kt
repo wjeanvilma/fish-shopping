@@ -126,7 +126,12 @@ internal fun OfflineSummaryPanel(report: OfflineReport, onContinue: () -> Unit, 
     Surface(
         modifier
             .testTag(ComposeUiTags.OFFLINE_ROOT)
-            .managementSheet(maxWidth = 400.dp, maxHeight = 520.dp),
+            .managementSheet(maxWidth = 400.dp, maxHeight = 520.dp)
+            .a11yPane("offline.title")
+            .semantics {
+                liveRegion = LiveRegionMode.Polite
+                contentDescription = UiStrings.t("a11y.offlineSummaryLive")
+            },
         shape = PanelShape,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,
@@ -136,21 +141,35 @@ internal fun OfflineSummaryPanel(report: OfflineReport, onContinue: () -> Unit, 
             Text(
                 buildString {
                     append(formatAwayDuration(report.elapsedMillis))
-                    if (report.capped) append(" · capped at max offline time")
+                    if (report.capped) {
+                        append(" · ")
+                        append(UiStrings.t("offline.capped"))
+                    }
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
             )
-            Text(UiStrings.t("offline.staffKeptRunning"),
+            Text(
+                UiStrings.t("offline.staffKeptRunning"),
                 style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.semantics {
+                    contentDescription = UiStrings.t("a11y.offlineSection")
+                },
             )
             val lines = buildList {
-                if (report.coinsDelta != 0L) add("${if (report.coinsDelta > 0) "+" else ""}${formatCoins(report.coinsDelta)} coins")
-                if (report.sales > 0) add("${report.sales} sales")
-                if (report.workerFishCaught > 0) add("${report.workerFishCaught} fish caught by staff")
-                if (report.workerItemsMoved > 0) add("${report.workerItemsMoved} items moved by staff")
+                if (report.coinsDelta != 0L) {
+                    val delta = "${if (report.coinsDelta > 0) "+" else ""}${formatCoins(report.coinsDelta)}"
+                    add(UiStrings.t("offline.coinsLine", mapOf("delta" to delta)))
+                }
+                if (report.sales > 0) add(UiStrings.t("offline.salesLine", mapOf("count" to report.sales)))
+                if (report.workerFishCaught > 0) {
+                    add(UiStrings.t("offline.staffFish", mapOf("count" to report.workerFishCaught)))
+                }
+                if (report.workerItemsMoved > 0) {
+                    add(UiStrings.t("offline.staffMoved", mapOf("count" to report.workerItemsMoved)))
+                }
                 if (report.journalLines.isNotEmpty()) addAll(report.journalLines)
-                if (isEmpty() && !report.hadActivity) add("Quiet shift — hire staff to earn while away")
+                if (isEmpty() && !report.hadActivity) add(UiStrings.t("offline.quietShift"))
             }
             lines.forEach { Text(it, style = Tabular, fontWeight = FontWeight.SemiBold) }
             Spacer(Modifier.height(8.dp))

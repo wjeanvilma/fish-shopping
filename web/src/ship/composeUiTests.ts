@@ -107,7 +107,9 @@ export function measureComposeUiTests(repoRoot: string): ComposeUiTestsMeasure {
       robo.includes("TitleMenuContent") &&
       robo.includes("OfflineSummaryPanel") &&
       robo.includes("PausePanel") &&
-      robo.includes("createComposeRule"),
+      robo.includes("createComposeRule") &&
+      // Finish 4.0 Phase 26 soft-floor: HUD nav toolbar suite.
+      robo.includes("HudNavToolbarContent"),
     instrumentedPresent:
       instr.includes("TitleMenuInstrumentedTest") &&
       instr.includes("TitleMenuContent") &&

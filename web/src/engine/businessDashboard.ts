@@ -1,8 +1,8 @@
 /** Phase 9 business dashboard — mirrors game-core sim/BusinessDashboard.kt. */
-import type { ContentPack } from "./content";
-import type { GameState } from "./state";
+import type { ContentPack, CounterDef, HarborDef } from "./content";
+import type { CounterState, GameState } from "./state";
 import { Stats } from "./state";
-import { DailyGoalsSystem } from "./systems";
+import { CustomerSystem, DailyGoalsSystem, ReputationSystem } from "./systems";
 import { abandonPermille, wageRatioPermille } from "./telemetry";
 import type { DailyGoalView } from "./view";
 
@@ -40,6 +40,17 @@ export interface BusinessDashboardView {
   dailyLoginStreak: number;
   dailyGoals: DailyGoalView[];
   offlineJournalLines: string[];
+  /** Finish 4.0 Phase 20 — cashflow / ops surfaces. */
+  maintenancePaid: number;
+  repairSpent: number;
+  itemsSpoiled: number;
+  loanInterestAccrued: number;
+  loanCollected: number;
+  operatingCosts: number;
+  netOperatingProfit: number;
+  activeScarcityTipPermille: number;
+  reputationScorePermille: number;
+  reputationLabel: string;
 }
 
 export function formatSession(totalSeconds: number): string {
@@ -52,12 +63,33 @@ export function formatSession(totalSeconds: number): string {
   return `${s}s`;
 }
 
+function activeScarcityTipPermille(
+  content: ContentPack,
+  state: GameState,
+  harbor: HarborDef,
+): number {
+  let best = 1000;
+  for (const cdef of harbor.counters) {
+    if (!CustomerSystem.isUnlocked(cdef, state)) continue;
+    const counter = state.counters.find((c) => c.counterId === cdef.id);
+    if (!counter) continue;
+    const tip = CustomerSystem.scarcityPriceMultPermille(
+      content,
+      cdef as CounterDef,
+      counter as CounterState,
+    );
+    if (tip > best) best = tip;
+  }
+  return best;
+}
+
 export const BusinessDashboard = {
   build(
     content: ContentPack,
     state: GameState,
     bottlenecks: BusinessDashboardBottleneckView[],
     topSpecies: BusinessDashboardSpeciesView[],
+    harbor?: HarborDef | null,
   ): BusinessDashboardView {
     const tps = Math.max(1, content.raw.ticksPerSecond);
     const sessionTicks = Math.max(0, state.tick);
@@ -68,6 +100,13 @@ export const BusinessDashboard = {
     const contractRevenue = state.stat(Stats.CONTRACT_REVENUE);
     const lost = state.stat(Stats.LOST_CUSTOMERS);
     const wages = state.stat(Stats.WAGES_PAID);
+    const maintenance = state.stat(Stats.MAINTENANCE_PAID);
+    const repairs = state.stat(Stats.REPAIR_SPENT);
+    const spoiled = state.stat(Stats.ITEMS_SPOILED);
+    const loanInterest = state.stat(Stats.LOAN_INTEREST_ACCRUED);
+    const loanCollected = state.stat(Stats.LOAN_COLLECTED);
+    const operatingCosts = wages + maintenance + repairs;
+    const gross = committedRevenue + contractRevenue;
     const minutes = Math.trunc(sessionSeconds / 60);
     const revenuePerMinute = minutes > 0 ? Math.trunc(committedRevenue / minutes) : 0;
     const salesPerMinute = minutes > 0 ? Math.trunc(sales / minutes) : 0;
@@ -107,6 +146,16 @@ export const BusinessDashboard = {
       dailyLoginStreak: DailyGoalsSystem.streak(state),
       dailyGoals: daily,
       offlineJournalLines: [],
+      maintenancePaid: maintenance,
+      repairSpent: repairs,
+      itemsSpoiled: spoiled,
+      loanInterestAccrued: loanInterest,
+      loanCollected,
+      operatingCosts,
+      netOperatingProfit: gross - operatingCosts,
+      activeScarcityTipPermille: harbor ? activeScarcityTipPermille(content, state, harbor) : 1000,
+      reputationScorePermille: ReputationSystem.scorePermille(content, state),
+      reputationLabel: ReputationSystem.bandLabel(content, state),
     };
   },
 };

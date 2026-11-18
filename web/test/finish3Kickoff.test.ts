@@ -60,7 +60,7 @@ describe("Finish 3.0 Phase 1 kickoff", () => {
     expect(summaryLine(board)).toContain(`openFlags=${FINISH3_OPEN_GAP_FLAGS.length}`);
 
     const art = measureArtCounts(root);
-    expect(art.authoredHarbors).toBe(8);
+    expect(art.authoredHarbors).toBeGreaterThanOrEqual(8);
     expect(art.authoredFish).toBe(50);
 
     const pin = JSON.parse(readFileSync(resolve(root, "shared/fixtures/RELEASE_PIN.json"), "utf8"));

@@ -1,0 +1,86 @@
+{
+  "phase": 19,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.staff_ai_2.v1",
+  "description": "Finish 4.0 Phase 19 — staff/worker AI depth wave 2. Deepens fisher trophy_cast/line_pro, porter dock_relay/cargo_sprint, and cashier quick_till beyond Finish 3.0 Phase 11 wave-1 behaviors. Schema stays 25 / content 3.0.0 (stats + decision traces only; no new save fields).",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 25,
+  "staffAi2Marker": "authored-finish-4.0-phase-19",
+  "extendsWorkerAiDepth": "shared/ship/worker-ai-depth.json",
+  "staffTreesCatalog": "shared/ship/staff-trees.json",
+  "depthStats": [
+    "stat.fisher_trophy_casts",
+    "stat.porter_relay_pickups",
+    "stat.cashier_quick_tills"
+  ],
+  "depthBehaviors": [
+    {
+      "branchId": "branch.fisher.trophy_cast",
+      "role": "fisher",
+      "markers": ["trophy_cast", "trophy_cast_bias", "FISHER_TROPHY_CASTS", "TROPHY_CAST_RARE_WEIGHT_MAX"]
+    },
+    {
+      "branchId": "branch.fisher.line_pro",
+      "role": "fisher",
+      "markers": ["line_pro", "line_pro_stock"]
+    },
+    {
+      "branchId": "branch.porter.dock_relay",
+      "role": "porter",
+      "markers": ["dock_relay", "PORTER_RELAY_PICKUPS"]
+    },
+    {
+      "branchId": "branch.porter.cargo_sprint",
+      "role": "porter",
+      "markers": ["cargo_sprint", "cargo_sprint_urgency"]
+    },
+    {
+      "branchId": "branch.cashier.quick_till",
+      "role": "cashier",
+      "markers": ["quick_till", "quick_till_queue", "CASHIER_QUICK_TILLS"]
+    }
+  ],
+  "decisionReasons": [
+    "trophy_cast_bias",
+    "line_pro_stock",
+    "dock_relay",
+    "cargo_sprint_urgency",
+    "quick_till_queue"
+  ],
+  "webWorkersPath": "web/src/engine/systems.ts",
+  "kotlinWorkersPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
+  "webStatsPath": "web/src/engine/state.ts",
+  "kotlinStatsPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/GameState.kt",
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-staff-ai-2.json",
+  "validateScript": "npm run staffai2:validate",
+  "softWorkerAiValidate": "npm run workerai:validate",
+  "authorTool": "shared/tools/author_staff_ai_2.py",
+  "checklist": [
+    "Fisher trophy_cast rare bias + FISHER_TROPHY_CASTS",
+    "Fisher line_pro stock-preferring spot scoring",
+    "Porter dock_relay multi-pickup + PORTER_RELAY_PICKUPS",
+    "Porter cargo_sprint OUTPUT_FULL urgency",
+    "Cashier quick_till longest/impatient queue + CASHIER_QUICK_TILLS",
+    "WorkerDecisionHooks reasons for wave-2 branches",
+    "Soft-floor workerai:validate (WorkerAi.kt path)",
+    "Kickoff phase 19 validate = staffai2:validate",
+    "staffai2:validate green in CI",
+    "schema stays 25"
+  ],
+  "preflightGates": [
+    "shared/ship/staff-ai-2.json",
+    "shared/fixtures/parity-staff-ai-2.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "shared/ship/worker-ai-depth.json",
+    "shared/ship/staff-trees.json",
+    "web/src/engine/systems.ts",
+    "web/src/engine/state.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/GameState.kt",
+    "web/src/ship/staffAi2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/StaffAi2.kt",
+    "web/scripts/validate-staff-ai-2.ts",
+    "shared/tools/author_staff_ai_2.py"
+  ]
+}

@@ -276,6 +276,17 @@ export interface MachineWearDef {
   repairCoins: number;
 }
 
+/** Finish 4.0 Phase 20 — selectable pier loan product (still one outstanding loan). */
+export interface BankLoanProductDef {
+  id: string;
+  name: string;
+  description: string;
+  principal: number;
+  repayPermille: number;
+  termTicks: number;
+  requires?: string[];
+}
+
 /** Phase 26 pier bank: one short-term loan at a time + coin-goal presets. */
 export interface BankDef {
   requires: string[];
@@ -286,10 +297,35 @@ export interface BankDef {
   /** While overdue, seize owed coins this often. */
   collectionPeriodTicks: number;
   goalPresets: number[];
+  /** Finish 4.0 Phase 20 — authored loan products (falls back to legacy principal). */
+  loanProducts?: BankLoanProductDef[];
 }
 
 export function bankRepayAmount(bank: BankDef): number {
   return Math.trunc((bank.loanPrincipal * bank.repayPermille) / 1000);
+}
+
+export function bankProductRepayAmount(product: BankLoanProductDef): number {
+  return Math.trunc((product.principal * product.repayPermille) / 1000);
+}
+
+export function bankProductsOrLegacy(bank: BankDef): BankLoanProductDef[] {
+  if (bank.loanProducts && bank.loanProducts.length > 0) return bank.loanProducts;
+  return [{
+    id: "loan.legacy",
+    name: "Pier loan",
+    description: "Short-term pier float",
+    principal: bank.loanPrincipal,
+    repayPermille: bank.repayPermille,
+    termTicks: bank.termTicks,
+    requires: [],
+  }];
+}
+
+export function bankProductById(bank: BankDef, id?: string | null): BankLoanProductDef | null {
+  const products = bankProductsOrLegacy(bank);
+  if (!id) return products[0] ?? null;
+  return products.find((p) => p.id === id) ?? null;
 }
 
 /** One curated museum set of species trophies. */
@@ -454,7 +490,9 @@ export interface ReputationDef {
   coachingPraiseScorePermille: number;
 }
 
-/** Finish 3.0 Phase 14 — single-player rival NPC market stall. */
+/** Finish 3.0 Phase 14 / Finish 4.0 Phase 15 — single-player rival NPC market stall. */
+export type RivalAiProfile = "siphon" | "undercut" | "adaptive" | "roamer";
+
 export interface RivalMarketDef {
   id: string;
   name: string;
@@ -464,9 +502,11 @@ export interface RivalMarketDef {
   specialtyProducts: string[];
   undercutPriceMultPermille: number;
   activeDayParts: string[];
+  /** Finish 4.0 Phase 15 — rival AI behavior profile. */
+  aiProfile?: RivalAiProfile;
 }
 
-/** Finish 3.0 Phase 14 — rival NPC markets catalog. */
+/** Finish 3.0 Phase 14 / Finish 4.0 Phase 15 — rival NPC markets catalog. */
 export interface RivalMarketsCatalog {
   tickInterval: number;
   emptyStockSiphonChancePermille: number;
@@ -474,6 +514,10 @@ export interface RivalMarketsCatalog {
   minReputationBandToResist: number;
   wellStockedUnits: number;
   pressureSpawnMultPermille: number;
+  /** Finish 4.0 Phase 15 — adaptive/roamer revenge aggression boost. */
+  adaptiveAggressionBoostPermille?: number;
+  /** Finish 4.0 Phase 15 — extra spawn mult when 2+ rivals pressuring. */
+  multiRivalPressureExtraMultPermille?: number;
   rivals: RivalMarketDef[];
 }
 
@@ -485,6 +529,8 @@ export interface EndgameTierDef {
   requiresPrestigeCount: number;
   requiresRivalBeats: number;
   requiresChallenges: number;
+  /** Finish 4.0 Phase 17 — legend marks required (default 0). */
+  requiresMarks: number;
   catchSpeedPermille: number;
   priceBonusPermille: number;
   coins: number;
@@ -498,6 +544,8 @@ export interface EndgameChallengeDef {
   stat: string;
   atLeast: number;
   rewardCoins: number;
+  /** Finish 4.0 Phase 17 — optional legend mark granted on complete. */
+  grantsMark: string | null;
 }
 
 /** Finish 3.0 Phase 15 — endgame deepen catalog. */
@@ -900,7 +948,22 @@ export class ContentPack {
     }
     this.decorById = byId(raw.decor.items);
     this.seasonalEventsById = byId(raw.seasonalEvents.events);
+    // Finish 4.0 Phase 15 — normalize optional rival AI depth fields.
+    raw.rivalMarkets.adaptiveAggressionBoostPermille =
+      raw.rivalMarkets.adaptiveAggressionBoostPermille ?? 0;
+    raw.rivalMarkets.multiRivalPressureExtraMultPermille =
+      raw.rivalMarkets.multiRivalPressureExtraMultPermille ?? 1000;
+    for (const rival of raw.rivalMarkets.rivals) {
+      rival.aiProfile = rival.aiProfile ?? "siphon";
+    }
     this.rivalsById = byId(raw.rivalMarkets.rivals);
+    // Finish 4.0 Phase 17 — normalize optional endgame deepen fields.
+    for (const tier of raw.endgame.tiers) {
+      tier.requiresMarks = tier.requiresMarks ?? 0;
+    }
+    for (const ch of raw.endgame.challenges) {
+      ch.grantsMark = ch.grantsMark ?? null;
+    }
     this.endgameTiersById = byId(raw.endgame.tiers);
     this.endgameChallengesById = byId(raw.endgame.challenges);
     this.harborsById = byId(raw.harbors);
@@ -1383,12 +1446,19 @@ export function validateContent(p: ContentPack): string[] {
   check(rivalsCat.wellStockedUnits >= 1, () => "rivalMarkets.wellStockedUnits must be >= 1");
   check(rivalsCat.pressureSpawnMultPermille >= 1, () =>
     "rivalMarkets.pressureSpawnMultPermille must be >= 1");
+  const adaptiveBoost = rivalsCat.adaptiveAggressionBoostPermille ?? 0;
+  check(adaptiveBoost >= 0 && adaptiveBoost <= 1000, () =>
+    "rivalMarkets.adaptiveAggressionBoostPermille must be 0..1000");
+  const multiExtra = rivalsCat.multiRivalPressureExtraMultPermille ?? 1000;
+  check(multiExtra >= 1 && multiExtra <= 1000, () =>
+    "rivalMarkets.multiRivalPressureExtraMultPermille must be 1..1000");
   check(Array.isArray(rivalsCat.rivals) && rivalsCat.rivals.length > 0, () =>
     "rivalMarkets.rivals must not be empty");
   check(new Set(rivalsCat.rivals.map((rv) => rv.id)).size === rivalsCat.rivals.length, () =>
     "rivalMarkets.rivals ids must be unique");
   const harborIdsForRivals = new Set(r.harbors.map((h) => h.id));
   const productIdsForRivals = new Set(r.products.map((p) => p.id));
+  const aiProfiles = new Set(["siphon", "undercut", "adaptive", "roamer"]);
   for (const rival of rivalsCat.rivals) {
     check(rival.id.startsWith("rival."), () => `${rival.id}: id must start with 'rival.'`);
     check(rival.harbors.length > 0, () => `${rival.id}: harbors must not be empty`);
@@ -1407,6 +1477,9 @@ export function validateContent(p: ContentPack): string[] {
     for (const part of rival.activeDayParts) {
       check(dayParts.has(part), () => `${rival.id}: unknown day part '${part}'`);
     }
+    const profile = rival.aiProfile ?? "siphon";
+    check(aiProfiles.has(profile), () =>
+      `${rival.id}: aiProfile must be siphon|undercut|adaptive|roamer`);
   }
 
   const endgame = r.endgame;
@@ -1421,6 +1494,8 @@ export function validateContent(p: ContentPack): string[] {
     check(tier.requiresPrestigeCount >= 0, () => `${tier.id}: requiresPrestigeCount must be >= 0`);
     check(tier.requiresRivalBeats >= 0, () => `${tier.id}: requiresRivalBeats must be >= 0`);
     check(tier.requiresChallenges >= 0, () => `${tier.id}: requiresChallenges must be >= 0`);
+    const requiresMarks = tier.requiresMarks ?? 0;
+    check(requiresMarks >= 0, () => `${tier.id}: requiresMarks must be >= 0`);
     check(tier.catchSpeedPermille >= 1, () => `${tier.id}: catchSpeedPermille must be >= 1`);
     check(tier.priceBonusPermille >= 1, () => `${tier.id}: priceBonusPermille must be >= 1`);
     check(tier.coins >= 0, () => `${tier.id}: coins must be >= 0`);
@@ -1435,6 +1510,10 @@ export function validateContent(p: ContentPack): string[] {
     check(ch.stat.startsWith("stat."), () => `${ch.id}: stat must start with 'stat.'`);
     check(ch.atLeast >= 1, () => `${ch.id}: atLeast must be >= 1`);
     check(ch.rewardCoins >= 0, () => `${ch.id}: rewardCoins must be >= 0`);
+    if (ch.grantsMark != null) {
+      check(ch.grantsMark.startsWith("endgame.mark."), () =>
+        `${ch.id}: grantsMark must start with 'endgame.mark.'`);
+    }
   }
 
   const rep = r.reputation;
@@ -1725,6 +1804,20 @@ export function validateContent(p: ContentPack): string[] {
     "bank.goalPresets must be unique");
   for (const goal of bank.goalPresets) {
     check(goal >= 1, () => "bank.goalPresets entries must be >= 1");
+  }
+  const loanProductIds = new Set<string>();
+  for (const product of bank.loanProducts ?? []) {
+    check(product.id.startsWith("loan."), () => `bank.loanProducts ${product.id} must start with 'loan.'`);
+    check(!loanProductIds.has(product.id), () => `bank.loanProducts duplicate '${product.id}'`);
+    loanProductIds.add(product.id);
+    check(product.name.trim().length > 0, () => `${product.id}: name must not be blank`);
+    check(product.description.trim().length > 0, () => `${product.id}: description must not be blank`);
+    check(product.principal >= 1, () => `${product.id}: principal must be >= 1`);
+    check(product.repayPermille >= 1000, () => `${product.id}: repayPermille must be >= 1000`);
+    check(product.termTicks >= 1, () => `${product.id}: termTicks must be >= 1`);
+    for (const req of product.requires ?? []) {
+      check(economyRequirable.has(req), () => `${product.id}: unknown requirement '${req}'`);
+    }
   }
   for (const req of bank.requires) {
     check(economyRequirable.has(req), () => `bank: unknown requirement '${req}'`);

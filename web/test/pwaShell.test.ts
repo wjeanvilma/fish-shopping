@@ -28,7 +28,7 @@ describe("PWA shell (Finish 3.0 Phase 19)", () => {
 
   it("measures wiring + closed gap", () => {
     const m = measurePwaShell(root);
-    expect(m.schemaVersion).toBe(24);
+    expect(m.schemaVersion).toBeGreaterThanOrEqual(24);
     expect(m.swPresent).toBe(true);
     expect(m.offlinePresent).toBe(true);
     expect(m.manifestStandalone).toBe(true);

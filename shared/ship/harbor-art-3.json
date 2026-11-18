@@ -1,0 +1,92 @@
+{
+  "phase": 9,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.harbor_art_3.v1",
+  "description": "Finish 4.0 Phase 9 — harbor art scenic pass. Augments all 8 harbor GLBs beyond grey-box blockout density with market/canopy/crane/ladder scenic props while keeping presenter sockets and *_blockout.glb filenames. Closes gaps.harborBlockoutPresent. Schema stays 24 / content 3.0.0.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "harborArt3Marker": "authored-finish-4.0-phase-9",
+  "harborArtPassCatalog": "shared/ship/harbor-art-pass.json",
+  "harborArtMarker": "authored-finish-4.0-phase-9",
+  "harborScenicMarker": "harbor-art-3",
+  "authoredHarborTarget": 8,
+  "scenicHarborTarget": 8,
+  "minHarborArtNodes": 10,
+  "themesModule": "shared/tools/harbor_themes.py",
+  "generator": "shared/tools/generate_blockout.py",
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "gapClosed": "harborBlockoutPresent",
+  "gapClosedValue": false,
+  "parityFixture": "shared/fixtures/parity-harbor-art-3.json",
+  "validateScript": "npm run harborart3:validate",
+  "scenicHarbors": [
+    {
+      "harborId": "harbor.sunrise_pier",
+      "theme": "sunrise",
+      "asset": "shared/assets/models/sunrise_pier_blockout.glb"
+    },
+    {
+      "harborId": "harbor.coral_lagoon",
+      "theme": "coral",
+      "asset": "shared/assets/models/coral_lagoon_blockout.glb"
+    },
+    {
+      "harborId": "harbor.storm_quay",
+      "theme": "storm",
+      "asset": "shared/assets/models/storm_quay_blockout.glb"
+    },
+    {
+      "harborId": "harbor.moon_cove",
+      "theme": "moon",
+      "asset": "shared/assets/models/moon_cove_blockout.glb"
+    },
+    {
+      "harborId": "harbor.obsidian_jetty",
+      "theme": "obsidian",
+      "asset": "shared/assets/models/obsidian_jetty_blockout.glb"
+    },
+    {
+      "harborId": "harbor.northlight_harbor",
+      "theme": "northlight",
+      "asset": "shared/assets/models/northlight_harbor_blockout.glb"
+    },
+    {
+      "harborId": "harbor.grand_marina",
+      "theme": "marina",
+      "asset": "shared/assets/models/grand_marina_blockout.glb"
+    },
+    {
+      "harborId": "harbor.ember_wharf",
+      "theme": "ember",
+      "asset": "shared/assets/models/ember_wharf_blockout.glb"
+    }
+  ],
+  "checklist": [
+    "All 8 harbor GLBs carry extras.harborArt=authored-finish-4.0-phase-9 + harborScenic=harbor-art-3",
+    "Each harbor has ≥10 HarborArt_* scenic nodes; pairwise hashes differ",
+    "Kickoff gaps.harborBlockoutPresent = false; baseline.harborBlockouts = 0",
+    "harbor-art-pass marker + parity floors raised for scenic pass",
+    "harborart:validate + harborart3:validate green",
+    "CI runs harborart3:validate",
+    "schema stays 24 / content 3.0.0 (presentation-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/harbor-art-3.json",
+    "shared/fixtures/parity-harbor-art-3.json",
+    "shared/ship/harbor-art-pass.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "shared/tools/harbor_themes.py",
+    "shared/tools/generate_blockout.py",
+    "shared/assets/models/sunrise_pier_blockout.glb",
+    "shared/assets/models/coral_lagoon_blockout.glb",
+    "shared/assets/models/storm_quay_blockout.glb",
+    "shared/assets/models/moon_cove_blockout.glb",
+    "shared/assets/models/obsidian_jetty_blockout.glb",
+    "shared/assets/models/northlight_harbor_blockout.glb",
+    "shared/assets/models/grand_marina_blockout.glb",
+    "shared/assets/models/ember_wharf_blockout.glb",
+    "web/src/ship/harborArt3.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/HarborArt3.kt",
+    "web/scripts/validate-harbor-art-3.ts"
+  ]
+}

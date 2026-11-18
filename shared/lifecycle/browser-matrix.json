@@ -1,14 +1,24 @@
 {
   "phase": 14,
   "schema": "fish.lifecycle.browser_matrix.v1",
-  "description": "Post-1.0 Phase 14 — browser QA matrix for Chrome / Safari / Firefox: WebGL2 gate, context loss recovery, IndexedDB storage quota fallback, and gesture audio unlock.",
+  "description": "Post-1.0 Phase 14 — browser QA matrix. Finish 4.0 Phase 27 adds Edge target + visibility/PWA/reduced-motion scenarios.",
   "phase28Catalog": "shared/lifecycle/browser-lifecycle.json",
+  "finish4Phase": 27,
   "browsers": [
     {
       "id": "chrome",
-      "label": "Chrome / Chromium / Edge",
+      "label": "Chrome / Chromium",
       "engines": ["Blink"],
       "minNotes": "Current stable; hardware acceleration on",
+      "webgl2": "required",
+      "indexedDb": "persistent",
+      "audioUnlock": ["pointerdown", "keydown", "touchstart"]
+    },
+    {
+      "id": "edge",
+      "label": "Microsoft Edge",
+      "engines": ["Blink"],
+      "minNotes": "Finish 4.0 Phase 27 — Chromium Edge stable; same WebGL2 + gesture unlock path as Chrome",
       "webgl2": "required",
       "indexedDb": "persistent",
       "audioUnlock": ["pointerdown", "keydown", "touchstart"]
@@ -83,6 +93,43 @@
       ],
       "hostHooks": ["App audioUnlockEvents", "GameHost.unlockAudio", "AudioBus"],
       "phase28Keys": ["web.audioGesture", "web.tabLifecycle.suspendAudioWhenHidden"]
+    },
+    {
+      "id": "visibility_hidden",
+      "title": "Tab visibility hide / show",
+      "trigger": "document.visibilitychange → hidden then visible",
+      "expects": [
+        "suspendOnVisibilityHidden",
+        "resumeOnVisibilityVisible",
+        "keepUnlockAcrossSuspend"
+      ],
+      "hostHooks": ["App.tsx visibilitychange", "GameHost pause/resume"],
+      "phase28Keys": ["web.tabLifecycle.suspendAudioWhenHidden"]
+    },
+    {
+      "id": "pwa_offline",
+      "title": "PWA offline shell",
+      "trigger": "Service worker registered; network offline navigates to offline.html",
+      "expects": [
+        "serviceWorkerRegistered",
+        "offlineShellServed",
+        "playRouteCached"
+      ],
+      "hostHooks": ["web/src/pwa/registerServiceWorker.ts", "web/public/offline.html", "web/public/sw.js"],
+      "phase28Keys": ["web.pwa"]
+    },
+    {
+      "id": "reduced_motion",
+      "title": "Reduced motion presentation budget",
+      "trigger": "settings.reducedMotion true during harbor render",
+      "expects": [
+        "skipFlyingTransfers",
+        "skipWorldBursts",
+        "skipScreenShake",
+        "simUnchanged"
+      ],
+      "hostHooks": ["HarborScene.render reducedMotion", "presenters crowd/flying"],
+      "phase28Keys": ["web.a11y.reducedMotion"]
     }
   ],
   "audioUnlockEvents": ["pointerdown", "keydown", "touchstart"],
@@ -94,15 +141,19 @@
   },
   "manualChecklist": [
     "Chrome: load game, confirm harbor renders; DevTools → Sensors → lose WebGL context",
+    "Edge: same WebGL2 + tab hide/show audio mute/unmute",
     "Firefox: same WebGL2 + tab hide/show audio mute/unmute",
     "Safari macOS: first click unlocks audio; private window shows memory-only save label",
     "Safari iOS: touchstart unlocks audio; rotate portrait/landscape HUD reflows",
-    "Fill storage / block site data → title toast + Settings memory-only label; play still works"
+    "Fill storage / block site data → title toast + Settings memory-only label; play still works",
+    "PWA: install / offline → offline.html shell; Play still boots when online again",
+    "Settings → reduced motion On → no fly/burst/shake; sim tick unchanged"
   ],
   "failCriteria": [
     "Blank screen with no WebGL2 gate copy",
     "Context loss without preventDefault (no restore)",
     "QuotaExceededError crashes the tab or blocks title Play",
-    "Safari iOS never unlocks AudioContext after first tap"
+    "Safari iOS never unlocks AudioContext after first tap",
+    "Reduced motion still plays fly/burst/shake VFX"
   ]
 }

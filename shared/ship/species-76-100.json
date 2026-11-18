@@ -1,0 +1,224 @@
+{
+  "phase": 11,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.species_76_100.v1",
+  "description": "Finish 4.0 Phase 11 \u2014 lock species 76\u2013100 ecology depth (8 new habitats covering all 25 wave ids) + full en/es/pt content i18n. Schema stays 24; schema-25 prep documents planned save/content bump for later endgame/harbor phases.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "speciesCount": 100,
+  "newSpeciesCount": 25,
+  "habitatCount": 16,
+  "newHabitatCount": 8,
+  "species76100Marker": "authored-finish-4.0-phase-11",
+  "priorSpeciesFloor": 75,
+  "newBaseSpecies": [
+    {
+      "id": "species.cedar_smelt",
+      "name": "Cedar smelt",
+      "rareUpgrade": "species.gilt_cedar",
+      "harbors": [
+        "harbor.sunrise_pier"
+      ],
+      "gallery": "gallery.sunrise_pier",
+      "habitat": "habitat.cedar_rail"
+    },
+    {
+      "id": "species.lantern_shad",
+      "name": "Lantern shad",
+      "rareUpgrade": "species.prism_shad",
+      "harbors": [
+        "harbor.sunrise_pier"
+      ],
+      "gallery": "gallery.sunrise_pier",
+      "habitat": "habitat.lantern_shelf"
+    },
+    {
+      "id": "species.brine_mullet",
+      "name": "Brine mullet",
+      "rareUpgrade": "species.bronze_brine",
+      "harbors": [
+        "harbor.obsidian_jetty"
+      ],
+      "gallery": "gallery.obsidian_jetty",
+      "habitat": "habitat.brine_pools"
+    },
+    {
+      "id": "species.canyon_bass",
+      "name": "Canyon bass",
+      "rareUpgrade": "species.crown_canyon",
+      "harbors": [
+        "harbor.obsidian_jetty"
+      ],
+      "gallery": "gallery.obsidian_jetty",
+      "habitat": "habitat.canyon_drop"
+    },
+    {
+      "id": "species.tidepool_blenny",
+      "name": "Tidepool blenny",
+      "rareUpgrade": "species.opal_blenny",
+      "harbors": [
+        "harbor.coral_lagoon"
+      ],
+      "gallery": "gallery.coral_lagoon",
+      "habitat": "habitat.tide_lip"
+    },
+    {
+      "id": "species.reef_hawkfish",
+      "name": "Reef hawkfish",
+      "rareUpgrade": "species.ruby_hawk",
+      "harbors": [
+        "harbor.coral_lagoon"
+      ],
+      "gallery": "gallery.coral_lagoon",
+      "habitat": "habitat.hawk_perch"
+    },
+    {
+      "id": "species.squall_smelt",
+      "name": "Squall smelt",
+      "rareUpgrade": "species.thunder_smelt",
+      "harbors": [
+        "harbor.storm_quay"
+      ],
+      "gallery": "gallery.storm_quay",
+      "habitat": "habitat.squall_foam"
+    },
+    {
+      "id": "species.gale_herring",
+      "name": "Gale herring",
+      "rareUpgrade": "species.prism_gale",
+      "harbors": [
+        "harbor.storm_quay"
+      ],
+      "gallery": "gallery.storm_quay",
+      "habitat": "habitat.plaza_cut"
+    },
+    {
+      "id": "species.cinder_smelt",
+      "name": "Cinder smelt",
+      "rareUpgrade": "species.magma_cinder",
+      "harbors": [
+        "harbor.ember_wharf"
+      ],
+      "gallery": "gallery.ember_wharf",
+      "habitat": "habitat.plaza_cut"
+    },
+    {
+      "id": "species.slag_perch",
+      "name": "Slag perch",
+      "rareUpgrade": "species.gilt_slag",
+      "harbors": [
+        "harbor.ember_wharf"
+      ],
+      "gallery": "gallery.ember_wharf",
+      "habitat": "habitat.plaza_cut"
+    },
+    {
+      "id": "species.frost_jack",
+      "name": "Frost jack",
+      "rareUpgrade": "species.aurora_jack",
+      "harbors": [
+        "harbor.northlight_harbor"
+      ],
+      "gallery": "gallery.northlight_harbor",
+      "habitat": "habitat.plaza_cut"
+    },
+    {
+      "id": "species.rime_herring",
+      "name": "Rime herring",
+      "rareUpgrade": "species.crystal_rime",
+      "harbors": [
+        "harbor.northlight_harbor"
+      ],
+      "gallery": "gallery.northlight_harbor",
+      "habitat": "habitat.plaza_cut"
+    },
+    {
+      "id": "species.plaza_tuna",
+      "name": "Plaza tuna",
+      "rareUpgrade": null,
+      "harbors": [
+        "harbor.grand_marina"
+      ],
+      "gallery": "gallery.grand_marina",
+      "habitat": "habitat.plaza_cut"
+    }
+  ],
+  "newRareSpecies": [
+    "species.gilt_cedar",
+    "species.prism_shad",
+    "species.bronze_brine",
+    "species.crown_canyon",
+    "species.opal_blenny",
+    "species.ruby_hawk",
+    "species.thunder_smelt",
+    "species.prism_gale",
+    "species.magma_cinder",
+    "species.gilt_slag",
+    "species.aurora_jack",
+    "species.crystal_rime"
+  ],
+  "habitatIds": [
+    "habitat.cedar_rail",
+    "habitat.lantern_shelf",
+    "habitat.brine_pools",
+    "habitat.canyon_drop",
+    "habitat.tide_lip",
+    "habitat.hawk_perch",
+    "habitat.squall_foam",
+    "habitat.plaza_cut"
+  ],
+  "allHabitatFloor": 16,
+  "rareGallery": "gallery.rare_gallery",
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-species-76-100.json",
+  "authorTool": "shared/tools/author_species_76_100.py",
+  "ecologyI18nTool": "shared/tools/author_ecology_i18n_76_100.py",
+  "validateScript": "npm run species76100:validate",
+  "schemaPrep": {
+    "targetSchemaVersion": 25,
+    "status": "prepared",
+    "ownedByPhase": 17,
+    "notes": [
+      "Keep SCHEMA_VERSION / content-pack schemaVersion at 24 until endgame-2 / harbors-9-10 require a save bump.",
+      "Planned schema 25 consumers: ecology habitat save caches, harbor travel prestige gates, endgame challenge progress.",
+      "Phase 11 only documents prep; no migration written yet."
+    ],
+    "prepCatalog": "shared/ship/schema-25-prep.json"
+  },
+  "i18n": {
+    "locales": [
+      "en",
+      "es",
+      "pt"
+    ],
+    "contentStringsEn": "shared/i18n/content-strings.en.json",
+    "contentStringsEs": "shared/i18n/content-strings.es.json",
+    "contentStringsPt": "shared/i18n/content-strings.pt.json",
+    "waveKeyCount": 25,
+    "habitatKeyCount": 8,
+    "requireTranslatedLocales": true
+  },
+  "checklist": [
+    "content-pack has 100 species including Phase 8/11 wave + rares",
+    "ecology.habitats \u226516 with 8 Phase 11 pockets covering all 25 wave ids",
+    "EN/ES/PT content-strings translate wave species + new habitats (ES/PT \u2260 EN)",
+    "Codex entries for all 100 species",
+    "schema-25-prep.json documents bump owned by Phase 17; schema stays 24",
+    "kickoff baseline.species = 100; speciesRemaining = 0",
+    "species76100:validate green in CI"
+  ],
+  "preflightGates": [
+    "shared/ship/species-76-100.json",
+    "shared/fixtures/parity-species-76-100.json",
+    "shared/ship/schema-25-prep.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "shared/tools/author_species_76_100.py",
+    "shared/tools/author_ecology_i18n_76_100.py",
+    "shared/assets/models/fish_cedar_smelt.glb",
+    "shared/assets/models/fish_plaza_tuna.glb",
+    "web/src/ship/species76100.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Species76100.kt",
+    "web/scripts/validate-species-76-100.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/world/EcologySystem.kt"
+  ]
+}

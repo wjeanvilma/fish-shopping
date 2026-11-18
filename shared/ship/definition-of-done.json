@@ -1,29 +1,29 @@
 {
   "phase": 30,
   "schema": "fish.ship.definition_of_done.v1",
-  "releaseTag": "v3.0.0",
+  "releaseTag": "v4.0.0",
   "completeTag": "v1.0-complete",
-  "contentVersion": "3.0.0",
-  "schemaVersion": 24,
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
   "quotas": {
-    "harbors": 8,
-    "speciesMin": 75,
-    "machineClasses": 10,
-    "rivalMarkets": 8,
+    "harbors": 10,
+    "speciesMin": 100,
+    "machineClasses": 12,
+    "rivalMarkets": 12,
     "achievements": 14,
-    "codexEntries": 75,
+    "codexEntries": 100,
     "weatherPatterns": 5,
     "tidePhases": 4,
-    "masteryTechniques": 3,
-    "masteryCoachingTips": 5,
+    "masteryTechniques": 6,
+    "masteryCoachingTips": 8,
     "staffBranches": 10,
     "staffSchedules": 2,
-    "seasonalEvents": 8,
+    "seasonalEvents": 12,
     "deliveryChains": 2,
     "reputationGatedContracts": 2,
     "dailyObjectives": 6,
-    "authoredHarborScenes": 8,
-    "authoredFishSpecies": 50,
+    "authoredHarborScenes": 10,
+    "authoredFishSpecies": 100,
     "audioPack2Stingers": 7,
     "audioPack2Beds": 2,
     "audioPack3Stingers": 8,
@@ -43,15 +43,26 @@
     "remoteAnalyticsBatchMax": 20,
     "checkoutApiRoutes": 3,
     "cloudQaScenarios": 12,
-    "contentScaffoldKinds": 6,
+    "contentScaffoldKinds": 8,
     "supportOps2FeatureFaq": 6,
     "supportOps2RefundRows": 4,
-    "parityLockSuites": 12,
+    "parityLockSuites": 16,
     "parityLockFinish2Suites": 4,
     "parityLockFinish3Suites": 4,
-    "quests": 30,
-    "cosmetics": 12,
-    "baits": 8
+    "parityLockFinish4Suites": 4,
+    "quests": 50,
+    "cosmetics": 18,
+    "baits": 12,
+    "audioPack4Stingers": 9,
+    "audioPack4Beds": 2,
+    "vfxJuice4BurstKinds": 7,
+    "vfxJuice4ShakeKinds": 2,
+    "endgameAmbientModes": 3,
+    "a11yDepth3Screens": 5,
+    "a11yDepth3ContrastPairs": 2,
+    "i18nUiKeysGrowth4": 280,
+    "stripeOpsSkus": 19,
+    "stripeOpsPriceMapped": 19
   },
   "checks": [
     "blueprint_quotas",
@@ -113,11 +124,11 @@
       "Real IAP paths: Play Billing production + web checkout catalogs wired to entitlements",
       "Real screenshots: phone + tablet captures under shared/store/screenshots/captures",
       "Authored audio: SFX pack + music beds present and validated",
-      "Live web legal/landing on canonicalHost (privacy/support/landing HTTPS 200) \u2014 Finish 2.0 Phase 1 verified",
+      "Live web legal/landing on canonicalHost (privacy/support/landing HTTPS 200) — Finish 2.0 Phase 1 verified",
       "Closed-testing catalog ready (signoff path to Phase 18 production)",
       "Public ship + hotfix lane catalogs green; RELEASE_PIN schema 20",
-      "All post-1.0 phase gate catalogs present (Phases 1\u201329)",
-      "Annotated git tag v1.0-complete cut \u2014 Finish 2.0 Phase 4 archived"
+      "All post-1.0 phase gate catalogs present (Phases 1–29)",
+      "Annotated git tag v1.0-complete cut — Finish 2.0 Phase 4 archived"
     ],
     "operatorGates": [
       {
@@ -315,7 +326,238 @@
       "catalog": "shared/ship/complete-tag.json"
     }
   },
-  "notes": "Phase 30 Finish 3.0 freeze: content/version 3.0.0 / schema 24. Finish 2.0 freeze stays historical at v2.0.0 / schema 23. post-1.0 closeout stays archived at v1.0-complete. LOC uses Finish 3.0 freeze anti-regression floors (plan 80k target retained, not padded). Deploy/tag remain manual.",
+  "notes": "Finish 4.0 Phase 18 cosmetics-iap-4 complete (cosmetics≥18 power-neutral); Phases 1–17 remain green. Content stays 3.0.0 / schema 25. Finish 3.0 freeze stays ready_for_release_tag; Finish 2.0 historical. LOC freeze floors anti-regression at 3.0 cut; Finish 4.0 plan targets 32k/20k/48k/100k. Deploy/tag remain manual.",
+  "harbors910": {
+    "phase": 12,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "harbors910Marker": "authored-finish-4.0-phase-12",
+    "catalog": "shared/ship/harbors-9-10.json",
+    "parityFixture": "shared/fixtures/parity-harbors-9-10.json",
+    "validateScript": "npm run harbors910:validate",
+    "checklist": [
+      "10 harbors including mist_cove + prism_reach",
+      "prestige nine/ten + landing quests + galleries wired",
+      "kickoff authoredHarborsRemaining = 0",
+      "harbors910:validate green in CI"
+    ]
+  },
+  "species76100": {
+    "phase": 11,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "species76100Marker": "authored-finish-4.0-phase-11",
+    "catalog": "shared/ship/species-76-100.json",
+    "parityFixture": "shared/fixtures/parity-species-76-100.json",
+    "validateScript": "npm run species76100:validate",
+    "checklist": [
+      "100 species + 16 ecology habitats covering wave 76–100",
+      "EN/ES/PT content-strings translate wave + new habitats",
+      "schema-25-prep prepared (live schema stays 24)",
+      "species76100:validate green in CI"
+    ]
+  },
+  "productArt": {
+    "phase": 10,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "productArtMarker": "authored-finish-4.0-phase-10",
+    "catalog": "shared/ship/product-art.json",
+    "parityFixture": "shared/fixtures/parity-product-art.json",
+    "validateScript": "npm run productart:validate",
+    "checklist": [
+      "34 products multi-part ProductArt (≥4 nodes) + 12 cosmetic banner GLBs",
+      "cosmetic-presentation meshAsset + counterPresentation wired",
+      "kickoff gaps.productArtIncomplete = false",
+      "productart:validate green in CI"
+    ]
+  },
+  "harborArt3": {
+    "phase": 9,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "harborArt3Marker": "authored-finish-4.0-phase-9",
+    "catalog": "shared/ship/harbor-art-3.json",
+    "parityFixture": "shared/fixtures/parity-harbor-art-3.json",
+    "validateScript": "npm run harborart3:validate",
+    "checklist": [
+      "All 8 harbor GLBs scenic (≥10 HarborArt_* + harborScenic=harbor-art-3)",
+      "kickoff gaps.harborBlockoutPresent = false; baseline.harborBlockouts = 0",
+      "harbor-art-pass marker raised to authored-finish-4.0-phase-9",
+      "harborart3:validate green in CI"
+    ]
+  },
+  "fishArt3b": {
+    "phase": 8,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "fishArt3bMarker": "authored-finish-4.0-phase-8",
+    "catalog": "shared/ship/fish-art-3b.json",
+    "parityFixture": "shared/fixtures/parity-fish-art-3b.json",
+    "validateScript": "npm run fishart3b:validate",
+    "checklist": [
+      "fish-art-pass authoredSpecies = 100 (meshes 76–100 locked)",
+      "content-pack species = 100; kickoff authoredFishRemaining/speciesRemaining = 0",
+      "DoD quotas.authoredFishSpecies + speciesMin + codexEntries = 100",
+      "fishart3b:validate green in CI"
+    ]
+  },
+  "fishArt3a": {
+    "phase": 7,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "fishArt3aMarker": "authored-finish-4.0-phase-7",
+    "catalog": "shared/ship/fish-art-3a.json",
+    "parityFixture": "shared/fixtures/parity-fish-art-3a.json",
+    "validateScript": "npm run fishart3a:validate",
+    "checklist": [
+      "fish-art-pass authoredSpecies ≥ 75 (meshes 51–75 locked)",
+      "kickoff baseline.authoredFish ≥ 75; authoredFishRemaining ≤ 25",
+      "DoD quotas.authoredFishSpecies ≥ 75",
+      "fishart3a:validate green in CI"
+    ]
+  },
+  "gameHostSplit": {
+    "phase": 6,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "gameHostSplitMarker": "authored-finish-4.0-phase-6",
+    "catalog": "shared/ship/gamehost-split.json",
+    "parityFixture": "shared/fixtures/parity-gamehost-split.json",
+    "validateScript": "npm run gamehostsplit:validate",
+    "checklist": [
+      "GameHost.ts slim (≤1400) with host/step intent buses",
+      "Web+Android presenters split + HarborRendererMath cleanup",
+      "kickoff gaps.gameHostSplitIncomplete closed",
+      "gamehostsplit:validate green in CI"
+    ]
+  },
+  "workersSimViewSplit": {
+    "phase": 5,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "workersSimViewSplitMarker": "authored-finish-4.0-phase-5",
+    "catalog": "shared/ship/workers-simview-split.json",
+    "parityFixture": "shared/fixtures/parity-workers-simview-split.json",
+    "validateScript": "npm run workersplit:validate",
+    "checklist": [
+      "Workers.kt slim (≤600) with WorkerAi + decision hooks",
+      "SimView.kt slim (≤800) with models + builders extracted",
+      "kickoff gaps.workersSimViewSplitIncomplete closed",
+      "workersplit:validate green in CI"
+    ]
+  },
+  "viewModelSplit": {
+    "phase": 4,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "viewModelSplitMarker": "authored-finish-4.0-phase-4",
+    "catalog": "shared/ship/viewmodel-split.json",
+    "parityFixture": "shared/fixtures/parity-viewmodel-split.json",
+    "validateScript": "npm run viewmodelsplit:validate",
+    "checklist": [
+      "GameViewModel.kt slim (≤1500 lines) delegating shell/economy/travel/IAP intents",
+      "≥6 extracted modules under game/ + game/vm/",
+      "kickoff gaps.viewModelSplitIncomplete closed",
+      "viewmodelsplit:validate green in CI"
+    ]
+  },
+  "systemsSplit2": {
+    "phase": 3,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "systemsSplit2Marker": "authored-finish-4.0-phase-3",
+    "catalog": "shared/ship/systems-split-2.json",
+    "parityFixture": "shared/fixtures/parity-systems-split-2.json",
+    "validateScript": "npm run systemssplit2:validate",
+    "checklist": [
+      "systems.ts slim (≤3800 lines) re-exporting customers/contracts/progression",
+      "≥8 extracted modules under web/src/engine/systems/ (Phase 2+3)",
+      "systemssplit2:validate green in CI"
+    ]
+  },
+  "systemsSplit1": {
+    "phase": 2,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "systemsSplit1Marker": "authored-finish-4.0-phase-2",
+    "catalog": "shared/ship/systems-split-1.json",
+    "parityFixture": "shared/fixtures/parity-systems-split-1.json",
+    "validateScript": "npm run systemssplit1:validate",
+    "checklist": [
+      "systems.ts slim (≤4700 lines) re-exporting fishing/production/movement",
+      "≥5 extracted modules under web/src/engine/systems/ with bridge",
+      "kickoff gaps.systemsSplitIncomplete closed",
+      "systemssplit1:validate green in CI"
+    ]
+  },
+  "finish4Kickoff": {
+    "phase": 1,
+    "plan": "30_finish_4.0",
+    "status": "frozen",
+    "statusValues": [
+      "active",
+      "in_progress",
+      "frozen"
+    ],
+    "kickoffMarker": "authored-finish-4.0-phase-1",
+    "catalog": "shared/ship/finish-4.0-kickoff.json",
+    "parityFixture": "shared/fixtures/parity-finish-4.0-kickoff.json",
+    "validateScript": "npm run finish4:validate",
+    "smokeScript": "npm run finish4:smoke",
+    "priorPlan": "30_finish_3.0",
+    "endReleaseTag": "v4.0.0",
+    "checklist": [
+      "Finish 3.0 prior plan marked finished; freeze-3.0.0 remains green",
+      "Gap scoreboard locks authored fish 50→100, harbors 8→10, product LOC →100k",
+      "30 Finish 4.0 phases listed kickoff→freeze-4",
+      "finish4:validate + finish4:smoke green in CI"
+    ]
+  },
   "finish3Kickoff": {
     "phase": 1,
     "plan": "30_finish_3.0",
@@ -334,8 +576,8 @@
     "endReleaseTag": "v3.0.0",
     "checklist": [
       "Finish 2.0 prior plan marked finished; freeze-2.0.0 remains green",
-      "Gap scoreboard locks authored harbors 3\u21928, fish 10\u219250, product LOC \u219280k",
-      "30 Finish 3.0 phases listed kickoff\u2192freeze-3",
+      "Gap scoreboard locks authored harbors 3→8, fish 10→50, product LOC →80k",
+      "30 Finish 3.0 phases listed kickoff→freeze-3",
       "finish3:validate + finish3:smoke green in CI"
     ]
   },
@@ -352,8 +594,8 @@
     "parityFixture": "shared/fixtures/parity-android-hud-split.json",
     "validateScript": "npm run androidhud:validate",
     "checklist": [
-      "GameScreen.kt slim (\u22641000 lines) with GameScreen + Hud only",
-      "\u226514 extracted HUD panel/primitive modules under ui/hud/",
+      "GameScreen.kt slim (≤1000 lines) with GameScreen + Hud only",
+      "≥14 extracted HUD panel/primitive modules under ui/hud/",
       "kickoff gaps.androidHudDecomposition closed",
       "androidhud:validate green in CI"
     ]
@@ -371,8 +613,8 @@
     "parityFixture": "shared/fixtures/parity-web-hud-split.json",
     "validateScript": "npm run webhud:validate",
     "checklist": [
-      "App.tsx slim (\u2264900 lines) with App + World + Hud only",
-      "\u226512 extracted UI panel/primitive modules under web/src/ui/",
+      "App.tsx slim (≤900 lines) with App + World + Hud only",
+      "≥12 extracted UI panel/primitive modules under web/src/ui/",
       "kickoff gaps.webHudDecomposition closed",
       "webhud:validate green in CI"
     ]
@@ -409,7 +651,7 @@
     "parityFixture": "shared/fixtures/parity-android-i18n.json",
     "validateScript": "npm run androidi18n:validate",
     "checklist": [
-      "en+es UiStrings catalogs \u2265120 keys with parity",
+      "en+es UiStrings catalogs ≥120 keys with parity",
       "ui/hud Text(\" chrome literals = 0",
       "gaps.androidI18nIncomplete closed",
       "androidi18n:validate green in CI"
@@ -428,7 +670,7 @@
     "parityFixture": "shared/fixtures/parity-content-i18n.json",
     "validateScript": "npm run contenti18n:validate",
     "checklist": [
-      "content-strings en/es/pt \u2265250 keys with parity",
+      "content-strings en/es/pt ≥250 keys with parity",
       "third locale pt on UI + listing",
       "gaps.contentI18nMissing + thirdLocaleMissing closed",
       "contenti18n:validate green in CI"
@@ -548,6 +790,25 @@
       "species5175:validate green in CI"
     ]
   },
+  "machines1112": {
+    "phase": 13,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "machines1112Marker": "authored-finish-4.0-phase-13",
+    "catalog": "shared/ship/machines-11-12.json",
+    "parityFixture": "shared/fixtures/parity-machines-11-12.json",
+    "validateScript": "npm run machines1112:validate",
+    "checklist": [
+      "12 machine classes including braiser + glazer",
+      "recipes + products + plots on all 10 harbors",
+      "kickoff machinesRemaining = 0",
+      "machines1112:validate green in CI"
+    ]
+  },
   "machines910": {
     "phase": 13,
     "plan": "30_finish_3.0",
@@ -565,6 +826,26 @@
       "Unlock plots + stations on all 8 harbors",
       "Press/pickler recipe graphs + product SKUs",
       "machines910:validate green in CI"
+    ]
+  },
+  "rivalMarkets2": {
+    "phase": 15,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "rivalMarkets2Marker": "authored-finish-4.0-phase-15",
+    "catalog": "shared/ship/rival-markets-2.json",
+    "parityFixture": "shared/fixtures/parity-rival-markets-2.json",
+    "validateScript": "npm run rivals2:validate",
+    "checklist": [
+      "≥12 rivals covering all harbors",
+      "AI profiles + adaptive/multi-rival pressure knobs",
+      "RivalMarketSystem TS/Kotlin AI depth",
+      "kickoff baseline.rivalMarkets = 12",
+      "rivals2:validate green in CI"
     ]
   },
   "rivalMarkets": {
@@ -599,7 +880,7 @@
     "parityFixture": "shared/fixtures/parity-schema-24-endgame.json",
     "validateScript": "npm run schema24:validate",
     "checklist": [
-      "SCHEMA_VERSION = 24 + v23\u2192v24 migration",
+      "SCHEMA_VERSION = 24 + v23→v24 migration",
       "Endgame tiers/challenges content + EndgameSystem parity",
       "beatenRivalIds persisted; legacy v23 fixture frozen",
       "schema24:validate green in CI"
@@ -637,7 +918,7 @@
     "parityFixture": "shared/fixtures/parity-cloud-qa-2.json",
     "validateScript": "npm run cloudqa2:validate",
     "checklist": [
-      "\u22658 wave-2 + \u226512 total cloud QA scenarios (Memory/Null backends)",
+      "≥8 wave-2 + ≥12 total cloud QA scenarios (Memory/Null backends)",
       "Schema 24 roundtrip; unavailable queue + sync-disabled paths",
       "Snippet-only Firestore rules preserved (no deployable firestore.rules)",
       "cloudqa2:validate green in CI"
@@ -732,7 +1013,7 @@
     "parityFixture": "shared/fixtures/parity-web-e2e.json",
     "validateScript": "npm run webe2e:validate",
     "checklist": [
-      "Playwright Chromium smoke (title\u2192play\u2192HUD\u2192pause)",
+      "Playwright Chromium smoke (title→play→HUD→pause)",
       "Stable WEB_E2E_IDS data-testid wiring",
       "Kickoff webE2eMissing closed",
       "webe2e:validate + e2e:smoke green in CI"
@@ -751,7 +1032,7 @@
     "parityFixture": "shared/fixtures/parity-audio-pack-3.json",
     "validateScript": "npm run audiopack3:validate",
     "checklist": [
-      "\u22658 pack-3 SFX stingers + \u22652 night/rival beds",
+      "≥8 pack-3 SFX stingers + ≥2 night/rival beds",
       "Ducking policy frozen from music-pack.json",
       "sfxFromEvent + bed priority festival>storm>rival>night>shop>harbor",
       "audiopack3:validate green in CI"
@@ -770,7 +1051,7 @@
     "parityFixture": "shared/fixtures/parity-vfx-juice-3.json",
     "validateScript": "npm run vfx3:validate",
     "checklist": [
-      "\u22656 pack-3 burst kinds + \u22652 shake kinds under budget-gate",
+      "≥6 pack-3 burst kinds + ≥2 shake kinds under budget-gate",
       "Tide ambient (dawn/day/dusk/night) + rival tint",
       "GameHost/GameViewModel + HarborScene/HarborRenderer wired",
       "vfx3:validate green in CI"
@@ -789,8 +1070,8 @@
     "parityFixture": "shared/fixtures/parity-a11y-depth-2.json",
     "validateScript": "npm run a11ydepth2:validate",
     "checklist": [
-      "\u22657 Finish 3.0 surfaces (bank/trophy/decor/theme/map/dashboard/rival)",
-      "\u22654 dark-theme contrast pairs under WCAG AA",
+      "≥7 Finish 3.0 surfaces (bank/trophy/decor/theme/map/dashboard/rival)",
+      "≥4 dark-theme contrast pairs under WCAG AA",
       "Rival pressure live region + map/dashboard pane titles",
       "a11ydepth2:validate green in CI"
     ]
@@ -814,6 +1095,84 @@
       "remoteanalytics:validate green in CI"
     ]
   },
+  "questsContracts4": {
+    "phase": 14,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "questsContracts4Marker": "authored-finish-4.0-phase-14",
+    "catalog": "shared/ship/quests-contracts-4.json",
+    "parityFixture": "shared/fixtures/parity-quests-contracts-4.json",
+    "validateScript": "npm run quests4:validate",
+    "checklist": [
+      "≥50 quests chained past endgame_beacon",
+      "≥5 delivery chains (mist_runner + prism_relay)",
+      "≥6 reputation-gated contracts + board depth",
+      "kickoff questsRemaining = 0",
+      "quests4:validate green in CI"
+    ]
+  },
+  "seasonalBait4": {
+    "phase": 16,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "seasonalBait4Marker": "authored-finish-4.0-phase-16",
+    "catalog": "shared/ship/seasonal-bait-4.json",
+    "parityFixture": "shared/fixtures/parity-seasonal-bait-4.json",
+    "validateScript": "npm run seasonalbait4:validate",
+    "checklist": [
+      "≥12 seasonal events + festival guests/contracts",
+      "≥12 baits",
+      "mastery maxLevel 7 / ≥6 techniques / ≥8 tips",
+      "kickoff seasonalEvents=12 / baits=12",
+      "seasonalbait4:validate green in CI"
+    ]
+  },
+  "endgame2": {
+    "phase": 17,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "endgame2Marker": "authored-finish-4.0-phase-17",
+    "catalog": "shared/ship/endgame-2.json",
+    "parityFixture": "shared/fixtures/parity-endgame-2.json",
+    "validateScript": "npm run endgame2:validate",
+    "checklist": [
+      "schema 25 live + v24→v25 migration",
+      "≥6 tiers / ≥8 challenges + legend marks",
+      "kickoff endgameSchema25Pending = false",
+      "endgame2:validate green in CI"
+    ]
+  },
+  "cosmetics4": {
+    "phase": 18,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "cosmetics4Marker": "authored-finish-4.0-phase-18",
+    "catalog": "shared/ship/cosmetics-iap-4.json",
+    "parityFixture": "shared/fixtures/parity-cosmetics-iap-4.json",
+    "validateScript": "npm run cosmetics4:validate",
+    "checklist": [
+      "≥18 power-neutral cosmetics",
+      "banner meshes + presentation parity",
+      "kickoff cosmetics=18 / contentFloorsShort=false",
+      "cosmetics4:validate green in CI"
+    ]
+  },
   "questsContracts3": {
     "phase": 27,
     "plan": "30_finish_3.0",
@@ -827,9 +1186,9 @@
     "parityFixture": "shared/fixtures/parity-quests-contracts-3.json",
     "validateScript": "npm run quests3:validate",
     "checklist": [
-      "\u226530 authored quests past prestige_wave",
-      "\u22653 delivery chains including dawn express",
-      "\u22653 reputation-gated contracts; Finish 2.0 floors untouched",
+      "≥30 authored quests past prestige_wave",
+      "≥3 delivery chains including dawn express",
+      "≥3 reputation-gated contracts; Finish 2.0 floors untouched",
       "quests3:validate green in CI"
     ]
   },
@@ -846,7 +1205,7 @@
     "parityFixture": "shared/fixtures/parity-content-cli-2.json",
     "validateScript": "npm run contentcli2:validate",
     "checklist": [
-      "\u22656 scaffold kinds (core + contract/bait/decor)",
+      "≥6 scaffold kinds (core + contract/bait/decor)",
       "--list and --check-pack; no auto-merge into content-pack",
       "Finish 2.0 contentcli:validate still green",
       "contentcli2:validate green in CI"
@@ -865,8 +1224,8 @@
     "parityFixture": "shared/fixtures/parity-parity-lock-3.0.json",
     "validateScript": "npm run parity3:validate",
     "checklist": [
-      "\u226512 parity suites including 4 Finish 3.0 system suites",
-      "rivals / schema24 endgame / machines 9\u201310 / quests-contracts-3",
+      "≥12 parity suites including 4 Finish 3.0 system suites",
+      "rivals / schema24 endgame / machines 9–10 / quests-contracts-3",
       "Finish 2.0 parity2:validate still green",
       "parity3:validate green in CI"
     ]
@@ -891,7 +1250,7 @@
     "completeTagArchived": "v1.0-complete",
     "checklist": [
       "RELEASE_PIN + content-pack at 2.0.0 / schema 23 / versionCode 3",
-      "Content floors \u22658 harbors / 50 species / 8 machines / 20 quests / 8 seasonal / 8 baits / 12 cosmetics",
+      "Content floors ≥8 harbors / 50 species / 8 machines / 20 quests / 8 seasonal / 8 baits / 12 cosmetics",
       "LOC freeze anti-regression floors green; plan targets retained without padding",
       "post-1.0 DoD closeout remains archived at v1.0-complete",
       "freeze2:validate + dod:validate green in CI",
@@ -925,7 +1284,7 @@
     "finish2ReleaseTagArchived": "v2.0.0",
     "checklist": [
       "RELEASE_PIN + content-pack at 3.0.0 / schema 24 / versionCode 4",
-      "Content floors \u22658 harbors / 75 species / 10 machines / 30 quests / 8 seasonal / 8 baits / 12 cosmetics",
+      "Content floors ≥8 harbors / 75 species / 10 machines / 30 quests / 8 seasonal / 8 baits / 12 cosmetics",
       "LOC freeze anti-regression floors green; plan targets retained without padding",
       "Finish 2.0 freeze + post-1.0 closeout remain historical/archived",
       "freeze3:validate + freeze2:validate + dod:validate green in CI",
@@ -937,6 +1296,299 @@
       "npm run dod:validate",
       "git tag -a v3.0.0 -m \"Fish Shopping 3.0.0 freeze\"",
       "Archive Finish 3.0 plan status as finished"
+    ]
+  },
+  "staffAi2": {
+    "phase": 19,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "staffAi2Marker": "authored-finish-4.0-phase-19",
+    "catalog": "shared/ship/staff-ai-2.json",
+    "parityFixture": "shared/fixtures/parity-staff-ai-2.json",
+    "validateScript": "npm run staffai2:validate",
+    "checklist": [
+      "Fisher trophy_cast / line_pro depth",
+      "Porter dock_relay / cargo_sprint depth",
+      "Cashier quick_till queue depth",
+      "Soft-floor workerai:validate → WorkerAi.kt",
+      "staffai2:validate green in CI"
+    ]
+  },
+  "economy2": {
+    "phase": 20,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "economy2Marker": "authored-finish-4.0-phase-20",
+    "catalog": "shared/ship/economy-bank-2.json",
+    "parityFixture": "shared/fixtures/parity-economy-bank-2.json",
+    "validateScript": "npm run economy2:validate",
+    "checklist": [
+      "≥3 loan products",
+      "≥8 coin goal presets",
+      "Scarcity + reputation retune",
+      "Dashboard cashflow surfaces",
+      "economy2:validate green in CI"
+    ]
+  },
+  "offlineCloud2": {
+    "phase": 21,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "offlineCloud2Marker": "authored-finish-4.0-phase-21",
+    "catalog": "shared/ship/offline-cloud-2.json",
+    "parityFixture": "shared/fixtures/parity-offline-cloud-2.json",
+    "validateScript": "npm run offlinecloud2:validate",
+    "checklist": [
+      "≥10 daily objectives / boardSlots ≥4",
+      "Offline journal delta fields",
+      "Cloud conflict reasonCode + diffHints",
+      "Analytics requeue/retry",
+      "offlinecloud2:validate green in CI"
+    ]
+  },
+  "uiParity": {
+    "phase": 22,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "uiParityMarker": "authored-finish-4.0-phase-22",
+    "catalog": "shared/ship/ui-parity-depth.json",
+    "parityFixture": "shared/fixtures/parity-ui-parity-depth.json",
+    "validateScript": "npm run uiparity:validate",
+    "checklist": [
+      "≥12 paired panel paths",
+      "≥13 feature marker floors",
+      "Dashboard loanInterest/loanCollected parity",
+      "Goals loan term + Reward label",
+      "Staff trainReason web+Android",
+      "uiparity:validate green in CI"
+    ]
+  },
+  "audioPack4": {
+    "phase": 23,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "audioPackMarker": "authored-finish-4.0-phase-23",
+    "catalog": "shared/ship/audio-pack-4.json",
+    "parityFixture": "shared/fixtures/parity-audio-pack-4.json",
+    "validateScript": "npm run audiovfx4:validate",
+    "checklist": [
+      "≥9 pack-4 stingers",
+      "≥2 pack-4 beds (endgame/ledger)",
+      "ducking frozen",
+      "audiovfx4:validate green in CI"
+    ]
+  },
+  "vfxJuice4": {
+    "phase": 23,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "vfxJuice4Marker": "authored-finish-4.0-phase-23",
+    "catalog": "shared/ship/vfx-juice-4.json",
+    "parityFixture": "shared/fixtures/parity-vfx-juice-4.json",
+    "validateScript": "npm run audiovfx4:validate",
+    "checklist": [
+      "≥7 event bursts",
+      "≥2 endgame shakes",
+      "≥3 endgame ambient modes",
+      "audiovfx4:validate green in CI"
+    ]
+  },
+  "a11yDepth3": {
+    "phase": 24,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "a11yDepth3Marker": "authored-finish-4.0-phase-24",
+    "catalog": "shared/ship/a11y-depth-3.json",
+    "parityFixture": "shared/fixtures/parity-a11y-depth-3.json",
+    "validateScript": "npm run a11yi18n4:validate",
+    "checklist": [
+      "≥5 depth-3 screen surfaces",
+      "≥2 light-theme contrast pairs",
+      "≥2 live regions",
+      "a11yi18n4:validate green in CI"
+    ]
+  },
+  "i18nGrowth4": {
+    "phase": 24,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "i18nGrowth4Marker": "authored-finish-4.0-phase-24",
+    "catalog": "shared/ship/i18n-growth-4.json",
+    "parityFixture": "shared/fixtures/parity-i18n-growth-4.json",
+    "validateScript": "npm run a11yi18n4:validate",
+    "checklist": [
+      "≥280 UI keys en/es/pt",
+      "≥20 a11y.* keys",
+      "Android Text(\" literals = 0",
+      "a11yi18n4:validate green in CI"
+    ]
+  },
+  "stripeOps4": {
+    "phase": 25,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "stripeOps4Marker": "authored-finish-4.0-phase-25",
+    "catalog": "shared/ship/stripe-ops-4.json",
+    "opsCatalog": "shared/ops/stripe-ops-4.json",
+    "parityFixture": "shared/fixtures/parity-stripe-ops-4.json",
+    "validateScript": "npm run stripeops4:validate",
+    "checklist": [
+      "≥19 SKUs synced across Play/web/checkout",
+      "Webhook idempotency + /v1/ops/readiness",
+      "Kickoff stripeOpsIncomplete closed",
+      "stripeops4:validate green in CI"
+    ]
+  },
+  "deeplinkE2e4": {
+    "phase": 26,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "deeplinkE2e4Marker": "authored-finish-4.0-phase-26",
+    "catalog": "shared/ship/deeplink-e2e-4.json",
+    "parityFixture": "shared/fixtures/parity-deeplink-e2e-4.json",
+    "validateScript": "npm run deeplinke2e4:validate",
+    "checklist": [
+      "Panel aliases ≥28 + E2E ids/tags ≥24",
+      "Expanded Playwright + Compose scenarios",
+      "Kickoff deeplinkE2eThin closed",
+      "deeplinke2e4:validate green in CI"
+    ]
+  },
+  "devicePerf4": {
+    "phase": 27,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "devicePerf4Marker": "authored-finish-4.0-phase-27",
+    "catalog": "shared/ship/device-perf-4.json",
+    "parityFixture": "shared/fixtures/parity-device-perf-4.json",
+    "validateScript": "npm run deviceperf4:validate",
+    "checklist": [
+      "Perf harbor LRU ≥3 + soft auto-upgrade",
+      "Android/browser matrices expanded",
+      "Analytics sink contract tests",
+      "Kickoff devicePerfIncomplete closed",
+      "deviceperf4:validate green in CI"
+    ]
+  },
+  "contentCli3": {
+    "phase": 28,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "contentCli3Marker": "authored-finish-4.0-phase-28",
+    "catalog": "shared/ship/content-cli-3.json",
+    "parityFixture": "shared/fixtures/parity-content-cli-3.json",
+    "validateScript": "npm run contentcli3:validate",
+    "checklist": [
+      "≥8 scaffold kinds including machine/rival",
+      "--check-floors meets Finish 4.0 pack floors",
+      "contentcli + contentcli2 soft floors still green",
+      "Kickoff contentCli3Missing closed",
+      "contentcli3:validate green in CI"
+    ]
+  },
+  "parityLock4": {
+    "phase": 29,
+    "plan": "30_finish_4.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "parityLock4Marker": "authored-finish-4.0-phase-29",
+    "catalog": "shared/ship/parity-lock-4.0.json",
+    "parityFixture": "shared/fixtures/parity-parity-lock-4.0.json",
+    "validateScript": "npm run parity4:validate",
+    "checklist": [
+      "≥16 parity suites including 4 Finish 4.0 system suites",
+      "machines_11_12 / quests_contracts_4 / rival_markets_2 / endgame_2",
+      "parity2 + parity3 soft floors still green",
+      "Kickoff parityLock4Missing closed",
+      "parity4:validate green in CI"
+    ]
+  },
+  "finish4Freeze": {
+    "phase": 30,
+    "plan": "30_finish_4.0",
+    "status": "ready_for_release_tag",
+    "statusValues": [
+      "ready_for_release_tag",
+      "tag_cut",
+      "archived"
+    ],
+    "releaseTag": "v4.0.0",
+    "contentVersion": "4.0.0",
+    "schemaVersion": 25,
+    "versionName": "4.0.0",
+    "versionCode": 5,
+    "catalog": "shared/ship/freeze-4.0.0.json",
+    "validateScript": "npm run freeze4:validate",
+    "locEnforceMode": "freeze_anti_regression",
+    "completeTagArchived": "v1.0-complete",
+    "finish2ReleaseTagArchived": "v2.0.0",
+    "finish3ReleaseTagArchived": "v3.0.0",
+    "checklist": [
+      "RELEASE_PIN + content-pack at 4.0.0 / schema 25 / versionCode 5",
+      "Content floors ≥10 harbors / 100 species / 12 machines / 50 quests / 12 seasonal / 12 baits / 18 cosmetics / 12 rivals / 16 parity",
+      "LOC freeze anti-regression floors green; plan targets retained without padding",
+      "Finish 3.0 + Finish 2.0 freeze + post-1.0 closeout remain historical/archived",
+      "freeze4:validate + freeze3:validate + freeze2:validate + dod:validate green in CI",
+      "Annotated git tag v4.0.0 remains operator-manual"
+    ],
+    "manualCommands": [
+      "npm run freeze4:validate",
+      "npm run freeze3:validate",
+      "npm run freeze2:validate",
+      "npm run dod:validate",
+      "git tag -a v4.0.0 -m \"Fish Shopping 4.0.0 freeze\"",
+      "Archive Finish 4.0 plan status as finished"
     ]
   }
 }

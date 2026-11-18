@@ -1,6 +1,6 @@
 /** Immutable presentation snapshot for the HUD and renderer. Mirrors game-core sim/SimView.kt. */
 import { coachingObjective, type ObjectiveView } from "./coaching";
-import { queueSlot, rectCenterX, rectCenterZ } from "./content";
+import { bankProductRepayAmount, bankProductsOrLegacy, queueSlot, rectCenterX, rectCenterZ } from "./content";
 import { compareStrings } from "./foundations";
 import type { MachineStatus } from "./state";
 import type { Simulation } from "./simulation";
@@ -93,6 +93,19 @@ export interface SeasonalEventBannerView {
   customerSpawnMultPermille: number;
   priceMultPermille: number;
 }
+/** Finish 4.0 Phase 20 — one selectable bank loan product. */
+export interface BankLoanProductView {
+  id: string;
+  name: string;
+  description: string;
+  principal: number;
+  repayAmount: number;
+  termTicks: number;
+  unlocked: boolean;
+  lockedReason: string | null;
+  canTake: boolean;
+}
+
 /** Phase 26 Goals-panel bank / coin-goal presentation. */
 export interface BankView {
   unlocked: boolean;
@@ -108,6 +121,8 @@ export interface BankView {
   coinGoal: number;
   coinGoalCelebrated: boolean;
   goalPresets: number[];
+  /** Finish 4.0 Phase 20 — authored loan products. */
+  loanProducts: BankLoanProductView[];
 }
 /** Phase 27 compact telemetry rates for HUD / Settings. */
 export interface TelemetryRatesView {
@@ -251,6 +266,7 @@ export interface EndgameTierView {
   requiresPrestigeCount: number;
   requiresRivalBeats: number;
   requiresChallenges: number;
+  requiresMarks: number;
   catchSpeedPermille: number;
   priceBonusPermille: number;
   coins: number;
@@ -265,6 +281,7 @@ export interface EndgameChallengeView {
   progress: number;
   goalAtLeast: number;
   rewardCoins: number;
+  grantsMark: string | null;
 }
 
 /** unlocked | active — Finish 2.0 Phase 11 achievements. */
@@ -481,6 +498,8 @@ export interface SimView {
   prestige: PrestigeView[];
   /** Finish 3.0 Phase 15 — endgame deepen board. */
   endgameUnlocked: boolean;
+  endgameMarkCount: number;
+  endgameMarks: string[];
   endgameLockedReason: string | null;
   beatenRivalCount: number;
   endgameTiers: EndgameTierView[];
@@ -914,6 +933,30 @@ export function buildView(sim: Simulation): SimView {
     bank: (() => {
       const unlocked = BankSystem.unlocked(c, s);
       const hasLoan = BankSystem.hasLoan(s);
+      const products = bankProductsOrLegacy(c.bank).map((product) => {
+        const productUnlocked = unlocked && BankSystem.productUnlocked(c, s, product);
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          principal: product.principal,
+          repayAmount: bankProductRepayAmount(product),
+          termTicks: product.termTicks,
+          unlocked: productUnlocked,
+          lockedReason: (() => {
+            if (!unlocked) {
+              const miss = BankSystem.missingRequirement(c, s);
+              return miss ? `Requires: ${miss}` : null;
+            }
+            if (!productUnlocked) {
+              const miss = BankSystem.productMissingRequirement(c, s, product);
+              return miss ? `Requires: ${miss}` : null;
+            }
+            return null;
+          })(),
+          canTake: productUnlocked && !hasLoan,
+        };
+      });
       return {
         unlocked,
         lockedReason: (() => {
@@ -926,11 +969,12 @@ export function buildView(sim: Simulation): SimView {
         loanOwed: s.loanOwed,
         loanDueTicksLeft: BankSystem.ticksRemaining(s),
         loanOverdue: BankSystem.overdue(s),
-        canTakeLoan: unlocked && !hasLoan,
+        canTakeLoan: unlocked && !hasLoan && products.some((p) => p.canTake),
         canRepayLoan: hasLoan && s.coins > 0,
         coinGoal: s.coinGoal,
         coinGoalCelebrated: s.coinGoalCelebrated,
         goalPresets: [...c.bank.goalPresets],
+        loanProducts: products,
       };
     })(),
     telemetryRates: {
@@ -1173,6 +1217,8 @@ export function buildView(sim: Simulation): SimView {
       return missing ? `Requires: ${missing}` : null;
     })(),
     beatenRivalCount: s.beatenRivalIds.size,
+    endgameMarkCount: s.endgameMarks.size,
+    endgameMarks: [...s.endgameMarks].sort(compareStrings),
     endgameTiers: c.endgame.tiers.map((t) => {
       const unlocked = s.unlockedEndgameTiers.has(t.id);
       return {
@@ -1183,6 +1229,7 @@ export function buildView(sim: Simulation): SimView {
         requiresPrestigeCount: t.requiresPrestigeCount,
         requiresRivalBeats: t.requiresRivalBeats,
         requiresChallenges: t.requiresChallenges,
+        requiresMarks: t.requiresMarks ?? 0,
         catchSpeedPermille: t.catchSpeedPermille,
         priceBonusPermille: t.priceBonusPermille,
         coins: t.coins,
@@ -1199,6 +1246,7 @@ export function buildView(sim: Simulation): SimView {
         progress: completed ? ch.atLeast : progress,
         goalAtLeast: ch.atLeast,
         rewardCoins: ch.rewardCoins,
+        grantsMark: ch.grantsMark ?? null,
       };
     }),
     achievements: c.achievements.entries.map((a) => {
@@ -1270,7 +1318,7 @@ export function buildView(sim: Simulation): SimView {
     transferAnchors: buildTransferAnchors(sim),
     warehouse: Warehouse.build(c, s, h),
     speciesBook: SpeciesBook.build(c, s),
-    businessDashboard: BusinessDashboard.build(c, s, automationIssueViews, topSpeciesViews),
+    businessDashboard: BusinessDashboard.build(c, s, automationIssueViews, topSpeciesViews, h),
   };
 }
 

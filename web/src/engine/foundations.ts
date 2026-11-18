@@ -34,7 +34,7 @@ export const CHECKPOINT_INTERVAL_TICKS = 30 * TICKS_PER_SECOND;
  * 19: speciesCatches map (Phase 27 telemetry v2).
  */
 /** Save schema — changelog mirrored in SnapshotCodec / snapshot.ts readState. */
-export const SCHEMA_VERSION = 24;
+export const SCHEMA_VERSION = 25;
 
 /** Kotlin-style integer division (truncates toward zero). */
 export function idiv(a: number, b: number): number {
@@ -148,6 +148,11 @@ export interface OfflineReport {
   itemsSold: number;
   workerFishCaught: number;
   workerItemsMoved: number;
+  /** Finish 4.0 Phase 21 — deeper away deltas for journal lines. */
+  contractsCompleted?: number;
+  maintenancePaid?: number;
+  itemsSpoiled?: number;
+  rivalBeats?: number;
   /** Finish 2.0 Phase 18 — narrative lines for the away summary / dashboard. */
   journalLines?: string[];
   hadActivity: boolean;

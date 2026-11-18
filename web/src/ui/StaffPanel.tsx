@@ -101,23 +101,27 @@ export function StaffPanel({ staff, workers, staffGear, automationIssues, statio
                     </div>
                   )}
                   {w.branches.length > 0 && (
-                    <div className="small" style={{ marginTop: 4 }}>
-                      Branch{w.activeBranchName ? `: ${w.activeBranchName}` : ""}
+                    <div className="small" style={{ marginTop: 4 }} aria-label={t("a11y.staffTrainSection")}>
+                      {t("staff.trainSection")}
+                      {w.activeBranchName ? `: ${w.activeBranchName}` : ""}
                       <div>
                         {w.branches.map((b) => (
-                          <button
-                            key={b.id}
-                            className="button ghost"
-                            style={{ marginRight: 4, marginTop: 4 }}
-                            disabled={b.active || (!b.unlocked && !b.canTrain)}
-                            title={b.trainReason ?? b.description}
-                            onClick={() => {
-                              if (b.unlocked) onSelectBranch(w.id, b.active ? null : b.id);
-                              else onTrainBranch(w.id, b.id);
-                            }}
-                          >
-                            {b.active ? `Using ${b.name}` : b.unlocked ? `Use ${b.name}` : `Train ${b.name} · ${formatCoins(b.trainingCostCoins)}`}
-                          </button>
+                          <span key={b.id} style={{ display: "inline-block", marginRight: 4, marginTop: 4 }}>
+                            <button
+                              className="button ghost"
+                              disabled={b.active || (!b.unlocked && !b.canTrain)}
+                              title={b.trainReason ?? b.description}
+                              onClick={() => {
+                                if (b.unlocked) onSelectBranch(w.id, b.active ? null : b.id);
+                                else onTrainBranch(w.id, b.id);
+                              }}
+                            >
+                              {b.active ? `Using ${b.name}` : b.unlocked ? `Use ${b.name}` : `Train ${b.name} · ${formatCoins(b.trainingCostCoins)}`}
+                            </button>
+                            {!b.unlocked && !b.canTrain && b.trainReason ? (
+                              <div className="small danger">{b.trainReason}</div>
+                            ) : null}
+                          </span>
                         ))}
                       </div>
                     </div>

@@ -29,7 +29,8 @@ class WebE2eCatalogTest {
         assertEquals(WebE2e.MARKER, json.getValue("webE2eMarker").jsonPrimitive.content)
         assertEquals(WebE2e.CLOSES_GAP, json.getValue("closesGap").jsonPrimitive.content)
         assertEquals(WebE2e.MIN_ID_COUNT, json.getValue("minIdCount").jsonPrimitive.content.toInt())
-        assertEquals(24, SimConstants.SCHEMA_VERSION)
+        // Finish 4.0 soft-floor: live schema may exceed Finish 3.0's 24.
+        assertTrue(SimConstants.SCHEMA_VERSION >= 24)
 
         assertTrue(File(root, WebE2e.IDS_MODULE).isFile)
         assertTrue(File(root, WebE2e.SMOKE_SPEC).isFile)

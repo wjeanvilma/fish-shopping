@@ -114,7 +114,7 @@ class Simulation(val content: ContentPack, val state: GameState) {
             is Command.GrantFullHarborUnlock -> FullUnlockSystem.grant(ctx, c.requestId)
             is Command.GrantIapCosmetic -> CosmeticsIapSystem.grant(ctx, c.cosmeticId, c.requestId)
             is Command.RepairMachine -> EconomySystem.repair(ctx, c.stationId, c.requestId)
-            is Command.TakeLoan -> com.willio.jeanvilma.fishshopping.core.economy.BankSystem.takeLoan(ctx, c.requestId)
+            is Command.TakeLoan -> com.willio.jeanvilma.fishshopping.core.economy.BankSystem.takeLoan(ctx, c.requestId, c.productId)
             is Command.RepayLoan -> com.willio.jeanvilma.fishshopping.core.economy.BankSystem.repayLoan(ctx, c.requestId)
             is Command.SetCoinGoal -> com.willio.jeanvilma.fishshopping.core.economy.BankSystem.setCoinGoal(ctx, c.amount)
         }

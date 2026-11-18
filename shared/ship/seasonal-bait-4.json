@@ -1,0 +1,84 @@
+{
+  "phase": 16,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.seasonal_bait_4.v1",
+  "description": "Finish 4.0 Phase 16 — raise seasonal festivals to ≥12 and baits to ≥12, and deepen fishing mastery (maxLevel 7, +3 techniques, +3 coaching tips). Schema stays 24 / content 3.0.0.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "seasonalBait4Marker": "authored-finish-4.0-phase-16",
+  "seasonalEventsMin": 12,
+  "baitsMin": 12,
+  "masteryMaxLevel": 7,
+  "masteryTechniquesMin": 6,
+  "masteryCoachingTipsMin": 8,
+  "newEvents": [
+    "event.mist_fog_festival",
+    "event.prism_light_fair",
+    "event.plaza_tuna_week",
+    "event.rime_aurora_vigil"
+  ],
+  "newBaits": [
+    "bait.mist_morsel",
+    "bait.prism_flake",
+    "bait.plaza_cutlet",
+    "bait.rime_crystal"
+  ],
+  "newTechniques": [
+    "technique.pulse_jig",
+    "technique.harbor_cast",
+    "technique.legend_set"
+  ],
+  "newCoachingTips": [
+    "tip.mastery.pulse_jig",
+    "tip.mastery.harbor_cast",
+    "tip.mastery.legend_set"
+  ],
+  "newFestivalCustomers": [
+    "customer.mist_fog_lantern",
+    "customer.prism_fair_tourist",
+    "customer.plaza_tuna_buyer",
+    "customer.rime_vigil_guest"
+  ],
+  "newFestivalContracts": [
+    "contract.mist_fog_braise",
+    "contract.prism_fair_glaze",
+    "contract.plaza_tuna_haul",
+    "contract.rime_vigil_crate"
+  ],
+  "extendsFestivalWeekends": "shared/ship/festival-weekends.json",
+  "extendsFishingMastery": "shared/ship/fishing-mastery.json",
+  "parityFixture": "shared/fixtures/parity-seasonal-bait-4.json",
+  "authorTool": "shared/tools/author_seasonal_bait_4.py",
+  "validateScript": "npm run seasonalbait4:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "checklist": [
+    "≥12 seasonal events (period expanded to 16000; mist/prism/plaza/rime weekends)",
+    "≥12 baits including mist/prism/plaza/rime packs",
+    "Mastery maxLevel 7 + ≥6 techniques + ≥8 coaching tips",
+    "Festival customers + gated contracts for new weekends",
+    "Finish 2.0 festivals:validate / mastery:validate soft floors still green",
+    "parity-seasonal-bait-4 + seasonalbait4:validate green",
+    "CI runs seasonalbait4:validate",
+    "kickoff baseline seasonalEvents=12 / baits=12",
+    "schema stays 24 / content 3.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/seasonal-bait-4.json",
+    "shared/fixtures/parity-seasonal-bait-4.json",
+    "shared/ship/festival-weekends.json",
+    "shared/ship/fishing-mastery.json",
+    "shared/content/content-pack.json",
+    "shared/tools/author_seasonal_bait_4.py",
+    "web/src/ship/seasonalBait4.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/SeasonalBait4.kt",
+    "web/scripts/validate-seasonal-bait-4.ts"
+  ],
+  "measured": {
+    "seasonalEvents": 12,
+    "baits": 12,
+    "masteryMaxLevel": 7,
+    "techniques": 6,
+    "coachingTips": 8
+  }
+}

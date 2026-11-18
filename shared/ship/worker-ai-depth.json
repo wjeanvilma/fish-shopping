@@ -2,7 +2,7 @@
   "phase": 11,
   "plan": "30_finish_3.0",
   "schema": "fish.ship.worker_ai_depth.v1",
-  "description": "Finish 3.0 Phase 11 — deepen worker AI for roles unlocked in Phase 10. Branch-aware supervisor patrol, greeter welcome pulse, ice multi-pickup, smoker kiln focus, operator pad_link scoring. Schema 23 / content 2.0.0 (stats only; no new save fields).",
+  "description": "Finish 3.0 Phase 11 \u2014 deepen worker AI for roles unlocked in Phase 10. Branch-aware supervisor patrol, greeter welcome pulse, ice multi-pickup, smoker kiln focus, operator pad_link scoring. Schema 23 / content 2.0.0 (stats only; no new save fields).",
   "contentVersion": "2.0.0",
   "schemaVersion": 23,
   "workerAiDepthMarker": "authored-finish-3.0-phase-11",
@@ -17,31 +17,47 @@
     {
       "branchId": "branch.supervisor.floor_lead",
       "role": "supervisor",
-      "markers": ["supervisorPatrol", "bestSupervisorPost", "SUPERVISOR_PATROLS"]
+      "markers": [
+        "supervisorPatrol",
+        "bestSupervisorPost",
+        "SUPERVISOR_PATROLS"
+      ]
     },
     {
       "branchId": "branch.greeter.welcome_desk",
       "role": "greeter",
-      "markers": ["greeterWelcomePulse", "GREETER_WELCOMES"]
+      "markers": [
+        "greeterWelcomePulse",
+        "GREETER_WELCOMES"
+      ]
     },
     {
       "branchId": "branch.ice_runner.chill_haul",
       "role": "ice_runner",
-      "markers": ["pickupIceRunner", "ICE_RUNNER_MULTI_PICKUPS"]
+      "markers": [
+        "pickupIceRunner",
+        "ICE_RUNNER_MULTI_PICKUPS"
+      ]
     },
     {
       "branchId": "branch.smoker_specialist.kiln_focus",
       "role": "smoker_specialist",
-      "markers": ["kilnFocus", "kiln_focus"]
+      "markers": [
+        "kilnFocus",
+        "kiln_focus"
+      ]
     },
     {
       "branchId": "branch.operator.pad_link",
       "role": "operator",
-      "markers": ["pad_link", "WAITING_FOR_INPUT"]
+      "markers": [
+        "pad_link",
+        "WAITING_FOR_INPUT"
+      ]
     }
   ],
   "webWorkersPath": "web/src/engine/systems.ts",
-  "kotlinWorkersPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/Workers.kt",
+  "kotlinWorkersPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
   "webStatsPath": "web/src/engine/state.ts",
   "kotlinStatsPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/GameState.kt",
   "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
@@ -56,7 +72,8 @@
     "Stats SUPERVISOR_PATROLS / GREETER_WELCOMES / ICE_RUNNER_MULTI_PICKUPS in TS+Kotlin",
     "Kickoff phase 11 validate = workerai:validate; measuredAtPhase bumped",
     "workerai:validate green in CI",
-    "schema stays 23"
+    "schema stays 23",
+    "Finish 4.0 Phase 19 soft-floor: kotlinWorkersPath \u2192 WorkerAi.kt"
   ],
   "preflightGates": [
     "shared/ship/worker-ai-depth.json",
@@ -66,7 +83,7 @@
     "shared/ship/staff-trees.json",
     "web/src/engine/systems.ts",
     "web/src/engine/state.ts",
-    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/Workers.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/GameState.kt",
     "web/src/ship/workerAiDepth.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/WorkerAiDepth.kt",

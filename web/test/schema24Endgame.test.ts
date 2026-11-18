@@ -31,7 +31,7 @@ describe("Schema 24 + endgame (Finish 3.0 Phase 15)", () => {
   it("locks phase 15 catalog floors", () => {
     expect(SCHEMA_24_ENDGAME_PHASE).toBe(15);
     expect(SCHEMA_24_VERSION).toBe(24);
-    expect(SCHEMA_VERSION).toBe(24);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(24);
     expect(SCHEMA_24_TIER_COUNT).toBe(4);
     expect(SCHEMA_24_CHALLENGE_COUNT).toBe(4);
     expect(SCHEMA_24_ENDGAME_MARKER).toBe("authored-finish-3.0-phase-15");
@@ -43,9 +43,9 @@ describe("Schema 24 + endgame (Finish 3.0 Phase 15)", () => {
 
   it("measures endgame wiring", () => {
     const m = measureSchema24Endgame(root);
-    expect(m.schemaVersion).toBe(24);
-    expect(m.tierCount).toBe(4);
-    expect(m.challengeCount).toBe(4);
+    expect(m.schemaVersion).toBeGreaterThanOrEqual(24);
+    expect(m.tierCount).toBeGreaterThanOrEqual(4);
+    expect(m.challengeCount).toBeGreaterThanOrEqual(4);
     expect(m.tiersPresent).toBe(true);
     expect(m.challengesPresent).toBe(true);
     expect(m.statsWiredTs).toBe(true);
@@ -67,10 +67,12 @@ describe("Schema 24 + endgame (Finish 3.0 Phase 15)", () => {
     expect(s.beatenRivalIds.size).toBe(0);
     expect(s.unlockedEndgameTiers.size).toBe(0);
     expect(s.completedEndgameChallenges.size).toBe(0);
+    expect(s.endgameMarks.size).toBe(0);
     const encoded = encodeSnapshot(content, s);
-    expect(encoded.startsWith('{"schemaVersion":24,')).toBe(true);
+    expect(encoded.startsWith(`{"schemaVersion":${SCHEMA_VERSION},`)).toBe(true);
     expect(encoded).toContain('"beatenRivalIds":[]');
     expect(encoded).toContain('"unlockedEndgameTiers":[]');
+    expect(encoded).toContain('"endgameMarks":[]');
   });
 
   it("unlocks Deep Harbor after prestige floor + view fields", () => {

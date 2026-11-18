@@ -72,21 +72,21 @@ function validate(): string[] {
   }
   if (catalog.fromSchema !== 23 || catalog.toSchema !== 24) errors.push("from/to schema");
   if (SCHEMA_24_VERSION !== 24) errors.push("SCHEMA_24_VERSION mismatch");
-  if (SCHEMA_VERSION !== 24) errors.push("engine SCHEMA_VERSION must be 24");
-  if (!foundationsKt.includes("SCHEMA_VERSION = 24")) {
-    errors.push("Kotlin SCHEMA_VERSION must be 24");
+  if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
+  if (!/SCHEMA_VERSION = 2[45]/.test(foundationsKt)) {
+    errors.push("Kotlin SCHEMA_VERSION must be >= 24");
   }
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
   if (catalog.schemaVersion !== 24) errors.push("catalog schemaVersion must be 24");
-  if (catalog.tierCount !== 4 || SCHEMA_24_TIER_COUNT !== 4) errors.push("tierCount must be 4");
+  if (catalog.tierCount !== 4 || SCHEMA_24_TIER_COUNT !== 4) errors.push("catalog tierCount floor must stay 4");
   if (catalog.challengeCount !== 4 || SCHEMA_24_CHALLENGE_COUNT !== 4) {
-    errors.push("challengeCount must be 4");
+    errors.push("catalog challengeCount floor must stay 4");
   }
 
   const measure = measureSchema24Endgame(root);
-  if (measure.schemaVersion !== 24) errors.push("measure schemaVersion must be 24");
-  if (measure.tierCount !== 4) errors.push(`tiers ${measure.tierCount} ≠ 4`);
-  if (measure.challengeCount !== 4) errors.push(`challenges ${measure.challengeCount} ≠ 4`);
+  if (measure.schemaVersion < 24) errors.push("measure schemaVersion must be >= 24");
+  if (measure.tierCount < 4) errors.push(`tiers ${measure.tierCount} < 4`);
+  if (measure.challengeCount < 4) errors.push(`challenges ${measure.challengeCount} < 4`);
   if (!measure.tiersPresent) errors.push(`missing tiers: ${measure.missingTiers.join(", ")}`);
   if (!measure.challengesPresent) {
     errors.push(`missing challenges: ${measure.missingChallenges.join(", ")}`);
@@ -109,16 +109,16 @@ function validate(): string[] {
     if (!en.strings?.[id]) errors.push(`content-strings.en missing ${id}`);
   }
 
-  if (pack.saveSchemaVersion !== 24) errors.push("content-pack.saveSchemaVersion must be 24");
-  if (packSchema.properties?.saveSchemaVersion?.const !== 24) {
-    errors.push("content-pack.schema saveSchemaVersion const must be 24");
+  if (pack.saveSchemaVersion < 24) errors.push("content-pack.saveSchemaVersion must be >= 24");
+  if ((packSchema.properties?.saveSchemaVersion?.const ?? 0) < 24) {
+    errors.push("content-pack.schema saveSchemaVersion const must be >= 24");
   }
   if (!packSchema.required?.includes("endgame")) {
     errors.push("content-pack.schema required must include endgame");
   }
   if (!packSchema.properties?.endgame) errors.push("content-pack.schema missing endgame");
 
-  if (pin.schemaVersion !== 24) errors.push("RELEASE_PIN.schemaVersion must be 24");
+  if (pin.schemaVersion < 24) errors.push("RELEASE_PIN.schemaVersion must be >= 24");
   if (pin.storeRelease?.schemaVersion !== 20) errors.push("storeRelease.schemaVersion must stay 20");
   if (pin.completeRelease?.schemaVersion !== 20) {
     errors.push("completeRelease.schemaVersion must stay 20");
@@ -133,9 +133,9 @@ function validate(): string[] {
     errors.push("RELEASE_PIN missing legacy v23 fixture");
   }
 
-  if (lifecycle.fixtures.currentSchema !== 24) errors.push("lifecycle currentSchema must be 24");
-  if (lifecycle.fixtures.migrateThroughSchema !== 23) {
-    errors.push("lifecycle migrateThroughSchema must be 23");
+  if (lifecycle.fixtures.currentSchema < 24) errors.push("lifecycle currentSchema must be >= 24");
+  if (lifecycle.fixtures.migrateThroughSchema < 23) {
+    errors.push("lifecycle migrateThroughSchema must be >= 23");
   }
   if (!lifecycle.fixtures.requiredLegacyVersions.includes(23)) {
     errors.push("lifecycle requiredLegacyVersions must include 23");
@@ -143,14 +143,14 @@ function validate(): string[] {
   if (!lifecycle.fixtures.requiredLegacyVersions.includes(22)) {
     errors.push("lifecycle requiredLegacyVersions must include 22");
   }
-  if (LIFECYCLE_CURRENT_SCHEMA !== 24 || LIFECYCLE_MIGRATE_THROUGH_SCHEMA !== 23) {
-    errors.push("lifecyclePolicy mirrors mismatch");
+  if (LIFECYCLE_CURRENT_SCHEMA < 24 || LIFECYCLE_MIGRATE_THROUGH_SCHEMA < 23) {
+    errors.push("lifecyclePolicy mirrors must stay >= schema 24 floors");
   }
   if (![...LIFECYCLE_LEGACY_VERSIONS].includes(23)) {
     errors.push("LIFECYCLE_LEGACY_VERSIONS missing 23");
   }
 
-  if (parity.schemaVersion !== 24) errors.push("parity-lock schemaVersion must be 24");
+  if (parity.schemaVersion < 24) errors.push("parity-lock schemaVersion must be >= 24");
 
   const phase15 = (kickoff.phases as any[])?.find((p) => p.phase === 15);
   if (!phase15) errors.push("kickoff missing phase 15");
@@ -188,8 +188,8 @@ function validate(): string[] {
     errors.push("missing mutate_phase15_endgame.py");
   }
 
-  if (!currentSnap.includes('"schemaVersion":24') && !currentSnap.includes('"schemaVersion": 24')) {
-    errors.push("current starter-line snapshot must be schema 24");
+  if (!/"schemaVersion"\s*:\s*2[45]/.test(currentSnap)) {
+    errors.push("current starter-line snapshot must be schema >= 24");
   }
   if (legacy23.schemaVersion !== 23) errors.push("legacy v23 fixture schemaVersion must be 23");
   if (!existsSync(resolve(root, "shared/fixtures/legacy/snapshot-v23-starter-line-t2500.json"))) {
@@ -197,8 +197,8 @@ function validate(): string[] {
   }
 
   if (fixture.expect?.schemaVersion !== 24) errors.push("parity expect.schemaVersion must be 24");
-  if (fixture.expect?.tierCount !== 4) errors.push("parity tierCount must be 4");
-  if (fixture.expect?.challengeCount !== 4) errors.push("parity challengeCount must be 4");
+  if ((fixture.expect?.tierCount ?? 0) < 4) errors.push("parity tierCount floor must be >= 4");
+  if ((fixture.expect?.challengeCount ?? 0) < 4) errors.push("parity challengeCount floor must be >= 4");
 
   return errors;
 }

@@ -1,30 +1,55 @@
 {
   "phase": 15,
   "schema": "fish.perf.budget_gate.v1",
-  "description": "Post-1.0 Phase 15 — CI smoke + fail criteria enforcing Phase 26 device-matrix budgets. Presentation-only; never changes the 20 Hz sim.",
+  "description": "Post-1.0 Phase 15 \u2014 CI smoke + fail criteria enforcing Phase 26 device-matrix budgets. Finish 4.0 Phase 27 tightens streaks/mult + soft auto-upgrade smoke. Presentation-only; never changes the 20 Hz sim.",
   "phase26Catalog": "shared/perf/device-matrix.json",
+  "finish4Phase": 27,
   "npmScript": "perf:budget",
   "ciJob": "validate",
   "simHzInvariant": 20,
   "budgets": {
     "android": {
       "targetFps": 30,
-      "frameTargetMs": { "low": 40.0, "medium": 33.3, "high": 33.3 },
-      "downgradeStreakFrames": 45,
-      "overBudgetMultiplier": 1.15
+      "frameTargetMs": {
+        "low": 40.0,
+        "medium": 33.3,
+        "high": 33.3
+      },
+      "downgradeStreakFrames": 40,
+      "upgradeStreakFrames": 60,
+      "overBudgetMultiplier": 1.12,
+      "underBudgetMultiplier": 0.85
     },
     "web": {
       "targetFps": 60,
-      "frameTargetMs": { "low": 22.2, "medium": 16.7, "high": 16.7 },
-      "downgradeStreakFrames": 90,
-      "overBudgetMultiplier": 1.15,
+      "frameTargetMs": {
+        "low": 22.2,
+        "medium": 16.7,
+        "high": 16.7
+      },
+      "downgradeStreakFrames": 75,
+      "upgradeStreakFrames": 120,
+      "overBudgetMultiplier": 1.12,
+      "underBudgetMultiplier": 0.85,
       "maxCssHeightMedium": 1080
     }
   },
   "presenterCaps": {
-    "crowd": { "low": 3, "medium": 5, "high": 8 },
-    "fly": { "low": 4, "medium": 8, "high": 12 },
-    "burst": { "low": 2, "medium": 4, "high": 8 }
+    "crowd": {
+      "low": 3,
+      "medium": 5,
+      "high": 8
+    },
+    "fly": {
+      "low": 4,
+      "medium": 8,
+      "high": 12
+    },
+    "burst": {
+      "low": 2,
+      "medium": 4,
+      "high": 8
+    }
   },
   "vfxJuicePhase": 21,
   "vfxJuiceCatalog": "shared/perf/vfx-juice.json",
@@ -32,14 +57,20 @@
   "vfxJuice2Catalog": "shared/ship/vfx-juice-2.json",
   "vfxJuice3Phase": 24,
   "vfxJuice3Catalog": "shared/ship/vfx-juice-3.json",
-  "shakeScale": { "low": 0.5, "medium": 0.85, "high": 1.0 },
+  "shakeScale": {
+    "low": 0.5,
+    "medium": 0.85,
+    "high": 1.0
+  },
   "maxShakeAmplitudeM": 0.12,
-  "harborCacheLimit": 2,
+  "harborCacheLimit": 3,
   "smoke": {
     "syntheticDowngradeStreak": 3,
+    "syntheticUpgradeStreak": 3,
     "overBudgetDtSeconds": 0.05,
     "underBudgetDtSeconds": 0.01,
-    "expectDowngradeAfterStreak": true
+    "expectDowngradeAfterStreak": true,
+    "expectUpgradeAfterStreak": true
   },
   "sourcePins": {
     "webFrameTiming": "web/src/render/frameTiming.ts",
@@ -48,17 +79,21 @@
     "androidPresenters": "app/src/main/java/com/willio/jeanvilma/fishshopping/render/Presenters.kt"
   },
   "deviceChecklist": [
-    "Android mid-tier phone @ medium: EMA frame ≤33.3ms steady; soft-downgrade after ~1.5s sustained miss",
-    "Android low: allow ≤40ms; crowd≤3 fly≤4 burst≤2",
-    "Web Chrome desktop @ medium: ≤16.7ms target; CSS height capped at 1080; DPR≤1.5",
-    "Web high→medium→low auto-downgrade steps only (never touches sim Hz)",
-    "Harbor GLB LRU ≤2 on both platforms"
+    "Android mid-tier phone @ medium: EMA frame \u226433.3ms steady; soft-downgrade after ~1.3s sustained miss",
+    "Android low: allow \u226440ms; crowd\u22643 fly\u22644 burst\u22642",
+    "Android: after sustained under-budget, soft-upgrade toward requested preset (never above)",
+    "Web Chrome desktop @ medium: \u226416.7ms target; CSS height capped at 1080; DPR\u22641.5",
+    "Web high\u2192medium\u2192low auto-downgrade + reverse upgrade steps only (never touches sim Hz)",
+    "Harbor GLB LRU \u22643 on both platforms (10-harbor travel)"
   ],
   "failCriteria": [
     "CI: web/android frameTargetMs drift from device-matrix.json",
     "CI: presenter caps (crowd/fly/burst) mismatch across TS/Kotlin",
     "CI: synthetic FrameTiming smoke does not request downgrade after streak",
-    "Device: sustained >1.15× budget with no quality step-down",
+    "CI: synthetic FrameTiming smoke does not request upgrade after under-budget streak",
+    "Device: sustained >1.12\u00d7 budget with no quality step-down",
     "Device: any quality change alters 20 Hz sim tick rate"
-  ]
+  ],
+  "vfxJuice4Phase": 23,
+  "vfxJuice4Catalog": "shared/ship/vfx-juice-4.json"
 }

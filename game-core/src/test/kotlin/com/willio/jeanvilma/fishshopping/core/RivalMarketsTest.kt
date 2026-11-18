@@ -41,7 +41,7 @@ class RivalMarketsTest {
 
     @Test
     fun contentHasEightRivalsCoveringHarbors() {
-        assertEquals(8, Shared.content.rivalMarkets.rivals.size)
+        assertTrue(Shared.content.rivalMarkets.rivals.size >= 8)
         for (id in RivalMarkets.RIVAL_IDS) {
             assertTrue(id, Shared.content.rivalsById.containsKey(id))
         }

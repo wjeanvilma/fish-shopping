@@ -1,0 +1,78 @@
+{
+  "phase": 29,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.parity_lock_4.v1",
+  "description": "Finish 4.0 Phase 29 — Parity lock 4.0: expand parity-lock.json suites for machines 11–12, quests/contracts-4, rival markets 2, and endgame deepen/schema 25. Closes kickoff gap parityLock4Missing. Soft-floors Finish 2.0/3.0 parity gates (8/12). Schema stays 25 / content 3.0.0.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 25,
+  "parityLock4Marker": "authored-finish-4.0-phase-29",
+  "closesGap": "parityLock4Missing",
+  "parityLockCatalog": "shared/fixtures/parity-lock.json",
+  "extendsParityLock3": "shared/ship/parity-lock-3.0.json",
+  "extendsParityLock2": "shared/ship/parity-lock-2.0.json",
+  "suiteFloor": 16,
+  "finish2SuiteFloor": 4,
+  "finish3SuiteFloor": 4,
+  "finish4SuiteFloor": 4,
+  "requiredFinish4SuiteIds": [
+    "machines_11_12",
+    "quests_contracts_4",
+    "rival_markets_2",
+    "endgame_2"
+  ],
+  "requiredFinish3SuiteIds": [
+    "rival_markets",
+    "schema24_endgame",
+    "machines_9_10",
+    "quests_contracts_3"
+  ],
+  "requiredFinish2SuiteIds": [
+    "achievements",
+    "weather_tide",
+    "fishing_mastery",
+    "festival_weekends"
+  ],
+  "requiredBaselineSuiteIds": [
+    "prng",
+    "starter_line",
+    "entitlements_unlock",
+    "legacy_migrations"
+  ],
+  "parityFixture": "shared/fixtures/parity-parity-lock-4.0.json",
+  "validateScript": "npm run parity4:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "softFloors": {
+    "finish2HistoricalSuiteFloor": 8,
+    "finish3HistoricalSuiteFloor": 12,
+    "finish2SuiteFloor": 4,
+    "finish3SuiteFloor": 4,
+    "note": "parity2:validate + parity3:validate stay green on historical 8/12 suite floors; Phase 29 enforces live ≥16 + 4 Finish 4.0 suites."
+  },
+  "checklist": [
+    "parity-lock.json lists ≥16 suites including 4 Finish 4.0 system suites",
+    "machines_11_12 / quests_contracts_4 / rival_markets_2 / endgame_2 fixtures exist",
+    "finish4ParityLockPhase=29; Finish 4.0 gates true",
+    "Finish 2.0 parity2:validate + Finish 3.0 parity3:validate + baseline parity:validate still green",
+    "parity-parity-lock-4.0 + parity4:validate green",
+    "CI runs parity4:validate",
+    "kickoff gaps.parityLock4Missing=false + measuredAtPhase≥29",
+    "schema stays 25 / content 3.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/parity-lock-4.0.json",
+    "shared/fixtures/parity-lock.json",
+    "shared/fixtures/parity-parity-lock-4.0.json",
+    "shared/ship/parity-lock-3.0.json",
+    "shared/ship/parity-lock-2.0.json",
+    "shared/fixtures/parity-machines-11-12.json",
+    "shared/fixtures/parity-quests-contracts-4.json",
+    "shared/fixtures/parity-rival-markets-2.json",
+    "shared/fixtures/parity-endgame-2.json",
+    "web/src/ship/parityLock4.ts",
+    "web/src/engine/parityLock.ts",
+    "web/scripts/validate-parity-lock-4.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ParityLock4.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/ParityLock.kt"
+  ]
+}

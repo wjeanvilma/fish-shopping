@@ -61,17 +61,18 @@ function validate(): string[] {
   if (fixture.deepLinksMarker !== DEEP_LINKS_MARKER) errors.push("fixture marker mismatch");
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
   if (catalog.schemaVersion !== 24) errors.push("catalog schemaVersion must stay 24");
-  if (SCHEMA_VERSION !== 24) errors.push("engine SCHEMA_VERSION must stay 24");
+  if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
   if (catalog.closesGap !== "deepLinksMissing") errors.push("closesGap mismatch");
   if (DEEP_LINKS_CLOSES_GAP !== "deepLinksMissing") errors.push("closesGap mirror mismatch");
 
+  // Finish 4.0 Phase 26 soft-floor: panel/hash alias maps may grow past Phase 20.
   if (routes.host !== catalog.host) errors.push("routes.host ≠ catalog.host");
   if (routes.pathPrefix !== catalog.pathPrefix) errors.push("routes.pathPrefix mismatch");
   if (routes.customScheme !== catalog.customScheme) errors.push("routes.customScheme mismatch");
   if (routes.packageName !== catalog.packageName) errors.push("routes.packageName mismatch");
 
   const measure = measureDeepLinks(root);
-  if (measure.schemaVersion !== 24) errors.push("measure schemaVersion must be 24");
+  if (measure.schemaVersion < 24) errors.push("measure schemaVersion must be >= 24");
   if (!measure.routesPresent) errors.push("routes catalog missing");
   if (!measure.assetLinksPresent) errors.push("assetlinks.json incomplete");
   if (!measure.manifestWired) errors.push("AndroidManifest App Links wiring incomplete");

@@ -16,18 +16,21 @@ describe("Android device lifecycle matrix (post-1.0 Phase 13)", () => {
   it("covers background/resume/rotate/process_death/low_memory on phone+tablet", () => {
     expect(ANDROID_DEVICE_LIFECYCLE_PHASE).toBe(13);
     expect(ANDROID_DEVICE_LIFECYCLE_SCHEMA).toBe("fish.lifecycle.android_device_matrix.v1");
-    expect(androidDeviceMatrix.scenarios.map((s) => s.id)).toEqual([
-      "background",
-      "resume",
-      "rotate",
-      "process_death",
-      "low_memory",
-    ]);
-    expect(androidDeviceMatrix.deviceClasses.map((c) => c.id)).toEqual([
-      "phone",
-      "tablet7",
-      "tablet10",
-    ]);
+    // Finish 4.0 Phase 27 soft-floor: scenario/device class lists may grow.
+    expect(androidDeviceMatrix.scenarios.map((s) => s.id)).toEqual(
+      expect.arrayContaining([
+        "background",
+        "resume",
+        "rotate",
+        "process_death",
+        "low_memory",
+      ]),
+    );
+    expect(androidDeviceMatrix.scenarios.length).toBeGreaterThanOrEqual(5);
+    expect(androidDeviceMatrix.deviceClasses.map((c) => c.id)).toEqual(
+      expect.arrayContaining(["phone", "tablet7", "tablet10"]),
+    );
+    expect(androidDeviceMatrix.deviceClasses.length).toBeGreaterThanOrEqual(3);
     expect(deviceClassForWidthDp(411)).toBe("phone");
     expect(deviceClassForWidthDp(700)).toBe("tablet7");
     expect(deviceClassForWidthDp(900)).toBe("tablet10");

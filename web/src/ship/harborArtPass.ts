@@ -1,6 +1,6 @@
 /**
- * Finish 2.0 Phase 19 + Finish 3.0 Phase 8 — harbor art pass catalog
- * (mirrors shared/ship/harbor-art-pass.json).
+ * Finish 2.0 Phase 19 + Finish 3.0 Phase 8 + Finish 4.0 Phase 9 — harbor art pass
+ * catalog (mirrors shared/ship/harbor-art-pass.json; scenic after harbor-art-3).
  */
 import catalogJson from "../../../shared/ship/harbor-art-pass.json";
 

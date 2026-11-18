@@ -14,23 +14,43 @@ object DeepLinkRoutes {
     const val CUSTOM_HOST = "open"
     const val ASSET_LINKS_PATH = ".well-known/assetlinks.json"
 
+    /** Finish 4.0 Phase 26 soft-floor: expanded aliases (≥28). Mirrors routes.json. */
     val PANEL_ALIASES: Map<String, ShellPanelId> = mapOf(
         "goals" to ShellPanelId.QUESTS,
         "daily" to ShellPanelId.QUESTS,
         "quests" to ShellPanelId.QUESTS,
+        "objectives" to ShellPanelId.QUESTS,
         "jobs" to ShellPanelId.CONTRACTS,
         "contracts" to ShellPanelId.CONTRACTS,
         "staff" to ShellPanelId.STAFF,
+        "crew" to ShellPanelId.STAFF,
         "map" to ShellPanelId.MAP,
+        "travel" to ShellPanelId.MAP,
+        "harbors" to ShellPanelId.MAP,
         "upgrades" to ShellPanelId.UPGRADES,
+        "shop" to ShellPanelId.UPGRADES,
         "dash" to ShellPanelId.DASHBOARD,
         "dashboard" to ShellPanelId.DASHBOARD,
+        "bank" to ShellPanelId.DASHBOARD,
+        "business" to ShellPanelId.DASHBOARD,
+        "ledger" to ShellPanelId.DASHBOARD,
         "settings" to ShellPanelId.SETTINGS,
+        "options" to ShellPanelId.SETTINGS,
+        "cosmetics" to ShellPanelId.SETTINGS,
         "codex" to ShellPanelId.SPECIES_BOOK,
         "species" to ShellPanelId.SPECIES_BOOK,
         "journal" to ShellPanelId.SPECIES_BOOK,
+        "book" to ShellPanelId.SPECIES_BOOK,
+        "encyclopedia" to ShellPanelId.SPECIES_BOOK,
         "warehouse" to ShellPanelId.WAREHOUSE,
         "stock" to ShellPanelId.WAREHOUSE,
+        "inventory" to ShellPanelId.WAREHOUSE,
+        "bag" to ShellPanelId.BAG,
+        "pack" to ShellPanelId.BAG,
+        "station" to ShellPanelId.STATION,
+        "pier" to ShellPanelId.STATION,
+        "pause" to ShellPanelId.PAUSE,
+        "menu" to ShellPanelId.PAUSE,
     )
 
     data class Intent(

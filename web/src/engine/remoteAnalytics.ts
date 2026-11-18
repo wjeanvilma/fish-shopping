@@ -28,6 +28,9 @@ export interface RemoteAnalyticsPolicyCatalog {
     flushOnSessionEnd: boolean;
     dropOldestOnOverflow: boolean;
     resyncSanitizeOnFlush: boolean;
+    requeueOnFlushFailure?: boolean;
+    maxFlushRetries?: number;
+    retryBackoffMs?: number;
   };
   envelope: {
     requiredFields: string[];
@@ -45,6 +48,10 @@ export const REMOTE_HEALTH_PATH = REMOTE_ANALYTICS_POLICY.endpoint.healthPath;
 export const REMOTE_MAX_EVENTS = REMOTE_ANALYTICS_POLICY.batch.maxEvents;
 export const REMOTE_MAX_QUEUE = REMOTE_ANALYTICS_POLICY.batch.maxQueue;
 export const REMOTE_FLUSH_INTERVAL_MS = REMOTE_ANALYTICS_POLICY.batch.flushIntervalMs;
+export const REMOTE_REQUEUE_ON_FLUSH_FAILURE =
+  REMOTE_ANALYTICS_POLICY.batch.requeueOnFlushFailure !== false;
+export const REMOTE_MAX_FLUSH_RETRIES = REMOTE_ANALYTICS_POLICY.batch.maxFlushRetries ?? 3;
+export const REMOTE_RETRY_BACKOFF_MS = REMOTE_ANALYTICS_POLICY.batch.retryBackoffMs ?? 2000;
 export const REMOTE_WEB_ENV_KEY = REMOTE_ANALYTICS_POLICY.client.webEnvKey;
 export const REMOTE_LOCAL_DEFAULT_BASE = REMOTE_ANALYTICS_POLICY.client.localEmulatorDefaultBase;
 
@@ -94,14 +101,21 @@ export function enqueueRemoteEvent(
   }
 }
 
-export function takeRemoteFlushSlice(
+export interface RemoteFlushSlice {
+  envelope: RemoteBatchEnvelope;
+  taken: QueuedRemoteEvent[];
+}
+
+/** Finish 4.0 Phase 21 — take with retained queue items for failed-flush requeue. */
+export function takeRemoteFlushSliceDetailed(
   queue: QueuedRemoteEvent[],
   nowMs: number,
   platform: string,
   maxEvents: number = REMOTE_MAX_EVENTS,
-): RemoteBatchEnvelope | null {
+): RemoteFlushSlice | null {
   if (queue.length === 0) return null;
   const events: RemoteBatchEnvelope["events"] = [];
+  const takenEvents: QueuedRemoteEvent[] = [];
   let taken = 0;
   while (queue.length > 0 && taken < maxEvents) {
     const head = queue.shift()!;
@@ -109,6 +123,7 @@ export function takeRemoteFlushSlice(
       ? sanitizeAnalytics(head.event.name, head.event.props)
       : head.event;
     if (!clean) continue;
+    takenEvents.push(head);
     events.push({
       name: clean.name,
       props: clean.props,
@@ -119,9 +134,36 @@ export function takeRemoteFlushSlice(
   }
   if (events.length === 0) return null;
   return {
-    schema: REMOTE_BATCH_SCHEMA,
-    platform,
-    sentAtMs: nowMs,
-    events,
+    envelope: {
+      schema: REMOTE_BATCH_SCHEMA,
+      platform,
+      sentAtMs: nowMs,
+      events,
+    },
+    taken: takenEvents,
   };
+}
+
+export function takeRemoteFlushSlice(
+  queue: QueuedRemoteEvent[],
+  nowMs: number,
+  platform: string,
+  maxEvents: number = REMOTE_MAX_EVENTS,
+): RemoteBatchEnvelope | null {
+  return takeRemoteFlushSliceDetailed(queue, nowMs, platform, maxEvents)?.envelope ?? null;
+}
+
+/** Finish 4.0 Phase 21 — prepend failed flush items back onto the queue. */
+export function requeueRemoteFlushSlice(
+  queue: QueuedRemoteEvent[],
+  taken: QueuedRemoteEvent[],
+  maxQueue: number = REMOTE_MAX_QUEUE,
+  dropOldest: boolean = REMOTE_ANALYTICS_POLICY.batch.dropOldestOnOverflow,
+): void {
+  if (taken.length === 0) return;
+  queue.unshift(...taken);
+  while (queue.length > maxQueue) {
+    if (dropOldest) queue.shift();
+    else queue.pop();
+  }
 }

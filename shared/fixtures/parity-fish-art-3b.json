@@ -1,0 +1,24 @@
+{
+  "schema": "fish.fixtures.parity_fish_art_3b.v1",
+  "fishArt3bMarker": "authored-finish-4.0-phase-8",
+  "phase": 8,
+  "plan": "30_finish_4.0",
+  "expect": {
+    "authoredSpeciesTarget": 100,
+    "speciesCountTarget": 100,
+    "newAuthoredCount": 25,
+    "authoredFishRemaining": 0,
+    "speciesRemaining": 0,
+    "baselineAuthoredFish": 100,
+    "schemaVersion": 24,
+    "contentVersion": "3.0.0",
+    "gates": [
+      "authored_floor_100",
+      "species_floor_100",
+      "wave_76_100_locked",
+      "licenses_ok",
+      "kickoff_gaps_closed",
+      "ci_gate"
+    ]
+  }
+}

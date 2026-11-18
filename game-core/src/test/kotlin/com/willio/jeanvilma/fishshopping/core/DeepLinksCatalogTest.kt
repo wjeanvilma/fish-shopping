@@ -53,6 +53,13 @@ class DeepLinksCatalogTest {
         val custom = DeepLinkRoutes.parseUriString("fishshopping://open?panel=staff")
         assertEquals(ShellPanelId.STAFF, custom.panel)
         assertEquals("query", custom.source)
+
+        // Finish 4.0 Phase 26 expanded aliases
+        assertEquals(ShellPanelId.BAG, DeepLinkRoutes.resolvePanelAlias("bag"))
+        assertEquals(ShellPanelId.DASHBOARD, DeepLinkRoutes.resolvePanelAlias("bank"))
+        assertEquals(ShellPanelId.PAUSE, DeepLinkRoutes.resolvePanelAlias("menu"))
+        assertEquals(ShellPanelId.STATION, DeepLinkRoutes.resolvePanelAlias("pier"))
+        assertTrue(DeepLinkRoutes.PANEL_ALIASES.size >= 28)
     }
 
     @Test
@@ -64,7 +71,8 @@ class DeepLinksCatalogTest {
         assertEquals(DeepLinks.MARKER, json.getValue("deepLinksMarker").jsonPrimitive.content)
         assertEquals(DeepLinks.CLOSES_GAP, json.getValue("closesGap").jsonPrimitive.content)
         assertEquals(DeepLinks.HOST, json.getValue("host").jsonPrimitive.content)
-        assertEquals(24, SimConstants.SCHEMA_VERSION)
+        // Finish 4.0 soft-floor: live schema may exceed Finish 3.0's 24.
+        assertTrue(SimConstants.SCHEMA_VERSION >= 24)
 
         assertTrue(File(root, DeepLinks.ASSET_LINKS_PATH).isFile)
         assertTrue(File(root, DeepLinks.ROUTES_CATALOG).isFile)

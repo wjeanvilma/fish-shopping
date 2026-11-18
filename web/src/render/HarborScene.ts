@@ -19,6 +19,8 @@ import { sharedAnalyticsBus } from "../analytics/analyticsBus";
 import { cosmeticPresentation, cosmeticSwatchRgb } from "../engine/cosmeticPresentation";
 import {
   downgradeQuality,
+  upgradeQuality,
+  qualityRank,
   FRAME_TARGET_MS,
   FrameTiming,
   HARBOR_CACHE_LIMIT,
@@ -138,8 +140,9 @@ export class HarborScene {
   private loadGen = 0;
   /** URL to reload after WebGL context restore (Phase 28). */
   private restoreUrl: string | null = null;
-  /** Phase 24: pier-side banner mesh for equipped/preview cosmetics. */
-  private cosmeticBanner: THREE.Mesh | null = null;
+  /** Phase 24 + Finish 4.0 Phase 10: pier-side multi-part banner for equipped/preview cosmetics. */
+  private cosmeticBanner: THREE.Group | null = null;
+  private cosmeticBannerCloth: THREE.Mesh | null = null;
   private cosmeticBannerId: string | null = null;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
@@ -532,38 +535,63 @@ export class HarborScene {
     this.renderer.render(this.scene, this.camera);
   }
 
-  /** Phase 24: show/hide a power-neutral pier banner from settings/preview. */
+  /** Phase 24 + Finish 4.0 Phase 10: show/hide a power-neutral multi-part pier banner. */
   private syncCosmeticBanner(cosmeticId: string | null): void {
     if (cosmeticId === this.cosmeticBannerId) return;
     this.cosmeticBannerId = cosmeticId;
     if (!cosmeticId) {
       if (this.cosmeticBanner) {
         this.scene.remove(this.cosmeticBanner);
-        this.cosmeticBanner.geometry.dispose();
-        (this.cosmeticBanner.material as THREE.Material).dispose();
+        this.cosmeticBanner.traverse((obj) => {
+          const mesh = obj as THREE.Mesh;
+          if (mesh.geometry) mesh.geometry.dispose();
+          const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
+          if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+          else mat?.dispose();
+        });
         this.cosmeticBanner = null;
+        this.cosmeticBannerCloth = null;
       }
       return;
     }
     const [r, g, b] = cosmeticSwatchRgb(cosmeticId);
     const color = new THREE.Color(r / 255, g / 255, b / 255);
     if (!this.cosmeticBanner) {
-      const geo = new THREE.PlaneGeometry(1.2, cosmeticPresentation.anchor.heightM);
-      const mat = new THREE.MeshStandardMaterial({
-        color,
-        side: THREE.DoubleSide,
-        roughness: 0.85,
-        metalness: 0.05,
-      });
-      this.cosmeticBanner = new THREE.Mesh(geo, mat);
-      this.cosmeticBanner.castShadow = true;
-      this.scene.add(this.cosmeticBanner);
-    } else {
-      (this.cosmeticBanner.material as THREE.MeshStandardMaterial).color.copy(color);
+      const group = new THREE.Group();
+      group.name = "CosmeticBanner";
+      const pole = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, cosmeticPresentation.anchor.heightM, 0.08),
+        new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 0.8, metalness: 0.05 }),
+      );
+      pole.position.set(0, cosmeticPresentation.anchor.heightM * 0.5, 0);
+      pole.castShadow = true;
+      const cloth = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, cosmeticPresentation.anchor.heightM * 0.55, 0.04),
+        new THREE.MeshStandardMaterial({
+          color,
+          side: THREE.DoubleSide,
+          roughness: 0.85,
+          metalness: 0.05,
+        }),
+      );
+      cloth.position.set(0.65, cosmeticPresentation.anchor.heightM * 0.62, 0);
+      cloth.castShadow = true;
+      const crest = new THREE.Mesh(
+        new THREE.BoxGeometry(0.32, 0.32, 0.06),
+        new THREE.MeshStandardMaterial({ color: 0xc4a35a, roughness: 0.55, metalness: 0.15 }),
+      );
+      crest.position.set(0.65, cosmeticPresentation.anchor.heightM * 0.72, 0.05);
+      crest.castShadow = true;
+      group.add(pole, cloth, crest);
+      this.cosmeticBanner = group;
+      this.cosmeticBannerCloth = cloth;
+      this.scene.add(group);
+    } else if (this.cosmeticBannerCloth) {
+      (this.cosmeticBannerCloth.material as THREE.MeshStandardMaterial).color.copy(color);
     }
     const x = cosmeticPresentation.anchor.xMm / 1000;
     const z = cosmeticPresentation.anchor.zMm / 1000;
-    this.cosmeticBanner.position.set(x, cosmeticPresentation.anchor.heightM * 0.5, z);
+    this.cosmeticBanner.position.set(x, 0, z);
     this.cosmeticBanner.visible = true;
   }
 
@@ -571,12 +599,23 @@ export class HarborScene {
     const dt = this.lastMs === 0 ? 0 : Math.min(0.25, Math.max(0, (nowMs - this.lastMs) / 1000));
     this.lastMs = nowMs;
     this.elapsed += dt;
-    if (dt > 0 && this.frameTiming.sample(dt, FRAME_TARGET_MS[this.sessionQuality])) {
-      const next = downgradeQuality(this.sessionQuality);
-      if (next !== this.sessionQuality) {
-        this.sessionQuality = next;
-        this.appliedKey = "";
-        this.applyQuality(next);
+    if (dt > 0) {
+      const action = this.frameTiming.sample(dt, FRAME_TARGET_MS[this.sessionQuality]);
+      if (action === "downgrade") {
+        const next = downgradeQuality(this.sessionQuality);
+        if (next !== this.sessionQuality) {
+          this.sessionQuality = next;
+          this.appliedKey = "";
+          this.applyQuality(next);
+        }
+      } else if (action === "upgrade") {
+        const next = upgradeQuality(this.sessionQuality);
+        // Never exceed the player-requested preset.
+        if (next !== this.sessionQuality && qualityRank(next) <= qualityRank(this.requestedQuality)) {
+          this.sessionQuality = next;
+          this.appliedKey = "";
+          this.applyQuality(next);
+        }
       }
     }
     if (dt > 0) {
@@ -702,7 +741,12 @@ export class HarborScene {
       }
     }
 
-    // Finish 2.0 Phase 22 + Finish 3.0 Phase 24 — weather/festival/tide/rival ambient.
+    // Finish 2.0/3.0/4.0 — weather/festival/tide/rival/endgame ambient.
+    const endgameMode = !v.endgameUnlocked
+      ? "locked"
+      : (v.endgameMarkCount ?? 0) > 0
+        ? "crowned"
+        : "active";
     const ambient = weatherAmbientProfile(
       v.weatherId,
       !!v.seasonalEvent,
@@ -710,6 +754,7 @@ export class HarborScene {
       reducedMotion,
       v.tidePhaseId || "day",
       !!v.rivalPressureActive || (v.activeRivalIds?.length ?? 0) > 0,
+      endgameMode,
     );
     this.scene.background = new THREE.Color(ambient.skyHex);
     if (this.waterMat) {

@@ -291,12 +291,47 @@ internal fun TitleScreen(state: GameUiState.Title, vm: GameViewModel) {
 @Composable
 internal fun CloudConflictPanel(conflict: CloudConflictView, vm: GameViewModel) {
     CenterCard {
-        Column(Modifier.widthIn(min = 300.dp, max = 420.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(UiStrings.t("title.chooseSave"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(buildString { append("This device and the cloud both have valid saves that differ ("); append((conflict.reason).toString()); append(").") },
+        Column(
+            Modifier
+                .widthIn(min = 300.dp, max = 420.dp)
+                .semantics {
+                    paneTitle = UiStrings.t("cloud.chooseSave")
+                    liveRegion = LiveRegionMode.Assertive
+                    contentDescription = UiStrings.t("a11y.cloudConflictLive")
+                },
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(UiStrings.t("cloud.chooseSave"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            val reasonLabel = buildString {
+                append(conflict.reason)
+                if (conflict.reasonCode.isNotBlank()) {
+                    append(" · ")
+                    append(conflict.reasonCode)
+                }
+            }
+            Text(
+                UiStrings.t("cloud.differsHint", mapOf("reason" to reasonLabel)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                modifier = Modifier.semantics {
+                    contentDescription = UiStrings.t("a11y.cloudConflictSection")
+                },
             )
+            if (conflict.diffHints.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    for (hint in conflict.diffHints) {
+                        Text(
+                            buildString {
+                                append('\u2022')
+                                append(' ')
+                                append(hint)
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        )
+                    }
+                }
+            }
             SnapshotChoiceCard(conflict.local)
             SnapshotChoiceCard(conflict.remote)
             Button(
@@ -308,8 +343,11 @@ internal fun CloudConflictPanel(conflict: CloudConflictView, vm: GameViewModel) 
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
             ) {
                 Text(
-                    if (conflict.recommended == SyncSource.REMOTE) "Use cloud (recommended)"
-                    else "Use this device (recommended)",
+                    if (conflict.recommended == SyncSource.REMOTE) {
+                        UiStrings.t("cloud.useCloudRecommended")
+                    } else {
+                        UiStrings.t("cloud.useDeviceRecommended")
+                    },
                 )
             }
             OutlinedButton(
@@ -321,8 +359,11 @@ internal fun CloudConflictPanel(conflict: CloudConflictView, vm: GameViewModel) 
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
             ) {
                 Text(
-                    if (conflict.recommended == SyncSource.REMOTE) "Use this device instead"
-                    else "Use cloud instead",
+                    if (conflict.recommended == SyncSource.REMOTE) {
+                        UiStrings.t("cloud.useDeviceInstead")
+                    } else {
+                        UiStrings.t("cloud.useCloudInstead")
+                    },
                 )
             }
         }

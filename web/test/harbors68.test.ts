@@ -35,7 +35,7 @@ describe("Harbors 6–8 (Finish 2.0 Phase 8)", () => {
     expect(HARBORS_68_PHASE).toBe(8);
     expect(HARBORS_68_SCHEMA).toBe("fish.ship.harbors_6_8.v1");
     expect(HARBOR_COUNT_FLOOR).toBe(8);
-    expect(content.harbors).toHaveLength(8);
+    expect(content.harbors.length).toBeGreaterThanOrEqual(8);
     expect((storeListing as { harbors68Phase?: number }).harbors68Phase).toBe(8);
     for (const entry of HARBORS_68.newHarbors) {
       expect(content.harborsById.has(entry.id)).toBe(true);

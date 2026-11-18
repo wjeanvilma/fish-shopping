@@ -20,5 +20,6 @@ object WebE2e {
     const val PLAYWRIGHT_CONFIG = "web/playwright.config.ts"
     const val SMOKE_SPEC = "web/e2e/smoke.spec.ts"
     const val NPM_SCRIPT = "e2e:smoke"
-    const val MIN_ID_COUNT = 18
+    /** Finish 4.0 Phase 26 soft-floor (was 18). */
+    const val MIN_ID_COUNT = 24
 }

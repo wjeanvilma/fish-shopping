@@ -1,0 +1,73 @@
+{
+  "phase": 3,
+  "plan": "30_finish_4.0",
+  "schema": "fish.ship.systems_split_2.v1",
+  "description": "Finish 4.0 Phase 3 — extract customers / contracts / quests+progression from systems.ts into web/src/engine/systems/*. Completes the systems.ts split wave started in Phase 2; bridge extended for remaining host deps.",
+  "contentVersion": "3.0.0",
+  "schemaVersion": 24,
+  "systemsSplit2Marker": "authored-finish-4.0-phase-3",
+  "systemsPackageRoot": "web/src/engine/systems",
+  "systemsFacadePath": "web/src/engine/systems.ts",
+  "systemsFacadeMaxLines": 3800,
+  "extractedFileMin": 8,
+  "requiredFiles": [
+    "customers.ts",
+    "progression.ts",
+    "contracts.ts"
+  ],
+  "priorSplitFiles": [
+    "context.ts",
+    "bridge.ts",
+    "fishing.ts",
+    "production.ts",
+    "movement.ts"
+  ],
+  "requiredSymbols": {
+    "customers.ts": ["CustomerSystem"],
+    "progression.ts": ["UpgradeSystem", "ProgressionSystem", "ReputationSystem", "Availability"],
+    "contracts.ts": ["ContractSystem"]
+  },
+  "facadeMustReexport": [
+    "CustomerSystem",
+    "UpgradeSystem",
+    "ProgressionSystem",
+    "ReputationSystem",
+    "ContractSystem",
+    "Availability"
+  ],
+  "facadeMustNotDefine": [
+    "export const CustomerSystem",
+    "export const UpgradeSystem",
+    "export const ProgressionSystem",
+    "export const ReputationSystem",
+    "export const ContractSystem"
+  ],
+  "facadeMustBindBridge": true,
+  "kickoffCatalog": "shared/ship/finish-4.0-kickoff.json",
+  "priorSplitCatalog": "shared/ship/systems-split-1.json",
+  "parityFixture": "shared/fixtures/parity-systems-split-2.json",
+  "validateScript": "npm run systemssplit2:validate",
+  "checklist": [
+    "systems.ts ≤3800 lines after customers/contracts/progression extract",
+    "≥8 modules under web/src/engine/systems/ (Phase 2+3)",
+    "customers/progression/contracts symbols present; facade does not redefine them",
+    "Bridge extended; extracted modules do not import ../systems",
+    "engine.test.ts green (90)",
+    "parity fixture + systemssplit2:validate green",
+    "CI runs systemssplit2:validate",
+    "schema stays 24 / content 3.0.0 (refactor-only)"
+  ],
+  "preflightGates": [
+    "shared/ship/systems-split-2.json",
+    "shared/fixtures/parity-systems-split-2.json",
+    "shared/ship/systems-split-1.json",
+    "shared/ship/finish-4.0-kickoff.json",
+    "web/src/engine/systems.ts",
+    "web/src/engine/systems/customers.ts",
+    "web/src/engine/systems/progression.ts",
+    "web/src/engine/systems/contracts.ts",
+    "web/src/ship/systemsSplit2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/SystemsSplit2.kt",
+    "web/scripts/validate-systems-split-2.ts"
+  ]
+}
