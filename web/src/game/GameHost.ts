@@ -35,6 +35,12 @@ import { peekSnapshot, summaryOf, type CloudConflictOffer, type SyncSource } fro
 import { CameraRig } from "./cameraRig";
 import { resolveVisibleCosmetic, sanitizeEquippedCosmetic } from "../engine/cosmeticPresentation";
 import { STORAGE_UNAVAILABLE_TOAST } from "./lifecyclePolicy";
+import {
+  LOADTEST_SAVE_BANK,
+  LOADTEST_TELEMETRY_BANK,
+  measureLoadtestBanksInBrowser,
+  type LoadtestBankProbe,
+} from "../ship/loadtestBanks";
 import { openSaveStore, type SaveStore } from "./saveStore";
 import {
   formatLastSavedLabel,
@@ -142,6 +148,9 @@ export class GameHost {
   private pendingShakes: ShakeKind[] = [];
   /** Finish 5.0 Phase 12 — previous pressure edge flags for warn stingers. */
   private pressureFlags: PressureFlags = { ...EMPTY_PRESSURE_FLAGS };
+  /** Large shared loadtest banks probed at boot (header + size only). */
+  private loadtestProbes: { save: LoadtestBankProbe; telemetry: LoadtestBankProbe; floorsMet: boolean } | null =
+    null;
 
   private readonly shellIntents = new HostShellIntents(this);
   private readonly economyIntents = new HostEconomyIntents(this);
@@ -257,6 +266,34 @@ export class GameHost {
     this.audio.unlock();
   }
 
+  /** Latest probe of the shared loadtest save/telemetry banks (null until boot probe). */
+  loadtestBankProbes(): {
+    save: LoadtestBankProbe;
+    telemetry: LoadtestBankProbe;
+    floorsMet: boolean;
+  } | null {
+    return this.loadtestProbes;
+  }
+
+  /** Re-run browser probe against /loadtest/*.json (served from shared/fixtures). */
+  async probeLoadtestBanks(): Promise<{
+    save: LoadtestBankProbe;
+    telemetry: LoadtestBankProbe;
+    floorsMet: boolean;
+  } | null> {
+    try {
+      const measured = await measureLoadtestBanksInBrowser();
+      this.loadtestProbes = measured;
+      // Touch refs so tree-shaking keeps bank URLs wired into the app bundle surface.
+      void LOADTEST_SAVE_BANK.webUrl;
+      void LOADTEST_TELEMETRY_BANK.webUrl;
+      return measured;
+    } catch {
+      this.loadtestProbes = null;
+      return null;
+    }
+  }
+
   /** Phase 28: Web Audio unlocked after a user gesture. */
   audioUnlocked(): boolean {
     return this.audio.isUnlocked;
@@ -277,6 +314,8 @@ export class GameHost {
       this.applyAnalyticsConsent();
       this.syncDailyGoalReminders();
       await this.consumeBillingReturnQuery();
+      // Shared ~90MB loadtest banks — header/size probe keeps boot light.
+      await this.probeLoadtestBanks();
       // Finish 3.0 Phase 20 — capture panel/harbor query/hash before Title.
       const deep = parseLocation();
       if (deep.panel || deep.harborId) this.pendingDeepLink = deep;

@@ -23,6 +23,7 @@ import com.willio.jeanvilma.fishshopping.cloud.CloudSyncCoordinator
 import com.willio.jeanvilma.fishshopping.core.content.BalanceExport
 import com.willio.jeanvilma.fishshopping.core.content.ContentLoader
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
+import com.willio.jeanvilma.fishshopping.core.ship.LoadtestBanks
 import com.willio.jeanvilma.fishshopping.core.persistence.CloudConflictOffer
 import com.willio.jeanvilma.fishshopping.core.persistence.CloudSync
 import com.willio.jeanvilma.fishshopping.core.persistence.NewerSaveException
@@ -359,6 +360,10 @@ class GameViewModel(app: Application) :
         viewModelScope.launch(simDispatcher) { load() }
     }
 
+    /** Latest probe of the shared ~90MB loadtest banks (null if assets missing). */
+    @Volatile
+    private var loadtestProbes: Pair<LoadtestBanks.Probe, LoadtestBanks.Probe>? = null
+
     /** Content and save presence only. The simulation is created from the title screen. */
     private fun load() {
         try {
@@ -370,6 +375,7 @@ class GameViewModel(app: Application) :
             applyAudioSettings()
             applyAnalyticsConsent()
             syncDailyGoalReminders()
+            loadtestProbes = probeLoadtestBanks()
             publishTitle(store.readCandidates().isNotEmpty())
         } catch (e: NewerSaveException) {
             allowSaving = false
@@ -377,6 +383,44 @@ class GameViewModel(app: Application) :
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start", e)
             _ui.value = GameUiState.Failed("Could not load game content: ${e.message}")
+        }
+    }
+
+    /** Header/size probe of packaged loadtest banks (does not parse the full ~90MB). */
+    fun loadtestBankProbes(): Pair<LoadtestBanks.Probe, LoadtestBanks.Probe>? = loadtestProbes
+
+    private fun probeLoadtestBanks(): Pair<LoadtestBanks.Probe, LoadtestBanks.Probe>? {
+        return try {
+            val assets = getApplication<Application>().assets
+            val save = probeAssetBank(assets, LoadtestBanks.SAVE_ASSET, LoadtestBanks.SAVE_SCHEMA)
+            val tele = probeAssetBank(assets, LoadtestBanks.TELEMETRY_ASSET, LoadtestBanks.TELEMETRY_SCHEMA)
+            Log.i(
+                TAG,
+                "Loadtest banks ready save=${save.bytes} tele=${tele.bytes} floors=${save.floorsMet && tele.floorsMet}",
+            )
+            save to tele
+        } catch (e: Exception) {
+            Log.w(TAG, "Loadtest banks not packaged or unreadable", e)
+            null
+        }
+    }
+
+    private fun probeAssetBank(
+        assets: android.content.res.AssetManager,
+        asset: String,
+        expectedSchema: String,
+    ): LoadtestBanks.Probe {
+        return try {
+            assets.openFd(asset).use { fd ->
+                fd.createInputStream().use { stream ->
+                    LoadtestBanks.probeStream(asset, fd.length, stream, expectedSchema)
+                }
+            }
+        } catch (_: Exception) {
+            assets.open(asset).use { stream ->
+                // Compressed asset fallback: header-only probe with known floor size.
+                LoadtestBanks.probeStream(asset, LoadtestBanks.MIN_BYTES, stream, expectedSchema)
+            }
         }
     }
 

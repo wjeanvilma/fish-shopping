@@ -151,8 +151,12 @@
     "parity-device-perf-5.json",
     "parity-content-cli-5.json",
     "parity-parity-lock-5.0.json",
-    "parity-freeze-5.0.0.json"
+    "parity-freeze-5.0.0.json",
+    "loadtest-save-bank.json",
+    "loadtest-telemetry-bank.json",
+    "parity-loadtest-banks.json"
   ],
+  "loadtestBanks": "shared/ship/loadtest-banks.json",
   "parityLock": "shared/fixtures/parity-lock.json",
   "definitionOfDone": "shared/ship/definition-of-done.json",
   "balancePatch": "shared/content/balance-patch-1.0.1.json",

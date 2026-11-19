@@ -402,5 +402,8 @@
   "parityLock5Phase": 29,
   "parityLock5Catalog": "shared/ship/parity-lock-5.0.json",
   "freeze50Phase": 30,
-  "freeze50Catalog": "shared/ship/freeze-5.0.0.json"
+  "freeze50Catalog": "shared/ship/freeze-5.0.0.json",
+  "loadtestBanksCatalog": "shared/ship/loadtest-banks.json",
+  "loadtestSaveBank": "shared/fixtures/loadtest-save-bank.json",
+  "loadtestTelemetryBank": "shared/fixtures/loadtest-telemetry-bank.json"
 }
