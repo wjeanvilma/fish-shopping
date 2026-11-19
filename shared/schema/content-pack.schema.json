@@ -51,8 +51,8 @@
     },
     "saveSchemaVersion": {
       "type": "integer",
-      "const": 25,
-      "description": "Finish 4.0 Phase 17 \u2014 save schema this content pack targets (migrations from \u226424)."
+      "const": 26,
+      "description": "Finish 5.0 Phase 17 — save schema this content pack targets (migrations from ≤25)."
     },
     "ticksPerSecond": {
       "const": 20
@@ -1300,7 +1300,7 @@
       "properties": {
         "dayLengthTicks": {
           "$ref": "#/$defs/positiveInt",
-          "description": "Ticks in one dawn\u2192night cycle (tick % dayLengthTicks)."
+          "description": "Ticks in one dawn→night cycle (tick % dayLengthTicks)."
         },
         "parts": {
           "type": "array",
@@ -1446,7 +1446,7 @@
             "type": "integer",
             "minimum": 1
           },
-          "description": "Phase 12 scarcity sale multipliers for counter fill bands 0\u201320% \u2026 80\u2013100% (1000 = unchanged)."
+          "description": "Phase 12 scarcity sale multipliers for counter fill bands 0–20% … 80–100% (1000 = unchanged)."
         },
         "wear": {
           "type": "object",
@@ -1711,7 +1711,7 @@
             "minimum": 0,
             "maximum": 1000
           },
-          "description": "Non-decreasing thresholds that split score into bands (N thresholds \u2192 N+1 bands)."
+          "description": "Non-decreasing thresholds that split score into bands (N thresholds → N+1 bands)."
         },
         "kindSpawnMultPermille": {
           "type": "array",
@@ -1722,7 +1722,7 @@
               "type": "integer",
               "minimum": 1
             },
-            "description": "CustomerKind.wire \u2192 spawn weight multiplier for one reputation band."
+            "description": "CustomerKind.wire → spawn weight multiplier for one reputation band."
           },
           "description": "Per-band spawn multipliers; length must equal scoreBandThresholdsPermille.length + 1."
         },
@@ -1855,7 +1855,12 @@
               },
               "aiProfile": {
                 "type": "string",
-                "enum": ["siphon", "undercut", "adaptive", "roamer"],
+                "enum": [
+                  "siphon",
+                  "undercut",
+                  "adaptive",
+                  "roamer"
+                ],
                 "description": "Finish 4.0 Phase 15 — rival AI behavior profile."
               }
             }
@@ -1932,6 +1937,11 @@
               "coins": {
                 "type": "integer",
                 "minimum": 0
+              },
+              "requiresCrests": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Finish 5.0 Phase 17 — crests required to unlock."
               }
             }
           }
@@ -1977,6 +1987,11 @@
                 "type": "string",
                 "pattern": "^endgame\\.mark\\.",
                 "description": "Finish 4.0 Phase 17 — optional legend mark granted on complete."
+              },
+              "grantsCrest": {
+                "type": "string",
+                "pattern": "^endgame\\.crest\\.",
+                "description": "Finish 5.0 Phase 17 — optional crest granted on complete."
               }
             }
           }
@@ -2693,7 +2708,7 @@
           },
           "customerPathWaypoints": {
             "type": "array",
-            "description": "Intermediate points for the customer approach polyline (entry \u2192 waypoints \u2192 queue slot). Empty means a straight walk. Segments must stay on open walkable ground.",
+            "description": "Intermediate points for the customer approach polyline (entry → waypoints → queue slot). Empty means a straight walk. Segments must stay on open walkable ground.",
             "items": {
               "$ref": "#/$defs/point"
             }
@@ -2799,7 +2814,7 @@
     },
     "achievements": {
       "type": "object",
-      "description": "Finish 2.0 Phase 11 \u2014 sim-granted achievements unlocked into save.unlockedAchievements.",
+      "description": "Finish 2.0 Phase 11 — sim-granted achievements unlocked into save.unlockedAchievements.",
       "required": [
         "entries"
       ],
@@ -2855,7 +2870,7 @@
     },
     "weather": {
       "type": "object",
-      "description": "Finish 2.0 Phase 13 \u2014 weather cycle + tide phases that modify catch rates and crowds.",
+      "description": "Finish 2.0 Phase 13 — weather cycle + tide phases that modify catch rates and crowds.",
       "required": [
         "patterns",
         "tide"
@@ -2986,7 +3001,7 @@
     },
     "codex": {
       "type": "object",
-      "description": "Finish 2.0 Phase 12 \u2014 species codex / journal lore, habitat hints, and family filters.",
+      "description": "Finish 2.0 Phase 12 — species codex / journal lore, habitat hints, and family filters.",
       "required": [
         "families",
         "entries"
@@ -3064,7 +3079,7 @@
     },
     "fishingMastery": {
       "type": "object",
-      "description": "Finish 2.0 Phase 14 \u2014 per-species fishing mastery XP, rod techniques, coaching tips.",
+      "description": "Finish 2.0 Phase 14 — per-species fishing mastery XP, rod techniques, coaching tips.",
       "required": [
         "maxLevel",
         "xpThresholds",
@@ -3219,7 +3234,7 @@
     },
     "staffTrees": {
       "type": "object",
-      "description": "Finish 2.0 Phase 15 \u2014 staff specialization trees: role branches, training costs, automation schedules.",
+      "description": "Finish 2.0 Phase 15 — staff specialization trees: role branches, training costs, automation schedules.",
       "required": [
         "branches",
         "schedules"

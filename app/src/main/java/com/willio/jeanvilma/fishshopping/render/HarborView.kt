@@ -41,7 +41,7 @@ fun HarborView(
 
     AndroidView(
         modifier = modifier,
-        factory = { ctx -> SurfaceView(ctx).also { renderer.attachTo(it) } },
+        factory = { ctx -> SurfaceView(ctx).also { renderer.attachTo(it); HarborCapture.attach(it) } },
         update = { renderer.ensureHarbor(sceneAsset) },
     )
 

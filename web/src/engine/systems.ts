@@ -7,7 +7,7 @@
 import type { AchievementDef, BaitDef, ContentPack, ContractTemplateDef, CounterDef, DailyObjectiveDef, DayPartDef, DecorDef, EndgameChallengeDef, EndgameTierDef, FishingSpotDef, HarborDef, ItemQuantity, PlotDef, PointMm, PrestigeMilestoneDef, QuestDef, RecipeDef, RivalMarketDef, RushWindowDef, SeasonalEventDef, SpeciesDef, TidePhaseDef, UpgradeDef, UpgradeEffect, WeatherPatternDef, WorkerDef } from "./content";
 import { bankProductById, bankProductRepayAmount, bankRepayAmount } from "./content";
 import type { TimingTier, TrophyRecord } from "./state";
-import { counterAccepts, freeSlot, queueSlot, rectCenterX, rectCenterZ, rectContains } from "./content";
+import { counterAccepts, queueSlot, rectCenterX, rectCenterZ, rectContains } from "./content";
 import { INPUT_SCALE, Prng, SafeMath, TICKS_PER_SECOND, compareStrings, idiv, type OfflineReport } from "./foundations";
 import { Inventory, Transfers } from "./inventory";
 import { ContractState, CounterState, CustomerState, FishingSpotState, GameState, MachineState, PlayerState, Receipt, Stats, WorkerState, type ContractOffer, type GameEvent, type HarborWorldStash } from "./state";
@@ -90,11 +90,12 @@ export const PlotSystem = {
  * Finish 3.0 Phase 12 — ecology habitat pockets boost species catch weights
  * when the active harbor matches and the current day-part is favored.
  */
-/** Finish 3.0 Phase 12 + Finish 4.0 Phase 11 — habitat weight pockets (≥16). */
+/** Finish 3.0 Phase 12 + Finish 4.0 Phase 11 + Finish 5.0 Phase 13 — habitat weight pockets (≥24). */
 export const EcologySystem = {
   BASELINE_WEIGHT_PERMILLE: 1000,
   HABITAT_FLOOR_PHASE_12: 8,
   HABITAT_FLOOR_PHASE_11: 16,
+  HABITAT_FLOOR_PHASE_13: 24,
 
   habitatWeightMultPermille(
     content: ContentPack,
@@ -138,6 +139,10 @@ export const EcologySystem = {
 
   meetsPhase11Floor(content: ContentPack): boolean {
     return EcologySystem.habitatCount(content) >= EcologySystem.HABITAT_FLOOR_PHASE_11;
+  },
+
+  meetsPhase13Floor(content: ContentPack): boolean {
+    return EcologySystem.habitatCount(content) >= EcologySystem.HABITAT_FLOOR_PHASE_13;
   },
 };
 
@@ -397,11 +402,105 @@ export const SeasonalEventSystem = {
   },
 };
 
+/** Cozy art pass 5 decor placement rules (shared contract with Kotlin DecorSystem). */
+export const DECOR_PLACEMENT = {
+  /** Positions snap to this grid. */
+  GRID_MM: 250,
+  /** Footprint radius of any placed decor item. */
+  RADIUS_MM: 600,
+  /** Extra clearance from zones and machine/counter footprints. */
+  CLEARANCE_MM: 400,
+  /** Keep this far inside the quay edge (the edge band holds scenery props). */
+  EDGE_INSET_MM: 1300,
+  /** Minimum centre-to-centre spacing between placed decor items. */
+  SPACING_MM: 1300,
+  /** Keep-out radius around the player spawn and customer entry. */
+  KEEP_OUT_MM: 1600,
+  /** Keep-out radius around each queue slot. */
+  QUEUE_KEEP_OUT_MM: 1100,
+} as const;
+
 /**
  * Phase 23 shop decor: buy-once placable cosmetics that add a tiny customer
  * patience buff. Banner-gated pieces reuse prestige cosmetic IDs.
+ * Cozy art pass 5: owned decor can be placed on open quay ground per harbor (cosmetic only).
  */
 export const DecorSystem = {
+  snap(mm: number): number {
+    const g = DECOR_PLACEMENT.GRID_MM;
+    return Math.round(mm / g) * g;
+  },
+
+  /** Why [decorId] cannot stand at (x, z) mm in the active harbor, or null if it can. */
+  placementProblem(content: ContentPack, s: GameState, decorId: string, xMm: number, zMm: number): string | null {
+    if (!content.decorById.has(decorId)) return "Unknown decor";
+    if (!s.ownedDecor.has(decorId)) return "Buy it first";
+    const h = content.harbor(s.harborId);
+    const P = DECOR_PLACEMENT;
+    const land = h.walkable.filter((w) => w.id.includes("land"));
+    const inside = land.some((r) =>
+      xMm >= r.minX + P.EDGE_INSET_MM && xMm <= r.maxX - P.EDGE_INSET_MM &&
+      zMm >= r.minZ + P.EDGE_INSET_MM && zMm <= r.maxZ - P.EDGE_INSET_MM);
+    if (!inside) return "Place it on open quay ground";
+    const reach = P.RADIUS_MM + P.CLEARANCE_MM;
+    const near = (r: { minX: number; minZ: number; maxX: number; maxZ: number }) => {
+      const dx = Math.max(r.minX - xMm, 0, xMm - r.maxX);
+      const dz = Math.max(r.minZ - zMm, 0, zMm - r.maxZ);
+      return dx * dx + dz * dz < reach * reach;
+    };
+    if (h.obstacles.some(near)) return "Too close to a station";
+    if (h.zones.some(near)) return "Too close to a work area";
+    const far = (x: number, z: number, r: number) => (x - xMm) * (x - xMm) + (z - zMm) * (z - zMm) >= r * r;
+    if (!far(h.playerSpawn.x, h.playerSpawn.z, P.KEEP_OUT_MM)) return "Keep the spawn point clear";
+    if (!far(h.customerEntry.x, h.customerEntry.z, P.KEEP_OUT_MM)) return "Keep the entrance clear";
+    for (const c of h.counters) {
+      for (let i = 0; i < c.maxQueue; i++) {
+        const q = queueSlot(c, i);
+        if (!far(q.x, q.z, P.QUEUE_KEEP_OUT_MM)) return "Keep the queue clear";
+      }
+    }
+    const placed = s.decorPlacements.get(s.harborId);
+    if (placed) {
+      for (const [id, p] of placed) {
+        if (id !== decorId && !far(p.xMm, p.zMm, P.SPACING_MM)) return "Too close to other decor";
+      }
+    }
+    return null;
+  },
+
+  place(ctx: StepContext, decorId: string, xMm: number, zMm: number, rotationQuarter: number): void {
+    const s = ctx.state;
+    const x = DecorSystem.snap(Math.trunc(xMm));
+    const z = DecorSystem.snap(Math.trunc(zMm));
+    const rot = ((Math.trunc(rotationQuarter) % 4) + 4) % 4;
+    const problem = DecorSystem.placementProblem(ctx.content, s, decorId, x, z);
+    if (problem) {
+      ctx.emit({ type: "decor_place_rejected", tick: s.tick, decorId, reason: problem });
+      return;
+    }
+    let placed = s.decorPlacements.get(s.harborId);
+    if (!placed) {
+      placed = new Map();
+      s.decorPlacements.set(s.harborId, placed);
+    }
+    const moved = placed.has(decorId);
+    placed.set(decorId, { xMm: x, zMm: z, rotationQuarter: rot });
+    ctx.emit({ type: "decor_placed", tick: s.tick, decorId, harborId: s.harborId, xMm: x, zMm: z, rotationQuarter: rot, moved });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "decor" });
+  },
+
+  store(ctx: StepContext, decorId: string): void {
+    const s = ctx.state;
+    const placed = s.decorPlacements.get(s.harborId);
+    if (!placed || !placed.delete(decorId)) {
+      ctx.emit({ type: "decor_place_rejected", tick: s.tick, decorId, reason: "Not placed here" });
+      return;
+    }
+    if (placed.size === 0) s.decorPlacements.delete(s.harborId);
+    ctx.emit({ type: "decor_stored", tick: s.tick, decorId, harborId: s.harborId });
+    ctx.emit({ type: "checkpoint_requested", tick: s.tick, reason: "decor" });
+  },
+
   patienceBonusTicks(content: ContentPack, s: GameState): number {
     let sum = 0;
     for (const d of content.decor.items) {
@@ -463,7 +562,8 @@ export const EndgameSystem = {
       s.completedPrestige.size >= tier.requiresPrestigeCount &&
       s.beatenRivalIds.size >= tier.requiresRivalBeats &&
       s.completedEndgameChallenges.size >= tier.requiresChallenges &&
-      s.endgameMarks.size >= (tier.requiresMarks ?? 0)
+      s.endgameMarks.size >= (tier.requiresMarks ?? 0) &&
+      s.endgameCrests.size >= (tier.requiresCrests ?? 0)
     );
   },
 
@@ -499,6 +599,11 @@ function completeEndgameChallenge(ctx: StepContext, ch: EndgameChallengeDef): vo
   if (mark && !s.endgameMarks.has(mark)) {
     s.endgameMarks.add(mark);
     s.bumpStat(Stats.ENDGAME_MARKS_EARNED);
+  }
+  const crest = ch.grantsCrest ?? null;
+  if (crest && !s.endgameCrests.has(crest)) {
+    s.endgameCrests.add(crest);
+    s.bumpStat(Stats.ENDGAME_CRESTS_EARNED);
   }
   if (ch.rewardCoins > 0) {
     s.coins = SafeMath.creditCoins(s.coins, ch.rewardCoins);
@@ -820,6 +925,19 @@ export const DailyGoalsSystem = {
       const n = report.rivalBeats!;
       lines.push(`Harbor beat rival pressure ${n} time${n === 1 ? "" : "s"}.`);
     }
+    // Finish 5.0 Phase 22 — offline sim fidelity journal categories.
+    if ((report.wagesPaid ?? 0) > 0) {
+      lines.push(`Staff wages drew ${report.wagesPaid} coins while away.`);
+    }
+    if ((report.repairSpent ?? 0) > 0) {
+      lines.push(`Machine repairs cost ${report.repairSpent} coins offline.`);
+    }
+    if ((report.loanInterestAccrued ?? 0) > 0) {
+      lines.push(`Loan interest accrued ${report.loanInterestAccrued} coins.`);
+    }
+    if ((report.revenueDelta ?? 0) > 0) {
+      lines.push(`Committed sales booked ${report.revenueDelta} coins offline.`);
+    }
     const streak = DailyGoalsSystem.streak(state);
     if (streak > 0) {
       lines.push(`Harbor streak: ${streak} day${streak === 1 ? "" : "s"}.`);
@@ -1041,13 +1159,20 @@ export const MasterySystem = {
     return base + MasterySystem.technique(content, state).perfectBonusPermille;
   },
 
-  grantCatchXp(ctx: StepContext, speciesId: string, timingTier: TimingTier, rare: boolean): void {
+  grantCatchXp(
+    ctx: StepContext,
+    speciesId: string,
+    timingTier: TimingTier,
+    rare: boolean,
+    xpMultPermille = 1000,
+  ): void {
     const s = ctx.state;
     const m = ctx.content.fishingMastery;
     let gain = m.xpCatch;
     if (timingTier === "perfect") gain += m.xpPerfectReel;
     else if (timingTier === "good") gain += m.xpGoodReel;
     if (rare) gain += m.xpRareCatch;
+    gain = Math.max(0, idiv(gain * Math.max(1, xpMultPermille), 1000));
     if (gain <= 0) return;
     const before = MasterySystem.xpOf(s, speciesId);
     const beforeLevel = MasterySystem.levelForXp(ctx.content, before);
@@ -1208,10 +1333,50 @@ export const EconomySystem = {
     );
   },
 
+  /**
+   * Mean spoil tier of raw fish in the bag, as permille (tier×1000).
+   * Empty bag → 2000 (neutral tier-2 baseline).
+   */
+  meanBagSpoilTierPermille(content: ContentPack, s: GameState): number {
+    let weighted = 0;
+    let units = 0;
+    for (const [id, qty] of s.player.bag.contents()) {
+      if (!content.speciesById.has(id) || qty <= 0) continue;
+      weighted += EconomySystem.spoilTier(content, id) * qty;
+      units += qty;
+    }
+    if (units <= 0) return 2000;
+    return idiv(weighted * 1000, units);
+  },
+
+  /**
+   * Finish 5.0 Phase 2 — bag spoil pressure from mean fish spoil tier.
+   * 1000 = neutral (mean tier 2). Higher → shorter spoil period.
+   */
+  bagSpoilPressurePermille(content: ContentPack, s: GameState): number {
+    const mean = EconomySystem.meanBagSpoilTierPermille(content, s);
+    const delta = idiv(mean - 2000, 10);
+    return Math.max(750, Math.min(1400, 1000 + delta));
+  },
+
   bagFishSpoilPeriodTicks(content: ContentPack, s: GameState): number {
     const base = content.economy.bagFishSpoilPeriodTicks;
-    const scaled = idiv(SafeMath.multiply(base, s.bagSpoilPeriodMultPermille), 1000);
-    return Math.max(1, scaled);
+    const iced = idiv(SafeMath.multiply(base, s.bagSpoilPeriodMultPermille), 1000);
+    const pressure = EconomySystem.bagSpoilPressurePermille(content, s);
+    return Math.max(1, idiv(SafeMath.multiply(iced, 1000), pressure));
+  },
+
+  /** Ticks until the next bag fish spoil tick; null when spoilage inactive or bag empty of fish. */
+  ticksUntilBagSpoil(content: ContentPack, s: GameState): number | null {
+    if (!EconomySystem.unlocked(content, s)) return null;
+    if (content.economy.bagFishSpoilUnits <= 0) return null;
+    let fishUnits = 0;
+    for (const [id, qty] of s.player.bag.contents()) {
+      if (content.speciesById.has(id)) fishUnits += qty;
+    }
+    if (fishUnits <= 0) return null;
+    const period = EconomySystem.bagFishSpoilPeriodTicks(content, s);
+    return Math.max(0, period - s.bagSpoilAccrualTicks);
   },
 
   counterSpoilPeriodTicks(content: ContentPack, s: GameState): number {
@@ -1836,6 +2001,60 @@ export const CosmeticsIapSystem = {
       title: "Aurora crest",
       description: "Aurora vigil crest plaque. Visual only — never changes rates, wages, or sale prices.",
     },
+    {
+      id: "entitlement.cosmetic.aurora_bunting",
+      sku: "fish.cosmetic.aurora_bunting",
+      webProductId: "fish.cosmetic.aurora_bunting",
+      androidProductId: "fish_cosmetic_aurora_bunting",
+      grantsCosmetic: "banner.iap_aurora_bunting",
+      title: "Aurora bunting",
+      description: "Aurora Inlet light bunting. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.tideglass_pennant",
+      sku: "fish.cosmetic.tideglass_pennant",
+      webProductId: "fish.cosmetic.tideglass_pennant",
+      androidProductId: "fish_cosmetic_tideglass_pennant",
+      grantsCosmetic: "banner.iap_tideglass_pennant",
+      title: "Tideglass pennant",
+      description: "Tideglass Bay mirror pennant. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.inlet_flag",
+      sku: "fish.cosmetic.inlet_flag",
+      webProductId: "fish.cosmetic.inlet_flag",
+      androidProductId: "fish_cosmetic_inlet_flag",
+      grantsCosmetic: "banner.iap_inlet_flag",
+      title: "Inlet flag",
+      description: "Northern inlet harbor flag. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.bay_streamer",
+      sku: "fish.cosmetic.bay_streamer",
+      webProductId: "fish.cosmetic.bay_streamer",
+      androidProductId: "fish_cosmetic_bay_streamer",
+      grantsCosmetic: "banner.iap_bay_streamer",
+      title: "Bay streamer",
+      description: "Tideglass ferry streamers. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.poach_ribbon",
+      sku: "fish.cosmetic.poach_ribbon",
+      webProductId: "fish.cosmetic.poach_ribbon",
+      androidProductId: "fish_cosmetic_poach_ribbon",
+      grantsCosmetic: "banner.iap_poach_ribbon",
+      title: "Poach ribbon",
+      description: "Poach pantry ribbon. Visual only — never changes rates, wages, or sale prices.",
+    },
+    {
+      id: "entitlement.cosmetic.can_crest",
+      sku: "fish.cosmetic.can_crest",
+      webProductId: "fish.cosmetic.can_crest",
+      androidProductId: "fish_cosmetic_can_crest",
+      grantsCosmetic: "banner.iap_can_crest",
+      title: "Can crest",
+      description: "Can circuit crest plaque. Visual only — never changes rates, wages, or sale prices.",
+    },
   ] as const,
 
   BY_SKU: new Map<string, {
@@ -2208,6 +2427,11 @@ export const WorkerSystem = {
       if (!w.onShift || w.busyWalking) continue;
       const def = ctx.content.workersById.get(w.roleId);
       if (!def) continue;
+      // Finish 5.0 Phase 20 — failure modes: recover from blocked idle.
+      if (ctx.state.tick % 40 === 0) {
+        const blocked = WorkerSystem.blockedReason(ctx.content, ctx.state, ctx.harbor, w);
+        if (blocked) attemptFailureRecover(ctx, w, def, blocked);
+      }
       if (def.role === "fisher") stepFisher(ctx, w, def);
       else if (def.role === "porter") stepPorter(ctx, w, def);
       else if (def.role === "operator") stepOperator(ctx, w, def);
@@ -3117,11 +3341,13 @@ function assignSupervisor(ctx: StepContext, w: WorkerState, def: WorkerDef): voi
   w.taskId = ctx.state.newId("task");
 }
 
-/** Finish 3.0 Phase 11 — re-post toward busiest counter / distressed station. */
+/** Finish 3.0 Phase 11 / Finish 5.0 Phase 20 — re-post toward busiest counter / distressed station. */
 function supervisorPatrol(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
-  const branch = StaffTreesSystem.branchOf(ctx.content, w);
-  const floorLead = branch?.id === "branch.supervisor.floor_lead";
-  const interval = floorLead ? 60 : 90;
+  const branchId = StaffTreesSystem.branchOf(ctx.content, w)?.id;
+  const rushMarshal = branchId === "branch.supervisor.rush_marshal";
+  const floorLead = branchId === "branch.supervisor.floor_lead" || rushMarshal;
+  const inRush = CustomerSystem.activeRush(ctx.harbor, ctx.state.tick) != null;
+  const interval = rushMarshal && inRush ? 40 : floorLead ? 60 : 90;
   if (ctx.state.tick % interval !== 0) return;
   const post = bestSupervisorPost(ctx, w);
   if (!post || post.zoneId === w.taskZoneId) return;
@@ -3130,11 +3356,25 @@ function supervisorPatrol(ctx: StepContext, w: WorkerState, def: WorkerDef): voi
   w.taskZoneId = post.zoneId;
   w.taskId = ctx.state.newId("task");
   ctx.state.bumpStat(Stats.SUPERVISOR_PATROLS);
+  if (rushMarshal) {
+    ctx.state.bumpStat(Stats.SUPERVISOR_RUSH_MARSHALS);
+    WorkerDecisionHooks.record({
+      workerId: w.id,
+      role: "supervisor",
+      kind: "patrol",
+      reason: "rush_marshal_patrol",
+      score: interval,
+      candidatesConsidered: 1,
+      tick: ctx.state.tick,
+    });
+  }
 }
 
 function bestSupervisorPost(ctx: StepContext, w: WorkerState): { x: number; z: number; zoneId: string } | null {
-  const branch = StaffTreesSystem.branchOf(ctx.content, w);
-  if (branch?.id === "branch.supervisor.floor_lead") {
+  const branchId = StaffTreesSystem.branchOf(ctx.content, w)?.id;
+  const rushMarshal = branchId === "branch.supervisor.rush_marshal";
+  const floorLead = branchId === "branch.supervisor.floor_lead" || rushMarshal;
+  if (floorLead) {
     let best: { x: number; z: number; zoneId: string; score: number } | null = null;
     for (const m of ctx.state.machines) {
       const station = ctx.harbor.stations.find((s) => s.id === m.stationId);
@@ -3142,7 +3382,7 @@ function bestSupervisorPost(ctx: StepContext, w: WorkerState): { x: number; z: n
       let score = 0;
       if (m.status === "OUTPUT_FULL") score += 80;
       if (m.status === "WAITING_FOR_INPUT") score += 60;
-      if (m.broken) score += 40;
+      if (m.broken) score += rushMarshal ? 80 : 40;
       if (score <= 0) continue;
       const zone = zonePoint(ctx.harbor, station.outputZone);
       const dist = WorkerSystem.walkTicks(w.x, w.z, zone.x, zone.z, 160);
@@ -3271,7 +3511,10 @@ function stepSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef):
 }
 
 function assignSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef): void {
-  const kilnFocus = StaffTreesSystem.branchOf(ctx.content, w)?.id === "branch.smoker_specialist.kiln_focus";
+  const branchId = StaffTreesSystem.branchOf(ctx.content, w)?.id;
+  const smokeQueue = branchId === "branch.smoker_specialist.smoke_queue";
+  const kilnFocus =
+    branchId === "branch.smoker_specialist.kiln_focus" || smokeQueue;
   if (!w.bag.isEmpty()) {
     const dest = findSmokerInputDrop(ctx, w) ?? (kilnFocus ? null : findMachineInputForBag(ctx, w));
     if (!dest) return;
@@ -3280,6 +3523,7 @@ function assignSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef
     w.taskDestInvId = dest.machine.input.id;
     w.taskZoneId = dest.zoneId;
     w.taskId = ctx.state.newId("task");
+    if (smokeQueue) ctx.state.bumpStat(Stats.SMOKER_QUEUE_FEEDS);
     return;
   }
   const haul = findSmokerHaul(ctx, w);
@@ -3294,6 +3538,18 @@ function assignSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef
     w.leaseExpiresAt = ctx.state.tick + def.leaseTicks;
     w.taskZoneId = haul.sourceZoneId;
     startWalk(w, haul.sourceX, haul.sourceZ, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w));
+    if (smokeQueue) {
+      ctx.state.bumpStat(Stats.SMOKER_QUEUE_FEEDS);
+      WorkerDecisionHooks.record({
+        workerId: w.id,
+        role: "smoker_specialist",
+        kind: "haul",
+        reason: "smoke_queue_feed",
+        score: haul.score,
+        candidatesConsidered: 1,
+        tick: ctx.state.tick,
+      });
+    }
     return;
   }
   const post = smokerPost(ctx);
@@ -3497,13 +3753,17 @@ function findMachineHaul(ctx: StepContext, w: WorkerState): HaulOffer | null {
         if (!destHasRoom(ctx, dst.input, itemId, w.id)) continue;
         const demand = machineDemand(dst);
         let score = scoreHaul(ctx, w, src.output, zone.x, zone.z, src.status === "OUTPUT_FULL" ? 50 : 0, demand);
-        // Finish 3.0 Phase 11 — pad_link prioritizes starving machine inputs.
-        if (
-          StaffTreesSystem.branchOf(ctx.content, w)?.id === "branch.operator.pad_link" &&
-          dst.status === "WAITING_FOR_INPUT"
-        ) {
-          score += 35;
+        // Finish 3.0 Phase 11 / Finish 5.0 Phase 20 — pad_link / circuit_boss starving inputs.
+        const opBranch = StaffTreesSystem.branchOf(ctx.content, w)?.id;
+        const circuitBoss = opBranch === "branch.operator.circuit_boss";
+        const padLink = opBranch === "branch.operator.pad_link" || circuitBoss;
+        if (padLink && dst.status === "WAITING_FOR_INPUT") {
+          score += circuitBoss ? 55 : 35;
         }
+        if (circuitBoss && src.status === "OUTPUT_FULL" && dst.status === "WAITING_FOR_INPUT") {
+          score += 40;
+        }
+        score += scheduleDaypartBoost(ctx, w, "operator");
         const offer: HaulOffer = {
           source: src.output, dest: dst.input, itemId,
           sourceX: zone.x, sourceZ: zone.z, sourceZoneId: srcStation.outputZone, score,
@@ -3511,6 +3771,21 @@ function findMachineHaul(ctx: StepContext, w: WorkerState): HaulOffer | null {
         if (!best || betterHaul(offer, best)) best = offer;
       }
     }
+  }
+  if (
+    best &&
+    StaffTreesSystem.branchOf(ctx.content, w)?.id === "branch.operator.circuit_boss"
+  ) {
+    ctx.state.bumpStat(Stats.OPERATOR_CIRCUIT_LINKS);
+    WorkerDecisionHooks.record({
+      workerId: w.id,
+      role: "operator",
+      kind: "haul",
+      reason: "circuit_boss_link",
+      score: best.score,
+      candidatesConsidered: 1,
+      tick: ctx.state.tick,
+    });
   }
   return best;
 }
@@ -3540,6 +3815,8 @@ function findFishableSpot(ctx: StepContext, w: WorkerState) {
       }).length;
       score += rareBias * 55;
     }
+    const schedBoost = scheduleDaypartBoost(ctx, w, "fisher");
+    score += schedBoost;
     considered++;
     if (
       !best ||
@@ -3551,17 +3828,20 @@ function findFishableSpot(ctx: StepContext, w: WorkerState) {
       bestZone = spot.zoneId;
     }
   }
+  const schedBoosted = scheduleDaypartBoost(ctx, w, "fisher") > 0;
   WorkerDecisionHooks.record({
     workerId: w.id,
     role: "fisher",
     kind: "spot",
     reason: !best
       ? "none_available"
-      : trophyCast
-        ? "trophy_cast_bias"
-        : linePro
-          ? "line_pro_stock"
-          : "best_score",
+      : schedBoosted
+        ? "schedule_daypart_boost"
+        : trophyCast
+          ? "trophy_cast_bias"
+          : linePro
+            ? "line_pro_stock"
+            : "best_score",
     score: best ? bestScore : null,
     candidatesConsidered: considered,
     tick: ctx.state.tick,
@@ -3714,7 +3994,15 @@ function findSmokerHaul(ctx: StepContext, w: WorkerState): HaulOffer | null {
         if (!accepted.has(itemId)) continue;
         if (!destHasRoom(ctx, dst.input, itemId, w.id)) continue;
         const demand = machineDemand(dst);
-        const score = scoreHaul(ctx, w, src.output, zone.x, zone.z, src.status === "OUTPUT_FULL" ? 50 : 0, demand) + 60;
+        let score =
+          scoreHaul(ctx, w, src.output, zone.x, zone.z, src.status === "OUTPUT_FULL" ? 50 : 0, demand) + 60;
+        const smokeQueue =
+          StaffTreesSystem.branchOf(ctx.content, w)?.id === "branch.smoker_specialist.smoke_queue";
+        if (smokeQueue) {
+          if (dst.status === "WAITING_FOR_INPUT") score += 45;
+          if (src.status === "OUTPUT_FULL") score += 35;
+        }
+        score += scheduleDaypartBoost(ctx, w, "smoker_specialist");
         const offer: HaulOffer = {
           source: src.output, dest: dst.input, itemId,
           sourceX: zone.x, sourceZ: zone.z, sourceZoneId: srcStation.outputZone, score,
@@ -3780,6 +4068,67 @@ function abortHaul(ctx: StepContext, w: WorkerState): void {
     }
   }
   clearTask(w);
+}
+
+/**
+ * Finish 5.0 Phase 20 — schedule-aware day-part scoring boost.
+ * dawn_crew favors fishers at dawn/day; night_watch favors cashiers/greeters at dusk/night;
+ * peak_tide boosts haulers during day/dusk.
+ */
+function scheduleDaypartBoost(ctx: StepContext, w: WorkerState, role: string): number {
+  const schedule = StaffTreesSystem.scheduleOf(ctx.content, w);
+  if (!schedule) return 0;
+  const part = FishingSystem.dayPartAt(ctx.content, ctx.state.tick).id;
+  if (!schedule.dayParts.includes(part)) return 0;
+  let boost = 0;
+  if (schedule.id === "schedule.dawn_crew" && (role === "fisher" || role === "porter")) boost = 25;
+  else if (schedule.id === "schedule.night_watch" && (role === "cashier" || role === "greeter")) boost = 28;
+  else if (schedule.id === "schedule.peak_tide") boost = 22;
+  else if (schedule.dayParts.includes(part)) boost = 12;
+  if (boost > 0) ctx.state.bumpStat(Stats.SCHEDULE_TASK_BOOSTS);
+  return boost;
+}
+
+/** Finish 5.0 Phase 20 — clear stuck idle / dump bag when blockedReason fires. */
+function attemptFailureRecover(
+  ctx: StepContext,
+  w: WorkerState,
+  _def: WorkerDef,
+  reason: string,
+): void {
+  if (!w.bag.isEmpty() && (reason === "No path" || reason === "Output full" || reason === "Spots empty")) {
+    const dump = findMachineInputForBag(ctx, w);
+    if (dump) {
+      startWalk(w, dump.x, dump.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, _def, w));
+      w.phase = "WALK_TO_DROP";
+      w.taskDestInvId = dump.machine.input.id;
+      w.taskZoneId = dump.zoneId;
+      w.taskId = ctx.state.newId("task");
+      ctx.state.bumpStat(Stats.WORKER_FAILURE_RECOVERIES);
+      WorkerDecisionHooks.record({
+        workerId: w.id,
+        role: _def.role,
+        kind: "recover",
+        reason: "failure_recover",
+        score: null,
+        candidatesConsidered: 1,
+        tick: ctx.state.tick,
+      });
+      return;
+    }
+  }
+  abortHaul(ctx, w);
+  clearTask(w);
+  ctx.state.bumpStat(Stats.WORKER_FAILURE_RECOVERIES);
+  WorkerDecisionHooks.record({
+    workerId: w.id,
+    role: _def.role,
+    kind: "recover",
+    reason: "failure_recover",
+    score: null,
+    candidatesConsidered: 0,
+    tick: ctx.state.tick,
+  });
 }
 
 function clearTask(w: WorkerState): void {
@@ -3917,8 +4266,8 @@ bindSystemsBridge({
     MasterySystem.timingBonusPermille(content, state, tier),
   masteryRareChanceBonusPermille: (content, state, speciesId) =>
     MasterySystem.rareChanceBonusPermille(content, state, speciesId),
-  masteryGrantCatchXp: (ctx, speciesId, timingTier, rare) =>
-    MasterySystem.grantCatchXp(ctx, speciesId, timingTier, rare),
+  masteryGrantCatchXp: (ctx, speciesId, timingTier, rare, xpMultPermille) =>
+    MasterySystem.grantCatchXp(ctx, speciesId, timingTier, rare, xpMultPermille ?? 1000),
   seasonalScaledWeight: (base, content, tick, speciesId, harborId) =>
     SeasonalEventSystem.scaledWeight(base, content, tick, speciesId, harborId),
   seasonalActive: (content, tick) => SeasonalEventSystem.active(content, tick),

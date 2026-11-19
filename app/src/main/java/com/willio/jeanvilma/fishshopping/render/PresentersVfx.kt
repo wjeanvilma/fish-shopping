@@ -114,12 +114,12 @@ class FlyingTransfers(poolSize: Int = FLYING_TRANSFER_POOL) {
     }
 }
 
-/** Phase 16/21 — pooled world bursts; Finish 2.0/3.0 add event burst kinds. */
-const val VFX_BURST_POOL = 8
+/** Phase 16/21 — pooled world bursts; Finish 5.0 Phase 27 denser-scene pool for 12 harbors. */
+const val VFX_BURST_POOL = 10
 
 fun worldBurstPoolForQuality(quality: PresenterQuality): Int = when (quality) {
     PresenterQuality.LOW -> 2
-    PresenterQuality.MEDIUM -> 4
+    PresenterQuality.MEDIUM -> 5
     PresenterQuality.HIGH -> VFX_BURST_POOL
 }
 
@@ -128,6 +128,7 @@ enum class WorldBurstKind {
     ACHIEVEMENT, FESTIVAL, CONTRACT_DONE, GOAL_CLAIM,
     RIVAL_BEAT, PRESTIGE, TROPHY_SET, HARBOR_TRAVEL, HIRE, LOAN,
     DECOR, COSMETIC, ENDGAME_TIER, ENDGAME_CHALLENGE, CONTRACT_ACCEPT, BAIT, FULL_UNLOCK,
+    CAST_STRIKE, SPOIL, MACHINE_BREAK, CONTRACT_DEADLINE, QUEST_NEAR,
 }
 
 data class WorldBurstCue(
@@ -172,12 +173,17 @@ private fun burstDurationS(kind: WorldBurstKind): Double = when (kind) {
     WorldBurstKind.CONTRACT_ACCEPT -> 0.35
     WorldBurstKind.BAIT -> 0.3
     WorldBurstKind.FULL_UNLOCK -> 0.65
+    WorldBurstKind.CAST_STRIKE -> 0.35
+    WorldBurstKind.SPOIL -> 0.4
+    WorldBurstKind.MACHINE_BREAK -> 0.45
+    WorldBurstKind.CONTRACT_DEADLINE -> 0.4
+    WorldBurstKind.QUEST_NEAR -> 0.35
 }
 
-/** Phase 21 + Finish 2.0/3.0/4.0 shake kinds. */
+/** Phase 21 + Finish 2.0/3.0/4.0/5.0 shake kinds. */
 enum class ShakeKind {
     CATCH, CUT, SALE, CELEBRATE, ACHIEVEMENT, FESTIVAL, RIVAL_BEAT, PRESTIGE,
-    ENDGAME_TIER, ENDGAME_CHALLENGE,
+    ENDGAME_TIER, ENDGAME_CHALLENGE, CAST_STRIKE, CONTRACT_DEADLINE,
 }
 
 const val SHAKE_DURATION_S = 0.18
@@ -194,6 +200,8 @@ fun shakeAmplitudeM(kind: ShakeKind): Double = when (kind) {
     ShakeKind.PRESTIGE -> 0.08
     ShakeKind.ENDGAME_TIER -> 0.08
     ShakeKind.ENDGAME_CHALLENGE -> 0.07
+    ShakeKind.CAST_STRIKE -> 0.06
+    ShakeKind.CONTRACT_DEADLINE -> 0.07
 }
 
 fun shakeScaleForQuality(quality: PresenterQuality): Double = when (quality) {
@@ -363,6 +371,31 @@ fun resolveBaitBurst(v: SimView): WorldBurstCue =
 /** Finish 4.0 Phase 23 — full harbor unlock at the player. */
 fun resolveFullUnlockBurst(v: SimView): WorldBurstCue =
     WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.FULL_UNLOCK)
+
+/** Finish 5.0 Phase 12 — cast strike splash at the player. */
+fun resolveCastStrikeBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.CAST_STRIKE)
+
+/** Finish 5.0 Phase 12 — spoil cue at the player. */
+fun resolveSpoilBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.SPOIL)
+
+/** Finish 5.0 Phase 12 — machine break flash above station output, else player. */
+fun resolveMachineBreakBurst(v: SimView, stationId: String? = null): WorldBurstCue {
+    if (stationId != null) {
+        val anchor = v.transferAnchors.firstOrNull { it.inventoryId == "inv.$stationId.output" }
+        if (anchor != null) return WorldBurstCue(anchor.xMm, anchor.zMm, WorldBurstKind.MACHINE_BREAK)
+    }
+    return WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.MACHINE_BREAK)
+}
+
+/** Finish 5.0 Phase 12 — contract deadline warn at the player. */
+fun resolveContractDeadlineBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.CONTRACT_DEADLINE)
+
+/** Finish 5.0 Phase 12 — quest near-complete cue at the player. */
+fun resolveQuestNearBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.QUEST_NEAR)
 
 /**
  * Ephemeral world bursts. Quality-budgeted; never mutates sim.

@@ -1,0 +1,57 @@
+{
+  "schema": "fish.fixture.parity_parity_lock_5.v1",
+  "description": "Finish 5.0 Phase 29: parity-lock 5.0 suite floors and required Finish 5.0 system fixtures.",
+  "parityLock5Marker": "authored-finish-5.0-phase-29",
+  "suiteFloor": 20,
+  "finish2SuiteFloor": 4,
+  "finish3SuiteFloor": 4,
+  "finish4SuiteFloor": 4,
+  "finish5SuiteFloor": 4,
+  "simHzInvariant": 20,
+  "expect": {
+    "closesGap": "parityLock5Missing",
+    "parityLock5Missing": false,
+    "baselineSuiteIds": [
+      "prng",
+      "starter_line",
+      "entitlements_unlock",
+      "legacy_migrations"
+    ],
+    "finish2SuiteIds": [
+      "achievements",
+      "weather_tide",
+      "fishing_mastery",
+      "festival_weekends"
+    ],
+    "finish3SuiteIds": [
+      "rival_markets",
+      "schema24_endgame",
+      "machines_9_10",
+      "quests_contracts_3"
+    ],
+    "finish4SuiteIds": [
+      "machines_11_12",
+      "quests_contracts_4",
+      "rival_markets_2",
+      "endgame_2"
+    ],
+    "finish5SuiteIds": [
+      "machines_13_14",
+      "quests_contracts_5",
+      "endgame_3",
+      "rivals_seasonal_5"
+    ],
+    "finish5Fixtures": [
+      "shared/fixtures/parity-machines-13-14.json",
+      "shared/fixtures/parity-quests-contracts-5.json",
+      "shared/fixtures/parity-endgame-3.json",
+      "shared/fixtures/parity-rivals-seasonal-5.json"
+    ],
+    "gates": [
+      "machines1314RecipesParity",
+      "questsContracts5FloorsMet",
+      "endgameSchema26Persisted",
+      "rivalsSeasonal5FloorsMet"
+    ]
+  }
+}

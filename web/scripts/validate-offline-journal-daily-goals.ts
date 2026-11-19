@@ -93,8 +93,9 @@ function validate(): string[] {
   } else if (obj.rewardCoins !== fixture.expect.rewardCoinsBase) {
     errors.push("fixture rewardCoins mismatch");
   }
-  if (content.dailyGoals.streakBonusCoinsPerDay !== fixture.expect.streakBonusCoinsPerDay) {
-    errors.push("streakBonusCoinsPerDay mismatch");
+  // Finish 5.0 Phase 19 soft-floor: retention deepen raised streak bonus coins (≥ historical).
+  if (content.dailyGoals.streakBonusCoinsPerDay < (fixture.expect.streakBonusCoinsPerDay ?? 5)) {
+    errors.push("streakBonusCoinsPerDay below historical floor");
   }
 
   if (typeof DailyGoalsSystem.syncClock !== "function") errors.push("DailyGoalsSystem.syncClock missing");

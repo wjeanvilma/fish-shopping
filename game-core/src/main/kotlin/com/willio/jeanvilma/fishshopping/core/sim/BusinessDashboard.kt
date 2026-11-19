@@ -11,8 +11,19 @@ import com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem
  * abandon + wage rates, session interval labels, and live bottlenecks.
  * Finish 2.0 Phase 18 adds daily streak / objectives.
  * Finish 4.0 Phase 20 adds cashflow / scarcity / reputation surfaces.
+ * Finish 5.0 Phase 21 adds pier ledger / loan book analytics.
  */
 object BusinessDashboard {
+
+    private val LEDGER_LINE_TYPES = setOf(
+        "loan",
+        "loan_repay",
+        "loan_collect",
+        "sale",
+        "wage",
+        "contract_payout",
+        "contract_penalty",
+    )
 
     fun build(
         content: ContentPack,
@@ -35,8 +46,19 @@ object BusinessDashboard {
         val spoiled = state.stat(Stats.ITEMS_SPOILED)
         val loanInterest = state.stat(Stats.LOAN_INTEREST_ACCRUED)
         val loanCollected = state.stat(Stats.LOAN_COLLECTED)
+        val loanRepaid = state.stat(Stats.LOAN_REPAID)
+        val loansTaken = state.stat(Stats.LOANS_TAKEN)
         val operatingCosts = wages + maintenance + repairs
         val gross = committedRevenue + contractRevenue
+        val ledgerNetCashflow = gross - operatingCosts - loanInterest - loanCollected
+        val contractRevenueSharePermille =
+            if (gross > 0L) ((contractRevenue * 1000L) / gross).toInt() else 0
+        val coinGoalProgressPermille =
+            if (state.coinGoal > 0L) {
+                ((state.coins * 1000L) / state.coinGoal).toInt().coerceAtMost(1000)
+            } else {
+                0
+            }
         val minutes = sessionSeconds / 60L
         val revenuePerMinute = if (minutes > 0L) committedRevenue / minutes else 0L
         val salesPerMinute = if (minutes > 0L) sales / minutes else 0L
@@ -87,7 +109,28 @@ object BusinessDashboard {
             activeScarcityTipPermille = scarcityTip,
             reputationScorePermille = ReputationSystem.scorePermille(content, state),
             reputationLabel = ReputationSystem.bandLabel(content, state),
+            loanOwed = state.loanOwed,
+            loansTaken = loansTaken,
+            loanRepaid = loanRepaid,
+            coinGoal = state.coinGoal,
+            coinGoalProgressPermille = coinGoalProgressPermille,
+            ledgerNetCashflow = ledgerNetCashflow,
+            contractRevenueSharePermille = contractRevenueSharePermille,
+            ledgerLines = buildLedgerLines(state),
         )
+    }
+
+    fun buildLedgerLines(state: GameState): List<String> {
+        val lines = ArrayList<String>(6)
+        val ledger = state.ledger.toList()
+        for (i in ledger.lastIndex downTo 0) {
+            if (lines.size >= 6) break
+            val r = ledger[i]
+            if (r.type !in LEDGER_LINE_TYPES) continue
+            val sign = if (r.coinDelta >= 0L) "+" else ""
+            lines += "${r.type} $sign${r.coinDelta}"
+        }
+        return lines
     }
 
     fun activeScarcityTipPermille(content: ContentPack, state: GameState, harbor: HarborDef): Int {

@@ -36,6 +36,8 @@ class RemoteAnalyticsSink(
         private set
     var flushFailures: Int = 0
         private set
+    var deadLetterCount: Int = 0
+        private set
 
     private val executor = Executors.newSingleThreadExecutor { r ->
         Thread(r, "fish-remote-analytics").apply { isDaemon = true }
@@ -83,26 +85,30 @@ class RemoteAnalyticsSink(
             if (ok) {
                 batchesSent += 1
                 flushFailures = 0
-            } else if (RemoteAnalyticsPolicy.REQUEUE_ON_FLUSH_FAILURE) {
-                // Finish 4.0 Phase 21 — requeue failed slice and schedule retry.
-                synchronized(lock) {
-                    RemoteAnalyticsPolicy.requeueFlushSlice(queue, taken)
-                }
-                scheduleRetry()
+            } else {
+                handleFlushFailure(taken)
             }
             ok
         } catch (_: Exception) {
             lastFlushOk = false
-            if (RemoteAnalyticsPolicy.REQUEUE_ON_FLUSH_FAILURE && taken.isNotEmpty()) {
-                synchronized(lock) {
-                    RemoteAnalyticsPolicy.requeueFlushSlice(queue, taken)
-                }
-                scheduleRetry()
-            }
+            handleFlushFailure(taken)
             false
         } finally {
             flushing.set(false)
         }
+    }
+
+    private fun handleFlushFailure(taken: List<RemoteAnalyticsPolicy.QueuedEvent>) {
+        if (!RemoteAnalyticsPolicy.REQUEUE_ON_FLUSH_FAILURE || taken.isEmpty()) return
+        if (RemoteAnalyticsPolicy.shouldDeadLetter(flushFailures + 1)) {
+            deadLetterCount += taken.size
+            flushFailures = RemoteAnalyticsPolicy.MAX_FLUSH_RETRIES
+            return
+        }
+        synchronized(lock) {
+            RemoteAnalyticsPolicy.requeueFlushSlice(queue, taken)
+        }
+        scheduleRetry()
     }
 
     private fun scheduleRetry() {
@@ -111,7 +117,12 @@ class RemoteAnalyticsSink(
             if (retryScheduled) return
             retryScheduled = true
             flushFailures += 1
-            val delay = RemoteAnalyticsPolicy.RETRY_BACKOFF_MS * flushFailures
+            val jitter = if (RemoteAnalyticsPolicy.RETRY_JITTER_MS > 0L) {
+                (Math.random() * (RemoteAnalyticsPolicy.RETRY_JITTER_MS + 1)).toLong()
+            } else {
+                0L
+            }
+            val delay = RemoteAnalyticsPolicy.retryDelayMs(flushFailures, jitter)
             executor.execute {
                 try {
                     Thread.sleep(delay)

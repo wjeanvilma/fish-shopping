@@ -43,14 +43,15 @@ function validate(): string[] {
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
   if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
-  if (catalog.branchCount !== 10 || STAFF_BRANCH_FLOOR !== 10) {
-    errors.push("branchCount must be 10");
+  // Finish 5.0 Phase 20 soft-floor: wave-3 grew trees beyond historical 10/2.
+  if (catalog.branchCount < 10 || STAFF_BRANCH_FLOOR < 10) {
+    errors.push("branchCount floor must be ≥ 10");
   }
-  if (catalog.scheduleCount !== 2 || STAFF_SCHEDULE_FLOOR !== 2) {
-    errors.push("scheduleCount must be 2");
+  if (catalog.scheduleCount < 2 || STAFF_SCHEDULE_FLOOR < 2) {
+    errors.push("scheduleCount floor must be ≥ 2");
   }
-  if (dod.quotas?.staffBranches !== 10) errors.push("DoD quotas.staffBranches must be 10");
-  if (dod.quotas?.staffSchedules !== 2) errors.push("DoD quotas.staffSchedules must be 2");
+  if ((dod.quotas?.staffBranches ?? 0) < 10) errors.push("DoD quotas.staffBranches must be ≥ 10");
+  if ((dod.quotas?.staffSchedules ?? 0) < 2) errors.push("DoD quotas.staffSchedules must be ≥ 2");
   if (content.staffTrees.branches.length < 10) {
     errors.push(`branches ${content.staffTrees.branches.length} < 10`);
   }
@@ -91,7 +92,18 @@ function validate(): string[] {
     "utf8",
   );
   const systemsTs = readFileSync(resolve(root, "web/src/engine/systems.ts"), "utf8");
-  const hostTs = readFileSync(resolve(root, "web/src/game/GameHost.ts"), "utf8");
+  // Finish 4/5 soft-floor: GameHost split moved toast/intents under web/src/game/host/.
+  const hostBundle = [
+    "web/src/game/GameHost.ts",
+    "web/src/game/host/hostStepBus.ts",
+    "web/src/game/host/hostStaffIntents.ts",
+  ].map((p) => {
+    try {
+      return readFileSync(resolve(root, p), "utf8");
+    } catch {
+      return "";
+    }
+  }).join("\n");
   const vmKt = readFileSync(
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt"),
     "utf8",
@@ -103,12 +115,12 @@ function validate(): string[] {
   );
   if (!treesKt.includes("object StaffTreesSystem")) errors.push("Kotlin StaffTreesSystem missing");
   if (!systemsTs.includes("export const StaffTreesSystem")) errors.push("web StaffTreesSystem missing");
-  if (!hostTs.includes("worker_branch_unlocked")) errors.push("GameHost missing branch unlock toast");
+  if (!hostBundle.includes("worker_branch_unlocked")) errors.push("host missing branch unlock toast");
   if (!vmKt.includes("WorkerBranchUnlocked")) errors.push("GameViewModel missing WorkerBranchUnlocked toast");
   if (!appTsx.includes("onTrainBranch")) errors.push("web Staff panel missing branch train UI");
   if (!screenKt.includes("onTrainBranch")) errors.push("Android Staff panel missing branch train UI");
   if (!vmKt.includes("fun trainWorkerBranch")) errors.push("Android missing trainWorkerBranch");
-  if (!hostTs.includes("trainWorkerBranch")) errors.push("web missing trainWorkerBranch");
+  if (!hostBundle.includes("trainWorkerBranch")) errors.push("web missing trainWorkerBranch");
 
   for (const gate of catalog.preflightGates as string[]) {
     if (!existsSync(resolve(root, gate))) errors.push(`missing preflight ${gate}`);

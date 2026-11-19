@@ -1,0 +1,24 @@
+{
+  "schema": "fish.fixtures.parity_product_art_5.v1",
+  "productArt5Marker": "authored-finish-5.0-phase-10",
+  "productFinish5Marker": "product-art-5",
+  "cosmeticFinish5Marker": "product-art-5",
+  "phase": 10,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "authoredProductTarget": 40,
+    "cosmeticBannerTarget": 18,
+    "minProductArtNodes": 4,
+    "minCosmeticArtNodes": 4,
+    "schemaVersion": 25,
+    "contentVersion": "4.0.0",
+    "productArt5IncompleteClosed": true,
+    "gates": [
+      "products_stamped",
+      "banners_stamped",
+      "gap_closed",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

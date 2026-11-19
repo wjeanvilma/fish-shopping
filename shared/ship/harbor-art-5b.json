@@ -1,0 +1,72 @@
+{
+  "phase": 8,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.harbor_art_5b.v1",
+  "description": "Finish 5.0 Phase 8 \u2014 harbor art 5b: pass-catalog harbors 7\u201310 (marina\u2192prism) stamped harborFinish5=harbor-art-5b. Closes gaps.harborArt5Incomplete. Harbors 11\u201312 landed in Phase 14; authoredHarbors is 12. Schema stays 25 / content 4.0.0.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "harborArt5bMarker": "authored-finish-5.0-phase-8",
+  "harborFinish5Marker": "harbor-art-5b",
+  "harborArtPassCatalog": "shared/ship/harbor-art-pass.json",
+  "harborArtMarker": "authored-finish-4.0-phase-9",
+  "harborScenicMarker": "harbor-art-3",
+  "cozyArtMarker": "cozy-art-5",
+  "finish5HarborTarget": 4,
+  "minHarborArtNodes": 10,
+  "themesModule": "shared/tools/harbor_themes.py",
+  "generator": "shared/tools/generate_blockout.py",
+  "cozyThemeModule": "shared/tools/cozy_theme_art.py",
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "gapClosed": "harborArt5Incomplete",
+  "gapClosedValue": false,
+  "parityFixture": "shared/fixtures/parity-harbor-art-5b.json",
+  "authorTool": "shared/tools/author_harbor_art_5b.py",
+  "validateScript": "npm run harborart5b:validate",
+  "finish5Harbors": [
+    {
+      "harborId": "harbor.grand_marina",
+      "theme": "marina",
+      "asset": "shared/assets/models/grand_marina_blockout.glb"
+    },
+    {
+      "harborId": "harbor.ember_wharf",
+      "theme": "ember",
+      "asset": "shared/assets/models/ember_wharf_blockout.glb"
+    },
+    {
+      "harborId": "harbor.mist_cove",
+      "theme": "mist",
+      "asset": "shared/assets/models/mist_cove_blockout.glb"
+    },
+    {
+      "harborId": "harbor.prism_reach",
+      "theme": "prism",
+      "asset": "shared/assets/models/prism_reach_blockout.glb"
+    }
+  ],
+  "checklist": [
+    "Pass-catalog harbors 7\u201310 carry extras.harborFinish5=harbor-art-5b",
+    "envArt includes harbor-art-5b while retaining harbor-art-3 + cozy-art-5",
+    "Each 5b harbor has \u226510 HarborArt_* scenic nodes",
+    "gaps.harborArt5Incomplete = false",
+    "authoredHarbors reaches 12 after Phase 14 harbors-11-12",
+    "harborart5b:validate green in CI",
+    "schema stays 25 / content 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/harbor-art-5b.json",
+    "shared/fixtures/parity-harbor-art-5b.json",
+    "shared/ship/harbor-art-pass.json",
+    "shared/ship/finish-5.0-kickoff.json",
+    "shared/tools/harbor_themes.py",
+    "shared/tools/generate_blockout.py",
+    "shared/assets/models/grand_marina_blockout.glb",
+    "shared/assets/models/ember_wharf_blockout.glb",
+    "shared/assets/models/mist_cove_blockout.glb",
+    "shared/assets/models/prism_reach_blockout.glb",
+    "web/src/ship/harborArt5b.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/HarborArt5b.kt",
+    "web/scripts/validate-harbor-art-5b.ts",
+    "shared/tools/author_harbor_art_5b.py"
+  ]
+}

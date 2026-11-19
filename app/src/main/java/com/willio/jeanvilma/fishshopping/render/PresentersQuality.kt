@@ -7,7 +7,8 @@ import kotlin.math.min
 /**
  * Finish 4.0 Phase 6 — quality / occlusion / stack slot presenters.
  */
-const val FLYING_TRANSFER_POOL = 12
+/** Finish 5.0 Phase 27 denser-scene fly pool for 12 harbors. */
+const val FLYING_TRANSFER_POOL = 16
 /** Arc flight time in seconds. */
 const val FLYING_TRANSFER_DURATION_S = 0.35
 /** Peak height of the parabolic arc above the ground (meters). */
@@ -19,7 +20,7 @@ enum class PresenterQuality { LOW, MEDIUM, HIGH }
 
 fun flyingTransferPoolForQuality(quality: PresenterQuality): Int = when (quality) {
     PresenterQuality.LOW -> 4
-    PresenterQuality.MEDIUM -> 8
+    PresenterQuality.MEDIUM -> 10
     PresenterQuality.HIGH -> FLYING_TRANSFER_POOL
 }
 
@@ -27,8 +28,8 @@ fun flyingTransferPoolForQuality(quality: PresenterQuality): Int = when (quality
 fun crowdDrawCapForQuality(quality: PresenterQuality, glbPool: Int): Int {
     val cap = when (quality) {
         PresenterQuality.LOW -> 3
-        PresenterQuality.MEDIUM -> 5
-        PresenterQuality.HIGH -> 8
+        PresenterQuality.MEDIUM -> 6
+        PresenterQuality.HIGH -> 10
     }
     return max(0, min(glbPool, cap))
 }

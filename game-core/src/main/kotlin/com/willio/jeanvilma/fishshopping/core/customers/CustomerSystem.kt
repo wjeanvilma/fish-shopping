@@ -466,6 +466,33 @@ object CustomerSystem {
     fun effectiveMaxQueue(def: CounterDef, rush: RushWindowDef?): Int =
         def.maxQueue + (rush?.queueBonus ?: 0)
 
+    /**
+     * Finish 5.0 Phase 3 — queue fill across unlocked counters (0..1000+).
+     * 1000 = at effective max queue capacity.
+     */
+    fun serviceQueuePressurePermille(content: ContentPack, state: GameState, harbor: HarborDef): Int {
+        val rush = activeRush(harbor, state.tick)
+        var capacity = 0
+        var queued = 0
+        for (def in harbor.counters) {
+            if (!isUnlocked(def, state)) continue
+            capacity += effectiveMaxQueue(def, rush)
+            queued += state.customers.count { it.counterId == def.id && it.arrived }
+        }
+        if (capacity <= 0) return 0
+        return ((queued.toLong() * 1000L) / capacity.toLong()).toInt()
+    }
+
+    /** Lowest patience among arrived customers; null when none waiting. */
+    fun minPatienceTicksLeft(state: GameState): Int? {
+        var min: Int? = null
+        for (c in state.customers) {
+            if (!c.arrived) continue
+            min = min?.let { minOf(it, c.patienceLeft) } ?: c.patienceLeft
+        }
+        return min
+    }
+
     fun ticksRemaining(rush: RushWindowDef, tick: Long): Int {
         val phase = (tick % rush.periodTicks.toLong()).toInt()
         return (rush.endTick - phase).coerceAtLeast(0)

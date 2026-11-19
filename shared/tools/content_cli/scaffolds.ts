@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 + Finish 4.0 Phase 28 — content JSON scaffolds.
+ * Finish 2.0/3.0/4.0/5.0 content JSON scaffolds.
  * Generates schema-shaped fragments; does not mutate content-pack.json.
  */
 import { normalizeSlug, qualifyId, titleFromSlug, type ScaffoldKind } from "./ids";
@@ -43,6 +43,16 @@ export interface ScaffoldRequest {
   undercutPriceMultPermille?: number;
   /** Rival AI profile. */
   aiProfile?: "siphon" | "undercut" | "adaptive" | "roamer";
+  /** Seasonal period ticks (default 21000). */
+  periodTicks?: number;
+  /** Seasonal start tick (default 100). */
+  startTick?: number;
+  /** Seasonal duration ticks (default 1500). */
+  durationTicks?: number;
+  /** Endgame prestige gate (default 8). */
+  requiresPrestigeCount?: number;
+  /** Cosmetic SKU override. */
+  sku?: string;
 }
 
 export interface ScaffoldResult {
@@ -318,6 +328,78 @@ export function scaffoldRival(req: ScaffoldRequest): ScaffoldResult {
   return { kind: "rival", id, fileName: `${id}.json`, document };
 }
 
+/** Finish 5.0 Phase 28 — seasonal event fragment. */
+export function scaffoldSeasonal(req: ScaffoldRequest): ScaffoldResult {
+  const slug = normalizeSlug(req.id);
+  const id = qualifyId("seasonal", slug);
+  const name = req.name?.trim() || titleFromSlug(slug);
+  const description =
+    req.description?.trim() ||
+    `Authoring scaffold seasonal event for ${name}. Tune multipliers before merge.`;
+  const document = {
+    id,
+    name,
+    description,
+    periodTicks: req.periodTicks ?? 21000,
+    startTick: req.startTick ?? 100,
+    durationTicks: req.durationTicks ?? 1500,
+    banner: `banner.${slug}`,
+    customerSpawnMultPermille: 1300,
+    priceMultPermille: 1100,
+    festivalCustomerIds: [] as string[],
+    speciesWeightMultPermille: {} as Record<string, number>,
+  };
+  return { kind: "seasonal", id, fileName: `${id}.json`, document };
+}
+
+/** Finish 5.0 Phase 28 — endgame tier fragment. */
+export function scaffoldEndgame(req: ScaffoldRequest): ScaffoldResult {
+  const slug = normalizeSlug(req.id);
+  const id = qualifyId("endgame", slug);
+  const name = req.name?.trim() || titleFromSlug(slug);
+  const description =
+    req.description?.trim() ||
+    `Authoring scaffold endgame tier for ${name}. Tune gates/rewards before merge.`;
+  const document = {
+    id,
+    name,
+    description,
+    requiresPrestigeCount: req.requiresPrestigeCount ?? 8,
+    requiresRivalBeats: 0,
+    requiresChallenges: 0,
+    catchSpeedPermille: 1025,
+    priceBonusPermille: 1025,
+    coins: req.cost ?? 400,
+    requiresMarks: 0,
+    requiresCrests: 0,
+  };
+  return { kind: "endgame", id, fileName: `${id}.json`, document };
+}
+
+/** Finish 5.0 Phase 28 — cosmetic entitlement fragment (billing, not content-pack). */
+export function scaffoldCosmetic(req: ScaffoldRequest): ScaffoldResult {
+  const slug = normalizeSlug(req.id);
+  const id = qualifyId("cosmetic", slug);
+  const name = req.name?.trim() || titleFromSlug(slug);
+  const description =
+    req.description?.trim() ||
+    `${name}. Visual only — never changes rates, wages, or sale prices.`;
+  const sku = req.sku?.trim() || `fish.cosmetic.${slug}`;
+  const document = {
+    id,
+    sku,
+    androidProductId: `fish_cosmetic_${slug}`,
+    webProductId: sku,
+    grantsCosmetic: `banner.iap_${slug}`,
+    type: "non_consumable",
+    powerNeutral: true,
+    title: name,
+    name,
+    description,
+  };
+  return { kind: "cosmetic", id, fileName: `${id}.json`, document };
+}
+
 export function buildScaffold(req: ScaffoldRequest): ScaffoldResult {
   if (req.kind === "species") return scaffoldSpecies(req);
   if (req.kind === "quest") return scaffoldQuest(req);
@@ -326,5 +408,8 @@ export function buildScaffold(req: ScaffoldRequest): ScaffoldResult {
   if (req.kind === "bait") return scaffoldBait(req);
   if (req.kind === "decor") return scaffoldDecor(req);
   if (req.kind === "machine") return scaffoldMachine(req);
-  return scaffoldRival(req);
+  if (req.kind === "rival") return scaffoldRival(req);
+  if (req.kind === "seasonal") return scaffoldSeasonal(req);
+  if (req.kind === "endgame") return scaffoldEndgame(req);
+  return scaffoldCosmetic(req);
 }

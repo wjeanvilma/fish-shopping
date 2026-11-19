@@ -31,6 +31,8 @@ export interface RemoteAnalyticsPolicyCatalog {
     requeueOnFlushFailure?: boolean;
     maxFlushRetries?: number;
     retryBackoffMs?: number;
+    retryJitterMs?: number;
+    deadLetterAfterMaxRetries?: boolean;
   };
   envelope: {
     requiredFields: string[];
@@ -52,8 +54,22 @@ export const REMOTE_REQUEUE_ON_FLUSH_FAILURE =
   REMOTE_ANALYTICS_POLICY.batch.requeueOnFlushFailure !== false;
 export const REMOTE_MAX_FLUSH_RETRIES = REMOTE_ANALYTICS_POLICY.batch.maxFlushRetries ?? 3;
 export const REMOTE_RETRY_BACKOFF_MS = REMOTE_ANALYTICS_POLICY.batch.retryBackoffMs ?? 2000;
+export const REMOTE_RETRY_JITTER_MS = REMOTE_ANALYTICS_POLICY.batch.retryJitterMs ?? 0;
+export const REMOTE_DEAD_LETTER_AFTER_MAX_RETRIES =
+  REMOTE_ANALYTICS_POLICY.batch.deadLetterAfterMaxRetries === true;
 export const REMOTE_WEB_ENV_KEY = REMOTE_ANALYTICS_POLICY.client.webEnvKey;
 export const REMOTE_LOCAL_DEFAULT_BASE = REMOTE_ANALYTICS_POLICY.client.localEmulatorDefaultBase;
+
+/** Finish 5.0 Phase 22 — backoff with optional jitter. */
+export function remoteRetryDelayMs(flushFailures: number, jitterMs = 0): number {
+  const base = REMOTE_RETRY_BACKOFF_MS * Math.max(1, flushFailures);
+  const jitter = Math.max(0, Math.min(REMOTE_RETRY_JITTER_MS, jitterMs));
+  return base + jitter;
+}
+
+export function shouldDeadLetterRemoteFlush(flushFailures: number): boolean {
+  return REMOTE_DEAD_LETTER_AFTER_MAX_RETRIES && flushFailures >= REMOTE_MAX_FLUSH_RETRIES;
+}
 
 export interface QueuedRemoteEvent {
   event: AnalyticsEvent;

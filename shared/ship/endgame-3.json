@@ -1,0 +1,108 @@
+{
+  "phase": 17,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.endgame_3.v1",
+  "description": "Finish 5.0 Phase 17 — deepen endgame (≥8 tiers / ≥12 challenges + crests) and bump live save schema 25→26 with endgameCrests persistence + v25→v26 migration.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 26,
+  "fromSchema": 25,
+  "toSchema": 26,
+  "endgame3Marker": "authored-finish-5.0-phase-17",
+  "tierCountMin": 8,
+  "challengeCountMin": 12,
+  "markCountMin": 3,
+  "crestCountMin": 3,
+  "tierIds": [
+    "endgame.tier.deep_harbor",
+    "endgame.tier.rival_warden",
+    "endgame.tier.legend_pier",
+    "endgame.tier.crown_market",
+    "endgame.tier.mist_sovereign",
+    "endgame.tier.prism_crown",
+    "endgame.tier.aurora_throne",
+    "endgame.tier.tideglass_ascendant"
+  ],
+  "challengeIds": [
+    "endgame.challenge.rival_sweep",
+    "endgame.challenge.prestige_surge",
+    "endgame.challenge.codex_depth",
+    "endgame.challenge.market_master",
+    "endgame.challenge.rival_armada",
+    "endgame.challenge.chain_admiral",
+    "endgame.challenge.harbor_decade",
+    "endgame.challenge.mastery_legend",
+    "endgame.challenge.harbor_circuit",
+    "endgame.challenge.quest_sovereign",
+    "endgame.challenge.machine_ascendant",
+    "endgame.challenge.revenue_crest"
+  ],
+  "newTierIds": [
+    "endgame.tier.aurora_throne",
+    "endgame.tier.tideglass_ascendant"
+  ],
+  "newChallengeIds": [
+    "endgame.challenge.harbor_circuit",
+    "endgame.challenge.quest_sovereign",
+    "endgame.challenge.machine_ascendant",
+    "endgame.challenge.revenue_crest"
+  ],
+  "crestIds": [
+    "endgame.crest.harbor_circuit",
+    "endgame.crest.quest_sovereign",
+    "endgame.crest.machine_ascendant",
+    "endgame.crest.revenue_crest"
+  ],
+  "stats": [
+    "stat.endgame_tiers_unlocked",
+    "stat.endgame_challenges_completed",
+    "stat.endgame_marks_earned",
+    "stat.endgame_crests_earned"
+  ],
+  "migration": {
+    "fields": [
+      {
+        "field": "endgameCrests",
+        "type": "string[]",
+        "default": []
+      }
+    ]
+  },
+  "extendsEndgame2": "shared/ship/endgame-2.json",
+  "schema26Prep": "shared/ship/schema-26-prep.json",
+  "parityFixture": "shared/fixtures/parity-endgame-3.json",
+  "authorTool": "shared/tools/author_endgame_3.py",
+  "validateScript": "npm run endgame3:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "legacyFixture": "shared/fixtures/legacy/snapshot-v25-starter-line-t2500.json",
+  "checklist": [
+    "≥8 endgame tiers including aurora_throne + tideglass_ascendant",
+    "≥12 endgame challenges with grantsCrest crests",
+    "SCHEMA_VERSION / saveSchemaVersion / RELEASE_PIN / lifecycle = 26",
+    "v25→v26 migration defaults endgameCrests=[]",
+    "endgame2:validate soft floors (≥6 tiers/challenges, schema≥25)",
+    "kickoff gaps.endgameSchema26Pending = false",
+    "parity-endgame-3 + endgame3:validate green",
+    "CI runs endgame3:validate",
+    "content stays 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/endgame-3.json",
+    "shared/fixtures/parity-endgame-3.json",
+    "shared/ship/endgame-2.json",
+    "shared/ship/schema-26-prep.json",
+    "shared/fixtures/legacy/snapshot-v25-starter-line-t2500.json",
+    "shared/fixtures/snapshot-starter-line-t2500.json",
+    "shared/content/content-pack.json",
+    "shared/tools/author_endgame_3.py",
+    "web/src/ship/endgame3.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Endgame3.kt",
+    "web/scripts/validate-endgame-3.ts"
+  ],
+  "measured": {
+    "tiers": 8,
+    "challenges": 12,
+    "marks": 4,
+    "crests": 4
+  }
+}

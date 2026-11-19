@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Finish 2.0 Phase 23 — Haitian Creole store listing copy. Source: shared/store/locales/ht.json -->
+    <string name="app_name">Fish Shopping</string>
+    <string name="store_short_description">Pran, koupe epi vann pwason nan yon mache 3D konfòtab sou bò pò.</string>
+    <string name="store_tagline">Pran, koupe, vann — jere mache pò ou</string>
+    <string name="store_whats_new">Gel 4.0.0 — san espès, senkant misyon, douz machin, dis pò, douz mache rival, endgame schema 25, parity lock 4.0, ak ops Finish 4.0. Schema 25; ansyen sovgad 3.0 toujou chaje.</string>
+</resources>

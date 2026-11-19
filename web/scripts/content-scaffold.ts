@@ -1,8 +1,7 @@
 /**
- * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 + Finish 4.0 Phase 28 —
- * npm entry for content scaffolds + Ajv schema check.
+ * Finish 2.0/3.0/4.0/5.0 — npm entry for content scaffolds + Ajv schema check.
  *
- *   npm run content:scaffold -- <species|quest|harbor|contract|bait|decor|machine|rival> --id <slug> [...]
+ *   npm run content:scaffold -- <kind> --id <slug> [...]
  *   npm run content:scaffold -- --list
  *   npm run content:scaffold -- --check-floors
  */
@@ -15,7 +14,7 @@ import {
   type ScaffoldKind,
 } from "../../shared/tools/content_cli/ids";
 import { indexPackIds, packHasId } from "../../shared/tools/content_cli/packIds";
-import { FINISH4_PACK_FLOORS, measurePackFloors } from "../../shared/tools/content_cli/packFloors";
+import { FINISH5_PACK_FLOORS, measurePackFloors } from "../../shared/tools/content_cli/packFloors";
 import { buildScaffold, type ScaffoldRequest } from "../../shared/tools/content_cli/scaffolds";
 import { validateScaffoldFragment } from "../src/contentAuthoring/scaffoldValidate";
 
@@ -37,6 +36,8 @@ Options:
   --recipes <ids>  --input-cap <n>  --output-cap <n>
   --harbors <ids>  --specialty <ids>  --aggression <n>  --undercut <n>
   --ai-profile <siphon|undercut|adaptive|roamer>
+  --period-ticks <n>  --start-tick <n>  --duration-ticks <n>
+  --prestige <n>  --sku <id>
 `);
   process.exit(2);
 }
@@ -72,6 +73,10 @@ function parse(argv: string[]): ScaffoldRequest & {
   const specialtyRaw = takeFlag(argv, "--specialty");
   const aggressionRaw = takeFlag(argv, "--aggression");
   const undercutRaw = takeFlag(argv, "--undercut");
+  const periodRaw = takeFlag(argv, "--period-ticks");
+  const startRaw = takeFlag(argv, "--start-tick");
+  const durationRaw = takeFlag(argv, "--duration-ticks");
+  const prestigeRaw = takeFlag(argv, "--prestige");
   const aiProfileRaw = takeFlag(argv, "--ai-profile") as
     | "siphon"
     | "undercut"
@@ -104,6 +109,11 @@ function parse(argv: string[]): ScaffoldRequest & {
     aggressionPermille: aggressionRaw ? Number(aggressionRaw) : undefined,
     undercutPriceMultPermille: undercutRaw ? Number(undercutRaw) : undefined,
     aiProfile: aiProfileRaw,
+    periodTicks: periodRaw ? Number(periodRaw) : undefined,
+    startTick: startRaw ? Number(startRaw) : undefined,
+    durationTicks: durationRaw ? Number(durationRaw) : undefined,
+    requiresPrestigeCount: prestigeRaw ? Number(prestigeRaw) : undefined,
+    sku: takeFlag(argv, "--sku"),
     outDir: resolve(takeFlag(argv, "--out") ?? defaultOut),
     dryRun: argv.includes("--dry-run"),
     checkPack: argv.includes("--check-pack"),
@@ -119,17 +129,18 @@ function main(): number {
   }
   if (argv.includes("--check-floors")) {
     const pack = JSON.parse(readFileSync(defaultPack, "utf8")) as Record<string, unknown>;
-    const measure = measurePackFloors(pack, FINISH4_PACK_FLOORS);
+    const measure = measurePackFloors(pack, FINISH5_PACK_FLOORS, { repoRoot: root });
     console.log(
       `pack floors species=${measure.species} quests=${measure.quests} harbors=${measure.harbors} ` +
-        `machines=${measure.machines} rivals=${measure.rivals} baits=${measure.baits}`,
+        `machines=${measure.machines} rivals=${measure.rivals} baits=${measure.baits} ` +
+        `seasonal=${measure.seasonal} cosmetics=${measure.cosmetics} chains=${measure.chains}`,
     );
     if (!measure.met) {
-      console.error("Finish 4.0 pack floors short:");
+      console.error("Finish 5.0 pack floors short:");
       for (const s of measure.shortfalls) console.error(`  - ${s}`);
       return 1;
     }
-    console.log("OK content pack meets Finish 4.0 floors");
+    console.log("OK content pack meets Finish 5.0 floors");
     return 0;
   }
 
@@ -141,40 +152,34 @@ function main(): number {
     return 1;
   }
 
-  let result;
-  try {
-    result = buildScaffold(req);
-  } catch (e) {
-    console.error((e as Error).message);
-    return 1;
-  }
-
-  const errors = validateScaffoldFragment(result.kind, result.document);
-  if (errors.length) {
-    console.error("Scaffold failed schema validation:");
-    for (const e of errors) console.error(`  - ${e}`);
+  const built = buildScaffold(req);
+  const schemaErrors = validateScaffoldFragment(built.kind, built.document);
+  if (schemaErrors.length) {
+    console.error("Scaffold failed schema/structural validation:");
+    for (const e of schemaErrors) console.error(`  - ${e}`);
     return 1;
   }
 
   if (req.checkPack) {
     const pack = JSON.parse(readFileSync(defaultPack, "utf8")) as Record<string, unknown>;
-    if (packHasId(indexPackIds(pack), result.kind, result.id)) {
-      console.error(`Id ${result.id} already exists in content-pack.json`);
+    const index = indexPackIds(pack, { repoRoot: root });
+    if (packHasId(index, built.kind, built.id)) {
+      console.error(`ID already present in pack/entitlements: ${built.id}`);
       return 1;
     }
+    console.log(`OK --check-pack: ${built.id} not present`);
   }
 
-  const json = `${JSON.stringify(result.document, null, 2)}\n`;
+  const json = `${JSON.stringify(built.document, null, 2)}\n`;
   if (req.dryRun) {
-    process.stdout.write(json);
+    console.log(json);
     return 0;
   }
 
   mkdirSync(req.outDir, { recursive: true });
-  const outPath = resolve(req.outDir, result.fileName);
+  const outPath = resolve(req.outDir, built.fileName);
   writeFileSync(outPath, json, "utf8");
   console.log(`Wrote ${outPath}`);
-  console.log(`OK ${result.kind} scaffold ${result.id} (schema OK; merge into content-pack.json manually)`);
   return 0;
 }
 

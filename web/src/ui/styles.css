@@ -217,6 +217,7 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 20%, transparent);
 }
 .timing-band { position: absolute; top: 0; bottom: 0; }
+.timing-band.strike { background: color-mix(in srgb, var(--warn, #c97b2a) 35%, transparent); }
 .timing-band.good { background: color-mix(in srgb, var(--action) 55%, transparent); }
 .timing-band.perfect { background: color-mix(in srgb, var(--reward) 75%, transparent); }
 .timing-needle {
@@ -474,3 +475,308 @@ a.button { text-decoration: none; display: inline-flex; align-items: center; jus
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ------------------------------------------------------------------------------------------
+ * Cozy art pass 5 — tidy HUD chrome (HudShell.tsx): harbor chip, coin pill, banner column,
+ * icon toolbar / menu drawer, photo mode and decorating overlays.
+ * ---------------------------------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  --chip-bg: color-mix(in srgb, #fffaf0 90%, transparent);
+  --chip-border: color-mix(in srgb, #8a6a3a 22%, transparent);
+  --wood: #8a5a32;
+  --coin-ink: #4a3208;
+  --hud-shadow: 0 3px 0 color-mix(in srgb, #5a3a1a 16%, transparent), 0 6px 18px color-mix(in srgb, #153449 14%, transparent);
+}
+[data-theme="dark"] {
+  --chip-bg: color-mix(in srgb, #1a2a35 90%, transparent);
+  --chip-border: color-mix(in srgb, #e8f1f6 14%, transparent);
+  --wood: #c9935a;
+  --coin-ink: #3a2606;
+  --hud-shadow: 0 3px 0 rgb(0 0 0 / 0.25), 0 6px 18px rgb(0 0 0 / 0.3);
+}
+.icon { display: inline-block; flex: none; vertical-align: -0.2em; }
+
+.hud .pill,
+.hud .panel { box-shadow: var(--hud-shadow); }
+.hud .pill { border: 1px solid var(--chip-border); }
+
+.harbor-chip {
+  display: grid;
+  gap: 2px;
+  padding: 8px 16px 8px 14px;
+  border-radius: 18px;
+  background: var(--chip-bg);
+  backdrop-filter: blur(6px);
+  max-width: var(--harbor-meta-max, min(42vw, 380px));
+}
+.harbor-chip-title { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; }
+.harbor-name {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.12em;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.harbor-chip .rating { margin-left: 0; }
+.harbor-chip .rep { margin-left: auto; padding-left: 8px; font-size: 0.86em; }
+.harbor-chip .harbor-chip-meta.day-part,
+.top-left.harbor-chip .harbor-chip-meta.day-part {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  opacity: 1;
+  font-size: 0.86em;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.meta-item { display: inline-flex; align-items: center; gap: 4px; }
+.meta-item .icon { color: var(--action); }
+.meta-item.spec { font-style: italic; }
+
+.top-coins {
+  top: max(var(--gap), env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px 8px 12px;
+  color: var(--coin-ink);
+  background: linear-gradient(180deg, #f6cb6a, var(--reward));
+  border-color: color-mix(in srgb, #8a5a10 35%, transparent);
+  font-size: calc(16px * var(--hud-font-scale));
+}
+.hud .top-coins { font-size: calc(16px * var(--hud-font-scale)); }
+.top-coins .coins-label { font-weight: 600; opacity: 0.75; font-size: 0.82em; }
+
+/* Banners: one centred column under the coin pill instead of sibling-selector stacking. */
+.hud-banners {
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 58px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  width: max-content;
+  max-width: min(92vw, 520px);
+}
+.hud-banners > .pill {
+  position: static;
+  transform: none;
+  pointer-events: auto;
+  min-height: 0;
+  padding: 6px 14px;
+  font-size: calc(13px * var(--hud-font-scale));
+}
+.hud-banners > .rival-banner { order: -1; }
+.hud-banners:empty { display: none; }
+
+/* Toolbar: compact icon row (wide) or Upgrades + Menu (narrow / portrait / touch). */
+.hud-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  box-shadow: var(--hud-shadow);
+  max-width: none;
+}
+.hud-toolbar .button.tool-button,
+.hud-toolbar .button.icon-button {
+  min-width: var(--touch, 48px);
+  min-height: var(--touch, 48px);
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--ink);
+  transition: background 120ms ease, transform 120ms ease;
+}
+.hud-toolbar .button.tool-button:hover,
+.hud-toolbar .button.icon-button:hover { background: color-mix(in srgb, var(--action) 14%, transparent); }
+.hud-toolbar .button.tool-button:active,
+.hud-toolbar .button.icon-button:active { transform: scale(0.94); }
+.hud-toolbar .button.primary,
+.hud-toolbar .button.icon-button:first-child { background: var(--action); color: var(--on-action); }
+.hud-toolbar .menu-button { background: transparent; }
+.tool-label {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@media (min-width: 1560px) {
+  .tool-label { position: static; width: auto; height: auto; clip: auto; font-size: 13px; }
+}
+.hud-portrait .hud-toolbar .button,
+.is-portrait .hud-toolbar .button { padding: 0 10px; }
+
+.menu-scrim { z-index: 20; place-items: end center; }
+.menu-drawer {
+  width: min(520px, calc(100vw - 20px));
+  max-height: var(--sheet-max-height, min(78vh, calc(100vh - 20px)));
+  overflow: auto;
+  margin-bottom: max(10px, env(safe-area-inset-bottom));
+  padding: 16px;
+  background: var(--surface);
+  border-radius: 24px 24px 18px 18px;
+  animation: drawer-up 180ms ease-out;
+}
+@keyframes drawer-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.menu-tile {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-height: 84px;
+  padding: 12px 6px;
+  border: 1px solid var(--chip-border);
+  border-radius: 16px;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font: 600 13px system-ui, sans-serif;
+  cursor: pointer;
+}
+.menu-tile:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.menu-tile-icon {
+  display: grid;
+  place-items: center;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--action) 16%, var(--surface));
+  color: var(--action);
+}
+
+/* Photo mode: full-screen gesture layer, HUD hidden. */
+.photo-mode, .decor-mode {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  font-size: 14px;
+}
+.photo-mode { cursor: grab; }
+.photo-mode:active { cursor: grabbing; }
+.photo-hint, .decor-hint {
+  position: absolute;
+  top: max(var(--gap), env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  min-height: 0;
+  padding: 8px 16px;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  white-space: nowrap;
+  max-width: calc(100vw - 32px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.photo-controls {
+  position: absolute;
+  left: 50%;
+  bottom: max(var(--gap), env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  flex-wrap: wrap;
+  justify-content: center;
+  cursor: default;
+}
+.photo-time { display: grid; gap: 2px; min-width: min(220px, 50vw); }
+.photo-time input { width: 100%; accent-color: var(--action); }
+.photo-controls .button { display: inline-flex; align-items: center; gap: 6px; }
+.snap-button { padding: 0 22px; background: var(--danger); }
+.photo-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  animation: photo-flash 200ms ease-out forwards;
+  pointer-events: none;
+}
+@keyframes photo-flash { from { opacity: 0.85; } to { opacity: 0; } }
+
+/* Decorating tray. */
+.decor-mode { cursor: crosshair; }
+.decor-tray {
+  position: absolute;
+  right: max(var(--gap), env(safe-area-inset-right));
+  bottom: max(var(--gap), env(safe-area-inset-bottom));
+  width: min(320px, calc(100vw - 32px));
+  max-height: min(70vh, calc(100vh - 100px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 14px;
+  background: var(--surface);
+  cursor: default;
+}
+.decor-tray .decor-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 2px; grid-auto-rows: max-content; align-content: start; }
+.decor-tray .decor-actions { flex: none; border-top: 1px solid var(--chip-border); padding-top: 10px; }
+.decor-list { display: grid; gap: 8px; margin-top: 10px; }
+.decor-item {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  min-height: var(--touch, 48px);
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font: 600 14px system-ui, sans-serif;
+  cursor: pointer;
+}
+.decor-item.selected { border-color: var(--action); background: color-mix(in srgb, var(--action) 12%, var(--surface)); }
+.decor-item:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.decor-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.decor-actions .button { display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; }
+.decor-actions .button.primary { margin-left: auto; }
+.decor-empty { display: grid; gap: 8px; margin-top: 8px; }
+.is-portrait .decor-tray,
+.hud-portrait .decor-tray {
+  left: max(10px, env(safe-area-inset-left));
+  right: max(10px, env(safe-area-inset-right));
+  width: auto;
+  max-height: 44vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-drawer, .photo-flash { animation: none; }
+  .hud-toolbar .button { transition: none; }
+}
+
+/* Portrait: chip · coins · [Upgrades][Menu] share one row without overlapping. */
+.hud-portrait .top-coins,
+.is-portrait .hud .top-coins {
+  left: auto;
+  right: calc(max(var(--gap), env(safe-area-inset-right)) + 118px);
+  transform: none;
+  padding: 8px 12px 8px 10px;
+}
+.hud-portrait .top-coins .coins-label { display: none; }
+.hud-portrait .harbor-chip,
+.is-portrait .hud .harbor-chip {
+  max-width: calc(100vw - 2 * max(var(--gap), 16px) - 228px);
+  padding: 6px 12px;
+}
+.hud-portrait .harbor-chip .rep { display: none; }
+.hud-portrait .hud-banners { top: calc(max(var(--gap), env(safe-area-inset-top)) + 64px); }

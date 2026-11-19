@@ -8,13 +8,18 @@
   "viewModelSplitMarker": "authored-finish-4.0-phase-4",
   "viewModelPackageRoot": "app/src/main/java/com/willio/jeanvilma/fishshopping/game",
   "viewModelPath": "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt",
-  "viewModelMaxLines": 1500,
-  "extractedFileMin": 6,
+  "viewModelMaxLines": 1600,
+  "extractedFileMin": 7,
+  "softFloors": {
+    "extractedFileHistoricalMin": 6,
+    "viewModelMaxLinesHistorical": 1500
+  },
   "requiredFiles": [
     "GameUiState.kt",
     "vm/VmIntentHost.kt",
     "vm/VmShellIntents.kt",
     "vm/VmEconomyIntents.kt",
+    "vm/VmFishingIntents.kt",
     "vm/VmTravelIntents.kt",
     "vm/VmIapIntents.kt"
   ],
@@ -28,7 +33,8 @@
       "VmStationIntentHost"
     ],
     "vm/VmShellIntents.kt": ["class VmShellIntents", "setUpgradesOpen", "openFromDeepLink"],
-    "vm/VmEconomyIntents.kt": ["class VmEconomyIntents", "purchase", "hire", "acceptContract", "reel"],
+    "vm/VmEconomyIntents.kt": ["class VmEconomyIntents", "purchase", "hire", "acceptContract"],
+    "vm/VmFishingIntents.kt": ["class VmFishingIntents", "reel", "buyBait", "selectBait", "selectTechnique"],
     "vm/VmTravelIntents.kt": ["class VmTravelIntents", "travelToHarbor", "applyDeepLink", "consumeDeepLink"],
     "vm/VmIapIntents.kt": [
       "class VmIapIntents",
@@ -39,6 +45,7 @@
     "GameViewModel.kt": [
       "VmShellIntents",
       "VmEconomyIntents",
+      "VmFishingIntents",
       "VmTravelIntents",
       "VmIapIntents",
       "enqueuePanelCommand"
@@ -47,6 +54,7 @@
   "viewModelMustNotDefine": [
     "sealed interface GameUiState",
     "class VmEconomyIntents",
+    "class VmFishingIntents",
     "class VmIapIntents",
     "class VmShellIntents",
     "class VmTravelIntents"
@@ -56,8 +64,8 @@
   "parityFixture": "shared/fixtures/parity-viewmodel-split.json",
   "validateScript": "npm run viewmodelsplit:validate",
   "checklist": [
-    "GameViewModel.kt ≤1500 lines; delegates shell/economy/travel/IAP intents",
-    "≥6 extracted modules (GameUiState + 5 vm/*)",
+    "GameViewModel.kt ≤1600 lines; delegates shell/economy/fishing/travel/IAP intents",
+    "≥7 extracted modules (GameUiState + 6 vm/*)",
     "Required host/intent symbols present",
     "Kickoff gaps.viewModelSplitIncomplete = false",
     "app compiles (:app:compileDebugKotlin)",
@@ -74,6 +82,7 @@
     "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmIntentHost.kt",
     "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmShellIntents.kt",
     "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmEconomyIntents.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmFishingIntents.kt",
     "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmTravelIntents.kt",
     "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmIapIntents.kt",
     "web/src/ship/viewModelSplit.ts",

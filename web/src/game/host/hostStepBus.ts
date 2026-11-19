@@ -10,6 +10,7 @@ import type { ShellPanelController } from "../../shell/shellPanels";
 import {
   resolveAchievementBurst,
   resolveBaitBurst,
+  resolveCastStrikeBurst,
   resolveCatchBurst,
   resolveCelebrateBurst,
   resolveContractAcceptBurst,
@@ -25,10 +26,12 @@ import {
   resolveHarborTravelBurst,
   resolveHireBurst,
   resolveLoanBurst,
+  resolveMachineBreakBurst,
   resolveMachineDoneBurst,
   resolvePayBurst,
   resolvePrestigeBurst,
   resolveRivalBeatBurst,
+  resolveSpoilBurst,
   resolveTrophySetBurst,
   type FlyingTransferCue,
   type ShakeKind,
@@ -79,6 +82,10 @@ export function processHostStep(
     let contractAcceptBurst = false;
     let baitBurst = false;
     let fullUnlockBurst = false;
+    let castStrikeBurst = false;
+    let spoilBurst = false;
+    let machineBreakBurst = false;
+    let machineBreakStationId: string | undefined;
     const events = sim.step(batch);
     sharedAnalyticsBus.onGameEvents(events, sim.state);
     for (const e of events) {
@@ -172,6 +179,19 @@ export function processHostStep(
             transaction = true;
           }
           break;
+        case "decor_placed":
+          sink.say(`${e.moved ? "Moved" : "Placed"} ${sim.content.decorById.get(e.decorId)?.name ?? e.decorId}`);
+          decorBurst = true;
+          transaction = true;
+          break;
+        case "decor_stored":
+          sink.say(`Stored ${sim.content.decorById.get(e.decorId)?.name ?? e.decorId}`);
+          transaction = true;
+          break;
+        case "decor_place_rejected":
+          sink.say(e.reason);
+          transaction = true;
+          break;
         case "endgame_tier_unlocked":
           sink.say(`Endgame tier unlocked (+${e.coinsRewarded})`);
           endgameTierBurst = true;
@@ -191,7 +211,12 @@ export function processHostStep(
           break;
         case "machine_broke":
           sink.say(`Machine broke: ${sim.content.machinesById.get(e.machineId)?.name ?? e.stationId}`);
+          machineBreakBurst = true;
+          machineBreakStationId = e.stationId;
           transaction = true;
+          break;
+        case "cast_strike_reel":
+          castStrikeBurst = true;
           break;
         case "iap_cosmetic_rejected":
           sink.say(e.reason);
@@ -341,6 +366,7 @@ export function processHostStep(
         case "items_spoiled": {
           const n = e.items.reduce((sum, it) => sum + it.quantity, 0);
           sink.say(`Spoiled ${n} ${e.location === "bag" ? "in bag" : "on counter"}`);
+          spoilBurst = true;
           transaction = true;
           break;
         }
@@ -404,6 +430,15 @@ export function processHostStep(
       if (contractAcceptBurst) sink.pendingBursts.push(resolveContractAcceptBurst(view));
       if (baitBurst) sink.pendingBursts.push(resolveBaitBurst(view));
       if (fullUnlockBurst) sink.pendingBursts.push(resolveFullUnlockBurst(view));
+      // Finish 5.0 Phase 12 visual juice.
+      if (castStrikeBurst) {
+        sink.pendingBursts.push(resolveCastStrikeBurst(view));
+        sink.pendingShakes.push("cast_strike");
+      }
+      if (spoilBurst) sink.pendingBursts.push(resolveSpoilBurst(view));
+      if (machineBreakBurst) {
+        sink.pendingBursts.push(resolveMachineBreakBurst(view, machineBreakStationId));
+      }
     }
     if (transaction) sink.publish(true);
 }

@@ -1,11 +1,13 @@
 /** Immutable presentation snapshot for the HUD and renderer. Mirrors game-core sim/SimView.kt. */
 import { coachingObjective, type ObjectiveView } from "./coaching";
 import { bankProductRepayAmount, bankProductsOrLegacy, queueSlot, rectCenterX, rectCenterZ } from "./content";
-import { compareStrings } from "./foundations";
+import { compareStrings, idiv } from "./foundations";
 import type { MachineStatus } from "./state";
 import type { Simulation } from "./simulation";
 import { abandonPermille, topSpeciesCatchShare, wageRatioPermille } from "./telemetry";
 import { BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DailyGoalsSystem, DecorSystem, EconomySystem, EndgameSystem, FishingSystem, HarborTravelSystem, MasterySystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, ReputationSystem, RivalMarketSystem, SeasonalEventSystem, StaffTreesSystem, UpgradeSystem, WeatherSystem, WorkerSystem } from "./systems";
+import { WeeklyGoalsSystem } from "./weeklyGoals";
+import { CastPhases } from "./systems/castPhases";
 import { Warehouse, type WarehouseView } from "./warehouse";
 export type { WarehouseView, WarehouseLineView, WarehouseLocationView } from "./warehouse";
 import { SpeciesBook, type SpeciesBookView } from "./speciesBook";
@@ -220,7 +222,18 @@ export interface AutomationIssueView {
 }
 
 /** Phase 23 shop decor offer row. */
+/** Cozy art pass 5: a decor item standing in the active harbor. */
+export interface DecorPlacementView {
+  decorId: string;
+  name: string;
+  xMm: number;
+  zMm: number;
+  rotationQuarter: number;
+}
+
 export interface DecorOfferView {
+  /** Cozy art pass 5: placed somewhere in the active harbor. */
+  placed: boolean;
   id: string;
   name: string;
   description: string;
@@ -402,6 +415,11 @@ export interface SimView {
   fishingProgress: number | null;
   fishingTimingWindow: boolean;
   fishingTimingTier: "perfect" | "good" | null;
+  /** Finish 5.0 Phase 2 — waiting / strike / fight while casting. */
+  castPhase: "waiting" | "strike" | "fight" | null;
+  /** Finish 5.0 Phase 2 — strike band as 0..1 of cast duration. */
+  castStrikeStart01: number;
+  castStrikeEnd01: number;
   /** Phase 19: Good reel window as 0..1 of cast duration (presentation). */
   timingGoodStart01: number;
   timingGoodEnd01: number;
@@ -413,6 +431,8 @@ export interface SimView {
   fishingRegenProgress: number | null;
   dayPartId: string;
   dayPartName: string;
+  /** Cozy art pass 5: continuous position in the day cycle, 0..999 (presentation only). */
+  dayProgressPermille: number;
   tideChartOwned: boolean;
   /** Finish 2.0 Phase 13 — current weather pattern. */
   weatherId: string;
@@ -471,9 +491,21 @@ export interface SimView {
   contractRefreshTicksLeft: number;
   contractFailStreak: number;
   contractFailStreakThreshold: number;
+  /** Finish 5.0 Phase 3 — queue fill pressure across unlocked counters. */
+  serviceQueuePressurePermille: number;
+  /** Finish 5.0 Phase 3 — lowest patience among arrived customers. */
+  minPatienceTicksLeft: number | null;
+  /** Finish 5.0 Phase 3 — ticks until nearest active contract deadline. */
+  ticksUntilNearestContractDeadline: number | null;
+  /** Finish 5.0 Phase 3 — fail-streak board pressure (1000 = at threshold). */
+  contractBoardPressurePermille: number;
+  /** Finish 5.0 Phase 3 — progress toward next unlocked quest (0..1000). */
+  nextQuestProgressPermille: number | null;
   /** Finish 2.0 Phase 18 — local login streak + today's dailies (Goals panel). */
   dailyLoginStreak: number;
   dailyGoals: DailyGoalView[];
+  /** Finish 5.0 Phase 23 — weekly retention board (Goals panel). */
+  weeklyGoals: DailyGoalView[];
   /** Soft sinks unlocked (maintenance + spoilage). */
   economyUnlocked: boolean;
   economyLockedReason: string | null;
@@ -481,6 +513,10 @@ export interface SimView {
   maintenanceCoinsPerStation: number;
   /** True while bag fish spoilage is active. */
   bagFishSpoilActive: boolean;
+  /** Finish 5.0 Phase 2 — ticks until next bag spoil; null when inactive/empty. */
+  ticksUntilBagSpoil: number | null;
+  /** Finish 5.0 Phase 2 — mean-tier spoil pressure (1000 = neutral). */
+  bagSpoilPressurePermille: number;
   prestigeUnlocked: boolean;
   prestigeLockedReason: string | null;
   /** Harbor rating stars 0..5 from lifetime revenue. */
@@ -500,6 +536,8 @@ export interface SimView {
   endgameUnlocked: boolean;
   endgameMarkCount: number;
   endgameMarks: string[];
+  endgameCrestCount: number;
+  endgameCrests: string[];
   endgameLockedReason: string | null;
   beatenRivalCount: number;
   endgameTiers: EndgameTierView[];
@@ -510,6 +548,8 @@ export interface SimView {
   unlockedCosmetics: string[];
   /** Phase 23 shop decor offers for the Goals panel. */
   decorOffers: DecorOfferView[];
+  /** Cozy art pass 5: decor standing in the active harbor (sorted by decor id). */
+  decorPlacements: DecorPlacementView[];
   /** Phase 24 optional IAP cosmetics (power-neutral). */
   cosmeticIapOffers: CosmeticIapOfferView[];
   /** Summed patience bonus from owned decor. */
@@ -625,20 +665,29 @@ export function buildView(sim: Simulation): SimView {
     const tier = casting
       ? FishingSystem.timingTierAtContent(c, s, p.fishingProgress, p.fishingCatchTicks)
       : "miss";
+    const phase = casting
+      ? CastPhases.phaseAt(p.fishingProgress, p.fishingCatchTicks, c, s)
+      : null;
     const reelHint = tier === "perfect" ? "Perfect — reel now!"
       : tier === "good" ? "Good — reel for a tip!"
         : "Reel now for a bonus!";
+    const phaseHint = phase === "waiting" ? "Waiting for a nibble…"
+      : phase === "strike" && inWindow && !p.reelAttemptedThisCast ? reelHint
+        : phase === "strike" ? "Strike window — get ready!"
+          : phase === "fight" ? "Fighting — hold the line!"
+            : "Fishing...";
     const lines = [
       !unlocked
         ? `Locked — buy ${spotDef.requiresUpgrade ? (c.upgradesById.get(spotDef.requiresUpgrade)?.name ?? spotDef.requiresUpgrade) : "an upgrade"}`
         : full ? "Bag full - deliver your catch"
           : empty ? "Pier empty — fish are returning"
-            : casting && inWindow && !p.reelAttemptedThisCast ? reelHint
+            : casting ? phaseHint
               : "Fishing...",
       `Fish here: ${spot.stock}/${spotDef.stockMax}`,
       tideOwned ? `${part.name} · tide chart` : part.name,
     ];
     if (casting) lines.push(`Hooked: ${c.speciesById.get(p.fishingSpecies!)!.name}`);
+    if (casting && phase) lines.push(`Cast: ${phase}`);
     const regenNeeded = FishingSystem.regenTicksForState(c, s, spotDef, spot.stock);
     context = {
       title: "Fishing spot",
@@ -817,6 +866,11 @@ export function buildView(sim: Simulation): SimView {
       const tier = FishingSystem.timingTierAtContent(c, s, p.fishingProgress, p.fishingCatchTicks);
       return tier === "miss" ? null : tier;
     })(),
+    castPhase: p.fishingSpecies !== null && p.fishingCatchTicks > 0
+      ? CastPhases.phaseAt(p.fishingProgress, p.fishingCatchTicks, c, s)
+      : null,
+    castStrikeStart01: CastPhases.WAITING_END_PERMILLE / 1000,
+    castStrikeEnd01: CastPhases.strikeEndPermille(c, s) / 1000,
     timingGoodStart01: MasterySystem.timingWindows(c, s).goodStart / 1000,
     timingGoodEnd01: MasterySystem.timingWindows(c, s).goodEnd / 1000,
     timingPerfectStart01: MasterySystem.timingWindows(c, s).perfectStart / 1000,
@@ -840,6 +894,7 @@ export function buildView(sim: Simulation): SimView {
     })(),
     dayPartId: FishingSystem.dayPartAt(c, s.tick).id,
     dayPartName: FishingSystem.dayPartAt(c, s.tick).name,
+    dayProgressPermille: idiv((s.tick % c.ecology.dayLengthTicks) * 1000, c.ecology.dayLengthTicks),
     tideChartOwned: FishingSystem.hasTideChart(s),
     weatherId: WeatherSystem.weatherAt(c, s.tick).id,
     weatherName: (() => { const w = WeatherSystem.weatherAt(c, s.tick); return c.displayName(w.id, w.name); })(),
@@ -1157,6 +1212,11 @@ export function buildView(sim: Simulation): SimView {
     contractRefreshTicksLeft: s.contractBoardRefreshAt <= 0 ? 0 : Math.max(0, s.contractBoardRefreshAt - s.tick),
     contractFailStreak: ContractSystem.failStreak(s),
     contractFailStreakThreshold: c.contracts.failStreakThreshold ?? 3,
+    serviceQueuePressurePermille: CustomerSystem.serviceQueuePressurePermille(c, s, h),
+    minPatienceTicksLeft: CustomerSystem.minPatienceTicksLeft(s),
+    ticksUntilNearestContractDeadline: ContractSystem.ticksUntilNearestDeadline(s),
+    contractBoardPressurePermille: ContractSystem.contractBoardPressurePermille(c, s),
+    nextQuestProgressPermille: ProgressionSystem.nextQuestProgressPermille(c, s),
     dailyLoginStreak: DailyGoalsSystem.streak(s),
     dailyGoals: DailyGoalsSystem.boardObjectives(c, s).map((o) => {
       const progress = DailyGoalsSystem.progress(c, s, o);
@@ -1174,6 +1234,22 @@ export function buildView(sim: Simulation): SimView {
         claimEnabled: complete && !claimed,
       };
     }),
+    weeklyGoals: WeeklyGoalsSystem.boardObjectives(s).map((o) => {
+      const progress = WeeklyGoalsSystem.progress(s, o);
+      const complete = WeeklyGoalsSystem.isComplete(s, o);
+      const claimed = WeeklyGoalsSystem.isClaimed(c, s, o);
+      return {
+        objectiveId: o.id,
+        name: o.name,
+        description: o.description,
+        progress,
+        target: o.goal.atLeast,
+        rewardCoins: WeeklyGoalsSystem.claimRewardCoins(o),
+        complete,
+        claimed,
+        claimEnabled: complete && !claimed,
+      };
+    }),
     economyUnlocked: EconomySystem.unlocked(c, s),
     economyLockedReason: (() => {
       const missing = EconomySystem.missingRequirement(c, s);
@@ -1181,6 +1257,8 @@ export function buildView(sim: Simulation): SimView {
     })(),
     maintenanceCoinsPerStation: EconomySystem.unlocked(c, s) ? EconomySystem.maintenanceCoinsPerStation(c, s, h) : 0,
     bagFishSpoilActive: EconomySystem.unlocked(c, s) && c.economy.bagFishSpoilUnits > 0,
+    ticksUntilBagSpoil: EconomySystem.ticksUntilBagSpoil(c, s),
+    bagSpoilPressurePermille: EconomySystem.bagSpoilPressurePermille(c, s),
     prestigeUnlocked: PrestigeSystem.boardUnlocked(c, s),
     prestigeLockedReason: (() => {
       const missing = PrestigeSystem.missingBoardRequirement(c, s);
@@ -1219,6 +1297,8 @@ export function buildView(sim: Simulation): SimView {
     beatenRivalCount: s.beatenRivalIds.size,
     endgameMarkCount: s.endgameMarks.size,
     endgameMarks: [...s.endgameMarks].sort(compareStrings),
+    endgameCrestCount: s.endgameCrests.size,
+    endgameCrests: [...s.endgameCrests].sort(compareStrings),
     endgameTiers: c.endgame.tiers.map((t) => {
       const unlocked = s.unlockedEndgameTiers.has(t.id);
       return {
@@ -1269,6 +1349,7 @@ export function buildView(sim: Simulation): SimView {
       const owned = s.ownedDecor.has(d.id);
       const miss = DecorSystem.missingRequirement(c, s, d);
       return {
+        placed: !!s.decorPlacements.get(s.harborId)?.has(d.id),
         id: d.id,
         name: d.name,
         description: d.description,
@@ -1295,6 +1376,15 @@ export function buildView(sim: Simulation): SimView {
       status: s.unlockedCosmetics.has(sku.grantsCosmetic) ? "owned" : "available",
     })),
     decorPatienceBonusTicks: DecorSystem.patienceBonusTicks(c, s),
+    decorPlacements: [...(s.decorPlacements.get(s.harborId) ?? new Map()).entries()]
+      .sort(([a], [b]) => compareStrings(a, b))
+      .map(([decorId, p]) => ({
+        decorId,
+        name: c.decorById.get(decorId)?.name ?? decorId,
+        xMm: p.xMm,
+        zMm: p.zMm,
+        rotationQuarter: p.rotationQuarter,
+      })),
     trophies: [...s.trophies.entries()]
       .sort(([a], [b]) => compareStrings(a, b))
       .map(([id, rec]) => ({

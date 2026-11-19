@@ -46,11 +46,23 @@ function validate(): string[] {
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/persistence/SettingsStore.kt"),
     "utf8",
   );
-  const appTsx = readFileSync(resolve(root, "web/src/ui/App.tsx"), "utf8");
-  const gameScreen = readFileSync(
-    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt"),
-    "utf8",
-  );
+  // Cozy art pass 5: HUD nav chrome lives in HudShell.tsx (rendered by App.tsx).
+  const appTsx =
+    readFileSync(resolve(root, "web/src/ui/App.tsx"), "utf8") +
+    readFileSync(resolve(root, "web/src/ui/HudShell.tsx"), "utf8");
+  const gameScreen =
+    readFileSync(
+      resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt"),
+      "utf8",
+    ) +
+    readFileSync(
+      resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/HudNavToolbar.kt"),
+      "utf8",
+    ) +
+    readFileSync(
+      resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/PauseSettingsPanels.kt"),
+      "utf8",
+    );
 
   if (catalog.phase !== 23) errors.push(`phase expected 23, got ${catalog.phase}`);
   if (catalog.schema !== I18N_SCAFFOLD_SCHEMA) errors.push("bad schema");
@@ -62,29 +74,33 @@ function validate(): string[] {
   if (catalog.i18nMarker !== I18N_SCAFFOLD_MARKER) errors.push("marker mismatch");
   if (catalog.defaultLocale !== "en" || DEFAULT_LOCALE !== "en") errors.push("defaultLocale must be en");
   if (catalog.secondLocale !== "es" || SECOND_LOCALE !== "es") errors.push("secondLocale must be es");
-  if (JSON.stringify(catalog.supportedLocales) !== JSON.stringify(["en", "es", "pt"])) {
-    errors.push("supportedLocales must be [en, es, pt]");
+  const expectedLocales = ["en", "es", "pt", "fr", "ht", "it", "ca", "ru"];
+  if (JSON.stringify(catalog.supportedLocales) !== JSON.stringify(expectedLocales)) {
+    errors.push("supportedLocales must be [en, es, pt, fr, ht, it, ca, ru]");
   }
   if (catalog.uiStringKeyMin !== 48 || UI_STRING_KEY_FLOOR !== 48) {
     errors.push("uiStringKeyMin must be 48");
   }
-  if (catalog.localeFileMin !== 3 || LOCALE_FILE_FLOOR !== 3) {
-    errors.push("localeFileMin must be 3");
+  if (catalog.localeFileMin !== 8 || LOCALE_FILE_FLOOR !== 8) {
+    errors.push("localeFileMin must be 8");
   }
 
   const enKeys = Object.keys(enUi.strings ?? {});
-  const esKeys = Object.keys(esUi.strings ?? {});
-  const ptUi = readJson(resolve(root, "shared/i18n/ui-strings.pt.json"));
-  const ptKeys = Object.keys(ptUi.strings ?? {});
-  if (enKeys.length < 48) errors.push(`en ui strings ${enKeys.length} < 48`);
-  if (esKeys.length < 48) errors.push(`es ui strings ${esKeys.length} < 48`);
-  if (ptKeys.length < 48) errors.push(`pt ui strings ${ptKeys.length} < 48`);
-  if (enKeys.length !== esKeys.length || enKeys.length !== ptKeys.length) {
-    errors.push("en/es/pt ui key count mismatch");
+  const localeUiKeys: Record<string, string[]> = { en: enKeys };
+  for (const loc of expectedLocales.slice(1)) {
+    const bundle = readJson(resolve(root, `shared/i18n/ui-strings.${loc}.json`));
+    localeUiKeys[loc] = Object.keys(bundle.strings ?? {});
   }
-  for (const k of enKeys) {
-    if (!esKeys.includes(k)) errors.push(`es missing ui key ${k}`);
-    if (!ptKeys.includes(k)) errors.push(`pt missing ui key ${k}`);
+  for (const loc of expectedLocales) {
+    if ((localeUiKeys[loc]?.length ?? 0) < 48) {
+      errors.push(`${loc} ui strings ${localeUiKeys[loc]?.length ?? 0} < 48`);
+    }
+    if ((localeUiKeys[loc]?.length ?? 0) !== enKeys.length) {
+      errors.push(`${loc} ui key count mismatch vs en`);
+    }
+    for (const k of enKeys) {
+      if (!localeUiKeys[loc]?.includes(k)) errors.push(`${loc} missing ui key ${k}`);
+    }
   }
   for (const k of fixture.expect.requiredUiKeys as string[]) {
     if (!enKeys.includes(k)) errors.push(`en missing required key ${k}`);
@@ -92,34 +108,41 @@ function validate(): string[] {
   if (UI_STRING_KEYS.length !== enKeys.length) {
     errors.push("runtime UI_STRING_KEYS drift vs en bundle");
   }
-  if (uiStringKeyCount("en") < UI_STRING_KEY_FLOOR) errors.push("runtime en key count below floor");
-  if (uiStringKeyCount("es") < UI_STRING_KEY_FLOOR) errors.push("runtime es key count below floor");
-  if (uiStringKeyCount("pt") < UI_STRING_KEY_FLOOR) errors.push("runtime pt key count below floor");
+  for (const loc of expectedLocales) {
+    if (uiStringKeyCount(loc as any) < UI_STRING_KEY_FLOOR) {
+      errors.push(`runtime ${loc} key count below floor`);
+    }
+  }
 
   setLocale("es");
   if (t("nav.pause") === "Pause") errors.push("es nav.pause should not be English Pause");
   setLocale("pt");
   if (t("nav.pause") === "Pause") errors.push("pt nav.pause should not be English Pause");
+  setLocale("fr");
+  // French "Pause" is identical to English; assert a distinct chrome key instead.
+  if (t("settings.close") === "Close") errors.push("fr settings.close should not be English Close");
+  setLocale("ht");
+  if (t("nav.pause") === "Pause") errors.push("ht nav.pause should not be English Pause");
+  setLocale("ru");
+  if (t("nav.pause") === "Pause") errors.push("ru nav.pause should not be English Pause");
   setLocale("en");
   if (t("nav.pause") !== "Pause") errors.push("en nav.pause mismatch");
 
   for (const path of fixture.expect.listingLocaleFiles as string[]) {
     if (!existsSync(resolve(root, path))) errors.push(`missing listing locale ${path}`);
   }
-  const enListing = readJson(resolve(root, "shared/store/locales/en.json"));
-  const esListing = readJson(resolve(root, "shared/store/locales/es.json"));
-  const ptListing = readJson(resolve(root, "shared/store/locales/pt.json"));
-  for (const key of fixture.expect.listingKeys as string[]) {
-    if (enListing[key] == null) errors.push(`en listing missing ${key}`);
-    if (esListing[key] == null) errors.push(`es listing missing ${key}`);
-    if (ptListing[key] == null) errors.push(`pt listing missing ${key}`);
+  for (const loc of expectedLocales) {
+    const listingLoc = readJson(resolve(root, `shared/store/locales/${loc}.json`));
+    for (const key of fixture.expect.listingKeys as string[]) {
+      if (listingLoc[key] == null) errors.push(`${loc} listing missing ${key}`);
+    }
   }
 
-  if (JSON.stringify(listingCopy.locales) !== JSON.stringify(["en", "es", "pt"])) {
-    errors.push("listing-copy.locales must be [en, es, pt]");
+  if (JSON.stringify(listingCopy.locales) !== JSON.stringify(expectedLocales)) {
+    errors.push("listing-copy.locales must be [en, es, pt, fr, ht, it, ca, ru]");
   }
-  if (JSON.stringify(listing.locales) !== JSON.stringify(["en", "es", "pt"])) {
-    errors.push("listing.locales must be [en, es, pt]");
+  if (JSON.stringify(listing.locales) !== JSON.stringify(expectedLocales)) {
+    errors.push("listing.locales must be [en, es, pt, fr, ht, it, ca, ru]");
   }
   if (listing.i18nScaffoldPhase !== 23) errors.push("listing.i18nScaffoldPhase must be 23");
   if (listing.i18nScaffoldCatalog !== "shared/ship/i18n-scaffold.json") {
@@ -154,14 +177,13 @@ function validate(): string[] {
   if (!gameScreen.includes('UiStrings.t("nav.pause")') || !gameScreen.includes("onLocale")) {
     errors.push("GameScreen must use UiStrings for nav + language picker");
   }
-  if (!existsSync(resolve(root, "app/src/main/res/values-es/strings.xml"))) {
-    errors.push("missing values-es/strings.xml");
+  for (const loc of expectedLocales.slice(1)) {
+    if (!existsSync(resolve(root, `app/src/main/res/values-${loc}/strings.xml`))) {
+      errors.push(`missing values-${loc}/strings.xml`);
+    }
   }
-  if (!existsSync(resolve(root, "app/src/main/res/values-pt/strings.xml"))) {
-    errors.push("missing values-pt/strings.xml");
-  }
-  if (index.supportedLocales?.length !== 3) errors.push("ui-strings index must list 3 locales");
-  if (SUPPORTED_LOCALES.length !== 3) errors.push("SUPPORTED_LOCALES floor");
+  if (index.supportedLocales?.length !== 8) errors.push("ui-strings index must list 8 locales");
+  if (SUPPORTED_LOCALES.length !== 8) errors.push("SUPPORTED_LOCALES floor");
   if (I18N_SCAFFOLD.listingKeyParity !== true) errors.push("listingKeyParity must be true");
 
   for (const gatePath of catalog.preflightGates as string[]) {

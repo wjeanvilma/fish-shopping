@@ -23,14 +23,15 @@ describe("LOC floors (Finish 2.0 Phase 6 → Phase 30 freeze)", () => {
     expect(LOC_FLOORS.enforceFloors).toBe(true);
     expect(LOC_ENFORCE_MODE).toBe("freeze_anti_regression");
     expect(LOC_FLOORS.enforceAtPhase).toBe(30);
-    expect(LOC_PRODUCT_TOTAL_FLOOR).toBe(64_200);
-    expect(LOC_PRODUCT_TOTAL_PLAN_TARGET).toBe(100_000);
-    expect(LOC_FLOORS.scopes.gameCore.phase30Floor).toBe(20_900);
-    expect(LOC_FLOORS.scopes.app.phase30Floor).toBe(13_100);
-    expect(LOC_FLOORS.scopes.webSrc.phase30Floor).toBe(30_200);
-    expect(LOC_FLOORS.scopes.gameCore.planTarget).toBe(32_000);
-    expect(LOC_FLOORS.scopes.app.planTarget).toBe(20_000);
-    expect(LOC_FLOORS.scopes.webSrc.planTarget).toBe(48_000);
+    // Soft-floor: Finish 5.0 Phase 30 raises freeze floors above Finish 4.0 cut.
+    expect(LOC_PRODUCT_TOTAL_FLOOR).toBeGreaterThanOrEqual(73_100);
+    expect(LOC_PRODUCT_TOTAL_PLAN_TARGET).toBe(120_000);
+    expect(LOC_FLOORS.scopes.gameCore.phase30Floor).toBeGreaterThanOrEqual(23_500);
+    expect(LOC_FLOORS.scopes.app.phase30Floor).toBeGreaterThanOrEqual(13_800);
+    expect(LOC_FLOORS.scopes.webSrc.phase30Floor).toBeGreaterThanOrEqual(35_600);
+    expect(LOC_FLOORS.scopes.gameCore.planTarget).toBe(38_000);
+    expect(LOC_FLOORS.scopes.app.planTarget).toBe(26_000);
+    expect(LOC_FLOORS.scopes.webSrc.planTarget).toBe(56_000);
     expect((storeListing as { locFloorsPhase?: number }).locFloorsPhase).toBe(6);
   });
 

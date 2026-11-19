@@ -1,0 +1,31 @@
+{
+  "locale": "it",
+  "bcp47": "it-IT",
+  "languageName": "Italiano",
+  "default": false,
+  "frozen": true,
+  "phase": 23,
+  "title": "Fish Shopping",
+  "shortDescription": "Pesca, taglia e vendi pesce in un accogliente mercato 3D del porto.",
+  "fullDescription": "Gestisci il tuo mercato del pesce sul molo. Lancia dalla passerella, lavora le catture al tagliafiletti, rifornisci il banco e servi una clientela sempre più numerosa. Assumi personale, sblocca miglioramenti, accetta contratti di consegna ed espandi verso nuovi porti — il tutto con una simulazione fissa a 20 Hz condivisa tra Android e web.\n\nCiclo della prima sessione: pesca → taglia → rifornisci → vendi.\n\nLa sincronizzazione cloud opzionale e l’analitica rispettosa della privacy restano disattivate finché non le attivi. Lo sblocco porti una tantum e i cosmetici neutrali sul gameplay sono disponibili tramite acquisto in-app; Ripristina acquisti recupera i diritti su un nuovo dispositivo.",
+  "whatsNew": "Blocco 4.0.0 — cento specie, cinquanta missioni, dodici macchine, dieci porti, dodici mercati rivali, endgame schema 25, blocco parità 4.0 e ops Finish 4.0. Schema 25; i salvataggi 3.0 precedenti si caricano ancora.",
+  "webLanding": {
+    "title": "Fish Shopping",
+    "tagline": "Pesca, taglia, vendi — gestisci il tuo mercato del porto",
+    "description": "Pesca, taglia e vendi pesce in un accogliente mercato 3D del porto.",
+    "ctaPlay": "Gioca nel browser",
+    "ctaPrivacy": "Privacy",
+    "ctaSupport": "Supporto"
+  },
+  "keywords": [
+    "pesca",
+    "tycoon",
+    "gestione",
+    "idle",
+    "3d",
+    "porto",
+    "mercato"
+  ],
+  "category": "Simulation",
+  "contentRating": "Everyone"
+}

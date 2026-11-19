@@ -61,13 +61,17 @@ export function measureWebE2e(repoRoot: string): WebE2eMeasure {
   const configPath = resolve(repoRoot, WEB_E2E.playwrightConfig);
   const titlePath = resolve(repoRoot, "web/src/ui/TitlePanels.tsx");
   const appPath = resolve(repoRoot, "web/src/ui/App.tsx");
+  const hudShellPath = resolve(repoRoot, "web/src/ui/HudShell.tsx");
   const pkgPath = resolve(repoRoot, "web/package.json");
 
   const ids = existsSync(idsPath) ? readFileSync(idsPath, "utf8") : "";
   const smoke = existsSync(smokePath) ? readFileSync(smokePath, "utf8") : "";
   const config = existsSync(configPath) ? readFileSync(configPath, "utf8") : "";
   const title = existsSync(titlePath) ? readFileSync(titlePath, "utf8") : "";
-  const app = existsSync(appPath) ? readFileSync(appPath, "utf8") : "";
+  // Soft-floor: cozy art pass moved HUD toolbar into HudShell (still rendered by App).
+  const app =
+    (existsSync(appPath) ? readFileSync(appPath, "utf8") : "") +
+    (existsSync(hudShellPath) ? readFileSync(hudShellPath, "utf8") : "");
   const pkg = existsSync(pkgPath) ? readJson(pkgPath) : {};
 
   let measuredAtPhase = -1;

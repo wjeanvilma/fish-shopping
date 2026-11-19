@@ -35,13 +35,28 @@
     "dropOldestOnOverflow": true,
     "resyncSanitizeOnFlush": true,
     "requeueOnFlushFailure": true,
-    "maxFlushRetries": 3,
-    "retryBackoffMs": 2000
+    "maxFlushRetries": 5,
+    "retryBackoffMs": 2000,
+    "retryJitterMs": 500,
+    "deadLetterAfterMaxRetries": true
   },
   "envelope": {
-    "requiredFields": ["schema", "platform", "sentAtMs", "events"],
-    "eventFields": ["name", "props", "schema", "clientTsMs"],
-    "platforms": ["web", "android"]
+    "requiredFields": [
+      "schema",
+      "platform",
+      "sentAtMs",
+      "events"
+    ],
+    "eventFields": [
+      "name",
+      "props",
+      "schema",
+      "clientTsMs"
+    ],
+    "platforms": [
+      "web",
+      "android"
+    ]
   },
   "eventNameMin": 8,
   "sourcePins": {

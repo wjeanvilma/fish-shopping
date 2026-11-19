@@ -1,0 +1,55 @@
+{
+  "schema": "fish.fixtures.parity_machines_13_14.v1",
+  "machines1314Marker": "authored-finish-5.0-phase-15",
+  "phase": 15,
+  "plan": "30_finish_5.0",
+  "description": "Finish 5.0 Phase 15: unlock harbor poacher via sunrise plot, process fillet \u2192 poached_fillet; assert 14 machine classes.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 51515,
+  "setup": {
+    "coins": 1600,
+    "completedQuests": [
+      "quest.specialty_kitchen"
+    ],
+    "ownedUpgrades": [
+      "upgrade.harbor_steamer",
+      "upgrade.harbor_press",
+      "upgrade.harbor_braiser"
+    ]
+  },
+  "build": {
+    "plotId": "plot.sunrise_poacher",
+    "requestId": "p15-poacher-build",
+    "expectUpgrade": "upgrade.harbor_poacher",
+    "stationId": "station.poacher_1"
+  },
+  "process": {
+    "walkTo": {
+      "x": 10700,
+      "z": -18000,
+      "expectZone": "zone.poacher_in"
+    },
+    "bagAfterUnlock": {
+      "product.fillet": 1
+    },
+    "preferredRecipeId": "recipe.poach_fillet",
+    "expectOutput": {
+      "item": "product.poached_fillet",
+      "quantity": 1
+    }
+  },
+  "expectFinal": {
+    "machineCount": 14,
+    "ownedUpgrade": "upgrade.harbor_poacher",
+    "schemaVersion": 25,
+    "contentVersion": "4.0.0",
+    "gates": [
+      "machines_14",
+      "plots_wired",
+      "recipes_and_products",
+      "module_glbs",
+      "kickoff_machines_met",
+      "ci_gate"
+    ]
+  }
+}

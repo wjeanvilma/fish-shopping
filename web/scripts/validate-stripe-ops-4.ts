@@ -145,6 +145,7 @@ function validate(): string[] {
     if (!owned) errors.push("webhook must grant product once");
   }
 
+  // Finish 5.0 Phase 25 soft-floor: live catalogs may exceed Finish 4.0's 19 SKUs.
   const active = (products.products as any[]).filter((p) => p.status === "active");
   if (active.length < 19) errors.push(`checkout products active ${active.length} < 19`);
   for (const p of active) {

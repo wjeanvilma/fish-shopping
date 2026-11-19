@@ -30,18 +30,26 @@ describe("i18n scaffold (Finish 2.0 Phase 23)", () => {
       (JSON.parse(readFileSync(resolve(root, "shared/store/listing-copy.json"), "utf8")) as {
         locales?: string[];
       }).locales,
-    ).toEqual(["en", "es", "pt"]);
+    ).toEqual(["en", "es", "pt", "fr", "ht", "it", "ca", "ru"]);
   });
 
-  it("resolves t() with en fallback and es/pt override", () => {
+  it("resolves t() with en fallback and locale overrides", () => {
     expect(resolveLocale("es")).toBe("es");
     expect(resolveLocale("pt")).toBe("pt");
-    expect(resolveLocale("fr")).toBe("en");
+    expect(resolveLocale("fr")).toBe("fr");
+    expect(resolveLocale("ht")).toBe("ht");
+    expect(resolveLocale("ru")).toBe("ru");
+    expect(resolveLocale("zz")).toBe("en");
     setLocale("en");
     expect(t("nav.pause")).toBe("Pause");
     setLocale("es");
     expect(t("nav.pause")).toBe("Pausa");
     setLocale("pt");
+    expect(t("nav.pause")).not.toBe("Pause");
+    setLocale("fr");
+    // French "Pause" matches English; assert a distinct chrome key.
+    expect(t("settings.close")).toBe("Fermer");
+    setLocale("ht");
     expect(t("nav.pause")).not.toBe("Pause");
     expect(t("achievements.count", { unlocked: 2, total: 14 })).toBe("2/14");
     setLocale("en");

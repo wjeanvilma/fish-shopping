@@ -1,12 +1,12 @@
 {
   "schema": "fish.fixture.parity_web_e2e.v1",
-  "description": "Finish 3.0 Phase 22: Playwright E2E id + suite expectations. Finish 4.0 Phase 26 soft-floors minIdCount≥24.",
+  "description": "Finish 3.0 Phase 22: Playwright E2E id + suite expectations. Finish 5.0 Phase 26 soft-floors minIdCount≥32.",
   "webE2eMarker": "authored-finish-3.0-phase-22",
   "expect": {
     "closesGap": "webE2eMissing",
     "schemaVersion": 24,
     "contentVersion": "2.0.0",
-    "minIdCount": 24,
+    "minIdCount": 32,
     "requiredIds": [
       "title.root",
       "title.play",

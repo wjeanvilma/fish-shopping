@@ -52,6 +52,9 @@ export const Stats = {
   ACHIEVEMENTS_UNLOCKED: "stat.achievements_unlocked",
   MASTERY_XP: "stat.mastery_xp",
   MASTERY_LEVEL_UPS: "stat.mastery_level_ups",
+  /** Finish 5.0 Phase 2 — cast phase transitions / strike-window reels. */
+  CAST_PHASE_TRANSITIONS: "stat.cast_phase_transitions",
+  CAST_STRIKE_REELS: "stat.cast_strike_reels",
   /** Finish 2.0 Phase 15 — staff branch train purchases / unlocks. */
   STAFF_BRANCH_TRAINING: "stat.staff_branch_training",
   STAFF_BRANCHES_UNLOCKED: "stat.staff_branches_unlocked",
@@ -63,6 +66,12 @@ export const Stats = {
   FISHER_TROPHY_CASTS: "stat.fisher_trophy_casts",
   PORTER_RELAY_PICKUPS: "stat.porter_relay_pickups",
   CASHIER_QUICK_TILLS: "stat.cashier_quick_tills",
+  /** Finish 5.0 Phase 20 — staff AI wave 3 specialties / schedule / failure recovery. */
+  SUPERVISOR_RUSH_MARSHALS: "stat.supervisor_rush_marshals",
+  OPERATOR_CIRCUIT_LINKS: "stat.operator_circuit_links",
+  SMOKER_QUEUE_FEEDS: "stat.smoker_queue_feeds",
+  SCHEDULE_TASK_BOOSTS: "stat.schedule_task_boosts",
+  WORKER_FAILURE_RECOVERIES: "stat.worker_failure_recoveries",
   /** Finish 3.0 Phase 14 — rival NPC market siphon / player beat counters. */
   RIVAL_SALES_STOLEN: "stat.rival_sales_stolen",
   RIVAL_UNDERCUTS: "stat.rival_undercuts",
@@ -72,6 +81,8 @@ export const Stats = {
   ENDGAME_CHALLENGES_COMPLETED: "stat.endgame_challenges_completed",
   /** Finish 4.0 Phase 17 — legend marks granted by deepen challenges. */
   ENDGAME_MARKS_EARNED: "stat.endgame_marks_earned",
+  /** Finish 5.0 Phase 17 — crests granted by deepen challenges. */
+  ENDGAME_CRESTS_EARNED: "stat.endgame_crests_earned",
   DECOR_BOUGHT: "stat.decor_bought",
   MACHINES_BROKEN: "stat.machines_broken",
   MACHINES_SLOWED: "stat.machines_slowed",
@@ -84,6 +95,8 @@ export const Stats = {
   COIN_GOALS_REACHED: "stat.coin_goals_reached",
   DAILY_LOGIN_STREAK: "stat.daily_login_streak",
   DAILY_GOALS_CLAIMED: "stat.daily_goals_claimed",
+  /** Finish 5.0 Phase 19 — weekly retention claims. */
+  WEEKLY_GOALS_CLAIMED: "stat.weekly_goals_claimed",
 } as const;
 
 /** Personal-best specimen mounted on the museum board for one species. */
@@ -108,11 +121,13 @@ export const STAT_KEYS: readonly string[] = [
   Stats.MASTERY_XP, Stats.MASTERY_LEVEL_UPS, Stats.STAFF_BRANCH_TRAINING, Stats.STAFF_BRANCHES_UNLOCKED,
   Stats.SUPERVISOR_PATROLS, Stats.GREETER_WELCOMES, Stats.ICE_RUNNER_MULTI_PICKUPS,
   Stats.FISHER_TROPHY_CASTS, Stats.PORTER_RELAY_PICKUPS, Stats.CASHIER_QUICK_TILLS,
+  Stats.SUPERVISOR_RUSH_MARSHALS, Stats.OPERATOR_CIRCUIT_LINKS, Stats.SMOKER_QUEUE_FEEDS,
+  Stats.SCHEDULE_TASK_BOOSTS, Stats.WORKER_FAILURE_RECOVERIES,
   Stats.RIVAL_SALES_STOLEN, Stats.RIVAL_UNDERCUTS, Stats.RIVAL_BEATS,
-  Stats.ENDGAME_TIERS_UNLOCKED, Stats.ENDGAME_CHALLENGES_COMPLETED, Stats.ENDGAME_MARKS_EARNED, Stats.DECOR_BOUGHT,
+  Stats.ENDGAME_TIERS_UNLOCKED, Stats.ENDGAME_CHALLENGES_COMPLETED, Stats.ENDGAME_MARKS_EARNED, Stats.ENDGAME_CRESTS_EARNED, Stats.DECOR_BOUGHT,
   Stats.MACHINES_BROKEN, Stats.MACHINES_SLOWED, Stats.MACHINES_REPAIRED, Stats.REPAIR_SPENT,
   Stats.LOANS_TAKEN, Stats.LOAN_INTEREST_ACCRUED, Stats.LOAN_REPAID, Stats.LOAN_COLLECTED, Stats.COIN_GOALS_REACHED,
-  Stats.DAILY_LOGIN_STREAK, Stats.DAILY_GOALS_CLAIMED,
+  Stats.DAILY_LOGIN_STREAK, Stats.DAILY_GOALS_CLAIMED, Stats.WEEKLY_GOALS_CLAIMED,
 ];
 
 export type WorkerTaskPhase = "NONE" | "WALK_TO_WORK" | "WORK" | "PICKUP" | "WALK_TO_DROP" | "DROP";
@@ -179,6 +194,8 @@ export class PlayerState {
   fishingCatchTicks = 0;
   reelAttemptedThisCast = false;
   reelRequested = false;
+  /** Ephemeral Finish 5.0 cast phase tracker (not persisted). */
+  lastCastPhase: "waiting" | "strike" | "fight" | null = null;
   preferredBaitId: string | null = null;
   activeBaitId: string | null = null;
   constructor(
@@ -356,9 +373,13 @@ export class GameState {
   readonly completedEndgameChallenges = new Set<string>();
   /** Finish 4.0 Phase 17 / schema 25 — legend marks from deepen challenges. */
   readonly endgameMarks = new Set<string>();
+  /** Finish 5.0 Phase 17 / schema 26 — crests from deepen challenges. */
+  readonly endgameCrests = new Set<string>();
   readonly unlockedCosmetics = new Set<string>();
   /** Phase 23 owned shop decor (placable cosmetics). */
   readonly ownedDecor = new Set<string>();
+  /** Cozy art pass 5: placed decor per harbor id → decor id → ground placement. */
+  readonly decorPlacements = new Map<string, Map<string, DecorPlacement>>();
   /**
    * Phase 23 one-time IAP: unlocks travel to every harbor (power-neutral access).
    * Sunrise Pier stays free; grant is idempotent via purchase receipts.
@@ -484,8 +505,19 @@ export class GameState {
   }
 }
 
+/** Cozy art pass 5: where an owned decor item stands in a harbor (millimetres, quarter turns). */
+export interface DecorPlacement {
+  xMm: number;
+  zMm: number;
+  rotationQuarter: number;
+}
+
 export type Command =
   | { type: "move"; x: number; z: number }
+  /** Cozy art pass 5: place (or move) an owned decor item on open quay ground in the active harbor. */
+  | { type: "place_decor"; decorId: string; xMm: number; zMm: number; rotationQuarter: number }
+  /** Cozy art pass 5: put a placed decor item back in storage (stays owned). */
+  | { type: "store_decor"; decorId: string }
   | { type: "purchase_upgrade"; upgradeId: string; requestId: string }
   /** Phase 6: confirm spend while standing on an expansion plot marker. */
   | { type: "build_plot"; plotId: string; requestId: string }
@@ -525,7 +557,9 @@ export type Command =
   /** Finish 2.0 Phase 18 — push host wall-clock ms for local daily goals / streak. */
   | { type: "sync_wall_clock"; epochMs: number }
   /** Finish 2.0 Phase 18 — claim a completed daily objective; requestId idempotent. */
-  | { type: "claim_daily_goal"; objectiveId: string; requestId: string };
+  | { type: "claim_daily_goal"; objectiveId: string; requestId: string }
+  /** Finish 5.0 Phase 19 — claim a completed weekly objective; requestId idempotent. */
+  | { type: "claim_weekly_goal"; objectiveId: string; requestId: string };
 
 export type GameEvent =
   | { type: "zone_entered"; tick: number; zoneId: string | null }
@@ -533,6 +567,10 @@ export type GameEvent =
   | { type: "trophy_recorded"; tick: number; speciesId: string; sizePermille: number; valueCoins: number; personalBest: boolean }
   | { type: "trophy_set_completed"; tick: number; setId: string }
   | { type: "fishing_spot_depleted"; tick: number; zoneId: string }
+  /** Finish 5.0 Phase 2 — cast phase advanced (waiting → strike → fight). */
+  | { type: "cast_phase_changed"; tick: number; phase: "waiting" | "strike" | "fight"; speciesId: string; zoneId: string }
+  /** Finish 5.0 Phase 2 — reel resolved during the strike window. */
+  | { type: "cast_strike_reel"; tick: number; speciesId: string; zoneId: string; timingTier: TimingTier }
   | { type: "items_transferred"; tick: number; from: string; to: string; itemId: string; count: number }
   | { type: "batch_started"; tick: number; batchId: string; stationId: string; recipeId: string }
   | { type: "batch_completed"; tick: number; batchId: string; stationId: string }
@@ -557,6 +595,9 @@ export type GameEvent =
   | { type: "plot_build_rejected"; tick: number; plotId: string; requestId: string; reason: string }
   | { type: "decor_purchased"; tick: number; decorId: string; receipt: Receipt; replayed: boolean }
   | { type: "decor_purchase_rejected"; tick: number; decorId: string; requestId: string; reason: string }
+  | { type: "decor_placed"; tick: number; decorId: string; harborId: string; xMm: number; zMm: number; rotationQuarter: number; moved: boolean }
+  | { type: "decor_stored"; tick: number; decorId: string; harborId: string }
+  | { type: "decor_place_rejected"; tick: number; decorId: string; reason: string }
   | { type: "full_harbor_unlock_granted"; tick: number; receipt: Receipt; replayed: boolean }
   | { type: "iap_cosmetic_granted"; tick: number; cosmeticId: string; receipt: Receipt; replayed: boolean }
   | { type: "iap_cosmetic_rejected"; tick: number; cosmeticId: string; requestId: string; reason: string }
@@ -609,4 +650,7 @@ export type GameEvent =
   | { type: "worker_schedule_changed"; tick: number; workerId: string; scheduleId: string | null }
   | { type: "daily_goals_rolled"; tick: number; dayId: number; streak: number }
   | { type: "daily_goal_claimed"; tick: number; objectiveId: string; payout: number; streak: number; receipt: Receipt; replayed: boolean }
-  | { type: "daily_goal_rejected"; tick: number; objectiveId: string; requestId: string; reason: string };
+  | { type: "daily_goal_rejected"; tick: number; objectiveId: string; requestId: string; reason: string }
+  | { type: "weekly_goals_rolled"; tick: number; weekId: number }
+  | { type: "weekly_goal_claimed"; tick: number; objectiveId: string; payout: number; receipt: Receipt; replayed: boolean }
+  | { type: "weekly_goal_rejected"; tick: number; objectiveId: string; requestId: string; reason: string };

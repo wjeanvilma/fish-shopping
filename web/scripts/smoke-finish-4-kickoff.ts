@@ -47,14 +47,15 @@ if (board.openFlagCount !== FINISH4_OPEN_GAP_FLAGS.length) {
 if (productLocProgress(FINISH4_KICKOFF.baseline.productLoc) !== 0) {
   errors.push("baseline LOC progress must be 0%");
 }
-if (FINISH4_OPEN_GAP_FLAGS.length < 7) {
-  errors.push("Finish 4.0 should still have open boolean gaps after Phase 10");
-}
+// Soft floor: Finish 4.0 freeze closed all boolean gaps; Phase 1 smoke no longer requires open flags.
 if (FINISH4_OPEN_GAP_FLAGS.includes("harborBlockoutPresent")) {
   errors.push("harborBlockoutPresent must be closed after Phase 9");
 }
 if (FINISH4_OPEN_GAP_FLAGS.includes("productArtIncomplete")) {
   errors.push("productArtIncomplete must be closed after Phase 10");
+}
+if (FINISH4_OPEN_GAP_FLAGS.includes("parityLock4Missing")) {
+  errors.push("parityLock4Missing must be closed after Phase 29");
 }
 
 if (errors.length) {

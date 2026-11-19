@@ -100,7 +100,11 @@ export function measureDeeplinkE2e4(repoRoot: string): DeeplinkE2e4Measure {
   const compose = existsSync(composePath) ? readJson(composePath) : {};
   const deepParity = existsSync(deepParityPath) ? readJson(deepParityPath) : {};
   const tagsSrc = existsSync(tagsPath) ? readFileSync(tagsPath, "utf8") : "";
-  const appSrc = existsSync(appPath) ? readFileSync(appPath, "utf8") : "";
+  // Cozy art pass 5: the toolbar lives in HudShell.tsx (rendered by App.tsx).
+  const hudShellPath = resolve(repoRoot, "web/src/ui/HudShell.tsx");
+  const appSrc =
+    (existsSync(appPath) ? readFileSync(appPath, "utf8") : "") +
+    (existsSync(hudShellPath) ? readFileSync(hudShellPath, "utf8") : "");
   const gameSrc = existsSync(gameScreenPath) ? readFileSync(gameScreenPath, "utf8") : "";
   const hudSrc = existsSync(hudPath) ? readFileSync(hudPath, "utf8") : "";
   const routesKt = existsSync(routesKtPath) ? readFileSync(routesKtPath, "utf8") : "";

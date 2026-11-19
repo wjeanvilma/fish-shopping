@@ -1,0 +1,25 @@
+{
+  "schema": "fish.fixtures.parity_engine_depth_1.v1",
+  "engineDepth1Marker": "authored-finish-5.0-phase-2",
+  "phase": 2,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "castPhaseMin": 3,
+    "requiredStatCount": 2,
+    "requiredEventCount": 2,
+    "viewFieldCount": 5,
+    "strikeXpPerfectPermille": 1250,
+    "strikeXpGoodPermille": 1100,
+    "schemaVersion": 25,
+    "contentVersion": "4.0.0",
+    "engineDepthIncomplete": false,
+    "gates": [
+      "cast_phases",
+      "cast_stats_events",
+      "spoil_pressure_view",
+      "kickoff_phase_wired",
+      "gap_closed",
+      "ci_gate"
+    ]
+  }
+}

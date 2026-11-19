@@ -1,7 +1,7 @@
 {
   "schema": "fish.fixture.parity_fish_art_pass.v1",
-  "description": "Finish 2.0 Phase 20 + Finish 3.0 Phase 9 + Finish 4.0 Phases 7\u20138: all 100 authored fish mesh markers, themes, and byte budgets.",
-  "authoredSpeciesMin": 100,
+  "description": "Finish 2.0 Phase 20 + Finish 3.0 Phase 9 + Finish 4.0 Phases 7\u20138 + Finish 5.0 Phase 9: all 125 authored fish mesh markers, themes, and byte budgets.",
+  "authoredSpeciesMin": 125,
   "fishArtMarker": "authored-phase-20",
   "maxBytesPerFish": 32000,
   "expect": {
@@ -604,6 +604,156 @@
         "speciesId": "species.plaza_tuna",
         "theme": "plaza_tuna",
         "asset": "fish_plaza_tuna.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.mist_sprat",
+        "theme": "mist_sprat",
+        "asset": "fish_mist_sprat.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.gilt_mist",
+        "theme": "gilt_mist",
+        "asset": "fish_gilt_mist.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.veil_shad",
+        "theme": "veil_shad",
+        "asset": "fish_veil_shad.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.prism_veil",
+        "theme": "prism_veil",
+        "asset": "fish_prism_veil.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.dusk_mullet",
+        "theme": "dusk_mullet",
+        "asset": "fish_dusk_mullet.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.bronze_dusk",
+        "theme": "bronze_dusk",
+        "asset": "fish_bronze_dusk.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.shelf_blenny",
+        "theme": "shelf_blenny",
+        "asset": "fish_shelf_blenny.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.opal_shelf",
+        "theme": "opal_shelf",
+        "asset": "fish_opal_shelf.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.coral_scad",
+        "theme": "coral_scad",
+        "asset": "fish_coral_scad.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.gilt_scad",
+        "theme": "gilt_scad",
+        "asset": "fish_gilt_scad.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.storm_drum",
+        "theme": "storm_drum",
+        "asset": "fish_storm_drum.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.thunder_storm",
+        "theme": "thunder_storm",
+        "asset": "fish_thunder_storm.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.ember_ray",
+        "theme": "ember_ray",
+        "asset": "fish_ember_ray.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.magma_ember",
+        "theme": "magma_ember",
+        "asset": "fish_magma_ember.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.north_smelt",
+        "theme": "north_smelt",
+        "asset": "fish_north_smelt.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.aurora_north",
+        "theme": "aurora_north",
+        "asset": "fish_aurora_north.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.marina_jack",
+        "theme": "marina_jack",
+        "asset": "fish_marina_jack.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.gilt_marina",
+        "theme": "gilt_marina",
+        "asset": "fish_gilt_marina.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.lantern_pike",
+        "theme": "lantern_pike",
+        "asset": "fish_lantern_pike.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.prism_lantern",
+        "theme": "prism_lantern",
+        "asset": "fish_prism_lantern.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.brine_goby",
+        "theme": "brine_goby",
+        "asset": "fish_brine_goby.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.crystal_brine",
+        "theme": "crystal_brine",
+        "asset": "fish_crystal_brine.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.plaza_wrasse",
+        "theme": "plaza_wrasse",
+        "asset": "fish_plaza_wrasse.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.crown_plaza",
+        "theme": "crown_plaza",
+        "asset": "fish_crown_plaza.glb",
+        "minFishArtNodes": 6
+      },
+      {
+        "speciesId": "species.mist_tuna",
+        "theme": "mist_tuna",
+        "asset": "fish_mist_tuna.glb",
         "minFishArtNodes": 6
       }
     ]

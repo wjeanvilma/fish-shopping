@@ -36,12 +36,22 @@ object ListingCopy {
     const val WHATS_NEW_VERSION = "3.0.0"
     const val WEB_TAGLINE = "Catch, cut, sell — run your harbor market"
 
-    /** Finish 3.0 — en + es + pt listing locale files. */
-    val LOCALES: List<String> = listOf("en", "es", "pt")
+    /** Listing locale files: en + es + pt + fr + ht + it + ca + ru. */
+    val LOCALES: List<String> = listOf("en", "es", "pt", "fr", "ht", "it", "ca", "ru")
     const val ES_LOCALE_PATH = "shared/store/locales/es.json"
     const val PT_LOCALE_PATH = "shared/store/locales/pt.json"
+    const val FR_LOCALE_PATH = "shared/store/locales/fr.json"
+    const val HT_LOCALE_PATH = "shared/store/locales/ht.json"
+    const val IT_LOCALE_PATH = "shared/store/locales/it.json"
+    const val CA_LOCALE_PATH = "shared/store/locales/ca.json"
+    const val RU_LOCALE_PATH = "shared/store/locales/ru.json"
     const val ANDROID_STRINGS_ES = "app/src/main/res/values-es/strings.xml"
     const val ANDROID_STRINGS_PT = "app/src/main/res/values-pt/strings.xml"
+    const val ANDROID_STRINGS_FR = "app/src/main/res/values-fr/strings.xml"
+    const val ANDROID_STRINGS_HT = "app/src/main/res/values-ht/strings.xml"
+    const val ANDROID_STRINGS_IT = "app/src/main/res/values-it/strings.xml"
+    const val ANDROID_STRINGS_CA = "app/src/main/res/values-ca/strings.xml"
+    const val ANDROID_STRINGS_RU = "app/src/main/res/values-ru/strings.xml"
 
     fun withinPlayLimits(title: String, short: String, full: String, whatsNew: String): Boolean =
         title.length in 1..TITLE_MAX &&

@@ -21,6 +21,10 @@ export interface CloudConflictView {
   reasonCode: string;
   /** Finish 4.0 Phase 21 — short UX hints describing local vs remote diffs. */
   diffHints: string[];
+  /** Finish 5.0 Phase 22 — conflict severity + sync diagnostics. */
+  severity: string;
+  ageSkewMs: number;
+  syncDiagnostics: string[];
   recommended: SyncSource;
   local: SnapshotChoiceRow;
   remote: SnapshotChoiceRow;
@@ -67,6 +71,9 @@ export function cloudConflictView(
     reason: string;
     reasonCode?: string;
     diffHints?: string[];
+    severity?: string;
+    ageSkewMs?: number;
+    syncDiagnostics?: string[];
   },
   content: ContentPack,
   nowMs = Date.now(),
@@ -75,6 +82,9 @@ export function cloudConflictView(
     reason: offer.reason,
     reasonCode: offer.reasonCode ?? "conflict",
     diffHints: offer.diffHints ?? [],
+    severity: offer.severity ?? "low",
+    ageSkewMs: offer.ageSkewMs ?? 0,
+    syncDiagnostics: offer.syncDiagnostics ?? [],
     recommended: offer.recommended,
     local: snapshotChoiceRow(offer.local, {
       sourceLabel: "This device",

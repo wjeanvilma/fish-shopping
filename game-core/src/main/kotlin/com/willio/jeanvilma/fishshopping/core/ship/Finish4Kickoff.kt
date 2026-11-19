@@ -58,7 +58,7 @@ object Finish4Kickoff {
 
     const val TARGET_AUTHORED_HARBORS = 10
     const val TARGET_AUTHORED_FISH = 100
-    const val TARGET_I18N_LOCALES = 3
+    const val TARGET_I18N_LOCALES = 8
     const val TARGET_I18N_UI_KEYS_MIN = 120
     const val TARGET_ANDROID_TEXT_LITERALS_MAX = 0
     const val TARGET_STAFF_COMING_SOON = 0

@@ -1,0 +1,71 @@
+{
+  "phase": 22,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.offline_cloud_3.v1",
+  "description": "Finish 5.0 Phase 22 — offline/cloud/analytics hardening 3. Conflict UX polish (severity/ageSkew/syncDiagnostics), cloud queue sync diagnostics, offline journal fidelity (wages/repairs/loan interest/revenue), analytics dead-letter + jitter retries. Schema stays 26 / content 4.0.0.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 26,
+  "offlineCloud3Marker": "authored-finish-5.0-phase-22",
+  "extendsOfflineCloud2": "shared/ship/offline-cloud-2.json",
+  "journalDeltaFields": [
+    "wagesPaid",
+    "repairSpent",
+    "loanInterestAccrued",
+    "revenueDelta"
+  ],
+  "conflictFields": [
+    "severity",
+    "ageSkewMs",
+    "syncDiagnostics"
+  ],
+  "syncDiagnosticsFields": [
+    "queuePending",
+    "queueAgeMs",
+    "attempts"
+  ],
+  "analyticsRetry": {
+    "requeueOnFlushFailure": true,
+    "maxFlushRetries": 5,
+    "retryBackoffMs": 2000,
+    "retryJitterMs": 500,
+    "deadLetterAfterMaxRetries": true
+  },
+  "parityFixture": "shared/fixtures/parity-offline-cloud-3.json",
+  "authorTool": "shared/tools/author_offline_cloud_3.py",
+  "validateScript": "npm run offlinecloud3:validate",
+  "softOfflineCloud2Validate": "npm run offlinecloud2:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "checklist": [
+    "OfflineReport wages/repair/loanInterest/revenue deltas + journal lines",
+    "CloudConflictOffer severity + ageSkewMs + syncDiagnostics in web↔Android UX",
+    "Cloud offline queue attempts / queueAge diagnostics",
+    "Analytics maxFlushRetries≥5 + jitter + deadLetterAfterMaxRetries",
+    "kickoff offlineCloud3Incomplete=false",
+    "offlinecloud3:validate green in CI",
+    "offlinecloud2:validate soft-green",
+    "schema stays 26 / content 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/offline-cloud-3.json",
+    "shared/fixtures/parity-offline-cloud-3.json",
+    "shared/ship/offline-cloud-2.json",
+    "shared/ops/remote-analytics-sink.json",
+    "shared/tools/author_offline_cloud_3.py",
+    "web/src/engine/offline.ts",
+    "web/src/engine/cloudSync.ts",
+    "web/src/cloud/cloudOfflineQueue.ts",
+    "web/src/analytics/remoteAnalyticsSink.ts",
+    "web/src/game/snapshotChoice.ts",
+    "web/src/ui/TitlePanels.tsx",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/OfflineEarnings.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/persistence/CloudSync.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/RemoteAnalyticsPolicy.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/cloud/CloudOfflineQueue.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/SnapshotChoice.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/TitlePanels.kt",
+    "web/src/ship/offlineCloud3.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/OfflineCloud3.kt",
+    "web/scripts/validate-offline-cloud-3.ts"
+  ]
+}

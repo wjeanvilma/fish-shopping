@@ -116,6 +116,7 @@ object SnapshotCodec {
                 JsonArray(s.completedEndgameChallenges.map { JsonPrimitive(it) }),
             )
             put("endgameMarks", JsonArray(s.endgameMarks.map { JsonPrimitive(it) }))
+            put("endgameCrests", JsonArray(s.endgameCrests.map { JsonPrimitive(it) }))
             put("unlockedCosmetics", JsonArray(s.unlockedCosmetics.map { JsonPrimitive(it) }))
             put("ownedDecor", JsonArray(s.ownedDecor.map { JsonPrimitive(it) }))
             put("fullHarborUnlock", s.fullHarborUnlock)
@@ -164,6 +165,22 @@ object SnapshotCodec {
                     put(id, encodeStash(stash))
                 }
             })
+            // Cozy art pass 5: optional; omitted when nothing is placed so schema-25 goldens hold.
+            if (s.decorPlacements.isNotEmpty()) {
+                put("decorPlacements", buildJsonObject {
+                    for ((harborId, placed) in s.decorPlacements) {
+                        put(harborId, buildJsonObject {
+                            for ((decorId, p) in placed) {
+                                put(decorId, buildJsonObject {
+                                    put("xMm", p.xMm)
+                                    put("zMm", p.zMm)
+                                    put("rotationQuarter", p.rotationQuarter)
+                                })
+                            }
+                        })
+                    }
+                })
+            }
         }
         val envelope = buildJsonObject {
             put("schemaVersion", SimConstants.SCHEMA_VERSION)
@@ -225,6 +242,7 @@ object SnapshotCodec {
      *  - v22 -> v23: worker activeBranchId / unlockedBranchIds / branchTrainingXp / scheduleId (Phase 15).
      *  - v23 -> v24: beatenRivalIds + unlockedEndgameTiers + completedEndgameChallenges (Finish 3.0 Phase 15).
      *  - v24 -> v25: endgameMarks (Finish 4.0 Phase 17 endgame deepen).
+     *  - v25 -> v26: endgameCrests (Finish 5.0 Phase 17 endgame deepen).
      */
     private fun readState(content: ContentPack, n: Node, version: Int): GameState {
         val harborId = n["harborId"].string()
@@ -419,6 +437,11 @@ object SnapshotCodec {
                 .filter { it.startsWith("endgame.mark.") }
                 .forEach { s.endgameMarks += it }
         }
+        if (version >= 26) {
+            n["endgameCrests"].list { it.string() }
+                .filter { it.startsWith("endgame.crest.") }
+                .forEach { s.endgameCrests += it }
+        }
         if (version >= 16) {
             n["ownedDecor"].list { it.string() }
                 .filter { it in content.decorById }
@@ -487,6 +510,22 @@ object SnapshotCodec {
                 val stashNode = Node(el, "$.state.harborStashes.$stashHarborId")
                 s.harborStashes[stashHarborId] = readStash(content, stashHarborId, stashNode, version)
             }
+        }
+
+        (n.optional("decorPlacements")?.el as? JsonObject)?.forEach { (placedHarborId, el) ->
+            if (placedHarborId !in content.harborsById) return@forEach
+            val inner = el as? JsonObject ?: return@forEach
+            val placed = java.util.TreeMap<String, com.willio.jeanvilma.fishshopping.core.sim.DecorPlacement>()
+            inner.forEach { (decorId, pe) ->
+                if (decorId !in content.decorById || decorId !in s.ownedDecor) return@forEach
+                val pn = Node(pe, "$.state.decorPlacements.$placedHarborId.$decorId")
+                placed[decorId] = com.willio.jeanvilma.fishshopping.core.sim.DecorPlacement(
+                    pn["xMm"].int(),
+                    pn["zMm"].int(),
+                    Math.floorMod(pn["rotationQuarter"].int(), 4),
+                )
+            }
+            if (placed.isNotEmpty()) s.decorPlacements[placedHarborId] = placed
         }
 
         // Rebuild derived limits from content + owned upgrades / prestige (idempotent effects).

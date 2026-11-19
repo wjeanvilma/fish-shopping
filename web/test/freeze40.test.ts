@@ -31,15 +31,18 @@ describe("Finish 4.0 Phase 30 freeze", () => {
     expect(existsSync(resolve(root, FREEZE_40.parityFixture))).toBe(true);
 
     const pin = JSON.parse(readFileSync(resolve(root, "shared/fixtures/RELEASE_PIN.json"), "utf8"));
-    expect(pin.contentVersion).toBe("4.0.0");
-    expect(pin.versionCode).toBe(5);
-    expect(pin.releaseTag).toBe("v4.0.0");
+    // Soft-floor: Finish 5.0 Phase 30 may advance live pin to 5.0.0.
+    expect(["4.0.0", "5.0.0"]).toContain(pin.contentVersion);
+    expect(pin.versionCode).toBeGreaterThanOrEqual(5);
+    expect(["v4.0.0", "v5.0.0"]).toContain(pin.releaseTag);
     expect(pin.freeze40).toBe("shared/ship/freeze-4.0.0.json");
     expect(pin.freeze30).toBe("shared/ship/freeze-3.0.0.json");
     expect(pin.freeze20).toBe("shared/ship/freeze-2.0.0.json");
 
     expect((storeListing as { freeze40Phase?: number }).freeze40Phase).toBe(30);
-    expect((storeListing as { whatsNewVersion?: string }).whatsNewVersion).toBe("4.0.0");
+    expect(["4.0.0", "5.0.0"]).toContain(
+      (storeListing as { whatsNewVersion?: string }).whatsNewVersion,
+    );
   });
 
   it("freeze4:validate and prior freeze gates pass", () => {

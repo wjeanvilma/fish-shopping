@@ -4,6 +4,7 @@
  * Finish 2.0 Phase 21 adds achievement/festival/contract/goal/mastery/quest stingers.
  * Finish 3.0 Phase 23 adds rival/travel/hire/prestige/loan/trophy stingers.
  * Finish 4.0 Phase 23 adds decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers.
+ * Finish 5.0 Phase 12 adds cast/spoil/service/contract/quest pressure stingers.
  */
 export type SfxCue =
   | "catch"
@@ -36,9 +37,14 @@ export type SfxCue =
   | "bait"
   | "full_unlock"
   | "machine_break"
-  | "spoil";
+  | "spoil"
+  | "cast_strike"
+  | "spoil_warn"
+  | "service_queue"
+  | "contract_deadline"
+  | "quest_near";
 
-/** All authored pack cue ids (post-1.0 + Finish 2.0/3.0/4.0 packs). */
+/** All authored pack cue ids (post-1.0 + Finish 2.0/3.0/4.0/5.0 packs). */
 export const SFX_CUES: readonly SfxCue[] = [
   "catch",
   "machine_done",
@@ -71,6 +77,11 @@ export const SFX_CUES: readonly SfxCue[] = [
   "full_unlock",
   "machine_break",
   "spoil",
+  "cast_strike",
+  "spoil_warn",
+  "service_queue",
+  "contract_deadline",
+  "quest_near",
 ] as const;
 
 /** Pack-2 cue ids (Finish 2.0 Phase 21). */
@@ -109,6 +120,15 @@ export const SFX_PACK4_CUES: readonly SfxCue[] = [
   "spoil",
 ] as const;
 
+/** Pack-5 cue ids (Finish 5.0 Phase 12). */
+export const SFX_PACK5_CUES: readonly SfxCue[] = [
+  "cast_strike",
+  "spoil_warn",
+  "service_queue",
+  "contract_deadline",
+  "quest_near",
+] as const;
+
 /** Cues that should also pulse a short haptic on Android / vibrate on web. */
 export const HAPTIC_CUES: ReadonlySet<SfxCue> = new Set([
   "catch",
@@ -121,6 +141,7 @@ export const HAPTIC_CUES: ReadonlySet<SfxCue> = new Set([
   "endgame_tier",
   "endgame_challenge",
   "full_unlock",
+  "cast_strike",
 ]);
 
 /** Minimal event shape so Kotlin/TS hosts can share the mapping rules. */
@@ -156,6 +177,11 @@ export type SfxEvent =
   | { type: "full_harbor_unlock_granted"; replayed?: boolean }
   | { type: "machine_broke" }
   | { type: "items_spoiled" }
+  | { type: "cast_strike_reel" }
+  | { type: "spoil_pressure_warn" }
+  | { type: "service_queue_pressure" }
+  | { type: "contract_deadline_warn" }
+  | { type: "quest_near_complete" }
   | { type: string; [k: string]: unknown };
 
 export function sfxFromEvent(e: SfxEvent): SfxCue | null {
@@ -222,6 +248,16 @@ export function sfxFromEvent(e: SfxEvent): SfxCue | null {
       return "machine_break";
     case "items_spoiled":
       return "spoil";
+    case "cast_strike_reel":
+      return "cast_strike";
+    case "spoil_pressure_warn":
+      return "spoil_warn";
+    case "service_queue_pressure":
+      return "service_queue";
+    case "contract_deadline_warn":
+      return "contract_deadline";
+    case "quest_near_complete":
+      return "quest_near";
     default:
       return null;
   }

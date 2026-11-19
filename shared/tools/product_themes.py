@@ -14,6 +14,12 @@ PRODUCT_ART_MIN_NODES = 4
 COSMETIC_BANNER_MARKER = "cosmetic-banner-phase-10"
 COSMETIC_BANNER_MIN = 12
 
+# Finish 5.0 Phase 10 — product/cosmetic presentation lock.
+PRODUCT_FINISH5_MARKER = "product-art-5"
+COSMETIC_FINISH5_MARKER = "product-art-5"
+PRODUCT_ART_FINISH5_MIN = 40
+COSMETIC_BANNER_FINISH5_MIN = 18
+
 
 def _finish(pos, nrm, idx):
     (x0, y0, z0), (x1, y1, z1) = mesh_bounds(pos)
@@ -96,9 +102,11 @@ def product_kind_for(product_id: str) -> str:
         or "grilled" in pid
         or "cured" in pid
         or "steamed" in pid
-        or "braised" in pid
+        or         "braised" in pid
         or "glazed" in pid
         or "glaze" in pid
+        or "poached" in pid
+        or "canned" in pid
     ):
         return "fried"
     if "fillet" in pid:

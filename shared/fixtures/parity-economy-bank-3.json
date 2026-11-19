@@ -1,0 +1,26 @@
+{
+  "schema": "fish.fixture.parity_economy_bank_3.v1",
+  "economy3Marker": "authored-finish-5.0-phase-21",
+  "phase": 21,
+  "plan": "30_finish_5.0",
+  "description": "Finish 5.0 Phase 21: tideglass/aurora loans + 12 goal presets + dashboard ledgerLines / ledgerNetCashflow surfaces.",
+  "sampleLoanId": "loan.tideglass",
+  "sampleGoalPreset": 22000,
+  "sampleDashboardField": "ledgerLines",
+  "expect": {
+    "schemaVersion": 26,
+    "contentVersion": "4.0.0",
+    "loanProductMin": 5,
+    "goalPresetMin": 12,
+    "dashboardFieldCount": 8,
+    "economy3Incomplete": false,
+    "gates": [
+      "loan_products_5",
+      "goal_presets_12",
+      "ledger_fields",
+      "ledger_ux",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

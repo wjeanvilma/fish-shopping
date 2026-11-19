@@ -14,12 +14,12 @@ object I18nScaffold {
     const val DEFAULT_LOCALE = "en"
     const val SECOND_LOCALE = "es"
     const val UI_STRING_KEY_MIN = 48
-    const val LOCALE_FILE_MIN = 3
+    const val LOCALE_FILE_MIN = 8
     const val THIRD_LOCALE = "pt"
     const val PARITY_FIXTURE = "shared/fixtures/parity-i18n-scaffold.json"
     const val CATALOG = "shared/ship/i18n-scaffold.json"
     const val UI_STRINGS_INDEX = "shared/i18n/ui-strings.json"
     const val LISTING_LOCALES_DIR = "shared/store/locales"
 
-    val SUPPORTED_LOCALES = listOf("en", "es", "pt")
+    val SUPPORTED_LOCALES = listOf("en", "es", "pt", "fr", "ht", "it", "ca", "ru")
 }

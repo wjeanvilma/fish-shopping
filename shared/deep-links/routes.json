@@ -1,8 +1,8 @@
 {
   "schema": "fish.deeplink.routes.v1",
-  "phase": 20,
-  "plan": "30_finish_3.0",
-  "description": "Finish 3.0 Phase 20 — Android App Links + web deep-link route catalog. Finish 4.0 Phase 26 expands aliases (soft-floor).",
+  "phase": 26,
+  "plan": "30_finish_5.0",
+  "description": "Finish 3.0 Phase 20 — Android App Links + web deep-link route catalog. Finish 5.0 Phase 26 expands weekly/endgame/ledger/friction aliases.",
   "packageName": "com.willio.jeanvilma.fishshopping",
   "canonicalHost": "https://wjeanvilma.github.io",
   "host": "wjeanvilma.github.io",
@@ -12,7 +12,10 @@
   "customHost": "open",
   "assetLinksPath": ".well-known/assetlinks.json",
   "assetLinksPublicPath": "web/public/.well-known/assetlinks.json",
-  "queryPanelKeys": ["panel", "go"],
+  "queryPanelKeys": [
+    "panel",
+    "go"
+  ],
   "queryHarborKey": "harbor",
   "panelAliases": {
     "goals": "quests",
@@ -49,7 +52,17 @@
     "station": "station",
     "pier": "station",
     "pause": "pause",
-    "menu": "pause"
+    "menu": "pause",
+    "weekly": "quests",
+    "weeklygoals": "quests",
+    "endgame": "quests",
+    "retention": "quests",
+    "pierledger": "dashboard",
+    "cashflow": "dashboard",
+    "friction": "pause",
+    "licenses": "settings",
+    "decor": "settings",
+    "photo": "pause"
   },
   "hashAliases": {
     "goals": "quests",
@@ -71,6 +84,13 @@
     "stock": "warehouse",
     "bag": "bag",
     "station": "station",
-    "pause": "pause"
+    "pause": "pause",
+    "weekly": "quests",
+    "endgame": "quests",
+    "retention": "quests",
+    "pierledger": "dashboard",
+    "ledger": "dashboard",
+    "friction": "pause",
+    "licenses": "settings"
   }
 }

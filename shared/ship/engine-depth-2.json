@@ -1,0 +1,62 @@
+{
+  "phase": 3,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.engine_depth_2.v1",
+  "description": "Finish 5.0 Phase 3 — engine depth 2: customer queue/patience pressure, contract deadline/fail-streak pressure, next-quest progress on SimView + coaching. Schema stays 25 / content 4.0.0 (ephemeral only).",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "engineDepth2Marker": "authored-finish-5.0-phase-3",
+  "viewFields": [
+    "serviceQueuePressurePermille",
+    "minPatienceTicksLeft",
+    "ticksUntilNearestContractDeadline",
+    "contractBoardPressurePermille",
+    "nextQuestProgressPermille"
+  ],
+  "viewFieldMin": 5,
+  "coachingContexts": [
+    "rush_queue",
+    "impatient_front",
+    "contract_fail_streak",
+    "contract_deadline",
+    "quest_near_complete"
+  ],
+  "coachingContextMin": 5,
+  "queuePressureTipPermille": 700,
+  "impatientPatienceMaxTicks": 40,
+  "contractDeadlineWarnTicks": 200,
+  "questNearCompletePermille": 800,
+  "parityFixture": "shared/fixtures/parity-engine-depth-2.json",
+  "authorTool": "shared/tools/author_engine_depth_2.py",
+  "validateScript": "npm run enginedepth2:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "checklist": [
+    "Service queue pressure + min patience on SimView (web↔Kotlin)",
+    "Contract deadline ETA + fail-streak board pressure on SimView",
+    "Next quest progress permille on SimView",
+    "Coaching tips for rush/queue, impatient front, fail streak, deadline, quest near-complete",
+    "enginedepth2:validate green in CI",
+    "schema stays 25"
+  ],
+  "preflightGates": [
+    "shared/ship/engine-depth-2.json",
+    "shared/fixtures/parity-engine-depth-2.json",
+    "shared/ship/finish-5.0-kickoff.json",
+    "web/src/engine/systems/customers.ts",
+    "web/src/engine/systems/contracts.ts",
+    "web/src/engine/systems/progression.ts",
+    "web/src/engine/coaching.ts",
+    "web/src/engine/view.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/customers/CustomerSystem.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/contracts/Contracts.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/progression/Progression.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/Coaching.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/SimView.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/SimViewModels.kt",
+    "web/src/ship/engineDepth2.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/EngineDepth2.kt",
+    "web/scripts/validate-engine-depth-2.ts",
+    "shared/tools/author_engine_depth_2.py"
+  ]
+}

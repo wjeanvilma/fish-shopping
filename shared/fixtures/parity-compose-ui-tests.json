@@ -1,12 +1,12 @@
 {
   "schema": "fish.fixture.parity_compose_ui_tests.v1",
-  "description": "Finish 3.0 Phase 21: Compose UI tag + suite expectations. Finish 4.0 Phase 26 soft-floors minTagCount≥24.",
+  "description": "Finish 3.0 Phase 21: Compose UI tag + suite expectations. Finish 5.0 Phase 26 soft-floors minTagCount≥32.",
   "composeUiTestsMarker": "authored-finish-3.0-phase-21",
   "expect": {
     "closesGap": "composeUiTestsMissing",
     "schemaVersion": 24,
     "contentVersion": "2.0.0",
-    "minTagCount": 24,
+    "minTagCount": 32,
     "requiredTags": [
       "title.root",
       "title.continue",

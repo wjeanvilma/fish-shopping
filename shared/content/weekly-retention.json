@@ -1,0 +1,68 @@
+{
+  "phase": 19,
+  "plan": "30_finish_5.0",
+  "schema": "fish.content.weekly_retention.v1",
+  "description": "Finish 5.0 Phase 19 — weekly retention objectives + reminder policy. Week state lives in GameState.stats (no save-schema bump).",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 26,
+  "weekLengthDays": 7,
+  "boardSlots": 2,
+  "weekBonusCoins": 40,
+  "objectivesMin": 4,
+  "objectives": [
+    {
+      "id": "weekly.rival_week",
+      "name": "Rival week",
+      "description": "Beat 3 rival markets this week.",
+      "goal": {
+        "stat": "stat.rival_beats",
+        "atLeast": 3
+      },
+      "rewardCoins": 90,
+      "weight": 40
+    },
+    {
+      "id": "weekly.chain_week",
+      "name": "Chain week",
+      "description": "Complete 2 delivery chains this week.",
+      "goal": {
+        "stat": "stat.contract_chains_completed",
+        "atLeast": 2
+      },
+      "rewardCoins": 100,
+      "weight": 35
+    },
+    {
+      "id": "weekly.harbor_circuit",
+      "name": "Harbor circuit",
+      "description": "Travel between harbors 4 times this week.",
+      "goal": {
+        "stat": "stat.harbors_traveled",
+        "atLeast": 4
+      },
+      "rewardCoins": 85,
+      "weight": 35
+    },
+    {
+      "id": "weekly.quest_surge",
+      "name": "Quest surge",
+      "description": "Complete 5 quests this week.",
+      "goal": {
+        "stat": "stat.quests_completed",
+        "atLeast": 5
+      },
+      "rewardCoins": 110,
+      "weight": 30
+    }
+  ],
+  "reminder": {
+    "catalog": "shared/push/local-weekly-goal-reminders.json",
+    "defaultLocalHour": 17,
+    "defaultLocalMinute": 30,
+    "channelId": "weekly_goals"
+  },
+  "stats": [
+    "stat.weekly_goals_claimed",
+    "stat.weekly_goals_week_id"
+  ]
+}

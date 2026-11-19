@@ -1,0 +1,12 @@
+{
+  "id": "entitlement.cosmetic.scaffold_aurora_bunting",
+  "sku": "fish.cosmetic.scaffold_aurora_bunting",
+  "androidProductId": "fish_cosmetic_scaffold_aurora_bunting",
+  "webProductId": "fish.cosmetic.scaffold_aurora_bunting",
+  "grantsCosmetic": "banner.iap_scaffold_aurora_bunting",
+  "type": "non_consumable",
+  "powerNeutral": true,
+  "title": "Aurora bunting",
+  "name": "Aurora bunting",
+  "description": "Aurora bunting. Visual only \u2014 never changes rates, wages, or sale prices."
+}

@@ -171,6 +171,19 @@ object DailyGoalsSystem {
         if (report.rivalBeats > 0L) {
             lines += "Harbor beat rival pressure ${report.rivalBeats} time${if (report.rivalBeats == 1L) "" else "s"}."
         }
+        // Finish 5.0 Phase 22 — offline sim fidelity journal categories.
+        if (report.wagesPaid > 0L) {
+            lines += "Staff wages drew ${report.wagesPaid} coins while away."
+        }
+        if (report.repairSpent > 0L) {
+            lines += "Machine repairs cost ${report.repairSpent} coins offline."
+        }
+        if (report.loanInterestAccrued > 0L) {
+            lines += "Loan interest accrued ${report.loanInterestAccrued} coins."
+        }
+        if (report.revenueDelta > 0L) {
+            lines += "Committed sales booked ${report.revenueDelta} coins offline."
+        }
         val streak = streak(state)
         if (streak > 0) {
             lines += "Harbor streak: $streak day${if (streak == 1) "" else "s"}."

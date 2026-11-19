@@ -93,6 +93,8 @@ class HarborRenderer(private val context: Context) {
     private val pendingShakes = ConcurrentLinkedQueue<ShakeKind>()
     private val footprints = HashMap<String, Int>()
     private var waterEntity = 0
+    /** Cozy art pass 5: day/night light, fog, lamp glow and placed decor (see CozyAtmospherePass). */
+    private val cozy by lazy { CozyAtmospherePass(engine, view, sun, indirectLight, skybox) }
     /** Zone pads for Phase 31 distance occlusion (entity + ground x/z meters). */
     private var fadeZones = emptyList<FadeZone>()
     private var loadedAssetPath: String? = null
@@ -259,6 +261,7 @@ class HarborRenderer(private val context: Context) {
         )
         pendingTransfers.clear()
         pendingBursts.clear()
+        rescanCozyNodes()
         stackSlots.values.forEach { setVisible(it, false) }
         flyFish.forEach { setVisible(it, false) }
         flyPortion.forEach { setVisible(it, false) }
@@ -384,6 +387,7 @@ class HarborRenderer(private val context: Context) {
             }
         }
         fadeZones = zones
+        rescanCozyNodes()
         val flyCount = max(FLYING_TRANSFER_POOL, max(fish.keys.maxOrNull() ?: -1, portion.keys.maxOrNull() ?: -1) + 1)
         flyFish = IntArray(flyCount) { fish[it] ?: 0 }
         flyPortion = IntArray(flyCount) { portion[it] ?: 0 }
@@ -675,21 +679,26 @@ class HarborRenderer(private val context: Context) {
             }
         }
 
-        // Finish 2.0/3.0/4.0 — weather/festival/tide/rival/endgame ambient.
+        // Finish 2.0/3.0/4.0/5.0 — weather/festival/tide/rival/endgame/pressure ambient.
         val ambient = weatherAmbientProfile(
             weatherId = sim.weatherId,
             festivalActive = sim.seasonalEvent != null,
             quality = FrameTiming.toPresenterQuality(sessionQuality),
             reducedMotion = reducedMotion,
-            tidePhaseId = sim.tidePhaseId.ifBlank { "day" },
+            // The profile's tidePhaseId slot keys dawn/day/dusk/night tints; feed it the day part
+            // (the sim's tide phase ids never matched — cozy art pass 5 fix, mirrors web).
+            tidePhaseId = sim.dayPartId.ifBlank { "day" },
             rivalActive = sim.rivalPressureActive || sim.activeRivalIds.isNotEmpty(),
             endgameMode = endgameAmbientIdForView(sim.endgameUnlocked, sim.endgameMarkCount),
+            pressureMode = pressureAmbientIdForView(
+                sim.bagSpoilPressurePermille,
+                sim.serviceQueuePressurePermille,
+                sim.ticksUntilNearestContractDeadline,
+                sim.nextQuestProgressPermille,
+            ),
         )
-        try {
-            skybox.setColor(floatArrayOf(ambient.skyR, ambient.skyG, ambient.skyB, 1f))
-        } catch (_: Throwable) {
-            // Older Filament builds may lack setColor; water tint still applies.
-        }
+        cozy.apply(sim, reducedMotion, floatArrayOf(ambient.skyR, ambient.skyG, ambient.skyB))
+        cozy.syncDecor(sim)
         if (waterEntity != 0) {
             val bobAmp = 0.02 * ambient.bobScale
             val waterY = if (bobAmp <= 0.0) HarborRendererMath.WATER_REST_Y else HarborRendererMath.WATER_REST_Y + sin(elapsed * 0.7) * bobAmp
@@ -721,6 +730,7 @@ class HarborRenderer(private val context: Context) {
         }
 
         val shake = if (reducedMotion) ShakeOffset(0.0, 0.0) else screenShake.update(dt)
+        if (HarborCapture.orbitCamera(camera, pose.x, pose.z)) return // cozy art pass 5 photo mode
         camera.lookAt(
             pose.x + shake.x, CameraRig.HEIGHT_M + shake.y, pose.z - CameraRig.BACK_M,
             pose.x + shake.x, 0.0, pose.z + CameraRig.LOOK_AHEAD_M,
@@ -729,6 +739,10 @@ class HarborRenderer(private val context: Context) {
     }
 
     /** Hides a renderable via its layer mask (cheap; keeps the entity in the scene). */
+    private fun rescanCozyNodes() {
+        asset?.let { cozy.rescan(it) }
+    }
+
     private fun setVisible(entity: Int, visible: Boolean) {
         if (entity == 0) return
         val rm = engine.renderableManager

@@ -1,0 +1,31 @@
+{
+  "locale": "ht",
+  "bcp47": "ht-HT",
+  "languageName": "Kreyòl ayisyen",
+  "default": false,
+  "frozen": true,
+  "phase": 23,
+  "title": "Fish Shopping",
+  "shortDescription": "Pran, koupe epi vann pwason nan yon mache 3D konfòtab sou bò pò.",
+  "fullDescription": "Jere pwòp mache pwason ou sou bor lanmè. Lance sòti sou mòl la, trete kapti yo sou koupe a, ranpli kontrè a epi sèvi yon foul kliyan k ap grandi. Anboche anplwaye, debloke amelyorasyon, pran kontra livrezon epi elaji nan nouvo pò — tout ak yon similasyon 20 Hz fiks pou Android ak web.\n\nBouk premye sesyon: pran → koupe → stock → vann.\n\nSenkronizasyon nwaj opsyonèl ak analitik ki respekte vi prive rete fèmen jiskaske ou aktive yo. Deblokaj pò yon sèl fwa ak kozmetik ki pa chanje pisans disponib nan acha in-app; Rekipere acha retabli dwa yo sou nouvo aparèy.",
+  "whatsNew": "Gel 4.0.0 — san espès, senkant misyon, douz machin, dis pò, douz mache rival, endgame schema 25, parity lock 4.0, ak ops Finish 4.0. Schema 25; ansyen sovgad 3.0 toujou chaje.",
+  "webLanding": {
+    "title": "Fish Shopping",
+    "tagline": "Pran, koupe, vann — jere mache pò ou",
+    "description": "Pran, koupe epi vann pwason nan yon mache 3D konfòtab sou bò pò.",
+    "ctaPlay": "Jwe nan navigatè",
+    "ctaPrivacy": "Vi prive",
+    "ctaSupport": "Sipò"
+  },
+  "keywords": [
+    "pèch",
+    "tycoon",
+    "jesyon",
+    "idle",
+    "3d",
+    "pò",
+    "mache"
+  ],
+  "category": "Simulation",
+  "contentRating": "Everyone"
+}

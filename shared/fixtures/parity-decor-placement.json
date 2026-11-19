@@ -1,0 +1,17 @@
+{
+  "marker": "cozy-art-5",
+  "description": "Decorate your harbor: placement-rule verdict counts over a 500 mm grid on Sunrise Pier with one owned decor item and nothing placed. Web DecorSystem.placementProblem and Kotlin DecorSystem.placementProblem must agree.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 7,
+  "decorId": "decor.lantern_string",
+  "grid": { "minX": -8000, "maxX": 15000, "minZ": -16000, "maxZ": 15000, "stepMm": 500 },
+  "verdictCounts": {
+    "OK": 1389,
+    "Place it on open quay ground": 665,
+    "Too close to a station": 560,
+    "Too close to a work area": 257,
+    "Keep the queue clear": 39,
+    "Keep the spawn point clear": 37,
+    "Keep the entrance clear": 14
+  }
+}

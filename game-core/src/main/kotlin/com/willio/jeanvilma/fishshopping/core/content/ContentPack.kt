@@ -671,6 +671,8 @@ data class EndgameTierDef(
     val coins: Long,
     /** Finish 4.0 Phase 17 — legend marks required (default 0). */
     val requiresMarks: Int = 0,
+    /** Finish 5.0 Phase 17 — crests required (default 0). */
+    val requiresCrests: Int = 0,
 )
 
 /** Finish 3.0 Phase 15 — endgame challenge. */
@@ -683,6 +685,8 @@ data class EndgameChallengeDef(
     val rewardCoins: Long,
     /** Finish 4.0 Phase 17 — optional legend mark granted on complete. */
     val grantsMark: String? = null,
+    /** Finish 5.0 Phase 17 — optional crest granted on complete. */
+    val grantsCrest: String? = null,
 )
 
 /** Finish 3.0 Phase 15 — endgame deepen catalog. */

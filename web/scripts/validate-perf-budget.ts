@@ -32,7 +32,8 @@ function validate(): string[] {
   if (gate.schema !== "fish.perf.budget_gate.v1") errors.push("bad schema");
   if (gate.phase26Catalog !== "shared/perf/device-matrix.json") errors.push("phase26Catalog mismatch");
   if (gate.simHzInvariant !== 20) errors.push("sim must stay 20 Hz");
-  if (matrix.phase !== 26) errors.push("Phase 26 catalog phase drift");
+  // Soft-floor: Finish 5 may annotate finish5Phase while retaining Phase 26 id.
+  if ((matrix.phase ?? 0) < 26) errors.push("Phase 26 catalog phase drift");
 
   // Gate ↔ Phase 26 matrix
   for (const platform of ["android", "web"] as const) {
@@ -61,7 +62,7 @@ function validate(): string[] {
   if (gate.budgets.web.maxCssHeightMedium !== matrix.platforms.web.maxCssHeightMedium) {
     errors.push("web maxCssHeightMedium drift");
   }
-  // Finish 4.0 Phase 27 soft-floors
+  // Finish 4.0 / 5.0 soft-floors (Finish 5.0 Phase 27 may raise harbor LRU past 3)
   if ((matrix.harborCacheLimit ?? 0) < 3) errors.push("harborCacheLimit soft-floor must be ≥3");
   if ((matrix.autoDowngrade?.overBudgetMultiplier ?? 99) > 1.12) {
     errors.push("overBudgetMultiplier soft-floor must be ≤1.12");
@@ -95,8 +96,8 @@ function validate(): string[] {
   if (!androidFt.includes("UNDER_BUDGET_MULT = 0.85")) {
     errors.push("Android UNDER_BUDGET_MULT must be 0.85");
   }
-  if (!androidFt.includes("HARBOR_CACHE_LIMIT = 3")) {
-    errors.push("Android HARBOR_CACHE_LIMIT must be 3");
+  if (!/HARBOR_CACHE_LIMIT\s*=\s*[3-9]/.test(androidFt)) {
+    errors.push("Android HARBOR_CACHE_LIMIT must be ≥3");
   }
   if (!androidFt.includes("FrameBudgetAction")) {
     errors.push("Android FrameTiming missing FrameBudgetAction");

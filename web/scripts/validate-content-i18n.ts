@@ -52,7 +52,7 @@ function validate(): string[] {
   if (catalog.schemaVersion !== 23) errors.push("schemaVersion must stay 23");
   if (catalog.thirdLocale !== "pt") errors.push("thirdLocale must be pt");
   if (catalog.contentStringKeyMin !== 250) errors.push("contentStringKeyMin must be 250");
-  if (catalog.localeCountMin !== 3) errors.push("localeCountMin must be 3");
+  if (catalog.localeCountMin !== 8) errors.push("localeCountMin must be 8");
 
   const measure = measureContentI18n(root);
   if (!measure.keysEnough) {
@@ -60,9 +60,9 @@ function validate(): string[] {
       `content keys en=${measure.enKeys} es=${measure.esKeys} pt=${measure.ptKeys} < ${catalog.contentStringKeyMin}`,
     );
   }
-  if (!measure.keyParity) errors.push("en/es/pt content key sets differ");
+  if (!measure.keyParity) errors.push("content key sets differ across locales");
   if (!measure.localesEnough) {
-    errors.push(`kickoff baseline.i18nLocales ${measure.localeCount} < 3`);
+    errors.push(`kickoff baseline.i18nLocales ${measure.localeCount} < 8`);
   }
   if (!measure.gapsClosed) {
     errors.push("kickoff gaps contentI18nMissing/thirdLocaleMissing must be false");
@@ -93,16 +93,19 @@ function validate(): string[] {
   if (kickoff.gaps?.thirdLocaleMissing !== false) {
     errors.push("kickoff.gaps.thirdLocaleMissing must be false");
   }
-  if (kickoff.baseline?.i18nLocales !== 3) {
-    errors.push("kickoff.baseline.i18nLocales must be 3");
+  if (kickoff.baseline?.i18nLocales !== 8) {
+    errors.push("kickoff.baseline.i18nLocales must be 8");
   }
 
   if (listing.contentI18nPhase !== 6) errors.push("listing.contentI18nPhase must be 6");
   if (listing.contentI18nCatalog !== "shared/ship/content-i18n.json") {
     errors.push("listing.contentI18nCatalog mismatch");
   }
-  if (JSON.stringify(listing.locales) !== JSON.stringify(["en", "es", "pt"])) {
-    errors.push("listing.locales must be [en, es, pt]");
+  if (
+    JSON.stringify(listing.locales) !==
+    JSON.stringify(["en", "es", "pt", "fr", "ht", "it", "ca", "ru"])
+  ) {
+    errors.push("listing.locales must be [en, es, pt, fr, ht, it, ca, ru]");
   }
   if (pin.contentI18n !== "shared/ship/content-i18n.json") {
     errors.push("RELEASE_PIN.contentI18n path missing");
@@ -121,7 +124,7 @@ function validate(): string[] {
       errors.push("DoD contentI18n marker mismatch");
     }
   }
-  if ((dod.quotas?.i18nLocales ?? 0) < 3) errors.push("DoD quotas.i18nLocales must be ≥ 3");
+  if ((dod.quotas?.i18nLocales ?? 0) < 8) errors.push("DoD quotas.i18nLocales must be ≥ 8");
 
   if (!pkg.scripts?.["contenti18n:validate"]) {
     errors.push("package.json missing contenti18n:validate");

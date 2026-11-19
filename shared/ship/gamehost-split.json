@@ -11,12 +11,17 @@
   "presentersFacadePath": "web/src/render/presenters.ts",
   "harborRendererPath": "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRenderer.kt",
   "harborRendererMaxLines": 780,
-  "extractedFileMin": 12,
+  "extractedFileMin": 13,
+  "softFloors": {
+    "extractedFileHistoricalMin": 12,
+    "requiredFilesHistoricalMin": 16
+  },
   "requiredFiles": [
     "web/src/game/host/hostState.ts",
     "web/src/game/host/hostIntentHost.ts",
     "web/src/game/host/hostShellIntents.ts",
     "web/src/game/host/hostEconomyIntents.ts",
+    "web/src/game/host/hostFishingIntents.ts",
     "web/src/game/host/hostTravelIntents.ts",
     "web/src/game/host/hostIapIntents.ts",
     "web/src/game/host/hostStepBus.ts",
@@ -34,6 +39,7 @@
     "GameHost.ts": [
       "HostShellIntents",
       "HostEconomyIntents",
+      "HostFishingIntents",
       "HostTravelIntents",
       "HostIapIntents",
       "processHostStep",
@@ -48,7 +54,8 @@
       "HostStationIntentHost"
     ],
     "hostShellIntents.ts": ["class HostShellIntents", "setUpgradesOpen", "openFromDeepLink"],
-    "hostEconomyIntents.ts": ["class HostEconomyIntents", "purchase", "hire", "acceptContract", "reel"],
+    "hostEconomyIntents.ts": ["class HostEconomyIntents", "purchase", "hire", "acceptContract"],
+    "hostFishingIntents.ts": ["class HostFishingIntents", "reel", "buyBait", "selectBait", "selectTechnique"],
     "hostTravelIntents.ts": ["class HostTravelIntents", "travelToHarbor", "applyDeepLink", "consumeDeepLink"],
     "hostIapIntents.ts": [
       "class HostIapIntents",
@@ -66,6 +73,7 @@
     "GameHost.ts": [
       "export type HostState =",
       "class HostEconomyIntents",
+      "class HostFishingIntents",
       "class HostIapIntents",
       "class HostShellIntents",
       "class HostTravelIntents",
@@ -106,6 +114,7 @@
     "web/src/game/host/hostIntentHost.ts",
     "web/src/game/host/hostShellIntents.ts",
     "web/src/game/host/hostEconomyIntents.ts",
+    "web/src/game/host/hostFishingIntents.ts",
     "web/src/game/host/hostTravelIntents.ts",
     "web/src/game/host/hostIapIntents.ts",
     "web/src/game/host/hostStepBus.ts",

@@ -478,10 +478,17 @@ fun assignSupervisor(ctx: StepContext, w: WorkerState, def: WorkerDef) {
     w.taskId = ctx.state.newId("task")
 }
 
-/** Finish 3.0 Phase 11 — re-post toward busiest counter / distressed station. */
+/** Finish 3.0 Phase 11 / Finish 5.0 Phase 20 — re-post toward busiest counter / distressed station. */
 fun supervisorPatrol(ctx: StepContext, w: WorkerState, def: WorkerDef) {
-    val floorLead = StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.supervisor.floor_lead"
-    val interval = if (floorLead) 60L else 90L
+    val branchId = StaffTreesSystem.branchOf(ctx.content, w)?.id
+    val rushMarshal = branchId == "branch.supervisor.rush_marshal"
+    val floorLead = branchId == "branch.supervisor.floor_lead" || rushMarshal
+    val inRush = CustomerSystem.activeRush(ctx.harbor, ctx.state.tick) != null
+    val interval = when {
+        rushMarshal && inRush -> 40L
+        floorLead -> 60L
+        else -> 90L
+    }
     if (ctx.state.tick % interval != 0L) return
     val post = bestSupervisorPost(ctx, w) ?: return
     if (post.second == w.taskZoneId) return
@@ -490,10 +497,26 @@ fun supervisorPatrol(ctx: StepContext, w: WorkerState, def: WorkerDef) {
     w.taskZoneId = post.second
     w.taskId = ctx.state.newId("task")
     ctx.state.bumpStat(Stats.SUPERVISOR_PATROLS)
+    if (rushMarshal) {
+        ctx.state.bumpStat(Stats.SUPERVISOR_RUSH_MARSHALS)
+        WorkerDecisionHooks.record(
+            WorkerDecisionTrace(
+                workerId = w.id,
+                role = "supervisor",
+                kind = "patrol",
+                reason = "rush_marshal_patrol",
+                score = interval,
+                candidatesConsidered = 1,
+                tick = ctx.state.tick,
+            ),
+        )
+    }
 }
 
 fun bestSupervisorPost(ctx: StepContext, w: WorkerState): Pair<PointMm, String>? {
-    val floorLead = StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.supervisor.floor_lead"
+    val branchId = StaffTreesSystem.branchOf(ctx.content, w)?.id
+    val rushMarshal = branchId == "branch.supervisor.rush_marshal"
+    val floorLead = branchId == "branch.supervisor.floor_lead" || rushMarshal
     if (floorLead) {
         var best: Triple<PointMm, String, Int>? = null
         for (m in ctx.state.machines) {
@@ -502,7 +525,7 @@ fun bestSupervisorPost(ctx: StepContext, w: WorkerState): Pair<PointMm, String>?
             var score = 0
             if (m.status == MachineStatus.OUTPUT_FULL) score += 80
             if (m.status == MachineStatus.WAITING_FOR_INPUT) score += 60
-            if (m.broken) score += 40
+            if (m.broken) score += if (rushMarshal) 80 else 40
             if (score <= 0) continue
             val zone = ctx.harbor.zonesById.getValue(station.outputZone)
             val point = PointMm(zone.rect.centerX, zone.rect.centerZ)
@@ -632,7 +655,9 @@ fun stepSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef) {
 }
 
 fun assignSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef) {
-    val kilnFocus = StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.smoker_specialist.kiln_focus"
+    val branchId = StaffTreesSystem.branchOf(ctx.content, w)?.id
+    val smokeQueue = branchId == "branch.smoker_specialist.smoke_queue"
+    val kilnFocus = branchId == "branch.smoker_specialist.kiln_focus" || smokeQueue
     if (!w.bag.isEmpty()) {
         val dest = findSmokerInputDrop(ctx, w)
             ?: if (kilnFocus) null else findMachineInputForBag(ctx, w)
@@ -642,6 +667,7 @@ fun assignSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef) {
         w.taskDestInvId = dest.first.input.id
         w.taskZoneId = dest.third
         w.taskId = ctx.state.newId("task")
+        if (smokeQueue) ctx.state.bumpStat(Stats.SMOKER_QUEUE_FEEDS)
         return
     }
     val haul = findSmokerHaul(ctx, w)
@@ -656,6 +682,20 @@ fun assignSmokerSpecialist(ctx: StepContext, w: WorkerState, def: WorkerDef) {
         w.leaseExpiresAt = ctx.state.tick + def.leaseTicks
         w.taskZoneId = haul.sourceZoneId
         startWalk(w, haul.sourceX, haul.sourceZ, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w))
+        if (smokeQueue) {
+            ctx.state.bumpStat(Stats.SMOKER_QUEUE_FEEDS)
+            WorkerDecisionHooks.record(
+                WorkerDecisionTrace(
+                    workerId = w.id,
+                    role = "smoker_specialist",
+                    kind = "haul",
+                    reason = "smoke_queue_feed",
+                    score = haul.score,
+                    candidatesConsidered = 1,
+                    tick = ctx.state.tick,
+                ),
+            )
+        }
         return
     }
     // Idle: post at smoker input to grant process-speed buff.
@@ -901,13 +941,19 @@ fun findMachineHaul(ctx: StepContext, w: WorkerState): HaulOffer? {
                     urgencyBonus = if (src.status == MachineStatus.OUTPUT_FULL) 50 else 0,
                     demand = demand,
                 )
-                // Finish 3.0 Phase 11 — pad_link prioritizes starving machine inputs.
-                if (
-                    StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.operator.pad_link" &&
+                // Finish 3.0 Phase 11 / Finish 5.0 Phase 20 — pad_link / circuit_boss.
+                val opBranch = StaffTreesSystem.branchOf(ctx.content, w)?.id
+                val circuitBoss = opBranch == "branch.operator.circuit_boss"
+                val padLink = opBranch == "branch.operator.pad_link" || circuitBoss
+                if (padLink && dst.status == MachineStatus.WAITING_FOR_INPUT) {
+                    score += if (circuitBoss) 55 else 35
+                }
+                if (circuitBoss && src.status == MachineStatus.OUTPUT_FULL &&
                     dst.status == MachineStatus.WAITING_FOR_INPUT
                 ) {
-                    score += 35
+                    score += 40
                 }
+                score += scheduleDaypartBoost(ctx, w, "operator")
                 val offer = HaulOffer(
                     src.output, dst.input, itemId,
                     zone.rect.centerX, zone.rect.centerZ, srcStation.outputZone, score,
@@ -915,6 +961,20 @@ fun findMachineHaul(ctx: StepContext, w: WorkerState): HaulOffer? {
                 if (best == null || betterHaul(offer, best)) best = offer
             }
         }
+    }
+    if (best != null && StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.operator.circuit_boss") {
+        ctx.state.bumpStat(Stats.OPERATOR_CIRCUIT_LINKS)
+        WorkerDecisionHooks.record(
+            WorkerDecisionTrace(
+                workerId = w.id,
+                role = "operator",
+                kind = "haul",
+                reason = "circuit_boss_link",
+                score = best.score,
+                candidatesConsidered = 1,
+                tick = ctx.state.tick,
+            ),
+        )
     }
     return best
 }
@@ -946,6 +1006,7 @@ fun findFishableSpot(ctx: StepContext, w: WorkerState): FishingSpotState? {
             }
             score += rareBias * 55L
         }
+        score += scheduleDaypartBoost(ctx, w, "fisher")
         considered++
         if (
             best == null ||
@@ -957,6 +1018,7 @@ fun findFishableSpot(ctx: StepContext, w: WorkerState): FishingSpotState? {
             bestZone = spot.zoneId
         }
     }
+    val schedBoosted = scheduleDaypartBoost(ctx, w, "fisher") > 0
     WorkerDecisionHooks.record(
         WorkerDecisionTrace(
             workerId = w.id,
@@ -964,6 +1026,7 @@ fun findFishableSpot(ctx: StepContext, w: WorkerState): FishingSpotState? {
             kind = "spot",
             reason = when {
                 best == null -> "none_available"
+                schedBoosted -> "schedule_daypart_boost"
                 trophyCast -> "trophy_cast_bias"
                 linePro -> "line_pro_stock"
                 else -> "best_score"
@@ -1130,11 +1193,18 @@ fun findSmokerHaul(ctx: StepContext, w: WorkerState): HaulOffer? {
                 if (itemId !in accepted) continue
                 if (!destHasRoom(ctx, dst.input, itemId, w.id)) continue
                 val demand = machineDemand(dst)
-                val score = scoreHaul(
+                var score = scoreHaul(
                     ctx, w, src.output, zone.rect.centerX, zone.rect.centerZ,
                     urgencyBonus = if (src.status == MachineStatus.OUTPUT_FULL) 50 else 0,
                     demand = demand,
                 ) + 60L // prefer smoker-related hauls over idle posting
+                val smokeQueue =
+                    StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.smoker_specialist.smoke_queue"
+                if (smokeQueue) {
+                    if (dst.status == MachineStatus.WAITING_FOR_INPUT) score += 45
+                    if (src.status == MachineStatus.OUTPUT_FULL) score += 35
+                }
+                score += scheduleDaypartBoost(ctx, w, "smoker_specialist")
                 val offer = HaulOffer(
                     src.output, dst.input, itemId,
                     zone.rect.centerX, zone.rect.centerZ, srcStation.outputZone, score,
@@ -1196,6 +1266,62 @@ fun abortHaul(ctx: StepContext, w: WorkerState) {
         }
     }
     clearTask(w)
+}
+
+/** Finish 5.0 Phase 20 — schedule-aware day-part scoring boost. */
+fun scheduleDaypartBoost(ctx: StepContext, w: WorkerState, role: String): Long {
+    val schedule = StaffTreesSystem.scheduleOf(ctx.content, w) ?: return 0L
+    val part = FishingSystem.dayPartAt(ctx.content, ctx.state.tick).id
+    if (part !in schedule.dayParts) return 0L
+    val boost = when {
+        schedule.id == "schedule.dawn_crew" && (role == "fisher" || role == "porter") -> 25L
+        schedule.id == "schedule.night_watch" && (role == "cashier" || role == "greeter") -> 28L
+        schedule.id == "schedule.peak_tide" -> 22L
+        else -> 12L
+    }
+    if (boost > 0L) ctx.state.bumpStat(Stats.SCHEDULE_TASK_BOOSTS)
+    return boost
+}
+
+/** Finish 5.0 Phase 20 — clear stuck idle / dump bag when blockedReason fires. */
+fun attemptFailureRecover(ctx: StepContext, w: WorkerState, def: WorkerDef, reason: String) {
+    if (!w.bag.isEmpty() && (reason == "No path" || reason == "Output full" || reason == "Spots empty")) {
+        val dump = findMachineInputForBag(ctx, w)
+        if (dump != null) {
+            startWalk(w, dump.second.x, dump.second.z, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w))
+            w.phase = WorkerTaskPhase.WALK_TO_DROP
+            w.taskDestInvId = dump.first.input.id
+            w.taskZoneId = dump.third
+            w.taskId = ctx.state.newId("task")
+            ctx.state.bumpStat(Stats.WORKER_FAILURE_RECOVERIES)
+            WorkerDecisionHooks.record(
+                WorkerDecisionTrace(
+                    workerId = w.id,
+                    role = def.role.wire,
+                    kind = "recover",
+                    reason = "failure_recover",
+                    score = null,
+                    candidatesConsidered = 1,
+                    tick = ctx.state.tick,
+                ),
+            )
+            return
+        }
+    }
+    abortHaul(ctx, w)
+    clearTask(w)
+    ctx.state.bumpStat(Stats.WORKER_FAILURE_RECOVERIES)
+    WorkerDecisionHooks.record(
+        WorkerDecisionTrace(
+            workerId = w.id,
+            role = def.role.wire,
+            kind = "recover",
+            reason = "failure_recover",
+            score = null,
+            candidatesConsidered = 0,
+            tick = ctx.state.tick,
+        ),
+    )
 }
 
 fun clearTask(w: WorkerState) {

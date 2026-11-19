@@ -40,6 +40,7 @@ import com.willio.jeanvilma.fishshopping.core.shell.ShellModalPolicy
 import com.willio.jeanvilma.fishshopping.core.shell.ShellHudPolicy
 import com.willio.jeanvilma.fishshopping.core.shell.OfflineShell
 import com.willio.jeanvilma.fishshopping.game.vm.VmEconomyIntents
+import com.willio.jeanvilma.fishshopping.game.vm.VmFishingIntents
 import com.willio.jeanvilma.fishshopping.game.vm.VmIapIntentHost
 import com.willio.jeanvilma.fishshopping.game.vm.VmIapIntents
 import com.willio.jeanvilma.fishshopping.game.vm.VmShellIntentHost
@@ -64,9 +65,11 @@ import com.willio.jeanvilma.fishshopping.render.ShakeKind
 import com.willio.jeanvilma.fishshopping.render.WorldBurstCue
 import com.willio.jeanvilma.fishshopping.render.resolveAchievementBurst
 import com.willio.jeanvilma.fishshopping.render.resolveBaitBurst
+import com.willio.jeanvilma.fishshopping.render.resolveCastStrikeBurst
 import com.willio.jeanvilma.fishshopping.render.resolveCatchBurst
 import com.willio.jeanvilma.fishshopping.render.resolveCelebrateBurst
 import com.willio.jeanvilma.fishshopping.render.resolveContractAcceptBurst
+import com.willio.jeanvilma.fishshopping.render.resolveContractDeadlineBurst
 import com.willio.jeanvilma.fishshopping.render.resolveContractDoneBurst
 import com.willio.jeanvilma.fishshopping.render.resolveCosmeticBurst
 import com.willio.jeanvilma.fishshopping.render.resolveDecorBurst
@@ -79,11 +82,15 @@ import com.willio.jeanvilma.fishshopping.render.resolveGoalClaimBurst
 import com.willio.jeanvilma.fishshopping.render.resolveHarborTravelBurst
 import com.willio.jeanvilma.fishshopping.render.resolveHireBurst
 import com.willio.jeanvilma.fishshopping.render.resolveLoanBurst
+import com.willio.jeanvilma.fishshopping.render.resolveMachineBreakBurst
 import com.willio.jeanvilma.fishshopping.render.resolveMachineDoneBurst
 import com.willio.jeanvilma.fishshopping.render.resolvePayBurst
 import com.willio.jeanvilma.fishshopping.render.resolvePrestigeBurst
+import com.willio.jeanvilma.fishshopping.render.resolveQuestNearBurst
 import com.willio.jeanvilma.fishshopping.render.resolveRivalBeatBurst
+import com.willio.jeanvilma.fishshopping.render.resolveSpoilBurst
 import com.willio.jeanvilma.fishshopping.render.resolveTrophySetBurst
+import com.willio.jeanvilma.fishshopping.core.ship.VfxJuice5
 import com.willio.jeanvilma.fishshopping.ui.hud.TapTarget
 import com.willio.jeanvilma.fishshopping.ui.hud.stickFromTapTarget
 import kotlin.math.hypot
@@ -123,6 +130,7 @@ class GameViewModel(app: Application) :
     // Finish 4.0 Phase 4 — intent modules (shell / economy / travel / IAP).
     private val shellIntents = VmShellIntents(this)
     private val economyIntents = VmEconomyIntents(this)
+    private val fishingIntents = VmFishingIntents(this)
     private val travelIntents = VmTravelIntents(this, shellIntents)
     private val iapIntents = VmIapIntents(this)
 
@@ -242,10 +250,35 @@ class GameViewModel(app: Application) :
     @Volatile
     private var stickActive = false
 
-    private val panelOpen get() = ShellModalPolicy.blocksWorldInput(
+    private val panelOpen get() = worldHold || ShellModalPolicy.blocksWorldInput(
         panels.snapshot(),
         pendingOfflineReport != null,
     )
+
+    /** Cozy art pass 5: photo / decorate modes freeze the world without opening a shell panel. */
+    @Volatile private var worldHold = false
+
+    fun setWorldHold(on: Boolean) {
+        if (on) setMove(0f, 0f)
+        worldHold = on
+    }
+
+    /** Why [decorId] cannot stand at (x, z) mm right now, or null if it can (presentation preview). */
+    fun decorPlacementProblem(decorId: String, xMm: Int, zMm: Int): String? {
+        val s = sim ?: return "Loading"
+        return com.willio.jeanvilma.fishshopping.core.world.DecorSystem.placementProblem(s.content, s.state, decorId, xMm, zMm)
+    }
+
+    fun placeDecor(decorId: String, xMm: Int, zMm: Int, rotationQuarter: Int) =
+        commitNow(Command.PlaceDecor(decorId, xMm, zMm, rotationQuarter))
+
+    fun storeDecor(decorId: String) = commitNow(Command.StoreDecor(decorId))
+
+    /** Apply one command immediately even while the world is held (decorating). */
+    private fun commitNow(command: Command) {
+        commands += command
+        viewModelScope.launch(simDispatcher) { sim?.let { step(it); publish(force = true) } }
+    }
 
 
     // --- Finish 4.0 Phase 4 intent-host surface ---
@@ -718,6 +751,8 @@ class GameViewModel(app: Application) :
 
     fun claimDailyGoal(objectiveId: String) = economyIntents.claimDailyGoal(objectiveId)
 
+    fun claimWeeklyGoal(objectiveId: String) = economyIntents.claimWeeklyGoal(objectiveId)
+
     /** Joystick in screen space: x right, y down, each -1..1. */
     fun setMove(screenX: Float, screenY: Float) {
         if (panelOpen) return
@@ -929,7 +964,7 @@ class GameViewModel(app: Application) :
         syncMusicBed()
     }
 
-    /** Finish 2.0/3.0/4.0: festival/storm/rival/night/endgame/ledger beds; ducking unchanged. */
+    /** Finish 2.0/3.0/4.0/5.0: festival/storm/rival/night/endgame/ledger/pressure beds; ducking unchanged. */
     private fun syncMusicBed() {
         val v = latestView
         val festivalActive = v?.seasonalEvent != null
@@ -940,6 +975,11 @@ class GameViewModel(app: Application) :
         val nightActive = tide == "night" || tide == "dusk"
         val endgameActive = v?.endgameUnlocked == true
         val ledgerActive = (v?.bank?.loanOwed ?: 0L) > 0L
+        val pressureActive =
+            (v?.bagSpoilPressurePermille ?: 0) > VfxJuice5.CRITICAL_PERMILLE ||
+                (v?.serviceQueuePressurePermille ?: 0) >= VfxJuice5.RISING_PERMILLE ||
+                ((v?.ticksUntilNearestContractDeadline ?: Int.MAX_VALUE) <= VfxJuice5.CONTRACT_DEADLINE_WARN_TICKS) ||
+                ((v?.nextQuestProgressPermille ?: 0) >= VfxJuice5.QUEST_NEAR_COMPLETE_PERMILLE)
         audio.syncMusicBedFromPanels(
             panels.isOpen(ShellPanelId.STATION),
             festivalActive,
@@ -948,6 +988,7 @@ class GameViewModel(app: Application) :
             nightActive,
             endgameActive,
             ledgerActive,
+            pressureActive,
         )
     }
 
@@ -1063,11 +1104,17 @@ class GameViewModel(app: Application) :
 
     fun deliverContract(contractId: String) = economyIntents.deliverContract(contractId)
 
-    fun buyBait(baitId: String) = economyIntents.buyBait(baitId)
+    fun buyBait(baitId: String) = fishingIntents.buyBait(baitId)
 
-    fun selectBait(baitId: String?) = economyIntents.selectBait(baitId)
+    fun selectBait(baitId: String?) = fishingIntents.selectBait(baitId)
 
-    fun selectTechnique(techniqueId: String?) = economyIntents.selectTechnique(techniqueId)
+    fun selectTechnique(techniqueId: String?) = fishingIntents.selectTechnique(techniqueId)
+
+    /** Finish 5.0 Phase 4 — loop HUD snapshot from latest SimView. */
+    fun loopHudSnapshot(): LoopHudSnapshot? {
+        val view = latestView ?: return null
+        return LoopHudSnapshot.from(view)
+    }
 
     fun trainWorkerBranch(workerId: String, branchId: String) =
         economyIntents.trainWorkerBranch(workerId, branchId)
@@ -1078,7 +1125,7 @@ class GameViewModel(app: Application) :
     fun setWorkerSchedule(workerId: String, scheduleId: String?) =
         economyIntents.setWorkerSchedule(workerId, scheduleId)
 
-    fun reel() = economyIntents.reel()
+    fun reel() = fishingIntents.reel()
 
     /** Cycle Auto → each recipe → Auto for a station (no tick advance). */
     fun cycleStationRecipe(stationId: String) = economyIntents.cycleStationRecipe(stationId)
@@ -1115,6 +1162,16 @@ class GameViewModel(app: Application) :
         var contractAcceptBurst = false
         var baitBurst = false
         var fullUnlockBurst = false
+        var castStrikeBurst = false
+        var spoilBurst = false
+        var machineBreakBurst = false
+        var machineBreakStationId: String? = null
+        var prevSpoilWarn = (latestView?.bagSpoilPressurePermille ?: 0) > VfxJuice5.CRITICAL_PERMILLE
+        var prevServiceQueue = (latestView?.serviceQueuePressurePermille ?: 0) >= VfxJuice5.RISING_PERMILLE
+        var prevDeadline =
+            (latestView?.ticksUntilNearestContractDeadline ?: Int.MAX_VALUE) <= VfxJuice5.CONTRACT_DEADLINE_WARN_TICKS
+        var prevQuestNear =
+            (latestView?.nextQuestProgressPermille ?: 0) >= VfxJuice5.QUEST_NEAR_COMPLETE_PERMILLE
         for (e in events) {
             sfxFromEvent(e)?.let { audio.play(it) }
             when (e) {
@@ -1193,6 +1250,11 @@ class GameViewModel(app: Application) :
                     cosmeticBurst = true
                     transaction = true
                 }
+                is GameEvent.DecorPlaced -> _messages.tryEmit(
+                    "${if (e.moved) "Moved" else "Placed"} ${s.content.decorById[e.decorId]?.name ?: e.decorId}",
+                )
+                is GameEvent.DecorStored -> _messages.tryEmit("Stored ${s.content.decorById[e.decorId]?.name ?: e.decorId}")
+                is GameEvent.DecorPlaceRejected -> _messages.tryEmit(e.reason)
                 is GameEvent.DecorPurchased -> if (!e.replayed) {
                     _messages.tryEmit("Decor: ${s.content.decorById[e.decorId]?.name ?: e.decorId}")
                     decorBurst = true
@@ -1215,7 +1277,12 @@ class GameViewModel(app: Application) :
                 }
                 is GameEvent.MachineBroke -> {
                     _messages.tryEmit("Machine broke: ${s.content.machinesById[e.machineId]?.name ?: e.stationId}")
+                    machineBreakBurst = true
+                    machineBreakStationId = e.stationId
                     transaction = true
+                }
+                is GameEvent.CastStrikeReel -> {
+                    castStrikeBurst = true
                 }
                 is GameEvent.IapCosmeticRejected -> {
                     _messages.tryEmit(e.reason)
@@ -1349,6 +1416,7 @@ class GameViewModel(app: Application) :
                     val n = e.items.sumOf { it.quantity }
                     val where = if (e.location == "bag") "in bag" else "on counter"
                     _messages.tryEmit("Spoiled $n $where")
+                    spoilBurst = true
                     transaction = true
                 }
                 is GameEvent.CheckpointRequested -> save()
@@ -1408,6 +1476,30 @@ class GameViewModel(app: Application) :
             if (contractAcceptBurst) worldBursts.offer(resolveContractAcceptBurst(view))
             if (baitBurst) worldBursts.offer(resolveBaitBurst(view))
             if (fullUnlockBurst) worldBursts.offer(resolveFullUnlockBurst(view))
+            // Finish 5.0 Phase 12 visual juice.
+            if (castStrikeBurst) {
+                worldBursts.offer(resolveCastStrikeBurst(view))
+                pendingShakes.offer(ShakeKind.CAST_STRIKE)
+            }
+            if (spoilBurst) worldBursts.offer(resolveSpoilBurst(view))
+            if (machineBreakBurst) worldBursts.offer(resolveMachineBreakBurst(view, machineBreakStationId))
+            val spoilWarn = view.bagSpoilPressurePermille > VfxJuice5.CRITICAL_PERMILLE
+            val serviceQueue = view.serviceQueuePressurePermille >= VfxJuice5.RISING_PERMILLE
+            val deadline =
+                (view.ticksUntilNearestContractDeadline ?: Int.MAX_VALUE) <= VfxJuice5.CONTRACT_DEADLINE_WARN_TICKS
+            val questNear =
+                (view.nextQuestProgressPermille ?: 0) >= VfxJuice5.QUEST_NEAR_COMPLETE_PERMILLE
+            if (spoilWarn && !prevSpoilWarn) audio.play(SfxCue.SPOIL_WARN)
+            if (serviceQueue && !prevServiceQueue) audio.play(SfxCue.SERVICE_QUEUE)
+            if (deadline && !prevDeadline) {
+                audio.play(SfxCue.CONTRACT_DEADLINE)
+                worldBursts.offer(resolveContractDeadlineBurst(view))
+                pendingShakes.offer(ShakeKind.CONTRACT_DEADLINE)
+            }
+            if (questNear && !prevQuestNear) {
+                audio.play(SfxCue.QUEST_NEAR)
+                worldBursts.offer(resolveQuestNearBurst(view))
+            }
         }
         if (transaction) publish(force = true)
     }

@@ -82,6 +82,27 @@ export const ContractSystem = {
     return Math.max(1, slots);
   },
 
+  /** Finish 5.0 Phase 3 — ticks until nearest active contract deadline. */
+  ticksUntilNearestDeadline(state: GameState): number | null {
+    if (state.activeContracts.length === 0) return null;
+    let best: number | null = null;
+    for (const c of state.activeContracts) {
+      const left = Math.max(0, c.deadlineTick - state.tick);
+      if (best === null || left < best) best = left;
+    }
+    return best;
+  },
+
+  /**
+   * Finish 5.0 Phase 3 — board pressure from fail streak (0..1000+).
+   * 1000 = at failStreakThreshold (offer weight / slot penalties apply).
+   */
+  contractBoardPressurePermille(content: ContentPack, state: GameState): number {
+    if (!ContractSystem.boardUnlocked(content, state)) return 0;
+    const threshold = Math.max(1, content.contracts.failStreakThreshold ?? 3);
+    return idiv(ContractSystem.failStreak(state) * 1000, threshold);
+  },
+
   step(ctx: StepContext): void {
     expireDeadlines(ctx);
     maybeRefreshBoard(ctx);

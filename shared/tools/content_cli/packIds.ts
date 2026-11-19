@@ -1,7 +1,10 @@
 /**
- * Finish 3.0 Phase 28 + Finish 4.0 Phase 28 — content-pack id collision helpers for scaffolds.
- * Read-only; never mutates content-pack.json.
+ * Finish 3.0/4.0/5.0 — content-pack id collision helpers for scaffolds.
+ * Read-only; never mutates content-pack.json / entitlements.json.
  */
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { ScaffoldKind } from "./ids";
 
 export interface PackIdIndex {
@@ -13,16 +16,37 @@ export interface PackIdIndex {
   decor: Set<string>;
   machines: Set<string>;
   rivals: Set<string>;
+  seasonal: Set<string>;
+  endgame: Set<string>;
+  cosmetics: Set<string>;
 }
 
 function asArray(value: unknown): any[] {
   return Array.isArray(value) ? value : [];
 }
 
-export function indexPackIds(pack: Record<string, unknown>): PackIdIndex {
+function loadCosmeticIds(repoRoot?: string): Set<string> {
+  try {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const root = repoRoot ?? resolve(here, "../../..");
+    const ents = JSON.parse(
+      readFileSync(resolve(root, "shared/billing/entitlements.json"), "utf8"),
+    ) as { cosmetics?: Array<{ id?: string }> };
+    return new Set(asArray(ents.cosmetics).map((x) => String(x.id)));
+  } catch {
+    return new Set();
+  }
+}
+
+export function indexPackIds(
+  pack: Record<string, unknown>,
+  opts?: { repoRoot?: string },
+): PackIdIndex {
   const decorRoot = (pack.decor as { items?: unknown } | undefined) ?? {};
   const contractsRoot = (pack.contracts as { templates?: unknown } | undefined) ?? {};
   const rivalsRoot = (pack.rivalMarkets as { rivals?: unknown } | undefined) ?? {};
+  const seasonalRoot = (pack.seasonalEvents as { events?: unknown } | undefined) ?? {};
+  const endgameRoot = (pack.endgame as { tiers?: unknown } | undefined) ?? {};
   return {
     species: new Set(asArray(pack.species).map((x) => String(x.id))),
     quests: new Set(asArray(pack.quests).map((x) => String(x.id))),
@@ -32,6 +56,9 @@ export function indexPackIds(pack: Record<string, unknown>): PackIdIndex {
     decor: new Set(asArray(decorRoot.items).map((x) => String(x.id))),
     machines: new Set(asArray(pack.machines).map((x) => String(x.id))),
     rivals: new Set(asArray(rivalsRoot.rivals).map((x) => String(x.id))),
+    seasonal: new Set(asArray(seasonalRoot.events).map((x) => String(x.id))),
+    endgame: new Set(asArray(endgameRoot.tiers).map((x) => String(x.id))),
+    cosmetics: loadCosmeticIds(opts?.repoRoot),
   };
 }
 
@@ -43,5 +70,8 @@ export function packHasId(index: PackIdIndex, kind: ScaffoldKind, id: string): b
   if (kind === "bait") return index.bait.has(id);
   if (kind === "decor") return index.decor.has(id);
   if (kind === "machine") return index.machines.has(id);
-  return index.rivals.has(id);
+  if (kind === "rival") return index.rivals.has(id);
+  if (kind === "seasonal") return index.seasonal.has(id);
+  if (kind === "endgame") return index.endgame.has(id);
+  return index.cosmetics.has(id);
 }

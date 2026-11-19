@@ -7,6 +7,7 @@ import type { TimingTier, TrophyRecord } from "../state";
 import { GameState, PlayerState, Receipt, Stats } from "../state";
 import { StepContext } from "./context";
 import { systemsBridge } from "./bridge";
+import { CastPhases, type CastPhase } from "./castPhases";
 
 export const FishingSystem = {
   step(ctx: StepContext): void {
@@ -51,6 +52,15 @@ export const FishingSystem = {
         FishingSystem.effectiveCatchSpeed(ctx.content, s, pick.id), pick.catchTicks,
       );
       p.reelAttemptedThisCast = false;
+      p.lastCastPhase = "waiting";
+      ctx.emit({
+        type: "cast_phase_changed",
+        tick: s.tick,
+        phase: "waiting",
+        speciesId: pick.id,
+        zoneId: zone.id,
+      });
+      s.bumpStat(Stats.CAST_PHASE_TRANSITIONS);
     }
 
     const species = ctx.content.speciesById.get(p.fishingSpecies)!;
@@ -60,11 +70,23 @@ export const FishingSystem = {
     p.fishingCatchTicks = duration;
 
     let reelTier: TimingTier = "miss";
+    let reelPhase: CastPhase = CastPhases.phaseAt(p.fishingProgress, duration, ctx.content, s);
     if (p.reelRequested) {
       p.reelRequested = false;
       if (!p.reelAttemptedThisCast) {
         p.reelAttemptedThisCast = true;
+        reelPhase = CastPhases.phaseAt(p.fishingProgress, duration, ctx.content, s);
         reelTier = FishingSystem.timingTierAtContent(ctx.content, s, p.fishingProgress, duration);
+        if (reelPhase === "strike" && reelTier !== "miss") {
+          s.bumpStat(Stats.CAST_STRIKE_REELS);
+          ctx.emit({
+            type: "cast_strike_reel",
+            tick: s.tick,
+            speciesId: species.id,
+            zoneId: zone.id,
+            timingTier: reelTier,
+          });
+        }
         if (reelTier !== "miss") {
           p.fishingProgress = duration;
         }
@@ -72,9 +94,21 @@ export const FishingSystem = {
     }
 
     if (reelTier === "miss") p.fishingProgress++;
+    const nextPhase = CastPhases.phaseAt(p.fishingProgress, duration, ctx.content, s);
+    if (p.lastCastPhase !== nextPhase) {
+      p.lastCastPhase = nextPhase;
+      s.bumpStat(Stats.CAST_PHASE_TRANSITIONS);
+      ctx.emit({
+        type: "cast_phase_changed",
+        tick: s.tick,
+        phase: nextPhase,
+        speciesId: species.id,
+        zoneId: zone.id,
+      });
+    }
     if (p.fishingProgress < duration) return;
 
-    FishingSystem.commitCatch(ctx, zone.id, spot.zoneId, species.id, reelTier);
+    FishingSystem.commitCatch(ctx, zone.id, spot.zoneId, species.id, reelTier, reelPhase);
     FishingSystem.clearCast(p);
   },
 
@@ -200,7 +234,14 @@ export const FishingSystem = {
     return FishingSystem.regenTicksFor(def, stock, state.player.fishRegenPermille, combined);
   },
 
-  commitCatch(ctx: StepContext, zoneId: string, spotZoneId: string, rolledSpeciesId: string, timingTier: TimingTier): void {
+  commitCatch(
+    ctx: StepContext,
+    zoneId: string,
+    spotZoneId: string,
+    rolledSpeciesId: string,
+    timingTier: TimingTier,
+    castPhase: CastPhase = "fight",
+  ): void {
     const s = ctx.state;
     const p = s.player;
     const spot = s.fishingSpots.find((f) => f.zoneId === spotZoneId)!;
@@ -250,7 +291,13 @@ export const FishingSystem = {
       }
       const timingBonus = timingTier !== "miss";
       const { sizePermille, valueCoins, personalBest } = TrophySystem.record(ctx, finalSpecies.id, timingTier);
-      systemsBridge.masteryGrantCatchXp(ctx, finalSpecies.id, timingTier, rare);
+      systemsBridge.masteryGrantCatchXp(
+        ctx,
+        finalSpecies.id,
+        timingTier,
+        rare,
+        CastPhases.strikeXpMultPermille(castPhase, timingTier),
+      );
       ctx.emit({
         type: "fish_caught", tick: s.tick, speciesId: finalSpecies.id, zoneId,
         timingBonus, timingTier, rareUpgrade: rare,
@@ -268,6 +315,7 @@ export const FishingSystem = {
     p.fishingCatchTicks = 0;
     p.reelAttemptedThisCast = false;
     p.activeBaitId = null;
+    p.lastCastPhase = null;
   },
 
   regenerate(ctx: StepContext): void {

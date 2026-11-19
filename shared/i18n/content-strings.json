@@ -2,17 +2,27 @@
   "schema": "fish.i18n.content_strings.v1",
   "phase": 6,
   "plan": "30_finish_3.0",
-  "description": "Finish 3.0 Phase 6 — content-pack display-name overlays (en/es/pt). Schema 23 pack shape unchanged.",
+  "description": "Content-pack display-name overlays (en/es/pt/fr/ht/it/ca/ru).",
   "defaultLocale": "en",
   "supportedLocales": [
     "en",
     "es",
-    "pt"
+    "pt",
+    "fr",
+    "ht",
+    "it",
+    "ca",
+    "ru"
   ],
   "bundles": {
     "en": "shared/i18n/content-strings.en.json",
     "es": "shared/i18n/content-strings.es.json",
-    "pt": "shared/i18n/content-strings.pt.json"
+    "pt": "shared/i18n/content-strings.pt.json",
+    "fr": "shared/i18n/content-strings.fr.json",
+    "ht": "shared/i18n/content-strings.ht.json",
+    "it": "shared/i18n/content-strings.it.json",
+    "ca": "shared/i18n/content-strings.ca.json",
+    "ru": "shared/i18n/content-strings.ru.json"
   },
   "keyMin": 250,
   "scopes": [

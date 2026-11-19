@@ -4,10 +4,10 @@ import com.willio.jeanvilma.fishshopping.core.ship.Finish4Kickoff
 import com.willio.jeanvilma.fishshopping.core.ship.ParityLock4
 import com.willio.jeanvilma.fishshopping.core.sim.ParityLock
 import java.io.File
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import org.junit.Test
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.contentOrNull

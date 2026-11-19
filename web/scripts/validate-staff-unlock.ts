@@ -51,7 +51,8 @@ function validate(): string[] {
   if (catalog.hireableRoleCount !== 8) errors.push("hireableRoleCount must be 8");
   if (catalog.staffBranchTarget !== 10) errors.push("staffBranchTarget must be 10");
   if (catalog.newBranchIds?.length !== 5) errors.push("newBranchIds must list 5");
-  if (STAFF_BRANCH_FLOOR !== 10) errors.push("staff-trees branchCount must be 10");
+  // Finish 5.0 Phase 20 soft-floor: live staff-trees may exceed historical 10.
+  if (STAFF_BRANCH_FLOOR < 10) errors.push("staff-trees branchCount floor must be ≥ 10");
 
   const measure = measureStaffUnlock(root);
   if (measure.hireableRoleCount !== 8) {

@@ -67,6 +67,11 @@ object WorkerSystem {
         for (w in ctx.state.workers.sortedBy { it.id }) {
             if (!w.onShift || w.busyWalking) continue
             val def = ctx.content.workersById[w.roleId] ?: continue
+            // Finish 5.0 Phase 20 — failure modes: recover from blocked idle.
+            if (ctx.state.tick % 40L == 0L) {
+                val blocked = blockedReason(ctx.content, ctx.state, ctx.harbor, w)
+                if (blocked != null) WorkerAi.attemptFailureRecover(ctx, w, def, blocked)
+            }
             when (def.role) {
                 WorkerRoleKind.FISHER -> WorkerAi.stepFisher(ctx, w, def)
                 WorkerRoleKind.PORTER -> WorkerAi.stepPorter(ctx, w, def)

@@ -4,6 +4,8 @@ package com.willio.jeanvilma.fishshopping.core.workers
  * Finish 4.0 Phase 5 — explainable worker AI decision traces.
  * Finish 4.0 Phase 19 wave-2 reasons (trophy_cast_bias / line_pro_stock /
  * dock_relay / cargo_sprint_urgency / quick_till_queue) score without save-schema changes.
+ * Finish 5.0 Phase 20 wave-3 reasons: rush_marshal_patrol, circuit_boss_link,
+ * smoke_queue_feed, schedule_daypart_boost, failure_recover.
  */
 data class WorkerDecisionTrace(
     val workerId: String,

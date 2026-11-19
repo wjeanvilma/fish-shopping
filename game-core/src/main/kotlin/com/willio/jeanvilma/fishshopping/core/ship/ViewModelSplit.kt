@@ -18,8 +18,10 @@ object ViewModelSplit {
         "app/src/main/java/com/willio/jeanvilma/fishshopping/game"
     const val VIEW_MODEL_PATH =
         "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt"
-    const val VIEW_MODEL_MAX_LINES = 1500
-    const val EXTRACTED_FILE_MIN = 6
+    const val VIEW_MODEL_MAX_LINES = 1600
+    const val EXTRACTED_FILE_MIN = 7
+    const val EXTRACTED_FILE_HISTORICAL_MIN = 6
+    const val VIEW_MODEL_MAX_LINES_HISTORICAL = 1500
     const val GAP_FLAG_CLOSED = "viewModelSplitIncomplete"
 
     val REQUIRED_FILES: List<String> = listOf(
@@ -27,6 +29,7 @@ object ViewModelSplit {
         "vm/VmIntentHost.kt",
         "vm/VmShellIntents.kt",
         "vm/VmEconomyIntents.kt",
+        "vm/VmFishingIntents.kt",
         "vm/VmTravelIntents.kt",
         "vm/VmIapIntents.kt",
     )

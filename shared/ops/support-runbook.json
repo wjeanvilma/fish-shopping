@@ -54,7 +54,13 @@
       "fish.cosmetic.plaza_flag",
       "fish.cosmetic.rime_streamer",
       "fish.cosmetic.brine_ribbon",
-      "fish.cosmetic.aurora_crest"
+      "fish.cosmetic.aurora_crest",
+      "fish.cosmetic.aurora_bunting",
+      "fish.cosmetic.tideglass_pennant",
+      "fish.cosmetic.inlet_flag",
+      "fish.cosmetic.bay_streamer",
+      "fish.cosmetic.poach_ribbon",
+      "fish.cosmetic.can_crest"
     ],
     "idempotent": true,
     "powerNeutralCosmetics": true

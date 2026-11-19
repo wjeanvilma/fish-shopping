@@ -1,0 +1,38 @@
+{
+  "schema": "fish.fixture.parity_quests_contracts_5.v1",
+  "description": "Finish 5.0 Phase 16: quest floor 75 + aurora/tideglass chains + rep-gate depth.",
+  "questsContracts5Marker": "authored-finish-5.0-phase-16",
+  "phase": 16,
+  "plan": "30_finish_5.0",
+  "questsMin": 75,
+  "deliveryChainsMin": 7,
+  "reputationGatedMin": 9,
+  "contractTemplatesMin": 70,
+  "newChainIds": [
+    "chain.aurora_run",
+    "chain.tideglass_ferry"
+  ],
+  "newChainHeadIds": [
+    "contract.chain_aurora_catch",
+    "contract.chain_tide_catch"
+  ],
+  "newChainLength": 3,
+  "newRepGatedId": "contract.poach_trust",
+  "newRepGatedBand": 2,
+  "terminalQuestId": "quest.legend_circuit",
+  "simHzInvariant": 20,
+  "expect": {
+    "contentVersion": "4.0.0",
+    "schemaVersion": 25,
+    "newQuests": 23,
+    "newChains": 2,
+    "gates": [
+      "quests_75",
+      "chains_7",
+      "rep_gated_9",
+      "templates_70",
+      "kickoff_quests_met",
+      "ci_gate"
+    ]
+  }
+}

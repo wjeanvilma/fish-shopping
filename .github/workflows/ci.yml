@@ -306,6 +306,128 @@ jobs:
           npm run finish4:validate
           npm run finish4:smoke
 
+      - name: Finish 5.0 Phase 1 kickoff
+        working-directory: web
+        run: |
+          npm run finish5:validate
+          npm run finish5:smoke
+
+      - name: Finish 5.0 Phase 2 engine depth 1
+        working-directory: web
+        run: npm run enginedepth1:validate
+
+      - name: Finish 5.0 Phase 3 engine depth 2
+        working-directory: web
+        run: npm run enginedepth2:validate
+
+      - name: Finish 5.0 Phase 4 Android VM depth
+        working-directory: web
+        run: npm run androidvmdepth:validate
+
+      - name: Finish 5.0 Phase 5 host presenter depth
+        working-directory: web
+        run: npm run hostpresenterdepth:validate
+
+      - name: Finish 5.0 Phase 6 LOC mid-check
+        working-directory: web
+        run: npm run locmidcheck:validate
+
+      - name: Finish 5.0 Phase 7 harbor art 5a
+        working-directory: web
+        run: npm run harborart5a:validate
+
+      - name: Finish 5.0 Phase 8 harbor art 5b
+        working-directory: web
+        run: npm run harborart5b:validate
+
+      - name: Finish 5.0 Phase 9 fish art 5
+        working-directory: web
+        run: npm run fishart5:validate
+
+      - name: Finish 5.0 Phase 10 product art 5
+        working-directory: web
+        run: npm run productart5:validate
+
+      - name: Finish 5.0 Phase 11 atmosphere 5
+        working-directory: web
+        run: npm run atmosphere5:validate
+
+      - name: Finish 5.0 Phase 12 audio pack 5 + VFX juice 5
+        working-directory: web
+        run: npm run audiovfx5:validate
+
+      - name: Finish 5.0 Phase 13 species 101–125 + ecology + i18n
+        working-directory: web
+        run: npm run species125:validate
+
+      - name: Finish 5.0 Phase 14 harbors 11–12 travel/prestige
+        working-directory: web
+        run: npm run harbors1112:validate
+
+      - name: Finish 5.0 Phase 15 machines 13–14 recipes/UI
+        working-directory: web
+        run: npm run machines1314:validate
+
+      - name: Finish 5.0 Phase 16 quests→75 chains→7 contracts depth
+        working-directory: web
+        run: npm run quests5:validate
+
+      - name: Finish 5.0 Phase 17 endgame deepen + schema 26
+        working-directory: web
+        run: npm run endgame3:validate
+
+      - name: Finish 5.0 Phase 18 rivals/seasonal/baits/cosmetics floors
+        working-directory: web
+        run: npm run rivalsseasonal5:validate
+
+      - name: Finish 5.0 Phase 19 tutorial friction + retention hooks
+        working-directory: web
+        run: npm run tutorialretention5:validate
+
+      - name: Finish 5.0 Phase 20 staff/worker AI depth wave 3
+        working-directory: web
+        run: npm run staffai3:validate
+
+      - name: Finish 5.0 Phase 21 economy/bank/dashboard depth 3
+        working-directory: web
+        run: npm run economy3:validate
+
+      - name: Finish 5.0 Phase 22 offline/cloud/analytics hardening 3
+        working-directory: web
+        run: npm run offlinecloud3:validate
+
+      - name: Finish 5.0 Phase 23 Web↔Android panel parity depth 5
+        working-directory: web
+        run: npm run uiparity5:validate
+
+      - name: Finish 5.0 Phase 24 a11y depth 4 + i18n growth
+        working-directory: web
+        run: npm run a11yi18n5:validate
+
+      - name: Finish 5.0 Phase 25 Stripe/checkout catalog ops 5
+        working-directory: web
+        run: npm run stripeops5:validate
+
+      - name: Finish 5.0 Phase 26 Deep links + E2E floors ≥12/≥14
+        working-directory: web
+        run: npm run deeplinke2e5:validate
+
+      - name: Finish 5.0 Phase 27 Device/browser/perf matrix 5
+        working-directory: web
+        run: npm run deviceperf5:validate
+
+      - name: Finish 5.0 Phase 28 content authoring CLI wave 5
+        working-directory: web
+        run: npm run contentcli5:validate
+
+      - name: Finish 5.0 Phase 29 parity lock 5.0
+        working-directory: web
+        run: npm run parity5:validate
+
+      - name: Finish 5.0 Phase 30 freeze 5.0.0
+        working-directory: web
+        run: npm run freeze5:validate
+
       - name: Finish 4.0 Phase 2 systems split 1
         working-directory: web
         run: npm run systemssplit1:validate

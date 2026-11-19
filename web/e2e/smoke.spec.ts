@@ -8,7 +8,7 @@ import {
 /**
  * Finish 3.0 Phase 22 — Playwright E2E smoke:
  * title → play → HUD toolbar → pause → goals.
- * Finish 4.0 Phase 26 — expanded nav + deep-link scenarios.
+ * Finish 5.0 Phase 26 — ≥12 scenarios including Finish 5 deep-link aliases.
  */
 
 async function seedFreshSession(page: Page, decidedAnalytics = true): Promise<void> {
@@ -129,5 +129,69 @@ test.describe("web E2E smoke", () => {
     await page.goto("/?panel=staff");
     await playToHud(page);
     await expect(page.getByRole("dialog").first()).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("warehouse and upgrades nav open panels", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/");
+    await playToHud(page);
+    await page.getByTestId(WEB_E2E_IDS.NAV_WAREHOUSE).click();
+    await expect(page.getByRole("dialog").first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByTestId(WEB_E2E_IDS.NAV_UPGRADES).click();
+    await expect(page.getByRole("dialog").first()).toBeVisible();
+  });
+
+  test("deep link panel=warehouse opens after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=warehouse");
+    await playToHud(page);
+    await expect(page.getByRole("dialog").first()).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("deep link panel=weekly opens goals after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=weekly");
+    await playToHud(page);
+    await expect(page.getByRole("dialog").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId(WEB_E2E_IDS.GOALS_WEEKLY)).toBeVisible();
+  });
+
+  test("deep link panel=pierledger opens dashboard after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=pierledger");
+    await playToHud(page);
+    await expect(page.getByRole("dialog").first()).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("deep link hash endgame opens goals after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/#endgame");
+    await playToHud(page);
+    await expect(page.getByRole("dialog").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId(WEB_E2E_IDS.GOALS_ENDGAME)).toBeVisible();
+  });
+
+  test("pause settings opens from pause panel", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/");
+    await playToHud(page);
+    await page.getByTestId(WEB_E2E_IDS.NAV_PAUSE).click();
+    await expect(page.getByTestId(WEB_E2E_IDS.PAUSE_ROOT)).toBeVisible();
+    await page.getByTestId(WEB_E2E_IDS.PAUSE_SETTINGS).click();
+    await expect(page.getByRole("dialog").first()).toBeVisible();
+  });
+
+  test("photo and decor nav open overlays", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/");
+    await playToHud(page);
+    await page.getByTestId(WEB_E2E_IDS.NAV_PHOTO).click();
+    await expect(page.getByTestId(WEB_E2E_IDS.PHOTO_SNAP)).toBeVisible({ timeout: 15_000 });
+    await page.keyboard.press("Escape");
+    await page.getByTestId(WEB_E2E_IDS.NAV_DECOR).click();
+    await expect(page.getByTestId(WEB_E2E_IDS.DECOR_PLACE).or(page.getByRole("dialog").first())).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

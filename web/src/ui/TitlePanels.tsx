@@ -151,6 +151,19 @@ export function CloudConflictPanel({ host, conflict }: { host: GameHost; conflic
             ))}
           </ul>
         ) : null}
+        <p className="small muted">
+          {t("cloud.severity")}: {conflict.severity}
+          {conflict.ageSkewMs > 0
+            ? ` · ${t("cloud.ageSkew")} ${Math.trunc(conflict.ageSkewMs / 1000)}s`
+            : ""}
+        </p>
+        {conflict.syncDiagnostics.length > 0 ? (
+          <ul className="small muted conflict-sync-diagnostics" aria-label={t("cloud.syncDiagnostics")}>
+            {conflict.syncDiagnostics.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        ) : null}
         <div className="snapshot-choice-list">
           <SnapshotChoiceCard row={conflict.local} />
           <SnapshotChoiceCard row={conflict.remote} />

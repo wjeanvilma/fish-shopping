@@ -2,7 +2,7 @@
   "phase": 1,
   "plan": "30_finish_3.0",
   "schema": "fish.ship.finish3_kickoff.v1",
-  "description": "Finish 3.0 Phase 1 \u2014 kickoff + gap scoreboard from frozen 2.0.0. Pins Finish 2.0 as finished, locks measured gaps, and opens the 30-phase path to content 3.0.0 / \u226580k product LOC without padding.",
+  "description": "Finish 3.0 Phase 1 — kickoff + gap scoreboard from frozen 2.0.0. Pins Finish 2.0 as finished, locks measured gaps, and opens the 30-phase path to content 3.0.0 / ≥80k product LOC without padding.",
   "contentVersion": "3.0.0",
   "schemaVersion": 24,
   "kickoffMarker": "authored-finish-3.0-phase-1",
@@ -38,7 +38,7 @@
     "quests": 30,
     "authoredHarbors": 8,
     "authoredFish": 50,
-    "i18nLocales": 3,
+    "i18nLocales": 8,
     "i18nUiKeys": 248,
     "androidUiStringsCalls": 214,
     "androidTextLiterals": 0,
@@ -65,7 +65,7 @@
   "gapTargets": {
     "authoredHarbors": 8,
     "authoredFish": 50,
-    "i18nLocales": 3,
+    "i18nLocales": 8,
     "i18nUiKeysMin": 120,
     "androidTextLiteralsMax": 0,
     "staffComingSoonReasons": 0,
@@ -144,13 +144,13 @@
     {
       "phase": 12,
       "id": "species-51-75",
-      "title": "Species 51\u201375 + ecology",
+      "title": "Species 51–75 + ecology",
       "validate": "species5175:validate"
     },
     {
       "phase": 13,
       "id": "machines-9-10",
-      "title": "Machines 9\u201310 + recipes",
+      "title": "Machines 9–10 + recipes",
       "validate": "machines910:validate"
     },
     {
@@ -267,8 +267,8 @@
   "checklist": [
     "Finish 2.0 priorPlan marked finished; freeze-2.0.0.json still green",
     "Kickoff catalog locks live baseline LOC (updated as Finish 3.0 phases land)",
-    "Gap scoreboard lists authored harbors 8/8 + fish 50/50 (closed Phases 8\u20139), product LOC \u219280k",
-    "30 Finish 3.0 phase ids present and ordered 1\u201330",
+    "Gap scoreboard lists authored harbors 8/8 + fish 50/50 (closed Phases 8–9), product LOC →80k",
+    "30 Finish 3.0 phase ids present and ordered 1–30",
     "Kotlin + TS mirrors match catalog; parity fixture marker locked",
     "listing + RELEASE_PIN + DoD finish3Kickoff wired",
     "CI runs finish3:validate + finish3:smoke",

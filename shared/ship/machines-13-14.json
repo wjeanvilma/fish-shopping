@@ -1,0 +1,65 @@
+{
+  "phase": 15,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.machines_13_14.v1",
+  "description": "Finish 5.0 Phase 15 \u2014 author machine classes 13\u201314 (Harbor poacher + Harbor canner) with recipe graphs, unlock plots on all 12 harbors, and product SKUs. Schema stays 25.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "machineCount": 14,
+  "newMachineCount": 2,
+  "machines1314Marker": "authored-finish-5.0-phase-15",
+  "newMachines": [
+    {
+      "id": "machine.harbor_poacher",
+      "name": "Harbor poacher",
+      "unlockUpgrade": "upgrade.harbor_poacher",
+      "recipeCount": 6,
+      "sampleRecipe": "recipe.poach_fillet",
+      "products": [
+        "product.poached_fillet",
+        "product.poach_broth",
+        "product.poach_carton"
+      ],
+      "moduleGlb": "shared/assets/models/modules/poacher.glb"
+    },
+    {
+      "id": "machine.harbor_canner",
+      "name": "Harbor canner",
+      "unlockUpgrade": "upgrade.harbor_canner",
+      "recipeCount": 6,
+      "sampleRecipe": "recipe.can_fillet",
+      "products": [
+        "product.canned_fillet",
+        "product.can_medley",
+        "product.can_carton"
+      ],
+      "moduleGlb": "shared/assets/models/modules/canner.glb"
+    }
+  ],
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-machines-13-14.json",
+  "authorTool": "shared/tools/author_machines_13_14.py",
+  "validateScript": "npm run machines1314:validate",
+  "checklist": [
+    "content-pack has 14 machine classes including harbor_poacher and harbor_canner",
+    "Unlock upgrades + expansion plots on all 12 harbors",
+    "Recipe graph produces new retail/wholesale SKUs",
+    "Product + module GLBs regenerated; harbor blockouts refreshed",
+    "Kickoff baseline.machines = 14; machinesRemaining = 0",
+    "machines1314:validate green in CI",
+    "schema stays 25"
+  ],
+  "preflightGates": [
+    "shared/ship/machines-13-14.json",
+    "shared/fixtures/parity-machines-13-14.json",
+    "shared/ship/finish-5.0-kickoff.json",
+    "shared/tools/author_machines_13_14.py",
+    "shared/assets/models/modules/poacher.glb",
+    "shared/assets/models/modules/canner.glb",
+    "shared/assets/models/product_poached_fillet.glb",
+    "shared/assets/models/product_canned_fillet.glb",
+    "web/src/ship/machines1314.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Machines1314.kt",
+    "web/scripts/validate-machines-13-14.ts"
+  ]
+}

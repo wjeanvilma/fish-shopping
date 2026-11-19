@@ -1,0 +1,73 @@
+{
+  "phase": 19,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.tutorial_retention_5.v1",
+  "description": "Finish 5.0 Phase 19 — first-session + mid-game tutorial friction rewrite, daily goals deepen (≥14 / boardSlots ≥5), weekly retention objectives + reminder policy. Schema stays 26 / content 4.0.0.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 26,
+  "tutorialRetention5Marker": "authored-finish-5.0-phase-19",
+  "tutorialStepsMin": 11,
+  "highFrictionMin": 7,
+  "nudgesMin": 7,
+  "dailyObjectivesMin": 14,
+  "boardSlotsMin": 5,
+  "weeklyObjectivesMin": 4,
+  "weeklyBoardSlotsMin": 2,
+  "maxStreakBonusDaysMin": 14,
+  "newDailyObjectiveIds": [
+    "daily.quest_push",
+    "daily.chain_run",
+    "daily.harbor_hop",
+    "daily.premium_plate"
+  ],
+  "newWeeklyObjectiveIds": [
+    "weekly.rival_week",
+    "weekly.chain_week",
+    "weekly.harbor_circuit",
+    "weekly.quest_surge"
+  ],
+  "midGameFrictionIds": [
+    "tutorial.grill_line",
+    "tutorial.plot_marker"
+  ],
+  "extendsTutorialFriction": "shared/content/tutorial-friction.json",
+  "weeklyRetentionCatalog": "shared/content/weekly-retention.json",
+  "weeklyPushCatalog": "shared/push/local-weekly-goal-reminders.json",
+  "parityFixture": "shared/fixtures/parity-tutorial-retention-5.json",
+  "authorTool": "shared/tools/author_tutorial_retention_5.py",
+  "validateScript": "npm run tutorialretention5:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "checklist": [
+    "≥7 high-friction tutorial steps including grill_line + plot_marker",
+    "≥7 dwell nudges + rewritten first-session/mid-game copy",
+    "≥14 daily objectives / boardSlots ≥5 / streak bonus days ≥14",
+    "≥4 weekly retention objectives + local weekly reminder policy",
+    "kickoff tutorialRetentionIncomplete=false",
+    "tutorial:validate / dailygoals:validate / localpush:validate soft-green",
+    "tutorialretention5:validate green in CI",
+    "schema stays 26 / content 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/tutorial-retention-5.json",
+    "shared/fixtures/parity-tutorial-retention-5.json",
+    "shared/content/tutorial-friction.json",
+    "shared/content/weekly-retention.json",
+    "shared/push/local-weekly-goal-reminders.json",
+    "shared/content/content-pack.json",
+    "shared/tools/author_tutorial_retention_5.py",
+    "web/src/ship/tutorialRetention5.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/TutorialRetention5.kt",
+    "web/scripts/validate-tutorial-retention-5.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/progression/WeeklyGoals.kt",
+    "web/src/engine/weeklyGoals.ts"
+  ],
+  "measured": {
+    "tutorialSteps": 11,
+    "highFriction": 7,
+    "nudges": 7,
+    "dailyObjectives": 14,
+    "boardSlots": 5,
+    "weeklyObjectives": 4
+  }
+}

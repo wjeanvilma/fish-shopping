@@ -413,6 +413,33 @@ export const CustomerSystem = {
     return def.maxQueue + (rush?.queueBonus ?? 0);
   },
 
+  /**
+   * Finish 5.0 Phase 3 — queue fill across unlocked counters (0..1000+).
+   * 1000 = at effective max queue capacity; higher when oversubscribed.
+   */
+  serviceQueuePressurePermille(content: ContentPack, state: GameState, harbor: HarborDef): number {
+    const rush = CustomerSystem.activeRush(harbor, state.tick);
+    let capacity = 0;
+    let queued = 0;
+    for (const def of harbor.counters) {
+      if (!CustomerSystem.isUnlocked(def, state)) continue;
+      capacity += CustomerSystem.effectiveMaxQueue(def, rush);
+      queued += state.customers.filter((c) => c.counterId === def.id && c.arrived).length;
+    }
+    if (capacity <= 0) return 0;
+    return idiv(queued * 1000, capacity);
+  },
+
+  /** Lowest patience among arrived customers; null when none waiting. */
+  minPatienceTicksLeft(state: GameState): number | null {
+    let min: number | null = null;
+    for (const c of state.customers) {
+      if (!c.arrived) continue;
+      if (min === null || c.patienceLeft < min) min = c.patienceLeft;
+    }
+    return min;
+  },
+
   ticksRemaining(rush: RushWindowDef, tick: number): number {
     const phase = tick % rush.periodTicks;
     return Math.max(0, rush.startTick + rush.durationTicks - phase);

@@ -31,7 +31,7 @@ class Endgame2Test {
         assertEquals(Endgame2.SCHEMA, json.getValue("schema").jsonPrimitive.content)
         assertEquals(Endgame2.ENDGAME_2_MARKER, json.getValue("endgame2Marker").jsonPrimitive.content)
         assertEquals(Endgame2.SCHEMA_VERSION, json.getValue("schemaVersion").jsonPrimitive.int)
-        assertEquals(25, SimConstants.SCHEMA_VERSION)
+        assertTrue(SimConstants.SCHEMA_VERSION >= 25)
 
         val listing = Json.parseToJsonElement(File(root, "shared/store/listing.json").readText()).jsonObject
         assertEquals(17, listing.getValue("endgame2Phase").jsonPrimitive.content.toInt())

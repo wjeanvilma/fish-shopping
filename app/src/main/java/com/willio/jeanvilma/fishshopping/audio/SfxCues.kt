@@ -8,6 +8,7 @@ import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
  * Finish 2.0 Phase 21 adds achievement/festival/contract/goal/mastery/quest stingers.
  * Finish 3.0 Phase 23 adds rival/travel/hire/prestige/loan/trophy stingers.
  * Finish 4.0 Phase 23 adds decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers.
+ * Finish 5.0 Phase 12 adds cast/spoil/service/contract/quest pressure stingers.
  */
 enum class SfxCue {
     CATCH,
@@ -41,6 +42,11 @@ enum class SfxCue {
     FULL_UNLOCK,
     MACHINE_BREAK,
     SPOIL,
+    CAST_STRIKE,
+    SPOIL_WARN,
+    SERVICE_QUEUE,
+    CONTRACT_DEADLINE,
+    QUEST_NEAR,
     ;
 
     /** Android `res/raw` name without extension (sfx_catch, …). */
@@ -78,6 +84,11 @@ enum class SfxCue {
         FULL_UNLOCK -> "full_unlock"
         MACHINE_BREAK -> "machine_break"
         SPOIL -> "spoil"
+        CAST_STRIKE -> "cast_strike"
+        SPOIL_WARN -> "spoil_warn"
+        SERVICE_QUEUE -> "service_queue"
+        CONTRACT_DEADLINE -> "contract_deadline"
+        QUEST_NEAR -> "quest_near"
     }
 }
 
@@ -92,7 +103,8 @@ fun SfxCue.wantsHaptic(): Boolean =
         this == SfxCue.COSMETIC ||
         this == SfxCue.ENDGAME_TIER ||
         this == SfxCue.ENDGAME_CHALLENGE ||
-        this == SfxCue.FULL_UNLOCK
+        this == SfxCue.FULL_UNLOCK ||
+        this == SfxCue.CAST_STRIKE
 
 fun sfxFromEvent(e: GameEvent): SfxCue? = when (e) {
     is GameEvent.FishCaught -> SfxCue.CATCH
@@ -125,5 +137,6 @@ fun sfxFromEvent(e: GameEvent): SfxCue? = when (e) {
     is GameEvent.FullHarborUnlockGranted -> if (e.replayed) null else SfxCue.FULL_UNLOCK
     is GameEvent.MachineBroke -> SfxCue.MACHINE_BREAK
     is GameEvent.ItemsSpoiled -> SfxCue.SPOIL
+    is GameEvent.CastStrikeReel -> SfxCue.CAST_STRIKE
     else -> null
 }

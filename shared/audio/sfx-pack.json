@@ -1,7 +1,7 @@
 {
   "phase": 19,
   "schema": "fish.audio.sfx_pack.v1",
-  "description": "Post-1.0 Phase 19 \u2014 authored mono WAV stingers for catch / cut / sell / UI (plus abandon, upgrade, rush). Buses keep mute, SFX gain, voice cap, and Android/Web focus-lifecycle policy. Phase 20 replaces procedural ambience with authored music beds. Finish 2.0 Phase 21 adds pack-2 stingers; Finish 3.0 Phase 23 adds pack-3 rival/travel/hire/prestige/loan/trophy stingers; Finish 4.0 Phase 23 adds pack-4 decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers.",
+  "description": "Post-1.0 Phase 19 \u2014 authored mono WAV stingers for catch / cut / sell / UI (plus abandon, upgrade, rush). Buses keep mute, SFX gain, voice cap, and Android/Web focus-lifecycle policy. Phase 20 replaces procedural ambience with authored music beds. Finish 2.0 Phase 21 adds pack-2 stingers; Finish 3.0 Phase 23 adds pack-3 rival/travel/hire/prestige/loan/trophy stingers; Finish 4.0 Phase 23 adds pack-4 decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers; Finish 5.0 Phase 12 adds pack-5 cast/spoil/service/contract/quest pressure stingers.",
   "sampleRate": 22050,
   "channels": 1,
   "encoding": "pcm_s16le",
@@ -298,6 +298,51 @@
       "haptic": false,
       "design": "wet flop + descending sigh",
       "pack4": true
+    },
+    {
+      "id": "cast_strike",
+      "file": "cast_strike.wav",
+      "androidRaw": "sfx_cast_strike",
+      "role": "feedback",
+      "haptic": true,
+      "design": "line twang + strike snap",
+      "pack5": true
+    },
+    {
+      "id": "spoil_warn",
+      "file": "spoil_warn.wav",
+      "androidRaw": "sfx_spoil_warn",
+      "role": "feedback",
+      "haptic": false,
+      "design": "descending spoil pressure warn",
+      "pack5": true
+    },
+    {
+      "id": "service_queue",
+      "file": "service_queue.wav",
+      "androidRaw": "sfx_service_queue",
+      "role": "feedback",
+      "haptic": false,
+      "design": "double counter tap + queue murmur",
+      "pack5": true
+    },
+    {
+      "id": "contract_deadline",
+      "file": "contract_deadline.wav",
+      "androidRaw": "sfx_contract_deadline",
+      "role": "feedback",
+      "haptic": false,
+      "design": "urgent deadline double tick",
+      "pack5": true
+    },
+    {
+      "id": "quest_near",
+      "file": "quest_near.wav",
+      "androidRaw": "sfx_quest_near",
+      "role": "feedback",
+      "haptic": false,
+      "design": "near-complete quest chime lift",
+      "pack5": true
     }
   ],
   "eventMap": {
@@ -331,7 +376,12 @@
     "bait_purchased": "bait",
     "full_harbor_unlock_granted": "full_unlock",
     "machine_broke": "machine_break",
-    "items_spoiled": "spoil"
+    "items_spoiled": "spoil",
+    "cast_strike_reel": "cast_strike",
+    "spoil_pressure_warn": "spoil_warn",
+    "service_queue_pressure": "service_queue",
+    "contract_deadline_warn": "contract_deadline",
+    "quest_near_complete": "quest_near"
   },
   "preflightGates": [
     "shared/audio/sfx-pack.json",

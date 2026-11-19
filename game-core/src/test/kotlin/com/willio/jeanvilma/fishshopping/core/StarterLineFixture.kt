@@ -276,6 +276,11 @@ object StarterLineFixture {
                 put("objectiveId", c.objectiveId)
                 put("requestId", c.requestId)
             }
+            is Command.ClaimWeeklyGoal -> {
+                put("type", "claim_weekly_goal")
+                put("objectiveId", c.objectiveId)
+                put("requestId", c.requestId)
+            }
             is Command.TravelToHarbor -> {
                 put("type", "travel_to_harbor")
                 put("harborId", c.harborId)
@@ -314,6 +319,17 @@ object StarterLineFixture {
                 put("type", "purchase_decor")
                 put("decorId", c.decorId)
                 put("requestId", c.requestId)
+            }
+            is Command.PlaceDecor -> {
+                put("type", "place_decor")
+                put("decorId", c.decorId)
+                put("xMm", c.xMm)
+                put("zMm", c.zMm)
+                put("rotationQuarter", c.rotationQuarter)
+            }
+            is Command.StoreDecor -> {
+                put("type", "store_decor")
+                put("decorId", c.decorId)
             }
             is Command.GrantFullHarborUnlock -> {
                 put("type", "grant_full_harbor_unlock")
@@ -374,6 +390,10 @@ object StarterLineFixture {
             o["objectiveId"]!!.jsonPrimitive.content,
             o["requestId"]!!.jsonPrimitive.content,
         )
+        "claim_weekly_goal" -> Command.ClaimWeeklyGoal(
+            o["objectiveId"]!!.jsonPrimitive.content,
+            o["requestId"]!!.jsonPrimitive.content,
+        )
         "travel_to_harbor" -> Command.TravelToHarbor(o["harborId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "buy_bait" -> Command.BuyBait(o["baitId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "select_bait" -> Command.SelectBait(
@@ -396,6 +416,13 @@ object StarterLineFixture {
             o["scheduleId"]?.takeIf { it !is kotlinx.serialization.json.JsonNull }?.jsonPrimitive?.content,
         )
         "purchase_decor" -> Command.PurchaseDecor(o["decorId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
+        "place_decor" -> Command.PlaceDecor(
+            o["decorId"]!!.jsonPrimitive.content,
+            o["xMm"]!!.jsonPrimitive.content.toInt(),
+            o["zMm"]!!.jsonPrimitive.content.toInt(),
+            o["rotationQuarter"]!!.jsonPrimitive.content.toInt(),
+        )
+        "store_decor" -> Command.StoreDecor(o["decorId"]!!.jsonPrimitive.content)
         "grant_full_harbor_unlock" -> Command.GrantFullHarborUnlock(o["requestId"]!!.jsonPrimitive.content)
         "grant_iap_cosmetic" -> Command.GrantIapCosmetic(
             o["cosmeticId"]!!.jsonPrimitive.content,

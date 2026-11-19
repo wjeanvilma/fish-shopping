@@ -84,6 +84,23 @@ fun Simulation.view(): SimView {
             val empty = unlocked && spot.stock <= 0
             val part = FishingSystem.dayPartAt(c, s.tick)
             val tideOwned = FishingSystem.hasTideChart(s)
+            val phase = if (casting) {
+                com.willio.jeanvilma.fishshopping.core.fishing.CastPhases.phaseAt(
+                    p.fishingProgress, p.fishingCatchTicks, c, s,
+                )
+            } else null
+            val reelHint = when (FishingSystem.timingTierAt(c, s, p.fishingProgress, p.fishingCatchTicks)) {
+                TimingTier.PERFECT -> "Perfect — reel now!"
+                TimingTier.GOOD -> "Good — reel for a tip!"
+                TimingTier.MISS -> "Reel now for a bonus!"
+            }
+            val phaseHint = when (phase) {
+                com.willio.jeanvilma.fishshopping.core.fishing.CastPhase.WAITING -> "Waiting for a nibble…"
+                com.willio.jeanvilma.fishshopping.core.fishing.CastPhase.STRIKE ->
+                    if (inWindow && !p.reelAttemptedThisCast) reelHint else "Strike window — get ready!"
+                com.willio.jeanvilma.fishshopping.core.fishing.CastPhase.FIGHT -> "Fighting — hold the line!"
+                null -> "Fishing..."
+            }
             val lines = mutableListOf(
                 when {
                     !unlocked -> {
@@ -92,19 +109,16 @@ fun Simulation.view(): SimView {
                     }
                     full -> "Bag full - deliver your catch"
                     empty -> "Pier empty — fish are returning"
-                    casting && inWindow && !p.reelAttemptedThisCast -> {
-                        when (FishingSystem.timingTierAt(p, p.fishingProgress, p.fishingCatchTicks)) {
-                            TimingTier.PERFECT -> "Perfect — reel now!"
-                            TimingTier.GOOD -> "Good — reel for a tip!"
-                            TimingTier.MISS -> "Reel now for a bonus!"
-                        }
-                    }
+                    casting -> phaseHint
                     else -> "Fishing..."
                 },
                 "Fish here: ${spot.stock}/${spotDef.stockMax}",
                 if (tideOwned) "${part.name} · tide chart" else part.name,
             )
             if (casting) lines += "Hooked: ${c.speciesById.getValue(p.fishingSpecies!!).let { c.displayName(it.id, it.name) }}"
+            if (casting && phase != null) {
+                lines += "Cast: ${com.willio.jeanvilma.fishshopping.core.fishing.CastPhases.wireName(phase)}"
+            }
             val regenNeeded = FishingSystem.regenTicksFor(c, s, spotDef, spot.stock)
             val progress = when {
                 casting -> p.fishingProgress.toFloat() / p.fishingCatchTicks
@@ -302,6 +316,15 @@ fun Simulation.view(): SimView {
                 TimingTier.MISS -> null
             }
         },
+        castPhase = if (p.fishingSpecies != null && p.fishingCatchTicks > 0) {
+            com.willio.jeanvilma.fishshopping.core.fishing.CastPhases.wireName(
+                com.willio.jeanvilma.fishshopping.core.fishing.CastPhases.phaseAt(
+                    p.fishingProgress, p.fishingCatchTicks, c, s,
+                ),
+            )
+        } else null,
+        castStrikeStart01 = com.willio.jeanvilma.fishshopping.core.fishing.CastPhases.WAITING_END_PERMILLE / 1000f,
+        castStrikeEnd01 = com.willio.jeanvilma.fishshopping.core.fishing.CastPhases.strikeEndPermille(c, s) / 1000f,
         timingGoodStart01 = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.timingWindows(c, s).goodStart / 1000f,
         timingGoodEnd01 = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.timingWindows(c, s).goodEnd / 1000f,
         timingPerfectStart01 = com.willio.jeanvilma.fishshopping.core.fishing.MasterySystem.timingWindows(c, s).perfectStart / 1000f,
@@ -325,6 +348,7 @@ fun Simulation.view(): SimView {
         },
         dayPartId = FishingSystem.dayPartAt(c, s.tick).id,
         dayPartName = FishingSystem.dayPartAt(c, s.tick).name,
+        dayProgressPermille = ((s.tick % c.ecology.dayLengthTicks) * 1000 / c.ecology.dayLengthTicks).toInt(),
         tideChartOwned = FishingSystem.hasTideChart(s),
         weatherId = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.weatherAt(c, s.tick).id,
         weatherName = com.willio.jeanvilma.fishshopping.core.world.WeatherSystem.weatherAt(c, s.tick).let { c.displayName(it.id, it.name) },
@@ -613,6 +637,11 @@ fun Simulation.view(): SimView {
         else (s.contractBoardRefreshAt - s.tick).coerceAtLeast(0L).toInt(),
         contractFailStreak = ContractSystem.failStreak(s),
         contractFailStreakThreshold = c.contracts.failStreakThreshold,
+        serviceQueuePressurePermille = CustomerSystem.serviceQueuePressurePermille(c, s, harbor),
+        minPatienceTicksLeft = CustomerSystem.minPatienceTicksLeft(s),
+        ticksUntilNearestContractDeadline = ContractSystem.ticksUntilNearestDeadline(s),
+        contractBoardPressurePermille = ContractSystem.contractBoardPressurePermille(c, s),
+        nextQuestProgressPermille = ProgressionSystem.nextQuestProgressPermille(c, s),
         dailyLoginStreak = com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem.streak(s),
         dailyGoals = run {
             val DG = com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem
@@ -633,12 +662,33 @@ fun Simulation.view(): SimView {
                 )
             }
         },
+        weeklyGoals = run {
+            val WG = com.willio.jeanvilma.fishshopping.core.progression.WeeklyGoalsSystem
+            WG.boardObjectives(s).map { o ->
+                val progress = WG.progress(s, o)
+                val complete = WG.isComplete(s, o)
+                val claimed = WG.isClaimed(c, s, o)
+                DailyGoalView(
+                    objectiveId = o.id,
+                    name = o.name,
+                    description = o.description,
+                    progress = progress,
+                    target = o.atLeast,
+                    rewardCoins = WG.claimRewardCoins(o),
+                    complete = complete,
+                    claimed = claimed,
+                    claimEnabled = complete && !claimed,
+                )
+            }
+        },
         economyUnlocked = EconomySystem.unlocked(c, s),
         economyLockedReason = EconomySystem.missingRequirement(c, s)?.let { "Requires: $it" },
         maintenanceCoinsPerStation = if (EconomySystem.unlocked(c, s)) {
             EconomySystem.maintenanceCoinsPerStation(c, s, harbor)
         } else 0,
         bagFishSpoilActive = EconomySystem.unlocked(c, s) && c.economy.bagFishSpoilUnits > 0,
+        ticksUntilBagSpoil = EconomySystem.ticksUntilBagSpoil(c, s),
+        bagSpoilPressurePermille = EconomySystem.bagSpoilPressurePermille(c, s),
         prestigeUnlocked = PrestigeSystem.boardUnlocked(c, s),
         prestigeLockedReason = PrestigeSystem.missingBoardRequirement(c, s)?.let { "Requires: $it" },
         harborRating = PrestigeSystem.harborRating(c, s),
@@ -674,6 +724,8 @@ fun Simulation.view(): SimView {
         beatenRivalCount = s.beatenRivalIds.size,
         endgameMarkCount = s.endgameMarks.size,
         endgameMarks = s.endgameMarks.toList(),
+        endgameCrestCount = s.endgameCrests.size,
+        endgameCrests = s.endgameCrests.toList(),
         endgameTiers = c.endgame.tiers.map { t ->
             val unlocked = t.id in s.unlockedEndgameTiers
             EndgameTierView(
@@ -746,6 +798,7 @@ fun Simulation.view(): SimView {
                     else -> null
                 },
                 canAfford = !owned && miss == null && s.coins >= d.cost,
+                placed = s.decorPlacements[s.harborId]?.containsKey(d.id) == true,
             )
         },
         cosmeticIapOffers = com.willio.jeanvilma.fishshopping.core.progression.CosmeticsIapSystem.CATALOG.map { sku ->
@@ -759,6 +812,9 @@ fun Simulation.view(): SimView {
             )
         },
         decorPatienceBonusTicks = com.willio.jeanvilma.fishshopping.core.world.DecorSystem.patienceBonusTicks(c, s),
+        decorPlacements = (s.decorPlacements[s.harborId] ?: emptyMap()).map { (decorId, p) ->
+            DecorPlacementView(decorId, c.decorById[decorId]?.name ?: decorId, p.xMm, p.zMm, p.rotationQuarter)
+        },
         trophies = s.trophies.entries.map { (id, rec) ->
             TrophyEntryView(
                 speciesId = id,

@@ -496,6 +496,7 @@ object ContentLoader {
                         priceBonusPermille = tier["priceBonusPermille"].int(min = 1),
                         coins = tier["coins"].long(min = 0),
                         requiresMarks = tier.optional("requiresMarks")?.int(min = 0) ?: 0,
+                        requiresCrests = tier.optional("requiresCrests")?.int(min = 0) ?: 0,
                     )
                 },
                 challenges = eg["challenges"].list { ch ->
@@ -507,6 +508,7 @@ object ContentLoader {
                         atLeast = ch["atLeast"].long(min = 1),
                         rewardCoins = ch["rewardCoins"].long(min = 0),
                         grantsMark = ch.optional("grantsMark")?.string(),
+                        grantsCrest = ch.optional("grantsCrest")?.string(),
                     )
                 },
             )

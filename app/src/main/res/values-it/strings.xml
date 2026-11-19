@@ -1,0 +1,7 @@
+<resources>
+    <!-- Finish 2.0 Phase 23 — Italian store listing copy. Source: shared/store/locales/it.json -->
+    <string name="app_name">Fish Shopping</string>
+    <string name="store_short_description">Pesca, taglia e vendi pesce in un accogliente mercato 3D del porto.</string>
+    <string name="store_tagline">Pesca, taglia, vendi — gestisci il tuo mercato del porto</string>
+    <string name="store_whats_new">Blocco 4.0.0 — cento specie, cinquanta missioni, dodici macchine, dieci porti, dodici mercati rivali, endgame schema 25, blocco parità 4.0 e ops Finish 4.0. Schema 25; i salvataggi 3.0 precedenti si caricano ancora.</string>
+</resources>

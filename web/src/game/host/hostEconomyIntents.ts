@@ -1,5 +1,6 @@
 /**
- * Finish 4.0 Phase 6 — economy / staff / contracts / bait / station intents for GameHost.
+ * Finish 4.0 Phase 6 — economy / staff / contracts / station intents for GameHost.
+ * Finish 5.0 Phase 5: fishing intents live in HostFishingIntents.
  */
 import { ProductionSystem, type Command } from "../../engine";
 import type { HostStationIntentHost } from "./hostIntentHost";
@@ -13,6 +14,10 @@ export class HostEconomyIntents {
 
   claimDailyGoal(objectiveId: string): void {
     this.push({ type: "claim_daily_goal", objectiveId, requestId: crypto.randomUUID() });
+  }
+
+  claimWeeklyGoal(objectiveId: string): void {
+    this.push({ type: "claim_weekly_goal", objectiveId, requestId: crypto.randomUUID() });
   }
 
   setMachinePaused(stationId: string, paused: boolean): void {
@@ -85,23 +90,6 @@ export class HostEconomyIntents {
 
   deliverContract(contractId: string): void {
     this.push({ type: "deliver_contract", contractId, requestId: crypto.randomUUID() });
-  }
-
-  buyBait(baitId: string): void {
-    this.push({ type: "buy_bait", baitId, requestId: crypto.randomUUID() });
-  }
-
-  selectBait(baitId: string | null): void {
-    this.push({ type: "select_bait", baitId });
-  }
-
-  selectTechnique(techniqueId: string | null): void {
-    this.push({ type: "select_technique", techniqueId });
-  }
-
-  reel(): void {
-    if (this.host.panelBlocksWorld()) return;
-    this.host.enqueueCommand({ type: "reel" });
   }
 
   /** Cycle Auto → each recipe → Auto for a station (no tick advance). */

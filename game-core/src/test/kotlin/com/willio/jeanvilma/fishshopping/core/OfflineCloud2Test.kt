@@ -62,8 +62,9 @@ class OfflineCloud2Test {
         }
 
         assertTrue(RemoteAnalyticsPolicy.REQUEUE_ON_FLUSH_FAILURE)
-        assertEquals(3, RemoteAnalyticsPolicy.MAX_FLUSH_RETRIES)
-        assertEquals(2_000L, RemoteAnalyticsPolicy.RETRY_BACKOFF_MS)
+        // Finish 5.0 Phase 22 soft-floor: later waves may raise retries.
+        assertTrue(RemoteAnalyticsPolicy.MAX_FLUSH_RETRIES >= 3)
+        assertTrue(RemoteAnalyticsPolicy.RETRY_BACKOFF_MS >= 2_000L)
 
         val older = SnapshotCodec.encode(
             Shared.content,

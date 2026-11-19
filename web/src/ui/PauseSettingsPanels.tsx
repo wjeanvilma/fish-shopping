@@ -162,6 +162,11 @@ export function SettingsPanel({ settings, cloudAvailable, saveStatus, telemetryR
                 ["en", "settings.languageEn"],
                 ["es", "settings.languageEs"],
                 ["pt", "settings.languagePt"],
+                ["fr", "settings.languageFr"],
+                ["ht", "settings.languageHt"],
+                ["it", "settings.languageIt"],
+                ["ca", "settings.languageCa"],
+                ["ru", "settings.languageRu"],
               ] as const).map(([loc, key]) => (
                 <button
                   key={loc}

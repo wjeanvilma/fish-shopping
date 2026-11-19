@@ -1,0 +1,31 @@
+{
+  "locale": "fr",
+  "bcp47": "fr-FR",
+  "languageName": "Français",
+  "default": false,
+  "frozen": true,
+  "phase": 23,
+  "title": "Fish Shopping",
+  "shortDescription": "Pêchez, découpez et vendez du poisson dans un marché 3D du port.",
+  "fullDescription": "Gérez votre propre marché de poisson en bord de mer. Lancez depuis le quai, transformez vos prises à la découpeuse, approvisionnez le comptoir et servez une clientèle toujours plus nombreuse. Embauchez du personnel, débloquez des améliorations, acceptez des contrats de livraison et développez de nouveaux ports — le tout avec une simulation fixe à 20 Hz partagée entre Android et le web.\n\nBoucle de la première session : pêcher → découper → approvisionner → vendre.\n\nLa synchronisation cloud optionnelle et l'analytique respectueuse de la vie privée restent désactivées jusqu'à votre accord. Le déblocage unique des ports et les cosmétiques neutres en puissance sont disponibles via achat in-app ; Restaurer les achats récupère les droits sur un nouvel appareil.",
+  "whatsNew": "Gel 4.0.0 — cent espèces, cinquante quêtes, douze machines, dix ports, douze marchés rivaux, fin de jeu schéma 25, verrou de parité 4.0 et ops Finish 4.0. Schéma 25 ; les sauvegardes 3.0 précédentes se chargent toujours.",
+  "webLanding": {
+    "title": "Fish Shopping",
+    "tagline": "Pêchez, découpez, vendez — gérez votre marché du port",
+    "description": "Pêchez, découpez et vendez du poisson dans un marché 3D chaleureux au bord de l'eau.",
+    "ctaPlay": "Jouer dans le navigateur",
+    "ctaPrivacy": "Confidentialité",
+    "ctaSupport": "Assistance"
+  },
+  "keywords": [
+    "pêche",
+    "tycoon",
+    "gestion",
+    "idle",
+    "3d",
+    "port",
+    "marché"
+  ],
+  "category": "Simulation",
+  "contentRating": "Everyone"
+}

@@ -3,6 +3,7 @@
  * Finish 2.0 Phase 29 adds achievements / weather / mastery / festival suites.
  * Finish 3.0 Phase 29 adds rivals / schema24 endgame / machines 9–10 / quests-contracts-3.
  * Finish 4.0 Phase 29 adds machines 11–12 / quests-contracts-4 / rivals-2 / endgame-2.
+ * Finish 5.0 Phase 29 adds machines 13–14 / quests-contracts-5 / endgame-3 / rivals-seasonal-5.
  */
 import parityLockJson from "../../../shared/fixtures/parity-lock.json";
 import type { GameState } from "./state";
@@ -18,6 +19,7 @@ export interface ParityLockSuite {
   finish2?: boolean;
   finish3?: boolean;
   finish4?: boolean;
+  finish5?: boolean;
 }
 
 export interface ParityLockCatalog {
@@ -28,13 +30,16 @@ export interface ParityLockCatalog {
   finish2ParityLockPhase?: number;
   finish3ParityLockPhase?: number;
   finish4ParityLockPhase?: number;
+  finish5ParityLockPhase?: number;
   parityLock2Catalog?: string;
   parityLock3Catalog?: string;
   parityLock4Catalog?: string;
+  parityLock5Catalog?: string;
   suiteFloor?: number;
   finish2SuiteFloor?: number;
   finish3SuiteFloor?: number;
   finish4SuiteFloor?: number;
+  finish5SuiteFloor?: number;
   suites: ParityLockSuite[];
   expandedExpectFields: string[];
   gates: {
@@ -53,6 +58,10 @@ export interface ParityLockCatalog {
     questsContracts4FloorsMet?: boolean;
     rivalMarkets2PressureDeterministic?: boolean;
     endgameSchema25Persisted?: boolean;
+    machines1314RecipesParity?: boolean;
+    questsContracts5FloorsMet?: boolean;
+    endgameSchema26Persisted?: boolean;
+    rivalsSeasonal5FloorsMet?: boolean;
   };
 }
 
@@ -62,6 +71,7 @@ export const PARITY_LOCK_SCHEMA = PARITY_LOCK.schema;
 export const PARITY_LOCK_FINISH2_PHASE = PARITY_LOCK.finish2ParityLockPhase ?? 29;
 export const PARITY_LOCK_FINISH3_PHASE = PARITY_LOCK.finish3ParityLockPhase ?? 29;
 export const PARITY_LOCK_FINISH4_PHASE = PARITY_LOCK.finish4ParityLockPhase ?? 29;
+export const PARITY_LOCK_FINISH5_PHASE = PARITY_LOCK.finish5ParityLockPhase ?? 29;
 export const PARITY_LOCK_SUITE_IDS = PARITY_LOCK.suites.map((s) => s.id);
 export const PARITY_LOCK_FINISH2_SUITE_IDS = PARITY_LOCK.suites
   .filter((s) => s.finish2)
@@ -71,6 +81,9 @@ export const PARITY_LOCK_FINISH3_SUITE_IDS = PARITY_LOCK.suites
   .map((s) => s.id);
 export const PARITY_LOCK_FINISH4_SUITE_IDS = PARITY_LOCK.suites
   .filter((s) => s.finish4)
+  .map((s) => s.id);
+export const PARITY_LOCK_FINISH5_SUITE_IDS = PARITY_LOCK.suites
+  .filter((s) => s.finish5)
   .map((s) => s.id);
 
 /** Canonical economy/unlock/tutorial/entitlement state both clients must match. */

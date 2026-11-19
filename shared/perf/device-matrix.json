@@ -1,11 +1,11 @@
 {
   "phase": 26,
   "schema": "fish.perf.device_matrix.v1",
-  "description": "Blueprint device budgets for quality presets and soft auto-downgrade/upgrade. Finish 4.0 Phase 27 tightens streaks, over-budget mult, and harbor LRU for 10 harbors. Presentation-only — never changes the 20 Hz sim.",
+  "description": "Blueprint device budgets for quality presets and soft auto-downgrade/upgrade. Finish 5.0 Phase 27 raises harbor LRU to 4 and denser-scene presenter caps for 12 harbors.",
   "budgetGatePhase": 15,
   "budgetGateCatalog": "shared/perf/budget-gate.json",
   "finish4Phase": 27,
-  "harborCacheLimit": 3,
+  "harborCacheLimit": 4,
   "platforms": {
     "android": {
       "label": "Android mid-tier",
@@ -43,21 +43,30 @@
       "android": "no shadows, no MSAA, crowd≤3, fly≤4, burst≤2"
     },
     "medium": {
-      "web": "≤1.5× DPR (≤1080 CSS tall), 1024 shadows, crowd≤5, fly≤8, burst≤4",
-      "android": "shadows on, no MSAA, crowd≤5, fly≤8, burst≤4"
+      "web": "≤1.5× DPR (≤1080 CSS tall), 1024 shadows, crowd≤6, fly≤10, burst≤5",
+      "android": "shadows on, no MSAA, crowd≤6, fly≤10, burst≤5"
     },
     "high": {
-      "web": "≤2× DPR, 2048 soft shadows, crowd≤8, fly full pool, burst full pool",
-      "android": "shadows + 4× MSAA, crowd≤8, fly full pool, burst full pool"
+      "web": "≤2× DPR, 2048 soft shadows, crowd≤10, fly full pool, burst full pool",
+      "android": "shadows + 4× MSAA, crowd≤10, fly full pool, burst full pool"
     }
   },
   "autoDowngrade": {
     "overBudgetMultiplier": 1.12,
-    "steps": ["high→medium", "medium→low", "low stays"]
+    "steps": [
+      "high→medium",
+      "medium→low",
+      "low stays"
+    ]
   },
   "autoUpgrade": {
     "underBudgetMultiplier": 0.85,
-    "steps": ["low→medium", "medium→high", "capped at requested preset"],
-    "note": "Finish 4.0 Phase 27 — recover quality after sustained under-budget frames without exceeding player preset."
-  }
+    "steps": [
+      "low→medium",
+      "medium→high",
+      "capped at requested preset"
+    ],
+    "note": "Finish 5.0 Phase 27 — recover quality after sustained under-budget frames without exceeding player preset (12-harbor travel)."
+  },
+  "finish5Phase": 27
 }

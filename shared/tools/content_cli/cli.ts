@@ -1,10 +1,11 @@
 /**
- * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 + Finish 4.0 Phase 28 — content authoring CLI entry.
+ * Finish 2.0/3.0/4.0/5.0 — content authoring CLI entry.
  *
  * Usage (from web/):
  *   npm run content:scaffold -- species --id tide_perch --name "Tide perch"
- *   npm run content:scaffold -- machine --id dock_press --dry-run
- *   npm run content:scaffold -- rival --id mist_hawker --check-pack
+ *   npm run content:scaffold -- seasonal --id aurora_tide --dry-run
+ *   npm run content:scaffold -- endgame --id crest_harbor --dry-run
+ *   npm run content:scaffold -- cosmetic --id aurora_bunting --check-pack
  *   npm run content:scaffold -- --list
  *   npm run content:scaffold -- --check-floors
  *
@@ -15,7 +16,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ALL_SCAFFOLD_KINDS, isScaffoldKind, type ScaffoldKind } from "./ids";
 import { indexPackIds, packHasId } from "./packIds";
-import { FINISH4_PACK_FLOORS, measurePackFloors } from "./packFloors";
+import { FINISH5_PACK_FLOORS, measurePackFloors } from "./packFloors";
 import { buildScaffold, type ScaffoldRequest } from "./scaffolds";
 import { structuralScaffoldErrors } from "./validateFragment";
 
@@ -31,11 +32,11 @@ function usage(): never {
 
 Options:
   --name <text>           Display name
-  --description <text>    Description (quest/contract/bait/decor/rival)
+  --description <text>    Description
   --out <dir>             Write JSON under dir (default shared/content/scaffolds/out)
   --dry-run               Print JSON only (no write)
-  --check-pack            Fail if id already exists in content-pack.json
-  --check-floors          Verify content-pack meets Finish 4.0 floors (no scaffold)
+  --check-pack            Fail if id already exists in content-pack/entitlements
+  --check-floors          Verify content-pack meets Finish 5.0 floors (no scaffold)
   --base-value <n>        Species baseValue
   --goal-stat <id>        Quest goal stat (default stat.fish_caught)
   --goal-at-least <n>     Quest goal atLeast (default 5)
@@ -43,7 +44,7 @@ Options:
   --fishing-species <ids> Comma species ids for harbor fishing spot
   --item <id>             Contract delivery item id
   --quantity <n>          Contract quantity
-  --cost <n>              Bait/decor cost or contract payout
+  --cost <n>              Bait/decor/endgame cost or contract payout
   --patience-bonus <n>    Decor patienceBonusTicks
   --recipes <ids>         Machine recipe ids (comma)
   --input-cap <n>         Machine inputCapacityUnits
@@ -53,11 +54,17 @@ Options:
   --aggression <n>        Rival aggressionPermille
   --undercut <n>          Rival undercutPriceMultPermille
   --ai-profile <id>       Rival aiProfile (siphon|undercut|adaptive|roamer)
+  --period-ticks <n>      Seasonal periodTicks
+  --start-tick <n>        Seasonal startTick
+  --duration-ticks <n>    Seasonal durationTicks
+  --prestige <n>          Endgame requiresPrestigeCount
+  --sku <id>              Cosmetic sku override
 
 Examples:
   npm run content:scaffold -- species --id tide_perch --name "Tide perch"
-  npm run content:scaffold -- machine --id dock_press --dry-run
-  npm run content:scaffold -- rival --id mist_hawker --check-pack
+  npm run content:scaffold -- seasonal --id aurora_tide --dry-run
+  npm run content:scaffold -- endgame --id crest_harbor --dry-run
+  npm run content:scaffold -- cosmetic --id aurora_bunting --check-pack
   npm run content:scaffold -- --list
   npm run content:scaffold -- --check-floors
 `);
@@ -101,6 +108,10 @@ function parseArgs(argv: string[]): ScaffoldRequest & {
   const specialtyRaw = takeFlag(argv, "--specialty");
   const aggressionRaw = takeFlag(argv, "--aggression");
   const undercutRaw = takeFlag(argv, "--undercut");
+  const periodRaw = takeFlag(argv, "--period-ticks");
+  const startRaw = takeFlag(argv, "--start-tick");
+  const durationRaw = takeFlag(argv, "--duration-ticks");
+  const prestigeRaw = takeFlag(argv, "--prestige");
   const aiProfileRaw = takeFlag(argv, "--ai-profile") as
     | "siphon"
     | "undercut"
@@ -134,6 +145,11 @@ function parseArgs(argv: string[]): ScaffoldRequest & {
     aggressionPermille: aggressionRaw ? Number(aggressionRaw) : undefined,
     undercutPriceMultPermille: undercutRaw ? Number(undercutRaw) : undefined,
     aiProfile: aiProfileRaw,
+    periodTicks: periodRaw ? Number(periodRaw) : undefined,
+    startTick: startRaw ? Number(startRaw) : undefined,
+    durationTicks: durationRaw ? Number(durationRaw) : undefined,
+    requiresPrestigeCount: prestigeRaw ? Number(prestigeRaw) : undefined,
+    sku: takeFlag(argv, "--sku"),
     outDir: resolve(takeFlag(argv, "--out") ?? defaultOut),
     dryRun: hasFlag(argv, "--dry-run"),
     checkPack: hasFlag(argv, "--check-pack"),
@@ -149,17 +165,18 @@ function main(): number {
   }
   if (hasFlag(argv, "--check-floors")) {
     const pack = JSON.parse(readFileSync(defaultPack, "utf8")) as Record<string, unknown>;
-    const measure = measurePackFloors(pack, FINISH4_PACK_FLOORS);
+    const measure = measurePackFloors(pack, FINISH5_PACK_FLOORS, { repoRoot });
     console.log(
       `pack floors species=${measure.species} quests=${measure.quests} harbors=${measure.harbors} ` +
-        `machines=${measure.machines} rivals=${measure.rivals} baits=${measure.baits}`,
+        `machines=${measure.machines} rivals=${measure.rivals} baits=${measure.baits} ` +
+        `seasonal=${measure.seasonal} cosmetics=${measure.cosmetics} chains=${measure.chains}`,
     );
     if (!measure.met) {
-      console.error("Finish 4.0 pack floors short:");
+      console.error("Finish 5.0 pack floors short:");
       for (const s of measure.shortfalls) console.error(`  - ${s}`);
       return 1;
     }
-    console.log("OK content pack meets Finish 4.0 floors");
+    console.log("OK content pack meets Finish 5.0 floors");
     return 0;
   }
 
@@ -188,9 +205,9 @@ function main(): number {
 
   if (req.checkPack) {
     const pack = JSON.parse(readFileSync(defaultPack, "utf8")) as Record<string, unknown>;
-    const index = indexPackIds(pack);
+    const index = indexPackIds(pack, { repoRoot });
     if (packHasId(index, result.kind, result.id)) {
-      console.error(`Id ${result.id} already exists in content-pack.json`);
+      console.error(`Id ${result.id} already exists in content-pack/entitlements`);
       return 1;
     }
   }

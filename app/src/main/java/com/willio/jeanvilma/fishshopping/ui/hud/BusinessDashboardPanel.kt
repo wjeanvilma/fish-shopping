@@ -66,6 +66,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -77,6 +78,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.willio.jeanvilma.fishshopping.core.i18n.UiStrings
+import com.willio.jeanvilma.fishshopping.ui.ComposeUiTags
 import com.willio.jeanvilma.fishshopping.core.store.LicensesNotice
 import com.willio.jeanvilma.fishshopping.core.store.StoreListing
 import com.willio.jeanvilma.fishshopping.core.sim.ContextCard
@@ -339,6 +341,93 @@ internal fun BusinessDashboardPanel(
                                 )
                             }
                             Text(buildString { append((sp.sharePermille / 10).toString()); append("%") }, style = Tabular)
+                        }
+                    }
+                }
+                if (dash.loansTaken > 0L || dash.loanOwed > 0L || dash.coinGoal > 0L || dash.ledgerLines.isNotEmpty()) {
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(UiStrings.t("dashboard.loanBook"), fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    buildString {
+                                        append(formatCoins(dash.loanOwed))
+                                        append(" owed · ")
+                                        append(dash.loansTaken)
+                                        append(" taken · ")
+                                        append(formatCoins(dash.loanRepaid))
+                                        append(" repaid")
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text(formatCoins(dash.loanOwed), style = Tabular)
+                        }
+                    }
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(UiStrings.t("dashboard.coinGoalProgress"), fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    if (dash.coinGoal > 0L) {
+                                        buildString {
+                                            append(formatCoins(dash.coinGoal))
+                                            append(" target · ")
+                                            append(dash.coinGoalProgressPermille / 10)
+                                            append("%")
+                                        }
+                                    } else {
+                                        "No coin goal set"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text(buildString { append((dash.coinGoalProgressPermille / 10).toString()); append("%") }, style = Tabular)
+                        }
+                    }
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(UiStrings.t("dashboard.ledgerCashflow"), fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    buildString {
+                                        append(UiStrings.t("dashboard.contractShare"))
+                                        append(" ")
+                                        append(dash.contractRevenueSharePermille / 10)
+                                        append("%")
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text(formatCoins(dash.ledgerNetCashflow), style = Tabular)
+                        }
+                    }
+                    if (dash.ledgerLines.isNotEmpty()) {
+                        item {
+                            Column(
+                                modifier = Modifier
+                                    .testTag(ComposeUiTags.DASH_LEDGER)
+                                    .semantics {
+                                        contentDescription = UiStrings.t("a11y.dashboardLedgerSection")
+                                    },
+                            ) {
+                                Text(UiStrings.t("dashboard.pierLedger"), fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    UiStrings.t("a11y.dashboardLedgerSection"),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                )
+                                dash.ledgerLines.forEach { line ->
+                                    Text(
+                                        line,
+                                        style = Tabular,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                    )
+                                }
+                            }
                         }
                     }
                 }

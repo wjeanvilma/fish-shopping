@@ -36,8 +36,9 @@ function validate(): string[] {
 
   if (catalog.phase !== 27) errors.push(`phase expected 27, got ${catalog.phase}`);
   if (catalog.schema !== "fish.fixtures.parity_lock.v1") errors.push("bad schema");
-  if (!["2.0.0", "3.0.0"].includes(catalog.contentVersion)) {
-    errors.push("contentVersion must be 2.0.0 or 3.0.0");
+  // Soft-floor: Finish 5.0 may bump live catalog contentVersion to 4.0.0/5.0.0.
+  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0"].includes(catalog.contentVersion)) {
+    errors.push("contentVersion must be 2.0.0–5.0.0");
   }
   if (catalog.schemaVersion < 21) errors.push("schemaVersion must be >= 21");
   if (catalog.constraints?.byteIdenticalSnapshots !== true) {
@@ -100,8 +101,9 @@ function validate(): string[] {
   if (!pin.fixtures.includes("parity-entitlements.json")) {
     errors.push("RELEASE_PIN fixtures must include parity-entitlements.json");
   }
-  if (!["2.0.0", "3.0.0"].includes(pin.contentVersion)) {
-    errors.push("RELEASE_PIN contentVersion must be 2.0.0 or 3.0.0");
+  // Soft-floor: Finish 4/5 RELEASE_PIN may pin content 4.0.0/5.0.0.
+  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0"].includes(pin.contentVersion)) {
+    errors.push("RELEASE_PIN contentVersion must be 2.0.0–5.0.0");
   }
   if (pin.schemaVersion !== catalog.schemaVersion) {
     errors.push("RELEASE_PIN schemaVersion must match parity-lock schemaVersion");

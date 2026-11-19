@@ -1,7 +1,7 @@
 {
   "phase": 22,
   "schema": "fish.content.tutorial_friction.v1",
-  "description": "Post-1.0 Phase 22 \u2014 telemetry-informed tutorial friction fixes. Copy + presentation timing/nudges only; advanceOn triggers, step ids, and schema 20 stay frozen. Funnel uses Phase 25 tutorial_step_completed stepIndex.",
+  "description": "Finish 5.0 Phase 19 — first-session + mid-game tutorial friction rewrite. Copy + dwell nudges only; advanceOn triggers and step ids stay frozen.",
   "contentPack": "shared/content/content-pack.json",
   "schemaVersion": 21,
   "contentVersion": "1.0.0",
@@ -21,43 +21,53 @@
       "tutorial.deliver_cutter",
       "tutorial.buy_upgrade",
       "tutorial.first_contract",
-      "tutorial.hire_staff"
+      "tutorial.hire_staff",
+      "tutorial.grill_line",
+      "tutorial.plot_marker"
     ],
     "dropHypotheses": [
       {
         "stepId": "tutorial.catch_three",
-        "reason": "Cast/reel timing window unclear; players mash Reel early or never hold Cast"
+        "reason": "Cast/reel timing window unclear"
       },
       {
         "stepId": "tutorial.deliver_cutter",
-        "reason": "Teal In pad vs Out pad confusion; bag full without walking onto pad"
+        "reason": "Teal In pad vs nearby drop confusion"
       },
       {
         "stepId": "tutorial.buy_upgrade",
-        "reason": "Upgrades panel undiscovered; players keep fishing without spending"
+        "reason": "Upgrades panel undiscovered"
       },
       {
         "stepId": "tutorial.first_contract",
-        "reason": "Jobs panel + deliver destination opaque after first sale"
+        "reason": "Jobs panel opaque after first sale"
       },
       {
         "stepId": "tutorial.hire_staff",
-        "reason": "Hire gated behind Make 10 sales; copy did not name the unlock"
+        "reason": "Hire gated behind Make 10 sales"
+      },
+      {
+        "stepId": "tutorial.grill_line",
+        "reason": "Mid-game grill In pad not obvious after hire"
+      },
+      {
+        "stepId": "tutorial.plot_marker",
+        "reason": "Expansion marker confirm spend missed"
       }
     ]
   },
   "copyPatches": [
     {
       "stepId": "tutorial.walk_to_pier",
-      "text": "Walk to the pier tip \u2014 stand where the boards meet the water"
+      "text": "Walk to the pier tip — stand where the boards meet the water"
     },
     {
       "stepId": "tutorial.catch_three",
-      "text": "Catch 3 fish: hold Cast, then tap Reel while the meter is green"
+      "text": "Catch 3 fish: hold Cast to charge, then tap Reel in the green window"
     },
     {
       "stepId": "tutorial.deliver_cutter",
-      "text": "Carry fish onto the teal In pad on the cutter's left"
+      "text": "Carry fish onto the teal In pad on the cutter's left — nearby drops do not count"
     },
     {
       "stepId": "tutorial.collect_output",
@@ -69,11 +79,11 @@
     },
     {
       "stepId": "tutorial.serve_customer",
-      "text": "Stay at the counter \u2014 sales ring up when the pad has stock"
+      "text": "Stay at the counter — sales ring up when the pad has stock"
     },
     {
       "stepId": "tutorial.buy_upgrade",
-      "text": "Open Upgrades and buy a bigger bag with your sale coins"
+      "text": "Open Upgrades (U) and buy Bag capacity with your sale coins"
     },
     {
       "stepId": "tutorial.first_contract",
@@ -85,7 +95,7 @@
     },
     {
       "stepId": "tutorial.grill_line",
-      "text": "When the grill unlocks, deliver fish to the charcoal In pad"
+      "text": "When the grill unlocks, walk fish onto the charcoal In pad — that starts the mid-game line"
     },
     {
       "stepId": "tutorial.plot_marker",
@@ -93,32 +103,42 @@
     }
   ],
   "timing": {
-    "defaultHintAfterMs": 10000,
+    "defaultHintAfterMs": 9000,
     "nudges": [
       {
         "stepId": "tutorial.catch_three",
-        "hintAfterMs": 8000,
-        "nudge": "Tip: hold Cast to charge, release timing into the green Reel window"
+        "hintAfterMs": 7000,
+        "nudge": "Tip: hold Cast to charge, release into the green Reel window — early taps miss"
       },
       {
         "stepId": "tutorial.deliver_cutter",
-        "hintAfterMs": 9000,
-        "nudge": "Tip: walk onto the left teal pad \u2014 dropping nearby is not enough"
+        "hintAfterMs": 8000,
+        "nudge": "Tip: walk fully onto the left teal In pad — dropping beside it does nothing"
       },
       {
         "stepId": "tutorial.buy_upgrade",
-        "hintAfterMs": 10000,
-        "nudge": "Tip: tap Upgrades (or press U) \u2014 Bag capacity is the first buy"
+        "hintAfterMs": 9000,
+        "nudge": "Tip: tap Upgrades (or press U) — Bag capacity is the first buy"
       },
       {
         "stepId": "tutorial.first_contract",
-        "hintAfterMs": 12000,
+        "hintAfterMs": 10000,
         "nudge": "Tip: Jobs lists contracts; accept one, then carry the goods to the drop"
       },
       {
         "stepId": "tutorial.hire_staff",
-        "hintAfterMs": 12000,
+        "hintAfterMs": 11000,
         "nudge": "Tip: keep selling until Make 10 sales, then Staff unlocks Hire"
+      },
+      {
+        "stepId": "tutorial.grill_line",
+        "hintAfterMs": 10000,
+        "nudge": "Tip: the grill In pad is charcoal-side — walk onto it with fish in the bag"
+      },
+      {
+        "stepId": "tutorial.plot_marker",
+        "hintAfterMs": 11000,
+        "nudge": "Tip: stand centered on the glowing expansion marker, then confirm the spend"
       }
     ]
   },
@@ -186,5 +206,6 @@
     "shared/content/content-pack.json",
     "web/src/engine/tutorialScript.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/TutorialScript.kt"
-  ]
+  ],
+  "phaseNote": "finish-5.0-phase-19"
 }

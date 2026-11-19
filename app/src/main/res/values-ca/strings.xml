@@ -1,0 +1,7 @@
+<resources>
+    <!-- Finish 2.0 Phase 23 — Catalan store listing copy. Source: shared/store/locales/ca.json -->
+    <string name="app_name">Fish Shopping</string>
+    <string name="store_short_description">Pesca, talla i ven peix en un acollidor mercat 3D del port.</string>
+    <string name="store_tagline">Pesca, talla, ven — gestiona el mercat del port</string>
+    <string name="store_whats_new">Congelació 4.0.0 — cent espècies, cinquanta missions, dotze màquines, deu ports, dotze mercats rivals, endgame esquema 25, bloqueig de paritat 4.0 i ops Finish 4.0. Esquema 25; les partides 3.0 anteriors continuen carregant.</string>
+</resources>

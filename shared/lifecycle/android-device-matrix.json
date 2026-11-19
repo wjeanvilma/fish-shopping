@@ -1,7 +1,7 @@
 {
   "phase": 13,
   "schema": "fish.lifecycle.android_device_matrix.v1",
-  "description": "Post-1.0 Phase 13 — Android device lifecycle QA matrix. Finish 4.0 Phase 27 expands foldable class + multi-window / deep-trim scenarios.",
+  "description": "Post-1.0 Phase 13 — Android device lifecycle QA matrix. Finish 5.0 Phase 27 adds desktop class + PiP/thermal scenarios for denser harbors.",
   "phase28Catalog": "shared/lifecycle/browser-lifecycle.json",
   "finish4Phase": 27,
   "packageName": "com.willio.jeanvilma.fishshopping",
@@ -11,29 +11,51 @@
       "id": "phone",
       "minWidthDp": 320,
       "maxWidthDp": 599,
-      "orientations": ["portrait", "landscape"],
+      "orientations": [
+        "portrait",
+        "landscape"
+      ],
       "note": "Primary Play phone screenshots + fullSensor HUD reflow."
     },
     {
       "id": "tablet7",
       "minWidthDp": 600,
       "maxWidthDp": 839,
-      "orientations": ["portrait", "landscape"],
+      "orientations": [
+        "portrait",
+        "landscape"
+      ],
       "note": "7-inch tablet class; same Activity + configChanges."
     },
     {
       "id": "tablet10",
       "minWidthDp": 840,
       "maxWidthDp": 10000,
-      "orientations": ["portrait", "landscape"],
+      "orientations": [
+        "portrait",
+        "landscape"
+      ],
       "note": "10-inch+ tablet class; same lifecycle contracts."
     },
     {
       "id": "foldable",
       "minWidthDp": 600,
       "maxWidthDp": 10000,
-      "orientations": ["portrait", "landscape"],
+      "orientations": [
+        "portrait",
+        "landscape"
+      ],
       "note": "Finish 4.0 Phase 27 — foldable / large-screen class; configChanges covers hinge/size without recreate."
+    },
+    {
+      "id": "desktop",
+      "minWidthDp": 840,
+      "maxWidthDp": 10000,
+      "orientations": [
+        "landscape",
+        "portrait"
+      ],
+      "note": "Finish 5.0 Phase 27 — Chromebook / desktop-class large window; denser harbor LRU travel."
     }
   ],
   "scenarios": [
@@ -46,8 +68,14 @@
         "checkpointOnStop",
         "abandonAudioFocus"
       ],
-      "hostHooks": ["MainActivity.onStop", "GameViewModel.pause"],
-      "phase28Keys": ["android.pauseSimOnStop", "android.checkpointOnStop"]
+      "hostHooks": [
+        "MainActivity.onStop",
+        "GameViewModel.pause"
+      ],
+      "phase28Keys": [
+        "android.pauseSimOnStop",
+        "android.checkpointOnStop"
+      ]
     },
     {
       "id": "resume",
@@ -58,8 +86,13 @@
         "requestAudioFocus",
         "offlineCatchUp"
       ],
-      "hostHooks": ["MainActivity.onStart", "GameViewModel.resume"],
-      "phase28Keys": ["android.audioFocus.restoreOnGain"]
+      "hostHooks": [
+        "MainActivity.onStart",
+        "GameViewModel.resume"
+      ],
+      "phase28Keys": [
+        "android.audioFocus.restoreOnGain"
+      ]
     },
     {
       "id": "rotate",
@@ -71,8 +104,14 @@
         "hudReflow",
         "glContextRetained"
       ],
-      "hostHooks": ["AndroidManifest.configChanges", "MainActivity.onConfigurationChanged"],
-      "phase28Keys": ["android.configChangesHandled", "android.screenOrientation"]
+      "hostHooks": [
+        "AndroidManifest.configChanges",
+        "MainActivity.onConfigurationChanged"
+      ],
+      "phase28Keys": [
+        "android.configChangesHandled",
+        "android.screenOrientation"
+      ]
     },
     {
       "id": "process_death",
@@ -83,8 +122,14 @@
         "migrateSchemaIfNeeded",
         "noDuplicateOfflineCredit"
       ],
-      "hostHooks": ["GameViewModel.pause", "GameViewModel.onCleared", "AtomicFile slots"],
-      "phase28Keys": ["android.processDeath.restoreFrom"]
+      "hostHooks": [
+        "GameViewModel.pause",
+        "GameViewModel.onCleared",
+        "AtomicFile slots"
+      ],
+      "phase28Keys": [
+        "android.processDeath.restoreFrom"
+      ]
     },
     {
       "id": "low_memory",
@@ -94,8 +139,13 @@
         "checkpointWithoutDestroy",
         "keepSimStateInMemoryIfPossible"
       ],
-      "hostHooks": ["MainActivity.onTrimMemory", "GameViewModel.onTrimMemory"],
-      "phase28Keys": ["android.checkpointOnStop"]
+      "hostHooks": [
+        "MainActivity.onTrimMemory",
+        "GameViewModel.onTrimMemory"
+      ],
+      "phase28Keys": [
+        "android.checkpointOnStop"
+      ]
     },
     {
       "id": "multi_window",
@@ -107,8 +157,13 @@
         "hudReflow",
         "glContextRetained"
       ],
-      "hostHooks": ["AndroidManifest.configChanges", "MainActivity.onConfigurationChanged"],
-      "phase28Keys": ["android.configChangesHandled"]
+      "hostHooks": [
+        "AndroidManifest.configChanges",
+        "MainActivity.onConfigurationChanged"
+      ],
+      "phase28Keys": [
+        "android.configChangesHandled"
+      ]
     },
     {
       "id": "deep_trim",
@@ -118,8 +173,48 @@
         "checkpointWithoutDestroy",
         "keepSimStateInMemoryIfPossible"
       ],
-      "hostHooks": ["MainActivity.onTrimMemory", "GameViewModel.onTrimMemory"],
-      "phase28Keys": ["android.checkpointOnStop"]
+      "hostHooks": [
+        "MainActivity.onTrimMemory",
+        "GameViewModel.onTrimMemory"
+      ],
+      "phase28Keys": [
+        "android.checkpointOnStop"
+      ]
+    },
+    {
+      "id": "picture_in_picture",
+      "title": "Picture-in-picture / multi-resume",
+      "trigger": "Enter PiP or overlay while sim running",
+      "expects": [
+        "pauseSimOnStop",
+        "checkpointOnStop",
+        "resumeSimLoop"
+      ],
+      "hostHooks": [
+        "MainActivity.onStop",
+        "MainActivity.onStart",
+        "GameViewModel.pause"
+      ],
+      "phase28Keys": [
+        "android.pauseSimOnStop",
+        "android.checkpointOnStop"
+      ]
+    },
+    {
+      "id": "thermal_status",
+      "title": "Thermal throttle / sustained heat",
+      "trigger": "Device reports thermal throttling during dense harbor travel",
+      "expects": [
+        "checkpointWithoutDestroy",
+        "keepSimStateInMemoryIfPossible"
+      ],
+      "hostHooks": [
+        "MainActivity.onTrimMemory",
+        "GameViewModel.onTrimMemory"
+      ],
+      "phase28Keys": [
+        "android.checkpointOnStop"
+      ]
     }
   ],
   "trimMemoryCheckpointFrom": "TRIM_MEMORY_RUNNING_LOW",
@@ -142,5 +237,6 @@
     "Crash or ANR on TRIM_MEMORY_RUNNING_CRITICAL",
     "Double offline credit after pause/resume",
     "Split-screen size change recreates Activity"
-  ]
+  ],
+  "finish5Phase": 27
 }

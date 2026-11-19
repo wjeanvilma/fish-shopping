@@ -24,7 +24,7 @@ export const FRAME_UPGRADE_STREAK = web.upgradeStreakFrames;
 /** Phase 26: medium quality draws at most this CSS height (1080p mid desktop). */
 export const WEB_MEDIUM_MAX_CSS_HEIGHT = web.maxCssHeightMedium;
 
-/** Harbor GLB LRU size (web + Android). Finish 4.0 Phase 27 soft-floor → 3. */
+/** Harbor GLB LRU size (web + Android). Finish 5.0 Phase 27 soft-floor → 4. */
 export const HARBOR_CACHE_LIMIT = matrix.harborCacheLimit;
 
 /** Over-budget multiplier from the device matrix. */

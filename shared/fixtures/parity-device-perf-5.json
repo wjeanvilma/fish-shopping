@@ -1,0 +1,72 @@
+{
+  "schema": "fish.fixture.parity_device_perf_5.v1",
+  "description": "Finish 5.0 Phase 27: device/browser/perf matrix 5 expectations.",
+  "devicePerf5Marker": "authored-finish-5.0-phase-27",
+  "expect": {
+    "closesGap": "devicePerf5Incomplete",
+    "devicePerf5Incomplete": false,
+    "schemaVersion": 26,
+    "contentVersion": "4.0.0",
+    "harborCacheFloor": 4,
+    "overBudgetMultMax": 1.12,
+    "underBudgetMult": 0.85,
+    "androidDeviceClassFloor": 5,
+    "androidScenarioFloor": 9,
+    "browserTargetFloor": 5,
+    "browserScenarioFloor": 9,
+    "analyticsContractTestsMin": 4,
+    "requiredAndroidClasses": [
+      "phone",
+      "tablet7",
+      "tablet10",
+      "foldable",
+      "desktop"
+    ],
+    "requiredAndroidScenarios": [
+      "multi_window",
+      "deep_trim",
+      "picture_in_picture",
+      "thermal_status"
+    ],
+    "requiredBrowsers": [
+      "chrome",
+      "edge",
+      "firefox",
+      "safari",
+      "chrome_android"
+    ],
+    "requiredBrowserScenarios": [
+      "visibility_hidden",
+      "pwa_offline",
+      "reduced_motion",
+      "bfcache_restore",
+      "persistent_storage"
+    ],
+    "frameTimingMustContain": [
+      "FRAME_UPGRADE_STREAK",
+      "FRAME_UNDER_BUDGET_MULT",
+      "upgradeQuality",
+      "FrameBudgetAction",
+      "HARBOR_CACHE_LIMIT"
+    ],
+    "androidFrameTimingMustContain": [
+      "FRAME_UPGRADE_STREAK",
+      "UNDER_BUDGET_MULT",
+      "FrameBudgetAction",
+      "HARBOR_CACHE_LIMIT = 4"
+    ],
+                "presenterMustContain": [
+                    "medium: 6",
+                    "high: 10",
+                    "FLYING_TRANSFER_POOL = 16",
+                    "MEDIUM -> 6",
+                    "HIGH -> 10"
+                ],
+    "analyticsContractMustContain": [
+      "consent fail-closed",
+      "batch schema",
+      "retry backoff",
+      "flush slice empty"
+    ]
+  }
+}

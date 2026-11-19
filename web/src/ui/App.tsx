@@ -9,6 +9,8 @@ import stormQuaySceneUrl from "../../../shared/assets/models/storm_quay_blockout
 import emberWharfSceneUrl from "../../../shared/assets/models/ember_wharf_blockout.glb?url";
 import mistCoveSceneUrl from "../../../shared/assets/models/mist_cove_blockout.glb?url";
 import prismReachSceneUrl from "../../../shared/assets/models/prism_reach_blockout.glb?url";
+import auroraInletSceneUrl from "../../../shared/assets/models/aurora_inlet_blockout.glb?url";
+import tideglassBaySceneUrl from "../../../shared/assets/models/tideglass_bay_blockout.glb?url";
 import type { SimView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
 import { t } from "../i18n/strings";
@@ -32,6 +34,7 @@ import {
   sanitizeEquippedCosmetic,
 } from "../engine/cosmeticPresentation";
 import { HarborScene, hasWebGL2 } from "../render/HarborScene";
+import { sceneBridge } from "../render/sceneBridge";
 import { Joystick } from "./Joystick";
 import {
   harborMetaMaxFraction,
@@ -53,6 +56,7 @@ import { OfflineSummaryPanel } from "./OfflineSummaryPanel";
 import { QuestLogPanel } from "./QuestLogPanel";
 import { ContractsPanel } from "./ContractsPanel";
 import { StaffPanel } from "./StaffPanel";
+import { BannerStack, CoinsPill, DecorModeOverlay, HarborChip, HudToolbar, MenuDrawer, PhotoModeOverlay, navItems } from "./HudShell";
 import { WEB_E2E_IDS } from "../e2e/webE2eIds";
 
 export { formatCoins } from "./hudFormat";
@@ -68,6 +72,8 @@ const BLOCKOUT_URLS: Record<string, string> = {
   "ember_wharf_blockout.glb": emberWharfSceneUrl,
   "mist_cove_blockout.glb": mistCoveSceneUrl,
   "prism_reach_blockout.glb": prismReachSceneUrl,
+  "aurora_inlet_blockout.glb": auroraInletSceneUrl,
+  "tideglass_bay_blockout.glb": tideglassBaySceneUrl,
 };
 
 /** Track viewport aspect so portrait chrome follows resized windows, not only OS orientation. */
@@ -98,6 +104,8 @@ function usePortraitLayout(): boolean {
 /** The harbor is the home screen; panels open over it (blueprint "Navigation rules"). */
 export function App() {
   const [host] = useState(() => new GameHost());
+  // QA hook (`?fsdebug`): screenshot scripts can reach the host, like sceneBridge.
+  if (typeof location !== "undefined" && location.search.includes("fsdebug")) (window as unknown as { __fsHost?: GameHost }).__fsHost = host;
   const state = useSyncExternalStore(host.subscribe, host.getState);
   const [webgl2] = useState(hasWebGL2);
   const portrait = usePortraitLayout();
@@ -146,6 +154,8 @@ function World({ host }: { host: GameHost }) {
     const canvas = canvasRef.current!;
     const scene = new HarborScene(canvas);
     scene.onContextStateChange = (lost) => setContextLost(lost);
+    sceneBridge.scene = scene;
+    sceneBridge.canvas = canvas;
     let raf = 0;
     let disposed = false;
     let loadGen = 0;
@@ -207,7 +217,7 @@ function World({ host }: { host: GameHost }) {
       if (!down || down.id !== e.pointerId || e.button !== 0) return;
       if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 12) return;
       const st = host.getState();
-      if (st.status !== "ready" || !st.settings.tapToMove) return;
+      if (st.status !== "ready" || !st.settings.tapToMove || host.isWorldHeld()) return;
       if (st.pauseOpen || st.settingsOpen || st.bagOpen || st.stationOpen || st.upgradesOpen
         || st.staffOpen || st.questsOpen || st.contractsOpen || st.mapOpen || st.warehouseOpen
         || st.speciesBookOpen || st.dashboardOpen || st.offlineReport) {
@@ -251,6 +261,10 @@ function World({ host }: { host: GameHost }) {
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointerup", onPointerUp);
       scene.onContextStateChange = null;
+      if (sceneBridge.scene === scene) {
+        sceneBridge.scene = null;
+        sceneBridge.canvas = null;
+      }
       scene.dispose();
     };
   }, [host]);
@@ -294,6 +308,15 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
   const [touch, setTouch] = useState(() => window.matchMedia?.("(pointer: coarse)").matches ?? false);
   /** Phase 22: dwell ms on the current tutorial step for friction nudges. */
   const [tutorialDwellMs, setTutorialDwellMs] = useState(0);
+  /** Cozy art pass 5: play / photo / decor modes + compact-nav menu drawer. */
+  const [mode, setMode] = useState<"play" | "photo" | "decor">("play");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [narrow, setNarrow] = useState(() => window.innerWidth < 1100);
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth < 1100);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Keyboard: WASD / arrows move, U/H/G/J/M/I panels, Escape closes the panel.
   useEffect(() => {
@@ -304,7 +327,9 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
       host.setMove(Math.sign(x), Math.sign(y));
     };
     const down = (e: KeyboardEvent) => {
-      if (isTextInput(e.target)) return;
+      if (isTextInput(e.target) || mode !== "play" || menuOpen) return;
+      if (e.code === "KeyO" && !e.repeat) { host.setMove(0, 0); setMode("photo"); return; }
+      if (e.code === "KeyK" && !e.repeat) { host.setMove(0, 0); setMode("decor"); return; }
       if (e.code === "Escape") {
         if (offlineReport) host.dismissOfflineReport();
         else if (pauseOpen) host.setPauseOpen(false);
@@ -354,7 +379,7 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", blur);
     };
-  }, [host, upgradesOpen, staffOpen, questsOpen, contractsOpen, mapOpen, warehouseOpen, speciesBookOpen, dashboardOpen, pauseOpen, settingsOpen, bagOpen, stationOpen, offlineReport]);
+  }, [host, upgradesOpen, staffOpen, questsOpen, contractsOpen, mapOpen, warehouseOpen, speciesBookOpen, dashboardOpen, pauseOpen, settingsOpen, bagOpen, stationOpen, offlineReport, mode, menuOpen]);
 
   useEffect(() => {
     const onTouch = () => setTouch(true);
@@ -381,40 +406,21 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
   const v = state.view;
   const frictionNudge = frictionNudgeText(v.objective?.tutorialStepId, tutorialDwellMs);
   const hudScale = state.settings.hudTextScale;
+  const exitMode = () => setMode("play");
+  if (mode === "photo") return <PhotoModeOverlay v={v} host={host} onExit={exitMode} />;
+  if (mode === "decor") {
+    return <DecorModeOverlay v={v} host={host} onExit={exitMode} onOpenShop={() => { setMode("play"); host.setQuestsOpen(true); }} />;
+  }
+  const nav = navItems(host, () => setMode("photo"), () => setMode("decor"));
+  const compactNav = portrait || narrow || touch;
   return (
     <div
       className={`hud${portrait ? " hud-portrait" : " hud-landscape"}`}
       style={{ ["--hud-font-scale" as string]: String(hudScale) }}
     >
-      <div className="pill top-left">
-        {v.harborName}
-        {!portrait && v.harborSpecializationName ? (
-          <span className="spec" title={v.harborSpecializationDescription ?? undefined}>
-            {" · "}{v.harborSpecializationName}
-          </span>
-        ) : null}
-        {v.harborRating > 0 ? <span className="rating">{"★".repeat(v.harborRating)}</span> : null}
-        <span className="rep" title={`${v.reputationLabel} · ${Math.trunc(v.reputationScorePermille / 10)}%`}>
-          {" · Rep "}{Math.trunc(v.reputationScorePermille / 10)}%
-        </span>
-        {!portrait && (
-          <span
-            className="day-part"
-            role="status"
-            aria-live="polite"
-            aria-label={`${t("hud.weatherTide")}: ${v.weatherName}, ${v.tidePhaseName}`}
-            title={`${v.weatherDescription} · ${v.tidePhaseName}`}
-          >
-            {" · "}{v.dayPartName}
-            {" · "}{v.weatherName}
-            {" · "}{v.tidePhaseName}
-            {" · "}{v.activeTechniqueName}
-            {v.tideChartOwned ? " · chart" : ""}
-            {v.preferredBaitId ? " · bait set" : ""}
-          </span>
-        )}
-      </div>
-      <div className="pill coins top-center" aria-live="polite">{formatCoins(v.coins)} {t("hud.coins")}</div>
+      <HarborChip v={v} portrait={portrait} />
+      <CoinsPill coins={formatCoins(v.coins)} label={t("hud.coins")} />
+      <BannerStack>
       {v.rush && (
         <div className="pill rush-banner" aria-live="polite">
           {v.rush.name} · {formatRushSeconds(v.rush.ticksRemaining)}s
@@ -462,69 +468,9 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
             : ""}
         </div>
       )}
-      <div
-        className="top-actions"
-        role="toolbar"
-        aria-label={t("hud.toolbar")}
-        data-testid={WEB_E2E_IDS.HUD_TOOLBAR}
-      >
-        <button
-          className="button"
-          data-testid={WEB_E2E_IDS.NAV_PAUSE}
-          onClick={() => host.setPauseOpen(true)}
-        >
-          {t("nav.pause")}{!portrait && <> <kbd>P</kbd></>}
-        </button>
-        <button
-          className="button"
-          data-testid={WEB_E2E_IDS.NAV_MAP}
-          onClick={() => host.setMapOpen(true)}
-        >
-          {t("nav.map")}{!portrait && <> <kbd>M</kbd></>}
-        </button>
-        <button
-          className="button"
-          data-testid={WEB_E2E_IDS.NAV_WAREHOUSE}
-          onClick={() => host.setWarehouseOpen(true)}
-        >
-          {t("nav.warehouse")}{!portrait && <> <kbd>I</kbd></>}
-        </button>
-        <button
-          className="button"
-          data-testid={WEB_E2E_IDS.NAV_GOALS}
-          onClick={() => host.setQuestsOpen(true)}
-        >
-          {t("nav.goals")}{!portrait && <> <kbd>G</kbd></>}
-        </button>
-        <button
-          className="button"
-          data-testid={WEB_E2E_IDS.NAV_JOBS}
-          onClick={() => host.setContractsOpen(true)}
-        >
-          {t("nav.jobs")}{!portrait && <> <kbd>J</kbd></>}
-        </button>
-        <button
-          className="button"
-          data-testid={WEB_E2E_IDS.NAV_STAFF}
-          onClick={() => host.setStaffOpen(true)}
-        >
-          {t("nav.staff")}{!portrait && <> <kbd>H</kbd></>}
-        </button>
-        <button
-          className="button"
-          data-testid={WEB_E2E_IDS.NAV_DASH}
-          onClick={() => host.setDashboardOpen(true)}
-        >
-          {t("nav.dash")}{!portrait && <> <kbd>Y</kbd></>}
-        </button>
-        <button
-          className="button"
-          data-testid={WEB_E2E_IDS.NAV_UPGRADES}
-          onClick={() => host.setUpgradesOpen(true)}
-        >
-          {t("nav.upgrades")}{!portrait && <> <kbd>U</kbd></>}
-        </button>
-      </div>
+      </BannerStack>
+      <HudToolbar items={nav} compact={compactNav} onMenu={() => setMenuOpen(true)} ariaLabel={t("hud.toolbar")} />
+      {menuOpen && <MenuDrawer items={nav} onClose={() => setMenuOpen(false)} />}
       {v.objective && (
         <div className={`panel objective${portrait ? " objective-portrait" : ""}`}>
           <div className="eyebrow">
@@ -532,7 +478,18 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
             {v.objective.detail ? <span className="objective-detail"> {v.objective.detail}</span> : null}
           </div>
           <div>{v.objective.text}</div>
-          {frictionNudge ? <div className="small muted" style={{ marginTop: 6 }}>{frictionNudge}</div> : null}
+          {frictionNudge ? (
+            <div
+              className="small muted"
+              style={{ marginTop: 6 }}
+              role="status"
+              aria-live="polite"
+              aria-label={t("a11y.frictionNudgeLive")}
+              data-testid={WEB_E2E_IDS.FRICTION_NUDGE}
+            >
+              {frictionNudge}
+            </div>
+          ) : null}
         </div>
       )}
       {touch ? (
@@ -564,6 +521,14 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
       )}
       {v.fishingCanReel && (
         <div className="reel-stack">
+          {v.castPhase && (
+            <div className="small muted" aria-live="polite">
+              {v.castPhase === "waiting" ? "Waiting…"
+                : v.castPhase === "strike" ? "Strike!"
+                  : v.castPhase === "fight" ? "Fighting"
+                    : v.castPhase}
+            </div>
+          )}
           {state.settings.timingAssist && v.fishingProgress != null && (
             <TimingMeter
               progress01={v.fishingProgress}
@@ -572,6 +537,8 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
               perfectStart={v.timingPerfectStart01}
               perfectEnd={v.timingPerfectEnd01}
               tier={v.fishingTimingTier}
+              strikeStart={v.castStrikeStart01}
+              strikeEnd={v.castStrikeEnd01}
             />
           )}
           <button
@@ -580,7 +547,10 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           >
             {state.settings.shapeCues && v.fishingTimingTier === "perfect" ? "★ " : ""}
             {state.settings.shapeCues && v.fishingTimingTier === "good" ? "● " : ""}
-            {v.fishingTimingTier === "perfect" ? "Perfect!" : v.fishingTimingTier === "good" ? "Good!" : "Reel"} <kbd>F</kbd>
+            {v.fishingTimingTier === "perfect" ? "Perfect!"
+              : v.fishingTimingTier === "good" ? "Good!"
+                : v.castPhase === "strike" ? "Strike reel!"
+                  : "Reel"} <kbd>F</kbd>
           </button>
         </div>
       )}
@@ -662,6 +632,14 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           dailyLoginStreak={v.dailyLoginStreak}
           dailyGoals={v.dailyGoals}
           onClaimDailyGoal={(id) => host.claimDailyGoal(id)}
+          weeklyGoals={v.weeklyGoals}
+          onClaimWeeklyGoal={(id) => host.claimWeeklyGoal(id)}
+          endgameUnlocked={v.endgameUnlocked}
+          endgameLockedReason={v.endgameLockedReason}
+          endgameMarkCount={v.endgameMarkCount}
+          endgameCrestCount={v.endgameCrestCount}
+          endgameTiers={v.endgameTiers}
+          endgameChallenges={v.endgameChallenges}
           onClose={() => {
             host.setPreviewCosmeticId(null);
             host.setQuestsOpen(false);
@@ -680,6 +658,8 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           refreshTicksLeft={v.contractRefreshTicksLeft}
           failStreak={v.contractFailStreak}
           failStreakThreshold={v.contractFailStreakThreshold}
+          ticksUntilNearestContractDeadline={v.ticksUntilNearestContractDeadline}
+          contractBoardPressurePermille={v.contractBoardPressurePermille}
           onAccept={(id) => host.acceptContract(id)}
           onDeliver={(id) => host.deliverContract(id)}
           onClose={() => host.setContractsOpen(false)}

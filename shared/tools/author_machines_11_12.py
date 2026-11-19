@@ -22,6 +22,11 @@ PRODUCT_ART_PARITY = ROOT / "fixtures" / "parity-product-art.json"
 EN = ROOT / "i18n" / "content-strings.en.json"
 ES = ROOT / "i18n" / "content-strings.es.json"
 PT = ROOT / "i18n" / "content-strings.pt.json"
+FR = ROOT / "i18n" / "content-strings.fr.json"
+HT = ROOT / "i18n" / "content-strings.ht.json"
+IT = ROOT / "i18n" / "content-strings.it.json"
+CA = ROOT / "i18n" / "content-strings.ca.json"
+RU = ROOT / "i18n" / "content-strings.ru.json"
 
 NEW_PRODUCTS = [
     {

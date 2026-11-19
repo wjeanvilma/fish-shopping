@@ -1,0 +1,76 @@
+{
+  "phase": 5,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.host_presenter_depth.v1",
+  "description": "Finish 5.0 Phase 5 — GameHost + presenter/HUD depth for Finish 5 engine loops: HostFishingIntents extraction, loopHudSnapshot, web HUD bindings for cast/spoil/service/contract/quest pressure. Schema stays 25 / content 4.0.0.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "hostPresenterDepthMarker": "authored-finish-5.0-phase-5",
+  "viewFields": [
+    "castPhase",
+    "castStrikeStart01",
+    "castStrikeEnd01",
+    "ticksUntilBagSpoil",
+    "bagSpoilPressurePermille",
+    "serviceQueuePressurePermille",
+    "minPatienceTicksLeft",
+    "ticksUntilNearestContractDeadline",
+    "contractBoardPressurePermille",
+    "nextQuestProgressPermille"
+  ],
+  "viewFieldMin": 10,
+  "requiredFiles": [
+    "web/src/game/host/hostFishingIntents.ts",
+    "web/src/game/loopHudSnapshot.ts"
+  ],
+  "requiredSymbols": {
+    "hostFishingIntents.ts": ["class HostFishingIntents", "reel", "buyBait", "selectBait", "selectTechnique"],
+    "loopHudSnapshot.ts": ["LoopHudSnapshot", "loopHudSnapshotFrom"],
+    "GameHost.ts": ["HostFishingIntents", "loopHudSnapshot", "reel"]
+  },
+  "hudBindings": {
+    "App.tsx": ["castPhase", "castStrikeStart01", "castStrikeEnd01"],
+    "StationBagPanels.tsx": [
+      "ticksUntilBagSpoil",
+      "bagSpoilPressurePermille",
+      "serviceQueuePressurePermille",
+      "minPatienceTicksLeft",
+      "nextQuestProgressPermille"
+    ],
+    "ContractsPanel.tsx": [
+      "ticksUntilNearestContractDeadline",
+      "contractBoardPressurePermille"
+    ],
+    "HudChrome.tsx": ["strikeStart", "strikeEnd"]
+  },
+  "parityFixture": "shared/fixtures/parity-host-presenter-depth.json",
+  "authorTool": "shared/tools/author_host_presenter_depth.py",
+  "validateScript": "npm run hostpresenterdepth:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "checklist": [
+    "HostFishingIntents extracted (reel/bait/technique)",
+    "loopHudSnapshot covers all 10 engine-depth view fields",
+    "App.tsx cast phase + strike meter bands",
+    "Bag spoil ETA/pressure + queue/quest cues",
+    "ContractsPanel deadline ETA + board pressure",
+    "hostpresenterdepth:validate green in CI",
+    "schema stays 25"
+  ],
+  "preflightGates": [
+    "shared/ship/host-presenter-depth.json",
+    "shared/fixtures/parity-host-presenter-depth.json",
+    "shared/ship/finish-5.0-kickoff.json",
+    "web/src/game/host/hostFishingIntents.ts",
+    "web/src/game/loopHudSnapshot.ts",
+    "web/src/game/GameHost.ts",
+    "web/src/ui/App.tsx",
+    "web/src/ui/StationBagPanels.tsx",
+    "web/src/ui/ContractsPanel.tsx",
+    "web/src/ui/HudChrome.tsx",
+    "web/src/ship/hostPresenterDepth.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/HostPresenterDepth.kt",
+    "web/scripts/validate-host-presenter-depth.ts",
+    "shared/tools/author_host_presenter_depth.py"
+  ]
+}

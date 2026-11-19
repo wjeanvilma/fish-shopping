@@ -1,0 +1,24 @@
+{
+  "schema": "fish.fixtures.parity_species_125.v1",
+  "species125Marker": "authored-finish-5.0-phase-13",
+  "phase": 13,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "speciesCount": 125,
+    "newSpeciesCount": 25,
+    "habitatCount": 24,
+    "newHabitatCount": 8,
+    "schemaVersion": 25,
+    "contentVersion": "4.0.0",
+    "speciesRemainingClosed": 0,
+    "gates": [
+      "species_wave",
+      "habitats",
+      "i18n_locales",
+      "codex",
+      "gap_closed",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

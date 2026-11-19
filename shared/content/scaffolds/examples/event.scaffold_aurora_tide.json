@@ -1,0 +1,13 @@
+{
+  "id": "event.scaffold_aurora_tide",
+  "name": "Aurora Tide",
+  "description": "Authoring scaffold seasonal event for Aurora Tide. Tune multipliers before merge.",
+  "periodTicks": 21000,
+  "startTick": 100,
+  "durationTicks": 1500,
+  "banner": "banner.scaffold_aurora_tide",
+  "customerSpawnMultPermille": 1300,
+  "priceMultPermille": 1100,
+  "festivalCustomerIds": [],
+  "speciesWeightMultPermille": {}
+}

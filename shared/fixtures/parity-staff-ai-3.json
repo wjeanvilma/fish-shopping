@@ -1,0 +1,29 @@
+{
+  "schema": "fish.fixture.parity_staff_ai_3.v1",
+  "staffAi3Marker": "authored-finish-5.0-phase-20",
+  "phase": 20,
+  "plan": "30_finish_5.0",
+  "description": "Finish 5.0 Phase 20: rush_marshal patrol during rush + peak_tide schedule day-part boost + failure_recover from blockedReason.",
+  "sampleBranchId": "branch.supervisor.rush_marshal",
+  "sampleScheduleId": "schedule.peak_tide",
+  "sampleDecisionReason": "failure_recover",
+  "expect": {
+    "schemaVersion": 26,
+    "contentVersion": "4.0.0",
+    "depthBehaviorCount": 5,
+    "depthStatCount": 5,
+    "decisionReasonCount": 5,
+    "branchesMin": 13,
+    "schedulesMin": 3,
+    "staffAi3Incomplete": false,
+    "gates": [
+      "rush_marshal",
+      "circuit_boss",
+      "smoke_queue",
+      "schedule_daypart",
+      "failure_recover",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

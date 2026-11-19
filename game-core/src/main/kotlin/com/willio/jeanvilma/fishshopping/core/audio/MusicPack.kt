@@ -3,7 +3,7 @@ package com.willio.jeanvilma.fishshopping.core.audio
 /**
  * Phase 20 (post-1.0) — authored music bed contracts from `shared/audio/music-pack.json`.
  * Finish 2.0 Phase 21 adds festival + storm beds; Finish 3.0 Phase 23 adds night + rival beds;
- * Finish 4.0 Phase 23 adds endgame + ledger beds.
+ * Finish 4.0 Phase 23 adds endgame + ledger beds; Finish 5.0 Phase 12 adds pressure bed.
  * Ducking constants stay frozen.
  */
 object MusicPack {
@@ -24,11 +24,12 @@ object MusicPack {
     const val MASTER_MUSIC_SCALE = 0.42f
 
     val BED_IDS: List<String> = listOf(
-        "harbor", "shop", "festival", "storm", "night", "rival", "endgame", "ledger",
+        "harbor", "shop", "festival", "storm", "night", "rival", "endgame", "ledger", "pressure",
     )
     val PACK2_BED_IDS: List<String> = listOf("festival", "storm")
     val PACK3_BED_IDS: List<String> = listOf("night", "rival")
     val PACK4_BED_IDS: List<String> = listOf("endgame", "ledger")
+    val PACK5_BED_IDS: List<String> = listOf("pressure")
 
     fun androidRawName(bedId: String): String = "music_$bedId"
 
@@ -37,7 +38,7 @@ object MusicPack {
 
     /**
      * Resolve bed from presentation context.
-     * Priority: festival > storm > rival > night > endgame > ledger > shop > harbor.
+     * Priority: festival > storm > rival > night > endgame > ledger > pressure > shop > harbor.
      */
     fun bedForContext(
         stationOpen: Boolean,
@@ -47,6 +48,7 @@ object MusicPack {
         nightActive: Boolean = false,
         endgameActive: Boolean = false,
         ledgerActive: Boolean = false,
+        pressureActive: Boolean = false,
     ): String = when {
         festivalActive -> "festival"
         stormActive -> "storm"
@@ -54,6 +56,7 @@ object MusicPack {
         nightActive -> "night"
         endgameActive -> "endgame"
         ledgerActive -> "ledger"
+        pressureActive -> "pressure"
         stationOpen -> "shop"
         else -> "harbor"
     }

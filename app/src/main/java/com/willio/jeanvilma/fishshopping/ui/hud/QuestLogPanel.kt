@@ -66,6 +66,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -77,10 +78,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.willio.jeanvilma.fishshopping.core.i18n.UiStrings
+import com.willio.jeanvilma.fishshopping.ui.ComposeUiTags
 import com.willio.jeanvilma.fishshopping.core.store.LicensesNotice
 import com.willio.jeanvilma.fishshopping.core.store.StoreListing
 import com.willio.jeanvilma.fishshopping.core.sim.ContextCard
 import com.willio.jeanvilma.fishshopping.core.sim.DailyGoalView
+import com.willio.jeanvilma.fishshopping.core.sim.EndgameChallengeView
+import com.willio.jeanvilma.fishshopping.core.sim.EndgameTierView
 import com.willio.jeanvilma.fishshopping.core.sim.MachineStatus
 import com.willio.jeanvilma.fishshopping.core.sim.ActiveContractView
 import com.willio.jeanvilma.fishshopping.core.sim.BankView
@@ -153,6 +157,14 @@ internal fun QuestLogPanel(
     dailyLoginStreak: Int,
     dailyGoals: List<DailyGoalView>,
     onClaimDailyGoal: (String) -> Unit,
+    weeklyGoals: List<DailyGoalView>,
+    onClaimWeeklyGoal: (String) -> Unit,
+    endgameUnlocked: Boolean,
+    endgameLockedReason: String?,
+    endgameMarkCount: Int,
+    endgameCrestCount: Int,
+    endgameTiers: List<EndgameTierView>,
+    endgameChallenges: List<EndgameChallengeView>,
     onClose: () -> Unit,
     modifier: Modifier,
 ) {
@@ -231,6 +243,160 @@ internal fun QuestLogPanel(
                                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                                 )
                             }
+                        }
+                    }
+                }
+                item {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .testTag(ComposeUiTags.GOALS_WEEKLY)
+                            .semantics {
+                                contentDescription = UiStrings.t("a11y.weeklyGoalsSection")
+                                liveRegion = LiveRegionMode.Polite
+                            },
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(UiStrings.t("a11y.weeklyGoalsSection"), fontWeight = FontWeight.SemiBold)
+                            Text(
+                                UiStrings.t("goals.weeklyEmpty"),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                            )
+                            Text(
+                                UiStrings.t("a11y.weeklyGoalsLive"),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                            )
+                        }
+                        Text(
+                            if (weeklyGoals.isNotEmpty()) "${weeklyGoals.size}" else "—",
+                            style = Tabular,
+                        )
+                    }
+                }
+                if (weeklyGoals.isEmpty()) {
+                    item {
+                        Text(
+                            UiStrings.t("goals.weeklyEmpty"),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                        )
+                    }
+                } else {
+                    items(weeklyGoals, key = { "weekly:${it.objectiveId}" }) { g ->
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(g.name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                when {
+                                    g.claimed -> Text(UiStrings.t("common.claimed"), style = Tabular, color = MaterialTheme.colorScheme.primary)
+                                    g.claimEnabled -> Button(
+                                        onClick = { onClaimWeeklyGoal(g.objectiveId) },
+                                        modifier = Modifier.heightIn(min = 48.dp),
+                                    ) { Text(UiStrings.t("common.claim")) }
+                                    else -> Text(buildString { append((g.progress).toString()); append("/"); append((g.target).toString()) }, style = Tabular)
+                                }
+                            }
+                            Text(g.description, style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                buildString {
+                                    append("Reward: ")
+                                    append(formatCoins(g.rewardCoins))
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                            )
+                            if (!g.claimed) {
+                                LinearProgressIndicator(
+                                    progress = {
+                                        (g.progress.toFloat() / g.target.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+                                    },
+                                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+                item {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .testTag(ComposeUiTags.GOALS_ENDGAME)
+                            .semantics {
+                                contentDescription = UiStrings.t("a11y.endgameSection")
+                            },
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(UiStrings.t("a11y.endgameSection"), fontWeight = FontWeight.SemiBold)
+                            if (!endgameUnlocked) {
+                                Text(
+                                    endgameLockedReason ?: UiStrings.t("endgame.locked"),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            } else {
+                                Text(
+                                    buildString {
+                                        append(UiStrings.t("endgame.marks"))
+                                        append(' ')
+                                        append(endgameMarkCount)
+                                        append(" · ")
+                                        append(UiStrings.t("endgame.crests"))
+                                        append(' ')
+                                        append(endgameCrestCount)
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                )
+                            }
+                        }
+                        Text(
+                            if (endgameUnlocked) "Open" else "Locked",
+                            style = Tabular,
+                            color = if (endgameUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        )
+                    }
+                }
+                if (endgameUnlocked) {
+                    items(endgameTiers, key = { it.id }) { tier ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(tier.name, fontWeight = FontWeight.SemiBold)
+                                Text(tier.description, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    buildString {
+                                        append("Prestige ")
+                                        append(tier.requiresPrestigeCount)
+                                        append(" · rivals ")
+                                        append(tier.requiresRivalBeats)
+                                        append(" · challenges ")
+                                        append(tier.requiresChallenges)
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                )
+                            }
+                            Text(tier.status, style = Tabular)
+                        }
+                    }
+                    items(endgameChallenges, key = { it.id }) { ch ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(ch.name, fontWeight = FontWeight.SemiBold)
+                                Text(ch.description, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    buildString {
+                                        append("Reward: ")
+                                        append(formatCoins(ch.rewardCoins))
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                )
+                            }
+                            Text(
+                                if (ch.status == "completed") "Done" else "${ch.progress}/${ch.goalAtLeast}",
+                                style = Tabular,
+                            )
                         }
                     }
                 }

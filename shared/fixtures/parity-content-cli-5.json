@@ -1,0 +1,89 @@
+{
+  "schema": "fish.fixture.parity_content_cli_5.v1",
+  "description": "Finish 5.0 Phase 28: content CLI wave-5 kinds + examples + Finish 5 pack floors.",
+  "contentCli5Marker": "authored-finish-5.0-phase-28",
+  "scaffoldKindMin": 11,
+  "exampleFileMin": 11,
+  "featureMin": 8,
+  "simHzInvariant": 20,
+  "expect": {
+    "closesGap": "contentCli5Missing",
+    "contentCli5Missing": false,
+    "schemaVersion": 26,
+    "contentVersion": "4.0.0",
+    "kinds": [
+      "species",
+      "quest",
+      "harbor",
+      "contract",
+      "bait",
+      "decor",
+      "machine",
+      "rival",
+      "seasonal",
+      "endgame",
+      "cosmetic"
+    ],
+    "wave5Kinds": [
+      "seasonal",
+      "endgame",
+      "cosmetic"
+    ],
+    "features": [
+      "list",
+      "check-pack",
+      "check-floors",
+      "machine",
+      "rival",
+      "seasonal",
+      "endgame",
+      "cosmetic"
+    ],
+    "exampleFiles": [
+      "shared/content/scaffolds/examples/species.scaffold_tide_perch.json",
+      "shared/content/scaffolds/examples/quest.scaffold_morning_haul.json",
+      "shared/content/scaffolds/examples/harbor.scaffold_mist_cove.json",
+      "shared/content/scaffolds/examples/contract.scaffold_dawn_crate.json",
+      "shared/content/scaffolds/examples/bait.scaffold_kelp_chunk.json",
+      "shared/content/scaffolds/examples/decor.scaffold_pier_bunting.json",
+      "shared/content/scaffolds/examples/machine.scaffold_dock_press.json",
+      "shared/content/scaffolds/examples/rival.scaffold_mist_hawker.json",
+      "shared/content/scaffolds/examples/event.scaffold_aurora_tide.json",
+      "shared/content/scaffolds/examples/endgame.tier.scaffold_crest_harbor.json",
+      "shared/content/scaffolds/examples/entitlement.cosmetic.scaffold_aurora_bunting.json"
+    ],
+    "exampleIds": [
+      "species.scaffold_tide_perch",
+      "quest.scaffold_morning_haul",
+      "harbor.scaffold_mist_cove",
+      "contract.scaffold_dawn_crate",
+      "bait.scaffold_kelp_chunk",
+      "decor.scaffold_pier_bunting",
+      "machine.scaffold_dock_press",
+      "rival.scaffold_mist_hawker",
+      "event.scaffold_aurora_tide",
+      "endgame.tier.scaffold_crest_harbor",
+      "entitlement.cosmetic.scaffold_aurora_bunting"
+    ],
+    "moduleFiles": [
+      "shared/tools/content_cli/ids.ts",
+      "shared/tools/content_cli/scaffolds.ts",
+      "shared/tools/content_cli/validateFragment.ts",
+      "shared/tools/content_cli/packIds.ts",
+      "shared/tools/content_cli/packFloors.ts",
+      "shared/tools/content_cli/cli.ts",
+      "web/scripts/content-scaffold.ts"
+    ],
+    "packFloorKeys": [
+      "speciesMin",
+      "questsMin",
+      "harborsMin",
+      "machinesMin",
+      "rivalsMin",
+      "baitsMin",
+      "seasonalMin",
+      "cosmeticsMin",
+      "chainsMin"
+    ]
+  }
+}

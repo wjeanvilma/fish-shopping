@@ -2,7 +2,7 @@
   "phase": 21,
   "plan": "30_finish_3.0",
   "schema": "fish.ship.compose_ui_tests.v1",
-  "description": "Finish 3.0 Phase 21 — Compose UI integration tests. Finish 4.0 Phase 26 soft-floors minTagCount≥24 and expands HUD nav scenarios.",
+  "description": "Finish 3.0 Phase 21 — Compose UI integration tests. Finish 5.0 Phase 26 soft-floors minTagCount≥32 and expands scenarios to ≥14.",
   "contentVersion": "2.0.0",
   "schemaVersion": 24,
   "composeUiTestsMarker": "authored-finish-3.0-phase-21",
@@ -12,7 +12,7 @@
   "instrumentedSuite": "app/src/androidTest/java/com/willio/jeanvilma/fishshopping/TitleMenuInstrumentedTest.kt",
   "gradleUnitTestFilter": "*ComposeUiIntegrationTest*",
   "gradleUnitTestTask": ":app:testDebugUnitTest",
-  "minTagCount": 24,
+  "minTagCount": 32,
   "scenarios": [
     "title_menu_play_no_save",
     "title_menu_continue_has_save",
@@ -20,7 +20,14 @@
     "offline_summary_continue",
     "pause_panel_actions",
     "hud_nav_toolbar_tags",
-    "compose_tags_catalog_stable"
+    "compose_tags_catalog_stable",
+    "hud_nav_warehouse_goals_fire",
+    "hud_nav_staff_upgrades_fire",
+    "compose_tags_finish5_floor",
+    "title_brand_displayed",
+    "pause_root_stable",
+    "offline_root_stable",
+    "deeplink_ready_tag_present"
   ],
   "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
   "parityFixture": "shared/fixtures/parity-compose-ui-tests.json",
@@ -43,5 +50,6 @@
     "web/src/ship/composeUiTests.ts",
     "web/scripts/validate-compose-ui-tests.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ComposeUiTests.kt"
-  ]
+  ],
+  "finish5DeeplinkE2ePhase": 26
 }

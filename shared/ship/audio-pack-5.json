@@ -1,0 +1,65 @@
+{
+  "phase": 12,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.audio_pack_5.v1",
+  "description": "Finish 5.0 Phase 12 — SFX/music pack 5: cast/spoil/service/contract/quest pressure stingers + pressure bed; ducking frozen. Combined validate audiovfx5:validate with vfx-juice-5. Closes gaps.audioVfx5Incomplete. Schema stays 25 / content 4.0.0.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "audioPackMarker": "authored-finish-5.0-phase-12",
+  "extendsCatalogs": {
+    "sfx": "shared/audio/sfx-pack.json",
+    "music": "shared/audio/music-pack.json"
+  },
+  "newStingerMin": 5,
+  "newBedMin": 1,
+  "duckingPolicyFrozen": true,
+  "frozenDucking": {
+    "sfxDuckFactor": 0.35,
+    "sfxDuckRecoveryMs": 280,
+    "focusLossSilence": true,
+    "focusTransientCanDuckFactor": 0.25,
+    "webHiddenSuspendsContext": true,
+    "respectMute": true,
+    "respectMusicVolume": true
+  },
+  "newStingers": [
+    "cast_strike",
+    "spoil_warn",
+    "service_queue",
+    "contract_deadline",
+    "quest_near"
+  ],
+  "newBeds": [
+    "pressure"
+  ],
+  "gapClosed": "audioVfx5Incomplete",
+  "gapClosedValue": false,
+  "parityFixture": "shared/fixtures/parity-audio-pack-5.json",
+  "validateScript": "npm run audiovfx5:validate",
+  "generator": "shared/tools/generate_sfx_pack.py + shared/tools/generate_music_pack.py",
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "checklist": [
+    "≥5 new SFX stingers baked + mirrored",
+    "≥1 new music bed (pressure)",
+    "ducking policy frozen",
+    "sfxFromEvent maps Finish 5.0 cast/spoil/pressure cues",
+    "bed priority festival > storm > rival > night > endgame > ledger > pressure > shop > harbor",
+    "licenses.json records authored-audio-pack-5",
+    "gaps.audioVfx5Incomplete closed",
+    "audiovfx5:validate green in CI",
+    "schema stays 25 / content 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/audio-pack-5.json",
+    "shared/fixtures/parity-audio-pack-5.json",
+    "shared/ship/vfx-juice-5.json",
+    "web/src/ship/audioPack5.ts",
+    "web/src/ship/vfxJuice5.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/AudioPack5.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/VfxJuice5.kt",
+    "web/src/audio/sfxCues.ts",
+    "web/src/audio/musicBeds.ts",
+    "shared/audio/sfx-pack.json",
+    "shared/audio/music-pack.json"
+  ]
+}

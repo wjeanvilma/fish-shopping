@@ -1,0 +1,52 @@
+{
+  "phase": 24,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.i18n_growth_5.v1",
+  "description": "Finish 5.0 Phase 24 — UI chrome key growth to ≥360 across 8 locales; Android Text literals stay 0. Combined validate a11yi18n5:validate.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 26,
+  "i18nGrowth5Marker": "authored-finish-5.0-phase-24",
+  "extendsCatalog": "shared/ship/i18n-growth-4.json",
+  "uiStringKeyMin": 360,
+  "localeMin": 8,
+  "a11yStringKeyMin": 30,
+  "androidTextLiteralsMax": 0,
+  "uiStringsIndex": "shared/i18n/ui-strings.json",
+  "uiStringsEn": "shared/i18n/ui-strings.en.json",
+  "parityFixture": "shared/fixtures/parity-i18n-growth-5.json",
+  "validateScript": "npm run a11yi18n5:validate",
+  "softA11yI18n4Validate": "npm run a11yi18n4:validate",
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "softFloors": {
+    "i18nGrowth4KeyMin": 280,
+    "i18nScaffoldKeyMin": 48,
+    "androidI18nKeyMin": 120,
+    "note": "Finish 5.0 Phase 24 soft floors keep Finish 4.0/2.0 key mins green while live floor is ≥360."
+  },
+  "checklist": [
+    "≥360 UI keys (361 live) with 8-locale parity",
+    "≥30 a11y.* keys",
+    "ui-strings.json keyMin ≥ 360",
+    "Android ui/hud Text(\" literals = 0",
+    "a11yi18n4:validate soft-green",
+    "a11yi18n5:validate green in CI",
+    "schema stays 26"
+  ],
+  "preflightGates": [
+    "shared/ship/i18n-growth-5.json",
+    "shared/fixtures/parity-i18n-growth-5.json",
+    "shared/i18n/ui-strings.json",
+    "shared/i18n/ui-strings.en.json",
+    "shared/i18n/ui-strings.es.json",
+    "shared/i18n/ui-strings.pt.json",
+    "shared/i18n/ui-strings.fr.json",
+    "shared/i18n/ui-strings.ht.json",
+    "shared/i18n/ui-strings.it.json",
+    "shared/i18n/ui-strings.ca.json",
+    "shared/i18n/ui-strings.ru.json",
+    "web/src/ship/i18nGrowth5.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/I18nGrowth5.kt",
+    "web/src/i18n/strings.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/i18n/UiStrings.kt"
+  ]
+}

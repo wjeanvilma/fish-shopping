@@ -1,0 +1,7 @@
+<resources>
+    <!-- Finish 2.0 Phase 23 — French store listing copy. Source: shared/store/locales/fr.json -->
+    <string name="app_name">Fish Shopping</string>
+    <string name="store_short_description">Pêchez, découpez et vendez du poisson dans un marché 3D du port.</string>
+    <string name="store_tagline">Pêchez, découpez, vendez — gérez votre marché du port</string>
+    <string name="store_whats_new">Gel 4.0.0 — cent espèces, cinquante quêtes, douze machines, dix ports, douze marchés rivaux, fin de jeu schéma 25, verrou de parité 4.0 et ops Finish 4.0. Schéma 25 ; les sauvegardes 3.0 précédentes se chargent toujours.</string>
+</resources>

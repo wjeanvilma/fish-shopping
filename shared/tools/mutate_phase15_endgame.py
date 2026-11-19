@@ -11,6 +11,11 @@ I18N = [
     ROOT / "shared/i18n/content-strings.en.json",
     ROOT / "shared/i18n/content-strings.es.json",
     ROOT / "shared/i18n/content-strings.pt.json",
+    ROOT / "shared/i18n/content-strings.fr.json",
+    ROOT / "shared/i18n/content-strings.ht.json",
+    ROOT / "shared/i18n/content-strings.it.json",
+    ROOT / "shared/i18n/content-strings.ca.json",
+    ROOT / "shared/i18n/content-strings.ru.json",
 ]
 
 ENDGAME = {

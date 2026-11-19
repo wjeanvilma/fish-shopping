@@ -3,6 +3,7 @@ package com.willio.jeanvilma.fishshopping.core.sim
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
 import com.willio.jeanvilma.fishshopping.core.content.HarborDef
 import com.willio.jeanvilma.fishshopping.core.content.ItemQuantity
+import com.willio.jeanvilma.fishshopping.core.fishing.CastPhase
 import com.willio.jeanvilma.fishshopping.core.inventory.Inventory
 import com.willio.jeanvilma.fishshopping.core.world.HarborWorldStash
 import java.util.TreeMap
@@ -52,6 +53,8 @@ object Stats {
     /** Finish 2.0 Phase 18 — local login / play streak (calendar day). */
     const val DAILY_LOGIN_STREAK = "stat.daily_login_streak"
     const val DAILY_GOALS_CLAIMED = "stat.daily_goals_claimed"
+    /** Finish 5.0 Phase 19 — weekly retention claims. */
+    const val WEEKLY_GOALS_CLAIMED = "stat.weekly_goals_claimed"
     const val HARBORS_TRAVELED = "stat.harbors_traveled"
     const val MAINTENANCE_PAID = "stat.maintenance_paid"
     const val ITEMS_SPOILED = "stat.items_spoiled"
@@ -63,6 +66,9 @@ object Stats {
     const val ACHIEVEMENTS_UNLOCKED = "stat.achievements_unlocked"
     /** Finish 2.0 Phase 14 — fishing mastery XP granted. */
     const val MASTERY_XP = "stat.mastery_xp"
+    /** Finish 5.0 Phase 2 — cast phase transitions / strike-window reels. */
+    const val CAST_PHASE_TRANSITIONS = "stat.cast_phase_transitions"
+    const val CAST_STRIKE_REELS = "stat.cast_strike_reels"
     const val MASTERY_LEVEL_UPS = "stat.mastery_level_ups"
     /** Finish 2.0 Phase 15 — staff branch train purchases / unlocks. */
     const val STAFF_BRANCH_TRAINING = "stat.staff_branch_training"
@@ -75,6 +81,12 @@ object Stats {
     const val FISHER_TROPHY_CASTS = "stat.fisher_trophy_casts"
     const val PORTER_RELAY_PICKUPS = "stat.porter_relay_pickups"
     const val CASHIER_QUICK_TILLS = "stat.cashier_quick_tills"
+    /** Finish 5.0 Phase 20 — staff AI wave 3 specialties / schedule / failure recovery. */
+    const val SUPERVISOR_RUSH_MARSHALS = "stat.supervisor_rush_marshals"
+    const val OPERATOR_CIRCUIT_LINKS = "stat.operator_circuit_links"
+    const val SMOKER_QUEUE_FEEDS = "stat.smoker_queue_feeds"
+    const val SCHEDULE_TASK_BOOSTS = "stat.schedule_task_boosts"
+    const val WORKER_FAILURE_RECOVERIES = "stat.worker_failure_recoveries"
     /** Finish 3.0 Phase 14 — rival NPC market siphon / player beat counters. */
     const val RIVAL_SALES_STOLEN = "stat.rival_sales_stolen"
     const val RIVAL_UNDERCUTS = "stat.rival_undercuts"
@@ -84,6 +96,8 @@ object Stats {
     const val ENDGAME_CHALLENGES_COMPLETED = "stat.endgame_challenges_completed"
     /** Finish 4.0 Phase 17 — legend marks granted by deepen challenges. */
     const val ENDGAME_MARKS_EARNED = "stat.endgame_marks_earned"
+    /** Finish 5.0 Phase 17 — crests granted by deepen challenges. */
+    const val ENDGAME_CRESTS_EARNED = "stat.endgame_crests_earned"
     const val DECOR_BOUGHT = "stat.decor_bought"
     const val MACHINES_BROKEN = "stat.machines_broken"
     const val MACHINES_SLOWED = "stat.machines_slowed"
@@ -105,14 +119,17 @@ object Stats {
         LEASES_EXPIRED, WAGES_PAID, OVERTIME_WAGES,
         QUESTS_COMPLETED, CONTRACTS_COMPLETED, CONTRACTS_FAILED, CONTRACT_REVENUE,
         CONTRACT_ITEMS_DELIVERED, CONTRACT_CHAINS_COMPLETED, CONTRACT_FAIL_STREAK,
-        DAILY_LOGIN_STREAK, DAILY_GOALS_CLAIMED,
+        DAILY_LOGIN_STREAK, DAILY_GOALS_CLAIMED, WEEKLY_GOALS_CLAIMED,
         HARBORS_TRAVELED, MAINTENANCE_PAID, ITEMS_SPOILED,
         PRESTIGE_COMPLETED, TROPHY_SPECIES, TROPHY_RECORDS, TROPHY_SETS_COMPLETE, ACHIEVEMENTS_UNLOCKED,
-        MASTERY_XP, MASTERY_LEVEL_UPS, STAFF_BRANCH_TRAINING, STAFF_BRANCHES_UNLOCKED,
+        MASTERY_XP, MASTERY_LEVEL_UPS, CAST_PHASE_TRANSITIONS, CAST_STRIKE_REELS,
+        STAFF_BRANCH_TRAINING, STAFF_BRANCHES_UNLOCKED,
         SUPERVISOR_PATROLS, GREETER_WELCOMES, ICE_RUNNER_MULTI_PICKUPS,
         FISHER_TROPHY_CASTS, PORTER_RELAY_PICKUPS, CASHIER_QUICK_TILLS,
+        SUPERVISOR_RUSH_MARSHALS, OPERATOR_CIRCUIT_LINKS, SMOKER_QUEUE_FEEDS,
+        SCHEDULE_TASK_BOOSTS, WORKER_FAILURE_RECOVERIES,
         RIVAL_SALES_STOLEN, RIVAL_UNDERCUTS, RIVAL_BEATS,
-        ENDGAME_TIERS_UNLOCKED, ENDGAME_CHALLENGES_COMPLETED, ENDGAME_MARKS_EARNED, DECOR_BOUGHT,
+        ENDGAME_TIERS_UNLOCKED, ENDGAME_CHALLENGES_COMPLETED, ENDGAME_MARKS_EARNED, ENDGAME_CRESTS_EARNED, DECOR_BOUGHT,
         MACHINES_BROKEN, MACHINES_SLOWED, MACHINES_REPAIRED, REPAIR_SPENT,
         LOANS_TAKEN, LOAN_INTEREST_ACCRUED, LOAN_REPAID, LOAN_COLLECTED, COIN_GOALS_REACHED,
     )
@@ -217,6 +234,8 @@ class PlayerState(
     var preferredBaitId: String? = null
     /** Bait attached to the active cast; consumed on a successful catch. */
     var activeBaitId: String? = null
+    /** Ephemeral Finish 5.0 cast phase tracker (not persisted). */
+    var lastCastPhase: CastPhase? = null
 }
 
 /** Reel timing result for a cast (Phase 8). */
@@ -391,9 +410,13 @@ class GameState(
     val completedEndgameChallenges = TreeSet<String>()
     /** Finish 4.0 Phase 17 / schema 25 — legend marks from deepen challenges. */
     val endgameMarks = TreeSet<String>()
+    /** Finish 5.0 Phase 17 / schema 26 — crests from deepen challenges. */
+    val endgameCrests = TreeSet<String>()
     val unlockedCosmetics = TreeSet<String>()
     /** Phase 23 owned shop decor (placable cosmetics). */
     val ownedDecor = TreeSet<String>()
+    /** Cozy art pass 5: placed decor per harbor id → decor id → ground placement (optional in saves). */
+    val decorPlacements = java.util.TreeMap<String, java.util.TreeMap<String, DecorPlacement>>()
     /**
      * Phase 23 one-time IAP: unlocks travel to every harbor (power-neutral access).
      * Sunrise Pier stays free; grant is idempotent via purchase receipts.
@@ -564,6 +587,8 @@ sealed interface Command {
     data class SyncWallClock(val epochMs: Long) : Command
     /** Finish 2.0 Phase 18 — claim a completed daily objective; [requestId] idempotent. */
     data class ClaimDailyGoal(val objectiveId: String, val requestId: String) : Command
+    /** Finish 5.0 Phase 19 — claim a completed weekly objective; [requestId] idempotent. */
+    data class ClaimWeeklyGoal(val objectiveId: String, val requestId: String) : Command
     /** Travel to another harbor; [requestId] makes retries idempotent. */
     data class TravelToHarbor(val harborId: String, val requestId: String) : Command
     /** Buy a bait pack at a kiosk zone; [requestId] makes retries idempotent. */
@@ -580,6 +605,10 @@ sealed interface Command {
     data class SetWorkerSchedule(val workerId: String, val scheduleId: String?) : Command
     /** Buy shop decor; [requestId] makes retries idempotent (Phase 23). */
     data class PurchaseDecor(val decorId: String, val requestId: String) : Command
+    /** Cozy art pass 5: place (or move) an owned decor item on open quay ground in the active harbor. */
+    data class PlaceDecor(val decorId: String, val xMm: Int, val zMm: Int, val rotationQuarter: Int) : Command
+    /** Cozy art pass 5: put a placed decor item back in storage (stays owned). */
+    data class StoreDecor(val decorId: String) : Command
     /**
      * Phase 23: grant the one-time full-harbor unlock entitlement.
      * [requestId] should be stable per store purchase token (`full-unlock:{token}`).
@@ -626,6 +655,20 @@ sealed interface GameEvent {
     data class TrophySetCompleted(override val tick: Long, val setId: String) : GameEvent
     /** Soft feedback when a fishing spot's stock hits zero. */
     data class FishingSpotDepleted(override val tick: Long, val zoneId: String) : GameEvent
+    /** Finish 5.0 Phase 2 — cast phase advanced (waiting → strike → fight). */
+    data class CastPhaseChanged(
+        override val tick: Long,
+        val phase: String,
+        val speciesId: String,
+        val zoneId: String,
+    ) : GameEvent
+    /** Finish 5.0 Phase 2 — reel resolved during the strike window. */
+    data class CastStrikeReel(
+        override val tick: Long,
+        val speciesId: String,
+        val zoneId: String,
+        val timingTier: TimingTier,
+    ) : GameEvent
     data class ItemsTransferred(override val tick: Long, val from: String, val to: String, val itemId: String, val count: Int) : GameEvent
     data class BatchStarted(override val tick: Long, val batchId: String, val stationId: String, val recipeId: String) : GameEvent
     data class BatchCompleted(override val tick: Long, val batchId: String, val stationId: String) : GameEvent
@@ -704,6 +747,17 @@ sealed interface GameEvent {
         val reason: String,
     ) : GameEvent
     data class DecorPurchaseRejected(override val tick: Long, val decorId: String, val requestId: String, val reason: String) : GameEvent
+    data class DecorPlaced(
+        override val tick: Long,
+        val decorId: String,
+        val harborId: String,
+        val xMm: Int,
+        val zMm: Int,
+        val rotationQuarter: Int,
+        val moved: Boolean,
+    ) : GameEvent
+    data class DecorStored(override val tick: Long, val decorId: String, val harborId: String) : GameEvent
+    data class DecorPlaceRejected(override val tick: Long, val decorId: String, val reason: String) : GameEvent
     data class MachineBroke(override val tick: Long, val stationId: String, val machineId: String) : GameEvent
     data class MachineSlowed(override val tick: Long, val stationId: String, val machineId: String, val untilTick: Long) : GameEvent
     data class MachineRepaired(
@@ -827,6 +881,23 @@ sealed interface GameEvent {
         val requestId: String,
         val reason: String,
     ) : GameEvent
+    data class WeeklyGoalsRolled(
+        override val tick: Long,
+        val weekId: Long,
+    ) : GameEvent
+    data class WeeklyGoalClaimed(
+        override val tick: Long,
+        val objectiveId: String,
+        val payout: Long,
+        val receipt: Receipt,
+        val replayed: Boolean,
+    ) : GameEvent
+    data class WeeklyGoalRejected(
+        override val tick: Long,
+        val objectiveId: String,
+        val requestId: String,
+        val reason: String,
+    ) : GameEvent
     data class HarborTraveled(
         override val tick: Long,
         val fromHarborId: String,
@@ -935,3 +1006,6 @@ sealed interface GameEvent {
         val scheduleId: String?,
     ) : GameEvent
 }
+
+/** Cozy art pass 5: where an owned decor item stands in a harbor (millimetres, quarter turns). */
+data class DecorPlacement(val xMm: Int, val zMm: Int, val rotationQuarter: Int)

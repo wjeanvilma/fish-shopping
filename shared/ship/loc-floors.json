@@ -2,9 +2,9 @@
   "phase": 6,
   "plan": "30_finish_2.0",
   "schema": "fish.ship.loc_floors.v1",
-  "description": "Finish 2.0 Phase 6 scoreboard → Finish 3.0 Phase 30 freeze → Finish 4.0 Phase 30 freeze. Measures real source only (no padding). Freeze floors stay anti-regression at the 4.0 cut; Finish 4.0 plan targets remain 32k/20k/48k/100k.",
-  "contentVersion": "4.0.0",
-  "schemaVersion": 25,
+  "description": "Finish 2.0 Phase 6 scoreboard → Finish 3.0/4.0/5.0 freezes. Measures real source only (no padding). Freeze floors stay anti-regression at the 5.0 cut; Finish 5.0 plan targets are 38k/26k/56k/120k.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
   "metric": {
     "unit": "physical_lines",
     "note": "Count every physical line in product source files (including blanks/comments). Matches the ~42k baseline used in the Finish 2.0 plan.",
@@ -21,26 +21,33 @@
     "gameCore": {
       "id": "game-core",
       "root": "game-core/src/main",
-      "extensions": [".kt"],
-      "phase30Floor": 23500,
-      "planTarget": 32000
+      "extensions": [
+        ".kt"
+      ],
+      "phase30Floor": 32000,
+      "planTarget": 38000
     },
     "app": {
       "id": "app",
       "root": "app/src/main",
-      "extensions": [".kt"],
-      "phase30Floor": 13800,
-      "planTarget": 20000
+      "extensions": [
+        ".kt"
+      ],
+      "phase30Floor": 15200,
+      "planTarget": 26000
     },
     "webSrc": {
       "id": "web/src",
       "root": "web/src",
-      "extensions": [".ts", ".tsx"],
-      "phase30Floor": 35600,
-      "planTarget": 48000
+      "extensions": [
+        ".ts",
+        ".tsx"
+      ],
+      "phase30Floor": 42500,
+      "planTarget": 56000
     }
   },
-  "productTotalFloor": 73100,
+  "productTotalFloor": 90000,
   "enforceFloors": true,
   "enforceAtPhase": 30,
   "baseline": {
@@ -59,12 +66,12 @@
   "validateScript": "npm run loc:validate",
   "smokeScript": "npm run loc:smoke",
   "checklist": [
-    "shared/ship/loc-floors.json locks freeze floors + plan targets",
+    "shared/ship/loc-floors.json locks freeze floors + Finish 5.0 plan targets",
     "Kotlin + TS mirrors match catalog",
     "npm run loc:smoke enforces freeze floors (enforceFloors=true)",
     "CI runs loc:validate + loc:smoke",
     "No LOC inflation via duplicated files or generated sources in product roots",
-    "Finish 4.0 plan targets 32k/20k/48k/100k; not padded to force-meet"
+    "Finish 5.0 plan targets 38k/26k/56k/120k; not padded to force-meet"
   ],
   "preflightGates": [
     "shared/ship/loc-floors.json",
@@ -74,20 +81,28 @@
     "web/scripts/smoke-loc-floors.ts"
   ],
   "enforceMode": "freeze_anti_regression",
-  "productTotalPlanTarget": 100000,
+  "productTotalPlanTarget": 120000,
   "freezeCut": {
     "measuredAtPhase": 30,
-    "gameCore": 23675,
-    "app": 13947,
-    "webSrc": 35851,
-    "productTotal": 73473,
-    "note": "Finish 4.0 Phase 30 freeze cut (physical lines). Floors sit slightly under measured to avoid flake; growth must remain real systems/content. Finish 3.0 cut (64488) remains historical via prior freeze catalogs."
+    "gameCore": 32287,
+    "app": 15415,
+    "webSrc": 42895,
+    "productTotal": 90597,
+    "note": "Finish 5.0 Phase 30 freeze cut (physical lines). Floors sit slightly under measured to avoid flake; growth must remain real systems/content. Finish 4.0 cut (73473) remains historical via prior freeze catalogs. Plan targets 38k/26k/56k/120k retained without padding."
   },
   "softFloors": {
     "finish3HistoricalProductTotalFloor": 64200,
     "finish3HistoricalGameCoreFloor": 20900,
     "finish3HistoricalAppFloor": 13100,
     "finish3HistoricalWebSrcFloor": 30200,
-    "note": "Finish 3.0 anti-regression floors remain documented; live floors raised to Finish 4.0 cut."
+    "note": "Finish 4.0 anti-regression floors remain documented; live floors raised to Finish 5.0 measured cut without padding to force-meet 120k plan target.",
+    "finish4HistoricalProductTotalPlanTarget": 100000,
+    "finish4HistoricalGameCorePlanTarget": 32000,
+    "finish4HistoricalAppPlanTarget": 20000,
+    "finish4HistoricalWebSrcPlanTarget": 48000,
+    "finish4HistoricalProductTotalFloor": 73100,
+    "finish4HistoricalGameCoreFloor": 23500,
+    "finish4HistoricalAppFloor": 13800,
+    "finish4HistoricalWebSrcFloor": 35600
   }
 }

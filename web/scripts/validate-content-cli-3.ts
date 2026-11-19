@@ -102,6 +102,7 @@ function validate(): string[] {
   if ((catalog.featureMin ?? 0) < 5 || CONTENT_CLI3_FEATURE_FLOOR < 5) {
     errors.push("featureMin must be ≥ 5");
   }
+  // Soft-floor: Finish 5.0 may grow ALL_SCAFFOLD_KINDS past Phase 28's 8.
   if (ALL_SCAFFOLD_KINDS.length < CONTENT_CLI3_KIND_FLOOR) {
     errors.push(`ALL_SCAFFOLD_KINDS ${ALL_SCAFFOLD_KINDS.length} < ${CONTENT_CLI3_KIND_FLOOR}`);
   }

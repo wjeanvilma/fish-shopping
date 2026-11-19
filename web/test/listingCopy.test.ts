@@ -17,7 +17,7 @@ describe("listing copy freeze (post-1.0 Phase 11)", () => {
     expect(LISTING_COPY_PHASE).toBe(11);
     expect(LISTING_COPY_SCHEMA).toBe("fish.store.listing_copy.v1");
     expect(listingCopy.frozen).toBe(true);
-    expect(listingCopy.locales).toEqual(["en", "es", "pt"]);
+    expect(listingCopy.locales).toEqual(["en", "es", "pt", "fr", "ht", "it", "ca", "ru"]);
     expect(withinPlayLimits()).toBe(true);
     expect(listingCopy.copy.title.length).toBeLessThanOrEqual(listingCopy.playLimits.titleMax);
     expect(listingCopy.copy.shortDescription.length).toBeLessThanOrEqual(

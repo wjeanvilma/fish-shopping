@@ -4,6 +4,7 @@ package com.willio.jeanvilma.fishshopping.render
  * Finish 2.0 Phase 22 — weather ambient profiles for harbor presentation.
  * Finish 3.0 Phase 24 adds tide + rival ambient mixes (still not burst-pool).
  * Finish 4.0 Phase 23 adds endgame ambient modes (still not burst-pool).
+ * Finish 5.0 Phase 12 adds pressure ambient modes (still not burst-pool).
  * Presentation-only; does not consume the VfxBurst pool or change 20 Hz sim.
  */
 enum class WeatherAmbientId {
@@ -16,6 +17,10 @@ enum class TideAmbientId {
 
 enum class EndgameAmbientId {
     LOCKED, ACTIVE, CROWNED,
+}
+
+enum class PressureAmbientId {
+    CALM, RISING, CRITICAL,
 }
 
 data class WeatherAmbientProfile(
@@ -57,6 +62,12 @@ private data class EndgameMix(
     val amount: Float,
 )
 
+private data class PressureMix(
+    val sky: Int,
+    val water: Int,
+    val amount: Float,
+)
+
 private val PROFILES = mapOf(
     WeatherAmbientId.CLEAR to AmbientBase(WeatherAmbientId.CLEAR, 0x9fd3ea, 0x1a5f7a, 0x3a9fc4, 1.0, 0.18f),
     WeatherAmbientId.OVERCAST to AmbientBase(WeatherAmbientId.OVERCAST, 0x8aa0b0, 0x2a4a5a, 0x4a7080, 0.7, 0.12f),
@@ -79,6 +90,12 @@ private val ENDGAME_MIX = mapOf(
     EndgameAmbientId.CROWNED to EndgameMix(0xe8c878, 0x4a6080, 0.24f),
 )
 
+private val PRESSURE_MIX = mapOf(
+    PressureAmbientId.CALM to PressureMix(0x9fd3ea, 0x1a5f7a, 0.0f),
+    PressureAmbientId.RISING to PressureMix(0xc07050, 0x3a4058, 0.14f),
+    PressureAmbientId.CRITICAL to PressureMix(0xa04038, 0x2a3048, 0.22f),
+)
+
 val WEATHER_AMBIENT_PATTERN_IDS = listOf(
     "weather.clear",
     "weather.overcast",
@@ -89,6 +106,7 @@ val WEATHER_AMBIENT_PATTERN_IDS = listOf(
 
 val TIDE_AMBIENT_PHASE_IDS = listOf("dawn", "day", "dusk", "night")
 val ENDGAME_AMBIENT_MODE_IDS = listOf("locked", "active", "crowned")
+val PRESSURE_AMBIENT_MODE_IDS = listOf("calm", "rising", "critical")
 
 fun weatherAmbientIdForWeatherId(weatherId: String): WeatherAmbientId = when {
     weatherId.contains("gale") -> WeatherAmbientId.GALE
@@ -112,6 +130,32 @@ fun endgameAmbientIdForView(endgameUnlocked: Boolean, endgameMarkCount: Int): En
     else -> EndgameAmbientId.ACTIVE
 }
 
+fun pressureAmbientIdForView(
+    bagSpoilPressurePermille: Int,
+    serviceQueuePressurePermille: Int,
+    ticksUntilNearestContractDeadline: Int?,
+    nextQuestProgressPermille: Int?,
+    risingPermille: Int = 700,
+    criticalPermille: Int = 1000,
+    contractDeadlineWarnTicks: Int = 200,
+    questNearCompletePermille: Int = 800,
+): PressureAmbientId {
+    val maxPressure = maxOf(bagSpoilPressurePermille, serviceQueuePressurePermille)
+    val deadlineCritical =
+        ticksUntilNearestContractDeadline != null &&
+            ticksUntilNearestContractDeadline <= contractDeadlineWarnTicks / 2
+    val deadlineRising =
+        ticksUntilNearestContractDeadline != null &&
+            ticksUntilNearestContractDeadline <= contractDeadlineWarnTicks
+    val questRising =
+        nextQuestProgressPermille != null && nextQuestProgressPermille >= questNearCompletePermille
+    return when {
+        maxPressure >= criticalPermille || deadlineCritical -> PressureAmbientId.CRITICAL
+        maxPressure >= risingPermille || deadlineRising || questRising -> PressureAmbientId.RISING
+        else -> PressureAmbientId.CALM
+    }
+}
+
 fun weatherAmbientProfile(
     weatherId: String,
     festivalActive: Boolean = false,
@@ -120,6 +164,7 @@ fun weatherAmbientProfile(
     tidePhaseId: String = "day",
     rivalActive: Boolean = false,
     endgameMode: EndgameAmbientId = EndgameAmbientId.LOCKED,
+    pressureMode: PressureAmbientId = PressureAmbientId.CALM,
 ): WeatherAmbientProfile {
     val base = PROFILES.getValue(weatherAmbientIdForWeatherId(weatherId))
     val qScale = when (quality) {
@@ -153,6 +198,12 @@ fun weatherAmbientProfile(
         sky = mixRgb(packRgb(sky), endgame.sky, endgame.amount * qScale)
         deep = mixRgb(packRgb(deep), endgame.water, endgame.amount * 0.55f * qScale)
         shallow = mixRgb(packRgb(shallow), endgame.water, endgame.amount * 0.35f * qScale)
+    }
+    val pressure = PRESSURE_MIX.getValue(pressureMode)
+    if (pressure.amount > 0f) {
+        sky = mixRgb(packRgb(sky), pressure.sky, pressure.amount * qScale)
+        deep = mixRgb(packRgb(deep), pressure.water, pressure.amount * 0.55f * qScale)
+        shallow = mixRgb(packRgb(shallow), pressure.water, pressure.amount * 0.35f * qScale)
     }
     return WeatherAmbientProfile(
         id = base.id,

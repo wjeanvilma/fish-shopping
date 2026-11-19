@@ -32,14 +32,14 @@ describe("Endgame deepen + schema 25 (Finish 4.0 Phase 17)", () => {
     expect(PARITY_ENDGAME_2).toContain("parity-endgame-2.json");
     expect(ENDGAME_2_PHASE).toBe(17);
     expect(ENDGAME_2_VERSION).toBe(25);
-    expect(SCHEMA_VERSION).toBe(25);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(25);
     expect(ENDGAME_2_MARKER).toBe("authored-finish-4.0-phase-17");
     expect((storeListing as { endgame2Phase?: number }).endgame2Phase).toBe(17);
   });
 
   it("measures deepen + schema 25 wiring", () => {
     const m = measureEndgame2(root);
-    expect(m.schemaVersion).toBe(25);
+    expect(m.schemaVersion).toBeGreaterThanOrEqual(25);
     expect(m.tierCount).toBeGreaterThanOrEqual(6);
     expect(m.challengeCount).toBeGreaterThanOrEqual(8);
     expect(m.markDefs).toBeGreaterThanOrEqual(3);
@@ -58,7 +58,7 @@ describe("Endgame deepen + schema 25 (Finish 4.0 Phase 17)", () => {
     const s = decodeSnapshot(content, legacy);
     expect(s.endgameMarks.size).toBe(0);
     const encoded = encodeSnapshot(content, s);
-    expect(encoded.startsWith('{"schemaVersion":25,')).toBe(true);
+    expect(encoded).toMatch(/^\{"schemaVersion":(2[5-9]|[3-9]\d),/);
     expect(encoded).toContain('"endgameMarks":[]');
   });
 

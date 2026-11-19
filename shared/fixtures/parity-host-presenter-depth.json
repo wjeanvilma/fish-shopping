@@ -1,0 +1,20 @@
+{
+  "schema": "fish.fixtures.parity_host_presenter_depth.v1",
+  "hostPresenterDepthMarker": "authored-finish-5.0-phase-5",
+  "phase": 5,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "viewFieldMin": 10,
+    "requiredFileMin": 2,
+    "hudBindingSurfaces": 4,
+    "schemaVersion": 25,
+    "contentVersion": "4.0.0",
+    "gates": [
+      "host_fishing_intents",
+      "loop_hud_snapshot",
+      "hud_bindings",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

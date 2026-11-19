@@ -1,0 +1,28 @@
+{
+  "schema": "fish.fixture.parity_endgame_3.v1",
+  "endgame3Marker": "authored-finish-5.0-phase-17",
+  "phase": 17,
+  "plan": "30_finish_5.0",
+  "description": "Finish 5.0 Phase 17: schema 26 persists endgameCrests; Aurora Throne requires crests after Prism Crown deepen.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 1717,
+  "firstNewTierId": "endgame.tier.aurora_throne",
+  "sampleCrestId": "endgame.crest.harbor_circuit",
+  "expect": {
+    "schemaVersion": 26,
+    "contentVersion": "4.0.0",
+    "tierCountMin": 8,
+    "challengeCountMin": 12,
+    "crestCountMin": 3,
+    "fromSchema": 25,
+    "toSchema": 26,
+    "gates": [
+      "schema_26",
+      "endgame_deepen",
+      "crests_persist",
+      "legacy_v25",
+      "kickoff_phase17",
+      "ci_gate"
+    ]
+  }
+}

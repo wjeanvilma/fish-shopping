@@ -1,0 +1,24 @@
+{
+  "schema": "fish.fixtures.parity_fish_art_5.v1",
+  "fishArt5Marker": "authored-finish-5.0-phase-9",
+  "fishFinish5Marker": "fish-art-5",
+  "phase": 9,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "authoredSpeciesTarget": 125,
+    "newAuthoredCount": 25,
+    "schemaVersion": 25,
+    "contentVersion": "4.0.0",
+    "fishArt5IncompleteClosed": true,
+    "authoredFishRemainingClosed": 0,
+    "speciesRemainingStillOpen": 0,
+    "gates": [
+      "art_ahead_meshes",
+      "finish5_stamp",
+      "pass_floor_125",
+      "gap_closed",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

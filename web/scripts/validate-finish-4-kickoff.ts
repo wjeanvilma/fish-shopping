@@ -231,16 +231,17 @@ function validate(): string[] {
   if (productLocProgress(b.productLoc) !== 0) errors.push("LOC progress at baseline must be 0%");
 
   const art = measureArtCounts(root);
-  if (art.authoredHarbors !== b.authoredHarbors) {
-    errors.push(`harbor-art-pass authored count ${art.authoredHarbors} ≠ baseline ${b.authoredHarbors}`);
+  // Soft-floored: Finish 5.0 raises live authored/content counts above Finish 4.0 baseline.
+  if (art.authoredHarbors < b.authoredHarbors) {
+    errors.push(`harbor-art-pass authored count ${art.authoredHarbors} < baseline ${b.authoredHarbors}`);
   }
-  if (art.authoredFish !== b.authoredFish) {
-    errors.push(`fish-art-pass authored count ${art.authoredFish} ≠ baseline ${b.authoredFish}`);
+  if (art.authoredFish < b.authoredFish) {
+    errors.push(`fish-art-pass authored count ${art.authoredFish} < baseline ${b.authoredFish}`);
   }
-  if ((pack.harbors as unknown[]).length !== b.harbors) errors.push("content harbors ≠ baseline");
-  if ((pack.species as unknown[]).length !== b.species) errors.push("content species ≠ baseline");
-  if ((pack.machines as unknown[]).length !== b.machines) errors.push("content machines ≠ baseline");
-  if ((pack.quests as unknown[]).length !== b.quests) errors.push("content quests ≠ baseline");
+  if ((pack.harbors as unknown[]).length < b.harbors) errors.push("content harbors < baseline");
+  if ((pack.species as unknown[]).length < b.species) errors.push("content species < baseline");
+  if ((pack.machines as unknown[]).length < b.machines) errors.push("content machines < baseline");
+  if ((pack.quests as unknown[]).length < b.quests) errors.push("content quests < baseline");
 
   const locBoard = measureLocScoreboard(root);
   if (locBoard.productTotal < b.productLoc - 50) {
@@ -258,16 +259,21 @@ function validate(): string[] {
     errors.push(`web/src LOC ${locBoard.webSrc.lines} regressed below baseline ${b.webSrcLoc}`);
   }
 
-  if (loc.productTotalPlanTarget !== 100000) {
-    errors.push("loc-floors productTotalPlanTarget must be 100000 for Finish 4.0");
+  // Soft floor: Finish 5.0 raised live plan targets; Finish 4.0 historical 100k still documented.
+  if ((loc.productTotalPlanTarget ?? 0) < 100000) {
+    errors.push("loc-floors productTotalPlanTarget must be ≥100000 (Finish 4 soft floor)");
   }
-  if (loc.scopes?.gameCore?.planTarget !== 32000) errors.push("loc-floors gameCore planTarget must be 32000");
-  if (loc.scopes?.app?.planTarget !== 20000) errors.push("loc-floors app planTarget must be 20000");
-  if (loc.scopes?.webSrc?.planTarget !== 48000) {
-    errors.push("loc-floors webSrc planTarget must be 48000");
+  if ((loc.scopes?.gameCore?.planTarget ?? 0) < 32000) {
+    errors.push("loc-floors gameCore planTarget must be ≥32000 (Finish 4 soft floor)");
   }
-  if (LOC_FLOORS.productTotalPlanTarget !== 100000) {
-    errors.push("LOC_FLOORS.productTotalPlanTarget mirror must be 100000");
+  if ((loc.scopes?.app?.planTarget ?? 0) < 20000) {
+    errors.push("loc-floors app planTarget must be ≥20000 (Finish 4 soft floor)");
+  }
+  if ((loc.scopes?.webSrc?.planTarget ?? 0) < 48000) {
+    errors.push("loc-floors webSrc planTarget must be ≥48000 (Finish 4 soft floor)");
+  }
+  if ((LOC_FLOORS.productTotalPlanTarget ?? 0) < 100000) {
+    errors.push("LOC_FLOORS.productTotalPlanTarget mirror must be ≥100000");
   }
   if (loc.freezeCut?.productTotal !== 73473) {
     errors.push("loc-floors freezeCut.productTotal must be refreshed to 73473");

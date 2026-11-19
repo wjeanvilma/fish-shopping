@@ -74,6 +74,7 @@ export function StationCard({
 
 export function TimingMeter({
   progress01, goodStart, goodEnd, perfectStart, perfectEnd, tier,
+  strikeStart, strikeEnd,
 }: {
   progress01: number;
   goodStart: number;
@@ -81,6 +82,9 @@ export function TimingMeter({
   perfectStart: number;
   perfectEnd: number;
   tier: "perfect" | "good" | null;
+  /** Finish 5.0 Phase 5 — cast strike band overlay (0..1 of cast duration). */
+  strikeStart?: number;
+  strikeEnd?: number;
 }) {
   const pct = Math.min(100, Math.max(0, progress01 * 100));
   return (
@@ -93,6 +97,12 @@ export function TimingMeter({
       aria-valuenow={Math.round(pct)}
       aria-valuetext={tier === "perfect" ? "Perfect window" : tier === "good" ? "Good window" : "Outside window"}
     >
+      {strikeStart != null && strikeEnd != null && (
+        <div
+          className="timing-band strike"
+          style={{ left: `${strikeStart * 100}%`, width: `${(strikeEnd - strikeStart) * 100}%` }}
+        />
+      )}
       <div className="timing-band good" style={{ left: `${goodStart * 100}%`, width: `${(goodEnd - goodStart) * 100}%` }} />
       <div className="timing-band perfect" style={{ left: `${perfectStart * 100}%`, width: `${(perfectEnd - perfectStart) * 100}%` }} />
       <div className="timing-needle" style={{ left: `${pct}%` }} />

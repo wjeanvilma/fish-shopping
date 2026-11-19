@@ -118,6 +118,42 @@
       "sku": "fish.cosmetic.aurora_crest",
       "status": "active",
       "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_aurora_bunting",
+      "sku": "fish.cosmetic.aurora_bunting",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_tideglass_pennant",
+      "sku": "fish.cosmetic.tideglass_pennant",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_inlet_flag",
+      "sku": "fish.cosmetic.inlet_flag",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_bay_streamer",
+      "sku": "fish.cosmetic.bay_streamer",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_poach_ribbon",
+      "sku": "fish.cosmetic.poach_ribbon",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_can_crest",
+      "sku": "fish.cosmetic.can_crest",
+      "status": "active",
+      "type": "non_consumable"
     }
   ]
 }

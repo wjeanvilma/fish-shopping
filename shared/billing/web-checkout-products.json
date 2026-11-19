@@ -156,6 +156,54 @@
       "status": "active",
       "type": "non_consumable",
       "stripePriceId": "price_test_fish_cosmetic_aurora_crest"
+    },
+    {
+      "webProductId": "fish.cosmetic.aurora_bunting",
+      "sku": "fish.cosmetic.aurora_bunting",
+      "androidProductId": "fish_cosmetic_aurora_bunting",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_aurora_bunting"
+    },
+    {
+      "webProductId": "fish.cosmetic.tideglass_pennant",
+      "sku": "fish.cosmetic.tideglass_pennant",
+      "androidProductId": "fish_cosmetic_tideglass_pennant",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_tideglass_pennant"
+    },
+    {
+      "webProductId": "fish.cosmetic.inlet_flag",
+      "sku": "fish.cosmetic.inlet_flag",
+      "androidProductId": "fish_cosmetic_inlet_flag",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_inlet_flag"
+    },
+    {
+      "webProductId": "fish.cosmetic.bay_streamer",
+      "sku": "fish.cosmetic.bay_streamer",
+      "androidProductId": "fish_cosmetic_bay_streamer",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_bay_streamer"
+    },
+    {
+      "webProductId": "fish.cosmetic.poach_ribbon",
+      "sku": "fish.cosmetic.poach_ribbon",
+      "androidProductId": "fish_cosmetic_poach_ribbon",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_poach_ribbon"
+    },
+    {
+      "webProductId": "fish.cosmetic.can_crest",
+      "sku": "fish.cosmetic.can_crest",
+      "androidProductId": "fish_cosmetic_can_crest",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_can_crest"
     }
   ]
 }

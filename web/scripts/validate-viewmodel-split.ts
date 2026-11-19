@@ -52,10 +52,21 @@ function validate(): string[] {
   if (catalog.contentVersion !== "3.0.0") errors.push("contentVersion must stay 3.0.0");
   if (catalog.schemaVersion !== 24) errors.push("schemaVersion must stay 24");
   if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
-  if (catalog.viewModelMaxLines !== 1500) errors.push("viewModelMaxLines must be 1500");
-  if (catalog.extractedFileMin !== 6) errors.push("extractedFileMin must be 6");
-  if ((catalog.requiredFiles as string[]).length !== 6) {
-    errors.push("requiredFiles must list 6 modules");
+  // Finish 5.0 Phase 4 soft-floors: fishing intents raised extracted floors.
+  if ((catalog.viewModelMaxLines ?? 0) < 1500) {
+    errors.push("viewModelMaxLines soft-floor must be ≥1500");
+  }
+  if ((catalog.extractedFileMin ?? 0) < 6) {
+    errors.push("extractedFileMin soft-floor must be ≥6");
+  }
+  if ((catalog.softFloors?.extractedFileHistoricalMin ?? 0) < 6) {
+    errors.push("soft floor extractedFileHistoricalMin must stay ≥6");
+  }
+  if ((catalog.requiredFiles as string[]).length < 6) {
+    errors.push("requiredFiles must list ≥6 modules");
+  }
+  if (!(catalog.requiredFiles as string[]).includes("vm/VmFishingIntents.kt")) {
+    errors.push("requiredFiles must include vm/VmFishingIntents.kt after Finish 5 Phase 4");
   }
 
   const measure = measureViewModelSplit(root);

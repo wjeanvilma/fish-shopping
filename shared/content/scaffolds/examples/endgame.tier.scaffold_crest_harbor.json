@@ -1,0 +1,13 @@
+{
+  "id": "endgame.tier.scaffold_crest_harbor",
+  "name": "Crest Harbor",
+  "description": "Authoring scaffold endgame tier for Crest Harbor. Tune gates/rewards before merge.",
+  "requiresPrestigeCount": 8,
+  "requiresRivalBeats": 0,
+  "requiresChallenges": 0,
+  "catchSpeedPermille": 1025,
+  "priceBonusPermille": 1025,
+  "coins": 400,
+  "requiresMarks": 0,
+  "requiresCrests": 0
+}

@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 + Finish 4.0 Phase 28 — fragment structural checks.
+ * Finish 2.0/3.0/4.0/5.0 — fragment structural checks.
  * Ajv lives in the web package; this module expects validateScaffoldFragment
  * to be provided by the web contentAuthoring wrapper when run via npm scripts.
  *
@@ -124,6 +124,38 @@ export function structuralScaffoldErrors(
     if (typeof document.undercutPriceMultPermille !== "number") {
       errors.push("undercutPriceMultPermille must be number");
     }
+  } else if (kind === "seasonal") {
+    if (typeof id === "string" && !/^event\.[a-z0-9_]+$/.test(id)) {
+      errors.push("seasonal id pattern");
+    }
+    if (typeof document.description !== "string") errors.push("description required");
+    for (const k of ["periodTicks", "startTick", "durationTicks"]) {
+      if (typeof document[k] !== "number") errors.push(`${k} must be number`);
+    }
+  } else if (kind === "endgame") {
+    if (typeof id === "string" && !/^endgame\.tier\.[a-z0-9_]+$/.test(id)) {
+      errors.push("endgame tier id pattern");
+    }
+    if (typeof document.description !== "string") errors.push("description required");
+    for (const k of [
+      "requiresPrestigeCount",
+      "requiresRivalBeats",
+      "requiresChallenges",
+      "catchSpeedPermille",
+      "priceBonusPermille",
+      "coins",
+    ]) {
+      if (typeof document[k] !== "number") errors.push(`${k} must be number`);
+    }
+  } else if (kind === "cosmetic") {
+    if (typeof id === "string" && !/^entitlement\.cosmetic\.[a-z0-9_]+$/.test(id)) {
+      errors.push("cosmetic id pattern");
+    }
+    if (typeof document.description !== "string") errors.push("description required");
+    if (typeof document.sku !== "string" || !document.sku) errors.push("sku required");
+    if (typeof document.grantsCosmetic !== "string") errors.push("grantsCosmetic required");
+    if (document.powerNeutral !== true) errors.push("powerNeutral must be true");
+    if (document.type !== "non_consumable") errors.push("type must be non_consumable");
   }
   return errors;
 }

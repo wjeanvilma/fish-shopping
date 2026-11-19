@@ -195,6 +195,22 @@ def ledger_bed(sr: int, seconds: float) -> list[float]:
     return normalize(out)
 
 
+def pressure_bed(sr: int, seconds: float) -> list[float]:
+    n = int(sr * seconds)
+    out = [0.0] * n
+    for i in range(n):
+        t = i / sr
+        pad = (
+            0.15 * math.sin(2 * math.pi * 98.0 * t)
+            + 0.12 * math.sin(2 * math.pi * 123.47 * t)
+            + 0.09 * math.sin(2 * math.pi * 155.56 * t)
+        )
+        pulse = 0.82 + 0.18 * math.sin(2 * math.pi * 3 * t / seconds)
+        tension = 0.045 * math.sin(2 * math.pi * 311.13 * t + 0.4 * math.sin(2 * math.pi * 1.5 * t / seconds))
+        out[i] = (pad * pulse + tension) * 0.53
+    return normalize(out)
+
+
 RENDERERS = {
     "harbor": harbor_bed,
     "shop": shop_bed,
@@ -204,6 +220,7 @@ RENDERERS = {
     "rival": rival_bed,
     "endgame": endgame_bed,
     "ledger": ledger_bed,
+    "pressure": pressure_bed,
 }
 
 

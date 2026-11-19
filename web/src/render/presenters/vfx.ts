@@ -121,10 +121,11 @@ export class FlyingTransfers {
 }
 
 /** Phase 16/21 — pooled world bursts (catch / pay / celebrate / machine_done). */
-export const VFX_BURST_POOL = 8;
+/** Finish 5.0 Phase 27 denser-scene burst pool for 12 harbors. */
+export const VFX_BURST_POOL = 10;
 export const VFX_BURST_POOL_BY_QUALITY = {
   low: 2,
-  medium: 4,
+  medium: 5,
   high: VFX_BURST_POOL,
 } as const;
 
@@ -154,7 +155,12 @@ export type WorldBurstKind =
   | "endgame_challenge"
   | "contract_accept"
   | "bait"
-  | "full_unlock";
+  | "full_unlock"
+  | "cast_strike"
+  | "spoil"
+  | "machine_break"
+  | "contract_deadline"
+  | "quest_near";
 
 export interface WorldBurstCue {
   xMm: number;
@@ -200,9 +206,14 @@ const BURST_DURATION_S: Record<WorldBurstKind, number> = {
   contract_accept: 0.35,
   bait: 0.3,
   full_unlock: 0.65,
+  cast_strike: 0.35,
+  spoil: 0.4,
+  machine_break: 0.45,
+  contract_deadline: 0.4,
+  quest_near: 0.35,
 };
 
-/** Phase 21 + Finish 2.0/3.0/4.0 shake kinds. */
+/** Phase 21 + Finish 2.0/3.0/4.0/5.0 shake kinds. */
 export type ShakeKind =
   | "catch"
   | "cut"
@@ -213,7 +224,9 @@ export type ShakeKind =
   | "rival_beat"
   | "prestige"
   | "endgame_tier"
-  | "endgame_challenge";
+  | "endgame_challenge"
+  | "cast_strike"
+  | "contract_deadline";
 
 export const SHAKE_DURATION_S = 0.18;
 /** Hard cap after quality scale (meters). */
@@ -229,6 +242,8 @@ export const SHAKE_AMPLITUDE_M: Record<ShakeKind, number> = {
   prestige: 0.08,
   endgame_tier: 0.08,
   endgame_challenge: 0.07,
+  cast_strike: 0.06,
+  contract_deadline: 0.07,
 };
 export const SHAKE_SCALE_BY_QUALITY = {
   low: 0.5,
@@ -425,6 +440,35 @@ export function resolveBaitBurst(v: SimView): WorldBurstCue {
 /** Finish 4.0 Phase 23 — full harbor unlock at the player. */
 export function resolveFullUnlockBurst(v: SimView): WorldBurstCue {
   return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "full_unlock" };
+}
+
+/** Finish 5.0 Phase 12 — cast strike splash at the player. */
+export function resolveCastStrikeBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "cast_strike" };
+}
+
+/** Finish 5.0 Phase 12 — spoil cue at the player. */
+export function resolveSpoilBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "spoil" };
+}
+
+/** Finish 5.0 Phase 12 — machine break flash above station output, else player. */
+export function resolveMachineBreakBurst(v: SimView, stationId?: string): WorldBurstCue {
+  if (stationId) {
+    const anchor = v.transferAnchors.find((a) => a.inventoryId === `inv.${stationId}.output`);
+    if (anchor) return { xMm: anchor.xMm, zMm: anchor.zMm, kind: "machine_break" };
+  }
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "machine_break" };
+}
+
+/** Finish 5.0 Phase 12 — contract deadline warn at the player. */
+export function resolveContractDeadlineBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "contract_deadline" };
+}
+
+/** Finish 5.0 Phase 12 — quest near-complete cue at the player. */
+export function resolveQuestNearBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "quest_near" };
 }
 
 /**

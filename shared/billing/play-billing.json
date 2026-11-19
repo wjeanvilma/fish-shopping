@@ -105,6 +105,36 @@
       "sku": "fish.cosmetic.aurora_crest",
       "androidProductId": "fish_cosmetic_aurora_crest",
       "grantsCosmetic": "banner.iap_aurora_crest"
+    },
+    {
+      "sku": "fish.cosmetic.aurora_bunting",
+      "androidProductId": "fish_cosmetic_aurora_bunting",
+      "grantsCosmetic": "banner.iap_aurora_bunting"
+    },
+    {
+      "sku": "fish.cosmetic.tideglass_pennant",
+      "androidProductId": "fish_cosmetic_tideglass_pennant",
+      "grantsCosmetic": "banner.iap_tideglass_pennant"
+    },
+    {
+      "sku": "fish.cosmetic.inlet_flag",
+      "androidProductId": "fish_cosmetic_inlet_flag",
+      "grantsCosmetic": "banner.iap_inlet_flag"
+    },
+    {
+      "sku": "fish.cosmetic.bay_streamer",
+      "androidProductId": "fish_cosmetic_bay_streamer",
+      "grantsCosmetic": "banner.iap_bay_streamer"
+    },
+    {
+      "sku": "fish.cosmetic.poach_ribbon",
+      "androidProductId": "fish_cosmetic_poach_ribbon",
+      "grantsCosmetic": "banner.iap_poach_ribbon"
+    },
+    {
+      "sku": "fish.cosmetic.can_crest",
+      "androidProductId": "fish_cosmetic_can_crest",
+      "grantsCosmetic": "banner.iap_can_crest"
     }
   ],
   "sandbox": {

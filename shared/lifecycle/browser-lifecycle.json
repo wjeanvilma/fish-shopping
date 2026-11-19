@@ -1,7 +1,7 @@
 {
   "phase": 28,
   "schema": "fish.lifecycle.browser_android.v1",
-  "description": "Browser + Android lifecycle QA gates: WebGL2, context loss, storage fallback, audio gesture/focus, tab/background pause+checkpoint, process-death restore via AtomicFile/IndexedDB slots, legacy fixtures migrate through schema 20\u2192current.",
+  "description": "Browser + Android lifecycle QA gates: WebGL2, context loss, storage fallback, audio gesture/focus, tab/background pause+checkpoint, process-death restore via AtomicFile/IndexedDB slots, legacy fixtures migrate through schema 20→current.",
   "web": {
     "webgl2Required": true,
     "webgl2GateCopy": "Fish Shopping needs a browser with WebGL 2. Try a current version of Chrome, Firefox, Edge or Safari, and make sure hardware acceleration is turned on.",
@@ -9,7 +9,7 @@
       "preventDefault": true,
       "pauseRenderWhileLost": true,
       "reloadHarborOnRestore": true,
-      "bannerCopy": "Graphics context lost \u2014 recovering scene\u2026"
+      "bannerCopy": "Graphics context lost — recovering scene…"
     },
     "storageUnavailable": {
       "fallback": "memory",
@@ -64,8 +64,8 @@
   },
   "fixtures": {
     "legacyDir": "shared/fixtures/legacy",
-    "migrateThroughSchema": 24,
-    "currentSchema": 25,
+    "migrateThroughSchema": 25,
+    "currentSchema": 26,
     "requiredLegacyVersions": [
       1,
       12,
@@ -80,7 +80,8 @@
       21,
       22,
       23,
-      24
+      24,
+      25
     ]
   }
 }

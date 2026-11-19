@@ -1,11 +1,12 @@
 """
-Finish 2.0 Phase 19 + Finish 3.0 Phase 8 + Finish 4.0 Phase 9/12 — authored harbor
-theme props + scenic pass beyond grey-box blockout density.
+Finish 2.0 Phase 19 + Finish 3.0 Phase 8 + Finish 4.0 Phase 9/12 + Finish 5.0
+Phase 14 — authored harbor theme props + scenic pass beyond grey-box blockout.
 
 Each theme adds distinct decorative meshes (HarborArt_* nodes) and palette
 overrides so all harbor GLBs are visibly authored while keeping presenter
 socket names unchanged. Phase 9 raises prop density / scenic accents so
 scenes are no longer mere blockouts. Phase 12 adds Mist Cove + Prism Reach.
+Phase 14 adds Aurora Inlet + Tideglass Bay.
 """
 from __future__ import annotations
 
@@ -15,6 +16,30 @@ HARBOR_ART_MARKER = "authored-finish-4.0-phase-9"
 HARBOR_ART_MIN = 10
 HARBOR_SCENIC_MARKER = "harbor-art-3"
 HARBOR_SCENIC_MIN_NODES = 10
+
+# Finish 5.0 Phase 7 — harbor art 5a (pass-catalog harbors 1–6).
+HARBOR_FINISH5_5A_MARKER = "harbor-art-5a"
+HARBOR_FINISH5_5A_THEMES = frozenset(
+    {
+        "sunrise",
+        "coral",
+        "storm",
+        "moon",
+        "obsidian",
+        "northlight",
+    }
+)
+
+# Finish 5.0 Phase 8 — harbor art 5b (pass-catalog harbors 7–10).
+HARBOR_FINISH5_5B_MARKER = "harbor-art-5b"
+HARBOR_FINISH5_5B_THEMES = frozenset(
+    {
+        "marina",
+        "ember",
+        "mist",
+        "prism",
+    }
+)
 
 # Harbor id suffix → theme key (content-pack harbor.id after "harbor.").
 AUTHORED_THEMES = {
@@ -28,6 +53,8 @@ AUTHORED_THEMES = {
     "ember_wharf": "ember",
     "mist_cove": "mist",
     "prism_reach": "prism",
+    "aurora_inlet": "aurora",
+    "tideglass_bay": "tideglass",
 }
 
 
@@ -490,13 +517,41 @@ THEME_PLACEMENTS = {
         ("art_tide_gauge", (9.0, 0.0, -2.0), 1.0),
         ("art_dock_ladder", (-14.5, -0.15, 1.2), 1.05),
     ],
+    "aurora": [
+        ("art_aurora_pole", (-7.0, 0.0, 2.0), 1.25),
+        ("art_aurora_pole", (4.0, 0.0, -2.5), 1.2),
+        ("art_aurora_pole", (-12.5, 0.0, -0.8), 1.15),
+        ("art_ice_marker", (-15.0, -0.1, 3.0), 1.2),
+        ("art_moon_lantern", (6.5, 0.0, 1.5), 1.1),
+        ("art_moon_lantern", (-3.5, 0.0, -3.0), 1.05),
+        ("art_kelp_cluster", (-14.0, -0.35, 1.0), 1.15),
+        ("art_planter", (2.5, 0.0, 2.5), 1.1),
+        ("art_canopy", (8.0, 0.0, 0.8), 1.05),
+        ("art_crate_stack", (0.5, 0.0, -3.0), 1.0),
+        ("art_signal_bell", (-5.0, 0.0, -2.0), 0.95),
+        ("art_dock_ladder", (-15.2, -0.15, 0.5), 1.05),
+    ],
+    "tideglass": [
+        ("art_tide_gauge", (-6.0, 0.0, 2.2), 1.2),
+        ("art_tide_gauge", (5.5, 0.0, -2.0), 1.15),
+        ("art_buoy", (-13.5, -0.25, 3.5), 0.95),
+        ("art_buoy", (-15.0, -0.25, -1.5), 0.9),
+        ("art_kelp_cluster", (-14.5, -0.35, 1.8), 1.2),
+        ("art_kelp_cluster", (3.0, -0.3, 3.2), 1.1),
+        ("art_lantern", (7.0, 0.0, 1.0), 1.05),
+        ("art_bench", (1.5, 0.0, 2.0), 1.05),
+        ("art_canopy", (8.5, 0.0, -1.0), 1.1),
+        ("art_crate_stack", (-1.0, 0.0, -3.2), 1.0),
+        ("art_bait_shed", (4.5, 0.0, -4.0), 1.05),
+        ("art_dock_ladder", (-15.0, -0.2, 0.8), 1.05),
+    ],
 }
 
 THEME_PALETTE = {
     "sunrise": {
         "water": "#3A8FB8",
         "pier": "#C9A66B",
-        "ground": "#8FA37A",
+        "ground": "#C9B48C",
     },
     "coral": {
         "water": "#2BB8C4",
@@ -551,6 +606,18 @@ THEME_PALETTE = {
         "pier": "#D0C8E0",
         "ground": "#90A8C0",
         "zone_fishing": "#70E0D8",
+    },
+    "aurora": {
+        "water": "#2A5888",
+        "pier": "#B8C8D8",
+        "ground": "#6A8098",
+        "zone_fishing": "#6BE0C8",
+    },
+    "tideglass": {
+        "water": "#2A8898",
+        "pier": "#A8C0C8",
+        "ground": "#789090",
+        "zone_fishing": "#5AD0C8",
     },
 }
 

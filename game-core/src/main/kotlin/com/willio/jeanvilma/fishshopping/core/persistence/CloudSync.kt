@@ -41,6 +41,9 @@ data class SnapshotSummary(
     val checksum: String,
 )
 
+/** Finish 5.0 Phase 22 — conflict severity for UX polish. */
+enum class CloudConflictSeverity { LOW, MEDIUM, HIGH }
+
 /** When both local and remote are valid but differ, UI must ask before applying. */
 data class CloudConflictOffer(
     val local: SnapshotSummary,
@@ -51,6 +54,12 @@ data class CloudConflictOffer(
     val reasonCode: String,
     /** Finish 4.0 Phase 21 — short UX hints describing local vs remote diffs. */
     val diffHints: List<String>,
+    /** Finish 5.0 Phase 22 — UX severity from coin/playtime skew. */
+    val severity: CloudConflictSeverity = CloudConflictSeverity.LOW,
+    /** Finish 5.0 Phase 22 — absolute save-age skew in ms. */
+    val ageSkewMs: Long = 0L,
+    /** Finish 5.0 Phase 22 — short sync diagnostic lines. */
+    val syncDiagnostics: List<String> = emptyList(),
     val localText: String,
     val remoteText: String,
 )
@@ -156,6 +165,7 @@ object CloudSync {
         }
         val localSummary = summaryOf(local, SyncSource.LOCAL)
         val remoteSummary = summaryOf(remote, SyncSource.REMOTE)
+        val severity = severityOf(localSummary, remoteSummary)
         return CloudConflictOffer(
             local = localSummary,
             remote = remoteSummary,
@@ -163,6 +173,9 @@ object CloudSync {
             reason = decision.reason,
             reasonCode = reasonCodeOf(decision.reason),
             diffHints = diffHints(localSummary, remoteSummary),
+            severity = severity,
+            ageSkewMs = ageSkewMs(localSummary, remoteSummary),
+            syncDiagnostics = syncDiagnostics(localSummary, remoteSummary, severity),
             localText = local.text,
             remoteText = remote.text,
         )
@@ -199,5 +212,38 @@ object CloudSync {
             else -> hints += "Same save age; prefer this device"
         }
         return hints
+    }
+
+    /** Finish 5.0 Phase 22 — severity from coin / playtime / harbor skew. */
+    fun severityOf(local: SnapshotSummary, remote: SnapshotSummary): CloudConflictSeverity {
+        val coinSkew = kotlin.math.abs(remote.coins - local.coins)
+        val tickSkew = kotlin.math.abs(remote.tick - local.tick)
+        val harborSkew = local.harborId.isNotBlank() && remote.harborId.isNotBlank() &&
+            local.harborId != remote.harborId
+        return when {
+            coinSkew >= 500L || tickSkew >= 20_000L || harborSkew -> CloudConflictSeverity.HIGH
+            coinSkew >= 50L || tickSkew >= 2_000L -> CloudConflictSeverity.MEDIUM
+            else -> CloudConflictSeverity.LOW
+        }
+    }
+
+    fun ageSkewMs(local: SnapshotSummary, remote: SnapshotSummary): Long =
+        kotlin.math.abs(remote.savedAtEpochMs - local.savedAtEpochMs)
+
+    fun syncDiagnostics(
+        local: SnapshotSummary,
+        remote: SnapshotSummary,
+        severity: CloudConflictSeverity = severityOf(local, remote),
+    ): List<String> {
+        val lines = mutableListOf(
+            "severity ${severity.name.lowercase()}",
+            "age skew ${ageSkewMs(local, remote) / 1000L}s",
+            "coin delta ${remote.coins - local.coins}",
+            "tick delta ${remote.tick - local.tick}",
+        )
+        if (local.harborId != remote.harborId) {
+            lines += "harbor ${local.harborId.ifBlank { "?" }} → ${remote.harborId.ifBlank { "?" }}"
+        }
+        return lines
     }
 }

@@ -11,6 +11,37 @@ from glb_geometry import add_box, fish_silhouette, mesh_bounds, normalize_mesh
 
 FISH_ART_MARKER = "authored-phase-20"
 FISH_ART_MIN = 100  # Finish 4.0 Phase 8 floor (meshes 76–100 locked)
+FISH_FINISH5_MARKER = "fish-art-5"  # Finish 5.0 Phase 9
+FISH_ART_FINISH5_MIN = 125
+FINISH5_ART_AHEAD_IDS = frozenset(
+    {
+        "species.mist_sprat",
+        "species.gilt_mist",
+        "species.veil_shad",
+        "species.prism_veil",
+        "species.dusk_mullet",
+        "species.bronze_dusk",
+        "species.shelf_blenny",
+        "species.opal_shelf",
+        "species.coral_scad",
+        "species.gilt_scad",
+        "species.storm_drum",
+        "species.thunder_storm",
+        "species.ember_ray",
+        "species.magma_ember",
+        "species.north_smelt",
+        "species.aurora_north",
+        "species.marina_jack",
+        "species.gilt_marina",
+        "species.lantern_pike",
+        "species.prism_lantern",
+        "species.brine_goby",
+        "species.crystal_brine",
+        "species.plaza_wrasse",
+        "species.crown_plaza",
+        "species.mist_tuna",
+    }
+)
 
 # species.id → theme key (must be unique; specialty geometry + palette differ).
 AUTHORED_SPECIES = {
@@ -116,6 +147,32 @@ AUTHORED_SPECIES = {
     "species.rime_herring": "rime_herring",
     "species.crystal_rime": "crystal_rime",
     "species.plaza_tuna": "plaza_tuna",
+    # Finish 5.0 Phase 9 — species 101–125 (art-ahead)
+    "species.mist_sprat": "mist_sprat",
+    "species.gilt_mist": "gilt_mist",
+    "species.veil_shad": "veil_shad",
+    "species.prism_veil": "prism_veil",
+    "species.dusk_mullet": "dusk_mullet",
+    "species.bronze_dusk": "bronze_dusk",
+    "species.shelf_blenny": "shelf_blenny",
+    "species.opal_shelf": "opal_shelf",
+    "species.coral_scad": "coral_scad",
+    "species.gilt_scad": "gilt_scad",
+    "species.storm_drum": "storm_drum",
+    "species.thunder_storm": "thunder_storm",
+    "species.ember_ray": "ember_ray",
+    "species.magma_ember": "magma_ember",
+    "species.north_smelt": "north_smelt",
+    "species.aurora_north": "aurora_north",
+    "species.marina_jack": "marina_jack",
+    "species.gilt_marina": "gilt_marina",
+    "species.lantern_pike": "lantern_pike",
+    "species.prism_lantern": "prism_lantern",
+    "species.brine_goby": "brine_goby",
+    "species.crystal_brine": "crystal_brine",
+    "species.plaza_wrasse": "plaza_wrasse",
+    "species.crown_plaza": "crown_plaza",
+    "species.mist_tuna": "mist_tuna",
 }
 
 THEME_COLORS = {
@@ -219,6 +276,32 @@ THEME_COLORS = {
     "rime_herring": {"body": "#A0B8C8", "fin": "#708898", "accent": "#D0E8F0"},
     "crystal_rime": {"body": "#B0E0F0", "fin": "#78B0C0", "accent": "#E0F8FF"},
     "plaza_tuna": {"body": "#2E6080", "fin": "#1A4058", "accent": "#6098B8"},
+    # Finish 5.0 Phase 9 colors
+    "mist_sprat": {"body": "#A8C0D0", "fin": "#7890A0", "accent": "#D8E8F0"},
+    "gilt_mist": {"body": "#D4B060", "fin": "#A08840", "accent": "#F0D890"},
+    "veil_shad": {"body": "#8A9BB0", "fin": "#6A7A90", "accent": "#C8D4E0"},
+    "prism_veil": {"body": "#9B7ED9", "fin": "#6A50A0", "accent": "#C8B0F0"},
+    "dusk_mullet": {"body": "#6A5080", "fin": "#4A3060", "accent": "#A080C0"},
+    "bronze_dusk": {"body": "#CD7F32", "fin": "#9A5A20", "accent": "#E0A060"},
+    "shelf_blenny": {"body": "#3D7A6A", "fin": "#2A5A4A", "accent": "#70B0A0"},
+    "opal_shelf": {"body": "#9AD0C5", "fin": "#68A898", "accent": "#C8F0E8"},
+    "coral_scad": {"body": "#E07070", "fin": "#A04040", "accent": "#F0A0A0"},
+    "gilt_scad": {"body": "#D0A050", "fin": "#987830", "accent": "#E8C880"},
+    "storm_drum": {"body": "#5A7088", "fin": "#3A5068", "accent": "#90A8C0"},
+    "thunder_storm": {"body": "#6A5ACD", "fin": "#4A3A9D", "accent": "#A090F0"},
+    "ember_ray": {"body": "#D4552A", "fin": "#902010", "accent": "#F09050"},
+    "magma_ember": {"body": "#E04020", "fin": "#A02010", "accent": "#F07040"},
+    "north_smelt": {"body": "#B8D4E8", "fin": "#88A8C0", "accent": "#E0F0FF"},
+    "aurora_north": {"body": "#6BC4C8", "fin": "#409098", "accent": "#A0E8E8"},
+    "marina_jack": {"body": "#2E6B8A", "fin": "#1A4860", "accent": "#60A0C0"},
+    "gilt_marina": {"body": "#C9A040", "fin": "#907028", "accent": "#E8C060"},
+    "lantern_pike": {"body": "#E8C07A", "fin": "#D4A84B", "accent": "#F5E6C8"},
+    "prism_lantern": {"body": "#9B7ED9", "fin": "#6A50A0", "accent": "#C8B0F0"},
+    "brine_goby": {"body": "#C8E0E8", "fin": "#90B0C0", "accent": "#E8F4F8"},
+    "crystal_brine": {"body": "#A8E0F0", "fin": "#70B0C0", "accent": "#E0F8FF"},
+    "plaza_wrasse": {"body": "#E07070", "fin": "#A04040", "accent": "#F0A0A0"},
+    "crown_plaza": {"body": "#C9A227", "fin": "#907018", "accent": "#E8C850"},
+    "mist_tuna": {"body": "#7FA8C4", "fin": "#507890", "accent": "#B0D0E0"},
 }
 
 # Unique specialty box layouts — ensures pairwise-distinct authored digests.
@@ -323,6 +406,32 @@ THEME_SPECIALTY = {
     "rime_herring": [((0.0, -0.07, 0.0), (0.28, 0.05, 0.1)), ((0.08, 0.07, 0.0), (0.12, 0.06, 0.08))],
     "crystal_rime": [((0.0, -0.05, 0.0), (0.26, 0.05, 0.1)), ((0.0, 0.1, 0.0), (0.14, 0.04, 0.12))],
     "plaza_tuna": [((0.05, 0.0, 0.0), (0.42, 0.24, 0.2)), ((0.18, 0.1, 0.0), (0.12, 0.12, 0.12))],
+    # Finish 5.0 Phase 9 specialty
+    "mist_sprat": [((0.18, 0.03, 0.0), (0.14, 0.06, 0.06)), ((-0.1, -0.04, 0.0), (0.16, 0.04, 0.08))],
+    "gilt_mist": [((0.2, 0.04, 0.0), (0.14, 0.06, 0.06)), ((-0.08, -0.03, 0.06), (0.14, 0.04, 0.08))],
+    "veil_shad": [((0.22, 0.08, 0.0), (0.12, 0.12, 0.1)), ((0.22, 0.08, 0.0), (0.06, 0.06, 0.16))],
+    "prism_veil": [((0.2, 0.1, 0.06), (0.1, 0.1, 0.08)), ((0.2, 0.1, -0.06), (0.1, 0.1, 0.08))],
+    "dusk_mullet": [((0.1, 0.0, 0.0), (0.18, 0.18, 0.18)), ((0.16, 0.06, 0.0), (0.08, 0.1, 0.1))],
+    "bronze_dusk": [((0.12, 0.02, 0.0), (0.18, 0.18, 0.18)), ((0.18, 0.08, 0.0), (0.08, 0.1, 0.1))],
+    "shelf_blenny": [((0.16, 0.06, 0.0), (0.12, 0.1, 0.08)), ((-0.08, -0.04, 0.0), (0.14, 0.06, 0.08))],
+    "opal_shelf": [((0.14, 0.08, 0.04), (0.12, 0.1, 0.08)), ((0.14, 0.08, -0.04), (0.12, 0.1, 0.08))],
+    "coral_scad": [((0.1, 0.04, 0.0), (0.24, 0.1, 0.12)), ((-0.12, -0.04, 0.0), (0.16, 0.06, 0.1))],
+    "gilt_scad": [((0.08, 0.05, 0.0), (0.22, 0.1, 0.12)), ((-0.1, 0.0, 0.08), (0.12, 0.08, 0.08))],
+    "storm_drum": [((0.0, 0.0, 0.0), (0.34, 0.26, 0.22)), ((0.12, 0.1, 0.0), (0.1, 0.1, 0.12))],
+    "thunder_storm": [((0.02, 0.02, 0.0), (0.32, 0.24, 0.2)), ((0.0, 0.14, 0.0), (0.12, 0.1, 0.1))],
+    "ember_ray": [((0.0, 0.0, 0.2), (0.36, 0.04, 0.24)), ((0.0, 0.0, -0.2), (0.36, 0.04, 0.24))],
+    "magma_ember": [((0.0, 0.0, 0.18), (0.34, 0.04, 0.22)), ((-0.2, 0.0, 0.0), (0.12, 0.04, 0.1))],
+    "north_smelt": [((0.22, 0.02, 0.0), (0.18, 0.05, 0.05)), ((-0.14, -0.03, 0.0), (0.16, 0.04, 0.08))],
+    "aurora_north": [((0.2, 0.04, 0.0), (0.18, 0.05, 0.05)), ((0.0, 0.12, 0.0), (0.1, 0.08, 0.08))],
+    "marina_jack": [((0.1, 0.0, 0.0), (0.28, 0.14, 0.12)), ((-0.14, 0.06, 0.0), (0.12, 0.1, 0.08))],
+    "gilt_marina": [((0.08, 0.04, 0.0), (0.26, 0.12, 0.12)), ((0.0, 0.14, 0.0), (0.1, 0.1, 0.1))],
+    "lantern_pike": [((0.22, 0.0, 0.0), (0.3, 0.08, 0.08)), ((-0.16, 0.04, 0.0), (0.2, 0.06, 0.06))],
+    "prism_lantern": [((0.24, 0.0, 0.0), (0.32, 0.08, 0.08)), ((-0.14, -0.04, 0.0), (0.18, 0.06, 0.06))],
+    "brine_goby": [((0.2, 0.02, 0.0), (0.1, 0.06, 0.06)), ((-0.12, 0.04, 0.0), (0.16, 0.04, 0.08))],
+    "crystal_brine": [((0.18, 0.06, 0.04), (0.1, 0.06, 0.06)), ((0.18, 0.06, -0.04), (0.1, 0.06, 0.06))],
+    "plaza_wrasse": [((0.0, 0.12, 0.0), (0.18, 0.14, 0.1)), ((0.1, 0.0, 0.1), (0.12, 0.1, 0.08))],
+    "crown_plaza": [((0.0, 0.11, 0.0), (0.2, 0.12, 0.1)), ((-0.08, 0.0, 0.1), (0.12, 0.1, 0.08))],
+    "mist_tuna": [((0.05, 0.0, 0.0), (0.4, 0.22, 0.18)), ((0.18, 0.08, 0.0), (0.12, 0.1, 0.1))],
 }
 
 

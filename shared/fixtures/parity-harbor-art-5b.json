@@ -1,0 +1,23 @@
+{
+  "schema": "fish.fixtures.parity_harbor_art_5b.v1",
+  "harborArt5bMarker": "authored-finish-5.0-phase-8",
+  "harborFinish5Marker": "harbor-art-5b",
+  "phase": 8,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "finish5HarborTarget": 4,
+    "minHarborArtNodes": 10,
+    "schemaVersion": 25,
+    "contentVersion": "4.0.0",
+    "harborArt5IncompleteClosed": true,
+    "authoredHarborsUnchanged": 10,
+    "gates": [
+      "finish5_harbors_stamped",
+      "scenic_nodes_met",
+      "gap_closed",
+      "kickoff_phase_wired",
+      "authored_harbors_unchanged",
+      "ci_gate"
+    ]
+  }
+}

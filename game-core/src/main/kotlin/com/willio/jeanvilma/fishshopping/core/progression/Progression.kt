@@ -162,6 +162,19 @@ object ProgressionSystem {
         return content.upgradesById[missing]?.name ?: content.questsById[missing]?.name ?: missing
     }
 
+    /**
+     * Finish 5.0 Phase 3 — progress toward the first unlocked incomplete quest (0..1000).
+     * Null when tutorial unfinished or no unlocked quest remains.
+     */
+    fun nextQuestProgressPermille(content: ContentPack, s: GameState): Int? {
+        if (s.tutorialIndex < content.tutorial.size) return null
+        val q = content.quests.firstOrNull { it.id !in s.completedQuests && requirementsMet(s, it) }
+            ?: return null
+        val target = q.goal.atLeast.coerceAtLeast(1).toLong()
+        val progress = s.stat(q.goal.stat).coerceAtMost(target)
+        return ((progress * 1000L) / target).toInt()
+    }
+
     private fun completeQuest(ctx: StepContext, q: QuestDef) {
         val s = ctx.state
         s.completedQuests += q.id

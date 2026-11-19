@@ -7,12 +7,14 @@ import {
   enqueueRemoteEvent,
   normalizeAnalyticsBaseUrl,
   remoteBatchUrl,
+  remoteRetryDelayMs,
   requeueRemoteFlushSlice,
   REMOTE_FLUSH_INTERVAL_MS,
   REMOTE_MAX_FLUSH_RETRIES,
   REMOTE_REQUEUE_ON_FLUSH_FAILURE,
-  REMOTE_RETRY_BACKOFF_MS,
+  REMOTE_RETRY_JITTER_MS,
   REMOTE_ANALYTICS_POLICY,
+  shouldDeadLetterRemoteFlush,
   takeRemoteFlushSliceDetailed,
   type QueuedRemoteEvent,
   type RemoteBatchEnvelope,
@@ -50,6 +52,7 @@ export class RemoteAnalyticsSink implements AnalyticsTrackSink {
   private batchesSent = 0;
   private eventsAccepted = 0;
   private flushFailures = 0;
+  private deadLetterCount = 0;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(opts: {
@@ -103,29 +106,37 @@ export class RemoteAnalyticsSink implements AnalyticsTrackSink {
         this.flushFailures = 0;
         return true;
       }
-      // Finish 4.0 Phase 21 — requeue failed slice and schedule retry.
-      if (REMOTE_REQUEUE_ON_FLUSH_FAILURE) {
-        requeueRemoteFlushSlice(this.queue, taken);
-        this.scheduleRetry();
-      }
+      // Finish 4.0 Phase 21 / Finish 5.0 Phase 22 — requeue or dead-letter.
+      this.handleFlushFailure(taken);
       return false;
     } catch {
       this.lastFlushOk = false;
-      if (REMOTE_REQUEUE_ON_FLUSH_FAILURE && taken.length > 0) {
-        requeueRemoteFlushSlice(this.queue, taken);
-        this.scheduleRetry();
-      }
+      this.handleFlushFailure(taken);
       return false;
     } finally {
       this.flushing = false;
     }
   }
 
+  private handleFlushFailure(taken: QueuedRemoteEvent[]): void {
+    if (!REMOTE_REQUEUE_ON_FLUSH_FAILURE || taken.length === 0) return;
+    if (shouldDeadLetterRemoteFlush(this.flushFailures + 1)) {
+      this.deadLetterCount += taken.length;
+      this.flushFailures = REMOTE_MAX_FLUSH_RETRIES;
+      return;
+    }
+    requeueRemoteFlushSlice(this.queue, taken);
+    this.scheduleRetry();
+  }
+
   private scheduleRetry(): void {
     if (this.flushFailures >= REMOTE_MAX_FLUSH_RETRIES) return;
     if (this.retryTimer) return;
     this.flushFailures += 1;
-    const delay = REMOTE_RETRY_BACKOFF_MS * this.flushFailures;
+    const jitter = REMOTE_RETRY_JITTER_MS > 0
+      ? Math.floor(Math.random() * (REMOTE_RETRY_JITTER_MS + 1))
+      : 0;
+    const delay = remoteRetryDelayMs(this.flushFailures, jitter);
     this.retryTimer = setTimeout(() => {
       this.retryTimer = null;
       void this.flush();
@@ -156,6 +167,7 @@ export class RemoteAnalyticsSink implements AnalyticsTrackSink {
     eventsAccepted: number;
     lastFlushOk: boolean;
     flushFailures: number;
+    deadLetterCount: number;
   } {
     return {
       queued: this.queue.length,
@@ -163,6 +175,7 @@ export class RemoteAnalyticsSink implements AnalyticsTrackSink {
       eventsAccepted: this.eventsAccepted,
       lastFlushOk: this.lastFlushOk,
       flushFailures: this.flushFailures,
+      deadLetterCount: this.deadLetterCount,
     };
   }
 }

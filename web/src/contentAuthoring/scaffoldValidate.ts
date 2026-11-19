@@ -1,6 +1,5 @@
 /**
- * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 + Finish 4.0 Phase 28 —
- * Ajv fragment validation for content scaffolds.
+ * Finish 2.0/3.0/4.0/5.0 — Ajv fragment validation for content scaffolds.
  */
 import Ajv2020 from "ajv/dist/2020";
 import schema from "../../../shared/schema/content-pack.schema.json";
@@ -23,6 +22,12 @@ const validateDecor = ajv.compile({
 const validateMachine = ajv.compile({ $ref: "content-pack#/properties/machines/items" });
 const validateRival = ajv.compile({
   $ref: "content-pack#/properties/rivalMarkets/properties/rivals/items",
+});
+const validateSeasonal = ajv.compile({
+  $ref: "content-pack#/properties/seasonalEvents/properties/events/items",
+});
+const validateEndgame = ajv.compile({
+  $ref: "content-pack#/properties/endgame/properties/tiers/items",
 });
 
 function ajvErrors(validate: { errors?: Array<{ instancePath?: string; message?: string }> | null }): string[] {
@@ -49,6 +54,13 @@ function validatorFor(kind: ScaffoldKind) {
       return validateMachine;
     case "rival":
       return validateRival;
+    case "seasonal":
+      return validateSeasonal;
+    case "endgame":
+      return validateEndgame;
+    case "cosmetic":
+      // Billing entitlement fragment — structural checks only (not content-pack schema).
+      return null;
   }
 }
 
@@ -60,6 +72,7 @@ export function validateScaffoldFragment(
   if (structural.length) return structural;
 
   const validate = validatorFor(kind);
+  if (!validate) return [];
   const ok = validate(document) as boolean;
   return ok ? [] : ajvErrors(validate);
 }

@@ -1,7 +1,7 @@
 {
   "phase": 11,
   "schema": "fish.store.listing_copy.v1",
-  "description": "Frozen Play / web listing copy for store ship. Finish 4.0 Phase 30 freezes whatsNew at 4.0.0; English remains the canonical en freeze for pin/whatsNewVersion.",
+  "description": "Frozen Play / web listing copy for store ship. Finish 5.0 Phase 30 freezes whatsNew at 5.0.0; English remains the canonical en freeze for pin/whatsNewVersion.",
   "frozen": true,
   "packageName": "com.willio.jeanvilma.fishshopping",
   "releasePin": "shared/fixtures/RELEASE_PIN.json",
@@ -10,7 +10,12 @@
   "locales": [
     "en",
     "es",
-    "pt"
+    "pt",
+    "fr",
+    "ht",
+    "it",
+    "ca",
+    "ru"
   ],
   "playLimits": {
     "titleMax": 50,
@@ -23,7 +28,7 @@
     "shortDescription": "Catch, cut, and sell fish in a cozy 3D harbor market.",
     "fullDescription": "Run your own waterfront fish market. Cast from the pier, process catches on the cutter, stock the counter, and serve a growing crowd. Hire staff, unlock upgrades, take delivery contracts, and expand to new harbors — all with a fixed 20 Hz simulation shared by Android and web.\n\nFirst session loop: fish → cut → stock → sell.\n\nOptional cloud sync and privacy-safe analytics are off until you opt in. One-time harbor unlock and power-neutral cosmetics are available via in-app purchase; Restore purchases recovers entitlements on a new device.",
     "whatsNew": "4.0.0 freeze — one hundred species, fifty quests, twelve machines, ten harbors, twelve rival markets, schema 25 endgame, parity lock 4.0, and Finish 4.0 ops. Schema 25; prior 3.0 saves still load.",
-    "whatsNewVersion": "4.0.0"
+    "whatsNewVersion": "5.0.0"
   },
   "webLanding": {
     "title": "Fish Shopping",
@@ -52,16 +57,36 @@
     "shared/store/locales/en.json",
     "shared/store/locales/es.json",
     "shared/store/locales/pt.json",
+    "shared/store/locales/fr.json",
+    "shared/store/locales/ht.json",
+    "shared/store/locales/it.json",
+    "shared/store/locales/ca.json",
+    "shared/store/locales/ru.json",
     "app/src/main/res/values/strings.xml",
     "app/src/main/res/values-es/strings.xml",
-    "app/src/main/res/values-pt/strings.xml"
+    "app/src/main/res/values-pt/strings.xml",
+    "app/src/main/res/values-fr/strings.xml",
+    "app/src/main/res/values-ht/strings.xml",
+    "app/src/main/res/values-it/strings.xml",
+    "app/src/main/res/values-ca/strings.xml",
+    "app/src/main/res/values-ru/strings.xml"
   ],
   "playConsoleChecklist": [
     "Paste title / short / full from copy.* (en locale)",
-    "Paste es locale from shared/store/locales/es.json when publishing Spanish listing",
-    "Paste pt locale from shared/store/locales/pt.json when publishing Portuguese listing",
+    "Paste es locale from shared/store/locales/es.json when publishing es listing",
+    "Paste pt locale from shared/store/locales/pt.json when publishing pt listing",
+    "Paste fr locale from shared/store/locales/fr.json when publishing fr listing",
+    "Paste ht locale from shared/store/locales/ht.json when publishing ht listing",
+    "Paste it locale from shared/store/locales/it.json when publishing it listing",
+    "Paste ca locale from shared/store/locales/ca.json when publishing ca listing",
+    "Paste ru locale from shared/store/locales/ru.json when publishing ru listing",
     "Paste whatsNew into Release notes for versionName from RELEASE_PIN",
     "Category Simulation · content rating Everyone",
-    "Finish 3.0 locales: en + es + pt present"
-  ]
+    "Locales: en + es + pt + fr + ht + it + ca + ru present"
+  ],
+  "androidStringsFr": "app/src/main/res/values-fr/strings.xml",
+  "androidStringsHt": "app/src/main/res/values-ht/strings.xml",
+  "androidStringsIt": "app/src/main/res/values-it/strings.xml",
+  "androidStringsCa": "app/src/main/res/values-ca/strings.xml",
+  "androidStringsRu": "app/src/main/res/values-ru/strings.xml"
 }

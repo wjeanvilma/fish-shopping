@@ -10,10 +10,11 @@ object FishArtPass {
     const val SCHEMA = "fish.ship.fish_art_pass.v1"
     const val CONTENT_VERSION = "2.0.0"
     const val SCHEMA_VERSION = 23
-    const val AUTHORED_SPECIES_MIN = 100
+    const val AUTHORED_SPECIES_MIN = 125
+    const val AUTHORED_SPECIES_HISTORICAL_MIN = 100
     const val FISH_ART_MARKER = "authored-phase-20"
     const val MAX_BYTES_PER_FISH = 32_000
-    const val MAX_TOTAL_AUTHORED_BYTES = 3_200_000
+    const val MAX_TOTAL_AUTHORED_BYTES = 4_000_000
     const val PARITY_FIXTURE = "shared/fixtures/parity-fish-art-pass.json"
     const val CATALOG = "shared/ship/fish-art-pass.json"
 

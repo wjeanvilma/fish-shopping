@@ -128,6 +128,10 @@ internal fun ContractsPanel(
     refreshTicksLeft: Int,
     failStreak: Int,
     failStreakThreshold: Int,
+    /** Finish 5.0 Phase 4 — nearest active deadline ticks. */
+    ticksUntilNearestContractDeadline: Int? = null,
+    /** Finish 5.0 Phase 4 — fail-streak board pressure (1000 = at threshold). */
+    contractBoardPressurePermille: Int = 0,
     onAccept: (String) -> Unit,
     onDeliver: (String) -> Unit,
     onClose: () -> Unit,
@@ -157,12 +161,33 @@ internal fun ContractsPanel(
                         Text(
                             buildString {
                                 append(UiStrings.t("a11y.failStreak", mapOf("count" to failStreak)))
-                                if (failStreak >= failStreakThreshold) append(" · board pressure on")
+                                if (failStreak >= failStreakThreshold || contractBoardPressurePermille >= 1000) {
+                                    append(" · board pressure on")
+                                }
                             },
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (failStreak >= failStreakThreshold) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            color = if (failStreak >= failStreakThreshold || contractBoardPressurePermille >= 1000) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            },
                             modifier = Modifier.semantics {
                                 contentDescription = UiStrings.t("a11y.failStreak", mapOf("count" to failStreak))
+                            },
+                        )
+                    }
+                    if (unlocked && ticksUntilNearestContractDeadline != null) {
+                        Text(
+                            buildString {
+                                append("Nearest deadline · ")
+                                append(formatRushSeconds(ticksUntilNearestContractDeadline))
+                                append("s")
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (ticksUntilNearestContractDeadline <= 200) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             },
                         )
                     }

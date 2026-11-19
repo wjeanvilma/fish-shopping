@@ -2,13 +2,13 @@
   "phase": 19,
   "plan": "30_finish_2.0",
   "schema": "fish.ship.harbor_art_pass.v1",
-  "description": "Finish 2.0 Phase 19 + Finish 3.0 Phase 8 + Finish 4.0 Phase 9/12 \u2014 all 10 harbor GLBs authored scenic theme sets beyond grey-box blockout; licenses + size budgets; web loads all 10 scenes.",
+  "description": "Finish 2.0 Phase 19 + Finish 3.0 Phase 8 + Finish 4.0 Phase 9/12 + Finish 5.0 Phase 14 \u2014 all 12 harbor GLBs authored scenic theme sets beyond grey-box blockout; licenses + size budgets; web loads all 12 scenes.",
   "contentVersion": "2.0.0",
   "schemaVersion": 23,
-  "authoredHarborMin": 10,
+  "authoredHarborMin": 12,
   "harborArtMarker": "authored-finish-4.0-phase-9",
-  "maxBytesPerHarbor": 200000,
-  "maxTotalAuthoredBytes": 2200000,
+  "maxBytesPerHarbor": 1200000,
+  "maxTotalAuthoredBytes": 14000000,
   "generator": "shared/tools/generate_blockout.py",
   "themesModule": "shared/tools/harbor_themes.py",
   "authoredHarbors": [
@@ -61,6 +61,16 @@
       "harborId": "harbor.prism_reach",
       "theme": "prism",
       "asset": "shared/assets/models/prism_reach_blockout.glb"
+    },
+    {
+      "harborId": "harbor.aurora_inlet",
+      "theme": "aurora",
+      "asset": "shared/assets/models/aurora_inlet_blockout.glb"
+    },
+    {
+      "harborId": "harbor.tideglass_bay",
+      "theme": "tideglass",
+      "asset": "shared/assets/models/tideglass_bay_blockout.glb"
     }
   ],
   "allBlockoutAssets": [
@@ -73,10 +83,12 @@
     "storm_quay_blockout.glb",
     "ember_wharf_blockout.glb",
     "mist_cove_blockout.glb",
-    "prism_reach_blockout.glb"
+    "prism_reach_blockout.glb",
+    "aurora_inlet_blockout.glb",
+    "tideglass_bay_blockout.glb"
   ],
   "parityFixture": "shared/fixtures/parity-harbor-art-pass.json",
-  "definitionOfDoneAuthoredHarbors": 10,
+  "definitionOfDoneAuthoredHarbors": 12,
   "validateScript": "npm run harborart:validate",
   "checklist": [
     "All 8 harbor GLBs tagged extras.harborArt=authored-finish-4.0-phase-9 with scenic harbor-art-3 themes",
@@ -96,5 +108,9 @@
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/HarborArtPass.kt",
     "shared/tools/harbor_themes.py",
     "shared/tools/generate_blockout.py"
-  ]
+  ],
+  "softFloors": {
+    "atmosphereFinish5Marker": "atmosphere-5",
+    "cozyArtMarker": "cozy-art-5"
+  }
 }

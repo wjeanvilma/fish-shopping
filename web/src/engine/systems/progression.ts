@@ -152,6 +152,21 @@ export const ProgressionSystem = {
     if (!missing) return null;
     return content.upgradesById.get(missing)?.name ?? content.questsById.get(missing)?.name ?? missing;
   },
+
+  /**
+   * Finish 5.0 Phase 3 — progress toward the first unlocked incomplete quest (0..1000).
+   * Null when tutorial unfinished or no unlocked quest remains.
+   */
+  nextQuestProgressPermille(content: ContentPack, s: GameState): number | null {
+    if (s.tutorialIndex < content.tutorial.length) return null;
+    const q = content.quests.find(
+      (quest) => !s.completedQuests.has(quest.id) && ProgressionSystem.requirementsMet(s, quest),
+    );
+    if (!q) return null;
+    const target = Math.max(1, q.goal.atLeast);
+    const progress = Math.min(s.stat(q.goal.stat), target);
+    return Math.trunc((progress * 1000) / target);
+  },
 };
 
 function completeQuest(ctx: StepContext, q: QuestDef): void {
