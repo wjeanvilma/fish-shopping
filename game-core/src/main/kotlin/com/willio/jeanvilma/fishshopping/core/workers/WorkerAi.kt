@@ -560,7 +560,7 @@ fun stepIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef) {
     }
 }
 
-/** Finish 3.0 Phase 11 — chill_haul chains fragile pickups before dropping. */
+/** Finish 3.0 Phase 11 / Finish 6.0 Phase 16 — chill_haul / nest_chill chain fragile pickups. */
 fun pickupIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef) {
     if (w.transferCooldown > 0) return
     val sourceId = w.taskSourceInvId
@@ -581,7 +581,9 @@ fun pickupIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef) {
     ctx.state.bumpStat(Stats.WORKER_ITEMS_MOVED)
     ctx.emit(GameEvent.ItemsTransferred(ctx.state.tick, source.id, w.bag.id, itemId, 1))
 
-    val chill = StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.ice_runner.chill_haul"
+    val branchId = StaffTreesSystem.branchOf(ctx.content, w)?.id
+    val nestChill = branchId == "branch.ice_runner.nest_chill"
+    val chill = branchId == "branch.ice_runner.chill_haul" || nestChill
     if (chill) {
         val next = findIceHaul(ctx, w)
         if (next != null && w.bag.roomFor(next.itemId) >= 1 && next.source.reserve(next.itemId, 1)) {
@@ -594,6 +596,20 @@ fun pickupIceRunner(ctx: StepContext, w: WorkerState, def: WorkerDef) {
             w.taskZoneId = next.sourceZoneId
             startWalk(w, next.sourceX, next.sourceZ, WorkerSystem.moveSpeed(ctx.content, ctx.state, def, w))
             ctx.state.bumpStat(Stats.ICE_RUNNER_MULTI_PICKUPS)
+            if (nestChill) {
+                ctx.state.bumpStat(Stats.ICE_RUNNER_NEST_CHILLS)
+                WorkerDecisionHooks.record(
+                    WorkerDecisionTrace(
+                        workerId = w.id,
+                        role = "ice_runner",
+                        kind = "haul",
+                        reason = "nest_chill_chain",
+                        score = next.score,
+                        candidatesConsidered = 2,
+                        tick = ctx.state.tick,
+                    ),
+                )
+            }
             return
         }
     }
@@ -728,20 +744,50 @@ fun assignGreeter(ctx: StepContext, w: WorkerState, def: WorkerDef) {
     w.taskId = ctx.state.newId("task")
 }
 
-/** Finish 3.0 Phase 11 — top up low-patience queued customers while posted. */
+/** Finish 3.0 Phase 11 / Finish 6.0 Phase 16 — welcome_desk / nest_host top-ups. */
 fun greeterWelcomePulse(ctx: StepContext, w: WorkerState) {
-    val desk = StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.greeter.welcome_desk"
-    val interval = if (desk) 75L else 120L
+    val branchId = StaffTreesSystem.branchOf(ctx.content, w)?.id
+    val nestHost = branchId == "branch.greeter.nest_host"
+    val desk = branchId == "branch.greeter.welcome_desk" || nestHost
+    val interval = when {
+        nestHost -> 55L
+        desk -> 75L
+        else -> 120L
+    }
     if (ctx.state.tick % interval != 0L) return
-    val boost = if (desk) 55 else 35
-    val threshold = if (desk) 110 else 90
+    val boost = when {
+        nestHost -> 70
+        desk -> 55
+        else -> 35
+    }
+    val threshold = when {
+        nestHost -> 125
+        desk -> 110
+        else -> 90
+    }
     var welcomed = 0L
     for (c in ctx.state.customers) {
         if (!c.arrived || c.patienceLeft <= 0 || c.patienceLeft >= threshold) continue
         c.patienceLeft += boost
         welcomed++
     }
-    if (welcomed > 0) ctx.state.bumpStat(Stats.GREETER_WELCOMES, welcomed)
+    if (welcomed > 0) {
+        ctx.state.bumpStat(Stats.GREETER_WELCOMES, welcomed)
+        if (nestHost) {
+            ctx.state.bumpStat(Stats.GREETER_NEST_HOSTS, welcomed)
+            WorkerDecisionHooks.record(
+                WorkerDecisionTrace(
+                    workerId = w.id,
+                    role = "greeter",
+                    kind = "welcome",
+                    reason = "nest_host_welcome",
+                    score = interval,
+                    candidatesConsidered = welcomed.toInt(),
+                    tick = ctx.state.tick,
+                ),
+            )
+        }
+    }
 }
 
 // ---------------------------------------------------------------- wages
@@ -810,12 +856,18 @@ data class HaulOffer(
     val score: Long,
 )
 
+fun isNestProduct(itemId: String): Boolean =
+    itemId.contains("roast") || itemId.contains("ferment")
+
 fun findHaul(ctx: StepContext, w: WorkerState): HaulOffer? {
     val supervisor = WorkerSystem.supervisorOnDuty(ctx.content, ctx.state)
-    val cargoSprint = StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.porter.cargo_sprint"
+    val branchId = StaffTreesSystem.branchOf(ctx.content, w)?.id
+    val nestHaul = branchId == "branch.porter.nest_haul"
+    val cargoSprint = branchId == "branch.porter.cargo_sprint" || nestHaul
     var considered = 0
     var best: HaulOffer? = null
     var bestFull = false
+    var bestNest = false
     for (counter in ctx.state.counters.sortedBy { it.counterId }) {
         val cdef = ctx.harbor.counters.first { it.id == counter.counterId }
         if (!CustomerSystem.isUnlocked(cdef, ctx.state)) continue
@@ -831,9 +883,12 @@ fun findHaul(ctx: StepContext, w: WorkerState): HaulOffer? {
                 if (!porterMayHaul(ctx, itemId, supervisor)) continue
                 val demand = counterDemand(ctx, counter, itemId)
                 val outputFull = m.status == MachineStatus.OUTPUT_FULL
+                val nestItem = isNestProduct(itemId)
                 var urgency = if (outputFull) 50 else 0
                 // Finish 4.0 Phase 19 — cargo_sprint_urgency clears jammed outputs first.
                 if (cargoSprint && outputFull) urgency += 45
+                // Finish 6.0 Phase 16 — nest_haul_urgency prefers roast/ferment jammed lines.
+                if (nestHaul && nestItem) urgency += 40
                 val score = scoreHaul(
                     ctx, w, m.output, zone.rect.centerX, zone.rect.centerZ,
                     urgencyBonus = urgency,
@@ -847,21 +902,25 @@ fun findHaul(ctx: StepContext, w: WorkerState): HaulOffer? {
                 if (best == null || betterHaul(offer, best)) {
                     best = offer
                     bestFull = outputFull
+                    bestNest = nestItem
                 }
             }
         }
     }
+    val reason = when {
+        best == null -> "none_available"
+        nestHaul && bestNest -> "nest_haul_urgency"
+        cargoSprint && bestFull -> "cargo_sprint_urgency"
+        branchId == "branch.porter.dock_relay" -> "dock_relay"
+        else -> "best_score"
+    }
+    if (reason == "nest_haul_urgency") ctx.state.bumpStat(Stats.PORTER_NEST_HAULS)
     WorkerDecisionHooks.record(
         WorkerDecisionTrace(
             workerId = w.id,
             role = "porter",
             kind = "haul",
-            reason = when {
-                best == null -> "none_available"
-                cargoSprint && bestFull -> "cargo_sprint_urgency"
-                StaffTreesSystem.branchOf(ctx.content, w)?.id == "branch.porter.dock_relay" -> "dock_relay"
-                else -> "best_score"
-            },
+            reason = reason,
             score = best?.score,
             candidatesConsidered = considered,
             tick = ctx.state.tick,
@@ -1018,6 +1077,9 @@ fun findFishableSpot(ctx: StepContext, w: WorkerState): FishingSpotState? {
             bestZone = spot.zoneId
         }
     }
+    val nestEmberBoosted =
+        StaffTreesSystem.scheduleOf(ctx.content, w)?.id == "schedule.nest_ember" &&
+            scheduleDaypartBoost(ctx, w, "fisher") > 0
     val schedBoosted = scheduleDaypartBoost(ctx, w, "fisher") > 0
     WorkerDecisionHooks.record(
         WorkerDecisionTrace(
@@ -1026,6 +1088,7 @@ fun findFishableSpot(ctx: StepContext, w: WorkerState): FishingSpotState? {
             kind = "spot",
             reason = when {
                 best == null -> "none_available"
+                nestEmberBoosted -> "schedule_nest_ember_boost"
                 schedBoosted -> "schedule_daypart_boost"
                 trophyCast -> "trophy_cast_bias"
                 linePro -> "line_pro_stock"
@@ -1268,7 +1331,10 @@ fun abortHaul(ctx: StepContext, w: WorkerState) {
     clearTask(w)
 }
 
-/** Finish 5.0 Phase 20 — schedule-aware day-part scoring boost. */
+/**
+ * Finish 5.0 Phase 20 / Finish 6.0 Phase 16 — schedule-aware day-part scoring boost.
+ * decision-traces-staff-ai-4 / WorkerDecisionHooks.lastForWorker / nest_decision_fixture
+ */
 fun scheduleDaypartBoost(ctx: StepContext, w: WorkerState, role: String): Long {
     val schedule = StaffTreesSystem.scheduleOf(ctx.content, w) ?: return 0L
     val part = FishingSystem.dayPartAt(ctx.content, ctx.state.tick).id
@@ -1277,6 +1343,8 @@ fun scheduleDaypartBoost(ctx: StepContext, w: WorkerState, role: String): Long {
         schedule.id == "schedule.dawn_crew" && (role == "fisher" || role == "porter") -> 25L
         schedule.id == "schedule.night_watch" && (role == "cashier" || role == "greeter") -> 28L
         schedule.id == "schedule.peak_tide" -> 22L
+        schedule.id == "schedule.nest_ember" &&
+            (role == "porter" || role == "ice_runner" || role == "operator" || role == "fisher") -> 26L
         else -> 12L
     }
     if (boost > 0L) ctx.state.bumpStat(Stats.SCHEDULE_TASK_BOOSTS)

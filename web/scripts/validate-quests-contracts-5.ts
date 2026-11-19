@@ -60,7 +60,7 @@ function validate(): string[] {
     errors.push("fixture marker mismatch");
   }
   if (catalog.contentVersion !== "4.0.0") errors.push("ship catalog contentVersion must stay 4.0.0");
-  if (!["4.0.0", "5.0.0"].includes(packRaw.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0 or 5.0.0");
+  if (!["4.0.0", "5.0.0", "6.0.0"].includes(packRaw.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0, 5.0.0, or 6.0.0");
   if (catalog.simHzInvariant !== 20) errors.push("simHzInvariant must be 20");
   if (catalog.extendsQuestsContracts4 !== "shared/ship/quests-contracts-4.json") {
     errors.push("extendsQuestsContracts4 path mismatch");

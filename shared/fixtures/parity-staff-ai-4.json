@@ -1,0 +1,32 @@
+{
+  "schema": "fish.fixture.parity_staff_ai_4.v1",
+  "staffAi4Marker": "authored-finish-6.0-phase-16",
+  "phase": 16,
+  "plan": "30_finish_6.0",
+  "description": "Finish 6.0 Phase 16: nest_chill chain + nest_host welcome + nest_haul urgency + nest_ember schedule boost + decision-trace fixtures.",
+  "sampleBranchId": "branch.ice_runner.nest_chill",
+  "sampleScheduleId": "schedule.nest_ember",
+  "sampleDecisionReason": "nest_decision_fixture",
+  "decisionTraceFixture": "shared/fixtures/decision-traces-staff-ai-4.json",
+  "expect": {
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "depthBehaviorCount": 5,
+    "depthStatCount": 5,
+    "decisionReasonCount": 5,
+    "branchesMin": 16,
+    "schedulesMin": 4,
+    "staffAi4Incomplete": false,
+    "openGapFlagMin": 1,
+    "traceSampleCount": 5,
+    "gates": [
+      "nest_chill",
+      "nest_host",
+      "nest_haul",
+      "schedule_nest_ember",
+      "decision_trace_fixtures",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

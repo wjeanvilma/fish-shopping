@@ -1,7 +1,8 @@
 /**
  * Phase 25/26 — privacy-safe analytics events (blueprint live-ops).
  * Mirrors game-core Analytics.kt. Consent is enforced by presentation clients.
- * Phase 26 adds session_start + crash_free_session for the ops dashboard.
+ * Finish 3.0 Phase 26 adds session_start + crash_free_session for the ops dashboard.
+ * Finish 6.0 Phase 26 adds nest_sigil_earned / nest_contract_settled / loadtest_bank_probed.
  */
 import { TELEMETRY_FORBIDDEN_KEYS } from "./telemetry";
 
@@ -16,6 +17,9 @@ export const ANALYTICS_EVENT_NAMES = [
   "frame_time_summary",
   "session_start",
   "crash_free_session",
+  "nest_sigil_earned",
+  "nest_contract_settled",
+  "loadtest_bank_probed",
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENT_NAMES)[number];
@@ -35,6 +39,9 @@ export const ANALYTICS_ALLOWED_PROPS: Record<AnalyticsEventName, ReadonlySet<str
   frame_time_summary: new Set(["emaMs", "quality", "samples", "platform"]),
   session_start: new Set(["platform"]),
   crash_free_session: new Set(["clean", "platform"]),
+  nest_sigil_earned: new Set(["sigilId", "count"]),
+  nest_contract_settled: new Set(["contractId", "coins"]),
+  loadtest_bank_probed: new Set(["bank", "floorsMet", "platform"]),
 };
 
 export type AnalyticsPropValue = boolean | number | string;
@@ -112,6 +119,21 @@ export const Analytics = {
   /** Phase 26: clean=true when the prior/current session ended without unclean exit. */
   crashFreeSession(clean: boolean, platform: string): AnalyticsEvent {
     return sanitizeAnalytics("crash_free_session", { clean, platform })!;
+  },
+
+  /** Finish 6.0 Phase 26: nest endgame sigil progress (id + count only). */
+  nestSigilEarned(sigilId: string, count: number): AnalyticsEvent {
+    return sanitizeAnalytics("nest_sigil_earned", { sigilId, count })!;
+  },
+
+  /** Finish 6.0 Phase 26: nest contract settlement (id + coins only). */
+  nestContractSettled(contractId: string, coins: number): AnalyticsEvent {
+    return sanitizeAnalytics("nest_contract_settled", { contractId, coins })!;
+  },
+
+  /** Finish 6.0 Phase 26: loadtest bank header/size probe result. */
+  loadtestBankProbed(bank: string, floorsMet: boolean, platform: string): AnalyticsEvent {
+    return sanitizeAnalytics("loadtest_bank_probed", { bank, floorsMet, platform })!;
   },
 };
 

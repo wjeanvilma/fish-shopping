@@ -1,0 +1,8 @@
+{
+  "id": "endgame.sigil.scaffold_nest_ember",
+  "name": "Nest Ember",
+  "description": "Authoring scaffold nest sigil. Reference from endgame.challenge.grantsSigil before merge — fragment is not auto-merged.",
+  "grantsFromChallengeHint": "endgame.challenge.scaffold_nest_ember",
+  "requiresPrestigeCount": 10,
+  "powerNeutral": true
+}

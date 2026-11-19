@@ -1,9 +1,9 @@
 {
   "phase": 27,
   "schema": "fish.fixtures.parity_lock.v1",
-  "description": "Post-1.0 Phase 27 parity lock + Finish 2.0/3.0/4.0/5.0 Phase 29 expansions. Schema 26 / content 4.0.0; legacy migrations through v22. Suites cover baseline, Finish 2–4 systems, and Finish 5.0 machines 13–14 / quests-contracts-5 / endgame-3 / rivals-seasonal-5.",
-  "contentVersion": "5.0.0",
-  "schemaVersion": 26,
+  "description": "Post-1.0 Phase 27 parity lock + Finish 2.0/3.0/4.0/5.0/6.0 Phase 29 expansions. Schema 27 / content 5.0.0; legacy migrations through v22. Suites cover baseline, Finish 2–5 systems, and Finish 6.0 machines 15–16 / quests-contracts-6 / endgame-4 / rivals-seasonal-6.",
+  "contentVersion": "6.0.0",
+  "schemaVersion": 27,
   "finish2ParityLockPhase": 29,
   "finish3ParityLockPhase": 29,
   "finish4ParityLockPhase": 29,
@@ -231,6 +231,48 @@
         "cosmetics"
       ],
       "finish5": true
+    },
+    {
+      "id": "machines_15_16",
+      "title": "Machines 15–16 roaster recipes",
+      "fixture": "shared/fixtures/parity-machines-15-16.json",
+      "covers": [
+        "machines",
+        "recipes"
+      ],
+      "finish6": true
+    },
+    {
+      "id": "quests_contracts_6",
+      "title": "Quests/contracts Finish 6.0 floors",
+      "fixture": "shared/fixtures/parity-quests-contracts-6.json",
+      "covers": [
+        "quests",
+        "contracts"
+      ],
+      "finish6": true
+    },
+    {
+      "id": "endgame_4",
+      "title": "Endgame deepen + schema 27 sigils",
+      "fixture": "shared/fixtures/parity-endgame-4.json",
+      "covers": [
+        "schema27",
+        "endgame"
+      ],
+      "finish6": true
+    },
+    {
+      "id": "rivals_seasonal_6",
+      "title": "Rivals/seasonal/baits/cosmetics Finish 6 floors",
+      "fixture": "shared/fixtures/parity-rivals-seasonal-6.json",
+      "covers": [
+        "rivals",
+        "seasonal",
+        "baits",
+        "cosmetics"
+      ],
+      "finish6": true
     }
   ],
   "expandedExpectFields": [
@@ -269,9 +311,13 @@
     "machines1314RecipesParity": true,
     "questsContracts5FloorsMet": true,
     "endgameSchema26Persisted": true,
-    "rivalsSeasonal5FloorsMet": true
+    "rivalsSeasonal5FloorsMet": true,
+    "machines1516RecipesParity": true,
+    "questsContracts6FloorsMet": true,
+    "endgameSchema27Persisted": true,
+    "rivalsSeasonal6FloorsMet": true
   },
-  "suiteFloor": 20,
+  "suiteFloor": 24,
   "finish2SuiteFloor": 4,
   "finish3SuiteFloor": 4,
   "finish4SuiteFloor": 4,
@@ -297,10 +343,17 @@
     "shared/fixtures/parity-quests-contracts-5.json",
     "shared/fixtures/parity-endgame-3.json",
     "shared/fixtures/parity-rivals-seasonal-5.json",
+    "shared/fixtures/parity-machines-15-16.json",
+    "shared/fixtures/parity-quests-contracts-6.json",
+    "shared/fixtures/parity-endgame-4.json",
+    "shared/fixtures/parity-rivals-seasonal-6.json",
     "web/src/engine/parityLock.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/ParityLock.kt"
   ],
   "finish5ParityLockPhase": 29,
   "parityLock5Catalog": "shared/ship/parity-lock-5.0.json",
-  "finish5SuiteFloor": 4
+  "finish5SuiteFloor": 4,
+  "finish6ParityLockPhase": 29,
+  "parityLock6Catalog": "shared/ship/parity-lock-6.0.json",
+  "finish6SuiteFloor": 4
 }

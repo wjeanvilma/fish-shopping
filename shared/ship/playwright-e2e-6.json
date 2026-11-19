@@ -1,0 +1,69 @@
+{
+  "phase": 23,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.playwright_e2e_6.v1",
+  "description": "Finish 6.0 Phase 23 — Playwright E2E floors ≥24 with nest deep-link aliases. Closes kickoff gap e2eDepthThin. Soft-floors Finish 5.0 deeplinke2e5 webScenarioFloor ≥12 and Finish 3.0 webe2e.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "playwrightE2e6Marker": "authored-finish-6.0-phase-23",
+  "closesGap": "e2eDepthThin",
+  "extendsCatalog": "shared/ship/web-e2e.json",
+  "webE2eShip": "shared/ship/web-e2e.json",
+  "deeplinkE2e5Ship": "shared/ship/deeplink-e2e-5.json",
+  "routesCatalog": "shared/deep-links/routes.json",
+  "scenarioFloor": 24,
+  "idCountFloor": 40,
+  "nestAliasMin": 8,
+  "softWebScenarioFloor": 12,
+  "softMinIdCount": 32,
+  "parityFixture": "shared/fixtures/parity-playwright-e2e-6.json",
+  "validateScript": "npm run playwrighte2e6:validate",
+  "softDeeplinkE2e5Validate": "npm run deeplinke2e5:validate",
+  "softWebE2eValidate": "npm run webe2e:validate",
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "authorTool": "shared/tools/author_playwright_e2e_6.py",
+  "softFloors": {
+    "deeplinkE2e5WebScenarioFloor": 12,
+    "webE2eMinIdCount": 32,
+    "openGapFlagMinPrior": 7,
+    "note": "Finish 5.0 deeplinke2e5 / Finish 3.0 webe2e stay green; Phase 23 raises live Playwright scenarios to ≥24 and closes e2eDepthThin."
+  },
+  "nestAliases": [
+    "nesttreasury",
+    "nestloans",
+    "nestember",
+    "nestconflict",
+    "saffron",
+    "roastnest",
+    "nestjournal",
+    "ember"
+  ],
+  "checklist": [
+    "≥24 Playwright scenarios in web-e2e.json + smoke.spec.ts",
+    "WEB_E2E_IDS / ComposeUiTags ≥40 including nest surfaces",
+    "nest deep-link aliases in routes.json + DeepLinkRoutes",
+    "kickoff.gaps.e2eDepthThin=false; openFlags 7→6",
+    "deeplinke2e5:validate + webe2e:validate soft-green",
+    "playwrighte2e6:validate green in CI",
+    "schema stays 27 / content 5.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/playwright-e2e-6.json",
+    "shared/fixtures/parity-playwright-e2e-6.json",
+    "shared/ship/web-e2e.json",
+    "shared/ship/deeplink-e2e-5.json",
+    "shared/deep-links/routes.json",
+    "web/src/e2e/webE2eIds.ts",
+    "web/e2e/smoke.spec.ts",
+    "web/src/ship/playwrightE2e6.ts",
+    "web/scripts/validate-playwright-e2e-6.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/PlaywrightE2e6.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/deeplink/DeepLinkRoutes.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/ComposeUiTags.kt"
+  ],
+  "measured": {
+    "scenarios": 24,
+    "idCount": 42,
+    "nestAliases": 8
+  }
+}

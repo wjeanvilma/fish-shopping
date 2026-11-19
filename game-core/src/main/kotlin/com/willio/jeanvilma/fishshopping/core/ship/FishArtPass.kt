@@ -10,7 +10,7 @@ object FishArtPass {
     const val SCHEMA = "fish.ship.fish_art_pass.v1"
     const val CONTENT_VERSION = "2.0.0"
     const val SCHEMA_VERSION = 23
-    const val AUTHORED_SPECIES_MIN = 125
+    const val AUTHORED_SPECIES_MIN = 150
     const val AUTHORED_SPECIES_HISTORICAL_MIN = 100
     const val FISH_ART_MARKER = "authored-phase-20"
     const val MAX_BYTES_PER_FISH = 32_000

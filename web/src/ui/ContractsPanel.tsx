@@ -22,6 +22,7 @@ import {
   licensesCatalog,
   ossHeadline,
 } from "../store/licenses";
+import { WEB_E2E_IDS } from "../e2e/webE2eIds";
 import { formatAwayDuration, formatCoins, formatRushSeconds, prestigeRewardBits } from "./hudFormat";
 
 export function ContractsPanel({
@@ -49,7 +50,14 @@ export function ContractsPanel({
   useEffect(() => closeRef.current?.focus(), []);
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={t("nav.jobs")} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="panel sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("nav.jobs")}
+        data-testid={WEB_E2E_IDS.CONTRACTS_PANEL}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sheet-header">
           <div className="grow">
             <h2>{t("nav.jobs")}</h2>

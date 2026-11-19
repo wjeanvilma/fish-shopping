@@ -75,9 +75,10 @@ function validate(): string[] {
   if (fixture.endgame3Marker !== ENDGAME_3_MARKER) errors.push("fixture marker mismatch");
   if (catalog.fromSchema !== 25 || catalog.toSchema !== 26) errors.push("from/to schema");
   if (ENDGAME_3_VERSION !== 26) errors.push("ENDGAME_3_VERSION mismatch");
-  if (SCHEMA_VERSION !== 26) errors.push("engine SCHEMA_VERSION must be 26");
-  if (!foundationsKt.includes("SCHEMA_VERSION = 26")) {
-    errors.push("Kotlin SCHEMA_VERSION must be 26");
+  // Soft-floor: Finish 6.0 Phase 14 bumps live schema to 27.
+  if (SCHEMA_VERSION < 26) errors.push("engine SCHEMA_VERSION must be >= 26");
+  if (!foundationsKt.includes("SCHEMA_VERSION = ")) {
+    errors.push("Kotlin SCHEMA_VERSION missing");
   }
   if (catalog.contentVersion !== "4.0.0") errors.push("contentVersion must stay 4.0.0");
   if (catalog.schemaVersion !== 26) errors.push("catalog schemaVersion must be 26");
@@ -86,7 +87,7 @@ function validate(): string[] {
   }
 
   const measure = measureEndgame3(root);
-  if (measure.schemaVersion !== 26) errors.push("measure schemaVersion must be 26");
+  if (measure.schemaVersion < 26) errors.push("measure schemaVersion must be >= 26");
   if (measure.tierCount < ENDGAME_3.tierCountMin) {
     errors.push(`tiers ${measure.tierCount} < ${ENDGAME_3.tierCountMin}`);
   }
@@ -128,9 +129,9 @@ function validate(): string[] {
     errors.push("en/pt content string counts differ");
   }
 
-  if (pack.saveSchemaVersion !== 26) errors.push("content-pack.saveSchemaVersion must be 26");
-  if (packSchema.properties?.saveSchemaVersion?.const !== 26) {
-    errors.push("content-pack.schema saveSchemaVersion const must be 26");
+  if (pack.saveSchemaVersion < 26) errors.push("content-pack.saveSchemaVersion must be >= 26");
+  if ((packSchema.properties?.saveSchemaVersion?.const ?? 0) < 26) {
+    errors.push("content-pack.schema saveSchemaVersion const must be >= 26");
   }
   if (!packSchema.properties?.endgame?.properties?.tiers?.items?.properties?.requiresCrests) {
     errors.push("content-pack.schema endgame tiers missing requiresCrests");
@@ -139,7 +140,7 @@ function validate(): string[] {
     errors.push("content-pack.schema endgame challenges missing grantsCrest");
   }
 
-  if (pin.schemaVersion !== 26) errors.push("RELEASE_PIN.schemaVersion must be 26");
+  if (pin.schemaVersion < 26) errors.push("RELEASE_PIN.schemaVersion must be >= 26");
   if (pin.storeRelease?.schemaVersion !== 20) errors.push("storeRelease.schemaVersion must stay 20");
   if (pin.completeRelease?.schemaVersion !== 20) {
     errors.push("completeRelease.schemaVersion must stay 20");
@@ -154,9 +155,9 @@ function validate(): string[] {
     errors.push("RELEASE_PIN missing legacy v25 fixture");
   }
 
-  if (lifecycle.fixtures.currentSchema !== 26) errors.push("lifecycle currentSchema must be 26");
-  if (lifecycle.fixtures.migrateThroughSchema !== 25) {
-    errors.push("lifecycle migrateThroughSchema must be 25");
+  if (lifecycle.fixtures.currentSchema < 26) errors.push("lifecycle currentSchema must be >= 26");
+  if (lifecycle.fixtures.migrateThroughSchema < 25) {
+    errors.push("lifecycle migrateThroughSchema must be >= 25");
   }
   if (!lifecycle.fixtures.requiredLegacyVersions.includes(25)) {
     errors.push("lifecycle requiredLegacyVersions must include 25");
@@ -164,7 +165,7 @@ function validate(): string[] {
   if (!lifecycle.fixtures.requiredLegacyVersions.includes(24)) {
     errors.push("lifecycle requiredLegacyVersions must include 24");
   }
-  if (LIFECYCLE_CURRENT_SCHEMA !== 26 || LIFECYCLE_MIGRATE_THROUGH_SCHEMA !== 25) {
+  if (LIFECYCLE_CURRENT_SCHEMA < 26 || LIFECYCLE_MIGRATE_THROUGH_SCHEMA < 25) {
     errors.push("lifecyclePolicy mirrors mismatch");
   }
   if (![...LIFECYCLE_LEGACY_VERSIONS].includes(25)) {
@@ -219,8 +220,13 @@ function validate(): string[] {
     errors.push("missing author_endgame_3.py");
   }
 
-  if (!currentSnap.includes('"schemaVersion":26') && !currentSnap.includes('"schemaVersion": 26')) {
-    errors.push("current starter-line snapshot must be schema 26");
+  if (
+    !currentSnap.includes('"schemaVersion":26') &&
+    !currentSnap.includes('"schemaVersion": 26') &&
+    !currentSnap.includes('"schemaVersion":27') &&
+    !currentSnap.includes('"schemaVersion": 27')
+  ) {
+    errors.push("current starter-line snapshot must be schema >= 26");
   }
   if (legacy25.schemaVersion !== 25) errors.push("legacy v25 fixture schemaVersion must be 25");
   if (!existsSync(resolve(root, "shared/fixtures/legacy/snapshot-v25-starter-line-t2500.json"))) {

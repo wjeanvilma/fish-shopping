@@ -28,6 +28,10 @@ describe("music beds (post-1.0 Phase 20)", () => {
       "storm",
       "night",
       "rival",
+      "endgame",
+      "ledger",
+      "pressure",
+      "nest",
     ]);
     expect(musicPack.ducking.sfxDuckFactor).toBeGreaterThan(0);
     expect(musicPack.ducking.sfxDuckFactor).toBeLessThan(1);

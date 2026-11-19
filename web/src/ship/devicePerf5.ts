@@ -135,15 +135,24 @@ export function measureDevicePerf5(repoRoot: string): DevicePerf5Measure {
     harborWebSrc.includes('action === "upgrade"') &&
     harborAndroidSrc.includes("FrameBudgetAction.UPGRADE");
 
+  // Soft-floor: Finish 6.0 may raise pools/caps further; require denser wiring ≥ Finish 5 floors.
+  const flyPoolTs = Number(qualityTsSrc.match(/FLYING_TRANSFER_POOL = (\d+)/)?.[1] ?? 0);
+  const flyPoolKt = Number(qualityKtSrc.match(/FLYING_TRANSFER_POOL = (\d+)/)?.[1] ?? 0);
+  const crowdMedTs = Number(qualityTsSrc.match(/medium:\s*(\d+)/)?.[1] ?? 0);
+  const crowdHighTs = Number(qualityTsSrc.match(/high:\s*(\d+)/)?.[1] ?? 0);
+  const crowdMedKt = Number(qualityKtSrc.match(/MEDIUM -> (\d+)/)?.[1] ?? 0);
+  const crowdHighKt = Number(qualityKtSrc.match(/HIGH -> (\d+)/)?.[1] ?? 0);
+  const burstPool = Number(vfxTsSrc.match(/VFX_BURST_POOL = (\d+)/)?.[1] ?? 0);
+  const harborCacheKt = Number(androidFtSrc.match(/HARBOR_CACHE_LIMIT = (\d+)/)?.[1] ?? 0);
   const denserCapsWired =
-    qualityTsSrc.includes("FLYING_TRANSFER_POOL = 16") &&
-    qualityTsSrc.includes("medium: 6") &&
-    qualityTsSrc.includes("high: 10") &&
-    qualityKtSrc.includes("FLYING_TRANSFER_POOL = 16") &&
-    qualityKtSrc.includes("MEDIUM -> 6") &&
-    qualityKtSrc.includes("HIGH -> 10") &&
-    vfxTsSrc.includes("VFX_BURST_POOL = 10") &&
-    androidFtSrc.includes("HARBOR_CACHE_LIMIT = 4");
+    flyPoolTs >= 16 &&
+    flyPoolKt >= 16 &&
+    crowdMedTs >= 6 &&
+    crowdHighTs >= 10 &&
+    crowdMedKt >= 6 &&
+    crowdHighKt >= 10 &&
+    burstPool >= 10 &&
+    harborCacheKt >= 4;
 
   const floorsMet =
     harborCache >= DEVICE_PERF_5.harborCacheFloor &&

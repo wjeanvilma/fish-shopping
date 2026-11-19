@@ -2,7 +2,7 @@
   "phase": 21,
   "plan": "30_finish_3.0",
   "schema": "fish.ship.compose_ui_tests.v1",
-  "description": "Finish 3.0 Phase 21 — Compose UI integration tests. Finish 5.0 Phase 26 soft-floors minTagCount≥32 and expands scenarios to ≥14.",
+  "description": "Finish 3.0 Phase 21 \u2014 Compose UI integration tests. Finish 5.0 Phase 26 soft-floors minTagCount\u226532 and expands scenarios to \u226514. Finish 6.0 Phase 24 expands nest surface scenarios to \u226520 (soft-floor \u226514).",
   "contentVersion": "2.0.0",
   "schemaVersion": 24,
   "composeUiTestsMarker": "authored-finish-3.0-phase-21",
@@ -27,7 +27,13 @@
     "title_brand_displayed",
     "pause_root_stable",
     "offline_root_stable",
-    "deeplink_ready_tag_present"
+    "deeplink_ready_tag_present",
+    "compose_tags_nest_floor",
+    "nest_treasury_tag_present",
+    "nest_loans_tag_present",
+    "bag_panel_tag_present",
+    "nest_panel_tags_wired",
+    "photo_decor_tags_stable"
   ],
   "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
   "parityFixture": "shared/fixtures/parity-compose-ui-tests.json",

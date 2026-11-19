@@ -1,0 +1,22 @@
+{
+  "schema": "fish.fixtures.parity_systems_split_3.v1",
+  "systemsSplit3Marker": "authored-finish-6.0-phase-4",
+  "phase": 4,
+  "plan": "30_finish_6.0",
+  "expect": {
+    "systemsFacadeMaxLines": 2800,
+    "extractedFileMin": 12,
+    "requiredFileCount": 4,
+    "schemaVersion": 26,
+    "contentVersion": "5.0.0",
+    "gapClosed": "systemsSplit3Incomplete",
+    "gates": [
+      "systems_facade_slim",
+      "rivals_economy_staff_workers_extracted",
+      "symbols_present",
+      "bridge_bound",
+      "gap_closed",
+      "ci_gate"
+    ]
+  }
+}

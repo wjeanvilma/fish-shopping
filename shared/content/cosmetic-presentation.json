@@ -360,6 +360,90 @@
       "powerNeutral": true,
       "meshAsset": "models/cosmetic_banner_can_crest.glb",
       "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_saffron_bunting",
+      "sku": "fish.cosmetic.saffron_bunting",
+      "title": "Saffron bunting",
+      "swatchRgb": [
+        220,
+        140,
+        70
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_saffron_bunting.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_cobalt_pennant",
+      "sku": "fish.cosmetic.cobalt_pennant",
+      "title": "Cobalt pennant",
+      "swatchRgb": [
+        70,
+        120,
+        190
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_cobalt_pennant.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_quay_flag",
+      "sku": "fish.cosmetic.quay_flag",
+      "title": "Quay flag",
+      "swatchRgb": [
+        200,
+        110,
+        60
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_quay_flag.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_sound_streamer",
+      "sku": "fish.cosmetic.sound_streamer",
+      "title": "Sound streamer",
+      "swatchRgb": [
+        90,
+        150,
+        210
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_sound_streamer.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_roast_ribbon",
+      "sku": "fish.cosmetic.roast_ribbon",
+      "title": "Roast ribbon",
+      "swatchRgb": [
+        190,
+        120,
+        80
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_roast_ribbon.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_ferment_crest",
+      "sku": "fish.cosmetic.ferment_crest",
+      "title": "Ferment crest",
+      "swatchRgb": [
+        100,
+        90,
+        160
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_ferment_crest.glb",
+      "minCosmeticArtNodes": 4
     }
   ],
   "fallback": {

@@ -1,0 +1,62 @@
+{
+  "schema": "fish.fixture.decision_traces_staff_ai_4.v1",
+  "staffAi4Marker": "authored-finish-6.0-phase-16",
+  "phase": 16,
+  "plan": "30_finish_6.0",
+  "description": "Finish 6.0 Phase 16 decision-trace fixtures for nest_chill / nest_host / nest_haul / nest_ember / nest_decision_fixture reasons.",
+  "maxTraces": 32,
+  "reasons": [
+    "nest_chill_chain",
+    "nest_host_welcome",
+    "nest_haul_urgency",
+    "schedule_nest_ember_boost",
+    "nest_decision_fixture"
+  ],
+  "samples": [
+    {
+      "workerId": "worker.nest_chill",
+      "role": "ice_runner",
+      "kind": "haul",
+      "reason": "nest_chill_chain",
+      "score": 42,
+      "candidatesConsidered": 2,
+      "tick": 1600
+    },
+    {
+      "workerId": "worker.nest_host",
+      "role": "greeter",
+      "kind": "welcome",
+      "reason": "nest_host_welcome",
+      "score": 60,
+      "candidatesConsidered": 3,
+      "tick": 1675
+    },
+    {
+      "workerId": "worker.nest_haul",
+      "role": "porter",
+      "kind": "haul",
+      "reason": "nest_haul_urgency",
+      "score": 95,
+      "candidatesConsidered": 4,
+      "tick": 1720
+    },
+    {
+      "workerId": "worker.nest_ember",
+      "role": "porter",
+      "kind": "schedule",
+      "reason": "schedule_nest_ember_boost",
+      "score": 26,
+      "candidatesConsidered": 1,
+      "tick": 1800
+    },
+    {
+      "workerId": "worker.fixture",
+      "role": "trace",
+      "kind": "fixture",
+      "reason": "nest_decision_fixture",
+      "score": null,
+      "candidatesConsidered": 5,
+      "tick": 1900
+    }
+  ]
+}

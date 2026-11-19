@@ -22,6 +22,7 @@ import {
   licensesCatalog,
   ossHeadline,
 } from "../store/licenses";
+import { WEB_E2E_IDS } from "../e2e/webE2eIds";
 import { formatAwayDuration, formatCoins, formatRushSeconds, prestigeRewardBits } from "./hudFormat";
 
 export function SpeciesBookPanel({ book, onClose }: { book: SpeciesBookView; onClose: () => void }) {
@@ -91,7 +92,14 @@ export function SpeciesBookPanel({ book, onClose }: { book: SpeciesBookView; onC
   }
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={t("panels.codex")} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="panel sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("panels.codex")}
+        data-testid={WEB_E2E_IDS.SPECIES_BOOK}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sheet-header">
           <h2>{t("panels.codex")}</h2>
           <button ref={closeRef} className="button ghost" onClick={onClose}>{t("common.close")}</button>

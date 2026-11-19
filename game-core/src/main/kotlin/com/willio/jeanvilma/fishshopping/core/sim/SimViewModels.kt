@@ -171,6 +171,8 @@ data class SimView(
     val endgameMarks: List<String>,
     val endgameCrestCount: Int,
     val endgameCrests: List<String>,
+    val endgameSigilCount: Int,
+    val endgameSigils: List<String>,
     val endgameTiers: List<EndgameTierView>,
     val endgameChallenges: List<EndgameChallengeView>,
     /** Finish 2.0 Phase 11 — lifetime achievements for Settings / HUD. */
@@ -298,6 +300,13 @@ data class BusinessDashboardView(
     val ledgerNetCashflow: Long = 0,
     val contractRevenueSharePermille: Int = 0,
     val ledgerLines: List<String> = emptyList(),
+    /** Finish 6.0 Phase 17 — nest treasury analytics. */
+    val wageBurdenPermille: Int = 0,
+    val loanCoveragePermille: Int = 0,
+    val rivalLossCoins: Long = 0,
+    val endgameSigilsEarned: Long = 0,
+    val coinGoalsReached: Long = 0,
+    val nestTreasuryLines: List<String> = emptyList(),
 )
 
 /** Finish 2.0 Phase 18 — one daily board objective. */

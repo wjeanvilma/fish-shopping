@@ -14,7 +14,7 @@ object DeepLinkRoutes {
     const val CUSTOM_HOST = "open"
     const val ASSET_LINKS_PATH = ".well-known/assetlinks.json"
 
-    /** Finish 5.0 Phase 26 soft-floor: expanded aliases (≥40). Mirrors routes.json. */
+    /** Finish 5.0 Phase 26 soft-floor ≥40; Finish 6.0 Phase 23 nest aliases. Mirrors routes.json. */
     val PANEL_ALIASES: Map<String, ShellPanelId> = mapOf(
         "goals" to ShellPanelId.QUESTS,
         "daily" to ShellPanelId.QUESTS,
@@ -24,13 +24,19 @@ object DeepLinkRoutes {
         "weeklygoals" to ShellPanelId.QUESTS,
         "endgame" to ShellPanelId.QUESTS,
         "retention" to ShellPanelId.QUESTS,
+        "nestloans" to ShellPanelId.QUESTS,
+        "nestember" to ShellPanelId.QUESTS,
+        "nestbank" to ShellPanelId.QUESTS,
         "jobs" to ShellPanelId.CONTRACTS,
         "contracts" to ShellPanelId.CONTRACTS,
+        "roastnest" to ShellPanelId.CONTRACTS,
         "staff" to ShellPanelId.STAFF,
         "crew" to ShellPanelId.STAFF,
         "map" to ShellPanelId.MAP,
         "travel" to ShellPanelId.MAP,
         "harbors" to ShellPanelId.MAP,
+        "saffron" to ShellPanelId.MAP,
+        "cobalt" to ShellPanelId.MAP,
         "upgrades" to ShellPanelId.UPGRADES,
         "shop" to ShellPanelId.UPGRADES,
         "dash" to ShellPanelId.DASHBOARD,
@@ -40,6 +46,8 @@ object DeepLinkRoutes {
         "ledger" to ShellPanelId.DASHBOARD,
         "pierledger" to ShellPanelId.DASHBOARD,
         "cashflow" to ShellPanelId.DASHBOARD,
+        "nesttreasury" to ShellPanelId.DASHBOARD,
+        "ember" to ShellPanelId.DASHBOARD,
         "settings" to ShellPanelId.SETTINGS,
         "options" to ShellPanelId.SETTINGS,
         "cosmetics" to ShellPanelId.SETTINGS,
@@ -50,6 +58,7 @@ object DeepLinkRoutes {
         "journal" to ShellPanelId.SPECIES_BOOK,
         "book" to ShellPanelId.SPECIES_BOOK,
         "encyclopedia" to ShellPanelId.SPECIES_BOOK,
+        "nestjournal" to ShellPanelId.SPECIES_BOOK,
         "warehouse" to ShellPanelId.WAREHOUSE,
         "stock" to ShellPanelId.WAREHOUSE,
         "inventory" to ShellPanelId.WAREHOUSE,
@@ -61,6 +70,7 @@ object DeepLinkRoutes {
         "menu" to ShellPanelId.PAUSE,
         "friction" to ShellPanelId.PAUSE,
         "photo" to ShellPanelId.PAUSE,
+        "nestconflict" to ShellPanelId.PAUSE,
     )
 
     data class Intent(

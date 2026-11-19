@@ -1,0 +1,48 @@
+{
+  "phase": 22,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.i18n_growth_6.v1",
+  "description": "Finish 6.0 Phase 22 — UI chrome key growth to ≥400 across 8 locales; Android Text literals stay 0. Combined validate a11yi18n6:validate.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "i18nGrowth6Marker": "authored-finish-6.0-phase-22",
+  "extendsCatalog": "shared/ship/i18n-growth-5.json",
+  "uiStringKeyMin": 400,
+  "localeMin": 8,
+  "a11yStringKeyMin": 40,
+  "androidTextLiteralsMax": 0,
+  "uiStringsIndex": "shared/i18n/ui-strings.json",
+  "uiStringsEn": "shared/i18n/ui-strings.en.json",
+  "parityFixture": "shared/fixtures/parity-i18n-growth-6.json",
+  "validateScript": "npm run a11yi18n6:validate",
+  "softA11yI18n5Validate": "npm run a11yi18n5:validate",
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "softFloors": {
+    "i18nGrowth5KeyMin": 360,
+    "i18nGrowth4KeyMin": 280,
+    "androidI18nKeyMin": 120,
+    "note": "Finish 6.0 Phase 22 soft floors keep Finish 5.0/4.0 key mins green while live floor is ≥400."
+  },
+  "checklist": [
+    "≥400 UI keys (407 live) with 8-locale parity",
+    "≥40 a11y.* keys",
+    "ui-strings.json keyMin ≥ 400",
+    "Android ui/hud Text(\" literals = 0",
+    "a11yi18n5:validate soft-green",
+    "a11yi18n6:validate green in CI",
+    "schema stays 27"
+  ],
+  "preflightGates": [
+    "shared/ship/i18n-growth-6.json",
+    "shared/fixtures/parity-i18n-growth-6.json",
+    "shared/i18n/ui-strings.json",
+    "shared/i18n/ui-strings.en.json",
+    "web/src/ship/i18nGrowth6.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/I18nGrowth6.kt",
+    "web/src/i18n/strings.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/i18n/UiStrings.kt"
+  ],
+  "measured": {
+    "uiStringKeys": 407
+  }
+}

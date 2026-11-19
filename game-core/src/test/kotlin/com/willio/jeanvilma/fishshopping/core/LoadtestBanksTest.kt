@@ -2,13 +2,13 @@ package com.willio.jeanvilma.fishshopping.core
 
 import com.willio.jeanvilma.fishshopping.core.ship.LoadtestBanks
 import java.io.File
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class LoadtestBanksTest {
     private fun repoRoot(): File = generateSequence(File(System.getProperty("user.dir"))) { it.parentFile }
@@ -18,8 +18,8 @@ class LoadtestBanksTest {
     fun banksExistAboveFloorAndMatchSchemas() {
         val root = repoRoot()
         val (save, tele) = LoadtestBanks.measureFromRepo(root)
-        assertTrue(save.bytes >= LoadtestBanks.MIN_BYTES, "save bytes=${save.bytes}")
-        assertTrue(tele.bytes >= LoadtestBanks.MIN_BYTES, "tele bytes=${tele.bytes}")
+        assertTrue("save bytes=${save.bytes}", save.bytes >= LoadtestBanks.MIN_BYTES)
+        assertTrue("tele bytes=${tele.bytes}", tele.bytes >= LoadtestBanks.MIN_BYTES)
         assertEquals(LoadtestBanks.SAVE_SCHEMA, save.schema)
         assertEquals(LoadtestBanks.TELEMETRY_SCHEMA, tele.schema)
         assertEquals("records", save.sampleKey)

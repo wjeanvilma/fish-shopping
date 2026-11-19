@@ -1,0 +1,31 @@
+{
+  "schema": "fish.fixture.parity_offline_cloud_4.v1",
+  "offlineCloud4Marker": "authored-finish-6.0-phase-18",
+  "phase": 18,
+  "plan": "30_finish_6.0",
+  "description": "Finish 6.0 Phase 18: nest journal deltas + preferredSide/conflictScore/nestConflictHint + queue circuit diagnostics + analytics circuit-breaker.",
+  "sampleJournalField": "loanRepaid",
+  "sampleConflictField": "preferredSide",
+  "sampleSyncField": "circuitOpen",
+  "expect": {
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "journalDeltaFieldCount": 4,
+    "conflictFieldCount": 3,
+    "syncDiagnosticsFieldCount": 3,
+    "maxFlushRetries": 7,
+    "retryJitterMs": 750,
+    "circuitBreakerAfterDeadLetters": 3,
+    "deadLetterAfterMaxRetries": true,
+    "offlineCloud4Incomplete": false,
+    "openGapFlagMin": 1,
+    "gates": [
+      "nest_journal_deltas",
+      "nest_conflict_ux",
+      "nest_sync_diagnostics",
+      "analytics_circuit_breaker",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

@@ -80,7 +80,15 @@ export function measureRivalMarkets2(repoRoot: string): RivalMarkets2Measure {
     (cat.multiRivalPressureExtraMultPermille ?? 1000) ===
       RIVAL_MARKETS_2.aiCatalog.multiRivalPressureExtraMultPermille;
 
-  const tsSystems = readFileSync(resolve(repoRoot, "web/src/engine/systems.ts"), "utf8");
+  const tsSystems = [
+    "web/src/engine/systems.ts",
+    "web/src/engine/systems/rivals.ts",
+  ]
+    .map((p) => {
+      const full = resolve(repoRoot, p);
+      return existsSync(full) ? readFileSync(full, "utf8") : "";
+    })
+    .join("\n");
   const ktSystems = readFileSync(
     resolve(
       repoRoot,

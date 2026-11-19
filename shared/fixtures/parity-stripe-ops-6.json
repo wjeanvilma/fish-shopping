@@ -1,0 +1,26 @@
+{
+  "schema": "fish.fixtures.parity_stripe_ops_6.v1",
+  "stripeOps6Marker": "authored-finish-6.0-phase-25",
+  "phase": 25,
+  "plan": "30_finish_6.0",
+  "expect": {
+    "skuFloor": 31,
+    "cosmeticSkuFloor": 30,
+    "priceMapFloor": 31,
+    "readinessPath": "/v1/ops/readiness",
+    "webhookIdempotency": true,
+    "closesGap": "stripeOps6Incomplete",
+    "stripeOps6Incomplete": false,
+    "openGapFlagMin": 1,
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "gates": [
+      "catalog_sync",
+      "price_map",
+      "readiness",
+      "webhook_idempotency",
+      "gap_closed",
+      "ci_gate"
+    ]
+  }
+}

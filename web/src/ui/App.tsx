@@ -11,6 +11,8 @@ import mistCoveSceneUrl from "../../../shared/assets/models/mist_cove_blockout.g
 import prismReachSceneUrl from "../../../shared/assets/models/prism_reach_blockout.glb?url";
 import auroraInletSceneUrl from "../../../shared/assets/models/aurora_inlet_blockout.glb?url";
 import tideglassBaySceneUrl from "../../../shared/assets/models/tideglass_bay_blockout.glb?url";
+import saffronQuaySceneUrl from "../../../shared/assets/models/saffron_quay_blockout.glb?url";
+import cobaltSoundSceneUrl from "../../../shared/assets/models/cobalt_sound_blockout.glb?url";
 import type { SimView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
 import { t } from "../i18n/strings";
@@ -74,6 +76,8 @@ const BLOCKOUT_URLS: Record<string, string> = {
   "prism_reach_blockout.glb": prismReachSceneUrl,
   "aurora_inlet_blockout.glb": auroraInletSceneUrl,
   "tideglass_bay_blockout.glb": tideglassBaySceneUrl,
+  "saffron_quay_blockout.glb": saffronQuaySceneUrl,
+  "cobalt_sound_blockout.glb": cobaltSoundSceneUrl,
 };
 
 /** Track viewport aspect so portrait chrome follows resized windows, not only OS orientation. */

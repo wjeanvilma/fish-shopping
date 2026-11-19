@@ -34,8 +34,9 @@ class OfflineCloud3Test {
         assertEquals(OfflineCloud3.SCHEMA_VERSION, json.getValue("schemaVersion").jsonPrimitive.int)
         assertTrue(SimConstants.SCHEMA_VERSION >= 26)
         assertFalse(Finish5Kickoff.OPEN_GAP_FLAGS.contains(OfflineCloud3.CLOSES_GAP))
-        assertEquals(5, RemoteAnalyticsPolicy.MAX_FLUSH_RETRIES)
-        assertEquals(500L, RemoteAnalyticsPolicy.RETRY_JITTER_MS)
+        // Soft-floor: Finish 6.0 Phase 18 raised retries/jitter; keep ≥ Phase-22 floors.
+        assertTrue(RemoteAnalyticsPolicy.MAX_FLUSH_RETRIES >= 5)
+        assertTrue(RemoteAnalyticsPolicy.RETRY_JITTER_MS >= 500L)
         assertTrue(RemoteAnalyticsPolicy.DEAD_LETTER_AFTER_MAX_RETRIES)
 
         val listing = Json.parseToJsonElement(File(root, "shared/store/listing.json").readText()).jsonObject

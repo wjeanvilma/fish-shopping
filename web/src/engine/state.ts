@@ -72,6 +72,10 @@ export const Stats = {
   SMOKER_QUEUE_FEEDS: "stat.smoker_queue_feeds",
   SCHEDULE_TASK_BOOSTS: "stat.schedule_task_boosts",
   WORKER_FAILURE_RECOVERIES: "stat.worker_failure_recoveries",
+  /** Finish 6.0 Phase 16 — staff AI wave 4 nest specialties. */
+  ICE_RUNNER_NEST_CHILLS: "stat.ice_runner_nest_chills",
+  GREETER_NEST_HOSTS: "stat.greeter_nest_hosts",
+  PORTER_NEST_HAULS: "stat.porter_nest_hauls",
   /** Finish 3.0 Phase 14 — rival NPC market siphon / player beat counters. */
   RIVAL_SALES_STOLEN: "stat.rival_sales_stolen",
   RIVAL_UNDERCUTS: "stat.rival_undercuts",
@@ -83,6 +87,8 @@ export const Stats = {
   ENDGAME_MARKS_EARNED: "stat.endgame_marks_earned",
   /** Finish 5.0 Phase 17 — crests granted by deepen challenges. */
   ENDGAME_CRESTS_EARNED: "stat.endgame_crests_earned",
+  /** Finish 6.0 Phase 14 — sigils granted by deepen challenges. */
+  ENDGAME_SIGILS_EARNED: "stat.endgame_sigils_earned",
   DECOR_BOUGHT: "stat.decor_bought",
   MACHINES_BROKEN: "stat.machines_broken",
   MACHINES_SLOWED: "stat.machines_slowed",
@@ -123,8 +129,9 @@ export const STAT_KEYS: readonly string[] = [
   Stats.FISHER_TROPHY_CASTS, Stats.PORTER_RELAY_PICKUPS, Stats.CASHIER_QUICK_TILLS,
   Stats.SUPERVISOR_RUSH_MARSHALS, Stats.OPERATOR_CIRCUIT_LINKS, Stats.SMOKER_QUEUE_FEEDS,
   Stats.SCHEDULE_TASK_BOOSTS, Stats.WORKER_FAILURE_RECOVERIES,
+  Stats.ICE_RUNNER_NEST_CHILLS, Stats.GREETER_NEST_HOSTS, Stats.PORTER_NEST_HAULS,
   Stats.RIVAL_SALES_STOLEN, Stats.RIVAL_UNDERCUTS, Stats.RIVAL_BEATS,
-  Stats.ENDGAME_TIERS_UNLOCKED, Stats.ENDGAME_CHALLENGES_COMPLETED, Stats.ENDGAME_MARKS_EARNED, Stats.ENDGAME_CRESTS_EARNED, Stats.DECOR_BOUGHT,
+  Stats.ENDGAME_TIERS_UNLOCKED, Stats.ENDGAME_CHALLENGES_COMPLETED, Stats.ENDGAME_MARKS_EARNED, Stats.ENDGAME_CRESTS_EARNED, Stats.ENDGAME_SIGILS_EARNED, Stats.DECOR_BOUGHT,
   Stats.MACHINES_BROKEN, Stats.MACHINES_SLOWED, Stats.MACHINES_REPAIRED, Stats.REPAIR_SPENT,
   Stats.LOANS_TAKEN, Stats.LOAN_INTEREST_ACCRUED, Stats.LOAN_REPAID, Stats.LOAN_COLLECTED, Stats.COIN_GOALS_REACHED,
   Stats.DAILY_LOGIN_STREAK, Stats.DAILY_GOALS_CLAIMED, Stats.WEEKLY_GOALS_CLAIMED,
@@ -375,6 +382,8 @@ export class GameState {
   readonly endgameMarks = new Set<string>();
   /** Finish 5.0 Phase 17 / schema 26 — crests from deepen challenges. */
   readonly endgameCrests = new Set<string>();
+  /** Finish 6.0 Phase 14 — nest sigils from deepen challenges. */
+  readonly endgameSigils = new Set<string>();
   readonly unlockedCosmetics = new Set<string>();
   /** Phase 23 owned shop decor (placable cosmetics). */
   readonly ownedDecor = new Set<string>();

@@ -114,12 +114,12 @@ class FlyingTransfers(poolSize: Int = FLYING_TRANSFER_POOL) {
     }
 }
 
-/** Phase 16/21 — pooled world bursts; Finish 5.0 Phase 27 denser-scene pool for 12 harbors. */
-const val VFX_BURST_POOL = 10
+/** Phase 16/21 — pooled world bursts; Finish 6.0 Phase 28 denser nest pool for 14 harbors. */
+const val VFX_BURST_POOL = 12
 
 fun worldBurstPoolForQuality(quality: PresenterQuality): Int = when (quality) {
-    PresenterQuality.LOW -> 2
-    PresenterQuality.MEDIUM -> 5
+    PresenterQuality.LOW -> 3
+    PresenterQuality.MEDIUM -> 6
     PresenterQuality.HIGH -> VFX_BURST_POOL
 }
 
@@ -129,6 +129,7 @@ enum class WorldBurstKind {
     RIVAL_BEAT, PRESTIGE, TROPHY_SET, HARBOR_TRAVEL, HIRE, LOAN,
     DECOR, COSMETIC, ENDGAME_TIER, ENDGAME_CHALLENGE, CONTRACT_ACCEPT, BAIT, FULL_UNLOCK,
     CAST_STRIKE, SPOIL, MACHINE_BREAK, CONTRACT_DEADLINE, QUEST_NEAR,
+    NEST_SETTLE, ROAST_READY, FERMENT_READY, SCHOOL_FLASH, AURORA_CREST,
 }
 
 data class WorldBurstCue(
@@ -178,12 +179,18 @@ private fun burstDurationS(kind: WorldBurstKind): Double = when (kind) {
     WorldBurstKind.MACHINE_BREAK -> 0.45
     WorldBurstKind.CONTRACT_DEADLINE -> 0.4
     WorldBurstKind.QUEST_NEAR -> 0.35
+    WorldBurstKind.NEST_SETTLE -> 0.4
+    WorldBurstKind.ROAST_READY -> 0.35
+    WorldBurstKind.FERMENT_READY -> 0.4
+    WorldBurstKind.SCHOOL_FLASH -> 0.35
+    WorldBurstKind.AURORA_CREST -> 0.45
 }
 
-/** Phase 21 + Finish 2.0/3.0/4.0/5.0 shake kinds. */
+/** Phase 21 + Finish 2.0/3.0/4.0/5.0/6.0 shake kinds. */
 enum class ShakeKind {
     CATCH, CUT, SALE, CELEBRATE, ACHIEVEMENT, FESTIVAL, RIVAL_BEAT, PRESTIGE,
     ENDGAME_TIER, ENDGAME_CHALLENGE, CAST_STRIKE, CONTRACT_DEADLINE,
+    NEST_SETTLE, AURORA_CREST,
 }
 
 const val SHAKE_DURATION_S = 0.18
@@ -202,6 +209,8 @@ fun shakeAmplitudeM(kind: ShakeKind): Double = when (kind) {
     ShakeKind.ENDGAME_CHALLENGE -> 0.07
     ShakeKind.CAST_STRIKE -> 0.06
     ShakeKind.CONTRACT_DEADLINE -> 0.07
+    ShakeKind.NEST_SETTLE -> 0.05
+    ShakeKind.AURORA_CREST -> 0.07
 }
 
 fun shakeScaleForQuality(quality: PresenterQuality): Double = when (quality) {
@@ -396,6 +405,36 @@ fun resolveContractDeadlineBurst(v: SimView): WorldBurstCue =
 /** Finish 5.0 Phase 12 — quest near-complete cue at the player. */
 fun resolveQuestNearBurst(v: SimView): WorldBurstCue =
     WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.QUEST_NEAR)
+
+/** Finish 6.0 Phase 12 — nest settle cue at the player. */
+fun resolveNestSettleBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.NEST_SETTLE)
+
+/** Finish 6.0 Phase 12 — roast ready above station output, else player. */
+fun resolveRoastReadyBurst(v: SimView, stationId: String? = null): WorldBurstCue {
+    if (stationId != null) {
+        val anchor = v.transferAnchors.firstOrNull { it.inventoryId == "inv.$stationId.output" }
+        if (anchor != null) return WorldBurstCue(anchor.xMm, anchor.zMm, WorldBurstKind.ROAST_READY)
+    }
+    return WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.ROAST_READY)
+}
+
+/** Finish 6.0 Phase 12 — ferment ready above station output, else player. */
+fun resolveFermentReadyBurst(v: SimView, stationId: String? = null): WorldBurstCue {
+    if (stationId != null) {
+        val anchor = v.transferAnchors.firstOrNull { it.inventoryId == "inv.$stationId.output" }
+        if (anchor != null) return WorldBurstCue(anchor.xMm, anchor.zMm, WorldBurstKind.FERMENT_READY)
+    }
+    return WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.FERMENT_READY)
+}
+
+/** Finish 6.0 Phase 12 — school flash at the player. */
+fun resolveSchoolFlashBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.SCHOOL_FLASH)
+
+/** Finish 6.0 Phase 12 — aurora crest at the player. */
+fun resolveAuroraCrestBurst(v: SimView): WorldBurstCue =
+    WorldBurstCue(v.player.xMm, v.player.zMm, WorldBurstKind.AURORA_CREST)
 
 /**
  * Ephemeral world bursts. Quality-budgeted; never mutates sim.

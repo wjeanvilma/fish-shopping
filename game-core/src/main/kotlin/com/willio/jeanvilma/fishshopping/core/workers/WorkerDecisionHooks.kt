@@ -6,6 +6,9 @@ package com.willio.jeanvilma.fishshopping.core.workers
  * dock_relay / cargo_sprint_urgency / quick_till_queue) score without save-schema changes.
  * Finish 5.0 Phase 20 wave-3 reasons: rush_marshal_patrol, circuit_boss_link,
  * smoke_queue_feed, schedule_daypart_boost, failure_recover.
+ * Finish 6.0 Phase 16 wave-4 reasons: nest_chill_chain, nest_host_welcome,
+ * nest_haul_urgency, schedule_nest_ember_boost, nest_decision_fixture
+ * (see decision-traces-staff-ai-4 fixtures).
  */
 data class WorkerDecisionTrace(
     val workerId: String,

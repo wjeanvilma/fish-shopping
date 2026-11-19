@@ -91,7 +91,18 @@ function validate(): string[] {
     resolve(root, "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/StaffTreesSystem.kt"),
     "utf8",
   );
-  const systemsTs = readFileSync(resolve(root, "web/src/engine/systems.ts"), "utf8");
+  const systemsTs = [
+    "web/src/engine/systems.ts",
+    "web/src/engine/systems/staffTrees.ts",
+  ]
+    .map((p) => {
+      try {
+        return readFileSync(resolve(root, p), "utf8");
+      } catch {
+        return "";
+      }
+    })
+    .join("\n");
   // Finish 4/5 soft-floor: GameHost split moved toast/intents under web/src/game/host/.
   const hostBundle = [
     "web/src/game/GameHost.ts",
@@ -108,6 +119,16 @@ function validate(): string[] {
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt"),
     "utf8",
   );
+  // Soft-floor: Finish 6.0 Phase 5 host-vm split moved step toasts into VmStepBus.
+  let vmStepBus = "";
+  try {
+    vmStepBus = readFileSync(
+      resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmStepBus.kt"),
+      "utf8",
+    );
+  } catch {
+    vmStepBus = "";
+  }
   const appTsx = readFileSync(resolve(root, "web/src/ui/App.tsx"), "utf8");
   const screenKt = readFileSync(
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt"),
@@ -116,7 +137,9 @@ function validate(): string[] {
   if (!treesKt.includes("object StaffTreesSystem")) errors.push("Kotlin StaffTreesSystem missing");
   if (!systemsTs.includes("export const StaffTreesSystem")) errors.push("web StaffTreesSystem missing");
   if (!hostBundle.includes("worker_branch_unlocked")) errors.push("host missing branch unlock toast");
-  if (!vmKt.includes("WorkerBranchUnlocked")) errors.push("GameViewModel missing WorkerBranchUnlocked toast");
+  if (!vmKt.includes("WorkerBranchUnlocked") && !vmStepBus.includes("WorkerBranchUnlocked")) {
+    errors.push("GameViewModel/VmStepBus missing WorkerBranchUnlocked toast");
+  }
   if (!appTsx.includes("onTrainBranch")) errors.push("web Staff panel missing branch train UI");
   if (!screenKt.includes("onTrainBranch")) errors.push("Android Staff panel missing branch train UI");
   if (!vmKt.includes("fun trainWorkerBranch")) errors.push("Android missing trainWorkerBranch");

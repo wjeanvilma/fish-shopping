@@ -9,16 +9,21 @@ import {
   remoteBatchUrl,
   remoteRetryDelayMs,
   requeueRemoteFlushSlice,
+  REMOTE_CIRCUIT_BREAKER_AFTER_DEAD_LETTERS,
   REMOTE_FLUSH_INTERVAL_MS,
   REMOTE_MAX_FLUSH_RETRIES,
   REMOTE_REQUEUE_ON_FLUSH_FAILURE,
   REMOTE_RETRY_JITTER_MS,
   REMOTE_ANALYTICS_POLICY,
+  remoteAnalyticsCircuitOpen,
   shouldDeadLetterRemoteFlush,
   takeRemoteFlushSliceDetailed,
   type QueuedRemoteEvent,
   type RemoteBatchEnvelope,
 } from "../engine/remoteAnalytics";
+
+/** Finish 6.0 Phase 18 — CIRCUIT_BREAKER threshold mirrors RemoteAnalyticsPolicy. */
+const CIRCUIT_BREAKER = REMOTE_CIRCUIT_BREAKER_AFTER_DEAD_LETTERS;
 import type { AnalyticsTrackSink } from "./analyticsBus";
 
 export type RemoteBatchPoster = (
@@ -82,8 +87,13 @@ export class RemoteAnalyticsSink implements AnalyticsTrackSink {
     if (!consent) this.queue.length = 0;
   }
 
+  /** Finish 6.0 Phase 18 — analytics circuit open after repeated dead-letters. */
+  get circuitOpen(): boolean {
+    return remoteAnalyticsCircuitOpen(this.deadLetterCount) || this.deadLetterCount >= CIRCUIT_BREAKER;
+  }
+
   track(event: AnalyticsEvent | null): void {
-    if (!this.consent || !this.baseUrl || !event) return;
+    if (!this.consent || !this.baseUrl || !event || this.circuitOpen) return;
     enqueueRemoteEvent(this.queue, event, this.nowMs());
     this.eventsAccepted += 1;
     if (this.queue.length >= REMOTE_ANALYTICS_POLICY.batch.maxEvents) {
@@ -92,7 +102,7 @@ export class RemoteAnalyticsSink implements AnalyticsTrackSink {
   }
 
   async flush(): Promise<boolean> {
-    if (!this.baseUrl || this.flushing || this.queue.length === 0) return true;
+    if (!this.baseUrl || this.flushing || this.queue.length === 0 || this.circuitOpen) return true;
     this.flushing = true;
     let taken: QueuedRemoteEvent[] = [];
     try {
@@ -168,6 +178,7 @@ export class RemoteAnalyticsSink implements AnalyticsTrackSink {
     lastFlushOk: boolean;
     flushFailures: number;
     deadLetterCount: number;
+    circuitOpen: boolean;
   } {
     return {
       queued: this.queue.length,
@@ -176,6 +187,7 @@ export class RemoteAnalyticsSink implements AnalyticsTrackSink {
       lastFlushOk: this.lastFlushOk,
       flushFailures: this.flushFailures,
       deadLetterCount: this.deadLetterCount,
+      circuitOpen: this.circuitOpen,
     };
   }
 }

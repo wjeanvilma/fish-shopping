@@ -2,13 +2,13 @@
   "phase": 10,
   "plan": "30_finish_4.0",
   "schema": "fish.ship.product_art.v1",
-  "description": "Finish 4.0 Phase 10/13 + Finish 5.0 Phase 15 — product/cosmetic art presentation pass. Authors multi-part ProductArt meshes for all 46 products, authored cosmetic banner GLBs, and counter tray presentation depth. Schema stays 25 / content 4.0.0.",
+  "description": "Finish 4.0 Phase 10/13 + Finish 5.0 Phase 10/15 + Finish 6.0 Phase 10 — product/cosmetic art presentation pass. Authors multi-part ProductArt meshes for all 52 products, authored cosmetic banner GLBs for 24 banners, and counter tray presentation depth. Schema stays 26 / content 5.0.0.",
   "contentVersion": "3.0.0",
   "schemaVersion": 24,
   "productArtMarker": "authored-finish-4.0-phase-10",
   "cosmeticBannerMarker": "cosmetic-banner-phase-10",
-  "authoredProductTarget": 46,
-  "cosmeticBannerTarget": 24,
+  "authoredProductTarget": 52,
+  "cosmeticBannerTarget": 30,
   "minProductArtNodes": 4,
   "minCosmeticArtNodes": 4,
   "themesModule": "shared/tools/product_themes.py",
@@ -112,7 +112,7 @@
     },
     {
       "productId": "product.fish_and_chips",
-      "kind": "portion",
+      "kind": "chips",
       "asset": "shared/assets/models/product_fish_and_chips.glb"
     },
     {
@@ -264,6 +264,36 @@
       "productId": "product.can_carton",
       "kind": "carton",
       "asset": "shared/assets/models/product_can_carton.glb"
+    },
+    {
+      "productId": "product.roasted_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_roasted_fillet.glb"
+    },
+    {
+      "productId": "product.roast_chip",
+      "kind": "chips",
+      "asset": "shared/assets/models/product_roast_chip.glb"
+    },
+    {
+      "productId": "product.roast_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_roast_carton.glb"
+    },
+    {
+      "productId": "product.fermented_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_fermented_fillet.glb"
+    },
+    {
+      "productId": "product.ferment_paste",
+      "kind": "soup",
+      "asset": "shared/assets/models/product_ferment_paste.glb"
+    },
+    {
+      "productId": "product.ferment_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_ferment_carton.glb"
     }
   ],
   "cosmeticBanners": [
@@ -362,6 +392,30 @@
     {
       "cosmeticId": "banner.iap_can_crest",
       "asset": "shared/assets/models/cosmetic_banner_can_crest.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_saffron_bunting",
+      "asset": "shared/assets/models/cosmetic_banner_saffron_bunting.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_cobalt_pennant",
+      "asset": "shared/assets/models/cosmetic_banner_cobalt_pennant.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_quay_flag",
+      "asset": "shared/assets/models/cosmetic_banner_quay_flag.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_sound_streamer",
+      "asset": "shared/assets/models/cosmetic_banner_sound_streamer.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_roast_ribbon",
+      "asset": "shared/assets/models/cosmetic_banner_roast_ribbon.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_ferment_crest",
+      "asset": "shared/assets/models/cosmetic_banner_ferment_crest.glb"
     }
   ],
   "checklist": [
@@ -385,6 +439,8 @@
   ],
   "softFloors": {
     "productFinish5Marker": "product-art-5",
-    "cosmeticFinish5Marker": "product-art-5"
+    "cosmeticFinish5Marker": "product-art-5",
+    "productFinish6Marker": "product-art-6",
+    "cosmeticFinish6Marker": "product-art-6"
   }
 }

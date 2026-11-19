@@ -31,6 +31,9 @@ export const EVENT_NAMES = [
   "frame_time_summary",
   "session_start",
   "crash_free_session",
+  "nest_sigil_earned",
+  "nest_contract_settled",
+  "loadtest_bank_probed",
 ] as const;
 
 export const FORBIDDEN_KEYS = new Set([
@@ -58,4 +61,7 @@ export const ALLOWED_PROPS: Record<(typeof EVENT_NAMES)[number], ReadonlySet<str
   frame_time_summary: new Set(["emaMs", "quality", "samples", "platform"]),
   session_start: new Set(["platform"]),
   crash_free_session: new Set(["clean", "platform"]),
+  nest_sigil_earned: new Set(["sigilId", "count"]),
+  nest_contract_settled: new Set(["contractId", "coins"]),
+  loadtest_bank_probed: new Set(["bank", "floorsMet", "platform"]),
 };

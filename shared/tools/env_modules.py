@@ -229,6 +229,28 @@ def canner_module():
     return _finish(pos, nrm, idx)
 
 
+def roaster_module():
+    """Harbor roaster: oven box, spit rail, ember tray."""
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.35, 0.0), (0.95, 0.60, 0.75))  # oven body
+    add_box(pos, nrm, idx, (0.0, 0.72, 0.0), (0.80, 0.12, 0.60))  # door band
+    add_box(pos, nrm, idx, (-0.25, 0.95, 0.0), (0.08, 0.08, 0.55))  # spit rail
+    add_box(pos, nrm, idx, (0.25, 0.95, 0.0), (0.08, 0.08, 0.55))
+    add_box(pos, nrm, idx, (0.0, 0.18, 0.0), (0.70, 0.10, 0.55))  # ember tray
+    return _finish(pos, nrm, idx)
+
+
+def fermenter_module():
+    """Harbor fermenter: crock, airlock, brine shelf."""
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.40, 0.0), (0.80, 0.75, 0.70))  # crock
+    add_box(pos, nrm, idx, (0.0, 0.85, 0.0), (0.65, 0.10, 0.55))  # lid
+    add_box(pos, nrm, idx, (0.0, 1.05, 0.0), (0.12, 0.22, 0.12))  # airlock
+    add_box(pos, nrm, idx, (0.35, 0.55, 0.0), (0.18, 0.40, 0.40))  # brine shelf
+    add_box(pos, nrm, idx, (-0.30, 0.55, 0.30), (0.20, 0.25, 0.16))  # jar nest
+    return _finish(pos, nrm, idx)
+
+
 MODULE_BUILDERS = {
     "pier": pier_deck_module,
     "ground": ground_module,
@@ -248,6 +270,8 @@ MODULE_BUILDERS = {
     "glazer": glazer_module,
     "poacher": poacher_module,
     "canner": canner_module,
+    "roaster": roaster_module,
+    "fermenter": fermenter_module,
 }
 
 MODULE_COLORS = {
@@ -269,6 +293,8 @@ MODULE_COLORS = {
     "glazer": "#6A90B0",
     "poacher": "#5A98A8",
     "canner": "#8A6A48",
+    "roaster": "#B05A38",
+    "fermenter": "#6A7A50",
 }
 
 # World Y height (metres) when node scale Y = height / 1.0 after normalize.
@@ -291,4 +317,6 @@ MODULE_HEIGHTS = {
     "glazer": 1.35,
     "poacher": 1.35,
     "canner": 1.40,
+    "roaster": 1.40,
+    "fermenter": 1.45,
 }

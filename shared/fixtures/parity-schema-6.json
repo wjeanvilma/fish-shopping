@@ -1,0 +1,24 @@
+{
+  "schema": "fish.fixtures.parity_schema_6.v1",
+  "schema6Marker": "authored-finish-6.0-phase-2",
+  "phase": 2,
+  "plan": "30_finish_6.0",
+  "expect": {
+    "contentVersion": "5.0.0",
+    "schemaVersion": 26,
+    "schemaMin": 4,
+    "sampleShipMin": 5,
+    "sampleBillingMin": 5,
+    "sampleOpsMin": 5,
+    "gapClosed": "schemaFoundationsIncomplete",
+    "gates": [
+      "schemas_present",
+      "index_locked",
+      "ajv_ship_samples",
+      "ajv_billing_samples",
+      "ajv_ops_samples",
+      "kickoff_gap_closed",
+      "ci_gate"
+    ]
+  }
+}

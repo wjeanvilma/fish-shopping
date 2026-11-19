@@ -24,6 +24,11 @@ data class OfflineReport(
     val repairSpent: Long = 0,
     val loanInterestAccrued: Long = 0,
     val revenueDelta: Long = 0,
+    /** Finish 6.0 Phase 18 — nest journal fidelity deltas. */
+    val loanRepaid: Long = 0,
+    val contractRevenue: Long = 0,
+    val rivalSalesStolen: Long = 0,
+    val endgameSigilsEarned: Long = 0,
     /** Finish 2.0 Phase 18 — narrative lines for the away summary / dashboard. */
     val journalLines: List<String> = emptyList(),
 ) {
@@ -32,7 +37,9 @@ data class OfflineReport(
             workerFishCaught > 0L || workerItemsMoved > 0L ||
             contractsCompleted > 0L || maintenancePaid > 0L || itemsSpoiled > 0L ||
             rivalBeats > 0L || wagesPaid > 0L || repairSpent > 0L ||
-            loanInterestAccrued > 0L || revenueDelta > 0L || journalLines.isNotEmpty()
+            loanInterestAccrued > 0L || revenueDelta > 0L ||
+            loanRepaid > 0L || contractRevenue > 0L || rivalSalesStolen > 0L ||
+            endgameSigilsEarned > 0L || journalLines.isNotEmpty()
 }
 
 /**
@@ -59,6 +66,10 @@ fun applyOffline(sim: Simulation, elapsedMillis: Long): OfflineReport {
     val beforeRepairs = sim.state.stat(Stats.REPAIR_SPENT)
     val beforeLoanInterest = sim.state.stat(Stats.LOAN_INTEREST_ACCRUED)
     val beforeRevenue = sim.state.stat(Stats.REVENUE)
+    val beforeLoanRepaid = sim.state.stat(Stats.LOAN_REPAID)
+    val beforeContractRevenue = sim.state.stat(Stats.CONTRACT_REVENUE)
+    val beforeRivalStolen = sim.state.stat(Stats.RIVAL_SALES_STOLEN)
+    val beforeSigils = sim.state.stat(Stats.ENDGAME_SIGILS_EARNED)
 
     if (ticks > 0L) {
         val player = sim.state.player
@@ -100,5 +111,9 @@ fun applyOffline(sim: Simulation, elapsedMillis: Long): OfflineReport {
         repairSpent = sim.state.stat(Stats.REPAIR_SPENT) - beforeRepairs,
         loanInterestAccrued = sim.state.stat(Stats.LOAN_INTEREST_ACCRUED) - beforeLoanInterest,
         revenueDelta = sim.state.stat(Stats.REVENUE) - beforeRevenue,
+        loanRepaid = sim.state.stat(Stats.LOAN_REPAID) - beforeLoanRepaid,
+        contractRevenue = sim.state.stat(Stats.CONTRACT_REVENUE) - beforeContractRevenue,
+        rivalSalesStolen = sim.state.stat(Stats.RIVAL_SALES_STOLEN) - beforeRivalStolen,
+        endgameSigilsEarned = sim.state.stat(Stats.ENDGAME_SIGILS_EARNED) - beforeSigils,
     )
 }

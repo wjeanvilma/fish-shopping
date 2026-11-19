@@ -1,0 +1,25 @@
+{
+  "schema": "fish.fixture.parity_a11y_depth_5.v1",
+  "a11yDepth5Marker": "authored-finish-6.0-phase-22",
+  "phase": 22,
+  "plan": "30_finish_6.0",
+  "description": "Finish 6.0 Phase 22: nest a11y depth 5 surfaces + contrast + live regions.",
+  "sampleSurface": "nest_treasury",
+  "sampleLiveRegion": "nest_conflict",
+  "expect": {
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "screenSurfaceMin": 6,
+    "contrastPairMin": 3,
+    "liveRegionMin": 3,
+    "a11yI18n6Incomplete": false,
+    "openGapFlagMin": 1,
+    "gates": [
+      "surfaces",
+      "contrast",
+      "live_regions",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

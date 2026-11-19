@@ -267,6 +267,42 @@
       "webProductId": "fish.cosmetic.can_crest",
       "androidProductId": "fish_cosmetic_can_crest",
       "grantsCosmetic": "banner.iap_can_crest"
+    },
+    {
+      "sku": "fish.cosmetic.saffron_bunting",
+      "webProductId": "fish.cosmetic.saffron_bunting",
+      "androidProductId": "fish_cosmetic_saffron_bunting",
+      "grantsCosmetic": "banner.iap_saffron_bunting"
+    },
+    {
+      "sku": "fish.cosmetic.cobalt_pennant",
+      "webProductId": "fish.cosmetic.cobalt_pennant",
+      "androidProductId": "fish_cosmetic_cobalt_pennant",
+      "grantsCosmetic": "banner.iap_cobalt_pennant"
+    },
+    {
+      "sku": "fish.cosmetic.quay_flag",
+      "webProductId": "fish.cosmetic.quay_flag",
+      "androidProductId": "fish_cosmetic_quay_flag",
+      "grantsCosmetic": "banner.iap_quay_flag"
+    },
+    {
+      "sku": "fish.cosmetic.sound_streamer",
+      "webProductId": "fish.cosmetic.sound_streamer",
+      "androidProductId": "fish_cosmetic_sound_streamer",
+      "grantsCosmetic": "banner.iap_sound_streamer"
+    },
+    {
+      "sku": "fish.cosmetic.roast_ribbon",
+      "webProductId": "fish.cosmetic.roast_ribbon",
+      "androidProductId": "fish_cosmetic_roast_ribbon",
+      "grantsCosmetic": "banner.iap_roast_ribbon"
+    },
+    {
+      "sku": "fish.cosmetic.ferment_crest",
+      "webProductId": "fish.cosmetic.ferment_crest",
+      "androidProductId": "fish_cosmetic_ferment_crest",
+      "grantsCosmetic": "banner.iap_ferment_crest"
     }
   ],
   "sandbox": {
@@ -275,5 +311,7 @@
   "finish4StripeOpsPhase": 25,
   "stripeOpsCatalog": "shared/ship/stripe-ops-4.json",
   "finish5StripeOpsPhase": 25,
-  "stripeOps5Catalog": "shared/ship/stripe-ops-5.json"
+  "stripeOps5Catalog": "shared/ship/stripe-ops-5.json",
+  "finish6StripeOpsPhase": 25,
+  "stripeOps6Catalog": "shared/ship/stripe-ops-6.json"
 }

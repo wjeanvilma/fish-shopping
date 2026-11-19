@@ -42,6 +42,11 @@ export function OfflineSummaryPanel({ report, onContinue }: { report: OfflineRep
   }
   if (report.journalLines?.length) lines.push(...report.journalLines);
   if (lines.length === 0 && !report.hadActivity) lines.push(t("offline.quietShift"));
+  const nestJournalActive =
+    (report.loanRepaid ?? 0) > 0 ||
+    (report.contractRevenue ?? 0) > 0 ||
+    (report.rivalSalesStolen ?? 0) > 0 ||
+    (report.endgameSigilsEarned ?? 0) > 0;
   return (
     <div className="scrim" data-testid={WEB_E2E_IDS.OFFLINE_ROOT}>
       <div
@@ -66,6 +71,11 @@ export function OfflineSummaryPanel({ report, onContinue }: { report: OfflineRep
           {report.capped ? ` · ${t("offline.capped")}` : ""}
         </p>
         <p aria-label={t("a11y.offlineSection")}>{t("offline.staffKeptRunning")}</p>
+        {nestJournalActive ? (
+          <p className="small muted" aria-label={t("a11y.offlineNestJournal")}>
+            {t("offline.nestJournal")}
+          </p>
+        ) : null}
         <ul className="upgrade-list">
           {lines.map((l) => <li key={l}><strong className="num">{l}</strong></li>)}
         </ul>

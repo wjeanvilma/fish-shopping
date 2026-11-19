@@ -9,6 +9,7 @@ import {
  * Finish 3.0 Phase 22 — Playwright E2E smoke:
  * title → play → HUD toolbar → pause → goals.
  * Finish 5.0 Phase 26 — ≥12 scenarios including Finish 5 deep-link aliases.
+ * Finish 6.0 Phase 23 — ≥24 scenarios including nest deep-link aliases.
  */
 
 async function seedFreshSession(page: Page, decidedAnalytics = true): Promise<void> {
@@ -193,5 +194,91 @@ test.describe("web E2E smoke", () => {
     await expect(page.getByTestId(WEB_E2E_IDS.DECOR_PLACE).or(page.getByRole("dialog").first())).toBeVisible({
       timeout: 15_000,
     });
+  });
+
+  test("deep link panel=bag opens bag after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=bag");
+    await playToHud(page);
+    await expect(page.getByTestId(WEB_E2E_IDS.BAG_PANEL)).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("deep link panel=jobs opens contracts after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=jobs");
+    await playToHud(page);
+    await expect(page.getByTestId(WEB_E2E_IDS.CONTRACTS_PANEL)).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("deep link panel=dash opens dashboard after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=dash");
+    await playToHud(page);
+    await expect(page.getByTestId(WEB_E2E_IDS.DASH_ROOT)).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("deep link panel=map opens map after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=map");
+    await playToHud(page);
+    await expect(page.getByTestId(WEB_E2E_IDS.MAP_PANEL)).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("deep link panel=nesttreasury opens dashboard after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=nesttreasury");
+    await playToHud(page);
+    await expect(page.getByTestId(WEB_E2E_IDS.DASH_ROOT)).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId(WEB_E2E_IDS.NEST_TREASURY)).toBeVisible();
+  });
+
+  test("deep link panel=nestloans opens goals bank after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=nestloans");
+    await playToHud(page);
+    await expect(page.getByRole("dialog").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId(WEB_E2E_IDS.NEST_LOANS)).toBeVisible();
+  });
+
+  test("deep link hash nestember opens goals after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/#nestember");
+    await playToHud(page);
+    await expect(page.getByRole("dialog").first()).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("deep link go=nestconflict opens pause after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?go=nestconflict");
+    await playToHud(page);
+    await expect(page.getByTestId(WEB_E2E_IDS.PAUSE_ROOT)).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("deep link panel=saffron opens map after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=saffron");
+    await playToHud(page);
+    await expect(page.getByTestId(WEB_E2E_IDS.MAP_PANEL)).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("deep link hash roastnest opens contracts after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/#roastnest");
+    await playToHud(page);
+    await expect(page.getByTestId(WEB_E2E_IDS.CONTRACTS_PANEL)).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("deep link panel=nestjournal opens species book after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=nestjournal");
+    await playToHud(page);
+    await expect(page.getByTestId(WEB_E2E_IDS.SPECIES_BOOK)).toBeVisible({ timeout: 20_000 });
+  });
+
+  test("deep link panel=contracts opens contracts after play", async ({ page }) => {
+    await seedFreshSession(page, true);
+    await page.goto("/?panel=contracts");
+    await playToHud(page);
+    await expect(page.getByTestId(WEB_E2E_IDS.CONTRACTS_PANEL)).toBeVisible({ timeout: 20_000 });
   });
 });

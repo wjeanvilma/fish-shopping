@@ -2,11 +2,11 @@
   "phase": 15,
   "plan": "30_finish_2.0",
   "schema": "fish.ship.staff_trees.v1",
-  "description": "Finish 2.0 Phase 15 + Finish 3.0 Phase 10 + Finish 5.0 Phase 20 — staff specialization trees for all hireable roles; wave-3 child specialties and peak_tide schedule (≥13 branches / ≥3 schedules).",
+  "description": "Finish 2.0–6.0 staff specialization trees; wave-4 nest child specialties and nest_ember schedule (≥16 branches / ≥4 schedules).",
   "contentVersion": "2.0.0",
   "schemaVersion": 23,
-  "branchCount": 13,
-  "scheduleCount": 3,
+  "branchCount": 16,
+  "scheduleCount": 4,
   "rootBranchCount": 8,
   "branches": [
     "branch.fisher.line_pro",
@@ -21,16 +21,20 @@
     "branch.greeter.welcome_desk",
     "branch.supervisor.rush_marshal",
     "branch.operator.circuit_boss",
-    "branch.smoker_specialist.smoke_queue"
+    "branch.smoker_specialist.smoke_queue",
+    "branch.ice_runner.nest_chill",
+    "branch.greeter.nest_host",
+    "branch.porter.nest_haul"
   ],
   "schedules": [
     "schedule.dawn_crew",
     "schedule.night_watch",
-    "schedule.peak_tide"
+    "schedule.peak_tide",
+    "schedule.nest_ember"
   ],
   "parityFixture": "shared/fixtures/parity-staff-trees.json",
-  "definitionOfDoneStaffBranches": 13,
-  "definitionOfDoneStaffSchedules": 3,
+  "definitionOfDoneStaffBranches": 16,
+  "definitionOfDoneStaffSchedules": 4,
   "validateScript": "npm run stafftrees:validate",
   "checklist": [
     "content-pack.staffTrees has ≥10 branches and ≥2 schedules covering all 8 roles",
@@ -51,6 +55,6 @@
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/StaffTrees.kt",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Schema23.kt",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/StaffTreesSystem.kt",
-    "web/src/engine/systems.ts"
+    "web/src/engine/systems/staffTrees.ts"
   ]
 }

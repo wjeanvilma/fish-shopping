@@ -1,0 +1,56 @@
+{
+  "phase": 2,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.schema_6.v1",
+  "description": "Finish 6.0 Phase 2 — formal JSON Schema foundations for ship catalogs, billing contracts, and ops catalogs. Ajv-validates representative live catalogs; closes schemaFoundationsIncomplete.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "schema6Marker": "authored-finish-6.0-phase-2",
+  "schemaIndex": "shared/schema/schema-index.json",
+  "schemas": {
+    "contentPack": "shared/schema/content-pack.schema.json",
+    "shipCatalog": "shared/schema/ship-catalog.schema.json",
+    "billingContract": "shared/schema/billing-contract.schema.json",
+    "opsCatalog": "shared/schema/ops-catalog.schema.json"
+  },
+  "schemaMin": 4,
+  "sampleCatalogMin": {
+    "ship": 5,
+    "billing": 5,
+    "ops": 5
+  },
+  "draft": "https://json-schema.org/draft/2020-12/schema",
+  "ajvOptions": {
+    "allErrors": true,
+    "strict": false
+  },
+  "parityFixture": "shared/fixtures/parity-schema-6.json",
+  "validateScript": "npm run schema6:validate",
+  "smokeScript": "npm run schema6:smoke",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "checklist": [
+    "ship-catalog / billing-contract / ops-catalog JSON Schemas present under shared/schema/",
+    "schema-index.json lists ≥4 schemas including content-pack",
+    "Ajv validates ≥5 ship + ≥5 billing + ≥5 ops sample catalogs",
+    "entitlements.json carries fish.billing.entitlements.v1 schema id",
+    "schemaFoundationsIncomplete gap closed on Finish 6 kickoff",
+    "schema6:validate + schema6:smoke green in CI",
+    "content/version stays 5.0.0 / schema 26"
+  ],
+  "preflightGates": [
+    "shared/ship/schema-6.json",
+    "shared/fixtures/parity-schema-6.json",
+    "shared/schema/schema-index.json",
+    "shared/schema/ship-catalog.schema.json",
+    "shared/schema/billing-contract.schema.json",
+    "shared/schema/ops-catalog.schema.json",
+    "shared/schema/content-pack.schema.json",
+    "shared/ship/finish-6.0-kickoff.json",
+    "web/src/ship/schema6.ts",
+    "web/src/schema/contractValidate.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Schema6.kt",
+    "web/scripts/validate-schema-6.ts",
+    "web/scripts/smoke-schema-6.ts"
+  ]
+}

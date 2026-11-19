@@ -1,0 +1,128 @@
+{
+  "phase": 16,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.staff_ai_4.v1",
+  "description": "Finish 6.0 Phase 16 — staff/worker AI depth wave 4 + decision-trace fixtures. Adds nest_chill / nest_host / nest_haul specialties, nest_ember schedule, and decision-traces-staff-ai-4 fixtures. Schema stays 27 / content 5.0.0.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "staffAi4Marker": "authored-finish-6.0-phase-16",
+  "extendsStaffAi3": "shared/ship/staff-ai-3.json",
+  "staffTreesCatalog": "shared/ship/staff-trees.json",
+  "decisionTraceFixture": "shared/fixtures/decision-traces-staff-ai-4.json",
+  "depthStats": [
+    "stat.ice_runner_nest_chills",
+    "stat.greeter_nest_hosts",
+    "stat.porter_nest_hauls",
+    "stat.schedule_task_boosts",
+    "stat.worker_failure_recoveries"
+  ],
+  "depthBehaviors": [
+    {
+      "branchId": "branch.ice_runner.nest_chill",
+      "role": "ice_runner",
+      "markers": [
+        "nest_chill",
+        "nest_chill_chain",
+        "ICE_RUNNER_NEST_CHILLS",
+        "chill_haul"
+      ]
+    },
+    {
+      "branchId": "branch.greeter.nest_host",
+      "role": "greeter",
+      "markers": [
+        "nest_host",
+        "nest_host_welcome",
+        "GREETER_NEST_HOSTS",
+        "welcome_desk"
+      ]
+    },
+    {
+      "branchId": "branch.porter.nest_haul",
+      "role": "porter",
+      "markers": [
+        "nest_haul",
+        "nest_haul_urgency",
+        "PORTER_NEST_HAULS",
+        "cargo_sprint"
+      ]
+    },
+    {
+      "branchId": "schedule.nest_ember",
+      "role": "schedule",
+      "markers": [
+        "schedule_nest_ember_boost",
+        "SCHEDULE_TASK_BOOSTS",
+        "nest_ember",
+        "scheduleDaypartBoost"
+      ]
+    },
+    {
+      "branchId": "decision_trace.fixtures",
+      "role": "trace",
+      "markers": [
+        "decision-traces-staff-ai-4",
+        "WorkerDecisionHooks",
+        "lastForWorker",
+        "nest_decision_fixture"
+      ]
+    }
+  ],
+  "decisionReasons": [
+    "nest_chill_chain",
+    "nest_host_welcome",
+    "nest_haul_urgency",
+    "schedule_nest_ember_boost",
+    "nest_decision_fixture"
+  ],
+  "newBranchIds": [
+    "branch.ice_runner.nest_chill",
+    "branch.greeter.nest_host",
+    "branch.porter.nest_haul"
+  ],
+  "newScheduleIds": [
+    "schedule.nest_ember"
+  ],
+  "branchesMin": 16,
+  "schedulesMin": 4,
+  "webWorkersPath": "web/src/engine/systems/workers.ts",
+  "kotlinWorkersPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
+  "webStatsPath": "web/src/engine/state.ts",
+  "kotlinStatsPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/GameState.kt",
+  "webDecisionHooksPath": "web/src/engine/systems/workerDecisionHooks.ts",
+  "kotlinDecisionHooksPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerDecisionHooks.kt",
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-staff-ai-4.json",
+  "validateScript": "npm run staffai4:validate",
+  "softStaffAi3Validate": "npm run staffai3:validate",
+  "softStaffTreesValidate": "npm run stafftrees:validate",
+  "authorTool": "shared/tools/author_staff_ai_4.py",
+  "checklist": [
+    "Ice runner nest_chill specialty + ICE_RUNNER_NEST_CHILLS",
+    "Greeter nest_host specialty + GREETER_NEST_HOSTS",
+    "Porter nest_haul specialty + PORTER_NEST_HAULS",
+    "schedule.nest_ember + schedule_nest_ember_boost scoring",
+    "decision-traces-staff-ai-4 fixtures for wave-4 reasons",
+    "staff-trees ≥16 branches / ≥4 schedules",
+    "kickoff staffAi4Incomplete=false",
+    "staffai4:validate green in CI",
+    "schema stays 27 / content 5.0.0",
+    "openGapFlagMin 14→13"
+  ],
+  "preflightGates": [
+    "shared/ship/staff-ai-4.json",
+    "shared/fixtures/parity-staff-ai-4.json",
+    "shared/fixtures/decision-traces-staff-ai-4.json",
+    "shared/ship/staff-ai-3.json",
+    "shared/ship/staff-trees.json",
+    "shared/content/content-pack.json",
+    "shared/tools/author_staff_ai_4.py",
+    "web/src/ship/staffAi4.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/StaffAi4.kt",
+    "web/scripts/validate-staff-ai-4.ts",
+    "web/src/engine/systems/workers.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
+    "web/src/engine/state.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/GameState.kt"
+  ]
+}

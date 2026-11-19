@@ -1,0 +1,94 @@
+{
+  "phase": 21,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.presenter_harness.v1",
+  "description": "Finish 6.0 Phase 21 — Presenter/render CPU snapshot harness. Dual web↔Android stage timing + nest HUD pressure snapshot wired through HarborScene/HarborRenderer. Schema stays 27 / content 5.0.0.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "presenterHarnessMarker": "authored-finish-6.0-phase-21",
+  "stageMin": 6,
+  "snapshotFieldMin": 11,
+  "stages": [
+    "crowd",
+    "fly",
+    "burst",
+    "locomotion",
+    "qualityBind",
+    "nestHud"
+  ],
+  "snapshotFields": [
+    "lastFrameMs",
+    "emaFrameMs",
+    "targetMs",
+    "overBudget",
+    "budgetAction",
+    "quality",
+    "harborCacheLimit",
+    "sampleCount",
+    "stageMs",
+    "caps",
+    "nestHudPressurePermille"
+  ],
+  "requiredFiles": [
+    "web/src/render/presenterCpuSnapshot.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresenterCpuSnapshot.kt"
+  ],
+  "requiredSymbols": {
+    "presenterCpuSnapshot.ts": [
+      "PRESENTER_CPU_STAGES",
+      "PresenterCpuHarness",
+      "presenterCpuSnapshotFrom",
+      "nestHud",
+      "nestHudPressurePermille"
+    ],
+    "PresenterCpuSnapshot.kt": [
+      "PresenterCpuHarness",
+      "PresenterCpuSnapshots",
+      "NEST_HUD",
+      "nestHudPressurePermille"
+    ],
+    "HarborScene.ts": [
+      "PresenterCpuHarness",
+      "cpuHarness",
+      "presenterCpuSnapshot",
+      "setNestHudPressurePermille"
+    ],
+    "HarborRenderer.kt": [
+      "PresenterCpuHarness",
+      "cpuHarness",
+      "presenterCpuSnapshot",
+      "setNestHudPressurePermille"
+    ]
+  },
+  "parityFixture": "shared/fixtures/parity-presenter-harness.json",
+  "authorTool": "shared/tools/author_presenter_harness.py",
+  "validateScript": "npm run presenterharness:validate",
+  "softFrameTimingValidate": "npm run perf:budget",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "checklist": [
+    "≥6 presenter CPU stages including nestHud",
+    "≥11 snapshot fields (frame + stage + caps + nest pressure)",
+    "HarborScene + HarborRenderer wire PresenterCpuHarness",
+    "kickoff presenterHarnessMissing=false",
+    "presenterharness:validate green in CI",
+    "schema stays 27 / content 5.0.0",
+    "openGapFlagMin 9→8"
+  ],
+  "preflightGates": [
+    "shared/ship/presenter-harness.json",
+    "shared/fixtures/parity-presenter-harness.json",
+    "shared/tools/author_presenter_harness.py",
+    "web/src/render/presenterCpuSnapshot.ts",
+    "web/src/render/HarborScene.ts",
+    "web/src/render/frameTiming.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresenterCpuSnapshot.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRenderer.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/FrameTiming.kt",
+    "web/src/ship/presenterHarness.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/PresenterHarness.kt",
+    "web/scripts/validate-presenter-harness.ts",
+    "web/test/presenterHarness.test.ts",
+    "app/src/test/java/com/willio/jeanvilma/fishshopping/PresenterCpuHarnessTest.kt"
+  ]
+}

@@ -1,14 +1,14 @@
 {
   "phase": 19,
-  "plan": "30_finish_5.0",
+  "plan": "30_finish_6.0",
   "schema": "fish.content.weekly_retention.v1",
-  "description": "Finish 5.0 Phase 19 — weekly retention objectives + reminder policy. Week state lives in GameState.stats (no save-schema bump).",
-  "contentVersion": "4.0.0",
-  "schemaVersion": 26,
+  "description": "Finish 6.0 Phase 19 — weekly retention deepen (nest ember + saffron circuit). Week state lives in GameState.stats (no save-schema bump).",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
   "weekLengthDays": 7,
-  "boardSlots": 2,
-  "weekBonusCoins": 40,
-  "objectivesMin": 4,
+  "boardSlots": 3,
+  "weekBonusCoins": 50,
+  "objectivesMin": 6,
   "objectives": [
     {
       "id": "weekly.rival_week",
@@ -53,6 +53,28 @@
       },
       "rewardCoins": 110,
       "weight": 30
+    },
+    {
+      "id": "weekly.nest_ember",
+      "name": "Nest ember week",
+      "description": "Earn 2 endgame sigils this week.",
+      "goal": {
+        "stat": "stat.endgame_sigils_earned",
+        "atLeast": 2
+      },
+      "rewardCoins": 120,
+      "weight": 28
+    },
+    {
+      "id": "weekly.saffron_circuit",
+      "name": "Saffron circuit",
+      "description": "Travel between harbors 6 times this week.",
+      "goal": {
+        "stat": "stat.harbors_traveled",
+        "atLeast": 6
+      },
+      "rewardCoins": 115,
+      "weight": 28
     }
   ],
   "reminder": {

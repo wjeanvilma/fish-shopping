@@ -1,0 +1,12 @@
+{
+  "id": "chain.scaffold_nest_relay",
+  "name": "Nest Relay",
+  "description": "Authoring scaffold delivery chain for Nest Relay. Author 3 contract steps with this chainId before merge.",
+  "steps": 3,
+  "requiresHarbor": "harbor.sunrise_pier",
+  "contractIdHints": [
+    "contract.chain_scaffold_nest_relay_1",
+    "contract.chain_scaffold_nest_relay_2",
+    "contract.chain_scaffold_nest_relay_3"
+  ]
+}

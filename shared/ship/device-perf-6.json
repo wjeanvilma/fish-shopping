@@ -1,0 +1,95 @@
+{
+  "phase": 28,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.device_perf_6.v1",
+  "description": "Finish 6.0 Phase 28 — Device/browser/perf matrix 6. Harbor LRU ≥5, denser nest presenter caps, expanded Android/browser matrices for 14 harbors. Closes kickoff gap devicePerf6Incomplete. Soft-floors Finish 5.0 deviceperf5:validate.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "devicePerf6Marker": "authored-finish-6.0-phase-28",
+  "closesGap": "devicePerf6Incomplete",
+  "perfMatrix": "shared/perf/device-matrix.json",
+  "budgetGate": "shared/perf/budget-gate.json",
+  "androidMatrix": "shared/lifecycle/android-device-matrix.json",
+  "browserMatrix": "shared/lifecycle/browser-matrix.json",
+  "remoteAnalyticsShip": "shared/ship/remote-analytics.json",
+  "remoteAnalyticsPolicy": "shared/ops/remote-analytics-sink.json",
+  "harborCacheFloor": 5,
+  "overBudgetMultMax": 1.12,
+  "underBudgetMult": 0.85,
+  "androidDowngradeStreakMax": 40,
+  "webDowngradeStreakMax": 75,
+  "androidDeviceClassFloor": 6,
+  "androidScenarioFloor": 11,
+  "browserTargetFloor": 6,
+  "browserScenarioFloor": 11,
+  "analyticsContractTestsMin": 5,
+  "presenterCaps": {
+    "crowd": {
+      "low": 4,
+      "medium": 8,
+      "high": 12
+    },
+    "fly": {
+      "low": 5,
+      "medium": 12,
+      "high": 20
+    },
+    "burst": {
+      "low": 3,
+      "medium": 6,
+      "high": 12
+    }
+  },
+  "parityFixture": "shared/fixtures/parity-device-perf-6.json",
+  "validateScript": "npm run deviceperf6:validate",
+  "softDevicePerf5Validate": "npm run deviceperf5:validate",
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "authorTool": "shared/tools/author_device_perf_6.py",
+  "softFloors": {
+    "devicePerf5HarborCacheFloor": 4,
+    "devicePerf5AndroidClassFloor": 5,
+    "devicePerf5BrowserTargetFloor": 5,
+    "openGapFlagMinPrior": 2,
+    "note": "Finish 5.0 deviceperf5 / perf:budget stay green on ≥ floors; Phase 28 enforces harbor LRU ≥5 + denser nest caps for 14 harbors."
+  },
+  "checklist": [
+    "Perf matrix harborCache≥5, denser nest presenter caps wired web+Android",
+    "Android device classes ≥6 (ultrawide) + scenarios ≥11",
+    "Browser targets ≥6 (safari_ios) + scenarios ≥11",
+    "Remote analytics sink contract tests (≥5)",
+    "Kickoff gaps.devicePerf6Incomplete=false",
+    "deviceperf5:validate + perf:budget soft-green",
+    "deviceperf6:validate green in CI",
+    "schema stays 27 / content 5.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/device-perf-6.json",
+    "shared/fixtures/parity-device-perf-6.json",
+    "shared/perf/device-matrix.json",
+    "shared/perf/budget-gate.json",
+    "shared/lifecycle/android-device-matrix.json",
+    "shared/lifecycle/browser-matrix.json",
+    "shared/ops/remote-analytics-sink.json",
+    "shared/tools/author_device_perf_6.py",
+    "web/src/render/frameTiming.ts",
+    "web/src/render/perfBudgetGate.ts",
+    "web/src/render/presenters/quality.ts",
+    "web/src/render/presenters/vfx.ts",
+    "web/scripts/validate-perf-budget.ts",
+    "web/scripts/validate-device-perf-6.ts",
+    "web/src/ship/devicePerf6.ts",
+    "web/test/devicePerf6.test.ts",
+    "web/test/remoteAnalyticsContract.test.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/FrameTiming.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersQuality.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersVfx.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/DevicePerf6.kt"
+  ],
+  "liveCounts": {
+    "harborCacheLimit": 5,
+    "androidClasses": 6,
+    "androidScenarios": 11,
+    "browserTargets": 6,
+    "browserScenarios": 11
+  }
+}

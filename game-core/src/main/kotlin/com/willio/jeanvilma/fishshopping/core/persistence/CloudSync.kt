@@ -60,6 +60,10 @@ data class CloudConflictOffer(
     val ageSkewMs: Long = 0L,
     /** Finish 5.0 Phase 22 — short sync diagnostic lines. */
     val syncDiagnostics: List<String> = emptyList(),
+    /** Finish 6.0 Phase 18 — nest conflict harden fields. */
+    val preferredSide: SyncSource = SyncSource.LOCAL,
+    val conflictScore: Int = 0,
+    val nestConflictHint: String = "",
     val localText: String,
     val remoteText: String,
 )
@@ -166,6 +170,8 @@ object CloudSync {
         val localSummary = summaryOf(local, SyncSource.LOCAL)
         val remoteSummary = summaryOf(remote, SyncSource.REMOTE)
         val severity = severityOf(localSummary, remoteSummary)
+        val conflictScore = conflictScoreOf(localSummary, remoteSummary, severity)
+        val preferredSide = recommended
         return CloudConflictOffer(
             local = localSummary,
             remote = remoteSummary,
@@ -176,6 +182,9 @@ object CloudSync {
             severity = severity,
             ageSkewMs = ageSkewMs(localSummary, remoteSummary),
             syncDiagnostics = syncDiagnostics(localSummary, remoteSummary, severity),
+            preferredSide = preferredSide,
+            conflictScore = conflictScore,
+            nestConflictHint = nestConflictHint(preferredSide, severity, conflictScore),
             localText = local.text,
             remoteText = remote.text,
         )
@@ -245,5 +254,28 @@ object CloudSync {
             lines += "harbor ${local.harborId.ifBlank { "?" }} → ${remote.harborId.ifBlank { "?" }}"
         }
         return lines
+    }
+
+    /** Finish 6.0 Phase 18 — numeric conflict score for nest UX. */
+    fun conflictScoreOf(
+        local: SnapshotSummary,
+        remote: SnapshotSummary,
+        severity: CloudConflictSeverity = severityOf(local, remote),
+    ): Int {
+        val coinSkew = kotlin.math.abs(remote.coins - local.coins)
+        val tickSkew = kotlin.math.abs(remote.tick - local.tick) / 100L
+        val ageSkew = ageSkewMs(local, remote) / 1000L
+        val base = when (severity) {
+            CloudConflictSeverity.HIGH -> 70
+            CloudConflictSeverity.MEDIUM -> 40
+            CloudConflictSeverity.LOW -> 15
+        }
+        return (base + (coinSkew / 25L).toInt() + tickSkew.toInt().coerceAtMost(20) + ageSkew.toInt().coerceAtMost(10))
+            .coerceAtMost(100)
+    }
+
+    fun nestConflictHint(preferredSide: SyncSource, severity: CloudConflictSeverity, score: Int): String {
+        val side = if (preferredSide == SyncSource.REMOTE) "cloud" else "device"
+        return "Nest prefers $side · ${severity.name.lowercase()} · score $score"
     }
 }

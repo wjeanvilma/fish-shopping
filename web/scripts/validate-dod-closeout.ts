@@ -56,15 +56,15 @@ function validate(): string[] {
   if (dod.completeTag !== "v1.0-complete") errors.push("completeTag must stay v1.0-complete");
   if (dod.releaseTag !== pin.releaseTag) errors.push("releaseTag ≠ RELEASE_PIN");
   if (dod.contentVersion !== pin.contentVersion) errors.push("contentVersion ≠ RELEASE_PIN");
-  if (![23, 24, 25, 26].includes(dod.schemaVersion)) {
-    errors.push("schemaVersion must be 23–26");
+  if (![23, 24, 25, 26, 27].includes(dod.schemaVersion)) {
+    errors.push("schemaVersion must be 23–27");
   }
   if (pin.schemaVersion < 23) errors.push("RELEASE_PIN schemaVersion must be >= 23");
-  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0"].includes(pin.contentVersion)) {
-    errors.push("RELEASE_PIN contentVersion must be 2.0.0–5.0.0");
+  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0", "6.0.0"].includes(pin.contentVersion)) {
+    errors.push("RELEASE_PIN contentVersion must be 2.0.0–6.0.0");
   }
-  if (!["v2.0.0", "v3.0.0", "v4.0.0", "v5.0.0"].includes(pin.releaseTag)) {
-    errors.push("RELEASE_PIN releaseTag must be v2.0.0–v5.0.0");
+  if (!["v2.0.0", "v3.0.0", "v4.0.0", "v5.0.0", "v6.0.0"].includes(pin.releaseTag)) {
+    errors.push("RELEASE_PIN releaseTag must be v2.0.0–v6.0.0");
   }
   if (pin.definitionOfDone !== "shared/ship/definition-of-done.json") {
     errors.push("RELEASE_PIN.definitionOfDone path");

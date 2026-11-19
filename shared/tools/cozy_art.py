@@ -18,6 +18,10 @@ COZY_ART_MARKER = "cozy-art-5"
 # Finish 5.0 Phase 11 — atmosphere/cozy render depth lock on harbor GLBs.
 ATMOSPHERE_FINISH5_MARKER = "atmosphere-5"
 
+# Finish 6.0 Phase 11 — atmosphere/cozy render depth lock on harbor GLBs.
+ATMOSPHERE_FINISH6_MARKER = "atmosphere-6"
+ATMOSPHERE_FINISH6_HARBOR_MIN = 14
+
 WOOD = "#B9875A"
 WOOD_DARK = "#7A5636"
 METAL = "#AEB8BF"
@@ -201,6 +205,27 @@ def canner(body: str) -> Mesh:
     return _norm_y(m)
 
 
+def roaster(body: str) -> Mesh:
+    m = Mesh()
+    _machine_base(m, body, 0.58)
+    m.box((0, 0.70, 0), (0.70, 0.55, 0.55), "#B05A38")                                # oven
+    m.box((0, 0.95, 0), (0.60, 0.08, 0.45), "#8A4028")                                # door band
+    for x in (-0.18, 0.18):
+        m.box((x, 1.10, 0), (0.05, 0.06, 0.42), "#D0C0A0")                            # spit rails
+    m.box((0, 0.38, 0), (0.50, 0.08, 0.40), "#E07030")                                # ember tray
+    return _norm_y(m)
+
+
+def fermenter(body: str) -> Mesh:
+    m = Mesh()
+    _machine_base(m, body, 0.58)
+    m.cylinder((0, 0.70, 0), 0.30, 0.70, "#6A7A50", seg=14)                           # crock
+    m.cylinder((0, 1.08, 0), 0.26, 0.08, "#4A5A38", seg=12)                           # lid
+    m.cylinder((0, 1.22, 0), 0.06, 0.18, "#C4D0B0", seg=8)                            # airlock
+    m.box((0.32, 0.60, 0), (0.14, 0.35, 0.30), "#8A9A70")                             # brine shelf
+    return _norm_y(m)
+
+
 def counter(body: str) -> Mesh:
     """Market stall: wooden counter (worktop at 0.74 m) + striped awning on posts."""
     m = Mesh()
@@ -229,7 +254,8 @@ def counter(body: str) -> Mesh:
 MACHINE_BUILDERS = {
     "cutter": cutter, "smoker": smoker, "grill": grill, "chiller": chiller, "fryer": fryer,
     "packer": packer, "steamer": steamer, "kiln": kiln, "press": press, "pickler": pickler,
-    "braiser": braiser, "glazer": glazer, "poacher": poacher, "canner": canner, "counter": counter,
+    "braiser": braiser, "glazer": glazer, "poacher": poacher, "canner": canner,
+    "roaster": roaster, "fermenter": fermenter, "counter": counter,
 }
 
 

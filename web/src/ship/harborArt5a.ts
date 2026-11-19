@@ -122,8 +122,8 @@ export function measureHarborArt5a(repoRoot: string): HarborArt5aMeasure {
     finish5Present,
     minArtNodesMet,
     artNodeCounts,
-    // Soft-floored after Phase 14 closed harbors 11–12 (was 10 through Phase 13).
-    authoredHarborsUnchanged: authored.length === 12,
+    // Soft-floored after Finish 5 Phase 14 (12) and Finish 6 Phase 7 (14).
+    authoredHarborsUnchanged: authored.length >= 12,
     // Soft-floored after Phase 8 closed harborArt5Incomplete.
     harborArt5IncompleteOpen: typeof kickoff?.gaps?.harborArt5Incomplete === "boolean",
     kickoffWired:

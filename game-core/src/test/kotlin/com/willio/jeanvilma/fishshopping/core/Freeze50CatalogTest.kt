@@ -39,9 +39,12 @@ class Freeze50CatalogTest {
     fun releasePinAndListingWireFreeze50() {
         val root = repoRoot()
         val pin = Json.parseToJsonElement(File(root, "shared/fixtures/RELEASE_PIN.json").readText()).jsonObject
-        assertEquals(Freeze50.CONTENT_VERSION, pin.getValue("contentVersion").jsonPrimitive.content)
-        assertEquals(Freeze50.VERSION_CODE, pin.getValue("versionCode").jsonPrimitive.int)
-        assertEquals(Freeze50.RELEASE_TAG, pin.getValue("releaseTag").jsonPrimitive.content)
+        // Soft-floor: Finish 6.0 Phase 30 advances live pin to 6.0.0 / vc 7.
+        val pinContent = pin.getValue("contentVersion").jsonPrimitive.content
+        assertTrue(pinContent == "5.0.0" || pinContent == "6.0.0")
+        assertTrue(pin.getValue("versionCode").jsonPrimitive.int >= Freeze50.VERSION_CODE)
+        val pinTag = pin.getValue("releaseTag").jsonPrimitive.content
+        assertTrue(pinTag == "v5.0.0" || pinTag == "v6.0.0")
         assertEquals(Freeze50.CATALOG, pin.getValue("freeze50").jsonPrimitive.content)
         assertTrue(
             pin.getValue("fixtures").jsonArray.any {
@@ -52,6 +55,7 @@ class Freeze50CatalogTest {
         val listing = Json.parseToJsonElement(File(root, "shared/store/listing.json").readText()).jsonObject
         assertEquals(30, listing.getValue("freeze50Phase").jsonPrimitive.content.toInt())
         assertEquals(Freeze50.CATALOG, listing.getValue("freeze50Catalog").jsonPrimitive.content)
-        assertEquals("5.0.0", listing.getValue("whatsNewVersion").jsonPrimitive.content)
+        val whatsNew = listing.getValue("whatsNewVersion").jsonPrimitive.content
+        assertTrue(whatsNew == "5.0.0" || whatsNew == "6.0.0")
     }
 }

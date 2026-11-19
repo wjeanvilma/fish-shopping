@@ -533,6 +533,8 @@ export interface EndgameTierDef {
   requiresMarks: number;
   /** Finish 5.0 Phase 17 — crests required (default 0). */
   requiresCrests: number;
+  /** Finish 6.0 Phase 14 — sigils required (default 0). */
+  requiresSigils: number;
   catchSpeedPermille: number;
   priceBonusPermille: number;
   coins: number;
@@ -550,6 +552,8 @@ export interface EndgameChallengeDef {
   grantsMark: string | null;
   /** Finish 5.0 Phase 17 — optional crest granted on complete. */
   grantsCrest: string | null;
+  /** Finish 6.0 Phase 14 — optional sigil granted on complete. */
+  grantsSigil: string | null;
 }
 
 /** Finish 3.0 Phase 15 — endgame deepen catalog. */
@@ -961,14 +965,16 @@ export class ContentPack {
       rival.aiProfile = rival.aiProfile ?? "siphon";
     }
     this.rivalsById = byId(raw.rivalMarkets.rivals);
-    // Finish 4.0 / 5.0 — normalize optional endgame deepen fields.
+    // Finish 4.0 / 5.0 / 6.0 — normalize optional endgame deepen fields.
     for (const tier of raw.endgame.tiers) {
       tier.requiresMarks = tier.requiresMarks ?? 0;
       tier.requiresCrests = tier.requiresCrests ?? 0;
+      tier.requiresSigils = tier.requiresSigils ?? 0;
     }
     for (const ch of raw.endgame.challenges) {
       ch.grantsMark = ch.grantsMark ?? null;
       ch.grantsCrest = ch.grantsCrest ?? null;
+      ch.grantsSigil = ch.grantsSigil ?? null;
     }
     this.endgameTiersById = byId(raw.endgame.tiers);
     this.endgameChallengesById = byId(raw.endgame.challenges);
@@ -1504,6 +1510,8 @@ export function validateContent(p: ContentPack): string[] {
     check(requiresMarks >= 0, () => `${tier.id}: requiresMarks must be >= 0`);
     const requiresCrests = tier.requiresCrests ?? 0;
     check(requiresCrests >= 0, () => `${tier.id}: requiresCrests must be >= 0`);
+    const requiresSigils = tier.requiresSigils ?? 0;
+    check(requiresSigils >= 0, () => `${tier.id}: requiresSigils must be >= 0`);
     check(tier.catchSpeedPermille >= 1, () => `${tier.id}: catchSpeedPermille must be >= 1`);
     check(tier.priceBonusPermille >= 1, () => `${tier.id}: priceBonusPermille must be >= 1`);
     check(tier.coins >= 0, () => `${tier.id}: coins must be >= 0`);
@@ -1525,6 +1533,10 @@ export function validateContent(p: ContentPack): string[] {
     if (ch.grantsCrest != null) {
       check(ch.grantsCrest.startsWith("endgame.crest."), () =>
         `${ch.id}: grantsCrest must start with 'endgame.crest.'`);
+    }
+    if (ch.grantsSigil != null) {
+      check(ch.grantsSigil.startsWith("endgame.sigil."), () =>
+        `${ch.id}: grantsSigil must start with 'endgame.sigil.'`);
     }
   }
 

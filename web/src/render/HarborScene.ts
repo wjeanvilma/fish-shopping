@@ -40,6 +40,7 @@ import {
   HARBOR_CACHE_LIMIT,
   WEB_MEDIUM_MAX_CSS_HEIGHT,
 } from "./frameTiming";
+import { PresenterCpuHarness, type PresenterCpuSnapshot } from "./presenterCpuSnapshot";
 import {
   CUSTOMER_BODY_REST_Y,
   CustomerCrowd,
@@ -69,7 +70,11 @@ import {
   type ShakeKind,
   type WorldBurstCue,
 } from "./presenters";
-import { pressureAmbientIdForView, weatherAmbientProfile } from "./weatherAmbient";
+import {
+  nestAmbientIdForView,
+  pressureAmbientIdForView,
+  weatherAmbientProfile,
+} from "./weatherAmbient";
 import { atmosphereFrame } from "./atmosphere";
 import {
   applyAtmosphereToWater,
@@ -179,6 +184,9 @@ export class HarborScene {
   /** Session floor: may soft-downgrade under sustained frame misses (Phase 29). */
   private sessionQuality: QualityPreset = "medium";
   private readonly frameTiming = new FrameTiming();
+  /** Finish 6.0 Phase 21 — presenter/render CPU snapshot harness (shares FrameTiming). */
+  private readonly cpuHarness = new PresenterCpuHarness({ timing: this.frameTiming });
+  private lastCpuSnapshot: PresenterCpuSnapshot | null = null;
   /** Phase 26/31: keep warm harbors for travel swaps (LRU from device-matrix). */
   private readonly harborCache = new Map<string, HarborCacheEntry>();
   private readonly harborLru: string[] = [];
@@ -366,6 +374,11 @@ export class HarborScene {
   }
 
   /** Test helper: current warm-harbor cache size after trim. */
+  /** Finish 6.0 Phase 21 — last presenter/render CPU snapshot (null until first frame sample). */
+  presenterCpuSnapshot(): PresenterCpuSnapshot | null {
+    return this.lastCpuSnapshot;
+  }
+
   harborCacheSize(): number {
     return this.harborCache.size;
   }
@@ -710,7 +723,17 @@ export class HarborScene {
     this.lastMs = nowMs;
     this.elapsed += dt;
     if (dt > 0) {
-      const action = this.frameTiming.sample(dt, FRAME_TARGET_MS[this.sessionQuality]);
+      this.cpuHarness.beginStage("qualityBind");
+      const action = this.cpuHarness.sampleFrame(dt, this.sessionQuality);
+      this.cpuHarness.endStage("qualityBind");
+      // Nest HUD pressure: bag spoil + service queue as a presentation-only permille cue.
+      const nestPressure = Math.min(
+        1000,
+        Math.trunc((v.bagSpoilPressurePermille ?? 0) * 0.5 + (v.serviceQueuePressurePermille ?? 0) * 0.5),
+      );
+      this.cpuHarness.setNestHudPressurePermille(nestPressure);
+      this.cpuHarness.recordStageMs("nestHud", Math.max(0.05, nestPressure / 1000));
+      this.lastCpuSnapshot = this.cpuHarness.snapshot();
       if (action === "downgrade") {
         const next = downgradeQuality(this.sessionQuality);
         if (next !== this.sessionQuality) {
@@ -873,6 +896,10 @@ export class HarborScene {
         v.serviceQueuePressurePermille ?? 0,
         v.ticksUntilNearestContractDeadline ?? null,
         v.nextQuestProgressPermille ?? null,
+      ),
+      nestAmbientIdForView(
+        v.decorPlacements?.length ?? 0,
+        (v.tidePhaseId ?? "") === "night" || (v.tidePhaseId ?? "") === "dusk",
       ),
     );
     // Cozy art pass 5: continuous day/night + weather lighting.

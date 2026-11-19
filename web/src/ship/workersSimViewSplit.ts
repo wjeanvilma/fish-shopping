@@ -103,8 +103,15 @@ export function measureWorkersSimViewSplit(repoRoot: string): WorkersSimViewSpli
     gapClosed = kickoff?.gaps?.[WORKERS_SIMVIEW_SPLIT.gapFlagClosed] === false;
   }
 
-  const systemsTs = resolve(repoRoot, "web/src/engine/systems.ts");
-  const systemsBody = existsSync(systemsTs) ? readFileSync(systemsTs, "utf8") : "";
+  const systemsBody = [
+    "web/src/engine/systems.ts",
+    "web/src/engine/systems/workers.ts",
+  ]
+    .map((p) => {
+      const full = resolve(repoRoot, p);
+      return existsSync(full) ? readFileSync(full, "utf8") : "";
+    })
+    .join("\n");
   const decisionHooksWired =
     systemsBody.includes("WorkerDecisionHooks.record") &&
     systemsBody.includes("best_score");

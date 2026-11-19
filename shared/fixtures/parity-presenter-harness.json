@@ -1,0 +1,24 @@
+{
+  "schema": "fish.fixture.parity_presenter_harness.v1",
+  "presenterHarnessMarker": "authored-finish-6.0-phase-21",
+  "phase": 21,
+  "plan": "30_finish_6.0",
+  "description": "Finish 6.0 Phase 21: presenter/render CPU snapshot harness with nestHud stage wired dual web↔Android.",
+  "sampleStage": "nestHud",
+  "sampleField": "nestHudPressurePermille",
+  "expect": {
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "stageMin": 6,
+    "snapshotFieldMin": 11,
+    "presenterHarnessMissing": false,
+    "openGapFlagMin": 1,
+    "gates": [
+      "stages",
+      "snapshot_fields",
+      "host_wire",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

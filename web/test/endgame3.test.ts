@@ -30,14 +30,15 @@ describe("Endgame deepen + schema 26 (Finish 5.0 Phase 17)", () => {
     expect(PARITY_ENDGAME_3).toContain("parity-endgame-3.json");
     expect(ENDGAME_3_PHASE).toBe(17);
     expect(ENDGAME_3_VERSION).toBe(26);
-    expect(SCHEMA_VERSION).toBe(26);
+    // Soft-floor: Finish 6.0 Phase 14 bumps live schema to 27.
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(26);
     expect(ENDGAME_3_MARKER).toBe("authored-finish-5.0-phase-17");
     expect((storeListing as { endgame3Phase?: number }).endgame3Phase).toBe(17);
   });
 
   it("measures deepen + schema 26 wiring", () => {
     const m = measureEndgame3(root);
-    expect(m.schemaVersion).toBe(26);
+    expect(m.schemaVersion).toBeGreaterThanOrEqual(26);
     expect(m.tierCount).toBeGreaterThanOrEqual(8);
     expect(m.challengeCount).toBeGreaterThanOrEqual(12);
     expect(m.crestDefs).toBeGreaterThanOrEqual(3);
@@ -56,7 +57,7 @@ describe("Endgame deepen + schema 26 (Finish 5.0 Phase 17)", () => {
     const s = decodeSnapshot(content, legacy);
     expect(s.endgameCrests.size).toBe(0);
     const encoded = encodeSnapshot(content, s);
-    expect(encoded.startsWith('{"schemaVersion":26,')).toBe(true);
+    expect(encoded.startsWith(`{"schemaVersion":${SCHEMA_VERSION},`)).toBe(true);
     expect(encoded).toContain('"endgameCrests":[]');
   });
 

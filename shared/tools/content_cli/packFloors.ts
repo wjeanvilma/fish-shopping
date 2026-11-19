@@ -1,5 +1,5 @@
 /**
- * Finish 4.0 Phase 28 + Finish 5.0 Phase 28 — content-pack floor checks for authoring CLI.
+ * Finish 4.0/5.0 Phase 28 + Finish 6.0 Phase 27 — content-pack floor checks for authoring CLI.
  * Read-only; never mutates content-pack.json.
  */
 import { readFileSync } from "node:fs";
@@ -39,6 +39,19 @@ export const FINISH5_PACK_FLOORS: PackFloorTargets = {
   seasonalMin: 16,
   cosmeticsMin: 24,
   chainsMin: 7,
+};
+
+/** Finish 6.0 kickoff gapTargets content floors. */
+export const FINISH6_PACK_FLOORS: PackFloorTargets = {
+  speciesMin: 150,
+  questsMin: 100,
+  harborsMin: 14,
+  machinesMin: 16,
+  rivalsMin: 20,
+  baitsMin: 20,
+  seasonalMin: 20,
+  cosmeticsMin: 30,
+  chainsMin: 9,
 };
 
 export interface PackFloorMeasure {

@@ -2,9 +2,9 @@
   "phase": 6,
   "plan": "30_finish_2.0",
   "schema": "fish.ship.loc_floors.v1",
-  "description": "Finish 2.0 Phase 6 scoreboard → Finish 3.0/4.0/5.0 freezes. Measures real source only (no padding). Freeze floors stay anti-regression at the 5.0 cut; Finish 5.0 plan targets are 38k/26k/56k/120k.",
-  "contentVersion": "5.0.0",
-  "schemaVersion": 26,
+  "description": "Finish 2.0 Phase 6 scoreboard → Finish 3.0/4.0/5.0/6.0 freezes. Measures real source only (no padding). Freeze floors stay anti-regression at the 6.0 cut; Finish 6.0 plan targets are 38k/26k/56k/120k.",
+  "contentVersion": "6.0.0",
+  "schemaVersion": 27,
   "metric": {
     "unit": "physical_lines",
     "note": "Count every physical line in product source files (including blanks/comments). Matches the ~42k baseline used in the Finish 2.0 plan.",
@@ -24,7 +24,7 @@
       "extensions": [
         ".kt"
       ],
-      "phase30Floor": 32000,
+      "phase30Floor": 35500,
       "planTarget": 38000
     },
     "app": {
@@ -33,7 +33,7 @@
       "extensions": [
         ".kt"
       ],
-      "phase30Floor": 15200,
+      "phase30Floor": 15800,
       "planTarget": 26000
     },
     "webSrc": {
@@ -43,11 +43,11 @@
         ".ts",
         ".tsx"
       ],
-      "phase30Floor": 42500,
+      "phase30Floor": 47800,
       "planTarget": 56000
     }
   },
-  "productTotalFloor": 90000,
+  "productTotalFloor": 99500,
   "enforceFloors": true,
   "enforceAtPhase": 30,
   "baseline": {
@@ -84,18 +84,18 @@
   "productTotalPlanTarget": 120000,
   "freezeCut": {
     "measuredAtPhase": 30,
-    "gameCore": 32287,
-    "app": 15415,
-    "webSrc": 42895,
-    "productTotal": 90597,
-    "note": "Finish 5.0 Phase 30 freeze cut (physical lines). Floors sit slightly under measured to avoid flake; growth must remain real systems/content. Finish 4.0 cut (73473) remains historical via prior freeze catalogs. Plan targets 38k/26k/56k/120k retained without padding."
+    "gameCore": 35947,
+    "app": 16080,
+    "webSrc": 48266,
+    "productTotal": 100293,
+    "note": "Finish 6.0 Phase 30 freeze cut (physical lines). Floors sit slightly under measured to avoid flake; growth must remain real systems/content. Finish 5.0 cut (90597) remains historical via prior freeze catalogs. Plan targets 38k/26k/56k/120k retained without padding."
   },
   "softFloors": {
     "finish3HistoricalProductTotalFloor": 64200,
     "finish3HistoricalGameCoreFloor": 20900,
     "finish3HistoricalAppFloor": 13100,
     "finish3HistoricalWebSrcFloor": 30200,
-    "note": "Finish 4.0 anti-regression floors remain documented; live floors raised to Finish 5.0 measured cut without padding to force-meet 120k plan target.",
+    "note": "Finish 5.0 anti-regression floors remain documented; live floors raised to Finish 6.0 measured cut without padding to force-meet 120k plan target.",
     "finish4HistoricalProductTotalPlanTarget": 100000,
     "finish4HistoricalGameCorePlanTarget": 32000,
     "finish4HistoricalAppPlanTarget": 20000,
@@ -103,6 +103,10 @@
     "finish4HistoricalProductTotalFloor": 73100,
     "finish4HistoricalGameCoreFloor": 23500,
     "finish4HistoricalAppFloor": 13800,
-    "finish4HistoricalWebSrcFloor": 35600
+    "finish4HistoricalWebSrcFloor": 35600,
+    "finish5HistoricalProductTotalFloor": 90000,
+    "finish5HistoricalGameCoreFloor": 32000,
+    "finish5HistoricalAppFloor": 15200,
+    "finish5HistoricalWebSrcFloor": 42500
   }
 }

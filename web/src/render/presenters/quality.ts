@@ -4,8 +4,8 @@
 import type { SimView } from "../../engine";
 
 
-/** Max pool size for flying transfer meshes (Fly_N_fish|portion in the GLB). Finish 5.0 → 16. */
-export const FLYING_TRANSFER_POOL = 16;
+/** Max pool size for flying transfer meshes (Fly_N_fish|portion in the GLB). Finish 6.0 → 20. */
+export const FLYING_TRANSFER_POOL = 20;
 /** Arc flight time in seconds. */
 export const FLYING_TRANSFER_DURATION_S = 0.35;
 /** Peak height of the parabolic arc above the ground (meters). */
@@ -14,20 +14,20 @@ export const FLYING_TRANSFER_BASE_Y_M = 0.25;
 
 /** Quality-scaled VFX budget (Phase 29). Caps concurrent arcs; never exceeds GLB pool. */
 export const FLYING_TRANSFER_POOL_BY_QUALITY = {
-  low: 4,
-  medium: 10,
+  low: 5,
+  medium: 12,
   high: FLYING_TRANSFER_POOL,
 } as const;
 
 /**
  * Soft crowd draw cap by quality (Phase 29). Still transform/visibility only —
  * never creates meshes. Clamped to the GLB customer pool at bind time.
- * Finish 5.0 Phase 27 denser-scene floors for 12 harbors.
+ * Finish 6.0 Phase 28 denser nest floors for 14 harbors.
  */
 export const CROWD_DRAW_CAP_BY_QUALITY = {
-  low: 3,
-  medium: 6,
-  high: 10,
+  low: 4,
+  medium: 8,
+  high: 12,
 } as const;
 
 export type PresenterQuality = keyof typeof FLYING_TRANSFER_POOL_BY_QUALITY;

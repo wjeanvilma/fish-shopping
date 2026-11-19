@@ -1,0 +1,23 @@
+{
+  "schema": "fish.fixtures.parity_host_vm_caps.v1",
+  "hostVmCapsMarker": "authored-finish-6.0-phase-5",
+  "phase": 5,
+  "plan": "30_finish_6.0",
+  "expect": {
+    "viewModelMaxLines": 1200,
+    "gameHostMaxLines": 1100,
+    "extractedFileMin": 4,
+    "requiredFileCount": 4,
+    "schemaVersion": 26,
+    "contentVersion": "5.0.0",
+    "gapClosed": "hostVmCapsIncomplete",
+    "gates": [
+      "viewmodel_slim",
+      "gamehost_slim",
+      "phase5_modules_extracted",
+      "symbols_present",
+      "gap_closed",
+      "ci_gate"
+    ]
+  }
+}

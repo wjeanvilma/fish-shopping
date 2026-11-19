@@ -64,8 +64,8 @@
   },
   "fixtures": {
     "legacyDir": "shared/fixtures/legacy",
-    "migrateThroughSchema": 25,
-    "currentSchema": 26,
+    "migrateThroughSchema": 26,
+    "currentSchema": 27,
     "requiredLegacyVersions": [
       1,
       12,
@@ -81,7 +81,8 @@
       22,
       23,
       24,
-      25
+      25,
+      26
     ]
   }
 }

@@ -113,6 +113,7 @@ class AudioBus(context: Context) {
         endgameActive: Boolean = false,
         ledgerActive: Boolean = false,
         pressureActive: Boolean = false,
+        nestActive: Boolean = false,
     ) {
         setMusicBed(
             MusicPack.bedForContext(
@@ -124,6 +125,7 @@ class AudioBus(context: Context) {
                 endgameActive,
                 ledgerActive,
                 pressureActive,
+                nestActive,
             ),
         )
     }
@@ -258,6 +260,11 @@ class AudioBus(context: Context) {
         SfxCue.SERVICE_QUEUE -> 260L
         SfxCue.CONTRACT_DEADLINE -> 300L
         SfxCue.QUEST_NEAR -> 280L
+        SfxCue.NEST_SETTLE -> 320L
+        SfxCue.ROAST_READY -> 260L
+        SfxCue.FERMENT_READY -> 280L
+        SfxCue.SCHOOL_FLASH -> 240L
+        SfxCue.AURORA_CREST -> 360L
     }
 
     private fun pulseHaptic(cue: SfxCue) {

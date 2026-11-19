@@ -90,7 +90,8 @@ def _machine_key(obstacle_id: str) -> str:
     oid = obstacle_id.lower()
     for key in (
         "smoker", "grill", "chiller", "fryer", "packer", "steamer", "kiln",
-        "press", "pickler", "braiser", "glazer", "poacher", "canner", "cutter", "counter",
+        "press", "pickler", "braiser", "glazer", "poacher", "canner",
+        "roaster", "fermenter", "cutter", "counter",
     ):
         if key in oid:
             return key
@@ -359,11 +360,13 @@ def build(content, harbor):
         if theme in HARBOR_FINISH5_5B_THEMES:
             env_bits.append(HARBOR_FINISH5_5B_MARKER)
         env_bits.append(cozy_art.ATMOSPHERE_FINISH5_MARKER)
+        env_bits.append(cozy_art.ATMOSPHERE_FINISH6_MARKER)
         extras["envArt"] = "+".join(env_bits)
         extras["harborArt"] = HARBOR_ART_MARKER
         extras["harborTheme"] = theme
         extras["harborScenic"] = HARBOR_SCENIC_MARKER
         extras["atmosphereFinish5"] = cozy_art.ATMOSPHERE_FINISH5_MARKER
+        extras["atmosphereFinish6"] = cozy_art.ATMOSPHERE_FINISH6_MARKER
         if theme in HARBOR_FINISH5_5A_THEMES:
             extras["harborFinish5"] = HARBOR_FINISH5_5A_MARKER
         elif theme in HARBOR_FINISH5_5B_THEMES:

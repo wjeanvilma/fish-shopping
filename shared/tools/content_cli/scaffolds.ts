@@ -1,5 +1,5 @@
 /**
- * Finish 2.0/3.0/4.0/5.0 content JSON scaffolds.
+ * Finish 2.0/3.0/4.0/5.0/6.0 content JSON scaffolds.
  * Generates schema-shaped fragments; does not mutate content-pack.json.
  */
 import { normalizeSlug, qualifyId, titleFromSlug, type ScaffoldKind } from "./ids";
@@ -53,6 +53,12 @@ export interface ScaffoldRequest {
   requiresPrestigeCount?: number;
   /** Cosmetic SKU override. */
   sku?: string;
+  /** Delivery chain step count (default 3). */
+  steps?: number;
+  /** Chain/sigil/modpack harbor gate. */
+  requiresHarbor?: string;
+  /** Modular pack included scaffold kinds. */
+  includes?: string[];
 }
 
 export interface ScaffoldResult {
@@ -400,6 +406,69 @@ export function scaffoldCosmetic(req: ScaffoldRequest): ScaffoldResult {
   return { kind: "cosmetic", id, fileName: `${id}.json`, document };
 }
 
+/** Finish 6.0 Phase 27 — delivery chain catalog fragment. */
+export function scaffoldChain(req: ScaffoldRequest): ScaffoldResult {
+  const slug = normalizeSlug(req.id);
+  const id = qualifyId("chain", slug);
+  const name = req.name?.trim() || titleFromSlug(slug);
+  const steps = req.steps ?? 3;
+  const description =
+    req.description?.trim() ||
+    `Authoring scaffold delivery chain for ${name}. Author ${steps} contract steps with this chainId before merge.`;
+  const document = {
+    id,
+    name,
+    description,
+    steps,
+    requiresHarbor: req.requiresHarbor ?? "harbor.sunrise_pier",
+    contractIdHints: Array.from({ length: steps }, (_, i) => `contract.chain_${slug}_${i + 1}`),
+  };
+  return { kind: "chain", id, fileName: `${id}.json`, document };
+}
+
+/** Finish 6.0 Phase 27 — nest endgame sigil fragment (structural; challenge grantsSigil). */
+export function scaffoldSigil(req: ScaffoldRequest): ScaffoldResult {
+  const slug = normalizeSlug(req.id);
+  const id = qualifyId("sigil", slug);
+  const name = req.name?.trim() || titleFromSlug(slug);
+  const description =
+    req.description?.trim() ||
+    `Authoring scaffold nest sigil for ${name}. Reference from endgame.challenge.grantsSigil before merge.`;
+  const document = {
+    id,
+    name,
+    description,
+    grantsFromChallengeHint: `endgame.challenge.${slug}`,
+    requiresPrestigeCount: req.requiresPrestigeCount ?? 10,
+    powerNeutral: true,
+  };
+  return { kind: "sigil", id, fileName: `${id}.json`, document };
+}
+
+/** Finish 6.0 Phase 27 — modular content pack manifest (never auto-merges). */
+export function scaffoldModpack(req: ScaffoldRequest): ScaffoldResult {
+  const slug = normalizeSlug(req.id);
+  const id = qualifyId("modpack", slug);
+  const name = req.name?.trim() || titleFromSlug(slug);
+  const description =
+    req.description?.trim() ||
+    `Authoring scaffold modular content pack for ${name}. Lists fragment kinds to author together; never auto-merges content-pack.json.`;
+  const includes = req.includes?.length
+    ? req.includes
+    : ["chain", "sigil", "seasonal", "cosmetic"];
+  const document = {
+    id,
+    name,
+    description,
+    contentVersion: "5.0.0",
+    schemaVersion: 27,
+    includes,
+    fragments: [] as string[],
+    modular: true,
+  };
+  return { kind: "modpack", id, fileName: `${id}.json`, document };
+}
+
 export function buildScaffold(req: ScaffoldRequest): ScaffoldResult {
   if (req.kind === "species") return scaffoldSpecies(req);
   if (req.kind === "quest") return scaffoldQuest(req);
@@ -411,5 +480,8 @@ export function buildScaffold(req: ScaffoldRequest): ScaffoldResult {
   if (req.kind === "rival") return scaffoldRival(req);
   if (req.kind === "seasonal") return scaffoldSeasonal(req);
   if (req.kind === "endgame") return scaffoldEndgame(req);
-  return scaffoldCosmetic(req);
+  if (req.kind === "cosmetic") return scaffoldCosmetic(req);
+  if (req.kind === "chain") return scaffoldChain(req);
+  if (req.kind === "sigil") return scaffoldSigil(req);
+  return scaffoldModpack(req);
 }

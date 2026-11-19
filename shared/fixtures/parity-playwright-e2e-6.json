@@ -1,0 +1,46 @@
+{
+  "schema": "fish.fixture.parity_playwright_e2e_6.v1",
+  "description": "Finish 6.0 Phase 23: Playwright E2E ≥24 + nest deep-link expectations.",
+  "playwrightE2e6Marker": "authored-finish-6.0-phase-23",
+  "plan": "30_finish_6.0",
+  "expect": {
+    "closesGap": "e2eDepthThin",
+    "e2eDepthThin": false,
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "scenarioFloor": 24,
+    "idCountFloor": 40,
+    "nestAliasMin": 8,
+    "openGapFlagMin": 1,
+    "requiredAliases": [
+      "nesttreasury",
+      "nestloans",
+      "nestember",
+      "nestconflict",
+      "saffron",
+      "roastnest",
+      "nestjournal",
+      "ember"
+    ],
+    "requiredIds": [
+      "bag.panel",
+      "nest.treasury",
+      "nest.loans",
+      "species.book",
+      "contracts.panel",
+      "map.panel",
+      "staff.train",
+      "dash.root"
+    ],
+    "smokeMustContain": [
+      "deep link panel=bag",
+      "deep link panel=nesttreasury",
+      "deep link panel=nestloans",
+      "deep link hash nestember",
+      "deep link go=nestconflict",
+      "deep link panel=saffron",
+      "deep link hash roastnest",
+      "deep link panel=nestjournal"
+    ]
+  }
+}

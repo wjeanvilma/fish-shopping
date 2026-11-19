@@ -2,7 +2,7 @@
   "phase": 26,
   "plan": "30_finish_5.0",
   "schema": "fish.ship.deeplink_e2e_5.v1",
-  "description": "Finish 5.0 Phase 26 — Deep links + E2E floors ≥12/≥14. Closes kickoff gap deeplinkE2e5Thin. Soft-floors Finish 4.0 deeplinke2e4:validate.",
+  "description": "Finish 5.0 Phase 26 \u2014 Deep links + E2E floors \u226512/\u226514. Closes kickoff gap deeplinkE2e5Thin. Soft-floors Finish 4.0 deeplinke2e4:validate.",
   "contentVersion": "4.0.0",
   "schemaVersion": 26,
   "deeplinkE2e5Marker": "authored-finish-5.0-phase-26",
@@ -29,13 +29,13 @@
     "deeplinkE2e4ComposeScenarioFloor": 7,
     "webE2eHistoricalMinIdCount": 24,
     "composeHistoricalMinTagCount": 24,
-    "note": "Finish 4.0 deeplinke2e4 / Finish 3.0 webe2e+composeui stay green; Phase 26 enforces raised ≥12/≥14 scenario floors."
+    "note": "Finish 4.0 deeplinke2e4 / Finish 3.0 webe2e+composeui stay green; Phase 26 enforces raised \u226512/\u226514 scenario floors; Finish 6.0 Phase 23 soft-floors webScenarioFloor \u226512 while live scenarios \u226524."
   },
   "checklist": [
-    "Panel aliases ≥40 + hash aliases ≥24",
-    "WEB_E2E_IDS ≥32 + ComposeUiTags ≥32",
-    "≥12 Playwright scenarios",
-    "≥14 Compose scenarios",
+    "Panel aliases \u226540 + hash aliases \u226524",
+    "WEB_E2E_IDS \u226532 + ComposeUiTags \u226532",
+    "\u226512 Playwright scenarios",
+    "\u226514 Compose scenarios",
     "Kickoff gaps.deeplinkE2e5Thin=false",
     "deeplinke2e4:validate soft-green",
     "deeplinke2e5:validate green in CI",
@@ -59,8 +59,8 @@
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/deeplink/DeepLinkRoutes.kt"
   ],
   "liveCounts": {
-    "panelAliases": 45,
-    "hashAliases": 27,
+    "panelAliases": 55,
+    "hashAliases": 35,
     "uriVectors": 12
   }
 }

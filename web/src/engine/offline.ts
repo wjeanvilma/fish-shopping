@@ -25,6 +25,10 @@ export function applyOffline(sim: Simulation, elapsedMillis: number): OfflineRep
   const beforeRepairs = sim.state.stat(Stats.REPAIR_SPENT);
   const beforeLoanInterest = sim.state.stat(Stats.LOAN_INTEREST_ACCRUED);
   const beforeRevenue = sim.state.stat(Stats.REVENUE);
+  const beforeLoanRepaid = sim.state.stat(Stats.LOAN_REPAID);
+  const beforeContractRevenue = sim.state.stat(Stats.CONTRACT_REVENUE);
+  const beforeRivalStolen = sim.state.stat(Stats.RIVAL_SALES_STOLEN);
+  const beforeSigils = sim.state.stat(Stats.ENDGAME_SIGILS_EARNED);
 
   if (ticks > 0) {
     const player = sim.state.player;
@@ -61,6 +65,10 @@ export function applyOffline(sim: Simulation, elapsedMillis: number): OfflineRep
   const repairSpent = sim.state.stat(Stats.REPAIR_SPENT) - beforeRepairs;
   const loanInterestAccrued = sim.state.stat(Stats.LOAN_INTEREST_ACCRUED) - beforeLoanInterest;
   const revenueDelta = sim.state.stat(Stats.REVENUE) - beforeRevenue;
+  const loanRepaid = sim.state.stat(Stats.LOAN_REPAID) - beforeLoanRepaid;
+  const contractRevenue = sim.state.stat(Stats.CONTRACT_REVENUE) - beforeContractRevenue;
+  const rivalSalesStolen = sim.state.stat(Stats.RIVAL_SALES_STOLEN) - beforeRivalStolen;
+  const endgameSigilsEarned = sim.state.stat(Stats.ENDGAME_SIGILS_EARNED) - beforeSigils;
 
   return {
     elapsedMillis: Math.max(0, elapsedMillis),
@@ -80,10 +88,15 @@ export function applyOffline(sim: Simulation, elapsedMillis: number): OfflineRep
     repairSpent,
     loanInterestAccrued,
     revenueDelta,
+    loanRepaid,
+    contractRevenue,
+    rivalSalesStolen,
+    endgameSigilsEarned,
     hadActivity:
       coinsDelta !== 0 || fishCaught > 0 || sales > 0 || workerFishCaught > 0 ||
       workerItemsMoved > 0 || contractsCompleted > 0 || maintenancePaid > 0 ||
       itemsSpoiled > 0 || rivalBeats > 0 || wagesPaid > 0 || repairSpent > 0 ||
-      loanInterestAccrued > 0 || revenueDelta > 0,
+      loanInterestAccrued > 0 || revenueDelta > 0 || loanRepaid > 0 ||
+      contractRevenue > 0 || rivalSalesStolen > 0 || endgameSigilsEarned > 0,
   };
 }

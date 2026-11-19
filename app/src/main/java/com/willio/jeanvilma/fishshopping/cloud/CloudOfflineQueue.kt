@@ -20,6 +20,10 @@ data class CloudOfflineQueueDiagnostics(
     val queuePending: Boolean,
     val queueAgeMs: Long,
     val attempts: Int,
+    /** Finish 6.0 Phase 18 — nest sync diagnostics. */
+    val lastAttemptAgeMs: Long = 0L,
+    val flushFailures: Int = 0,
+    val circuitOpen: Boolean = false,
 )
 
 interface CloudOfflineQueueStore {
@@ -27,12 +31,27 @@ interface CloudOfflineQueueStore {
     fun enqueue(snapshot: String, uidHint: String?, nowMs: Long = System.currentTimeMillis())
     fun clear()
     fun pending(): Boolean = load() != null
-    fun diagnostics(nowMs: Long = System.currentTimeMillis()): CloudOfflineQueueDiagnostics {
-        val entry = load() ?: return CloudOfflineQueueDiagnostics(false, 0L, 0)
+    fun diagnostics(
+        nowMs: Long = System.currentTimeMillis(),
+        flushFailures: Int = 0,
+        circuitOpen: Boolean = false,
+    ): CloudOfflineQueueDiagnostics {
+        val entry = load()
+            ?: return CloudOfflineQueueDiagnostics(
+                queuePending = false,
+                queueAgeMs = 0L,
+                attempts = 0,
+                lastAttemptAgeMs = 0L,
+                flushFailures = flushFailures,
+                circuitOpen = circuitOpen,
+            )
         return CloudOfflineQueueDiagnostics(
             queuePending = true,
             queueAgeMs = (nowMs - entry.queuedAtEpochMs).coerceAtLeast(0L),
             attempts = entry.attempts,
+            lastAttemptAgeMs = (nowMs - entry.lastAttemptEpochMs).coerceAtLeast(0L),
+            flushFailures = flushFailures,
+            circuitOpen = circuitOpen,
         )
     }
 }

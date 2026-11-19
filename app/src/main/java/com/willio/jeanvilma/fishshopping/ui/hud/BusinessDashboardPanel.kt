@@ -130,7 +130,10 @@ internal fun BusinessDashboardPanel(
 ) {
     val offlineLines = journalLines.ifEmpty { dash.offlineJournalLines }
     Surface(
-        modifier.managementSheet(maxWidth = 440.dp, maxHeight = 480.dp).a11yPane("panels.dashboard"),
+        modifier
+            .testTag(ComposeUiTags.DASH_ROOT)
+            .managementSheet(maxWidth = 440.dp, maxHeight = 480.dp)
+            .a11yPane("panels.dashboard"),
         shape = PanelShape,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,
@@ -344,7 +347,9 @@ internal fun BusinessDashboardPanel(
                         }
                     }
                 }
-                if (dash.loansTaken > 0L || dash.loanOwed > 0L || dash.coinGoal > 0L || dash.ledgerLines.isNotEmpty()) {
+                if (dash.loansTaken > 0L || dash.loanOwed > 0L || dash.coinGoal > 0L || dash.ledgerLines.isNotEmpty() ||
+                    dash.nestTreasuryLines.isNotEmpty() || dash.rivalLossCoins > 0L || dash.endgameSigilsEarned > 0L
+                ) {
                     item {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
@@ -403,6 +408,55 @@ internal fun BusinessDashboardPanel(
                                 )
                             }
                             Text(formatCoins(dash.ledgerNetCashflow), style = Tabular)
+                        }
+                    }
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .testTag(ComposeUiTags.NEST_TREASURY)
+                                .semantics {
+                                    contentDescription = UiStrings.t("a11y.nestTreasurySection")
+                                },
+                        ) {
+                            Text(UiStrings.t("dashboard.nestTreasury"), fontWeight = FontWeight.SemiBold)
+                            Text(
+                                buildString {
+                                    append(UiStrings.t("dashboard.wageBurden"))
+                                    append(" ")
+                                    append(dash.wageBurdenPermille / 10)
+                                    append("% · ")
+                                    append(UiStrings.t("dashboard.loanCoverage"))
+                                    append(" ")
+                                    append(dash.loanCoveragePermille / 10)
+                                    append("%")
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                            )
+                            Text(
+                                buildString {
+                                    append(UiStrings.t("dashboard.rivalLoss"))
+                                    append(" ")
+                                    append(formatCoins(dash.rivalLossCoins))
+                                    append(" · ")
+                                    append(UiStrings.t("dashboard.sigilsEarned"))
+                                    append(" ")
+                                    append(dash.endgameSigilsEarned)
+                                    append(" · ")
+                                    append(UiStrings.t("dashboard.coinGoalsHit"))
+                                    append(" ")
+                                    append(dash.coinGoalsReached)
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                            )
+                            dash.nestTreasuryLines.forEach { line ->
+                                Text(
+                                    line,
+                                    style = Tabular,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                )
+                            }
                         }
                     }
                     if (dash.ledgerLines.isNotEmpty()) {

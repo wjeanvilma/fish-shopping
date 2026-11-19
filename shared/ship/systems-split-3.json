@@ -1,0 +1,87 @@
+{
+  "phase": 4,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.systems_split_3.v1",
+  "description": "Finish 6.0 Phase 4 — extract rivals / economy+bank / staffTrees / workers from systems.ts into web/src/engine/systems/*. Facade ≤2800; closes systemsSplit3Incomplete.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "systemsSplit3Marker": "authored-finish-6.0-phase-4",
+  "closesGap": "systemsSplit3Incomplete",
+  "systemsPackageRoot": "web/src/engine/systems",
+  "systemsFacadePath": "web/src/engine/systems.ts",
+  "systemsFacadeMaxLines": 2800,
+  "extractedFileMin": 12,
+  "requiredFiles": [
+    "rivals.ts",
+    "economyBank.ts",
+    "staffTrees.ts",
+    "workers.ts"
+  ],
+  "priorSplitFiles": [
+    "context.ts",
+    "bridge.ts",
+    "fishing.ts",
+    "production.ts",
+    "movement.ts",
+    "customers.ts",
+    "progression.ts",
+    "contracts.ts"
+  ],
+  "requiredSymbols": {
+    "rivals.ts": ["RivalMarketSystem"],
+    "economyBank.ts": ["EconomySystem", "BankSystem"],
+    "staffTrees.ts": ["StaffTreesSystem"],
+    "workers.ts": ["WorkerSystem", "AutomationSystem"]
+  },
+  "facadeMustReexport": [
+    "RivalMarketSystem",
+    "EconomySystem",
+    "BankSystem",
+    "StaffTreesSystem",
+    "WorkerSystem",
+    "AutomationSystem"
+  ],
+  "facadeMustNotDefine": [
+    "export const RivalMarketSystem",
+    "export const EconomySystem",
+    "export const BankSystem",
+    "export const StaffTreesSystem",
+    "export const WorkerSystem",
+    "export const AutomationSystem"
+  ],
+  "facadeMustBindBridge": true,
+  "bridgeRequiredModules": [
+    "staffTrees.ts",
+    "workers.ts"
+  ],
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "priorSplitCatalog": "shared/ship/systems-split-2.json",
+  "parityFixture": "shared/fixtures/parity-systems-split-3.json",
+  "validateScript": "npm run systemssplit3:validate",
+  "smokeScript": "npm run systemssplit3:smoke",
+  "checklist": [
+    "systems.ts ≤2800 lines after rivals/economy/staffTrees/workers extract",
+    "≥12 modules under web/src/engine/systems/",
+    "rivals/economyBank/staffTrees/workers symbols present; facade does not redefine them",
+    "staffTrees + workers use systemsBridge; no circular ../systems imports",
+    "systemsSplit3Incomplete closed",
+    "parity fixture + systemssplit3:validate/smoke green",
+    "CI runs systemssplit3:validate + systemssplit3:smoke",
+    "content/version stays 5.0.0 / schema 26"
+  ],
+  "preflightGates": [
+    "shared/ship/systems-split-3.json",
+    "shared/fixtures/parity-systems-split-3.json",
+    "shared/ship/systems-split-2.json",
+    "shared/ship/finish-6.0-kickoff.json",
+    "web/src/engine/systems.ts",
+    "web/src/engine/systems/rivals.ts",
+    "web/src/engine/systems/economyBank.ts",
+    "web/src/engine/systems/staffTrees.ts",
+    "web/src/engine/systems/workers.ts",
+    "web/src/ship/systemsSplit3.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/SystemsSplit3.kt",
+    "web/scripts/validate-systems-split-3.ts",
+    "web/scripts/smoke-systems-split-3.ts"
+  ]
+}

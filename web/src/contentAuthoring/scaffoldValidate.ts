@@ -1,5 +1,5 @@
 /**
- * Finish 2.0/3.0/4.0/5.0 — Ajv fragment validation for content scaffolds.
+ * Finish 2.0/3.0/4.0/5.0/6.0 — Ajv fragment validation for content scaffolds.
  */
 import Ajv2020 from "ajv/dist/2020";
 import schema from "../../../shared/schema/content-pack.schema.json";
@@ -60,6 +60,11 @@ function validatorFor(kind: ScaffoldKind) {
       return validateEndgame;
     case "cosmetic":
       // Billing entitlement fragment — structural checks only (not content-pack schema).
+      return null;
+    case "chain":
+    case "sigil":
+    case "modpack":
+      // Finish 6.0 authoring fragments — structural checks only (not content-pack schema items).
       return null;
   }
 }

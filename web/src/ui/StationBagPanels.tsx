@@ -22,6 +22,7 @@ import {
   licensesCatalog,
   ossHeadline,
 } from "../store/licenses";
+import { WEB_E2E_IDS } from "../e2e/webE2eIds";
 import { formatAwayDuration, formatCoins, formatRushSeconds, prestigeRewardBits } from "./hudFormat";
 
 export function BagDetailPanel({ v, onSelectBait, onSelectTechnique, onClose }: {
@@ -37,7 +38,14 @@ export function BagDetailPanel({ v, onSelectBait, onSelectTechnique, onClose }: 
   const isBait = (itemId: string) => itemId.startsWith("bait.") || baitIds.has(itemId);
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={t("panels.bag")} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="panel sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("panels.bag")}
+        data-testid={WEB_E2E_IDS.BAG_PANEL}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sheet-header">
           <h2>{t("panels.bag")}</h2>
           <span className="num">{v.bagUsedUnits}/{v.bagCapacityUnits}</span>

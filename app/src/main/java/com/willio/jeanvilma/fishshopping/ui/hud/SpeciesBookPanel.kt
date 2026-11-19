@@ -72,6 +72,8 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.testTag
+import com.willio.jeanvilma.fishshopping.ui.ComposeUiTags
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
@@ -130,6 +132,7 @@ internal fun SpeciesBookPanel(
     val selected = book.entries.firstOrNull { it.speciesId == selectedId }
     Surface(
         modifier
+            .testTag(ComposeUiTags.SPECIES_BOOK)
             .managementSheet(maxWidth = 440.dp, maxHeight = 520.dp)
             .a11yPane(if (selected != null) "codex.detail" else "panels.codex"),
         shape = PanelShape,

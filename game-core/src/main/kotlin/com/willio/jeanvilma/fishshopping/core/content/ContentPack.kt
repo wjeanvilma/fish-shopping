@@ -673,6 +673,8 @@ data class EndgameTierDef(
     val requiresMarks: Int = 0,
     /** Finish 5.0 Phase 17 — crests required (default 0). */
     val requiresCrests: Int = 0,
+    /** Finish 6.0 Phase 14 — sigils required (default 0). */
+    val requiresSigils: Int = 0,
 )
 
 /** Finish 3.0 Phase 15 — endgame challenge. */
@@ -687,6 +689,8 @@ data class EndgameChallengeDef(
     val grantsMark: String? = null,
     /** Finish 5.0 Phase 17 — optional crest granted on complete. */
     val grantsCrest: String? = null,
+    /** Finish 6.0 Phase 14 — optional sigil granted on complete. */
+    val grantsSigil: String? = null,
 )
 
 /** Finish 3.0 Phase 15 — endgame deepen catalog. */

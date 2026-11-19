@@ -51,8 +51,8 @@
     },
     "saveSchemaVersion": {
       "type": "integer",
-      "const": 26,
-      "description": "Finish 5.0 Phase 17 — save schema this content pack targets (migrations from ≤25)."
+      "const": 27,
+      "description": "Finish 6.0 Phase 14 — save schema this content pack targets (migrations from ≤26)."
     },
     "ticksPerSecond": {
       "const": 20
@@ -1942,6 +1942,11 @@
                 "type": "integer",
                 "minimum": 0,
                 "description": "Finish 5.0 Phase 17 — crests required to unlock."
+              },
+              "requiresSigils": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Finish 6.0 Phase 14 — sigils required to unlock."
               }
             }
           }
@@ -1992,6 +1997,11 @@
                 "type": "string",
                 "pattern": "^endgame\\.crest\\.",
                 "description": "Finish 5.0 Phase 17 — optional crest granted on complete."
+              },
+              "grantsSigil": {
+                "type": "string",
+                "pattern": "^endgame\\.sigil\\.",
+                "description": "Finish 6.0 Phase 14 — optional sigil granted on complete."
               }
             }
           }

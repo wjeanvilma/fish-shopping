@@ -1,0 +1,65 @@
+{
+  "phase": 12,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.audio_pack_6.v1",
+  "description": "Finish 6.0 Phase 12 — SFX/music pack 6: nest/roast/ferment/school/aurora cozy stingers + nest bed; ducking frozen. Combined validate audiovfx6:validate with vfx-juice-6. Closes gaps.audioVfx6Incomplete. Schema stays 26 / content 5.0.0.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "audioPackMarker": "authored-finish-6.0-phase-12",
+  "extendsCatalogs": {
+    "sfx": "shared/audio/sfx-pack.json",
+    "music": "shared/audio/music-pack.json"
+  },
+  "newStingerMin": 5,
+  "newBedMin": 1,
+  "duckingPolicyFrozen": true,
+  "frozenDucking": {
+    "sfxDuckFactor": 0.35,
+    "sfxDuckRecoveryMs": 280,
+    "focusLossSilence": true,
+    "focusTransientCanDuckFactor": 0.25,
+    "webHiddenSuspendsContext": true,
+    "respectMute": true,
+    "respectMusicVolume": true
+  },
+  "newStingers": [
+    "nest_settle",
+    "roast_ready",
+    "ferment_ready",
+    "school_flash",
+    "aurora_crest"
+  ],
+  "newBeds": [
+    "nest"
+  ],
+  "gapClosed": "audioVfx6Incomplete",
+  "gapClosedValue": false,
+  "parityFixture": "shared/fixtures/parity-audio-pack-6.json",
+  "validateScript": "npm run audiovfx6:validate",
+  "generator": "shared/tools/generate_sfx_pack.py + shared/tools/generate_music_pack.py",
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "checklist": [
+    "≥5 new SFX stingers baked + mirrored",
+    "≥1 new music bed (nest)",
+    "ducking policy frozen",
+    "sfxFromEvent maps Finish 6.0 nest/roast/ferment/school/aurora cues",
+    "bed priority festival > storm > rival > night > endgame > ledger > pressure > nest > shop > harbor",
+    "licenses.json records authored-audio-pack-6",
+    "gaps.audioVfx6Incomplete closed",
+    "audiovfx6:validate green in CI",
+    "schema stays 26 / content 5.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/audio-pack-6.json",
+    "shared/fixtures/parity-audio-pack-6.json",
+    "shared/ship/vfx-juice-6.json",
+    "web/src/ship/audioPack6.ts",
+    "web/src/ship/vfxJuice6.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/AudioPack6.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/VfxJuice6.kt",
+    "web/src/audio/sfxCues.ts",
+    "web/src/audio/musicBeds.ts",
+    "shared/audio/sfx-pack.json",
+    "shared/audio/music-pack.json"
+  ]
+}

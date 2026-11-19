@@ -1,0 +1,107 @@
+{
+  "phase": 12,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.vfx_juice_6.v1",
+  "description": "Finish 6.0 Phase 12 — nest/roast/ferment/school/aurora bursts + nest/aurora shakes + nest ambient; extends juice 5; presentation-only; closes gaps.audioVfx6Incomplete; schema stays 26 / content 5.0.0.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "extendsCatalog": "shared/perf/vfx-juice.json",
+  "extendsJuice5Catalog": "shared/ship/vfx-juice-5.json",
+  "budgetGateCatalog": "shared/perf/budget-gate.json",
+  "simHzInvariant": 20,
+  "vfxJuice6Marker": "authored-finish-6.0-phase-12",
+  "eventBurstMin": 5,
+  "eventShakeMin": 2,
+  "nestAmbientMin": 3,
+  "eventBursts": {
+    "kinds": [
+      "nest_settle",
+      "roast_ready",
+      "ferment_ready",
+      "school_flash",
+      "aurora_crest"
+    ],
+    "durationSec": {
+      "nest_settle": 0.4,
+      "roast_ready": 0.35,
+      "ferment_ready": 0.4,
+      "school_flash": 0.35,
+      "aurora_crest": 0.45
+    },
+    "sharesBurstPool": true
+  },
+  "eventShake": {
+    "kinds": [
+      "nest_settle",
+      "aurora_crest"
+    ],
+    "durationSec": 0.18,
+    "maxAmplitudeM": 0.12,
+    "amplitudeM": {
+      "nest_settle": 0.05,
+      "aurora_crest": 0.07
+    },
+    "scaleByQuality": {
+      "low": 0.5,
+      "medium": 0.85,
+      "high": 1.0
+    },
+    "disabledWhenReducedMotion": true
+  },
+  "ambientNest": {
+    "modes": [
+      "idle",
+      "roosting",
+      "settled"
+    ],
+    "consumesBurstPool": false,
+    "roostingMinPlacements": 1,
+    "settledMinPlacements": 3
+  },
+  "eventMap": {
+    "nest_settle_pulse": {
+      "burst": "nest_settle",
+      "shake": "nest_settle"
+    },
+    "roast_cycle_ready": {
+      "burst": "roast_ready"
+    },
+    "ferment_cycle_ready": {
+      "burst": "ferment_ready"
+    },
+    "school_flash": {
+      "burst": "school_flash"
+    },
+    "aurora_crest": {
+      "burst": "aurora_crest",
+      "shake": "aurora_crest"
+    }
+  },
+  "gapClosed": "audioVfx6Incomplete",
+  "gapClosedValue": false,
+  "parityFixture": "shared/fixtures/parity-vfx-juice-6.json",
+  "validateScript": "npm run audiovfx6:validate",
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "checklist": [
+    "≥5 new event burst kinds",
+    "≥2 new shake kinds (nest_settle/aurora_crest)",
+    "≥3 nest ambient modes",
+    "GameHost + VmStepBus wire Finish 6.0 events",
+    "HarborScene + HarborRenderer apply nest ambient",
+    "gaps.audioVfx6Incomplete closed",
+    "audiovfx6:validate green in CI",
+    "schema stays 26 / content 5.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/vfx-juice-6.json",
+    "shared/fixtures/parity-vfx-juice-6.json",
+    "shared/perf/budget-gate.json",
+    "web/src/ship/vfxJuice6.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/VfxJuice6.kt",
+    "web/src/render/presenters/vfx.ts",
+    "web/src/render/weatherAmbient.ts",
+    "web/src/game/host/hostStepBus.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersVfx.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmStepBus.kt"
+  ]
+}

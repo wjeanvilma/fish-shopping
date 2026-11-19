@@ -44,7 +44,7 @@
     "finish4HistoricalVersionCode": 5,
     "finish4HistoricalSchemaVersion": 25,
     "finish4HistoricalProductTotalFloor": 73100,
-    "note": "freeze4/freeze3/freeze2 stay green on historical pins; live pin advances to 5.0.0 / schema 26 / versionCode 6."
+    "note": "freeze5/freeze4/freeze3/freeze2 stay green on historical pins; Finish 6.0 Phase 30 advances live pin to 6.0.0 / schema 27 / versionCode 7."
   },
   "checklist": [
     "RELEASE_PIN contentVersion/versionName/releaseTag = 5.0.0; versionCode = 6; schemaVersion = 26",

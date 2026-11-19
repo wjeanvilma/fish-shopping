@@ -2,7 +2,7 @@
   "schema": "fish.deeplink.routes.v1",
   "phase": 26,
   "plan": "30_finish_5.0",
-  "description": "Finish 3.0 Phase 20 — Android App Links + web deep-link route catalog. Finish 5.0 Phase 26 expands weekly/endgame/ledger/friction aliases.",
+  "description": "Finish 3.0 Phase 20 \u2014 Android App Links + web deep-link route catalog. Finish 5.0 Phase 26 expands weekly/endgame/ledger/friction aliases. Finish 6.0 Phase 23 expands nest treasury/loans/ember/conflict aliases.",
   "packageName": "com.willio.jeanvilma.fishshopping",
   "canonicalHost": "https://wjeanvilma.github.io",
   "host": "wjeanvilma.github.io",
@@ -62,7 +62,17 @@
     "friction": "pause",
     "licenses": "settings",
     "decor": "settings",
-    "photo": "pause"
+    "photo": "pause",
+    "nesttreasury": "dashboard",
+    "nestloans": "quests",
+    "nestember": "quests",
+    "nestconflict": "pause",
+    "saffron": "map",
+    "roastnest": "contracts",
+    "nestjournal": "speciesBook",
+    "cobalt": "map",
+    "ember": "dashboard",
+    "nestbank": "quests"
   },
   "hashAliases": {
     "goals": "quests",
@@ -91,6 +101,14 @@
     "pierledger": "dashboard",
     "ledger": "dashboard",
     "friction": "pause",
-    "licenses": "settings"
+    "licenses": "settings",
+    "nesttreasury": "dashboard",
+    "nestloans": "quests",
+    "nestember": "quests",
+    "nestconflict": "pause",
+    "saffron": "map",
+    "roastnest": "contracts",
+    "nestjournal": "speciesBook",
+    "ember": "dashboard"
   }
 }

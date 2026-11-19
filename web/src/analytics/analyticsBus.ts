@@ -132,6 +132,21 @@ export class AnalyticsBus {
     this.track(Analytics.saveRecovery(source));
   }
 
+  /** Finish 6.0 Phase 26: nest endgame sigil progress. */
+  onNestSigilEarned(sigilId: string, count: number): void {
+    this.track(Analytics.nestSigilEarned(sigilId, count));
+  }
+
+  /** Finish 6.0 Phase 26: nest contract settlement. */
+  onNestContractSettled(contractId: string, coins: number): void {
+    this.track(Analytics.nestContractSettled(contractId, coins));
+  }
+
+  /** Finish 6.0 Phase 26: loadtest bank probe telemetry. */
+  onLoadtestBankProbed(bank: string, floorsMet: boolean): void {
+    this.track(Analytics.loadtestBankProbed(bank, floorsMet, "web"));
+  }
+
   /** Call once per display frame with current EMA + quality. */
   onFrameSample(emaMs: number, quality: QualityPreset): void {
     if (!this.consent || emaMs <= 0) return;

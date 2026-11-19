@@ -1,0 +1,60 @@
+{
+  "schema": "fish.fixtures.parity_machines_15_16.v1",
+  "machines1516Marker": "authored-finish-6.0-phase-9",
+  "phase": 9,
+  "plan": "30_finish_6.0",
+  "description": "Finish 6.0 Phase 9: unlock harbor roaster via sunrise plot, process fillet → roasted_fillet; assert 16 machine classes.",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 61616,
+  "setup": {
+    "coins": 1800,
+    "completedQuests": [
+      "quest.specialty_kitchen"
+    ],
+    "ownedUpgrades": [
+      "upgrade.harbor_steamer",
+      "upgrade.harbor_press",
+      "upgrade.harbor_braiser",
+      "upgrade.harbor_poacher"
+    ]
+  },
+  "build": {
+    "plotId": "plot.sunrise_roaster",
+    "requestId": "p9-roaster-build",
+    "expectUpgrade": "upgrade.harbor_roaster",
+    "stationId": "station.roaster_1"
+  },
+  "process": {
+    "walkTo": {
+      "x": 10700,
+      "z": -21500,
+      "expectZone": "zone.roaster_in"
+    },
+    "bagAfterUnlock": {
+      "product.fillet": 1
+    },
+    "preferredRecipeId": "recipe.roast_fillet",
+    "expectOutput": {
+      "item": "product.roasted_fillet",
+      "quantity": 1
+    }
+  },
+  "expectFinal": {
+    "machineCount": 16,
+    "ownedUpgrade": "upgrade.harbor_roaster",
+    "schemaVersion": 26,
+    "contentVersion": "5.0.0",
+    "machinesRemainingClosed": 0,
+    "gates": [
+      "machines_16",
+      "plots_wired",
+      "recipes_and_products",
+      "module_glbs",
+      "kickoff_machines_met",
+      "ci_gate"
+    ]
+  },
+  "expect": {
+    "openGapFlagMin": 1
+  }
+}

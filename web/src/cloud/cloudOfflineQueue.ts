@@ -18,6 +18,10 @@ export interface CloudOfflineQueueDiagnostics {
   queuePending: boolean;
   queueAgeMs: number;
   attempts: number;
+  /** Finish 6.0 Phase 18 — nest sync diagnostics. */
+  lastAttemptAgeMs: number;
+  flushFailures: number;
+  circuitOpen: boolean;
 }
 
 const KEY =
@@ -79,15 +83,29 @@ export function cloudOfflineQueuePending(): boolean {
   return loadCloudOfflineQueue() !== null;
 }
 
-/** Finish 5.0 Phase 22 — sync diagnostics for pending offline cloud push. */
-export function cloudOfflineQueueDiagnostics(nowMs = Date.now()): CloudOfflineQueueDiagnostics {
+/** Finish 5.0 Phase 22 / Finish 6.0 Phase 18 — sync diagnostics for pending offline cloud push. */
+export function cloudOfflineQueueDiagnostics(
+  nowMs = Date.now(),
+  flushFailures = 0,
+  circuitOpen = false,
+): CloudOfflineQueueDiagnostics {
   const entry = loadCloudOfflineQueue();
   if (!entry) {
-    return { queuePending: false, queueAgeMs: 0, attempts: 0 };
+    return {
+      queuePending: false,
+      queueAgeMs: 0,
+      attempts: 0,
+      lastAttemptAgeMs: 0,
+      flushFailures,
+      circuitOpen,
+    };
   }
   return {
     queuePending: true,
     queueAgeMs: Math.max(0, nowMs - entry.queuedAtEpochMs),
     attempts: entry.attempts,
+    lastAttemptAgeMs: Math.max(0, nowMs - entry.lastAttemptEpochMs),
+    flushFailures,
+    circuitOpen,
   };
 }

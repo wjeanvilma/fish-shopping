@@ -47,7 +47,7 @@
     "cargo_sprint_urgency",
     "quick_till_queue"
   ],
-  "webWorkersPath": "web/src/engine/systems.ts",
+  "webWorkersPath": "web/src/engine/systems/workers.ts",
   "kotlinWorkersPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
   "webStatsPath": "web/src/engine/state.ts",
   "kotlinStatsPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/GameState.kt",
@@ -74,7 +74,7 @@
     "shared/ship/finish-4.0-kickoff.json",
     "shared/ship/worker-ai-depth.json",
     "shared/ship/staff-trees.json",
-    "web/src/engine/systems.ts",
+    "web/src/engine/systems/workers.ts",
     "web/src/engine/state.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/GameState.kt",

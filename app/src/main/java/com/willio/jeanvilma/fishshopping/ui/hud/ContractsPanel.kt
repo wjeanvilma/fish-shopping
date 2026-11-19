@@ -72,6 +72,8 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.testTag
+import com.willio.jeanvilma.fishshopping.ui.ComposeUiTags
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
@@ -138,7 +140,10 @@ internal fun ContractsPanel(
     modifier: Modifier,
 ) {
     Surface(
-        modifier.managementSheet(maxWidth = 460.dp, maxHeight = 400.dp).a11yPane("nav.jobs"),
+        modifier
+            .testTag(ComposeUiTags.CONTRACTS_PANEL)
+            .managementSheet(maxWidth = 460.dp, maxHeight = 400.dp)
+            .a11yPane("nav.jobs"),
         shape = PanelShape,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,

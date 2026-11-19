@@ -1,9 +1,8 @@
 /**
  * Large realistic loadtest JSON banks (save + telemetry) shared with Android.
- * Mirrors shared/ship/loadtest-banks.json — probe headers/size without full parse.
+ * Mirrors shared/ship/loadtest-banks.json — browser-safe catalog + URL probes.
+ * Node disk probes live in loadtestBanksNode.ts (keeps vite client free of node:fs).
  */
-import { existsSync, openSync, readSync, closeSync, statSync } from "node:fs";
-import { resolve } from "node:path";
 import catalogJson from "../../../shared/ship/loadtest-banks.json";
 
 export interface LoadtestBankRef {
@@ -41,46 +40,27 @@ export interface LoadtestBankProbe {
   floorsMet: boolean;
 }
 
-function escapeRegExp(value: string): string {
+export function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function extractField(header: string, key: string): string | null {
+export function extractField(header: string, key: string): string | null {
   const re = new RegExp(`"${escapeRegExp(key)}"\\s*:\\s*"([^"]+)"`);
   const m = header.match(re);
   return m?.[1] ?? null;
 }
 
-function extractInt(header: string, key: string): number | null {
+export function extractInt(header: string, key: string): number | null {
   const re = new RegExp(`"${escapeRegExp(key)}"\\s*:\\s*(-?\\d+)`);
   const m = header.match(re);
   return m ? Number(m[1]) : null;
 }
 
-/** Probe a bank on disk (Node / vitest / ship scripts). */
-export function probeLoadtestBankFile(
-  repoRoot: string,
+export function floorsMetFromHeader(
   ref: LoadtestBankRef,
-): LoadtestBankProbe {
-  const path = resolve(repoRoot, ref.fixture);
-  if (!existsSync(path)) {
-    return {
-      pathOrUrl: path,
-      bytes: 0,
-      schema: null,
-      label: null,
-      contentVersion: null,
-      schemaVersion: null,
-      sampleKey: null,
-      floorsMet: false,
-    };
-  }
-  const bytes = statSync(path).size;
-  const fd = openSync(path, "r");
-  const buf = Buffer.alloc(4096);
-  const n = readSync(fd, buf, 0, buf.length, 0);
-  closeSync(fd);
-  const header = buf.subarray(0, n).toString("utf8");
+  bytes: number,
+  header: string,
+): Omit<LoadtestBankProbe, "pathOrUrl" | "floorsMet"> & { floorsMet: boolean } {
   const schema = extractField(header, "$schema");
   const label = extractField(header, "label");
   const contentVersion = extractField(header, "contentVersion");
@@ -88,7 +68,6 @@ export function probeLoadtestBankFile(
   const sampleKey =
     header.includes('"records"') ? "records" : header.includes('"events"') ? "events" : null;
   return {
-    pathOrUrl: path,
     bytes,
     schema,
     label,
@@ -101,16 +80,6 @@ export function probeLoadtestBankFile(
       contentVersion === LOADTEST_BANKS.contentVersion &&
       (schemaVersion ?? 0) >= LOADTEST_BANKS.schemaVersion,
   };
-}
-
-export function measureLoadtestBanks(repoRoot: string): {
-  save: LoadtestBankProbe;
-  telemetry: LoadtestBankProbe;
-  floorsMet: boolean;
-} {
-  const save = probeLoadtestBankFile(repoRoot, LOADTEST_SAVE_BANK);
-  const telemetry = probeLoadtestBankFile(repoRoot, LOADTEST_TELEMETRY_BANK);
-  return { save, telemetry, floorsMet: save.floorsMet && telemetry.floorsMet };
 }
 
 /** Browser probe via HEAD + ranged GET (avoids loading ~90MB into memory). */
@@ -132,25 +101,10 @@ export async function probeLoadtestBankUrl(
     bytes = full ? Number(full[1]) : Number(res.headers.get("content-length") || 0);
   }
   const header = await res.text();
-  const schema = extractField(header, "$schema");
-  const label = extractField(header, "label");
-  const contentVersion = extractField(header, "contentVersion");
-  const schemaVersion = extractInt(header, "schemaVersion");
-  const sampleKey =
-    header.includes('"records"') ? "records" : header.includes('"events"') ? "events" : null;
+  const measured = floorsMetFromHeader(ref, bytes, header);
   return {
     pathOrUrl: url,
-    bytes,
-    schema,
-    label,
-    contentVersion,
-    schemaVersion,
-    sampleKey,
-    floorsMet:
-      bytes >= ref.minBytes &&
-      schema === ref.schema &&
-      contentVersion === LOADTEST_BANKS.contentVersion &&
-      (schemaVersion ?? 0) >= LOADTEST_BANKS.schemaVersion,
+    ...measured,
   };
 }
 

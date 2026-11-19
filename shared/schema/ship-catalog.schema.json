@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fishshopping.local/schema/ship-catalog.schema.json",
+  "title": "Fish Shopping ship catalog",
+  "description": "Structural contract for shared/ship/*.json phase catalogs. Behavioral floors stay in per-phase validators; this schema locks identity, versioning, and docs-as-code fields for AI-lab training excellence.",
+  "type": "object",
+  "required": ["phase", "schema", "description"],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": { "type": "string" },
+    "phase": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 30
+    },
+    "plan": {
+      "type": "string",
+      "pattern": "^30_finish_[0-9]+\\.[0-9]+$|^post-1\\.0_finish_plan$"
+    },
+    "schema": {
+      "type": "string",
+      "pattern": "^fish\\.ship\\.[a-z0-9_]+\\.v[0-9]+$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 16
+    },
+    "contentVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "parityFixture": {
+      "type": "string",
+      "pattern": "^shared/fixtures/.+\\.json$"
+    },
+    "validateScript": {
+      "type": "string",
+      "pattern": "^npm run [a-z0-9-]+:(validate|smoke)$"
+    },
+    "smokeScript": {
+      "type": "string",
+      "pattern": "^npm run [a-z0-9-]+:smoke$"
+    },
+    "checklist": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 4 },
+      "minItems": 1
+    },
+    "preflightGates": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 4 },
+      "minItems": 1
+    }
+  }
+}

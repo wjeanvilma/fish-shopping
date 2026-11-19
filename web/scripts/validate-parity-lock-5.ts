@@ -125,9 +125,9 @@ function validate(): string[] {
   }
   if ((catalog.suiteFloor ?? 0) < 20) errors.push("parity-lock.suiteFloor must be ≥ 20");
   if ((catalog.finish5SuiteFloor ?? 0) < 4) errors.push("parity-lock.finish5SuiteFloor must be ≥ 4");
-  // Soft-floor: Phase 30 freeze may bump live parity-lock contentVersion to 5.0.0.
-  if (!["4.0.0", "5.0.0"].includes(catalog.contentVersion)) {
-    errors.push("parity-lock contentVersion must be 4.0.0 or 5.0.0");
+  // Soft-floor: Finish 5/6 freezes may bump live parity-lock contentVersion.
+  if (!["4.0.0", "5.0.0", "6.0.0"].includes(catalog.contentVersion)) {
+    errors.push("parity-lock contentVersion must be 4.0.0, 5.0.0, or 6.0.0");
   }
   if ((catalog.schemaVersion ?? 0) < 26) errors.push("parity-lock schemaVersion must be ≥ 26");
 

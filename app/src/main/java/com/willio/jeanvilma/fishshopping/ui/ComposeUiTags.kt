@@ -3,6 +3,7 @@ package com.willio.jeanvilma.fishshopping.ui
 /**
  * Finish 3.0 Phase 21 — stable Compose test tags for UI integration tests.
  * Finish 5.0 Phase 26 expands Finish 5 surface tags (soft-floor ≥32).
+ * Finish 6.0 Phase 23 expands nest/deep-link surface tags (soft-floor ≥32, live ≥40).
  * Presentation-only; never affects sim.
  */
 object ComposeUiTags {
@@ -43,6 +44,14 @@ object ComposeUiTags {
     const val DASH_LEDGER = "dash.ledger"
     const val WAREHOUSE_PANEL = "warehouse.panel"
     const val FRICTION_NUDGE = "friction.nudge"
+    const val BAG_PANEL = "bag.panel"
+    const val NEST_TREASURY = "nest.treasury"
+    const val NEST_LOANS = "nest.loans"
+    const val SPECIES_BOOK = "species.book"
+    const val CONTRACTS_PANEL = "contracts.panel"
+    const val MAP_PANEL = "map.panel"
+    const val STAFF_TRAIN = "staff.train"
+    const val DASH_ROOT = "dash.root"
 
     val ALL: List<String> = listOf(
         TITLE_ROOT,
@@ -79,5 +88,13 @@ object ComposeUiTags {
         DASH_LEDGER,
         WAREHOUSE_PANEL,
         FRICTION_NUDGE,
+        BAG_PANEL,
+        NEST_TREASURY,
+        NEST_LOANS,
+        SPECIES_BOOK,
+        CONTRACTS_PANEL,
+        MAP_PANEL,
+        STAFF_TRAIN,
+        DASH_ROOT,
     )
 }

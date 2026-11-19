@@ -54,8 +54,8 @@ function validate(): string[] {
   if (catalog.contentVersion !== "4.0.0") errors.push("contentVersion must stay 4.0.0");
   if (catalog.schemaVersion !== 26) errors.push("schemaVersion must stay 26");
   if (SCHEMA_VERSION < 26) errors.push("engine SCHEMA_VERSION must be >= 26");
-  if (!["4.0.0", "5.0.0"].includes(pack.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0 or 5.0.0");
-  if (pack.saveSchemaVersion !== 26) errors.push("content-pack.saveSchemaVersion must be 26");
+  if (!["4.0.0", "5.0.0", "6.0.0"].includes(pack.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0, 5.0.0, or 6.0.0");
+  if (pack.saveSchemaVersion < 26) errors.push("content-pack.saveSchemaVersion must be >= 26");
 
   const measure = measureOfflineCloud3(root);
   if (!measure.journalFieldsPresent) errors.push("offline journal fidelity fields missing TS/Kotlin");
@@ -69,8 +69,9 @@ function validate(): string[] {
   if (!measure.kickoffClosed) errors.push("kickoff.gaps.offlineCloud3Incomplete must be false");
   for (const g of measure.missingGates) errors.push(`missing preflight ${g}`);
 
+  // Soft-floor: Finish 6.0 Phase 18 raised retries/jitter; keep ≥ Phase-22 floors.
   if ((policy.batch?.maxFlushRetries ?? 0) < 5) errors.push("analytics maxFlushRetries must be ≥5");
-  if (policy.batch?.retryJitterMs !== 500) errors.push("analytics retryJitterMs must be 500");
+  if ((policy.batch?.retryJitterMs ?? 0) < 500) errors.push("analytics retryJitterMs must be ≥500");
   if (policy.batch?.deadLetterAfterMaxRetries !== true) {
     errors.push("analytics deadLetterAfterMaxRetries must be true");
   }
@@ -133,7 +134,8 @@ function validate(): string[] {
     errors.push("parity journalDeltaFieldCount must be 4");
   }
   if (fixture.expect?.conflictFieldCount !== 3) errors.push("parity conflictFieldCount must be 3");
-  if (fixture.expect?.maxFlushRetries !== 5) errors.push("parity maxFlushRetries must be 5");
+  // Soft-floor: Phase-22 parity lock; live policy may be higher after Phase 18.
+  if ((fixture.expect?.maxFlushRetries ?? 0) < 5) errors.push("parity maxFlushRetries must be ≥5");
   if (fixture.expect?.offlineCloud3Incomplete !== false) {
     errors.push("parity offlineCloud3Incomplete must be false");
   }

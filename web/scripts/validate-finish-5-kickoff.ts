@@ -290,16 +290,21 @@ function validate(): string[] {
   if (productLocProgress(b.productLoc) !== 0) errors.push("LOC progress at baseline must be 0%");
 
   const art = measureArtCounts(root);
-  if (art.authoredHarbors !== b.authoredHarbors) {
-    errors.push(`harbor-art-pass authored count ${art.authoredHarbors} ≠ baseline ${b.authoredHarbors}`);
+  // Soft-floor: Finish 6 Phase 7 grew authored harbors to 14; Finish 5 baseline stays 12.
+  if (art.authoredHarbors < b.authoredHarbors) {
+    errors.push(`harbor-art-pass authored count ${art.authoredHarbors} < baseline ${b.authoredHarbors}`);
   }
-  if (art.authoredFish !== b.authoredFish) {
-    errors.push(`fish-art-pass authored count ${art.authoredFish} ≠ baseline ${b.authoredFish}`);
+  // Soft-floor: Finish 6 Phase 8 grew authored fish to 150; Finish 5 baseline stays 125.
+  if (art.authoredFish < b.authoredFish) {
+    errors.push(`fish-art-pass authored count ${art.authoredFish} < baseline ${b.authoredFish}`);
   }
-  if ((pack.harbors as unknown[]).length !== b.harbors) errors.push("content harbors ≠ baseline");
-  if ((pack.species as unknown[]).length !== b.species) errors.push("content species ≠ baseline");
+  // Soft-floor: Finish 6 Phase 7 grew content harbors to 14; Finish 5 baseline stays 12.
+  if ((pack.harbors as unknown[]).length < b.harbors) errors.push("content harbors < baseline");
+  // Soft-floor: Finish 6 Phase 8 grew content species to 150; Finish 5 baseline stays 125.
+  if ((pack.species as unknown[]).length < b.species) errors.push("content species < baseline");
   if ((pack.machines as unknown[]).length !== b.machines) errors.push("content machines ≠ baseline");
-  if ((pack.quests as unknown[]).length !== b.quests) errors.push("content quests ≠ baseline");
+  // Soft-floor: Finish 6 Phase 7 added 2 landing quests; Finish 5 baseline stays 75.
+  if ((pack.quests as unknown[]).length < b.quests) errors.push("content quests < baseline");
 
   const locBoard = measureLocScoreboard(root);
   if (locBoard.productTotal < b.productLoc - 50) {

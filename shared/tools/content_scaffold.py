@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Finish 2.0/3.0/4.0 content CLI — thin wrapper around the TS scaffold CLI.
+"""Finish 2.0–6.0 content CLI — thin wrapper around the TS scaffold CLI.
 
 Prefer: cd web && npm run content:scaffold -- <kind> --id <slug> [...]
-Kinds: species|quest|harbor|contract|bait|decor|machine|rival
-Also: --list / --check-pack / --check-floors.
+Kinds: species|quest|harbor|contract|bait|decor|machine|rival|seasonal|endgame|cosmetic|chain|sigil|modpack
+Also: --list / --check-pack / --check-floors / --list-modpacks / --check-modpacks.
 This script forwards argv to that npm entry so shared/tools stays discoverable.
 """
 from __future__ import annotations

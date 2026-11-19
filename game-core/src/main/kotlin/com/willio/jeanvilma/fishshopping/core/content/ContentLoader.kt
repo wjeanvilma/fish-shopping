@@ -497,6 +497,7 @@ object ContentLoader {
                         coins = tier["coins"].long(min = 0),
                         requiresMarks = tier.optional("requiresMarks")?.int(min = 0) ?: 0,
                         requiresCrests = tier.optional("requiresCrests")?.int(min = 0) ?: 0,
+                        requiresSigils = tier.optional("requiresSigils")?.int(min = 0) ?: 0,
                     )
                 },
                 challenges = eg["challenges"].list { ch ->
@@ -509,6 +510,7 @@ object ContentLoader {
                         rewardCoins = ch["rewardCoins"].long(min = 0),
                         grantsMark = ch.optional("grantsMark")?.string(),
                         grantsCrest = ch.optional("grantsCrest")?.string(),
+                        grantsSigil = ch.optional("grantsSigil")?.string(),
                     )
                 },
             )

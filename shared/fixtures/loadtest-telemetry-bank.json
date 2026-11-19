@@ -2,7 +2,7 @@
   "$schema": "fish.fixtures.loadtest_telemetry_bank.v1",
   "label": "Loadtest telemetry bank — realistic gameplay event corpus",
   "contentVersion": "5.0.0",
-  "schemaVersion": 26,
+  "schemaVersion": 27,
   "sourceContent": "shared/content/content-pack.json",
   "purpose": "Android/web analytics/perf soak + sink contract stress",
   "events": [

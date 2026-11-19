@@ -51,6 +51,12 @@
     "fish.cosmetic.inlet_flag",
     "fish.cosmetic.bay_streamer",
     "fish.cosmetic.poach_ribbon",
-    "fish.cosmetic.can_crest"
+    "fish.cosmetic.can_crest",
+    "fish.cosmetic.saffron_bunting",
+    "fish.cosmetic.cobalt_pennant",
+    "fish.cosmetic.quay_flag",
+    "fish.cosmetic.sound_streamer",
+    "fish.cosmetic.roast_ribbon",
+    "fish.cosmetic.ferment_crest"
   ]
 }

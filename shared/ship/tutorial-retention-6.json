@@ -1,0 +1,79 @@
+{
+  "phase": 19,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.tutorial_retention_6.v1",
+  "description": "Finish 6.0 Phase 19 — nest mid-game tutorial friction + retention deepen. roast_nest/ferment_line friction, daily ≥18 / boardSlots ≥6, weekly ≥6 / slots ≥3. Schema stays 27 / content 5.0.0.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "tutorialRetention6Marker": "authored-finish-6.0-phase-19",
+  "tutorialStepsMin": 13,
+  "highFrictionMin": 9,
+  "nudgesMin": 9,
+  "dailyObjectivesMin": 18,
+  "boardSlotsMin": 6,
+  "weeklyObjectivesMin": 6,
+  "weeklyBoardSlotsMin": 3,
+  "maxStreakBonusDaysMin": 21,
+  "newDailyObjectiveIds": [
+    "daily.roast_plate",
+    "daily.nest_haul",
+    "daily.ember_loan",
+    "daily.sigil_seek"
+  ],
+  "newWeeklyObjectiveIds": [
+    "weekly.nest_ember",
+    "weekly.saffron_circuit"
+  ],
+  "newTutorialStepIds": [
+    "tutorial.roast_nest",
+    "tutorial.ferment_line"
+  ],
+  "midGameFrictionIds": [
+    "tutorial.roast_nest",
+    "tutorial.ferment_line"
+  ],
+  "extendsTutorialFriction": "shared/content/tutorial-friction.json",
+  "extendsTutorialRetention5": "shared/ship/tutorial-retention-5.json",
+  "weeklyRetentionCatalog": "shared/content/weekly-retention.json",
+  "weeklyPushCatalog": "shared/push/local-weekly-goal-reminders.json",
+  "parityFixture": "shared/fixtures/parity-tutorial-retention-6.json",
+  "authorTool": "shared/tools/author_tutorial_retention_6.py",
+  "validateScript": "npm run tutorialretention6:validate",
+  "softTutorialRetention5Validate": "npm run tutorialretention5:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "checklist": [
+    "≥9 high-friction tutorial steps including roast_nest + ferment_line",
+    "≥9 dwell nudges + nest mid-game copy",
+    "≥18 daily objectives / boardSlots ≥6 / streak bonus days ≥21",
+    "≥6 weekly retention objectives / boardSlots ≥3",
+    "kickoff tutorialRetention6Incomplete=false",
+    "tutorialretention5:validate soft-green",
+    "tutorialretention6:validate green in CI",
+    "schema stays 27 / content 5.0.0",
+    "openGapFlagMin 11→10"
+  ],
+  "preflightGates": [
+    "shared/ship/tutorial-retention-6.json",
+    "shared/fixtures/parity-tutorial-retention-6.json",
+    "shared/ship/tutorial-retention-5.json",
+    "shared/content/tutorial-friction.json",
+    "shared/content/weekly-retention.json",
+    "shared/push/local-weekly-goal-reminders.json",
+    "shared/content/content-pack.json",
+    "shared/tools/author_tutorial_retention_6.py",
+    "web/src/ship/tutorialRetention6.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/TutorialRetention6.kt",
+    "web/scripts/validate-tutorial-retention-6.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/progression/WeeklyGoals.kt",
+    "web/src/engine/weeklyGoals.ts"
+  ],
+  "measured": {
+    "tutorialSteps": 13,
+    "highFriction": 9,
+    "nudges": 9,
+    "dailyObjectives": 18,
+    "boardSlots": 6,
+    "weeklyObjectives": 6
+  }
+}

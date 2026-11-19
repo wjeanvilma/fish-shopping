@@ -25,6 +25,10 @@ export interface CloudConflictView {
   severity: string;
   ageSkewMs: number;
   syncDiagnostics: string[];
+  /** Finish 6.0 Phase 18 — nest conflict harden fields. */
+  preferredSide: SyncSource;
+  conflictScore: number;
+  nestConflictHint: string;
   recommended: SyncSource;
   local: SnapshotChoiceRow;
   remote: SnapshotChoiceRow;
@@ -74,6 +78,9 @@ export function cloudConflictView(
     severity?: string;
     ageSkewMs?: number;
     syncDiagnostics?: string[];
+    preferredSide?: SyncSource;
+    conflictScore?: number;
+    nestConflictHint?: string;
   },
   content: ContentPack,
   nowMs = Date.now(),
@@ -85,6 +92,9 @@ export function cloudConflictView(
     severity: offer.severity ?? "low",
     ageSkewMs: offer.ageSkewMs ?? 0,
     syncDiagnostics: offer.syncDiagnostics ?? [],
+    preferredSide: offer.preferredSide ?? offer.recommended,
+    conflictScore: offer.conflictScore ?? 0,
+    nestConflictHint: offer.nestConflictHint ?? "",
     recommended: offer.recommended,
     local: snapshotChoiceRow(offer.local, {
       sourceLabel: "This device",

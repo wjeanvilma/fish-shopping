@@ -220,7 +220,10 @@ internal fun HarborMapPanel(
     modifier: Modifier,
 ) {
     Surface(
-        modifier.managementSheet(maxWidth = 420.dp, maxHeight = 420.dp).a11yPane("panels.map"),
+        modifier
+            .testTag(ComposeUiTags.MAP_PANEL)
+            .managementSheet(maxWidth = 420.dp, maxHeight = 420.dp)
+            .a11yPane("panels.map"),
         shape = PanelShape,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,

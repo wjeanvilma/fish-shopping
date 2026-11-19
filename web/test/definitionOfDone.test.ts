@@ -53,10 +53,12 @@ describe("definition of done (Phase 30)", () => {
     expect(["4.0.0", "5.0.0"]).toContain(content.contentVersion);
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(25);
     expect(content.harbors.length).toBe(dod.quotas.harbors);
-    expect(content.harbors.length).toBe(12);
+    // Soft-floor: Finish 6.0 Phase 7 grew harbors to 14 (historical Finish 5 floor was 12).
+    expect(content.harbors.length).toBeGreaterThanOrEqual(12);
     expect(content.raw.species.length).toBeGreaterThanOrEqual(dod.quotas.speciesMin);
     expect(content.raw.machines.length).toBeGreaterThanOrEqual(dod.quotas.machineClasses);
-    expect(content.raw.machines.length).toBe(14);
+    // Soft-floor: Finish 6.0 Phase 9 grew machines to 16 (historical Finish 5 floor was 14).
+    expect(content.raw.machines.length).toBeGreaterThanOrEqual(14);
     expect(content.raw.quests.length).toBeGreaterThanOrEqual(20);
     expect(["4.0.0", "5.0.0"]).toContain(pin.contentVersion);
     expect(pin.schemaVersion).toBe(SCHEMA_VERSION);

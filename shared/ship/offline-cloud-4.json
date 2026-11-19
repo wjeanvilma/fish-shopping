@@ -1,0 +1,73 @@
+{
+  "phase": 18,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.offline_cloud_4.v1",
+  "description": "Finish 6.0 Phase 18 — offline/cloud/analytics hardening 4. Nest journal fidelity (loanRepaid/contractRevenue/rivalSalesStolen/endgameSigilsEarned), conflict preferredSide/conflictScore/nestConflictHint, queue lastAttemptAge/flushFailures/circuitOpen, analytics retries≥7 + jitter 750 + circuitBreakerAfterDeadLetters. Schema stays 27 / content 5.0.0.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "offlineCloud4Marker": "authored-finish-6.0-phase-18",
+  "extendsOfflineCloud3": "shared/ship/offline-cloud-3.json",
+  "journalDeltaFields": [
+    "loanRepaid",
+    "contractRevenue",
+    "rivalSalesStolen",
+    "endgameSigilsEarned"
+  ],
+  "conflictFields": [
+    "preferredSide",
+    "conflictScore",
+    "nestConflictHint"
+  ],
+  "syncDiagnosticsFields": [
+    "lastAttemptAgeMs",
+    "flushFailures",
+    "circuitOpen"
+  ],
+  "analyticsRetry": {
+    "requeueOnFlushFailure": true,
+    "maxFlushRetries": 7,
+    "retryBackoffMs": 2000,
+    "retryJitterMs": 750,
+    "deadLetterAfterMaxRetries": true,
+    "circuitBreakerAfterDeadLetters": 3
+  },
+  "parityFixture": "shared/fixtures/parity-offline-cloud-4.json",
+  "authorTool": "shared/tools/author_offline_cloud_4.py",
+  "validateScript": "npm run offlinecloud4:validate",
+  "softOfflineCloud3Validate": "npm run offlinecloud3:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "checklist": [
+    "OfflineReport nest journal deltas + journal lines",
+    "CloudConflictOffer preferredSide/conflictScore/nestConflictHint in web↔Android UX",
+    "Cloud offline queue lastAttemptAge/flushFailures/circuitOpen diagnostics",
+    "Analytics maxFlushRetries≥7 + jitter 750 + circuitBreakerAfterDeadLetters",
+    "kickoff offlineCloud4Incomplete=false",
+    "offlinecloud4:validate green in CI",
+    "offlinecloud3:validate soft-green",
+    "schema stays 27 / content 5.0.0",
+    "openGapFlagMin 12→11"
+  ],
+  "preflightGates": [
+    "shared/ship/offline-cloud-4.json",
+    "shared/fixtures/parity-offline-cloud-4.json",
+    "shared/ship/offline-cloud-3.json",
+    "shared/ops/remote-analytics-sink.json",
+    "shared/tools/author_offline_cloud_4.py",
+    "web/src/engine/offline.ts",
+    "web/src/engine/cloudSync.ts",
+    "web/src/cloud/cloudOfflineQueue.ts",
+    "web/src/analytics/remoteAnalyticsSink.ts",
+    "web/src/game/snapshotChoice.ts",
+    "web/src/ui/TitlePanels.tsx",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/OfflineEarnings.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/persistence/CloudSync.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/RemoteAnalyticsPolicy.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/cloud/CloudOfflineQueue.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/SnapshotChoice.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/TitlePanels.kt",
+    "web/src/ship/offlineCloud4.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/OfflineCloud4.kt",
+    "web/scripts/validate-offline-cloud-4.ts"
+  ]
+}

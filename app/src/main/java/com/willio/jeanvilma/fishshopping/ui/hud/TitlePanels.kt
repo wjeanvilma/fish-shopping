@@ -348,6 +348,37 @@ internal fun CloudConflictPanel(conflict: CloudConflictView, vm: GameViewModel) 
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             )
+            Text(
+                buildString {
+                    append(UiStrings.t("cloud.preferredSide"))
+                    append(": ")
+                    append(conflict.preferredSide.name.lowercase())
+                    append(" · ")
+                    append(UiStrings.t("cloud.conflictScore"))
+                    append(' ')
+                    append(conflict.conflictScore)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.semantics {
+                    contentDescription = UiStrings.t("a11y.nestConflictSection")
+                },
+            )
+            if (conflict.nestConflictHint.isNotBlank()) {
+                Text(
+                    buildString {
+                        append(UiStrings.t("cloud.nestConflictHint"))
+                        append(": ")
+                        append(conflict.nestConflictHint)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.semantics {
+                        liveRegion = LiveRegionMode.Polite
+                        contentDescription = UiStrings.t("a11y.nestConflictLive")
+                    },
+                )
+            }
             if (conflict.syncDiagnostics.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(

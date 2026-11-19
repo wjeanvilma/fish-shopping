@@ -158,11 +158,8 @@ listOf("loadtest-save-bank.json", "loadtest-telemetry-bank.json").forEach { name
     val dst = File(loadtestAssetDir, name)
     if (src.isFile && (!dst.exists() || dst.length() != src.length())) {
         dst.delete()
-        try {
-            java.nio.file.Files.createLink(dst.toPath(), src.toPath())
-        } catch (_: Exception) {
-            src.copyTo(dst, overwrite = true)
-        }
+        // Kotlin DSL shadows `java`; copy is sufficient for CI asset packaging.
+        src.copyTo(dst, overwrite = true)
     }
 }
 androidComponents {

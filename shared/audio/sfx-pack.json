@@ -1,7 +1,7 @@
 {
   "phase": 19,
   "schema": "fish.audio.sfx_pack.v1",
-  "description": "Post-1.0 Phase 19 \u2014 authored mono WAV stingers for catch / cut / sell / UI (plus abandon, upgrade, rush). Buses keep mute, SFX gain, voice cap, and Android/Web focus-lifecycle policy. Phase 20 replaces procedural ambience with authored music beds. Finish 2.0 Phase 21 adds pack-2 stingers; Finish 3.0 Phase 23 adds pack-3 rival/travel/hire/prestige/loan/trophy stingers; Finish 4.0 Phase 23 adds pack-4 decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers; Finish 5.0 Phase 12 adds pack-5 cast/spoil/service/contract/quest pressure stingers.",
+  "description": "Post-1.0 Phase 19 \u2014 authored mono WAV stingers for catch / cut / sell / UI (plus abandon, upgrade, rush). Buses keep mute, SFX gain, voice cap, and Android/Web focus-lifecycle policy. Phase 20 replaces procedural ambience with authored music beds. Finish 2.0 Phase 21 adds pack-2 stingers; Finish 3.0 Phase 23 adds pack-3 rival/travel/hire/prestige/loan/trophy stingers; Finish 4.0 Phase 23 adds pack-4 decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers; Finish 5.0 Phase 12 adds pack-5 cast/spoil/service/contract/quest pressure stingers; Finish 6.0 Phase 12 adds pack-6 nest/roast/ferment/school/aurora cozy stingers.",
   "sampleRate": 22050,
   "channels": 1,
   "encoding": "pcm_s16le",
@@ -14,7 +14,7 @@
   "androidRawDir": "app/src/main/res/raw",
   "androidRawPrefix": "sfx_",
   "maxBytesPerClip": 24576,
-  "maxTotalBytes": 480000,
+  "maxTotalBytes": 560000,
   "maxDurationMs": 420,
   "voiceCostPerClip": 1,
   "maxSfxVoices": 6,
@@ -343,6 +343,51 @@
       "haptic": false,
       "design": "near-complete quest chime lift",
       "pack5": true
+    },
+    {
+      "id": "nest_settle",
+      "file": "nest_settle.wav",
+      "androidRaw": "sfx_nest_settle",
+      "role": "feedback",
+      "haptic": false,
+      "design": "soft cozy nest settle thump + warm pad",
+      "pack6": true
+    },
+    {
+      "id": "roast_ready",
+      "file": "roast_ready.wav",
+      "androidRaw": "sfx_roast_ready",
+      "role": "feedback",
+      "haptic": false,
+      "design": "warm roast chime + crackle tick",
+      "pack6": true
+    },
+    {
+      "id": "ferment_ready",
+      "file": "ferment_ready.wav",
+      "androidRaw": "sfx_ferment_ready",
+      "role": "feedback",
+      "haptic": false,
+      "design": "bubbly ferment pop + soft glass ping",
+      "pack6": true
+    },
+    {
+      "id": "school_flash",
+      "file": "school_flash.wav",
+      "androidRaw": "sfx_school_flash",
+      "role": "feedback",
+      "haptic": true,
+      "design": "silver school flash shimmer",
+      "pack6": true
+    },
+    {
+      "id": "aurora_crest",
+      "file": "aurora_crest.wav",
+      "androidRaw": "sfx_aurora_crest",
+      "role": "feedback",
+      "haptic": false,
+      "design": "aurora crest shimmer swell",
+      "pack6": true
     }
   ],
   "eventMap": {
@@ -381,7 +426,12 @@
     "spoil_pressure_warn": "spoil_warn",
     "service_queue_pressure": "service_queue",
     "contract_deadline_warn": "contract_deadline",
-    "quest_near_complete": "quest_near"
+    "quest_near_complete": "quest_near",
+    "nest_settle_pulse": "nest_settle",
+    "roast_cycle_ready": "roast_ready",
+    "ferment_cycle_ready": "ferment_ready",
+    "school_flash": "school_flash",
+    "aurora_crest": "aurora_crest"
   },
   "preflightGates": [
     "shared/audio/sfx-pack.json",

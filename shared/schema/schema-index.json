@@ -1,0 +1,63 @@
+{
+  "schema": "fish.schema.index.v1",
+  "description": "Finish 6.0 Phase 2 — index of formal JSON Schemas used by content + ship/billing/ops validators. Single entry point for AI agents and Ajv loaders.",
+  "phase": 2,
+  "plan": "30_finish_6.0",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "draft": "https://json-schema.org/draft/2020-12/schema",
+  "schemas": [
+    {
+      "id": "content-pack",
+      "path": "shared/schema/content-pack.schema.json",
+      "domain": "content",
+      "$id": "https://fishshopping.local/schema/content-pack.schema.json"
+    },
+    {
+      "id": "ship-catalog",
+      "path": "shared/schema/ship-catalog.schema.json",
+      "domain": "ship",
+      "$id": "https://fishshopping.local/schema/ship-catalog.schema.json"
+    },
+    {
+      "id": "billing-contract",
+      "path": "shared/schema/billing-contract.schema.json",
+      "domain": "billing",
+      "$id": "https://fishshopping.local/schema/billing-contract.schema.json"
+    },
+    {
+      "id": "ops-catalog",
+      "path": "shared/schema/ops-catalog.schema.json",
+      "domain": "ops",
+      "$id": "https://fishshopping.local/schema/ops-catalog.schema.json"
+    }
+  ],
+  "schemaMin": 4,
+  "sampleCatalogs": {
+    "ship": [
+      "shared/ship/finish-6.0-kickoff.json",
+      "shared/ship/loc-floors.json",
+      "shared/ship/freeze-5.0.0.json",
+      "shared/ship/engine-depth-1.json",
+      "shared/ship/schema-6.json"
+    ],
+    "billing": [
+      "shared/billing/play-billing.json",
+      "shared/billing/web-billing.json",
+      "shared/billing/entitlements.json",
+      "shared/billing/entitlement-reconcile.json",
+      "shared/billing/store-catalog-sync.json"
+    ],
+    "ops": [
+      "shared/ops/stripe-ops-5.json",
+      "shared/ops/stripe-ops-4.json",
+      "shared/ops/support-runbook.json",
+      "shared/ops/analytics-dashboard.json",
+      "shared/ops/remote-analytics-sink.json"
+    ]
+  },
+  "ajvOptions": {
+    "allErrors": true,
+    "strict": false
+  }
+}

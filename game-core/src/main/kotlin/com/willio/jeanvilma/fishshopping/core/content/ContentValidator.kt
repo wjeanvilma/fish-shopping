@@ -531,6 +531,7 @@ object ContentValidator {
             check(tier.requiresChallenges >= 0) { "${tier.id}: requiresChallenges must be >= 0" }
             check(tier.requiresMarks >= 0) { "${tier.id}: requiresMarks must be >= 0" }
             check(tier.requiresCrests >= 0) { "${tier.id}: requiresCrests must be >= 0" }
+            check(tier.requiresSigils >= 0) { "${tier.id}: requiresSigils must be >= 0" }
             check(tier.catchSpeedPermille >= 1) { "${tier.id}: catchSpeedPermille must be >= 1" }
             check(tier.priceBonusPermille >= 1) { "${tier.id}: priceBonusPermille must be >= 1" }
             check(tier.coins >= 0) { "${tier.id}: coins must be >= 0" }
@@ -554,6 +555,11 @@ object ContentValidator {
             ch.grantsCrest?.let { crest ->
                 check(crest.startsWith("endgame.crest.")) {
                     "${ch.id}: grantsCrest must start with 'endgame.crest.'"
+                }
+            }
+            ch.grantsSigil?.let { sigil ->
+                check(sigil.startsWith("endgame.sigil.")) {
+                    "${ch.id}: grantsSigil must start with 'endgame.sigil.'"
                 }
             }
         }

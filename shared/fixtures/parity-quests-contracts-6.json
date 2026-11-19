@@ -1,0 +1,40 @@
+{
+  "schema": "fish.fixtures.parity_quests_contracts_6.v1",
+  "description": "Finish 6.0 Phase 13: quest floor 100 + saffron/cobalt chains + rep-gate depth.",
+  "questsContracts6Marker": "authored-finish-6.0-phase-13",
+  "phase": 13,
+  "plan": "30_finish_6.0",
+  "questsMin": 100,
+  "deliveryChainsMin": 9,
+  "reputationGatedMin": 12,
+  "contractTemplatesMin": 85,
+  "newChainIds": [
+    "chain.saffron_roast",
+    "chain.cobalt_ferment"
+  ],
+  "newChainHeadIds": [
+    "contract.chain_saffron_catch",
+    "contract.chain_cobalt_catch"
+  ],
+  "newChainLength": 3,
+  "newRepGatedId": "contract.roast_trust",
+  "newRepGatedBand": 2,
+  "terminalQuestId": "quest.nest_covenant",
+  "simHzInvariant": 20,
+  "expect": {
+    "contentVersion": "5.0.0",
+    "schemaVersion": 26,
+    "newQuests": 24,
+    "newChains": 2,
+    "questsRemainingClosed": true,
+    "openGapFlagMin": 1,
+    "gates": [
+      "quests_100",
+      "chains_9",
+      "rep_gated_12",
+      "templates_85",
+      "kickoff_quests_met",
+      "ci_gate"
+    ]
+  }
+}

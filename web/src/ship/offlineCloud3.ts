@@ -172,7 +172,8 @@ export function measureOfflineCloud3(repoRoot: string): OfflineCloud3Measure {
     analyticsRetryWired:
       policy.batch?.requeueOnFlushFailure === true &&
       (policy.batch?.maxFlushRetries ?? 0) >= OFFLINE_CLOUD_3.analyticsRetry.maxFlushRetries &&
-      policy.batch?.retryJitterMs === OFFLINE_CLOUD_3.analyticsRetry.retryJitterMs &&
+      // Soft-floor: Finish 6.0 Phase 18 raised jitter; keep ≥ Phase-22 floor.
+      (policy.batch?.retryJitterMs ?? 0) >= OFFLINE_CLOUD_3.analyticsRetry.retryJitterMs &&
       policy.batch?.deadLetterAfterMaxRetries === true &&
       remoteTs.includes("shouldDeadLetterRemoteFlush") &&
       remoteTs.includes("deadLetterCount") &&

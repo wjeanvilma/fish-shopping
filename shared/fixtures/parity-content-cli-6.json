@@ -1,0 +1,116 @@
+{
+  "schema": "fish.fixtures.parity_content_cli_6.v1",
+  "description": "Finish 6.0 Phase 27: content CLI wave-6 kinds + modular packs + Finish 6 pack floors.",
+  "contentCli6Marker": "authored-finish-6.0-phase-27",
+  "scaffoldKindMin": 14,
+  "exampleFileMin": 14,
+  "featureMin": 11,
+  "modpackFloor": 1,
+  "simHzInvariant": 20,
+  "expect": {
+    "closesGap": "contentCli6Missing",
+    "contentCli6Missing": false,
+    "openGapFlagMin": 0,
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "kinds": [
+      "species",
+      "quest",
+      "harbor",
+      "contract",
+      "bait",
+      "decor",
+      "machine",
+      "rival",
+      "seasonal",
+      "endgame",
+      "cosmetic",
+      "chain",
+      "sigil",
+      "modpack"
+    ],
+    "wave6Kinds": [
+      "chain",
+      "sigil",
+      "modpack"
+    ],
+    "features": [
+      "list",
+      "check-pack",
+      "check-floors",
+      "list-modpacks",
+      "check-modpacks",
+      "machine",
+      "rival",
+      "seasonal",
+      "endgame",
+      "cosmetic",
+      "chain",
+      "sigil",
+      "modpack"
+    ],
+    "exampleFiles": [
+      "shared/content/scaffolds/examples/species.scaffold_tide_perch.json",
+      "shared/content/scaffolds/examples/quest.scaffold_morning_haul.json",
+      "shared/content/scaffolds/examples/harbor.scaffold_mist_cove.json",
+      "shared/content/scaffolds/examples/contract.scaffold_dawn_crate.json",
+      "shared/content/scaffolds/examples/bait.scaffold_kelp_chunk.json",
+      "shared/content/scaffolds/examples/decor.scaffold_pier_bunting.json",
+      "shared/content/scaffolds/examples/machine.scaffold_dock_press.json",
+      "shared/content/scaffolds/examples/rival.scaffold_mist_hawker.json",
+      "shared/content/scaffolds/examples/event.scaffold_aurora_tide.json",
+      "shared/content/scaffolds/examples/endgame.tier.scaffold_crest_harbor.json",
+      "shared/content/scaffolds/examples/entitlement.cosmetic.scaffold_aurora_bunting.json",
+      "shared/content/scaffolds/examples/chain.scaffold_nest_relay.json",
+      "shared/content/scaffolds/examples/endgame.sigil.scaffold_nest_ember.json",
+      "shared/content/scaffolds/examples/pack.scaffold_nest_saffron.json"
+    ],
+    "exampleIds": [
+      "species.scaffold_tide_perch",
+      "quest.scaffold_morning_haul",
+      "harbor.scaffold_mist_cove",
+      "contract.scaffold_dawn_crate",
+      "bait.scaffold_kelp_chunk",
+      "decor.scaffold_pier_bunting",
+      "machine.scaffold_dock_press",
+      "rival.scaffold_mist_hawker",
+      "event.scaffold_aurora_tide",
+      "endgame.tier.scaffold_crest_harbor",
+      "entitlement.cosmetic.scaffold_aurora_bunting",
+      "chain.scaffold_nest_relay",
+      "endgame.sigil.scaffold_nest_ember",
+      "pack.scaffold_nest_saffron"
+    ],
+    "modpackFiles": [
+      "shared/content/scaffolds/modpacks/pack.scaffold_nest_saffron.json"
+    ],
+    "moduleFiles": [
+      "shared/tools/content_cli/ids.ts",
+      "shared/tools/content_cli/scaffolds.ts",
+      "shared/tools/content_cli/validateFragment.ts",
+      "shared/tools/content_cli/packIds.ts",
+      "shared/tools/content_cli/packFloors.ts",
+      "shared/tools/content_cli/modpacks.ts",
+      "shared/tools/content_cli/cli.ts",
+      "web/scripts/content-scaffold.ts"
+    ],
+    "packFloorKeys": [
+      "speciesMin",
+      "questsMin",
+      "harborsMin",
+      "machinesMin",
+      "rivalsMin",
+      "baitsMin",
+      "seasonalMin",
+      "cosmeticsMin",
+      "chainsMin"
+    ],
+    "gates": [
+      "wave6_kinds",
+      "modpacks",
+      "finish6_floors",
+      "gap_closed",
+      "ci_gate"
+    ]
+  }
+}

@@ -424,9 +424,11 @@ internal fun QuestLogPanel(
                 item {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.semantics {
-                            contentDescription = UiStrings.t("a11y.bankSection")
-                        },
+                        modifier = Modifier
+                            .testTag(ComposeUiTags.NEST_LOANS)
+                            .semantics {
+                                contentDescription = UiStrings.t("a11y.bankSection")
+                            },
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text(UiStrings.t("bank.title"), fontWeight = FontWeight.SemiBold)
@@ -469,6 +471,8 @@ internal fun QuestLogPanel(
                                     )
                                 }
                                 products.forEach { product ->
+                                    val nestLoan =
+                                        product.id == "loan.nest_ember" || product.id == "loan.saffron_crest"
                                     Text(
                                         buildString {
                                             append(product.name)
@@ -479,9 +483,23 @@ internal fun QuestLogPanel(
                                             append(" in ")
                                             append(formatRushSeconds(product.termTicks))
                                             append("s")
+                                            if (nestLoan) {
+                                                append(" · ")
+                                                append(UiStrings.t("bank.nestLoanBadge"))
+                                            }
                                         },
                                         style = MaterialTheme.typography.bodySmall,
-                                        modifier = Modifier.padding(top = 4.dp),
+                                        modifier = Modifier
+                                            .padding(top = 4.dp)
+                                            .then(
+                                                if (nestLoan) {
+                                                    Modifier.semantics {
+                                                        contentDescription = UiStrings.t("a11y.nestLoanSection")
+                                                    }
+                                                } else {
+                                                    Modifier
+                                                },
+                                            ),
                                     )
                                     product.lockedReason?.let { reason ->
                                         Text(

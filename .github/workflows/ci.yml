@@ -312,6 +312,149 @@ jobs:
           npm run finish5:validate
           npm run finish5:smoke
 
+      - name: Finish 6.0 Phase 1 kickoff + gap scoreboard
+        working-directory: web
+        run: |
+          npm run finish6:validate
+          npm run finish6:smoke
+
+      - name: Finish 6.0 Phase 2 schema foundations
+        working-directory: web
+        run: |
+          npm run schema6:validate
+          npm run schema6:smoke
+
+      - name: Finish 6.0 Phase 3 ship catalog codegen
+        working-directory: web
+        run: |
+          npm run ship:codegen -- --check
+          npm run shipcodegen:validate
+          npm run shipcodegen:smoke
+
+      - name: Finish 6.0 Phase 4 systems split 3
+        working-directory: web
+        run: |
+          npm run systemssplit3:validate
+          npm run systemssplit3:smoke
+
+      - name: Finish 6.0 Phase 5 host VM caps
+        working-directory: web
+        run: |
+          npm run hostvmcaps:validate
+          npm run hostvmcaps:smoke
+
+      - name: Finish 6.0 Phase 6 LOC mid-check
+        working-directory: web
+        run: |
+          npm run locmidcheck6:validate
+          npm run locmidcheck6:smoke
+
+      - name: Finish 6.0 Phase 7 harbors 13–14 scenic art/prestige
+        working-directory: web
+        run: |
+          npm run harbors1314:validate
+          npm run harbors1314:smoke
+
+      - name: Finish 6.0 Phase 8 species 150 ecology/i18n/fish-art-6
+        working-directory: web
+        run: |
+          npm run species150:validate
+          npm run species150:smoke
+
+      - name: Finish 6.0 Phase 9 machines 15–16 recipes/UI
+        working-directory: web
+        run: |
+          npm run machines1516:validate
+          npm run machines1516:smoke
+
+      - name: Finish 6.0 Phase 10 product/cosmetic art presentation 6
+        working-directory: web
+        run: |
+          npm run productart6:validate
+          npm run productart6:smoke
+
+      - name: Finish 6.0 Phase 11 atmosphere/cozy render depth 6
+        working-directory: web
+        run: |
+          npm run atmosphere6:validate
+          npm run atmosphere6:smoke
+
+      - name: Finish 6.0 Phase 12 audio pack 6 + VFX juice 6
+        working-directory: web
+        run: npm run audiovfx6:validate
+
+      - name: Finish 6.0 Phase 13 quests→100, chains→9, contracts depth
+        working-directory: web
+        run: npm run quests6:validate
+
+      - name: Finish 6.0 Phase 14 endgame deepen + schema 27
+        working-directory: web
+        run: npm run endgame4:validate
+
+      - name: Finish 6.0 Phase 15 rivals/seasonal/baits/cosmetics growth 6
+        working-directory: web
+        run: npm run rivalsseasonal6:validate
+
+      - name: Finish 6.0 Phase 16 staff/worker AI depth wave 4
+        working-directory: web
+        run: npm run staffai4:validate
+
+      - name: Finish 6.0 Phase 17 economy/bank/dashboard depth 4
+        working-directory: web
+        run: npm run economy4:validate
+
+      - name: Finish 6.0 Phase 18 offline/cloud/analytics hardening 4
+        working-directory: web
+        run: npm run offlinecloud4:validate
+
+      - name: Finish 6.0 Phase 19 tutorial friction + retention hooks 6
+        working-directory: web
+        run: npm run tutorialretention6:validate
+
+      - name: Finish 6.0 Phase 20 Web↔Android panel parity depth 6
+        working-directory: web
+        run: npm run uiparity6:validate
+
+      - name: Finish 6.0 Phase 21 Presenter/render CPU snapshot harness
+        working-directory: web
+        run: npm run presenterharness:validate
+
+      - name: Finish 6.0 Phase 22 a11y depth 5 + i18n ≥400
+        working-directory: web
+        run: npm run a11yi18n6:validate
+
+      - name: Finish 6.0 Phase 23 Playwright E2E floors ≥24
+        working-directory: web
+        run: npm run playwrighte2e6:validate
+
+      - name: Finish 6.0 Phase 24 Compose instrumented floors ≥20
+        working-directory: web
+        run: npm run composee2e6:validate
+
+      - name: Finish 6.0 Phase 25 Stripe/checkout live-ready catalog ops 6
+        working-directory: web
+        run: npm run stripeops6:validate
+
+      - name: Finish 6.0 Phase 26 Analytics + loadtest banks expansion 6
+        working-directory: web
+        run: npm run analyticsloadtest6:validate
+
+      - name: Finish 6.0 Phase 27 Content authoring CLI wave 6 + modular packs
+        working-directory: web
+        run: npm run contentcli6:validate
+
+      - name: Finish 6.0 Phase 28 Device/browser/perf matrix 6
+        working-directory: web
+        run: npm run deviceperf6:validate
+
+      - name: Finish 6.0 Phase 29 parity lock 6.0
+        working-directory: web
+        run: npm run parity6:validate
+
+      - name: Finish 6.0 Phase 30 freeze 6.0.0
+        working-directory: web
+        run: npm run freeze6:validate
+
       - name: Finish 5.0 Phase 2 engine depth 1
         working-directory: web
         run: npm run enginedepth1:validate

@@ -24,7 +24,7 @@
     "ca": "shared/i18n/content-strings.ca.json",
     "ru": "shared/i18n/content-strings.ru.json"
   },
-  "keyMin": 250,
+  "keyMin": 773,
   "scopes": [
     "species",
     "products",

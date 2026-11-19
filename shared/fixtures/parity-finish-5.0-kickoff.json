@@ -21,7 +21,7 @@
       "staffComingSoonReasons": 0
     },
     "phaseCount": 30,
-    "openGapFlagMin": 12,
+    "openGapFlagMin": 7,
     "gates": [
       "prior_plan_finished",
       "baseline_locked",

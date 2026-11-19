@@ -33,16 +33,19 @@ describe("Finish 5.0 Phase 30 freeze", () => {
     expect(FINISH5_OPEN_GAP_FLAGS.length).toBe(0);
 
     const pin = JSON.parse(readFileSync(resolve(root, "shared/fixtures/RELEASE_PIN.json"), "utf8"));
-    expect(pin.contentVersion).toBe("5.0.0");
-    expect(pin.versionCode).toBe(6);
-    expect(pin.releaseTag).toBe("v5.0.0");
+    // Soft-floor: Finish 6.0 Phase 30 advances live pin to 6.0.0 / vc 7.
+    expect(["5.0.0", "6.0.0"]).toContain(pin.contentVersion);
+    expect(pin.versionCode).toBeGreaterThanOrEqual(6);
+    expect(["v5.0.0", "v6.0.0"]).toContain(pin.releaseTag);
     expect(pin.freeze50).toBe("shared/ship/freeze-5.0.0.json");
     expect(pin.freeze40).toBe("shared/ship/freeze-4.0.0.json");
     expect(pin.freeze30).toBe("shared/ship/freeze-3.0.0.json");
     expect(pin.freeze20).toBe("shared/ship/freeze-2.0.0.json");
 
     expect((storeListing as { freeze50Phase?: number }).freeze50Phase).toBe(30);
-    expect((storeListing as { whatsNewVersion?: string }).whatsNewVersion).toBe("5.0.0");
+    expect(["5.0.0", "6.0.0"]).toContain(
+      (storeListing as { whatsNewVersion?: string }).whatsNewVersion,
+    );
   });
 
   it("freeze5:validate and prior freeze gates pass", () => {

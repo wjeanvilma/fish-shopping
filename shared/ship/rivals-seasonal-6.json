@@ -1,0 +1,83 @@
+{
+  "phase": 15,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.rivals_seasonal_6.v1",
+  "description": "Finish 6.0 Phase 15 — raise rivals→20, seasonal→20, baits→20, cosmetics→30 with saffron/cobalt nest coverage. Schema stays 27 / content 5.0.0.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "rivalsSeasonal6Marker": "authored-finish-6.0-phase-15",
+  "rivalsMin": 20,
+  "seasonalEventsMin": 20,
+  "baitsMin": 20,
+  "cosmeticsMin": 30,
+  "newRivalIds": [
+    "rival.saffron_hawker",
+    "rival.cobalt_trader",
+    "rival.nest_roamer",
+    "rival.covenant_syndicate"
+  ],
+  "newEventIds": [
+    "event.saffron_quay_ember_fair",
+    "event.cobalt_sound_rime_vigil",
+    "event.roast_nest_week",
+    "event.ferment_covenant_carnival"
+  ],
+  "newBaitIds": [
+    "bait.saffron_nibble",
+    "bait.cobalt_flake",
+    "bait.roast_paste",
+    "bait.ferment_spark"
+  ],
+  "newCosmeticIds": [
+    "banner.iap_saffron_bunting",
+    "banner.iap_cobalt_pennant",
+    "banner.iap_quay_flag",
+    "banner.iap_sound_streamer",
+    "banner.iap_roast_ribbon",
+    "banner.iap_ferment_crest"
+  ],
+  "newCosmeticSkus": [
+    "fish.cosmetic.saffron_bunting",
+    "fish.cosmetic.cobalt_pennant",
+    "fish.cosmetic.quay_flag",
+    "fish.cosmetic.sound_streamer",
+    "fish.cosmetic.roast_ribbon",
+    "fish.cosmetic.ferment_crest"
+  ],
+  "periodTicks": 25200,
+  "extendsRivalsSeasonal5": "shared/ship/rivals-seasonal-5.json",
+  "parityFixture": "shared/fixtures/parity-rivals-seasonal-6.json",
+  "authorTool": "shared/tools/author_rivals_seasonal_6.py",
+  "validateScript": "npm run rivalsseasonal6:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "checklist": [
+    "≥20 rivals covering all 14 harbors including saffron_quay + cobalt_sound",
+    "≥20 seasonal events (periodTicks≥21000) + festival customers/contracts",
+    "≥20 baits including saffron/cobalt/roast/ferment gated tips",
+    "≥30 power-neutral cosmetics + banner meshes",
+    "kickoff contentFloorsShort=false + openGapFlagMin 15→14",
+    "rivalsseasonal5 soft floors stay green",
+    "parity + rivalsseasonal6:validate green in CI",
+    "schema stays 27 / content 5.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/rivals-seasonal-6.json",
+    "shared/fixtures/parity-rivals-seasonal-6.json",
+    "shared/ship/rivals-seasonal-5.json",
+    "shared/content/content-pack.json",
+    "shared/billing/entitlements.json",
+    "shared/content/cosmetic-presentation.json",
+    "shared/tools/author_rivals_seasonal_6.py",
+    "web/src/ship/rivalsSeasonal6.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/RivalsSeasonal6.kt",
+    "web/scripts/validate-rivals-seasonal-6.ts"
+  ],
+  "measured": {
+    "rivals": 20,
+    "seasonalEvents": 20,
+    "baits": 20,
+    "cosmetics": 30,
+    "harborsCovered": 14
+  }
+}

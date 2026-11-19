@@ -576,6 +576,61 @@ def quest_near_clip(sr: int) -> list[float]:
     return synth(sr, 280, render)
 
 
+def nest_settle_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        thump = math.sin(2 * math.pi * (120 - 30 * t) * t) * math.exp(-t * 10) * 0.42
+        pad = math.sin(2 * math.pi * 196 * t) * env_adsr(i, n, 0.08, 0.28, 0.4, 0.4) * 0.28
+        soft = (((i * 7331) & 255) / 255 - 0.5) * math.exp(-t * 14) * 0.1
+        return thump + pad + soft
+
+    return synth(sr, 300, render)
+
+
+def roast_ready_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        chime = math.sin(2 * math.pi * 523.25 * t) * math.exp(-t * 11) * 0.36
+        crackle = (((i * 1103515245 + 12345) & 0x7FFF) / 0x7FFF - 0.5) * math.exp(-t * 16) * 0.16
+        warm = math.sin(2 * math.pi * (220 + 40 * t) * t) * env_adsr(i, n, 0.05, 0.2, 0.35, 0.45) * 0.26
+        return chime + crackle + warm
+
+    return synth(sr, 280, render)
+
+
+def ferment_ready_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        bubble = math.sin(2 * math.pi * (280 + 90 * math.sin(t * 18)) * t) * math.exp(-t * 9) * 0.3
+        ping = math.sin(2 * math.pi * 990 * t) * math.exp(-t * 22) * 0.22
+        body = math.sin(2 * math.pi * 165 * t) * env_adsr(i, n, 0.1, 0.25, 0.35, 0.4) * 0.24
+        return bubble + ping + body
+
+    return synth(sr, 300, render)
+
+
+def school_flash_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        shimmer = math.sin(2 * math.pi * (880 + 220 * t) * t) * math.exp(-t * 16) * 0.34
+        splash = (((i * 9131) & 255) / 255 - 0.5) * math.exp(-t * 20) * 0.18
+        lift = math.sin(2 * math.pi * 440 * t) * env_adsr(i, n, 0.04, 0.15, 0.3, 0.4) * 0.22
+        return shimmer + splash + lift
+
+    return synth(sr, 240, render)
+
+
+def aurora_crest_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        swell = math.sin(2 * math.pi * (330 + 80 * t) * t) * env_adsr(i, n, 0.12, 0.3, 0.45, 0.35) * 0.36
+        shimmer = math.sin(2 * math.pi * 990 * t) * math.exp(-t * 8) * 0.18
+        spark = (((i * 7919) & 255) / 255 - 0.5) * math.exp(-t * 12) * 0.1
+        return swell + shimmer + spark
+
+    return synth(sr, 340, render)
+
+
 RENDERERS = {
     "catch": catch_clip,
     "machine_done": machine_done_clip,
@@ -613,6 +668,11 @@ RENDERERS = {
     "service_queue": service_queue_clip,
     "contract_deadline": contract_deadline_clip,
     "quest_near": quest_near_clip,
+    "nest_settle": nest_settle_clip,
+    "roast_ready": roast_ready_clip,
+    "ferment_ready": ferment_ready_clip,
+    "school_flash": school_flash_clip,
+    "aurora_crest": aurora_crest_clip,
 }
 
 

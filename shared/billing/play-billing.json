@@ -135,6 +135,36 @@
       "sku": "fish.cosmetic.can_crest",
       "androidProductId": "fish_cosmetic_can_crest",
       "grantsCosmetic": "banner.iap_can_crest"
+    },
+    {
+      "sku": "fish.cosmetic.saffron_bunting",
+      "androidProductId": "fish_cosmetic_saffron_bunting",
+      "grantsCosmetic": "banner.iap_saffron_bunting"
+    },
+    {
+      "sku": "fish.cosmetic.cobalt_pennant",
+      "androidProductId": "fish_cosmetic_cobalt_pennant",
+      "grantsCosmetic": "banner.iap_cobalt_pennant"
+    },
+    {
+      "sku": "fish.cosmetic.quay_flag",
+      "androidProductId": "fish_cosmetic_quay_flag",
+      "grantsCosmetic": "banner.iap_quay_flag"
+    },
+    {
+      "sku": "fish.cosmetic.sound_streamer",
+      "androidProductId": "fish_cosmetic_sound_streamer",
+      "grantsCosmetic": "banner.iap_sound_streamer"
+    },
+    {
+      "sku": "fish.cosmetic.roast_ribbon",
+      "androidProductId": "fish_cosmetic_roast_ribbon",
+      "grantsCosmetic": "banner.iap_roast_ribbon"
+    },
+    {
+      "sku": "fish.cosmetic.ferment_crest",
+      "androidProductId": "fish_cosmetic_ferment_crest",
+      "grantsCosmetic": "banner.iap_ferment_crest"
     }
   ],
   "sandbox": {

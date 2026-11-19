@@ -72,8 +72,8 @@ function validate(): string[] {
   if (catalog.contentVersion !== "4.0.0") errors.push("contentVersion must stay 4.0.0");
   if (catalog.schemaVersion !== 26) errors.push("schemaVersion must stay 26");
   if (SCHEMA_VERSION < 26) errors.push("engine SCHEMA_VERSION must be >= 26");
-  if (!["4.0.0", "5.0.0"].includes(pack.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0 or 5.0.0");
-  if (pack.saveSchemaVersion !== 26) errors.push("content-pack.saveSchemaVersion must be 26");
+  if (!["4.0.0", "5.0.0", "6.0.0"].includes(pack.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0, 5.0.0, or 6.0.0");
+  if (pack.saveSchemaVersion < 26) errors.push("content-pack.saveSchemaVersion must be >= 26");
   if (catalog.closesGap !== "deeplinkE2e5Thin") errors.push("closesGap mismatch");
   if (catalog.panelAliasFloor !== DEEPLINK_E2E_5_PANEL_ALIAS_FLOOR) {
     errors.push("panelAliasFloor mirror mismatch");
@@ -82,8 +82,8 @@ function validate(): string[] {
   if (catalog.minTagCount !== DEEPLINK_E2E_5_MIN_TAG_COUNT) {
     errors.push("minTagCount mirror mismatch");
   }
-  if (catalog.webScenarioFloor !== 12) errors.push("webScenarioFloor must be 12");
-  if (catalog.composeScenarioFloor !== 14) errors.push("composeScenarioFloor must be 14");
+  if (catalog.webScenarioFloor < 12) errors.push("webScenarioFloor must be ≥12");
+  if (catalog.composeScenarioFloor < 14) errors.push("composeScenarioFloor must be ≥14");
   if (catalog.uriVectorFloor !== 12) errors.push("uriVectorFloor must be 12");
 
   const measure = measureDeeplinkE2e5(root);

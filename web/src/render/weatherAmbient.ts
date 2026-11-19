@@ -3,10 +3,12 @@
  * Finish 3.0 Phase 24 adds tide + rival ambient mixes (still not burst-pool).
  * Finish 4.0 Phase 23 adds endgame ambient modes (still not burst-pool).
  * Finish 5.0 Phase 12 adds pressure ambient modes (still not burst-pool).
+ * Finish 6.0 Phase 12 adds nest ambient modes (still not burst-pool).
  * Presentation-only; does not consume the VfxBurst pool or change 20 Hz sim.
  */
 import type { PresenterQuality } from "./presenters";
 import { VFX_JUICE_5 } from "../ship/vfxJuice5";
+import { VFX_JUICE_6 } from "../ship/vfxJuice6";
 
 export type WeatherAmbientId =
   | "clear"
@@ -19,6 +21,7 @@ export type WeatherAmbientId =
 export type TideAmbientId = "dawn" | "day" | "dusk" | "night";
 export type EndgameAmbientId = "locked" | "active" | "crowned";
 export type PressureAmbientId = "calm" | "rising" | "critical";
+export type NestAmbientId = "idle" | "roosting" | "settled";
 
 export interface WeatherAmbientProfile {
   id: WeatherAmbientId;
@@ -109,6 +112,7 @@ export const WEATHER_AMBIENT_PATTERN_IDS = [
 export const TIDE_AMBIENT_PHASE_IDS: readonly TideAmbientId[] = ["dawn", "day", "dusk", "night"];
 export const ENDGAME_AMBIENT_MODE_IDS: readonly EndgameAmbientId[] = ["locked", "active", "crowned"];
 export const PRESSURE_AMBIENT_MODE_IDS: readonly PressureAmbientId[] = ["calm", "rising", "critical"];
+export const NEST_AMBIENT_MODE_IDS: readonly NestAmbientId[] = ["idle", "roosting", "settled"];
 
 /** Endgame sky/water tint targets (Finish 4.0 Phase 23). */
 const ENDGAME_MIX: Record<EndgameAmbientId, { sky: string; water: string; amount: number }> = {
@@ -122,6 +126,13 @@ const PRESSURE_MIX: Record<PressureAmbientId, { sky: string; water: string; amou
   calm: { sky: "#9fd3ea", water: "#1a5f7a", amount: 0.0 },
   rising: { sky: "#c07050", water: "#3a4058", amount: 0.14 },
   critical: { sky: "#a04038", water: "#2a3048", amount: 0.22 },
+};
+
+/** Nest sky/water tint targets (Finish 6.0 Phase 12). */
+const NEST_MIX: Record<NestAmbientId, { sky: string; water: string; amount: number }> = {
+  idle: { sky: "#9fd3ea", water: "#1a5f7a", amount: 0.0 },
+  roosting: { sky: "#d8b878", water: "#3a5860", amount: 0.12 },
+  settled: { sky: "#e8c898", water: "#4a6870", amount: 0.2 },
 };
 
 export function endgameAmbientIdForView(
@@ -155,6 +166,17 @@ export function pressureAmbientIdForView(
   return "calm";
 }
 
+export function nestAmbientIdForView(
+  decorPlacementCount: number,
+  nightActive = false,
+): NestAmbientId {
+  const roosting = VFX_JUICE_6.ambientNest.roostingMinPlacements;
+  const settled = VFX_JUICE_6.ambientNest.settledMinPlacements;
+  if (decorPlacementCount >= settled) return "settled";
+  if (decorPlacementCount >= roosting || nightActive) return "roosting";
+  return "idle";
+}
+
 export function weatherAmbientIdForWeatherId(weatherId: string): WeatherAmbientId {
   if (weatherId.includes("gale")) return "gale";
   if (weatherId.includes("rain")) return "rain";
@@ -180,6 +202,7 @@ export function weatherAmbientProfile(
   rivalActive = false,
   endgameMode: EndgameAmbientId = "locked",
   pressureMode: PressureAmbientId = "calm",
+  nestMode: NestAmbientId = "idle",
 ): WeatherAmbientProfile {
   const base = { ...PROFILES[weatherAmbientIdForWeatherId(weatherId)] };
   const qScale = quality === "low" ? 0.55 : quality === "medium" ? 0.85 : 1.0;
@@ -211,6 +234,12 @@ export function weatherAmbientProfile(
     base.waterDeepHex = mixHex(base.waterDeepHex, pressure.water, pressure.amount * 0.55 * qScale);
     base.waterShallowHex = mixHex(base.waterShallowHex, pressure.water, pressure.amount * 0.35 * qScale);
   }
+  const nest = NEST_MIX[nestMode];
+  if (nest.amount > 0) {
+    base.skyHex = mixHex(base.skyHex, nest.sky, nest.amount * qScale);
+    base.waterDeepHex = mixHex(base.waterDeepHex, nest.water, nest.amount * 0.55 * qScale);
+    base.waterShallowHex = mixHex(base.waterShallowHex, nest.water, nest.amount * 0.35 * qScale);
+  }
   return base;
 }
 
@@ -223,6 +252,7 @@ export function weatherWaterTintRgb(
   rivalActive = false,
   endgameMode: EndgameAmbientId = "locked",
   pressureMode: PressureAmbientId = "calm",
+  nestMode: NestAmbientId = "idle",
 ): { r: number; g: number; b: number; bobScale: number } {
   const p = weatherAmbientProfile(
     weatherId,
@@ -233,6 +263,7 @@ export function weatherWaterTintRgb(
     rivalActive,
     endgameMode,
     pressureMode,
+    nestMode,
   );
   const c = hexToRgb(p.waterDeepHex);
   return { r: c.r, g: c.g, b: c.b, bobScale: p.bobScale };

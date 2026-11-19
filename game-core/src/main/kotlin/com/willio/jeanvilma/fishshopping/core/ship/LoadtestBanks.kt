@@ -12,8 +12,10 @@ object LoadtestBanks {
     const val CATALOG = "shared/ship/loadtest-banks.json"
     const val PARITY_FIXTURE = "shared/fixtures/parity-loadtest-banks.json"
     const val CONTENT_VERSION = "5.0.0"
-    const val SCHEMA_VERSION = 26
+    /** Finish 6.0 Phase 26 — bank headers bumped to schema 27. */
+    const val SCHEMA_VERSION = 27
     const val MIN_BYTES = 85_000_000L
+    const val LOADTEST_BANKS_MARKER = "authored-finish-6.0-phase-26"
 
     const val SAVE_FIXTURE = "shared/fixtures/loadtest-save-bank.json"
     const val TELEMETRY_FIXTURE = "shared/fixtures/loadtest-telemetry-bank.json"

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fishshopping.local/schema/billing-contract.schema.json",
+  "title": "Fish Shopping billing contract",
+  "description": "Structural contract for shared/billing/*.json catalogs (Play, web checkout, entitlements, reconcile, store sync). Secrets never appear here — only product identity and wiring.",
+  "type": "object",
+  "required": ["schema", "phase"],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": { "type": "string" },
+    "phase": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "schema": {
+      "type": "string",
+      "pattern": "^fish\\.billing\\.[a-z0-9_]+\\.v[0-9]+$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 16
+    },
+    "productType": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Play uses inapp; web catalogs may use non_consumable / catalog-specific labels."
+    },
+    "skus": {
+      "type": "array",
+      "description": "Either SKU id strings (reconcile lists) or rich SKU objects (Play/web product rows).",
+      "items": {
+        "oneOf": [
+          { "type": "string", "minLength": 3 },
+          {
+            "type": "object",
+            "required": ["sku"],
+            "additionalProperties": true,
+            "properties": {
+              "sku": { "type": "string", "minLength": 3 },
+              "androidProductId": { "type": "string" },
+              "webProductId": { "type": "string" },
+              "grantsCosmetic": {
+                "type": ["string", "null"]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "fullUnlock": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string" },
+        "sku": { "type": "string" },
+        "powerNeutral": { "type": "boolean" }
+      }
+    },
+    "cosmetics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string" },
+          "sku": { "type": "string" },
+          "powerNeutral": { "type": "boolean" }
+        }
+      }
+    },
+    "catalog": {
+      "type": "string",
+      "pattern": "^shared/.+\\.json$"
+    }
+  }
+}

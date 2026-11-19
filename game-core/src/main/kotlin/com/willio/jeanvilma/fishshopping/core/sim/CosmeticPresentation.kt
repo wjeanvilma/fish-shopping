@@ -56,6 +56,12 @@ object CosmeticPresentation {
         Item("banner.iap_bay_streamer", "fish.cosmetic.bay_streamer", "Bay streamer", intArrayOf(160, 210, 230), "iap", "models/cosmetic_banner_bay_streamer.glb"),
         Item("banner.iap_poach_ribbon", "fish.cosmetic.poach_ribbon", "Poach ribbon", intArrayOf(210, 170, 110), "iap", "models/cosmetic_banner_poach_ribbon.glb"),
         Item("banner.iap_can_crest", "fish.cosmetic.can_crest", "Can crest", intArrayOf(180, 140, 90), "iap", "models/cosmetic_banner_can_crest.glb"),
+        Item("banner.iap_saffron_bunting", "fish.cosmetic.saffron_bunting", "Saffron bunting", intArrayOf(220, 140, 70), "iap", "models/cosmetic_banner_saffron_bunting.glb"),
+        Item("banner.iap_cobalt_pennant", "fish.cosmetic.cobalt_pennant", "Cobalt pennant", intArrayOf(70, 120, 190), "iap", "models/cosmetic_banner_cobalt_pennant.glb"),
+        Item("banner.iap_quay_flag", "fish.cosmetic.quay_flag", "Quay flag", intArrayOf(200, 110, 60), "iap", "models/cosmetic_banner_quay_flag.glb"),
+        Item("banner.iap_sound_streamer", "fish.cosmetic.sound_streamer", "Sound streamer", intArrayOf(90, 150, 210), "iap", "models/cosmetic_banner_sound_streamer.glb"),
+        Item("banner.iap_roast_ribbon", "fish.cosmetic.roast_ribbon", "Roast ribbon", intArrayOf(190, 120, 80), "iap", "models/cosmetic_banner_roast_ribbon.glb"),
+        Item("banner.iap_ferment_crest", "fish.cosmetic.ferment_crest", "Ferment crest", intArrayOf(100, 90, 160), "iap", "models/cosmetic_banner_ferment_crest.glb"),
     )
 
     val BY_ID: Map<String, Item> = ITEMS.associateBy { it.cosmeticId }

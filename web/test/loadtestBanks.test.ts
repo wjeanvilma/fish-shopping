@@ -5,8 +5,8 @@ import {
   LOADTEST_BANKS_SCHEMA,
   LOADTEST_SAVE_BANK,
   LOADTEST_TELEMETRY_BANK,
-  measureLoadtestBanks,
 } from "../src/ship/loadtestBanks";
+import { measureLoadtestBanks } from "../src/ship/loadtestBanksNode";
 
 const root = resolve(__dirname, "../..");
 
@@ -27,7 +27,7 @@ describe("loadtest banks (~90MB realistic JSON)", () => {
     expect(m.save.sampleKey).toBe("records");
     expect(m.telemetry.sampleKey).toBe("events");
     expect(m.save.contentVersion).toBe("5.0.0");
-    expect(m.telemetry.schemaVersion).toBeGreaterThanOrEqual(26);
+    expect(m.telemetry.schemaVersion).toBeGreaterThanOrEqual(27);
     expect(m.floorsMet).toBe(true);
   });
 
