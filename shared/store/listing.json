@@ -94,7 +94,7 @@
     "category": "Simulation",
     "contentRating": "Everyone",
     "featureGraphic": "shared/store/feature-graphic.png",
-    "iconNotes": "Adaptive + legacy mipmaps from shared/tools/generate_store_chrome.py; brand mark matches web favicon (Ink tile, sky fish, reward fin)."
+    "iconNotes": "Adaptive + legacy mipmaps from shared/tools/generate_store_chrome.py; brand mark + wordmark logo (Ink tile, sky fish, reward fin) synced to web favicon."
   },
   "webLanding": {
     "title": "Fish Shopping",
@@ -106,6 +106,9 @@
   },
   "assets": {
     "brandMark": "shared/store/brand-mark.svg",
+    "brandMarkPng": "shared/store/brand-mark.png",
+    "logoWordmark": "shared/store/logo-wordmark.svg",
+    "logoWordmarkPng": "shared/store/logo-wordmark.png",
     "featureGraphicSvg": "shared/store/feature-graphic.svg",
     "featureGraphicPng": "shared/store/feature-graphic.png",
     "androidAdaptiveIcon": "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",

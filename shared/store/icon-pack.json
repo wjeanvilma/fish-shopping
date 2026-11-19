@@ -10,6 +10,16 @@
     "action": "#008f95"
   },
   "sourceMark": "shared/store/brand-mark.svg",
+  "logoWordmark": "shared/store/logo-wordmark.svg",
+  "logoPngs": {
+    "brandMark": "shared/store/brand-mark.png",
+    "brandMark128": "shared/store/brand-mark-128.png",
+    "brandMark256": "shared/store/brand-mark-256.png",
+    "brandMark512": "shared/store/brand-mark-512.png",
+    "brandMark1024": "shared/store/brand-mark-1024.png",
+    "wordmark": "shared/store/logo-wordmark.png",
+    "wordmark2x": "shared/store/logo-wordmark@2x.png"
+  },
   "tool": "shared/tools/generate_store_chrome.py",
   "npmScript": "icons:generate",
   "validateScript": "icons:validate",

@@ -27,7 +27,7 @@ CATALOG = ROOT / "shared/store/icon-pack.json"
 
 
 def draw_mark(size: int, *, rounded: bool = True, pad_ratio: float = 0.0) -> Image.Image:
-    """Draw the Fish Shopping mark into a square RGBA image."""
+    """Draw the Fish Shopping mark into a square RGBA image (matches brand-mark.svg)."""
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     pad = int(size * pad_ratio)
@@ -42,34 +42,51 @@ def draw_mark(size: int, *, rounded: bool = True, pad_ratio: float = 0.0) -> Ima
         span = size - 2 * pad
         return pad + x / 64.0 * span, pad + y / 64.0 * span
 
+    overlay = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+
+    # Soft water sheen
+    od.polygon(
+        [p(8, 46), p(18, 52), p(32, 54), p(46, 48), p(54, 40), p(34, 52), p(18, 52), p(8, 46)],
+        fill=ACTION[:3] + (56,),
+    )
+
+    # Fish body
     body = [
-        p(10, 34),
-        p(18, 24),
-        p(32, 20),
-        p(44, 22),
-        p(52, 28),
-        p(54, 34),
-        p(52, 40),
-        p(44, 46),
-        p(32, 48),
-        p(18, 44),
+        p(12, 33),
+        p(19, 19),
+        p(32, 13),
+        p(46, 19),
+        p(55, 26),
+        p(57, 31),
+        p(51, 39),
+        p(40, 45),
+        p(27, 49),
+        p(16, 44),
+        p(10, 35),
     ]
     draw.polygon(body, fill=SKY)
-    draw.polygon([p(8, 34), p(2.5, 29.8), p(2.5, 38.2)], fill=REWARD)
-    ex, ey = p(42, 30)
-    er = max(1.5, size * 0.04)
+
+    # Dorsal fin
+    draw.polygon([p(28, 18), p(38, 17), p(42, 21), p(34, 24)], fill=(0x7E, 0xBF, 0xD9, 255))
+
+    # Eye + highlight
+    ex, ey = p(44, 28)
+    er = max(1.6, size * 0.045)
     draw.ellipse([ex - er, ey - er, ex + er, ey + er], fill=INK)
-    shade = [
-        p(18, 38),
-        p(28, 42),
-        p(40, 42),
-        p(48, 38),
-        p(42, 44),
-        p(28, 46),
-        p(20, 42),
-    ]
-    overlay = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    ImageDraw.Draw(overlay).polygon(shade, fill=ACTION[:3] + (90,))
+    hx, hy = p(45, 27)
+    hr = max(0.8, size * 0.015)
+    draw.ellipse([hx - hr, hy - hr, hx + hr, hy + hr], fill=SKY)
+
+    # Reward fin + coin tip
+    draw.polygon([p(11, 33), p(4, 27.5), p(4, 38.5)], fill=REWARD)
+    cx, cy = p(7.2, 33)
+    cr = max(1.0, size * 0.025)
+    draw.ellipse([cx - cr, cy - cr, cx + cr, cy + cr], fill=(0xF3, 0xD0, 0x89, 255))
+
+    # Belly shade
+    shade = [p(18, 37), p(28, 42), p(40, 44), p(51, 34), p(46, 43), p(28, 46), p(18, 40)]
+    od.polygon(shade, fill=ACTION[:3] + (90,))
     return Image.alpha_composite(img, overlay)
 
 
@@ -185,6 +202,82 @@ def write_web_and_play_icons() -> None:
     print(f"wrote {play_path.relative_to(ROOT)} (512 Play hi-res)")
 
 
+def _load_fonts(title_size: int, tag_size: int) -> tuple[ImageFont.ImageFont, ImageFont.ImageFont]:
+    title = ImageFont.load_default()
+    tag = ImageFont.load_default()
+    for path in (
+        "/System/Library/Fonts/Supplemental/Georgia.ttf",
+        "/System/Library/Fonts/Supplemental/Times New Roman.ttf",
+        "/Library/Fonts/Georgia.ttf",
+    ):
+        if Path(path).exists():
+            try:
+                title = ImageFont.truetype(path, title_size)
+                break
+            except OSError:
+                pass
+    for path in (
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/Library/Fonts/Arial.ttf",
+    ):
+        if Path(path).exists():
+            try:
+                tag = ImageFont.truetype(path, tag_size)
+                break
+            except OSError:
+                pass
+    return title, tag
+
+
+def draw_wordmark(width: int = 1120, height: int = 256) -> Image.Image:
+    """Rasterize the horizontal logo lockup (mark + Fish Shopping wordmark)."""
+    img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    mark_size = int(height * 0.875)
+    mark = draw_mark(mark_size, rounded=True)
+    mark_y = (height - mark_size) // 2
+    img.alpha_composite(mark, (0, mark_y))
+
+    d = ImageDraw.Draw(img)
+    scale = height / 128.0
+    title_font, tag_font = _load_fonts(int(54 * scale), int(18 * scale))
+    text_x = int(136 * scale)
+    d.text((text_x, int(34 * scale)), "Fish Shopping", fill=INK, font=title_font)
+    d.text(
+        (text_x + 2, int(78 * scale)),
+        "Catch, cut, sell - harbor market",
+        fill=INK[:3] + (184,),
+        font=tag_font,
+    )
+    return img
+
+
+def write_logo_pngs() -> None:
+    """Export standalone PNG logos (brand mark + wordmark) into shared/store."""
+    store = ROOT / "shared/store"
+    store.mkdir(parents=True, exist_ok=True)
+
+    for size in (128, 256, 512, 1024):
+        out = store / f"brand-mark-{size}.png"
+        draw_mark(size, rounded=True).save(out, "PNG", optimize=True)
+        print(f"wrote {out.relative_to(ROOT)} ({size})")
+
+    # Transparent-friendly mark copy used as the primary logo PNG.
+    primary = store / "brand-mark.png"
+    draw_mark(512, rounded=True).save(primary, "PNG", optimize=True)
+    print(f"wrote {primary.relative_to(ROOT)} (512)")
+
+    wordmark = draw_wordmark(1120, 256)
+    word_path = store / "logo-wordmark.png"
+    wordmark.save(word_path, "PNG", optimize=True)
+    print(f"wrote {word_path.relative_to(ROOT)} (1120x256)")
+
+    wordmark_2x = draw_wordmark(2240, 512)
+    word_2x = store / "logo-wordmark@2x.png"
+    wordmark_2x.save(word_2x, "PNG", optimize=True)
+    print(f"wrote {word_2x.relative_to(ROOT)} (2240x512)")
+
+
 def write_manifest_icons_note() -> None:
     """Ensure catalog phase stamp is present (manifest edited separately)."""
     if CATALOG.is_file():
@@ -197,6 +290,7 @@ def main() -> int:
     write_manifest_icons_note()
     write_android_mipmaps()
     write_web_and_play_icons()
+    write_logo_pngs()
     write_feature_graphic()
     print("OK icons:generate — Phase 10 icon pack + feature graphic")
     return 0

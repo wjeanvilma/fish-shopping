@@ -1,8 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Fish Shopping">
   <!-- Brand mark: ink harbor tile + sky fish + reward fin. Source for favicon / adaptive icon. -->
   <rect width="64" height="64" rx="14" fill="#153449"/>
-  <path fill="#9fd3ea" d="M10 34c8-12 22-16 34-10 4 2 8 6 10 10-2 4-6 8-10 10-12 6-26 2-34-10z"/>
-  <circle cx="42" cy="30" r="2.6" fill="#153449"/>
-  <path fill="#e8af4a" d="M8 34l-5.5-4.2v8.4L8 34z"/>
-  <path fill="#008f95" opacity="0.35" d="M18 38c6 4 16 6 24 2 2-1 4-3 5-5-3 6-12 10-22 8-4-.5-6-2-7-5z"/>
+  <!-- Soft water sheen -->
+  <path fill="#008f95" opacity="0.22" d="M8 46c10 6 24 8 38 2 4-2 7-5 8-8-6 8-20 14-36 12-6-.5-9-3-10-6z"/>
+  <!-- Fish body -->
+  <path fill="#9fd3ea" d="M12 33c7-14 20-20 34-14 5 2 9 7 11 12-1 3-3 6-6 8-3 3-7 5-11 6-13 4-24-1-30-10-1-2-1-3 2-2z"/>
+  <!-- Dorsal fin -->
+  <path fill="#7ebfd9" d="M28 18c4-1 10 0 14 3-2 2-5 3-8 3-3 0-5-2-6-6z"/>
+  <!-- Eye -->
+  <circle cx="44" cy="28" r="3" fill="#153449"/>
+  <circle cx="45" cy="27" r="1" fill="#9fd3ea"/>
+  <!-- Reward fin (gold coin tip) -->
+  <path fill="#e8af4a" d="M11 33l-7-5.5v11L11 33z"/>
+  <circle cx="7.2" cy="33" r="1.6" fill="#f3d089"/>
+  <!-- Belly shade -->
+  <path fill="#008f95" opacity="0.35" d="M18 37c7 5 18 7 28 2 2-1 4-3 5-5-4 7-15 12-27 9-4-.5-6-3-6-6z"/>
 </svg>

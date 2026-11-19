@@ -243,6 +243,11 @@
       "id": "store-chrome",
       "paths": [
         "shared/store/brand-mark.svg",
+        "shared/store/brand-mark.png",
+        "shared/store/brand-mark-*.png",
+        "shared/store/logo-wordmark.svg",
+        "shared/store/logo-wordmark.png",
+        "shared/store/logo-wordmark@2x.png",
         "shared/store/feature-graphic.svg",
         "shared/store/feature-graphic.png",
         "shared/store/play-icon-512.png",
