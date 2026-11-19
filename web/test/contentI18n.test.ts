@@ -17,7 +17,7 @@ describe("Content i18n (Finish 3.0 Phase 6)", () => {
   it("locks phase 6 catalog floors", () => {
     expect(CONTENT_I18N_PHASE).toBe(6);
     expect(CONTENT_I18N.contentStringKeyMin).toBe(250);
-    expect(CONTENT_I18N.localeCountMin).toBe(3);
+    expect(CONTENT_I18N.localeCountMin).toBe(8);
     expect(CONTENT_I18N.thirdLocale).toBe("pt");
     expect(CONTENT_I18N_MARKER).toBe("authored-finish-3.0-phase-6");
   });

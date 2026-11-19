@@ -153,7 +153,7 @@ function validate(): string[] {
   if (i18nShip.uiStringKeyMin !== 280 || UI_STRING_KEY_FLOOR_4 !== 280) {
     errors.push("uiStringKeyMin must be 280");
   }
-  if (i18nShip.localeMin !== 3 || LOCALE_FLOOR_4 !== 3) errors.push("localeMin must be 3");
+  if (i18nShip.localeMin !== 8 || LOCALE_FLOOR_4 !== 8) errors.push("localeMin must be 8");
   if (i18nShip.a11yStringKeyMin !== 20 || A11Y_STRING_KEY_FLOOR_4 !== 20) {
     errors.push("a11yStringKeyMin must be 20");
   }

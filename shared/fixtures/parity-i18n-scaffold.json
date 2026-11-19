@@ -4,9 +4,18 @@
   "defaultLocale": "en",
   "secondLocale": "es",
   "thirdLocale": "pt",
-  "supportedLocales": ["en", "es", "pt"],
+  "supportedLocales": [
+    "en",
+    "es",
+    "pt",
+    "fr",
+    "ht",
+    "it",
+    "ca",
+    "ru"
+  ],
   "uiStringKeyMin": 48,
-  "localeFileMin": 3,
+  "localeFileMin": 8,
   "i18nMarker": "authored-finish-2.0-phase-23",
   "expect": {
     "requiredUiKeys": [

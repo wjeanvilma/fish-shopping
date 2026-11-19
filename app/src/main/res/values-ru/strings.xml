@@ -1,0 +1,7 @@
+<resources>
+    <!-- Finish 2.0 Phase 23 — Russian store listing copy. Source: shared/store/locales/ru.json -->
+    <string name="app_name">Fish Shopping</string>
+    <string name="store_short_description">Ловите, разделывайте и продавайте рыбу в уютном 3D-рынке гавани.</string>
+    <string name="store_tagline">Лови, разделывай, продавай — управляй рыбным рынком гавани</string>
+    <string name="store_whats_new">Заморозка 4.0.0 — сто видов, пятьдесят квестов, двенадцать машин, десять гаваней, двенадцать рынков соперников, эндгейм схема 25, блокировка паритета 4.0 и ops Finish 4.0. Схема 25; сохранения 3.0 по-прежнему загружаются.</string>
+</resources>

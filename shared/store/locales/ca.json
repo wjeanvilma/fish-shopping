@@ -1,0 +1,31 @@
+{
+  "locale": "ca",
+  "bcp47": "ca-ES",
+  "languageName": "Català",
+  "default": false,
+  "frozen": true,
+  "phase": 23,
+  "title": "Fish Shopping",
+  "shortDescription": "Pesca, talla i ven peix en un acollidor mercat 3D del port.",
+  "fullDescription": "Gestiona el teu mercat de peix al moll. Llence't des del moll, processa les captures al tallador, omple el taulell i atén una clientela cada cop més gran. Contracta personal, desbloqueja millores, accepta contractes de lliurament i expandeix-te a nous ports — tot amb una simulació fixa a 20 Hz compartida entre Android i web.\n\nBucle de la primera sessió: pescar → tallar → estocar → vendre.\n\nLa sincronització opcional al núvol i l'analítica respectuosa amb la privadesa resten desactivades fins que les activis. El desbloqueig de port de pagament únic i els cosmètics neutrals en potència estan disponibles mitjançant compra a l'app; Restaurar compres recupera els drets en un dispositiu nou.",
+  "whatsNew": "Congelació 4.0.0 — cent espècies, cinquanta missions, dotze màquines, deu ports, dotze mercats rivals, endgame esquema 25, bloqueig de paritat 4.0 i ops Finish 4.0. Esquema 25; les partides 3.0 anteriors continuen carregant.",
+  "webLanding": {
+    "title": "Fish Shopping",
+    "tagline": "Pesca, talla, ven — gestiona el mercat del port",
+    "description": "Pesca, talla i ven peix en un acollidor mercat 3D del port.",
+    "ctaPlay": "Juga al navegador",
+    "ctaPrivacy": "Privadesa",
+    "ctaSupport": "Suport"
+  },
+  "keywords": [
+    "pesca",
+    "tycoon",
+    "gestió",
+    "idle",
+    "3d",
+    "port",
+    "mercat"
+  ],
+  "category": "Simulation",
+  "contentRating": "Everyone"
+}

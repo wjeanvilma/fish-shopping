@@ -10,7 +10,7 @@
     "newHabitatCount": 8,
     "schemaVersion": 24,
     "schemaPrepTarget": 25,
-    "i18nLocales": 3,
+    "i18nLocales": 8,
     "gates": [
       "hundred_species",
       "sixteen_habitats",

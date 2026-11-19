@@ -258,10 +258,15 @@ internal fun SettingsPanel(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (loc in listOf("en", "es", "pt")) {
+                for (loc in listOf("en", "es", "pt", "fr", "ht", "it", "ca", "ru")) {
                     val labelKey = when (loc) {
                         "es" -> "settings.languageEs"
                         "pt" -> "settings.languagePt"
+                        "fr" -> "settings.languageFr"
+                        "ht" -> "settings.languageHt"
+                        "it" -> "settings.languageIt"
+                        "ca" -> "settings.languageCa"
+                        "ru" -> "settings.languageRu"
                         else -> "settings.languageEn"
                     }
                     if (settings.locale == loc) {

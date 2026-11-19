@@ -59,7 +59,7 @@ class ListingCopyTest {
         val catalog = Json.parseToJsonElement(File(root, ListingCopy.CATALOG).readText()).jsonObject
         val locales = catalog.getValue("locales").jsonArray.map { it.jsonPrimitive.content }
         assertEquals(ListingCopy.LOCALES, locales)
-        assertEquals(listOf("en", "es", "pt"), locales)
+        assertEquals(listOf("en", "es", "pt", "fr", "ht", "it", "ca", "ru"), locales)
 
         val en = Json.parseToJsonElement(File(root, ListingCopy.EN_LOCALE_PATH).readText()).jsonObject
         assertEquals("en", en.getValue("locale").jsonPrimitive.content)

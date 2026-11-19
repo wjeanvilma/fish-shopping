@@ -38,7 +38,7 @@ class I18nScaffoldTest {
             listing.getValue("i18nScaffoldCatalog").jsonPrimitive.content,
         )
         assertEquals(
-            listOf("en", "es", "pt"),
+            listOf("en", "es", "pt", "fr", "ht", "it", "ca", "ru"),
             listing.getValue("locales").jsonArray.map { it.jsonPrimitive.content },
         )
     }

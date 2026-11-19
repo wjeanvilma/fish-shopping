@@ -25,6 +25,11 @@ I18N = {
     "en": ROOT / "i18n" / "content-strings.en.json",
     "es": ROOT / "i18n" / "content-strings.es.json",
     "pt": ROOT / "i18n" / "content-strings.pt.json",
+    "fr": ROOT / "i18n" / "content-strings.fr.json",
+    "ht": ROOT / "i18n" / "content-strings.ht.json",
+    "it": ROOT / "i18n" / "content-strings.it.json",
+    "ca": ROOT / "i18n" / "content-strings.ca.json",
+    "ru": ROOT / "i18n" / "content-strings.ru.json"
 }
 
 MIST = {

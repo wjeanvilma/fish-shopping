@@ -1,12 +1,11 @@
 /**
- * Finish 3.0 Phase 6 — content i18n + third locale
- * (mirrors shared/ship/content-i18n.json).
+ * Content i18n ship contracts (mirrors shared/ship/content-i18n.json).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import catalogJson from "../../../shared/ship/content-i18n.json";
 import { CONTENT_STRING_KEYS, contentStringKeyCount } from "../i18n/contentStrings";
-import { UI_STRING_KEYS, uiStringKeyCount } from "../i18n/strings";
+import { UI_STRING_KEYS, uiStringKeyCount, type AppLocale } from "../i18n/strings";
 
 export interface ContentI18nCatalog {
   phase: number;
@@ -57,25 +56,20 @@ function readJson(path: string): any {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
+const MEASURE_LOCALES = ["en", "es", "pt", "fr", "ht", "it", "ca", "ru"] as const;
+
 export function measureContentI18n(repoRoot: string): ContentI18nMeasure {
-  const en = existsSync(resolve(repoRoot, CONTENT_I18N.contentStringsEn))
-    ? readJson(resolve(repoRoot, CONTENT_I18N.contentStringsEn))
-    : { strings: {} };
-  const es = existsSync(resolve(repoRoot, CONTENT_I18N.contentStringsEs))
-    ? readJson(resolve(repoRoot, CONTENT_I18N.contentStringsEs))
-    : { strings: {} };
-  const pt = existsSync(resolve(repoRoot, CONTENT_I18N.contentStringsPt))
-    ? readJson(resolve(repoRoot, CONTENT_I18N.contentStringsPt))
-    : { strings: {} };
-  const enKeysList = Object.keys(en.strings ?? {});
-  const esKeysList = Object.keys(es.strings ?? {});
-  const ptKeysList = Object.keys(pt.strings ?? {});
+  const bundles = MEASURE_LOCALES.map((loc) => {
+    const path = resolve(repoRoot, `shared/i18n/content-strings.${loc}.json`);
+    return existsSync(path) ? readJson(path) : { strings: {} };
+  });
+  const keyLists = bundles.map((b) => Object.keys(b.strings ?? {}));
+  const enKeysList = keyLists[0] ?? [];
   const enSet = new Set(enKeysList);
-  const keyParity =
-    enKeysList.length === esKeysList.length &&
-    enKeysList.length === ptKeysList.length &&
-    esKeysList.every((k) => enSet.has(k)) &&
-    ptKeysList.every((k) => enSet.has(k));
+  const keyParity = keyLists.every(
+    (keys) =>
+      keys.length === enKeysList.length && keys.every((k) => enSet.has(k)),
+  );
 
   const kickoffPath = resolve(repoRoot, CONTENT_I18N.kickoffCatalog);
   let gapsClosed = false;
@@ -110,12 +104,9 @@ export function measureContentI18n(repoRoot: string): ContentI18nMeasure {
 
   return {
     enKeys: enKeysList.length,
-    esKeys: esKeysList.length,
-    ptKeys: ptKeysList.length,
-    keysEnough:
-      enKeysList.length >= CONTENT_I18N.contentStringKeyMin &&
-      esKeysList.length >= CONTENT_I18N.contentStringKeyMin &&
-      ptKeysList.length >= CONTENT_I18N.contentStringKeyMin,
+    esKeys: keyLists[1]?.length ?? 0,
+    ptKeys: keyLists[2]?.length ?? 0,
+    keysEnough: keyLists.every((keys) => keys.length >= CONTENT_I18N.contentStringKeyMin),
     keyParity,
     localeCount,
     localesEnough: localeCount >= CONTENT_I18N.localeCountMin,
@@ -127,10 +118,11 @@ export function measureContentI18n(repoRoot: string): ContentI18nMeasure {
 }
 
 export function runtimeContentKeyParity(): boolean {
+  const locales: AppLocale[] = ["en", "es", "pt", "fr", "ht", "it", "ca", "ru"];
+  const enCount = contentStringKeyCount("en");
   return (
-    CONTENT_STRING_KEYS.length === contentStringKeyCount("en") &&
-    contentStringKeyCount("en") === contentStringKeyCount("es") &&
-    contentStringKeyCount("en") === contentStringKeyCount("pt") &&
+    CONTENT_STRING_KEYS.length === enCount &&
+    locales.every((loc) => contentStringKeyCount(loc) === enCount) &&
     UI_STRING_KEYS.length === uiStringKeyCount("pt")
   );
 }

@@ -17,7 +17,7 @@
       "speciesMin": 100,
       "machinesMin": 12,
       "questsMin": 50,
-      "i18nLocales": 3,
+      "i18nLocales": 8,
       "staffComingSoonReasons": 0
     },
     "phaseCount": 30,

@@ -20,6 +20,11 @@ DOD = ROOT / "ship" / "definition-of-done.json"
 EN = ROOT / "i18n" / "content-strings.en.json"
 ES = ROOT / "i18n" / "content-strings.es.json"
 PT = ROOT / "i18n" / "content-strings.pt.json"
+FR = ROOT / "i18n" / "content-strings.fr.json"
+HT = ROOT / "i18n" / "content-strings.ht.json"
+IT = ROOT / "i18n" / "content-strings.it.json"
+CA = ROOT / "i18n" / "content-strings.ca.json"
+RU = ROOT / "i18n" / "content-strings.ru.json"
 CONTENT_STRINGS_KT = (
     ROOT.parent
     / "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/i18n/ContentStrings.kt"

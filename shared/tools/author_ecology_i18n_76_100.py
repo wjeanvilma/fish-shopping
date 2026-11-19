@@ -16,6 +16,11 @@ PACK = ROOT / "shared/content/content-pack.json"
 EN = ROOT / "shared/i18n/content-strings.en.json"
 ES = ROOT / "shared/i18n/content-strings.es.json"
 PT = ROOT / "shared/i18n/content-strings.pt.json"
+FR = ROOT / "shared/i18n/content-strings.fr.json"
+HT = ROOT / "shared/i18n/content-strings.ht.json"
+IT = ROOT / "shared/i18n/content-strings.it.json"
+CA = ROOT / "shared/i18n/content-strings.ca.json"
+RU = ROOT / "shared/i18n/content-strings.ru.json"
 
 WAVE_BASES = [
     "species.cedar_smelt",

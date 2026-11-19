@@ -2,17 +2,27 @@
   "schema": "fish.i18n.ui_strings.v1",
   "phase": 23,
   "plan": "30_finish_2.0",
-  "description": "Finish 2.0 Phase 23 + Finish 3.0 Phase 6 \u2014 UI chrome string catalogs (en + es + pt).",
+  "description": "UI chrome string catalogs (en + es + pt + fr + ht + it + ca + ru).",
   "defaultLocale": "en",
   "supportedLocales": [
     "en",
     "es",
-    "pt"
+    "pt",
+    "fr",
+    "ht",
+    "it",
+    "ca",
+    "ru"
   ],
   "bundles": {
     "en": "shared/i18n/ui-strings.en.json",
     "es": "shared/i18n/ui-strings.es.json",
-    "pt": "shared/i18n/ui-strings.pt.json"
+    "pt": "shared/i18n/ui-strings.pt.json",
+    "fr": "shared/i18n/ui-strings.fr.json",
+    "ht": "shared/i18n/ui-strings.ht.json",
+    "it": "shared/i18n/ui-strings.it.json",
+    "ca": "shared/i18n/ui-strings.ca.json",
+    "ru": "shared/i18n/ui-strings.ru.json"
   },
   "keyMin": 280,
   "namespaces": [

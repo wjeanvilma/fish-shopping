@@ -56,7 +56,7 @@
     "authoredHarbors": 10,
     "authoredFish": 100,
     "harborBlockouts": 0,
-    "i18nLocales": 3,
+    "i18nLocales": 8,
     "i18nUiKeys": 280,
     "androidUiStringsCalls": 214,
     "androidTextLiterals": 0,
@@ -87,7 +87,7 @@
   "gapTargets": {
     "authoredHarbors": 10,
     "authoredFish": 100,
-    "i18nLocales": 3,
+    "i18nLocales": 8,
     "i18nUiKeysMin": 120,
     "androidTextLiteralsMax": 0,
     "staffComingSoonReasons": 0,

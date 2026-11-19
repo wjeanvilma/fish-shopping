@@ -15,7 +15,7 @@ object ContentI18n {
     const val SCHEMA_VERSION = 23
 
     const val THIRD_LOCALE = "pt"
-    const val LOCALE_COUNT_MIN = 3
+    const val LOCALE_COUNT_MIN = 8
     const val CONTENT_STRING_KEY_MIN = 250
     const val VALIDATE_SCRIPT = "contenti18n:validate"
 
@@ -24,5 +24,5 @@ object ContentI18n {
         "thirdLocaleMissing",
     )
 
-    val SUPPORTED_LOCALES: List<String> = listOf("en", "es", "pt")
+    val SUPPORTED_LOCALES: List<String> = listOf("en", "es", "pt", "fr", "ht", "it", "ca", "ru")
 }

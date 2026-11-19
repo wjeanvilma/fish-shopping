@@ -76,7 +76,12 @@
   "locales": [
     "en",
     "es",
-    "pt"
+    "pt",
+    "fr",
+    "ht",
+    "it",
+    "ca",
+    "ru"
   ],
   "whatsNew": "4.0.0 freeze — one hundred species, fifty quests, twelve machines, ten harbors, twelve rival markets, schema 25 endgame, parity lock 4.0, and Finish 4.0 ops. Schema 25; prior 3.0 saves still load.",
   "whatsNewVersion": "4.0.0",

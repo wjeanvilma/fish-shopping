@@ -12,7 +12,7 @@ object I18nGrowth4 {
     const val SCHEMA_VERSION = 25
     const val I18N_GROWTH_4_MARKER = "authored-finish-4.0-phase-24"
     const val UI_STRING_KEY_MIN = 280
-    const val LOCALE_MIN = 3
+    const val LOCALE_MIN = 8
     const val A11Y_STRING_KEY_MIN = 20
     const val ANDROID_TEXT_LITERALS_MAX = 0
     const val PARITY_FIXTURE = "shared/fixtures/parity-i18n-growth-4.json"
