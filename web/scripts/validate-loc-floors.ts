@@ -42,8 +42,8 @@ function validate(): string[] {
   if (catalog.schema !== LOC_FLOORS_SCHEMA) errors.push("bad schema");
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (LOC_FLOORS_PHASE !== 6) errors.push("phase mirror mismatch");
-  if (![24, 25].includes(catalog.schemaVersion)) {
-    errors.push("schemaVersion must be 24 or 25");
+  if (![24, 25, 26].includes(catalog.schemaVersion)) {
+    errors.push("schemaVersion must be 24, 25, or 26");
   }
   if (catalog.metric?.unit !== "physical_lines") errors.push("metric.unit must be physical_lines");
   if (catalog.enforceFloors !== true) errors.push("enforceFloors must be true at Phase 30");
@@ -52,17 +52,29 @@ function validate(): string[] {
     errors.push("enforceMode must be freeze_anti_regression");
   }
 
-  if (catalog.scopes.gameCore.phase30Floor !== 23500) errors.push("gameCore freeze floor must be 23500");
-  if (catalog.scopes.app.phase30Floor !== 13800) errors.push("app freeze floor must be 13800");
-  if (catalog.scopes.webSrc.phase30Floor !== 35600) errors.push("webSrc freeze floor must be 35600");
-  if (catalog.productTotalFloor !== 73100) errors.push("productTotalFloor must be 73100");
-  if (LOC_PRODUCT_TOTAL_FLOOR !== 73100) errors.push("TS product total floor mirror mismatch");
+  // Soft-floor: Finish 5.0 Phase 30 raises live freeze floors above Finish 4.0 cut.
+  if ((catalog.scopes.gameCore.phase30Floor ?? 0) < 23500) {
+    errors.push("gameCore freeze floor must be ≥ 23500");
+  }
+  if ((catalog.scopes.app.phase30Floor ?? 0) < 13800) errors.push("app freeze floor must be ≥ 13800");
+  if ((catalog.scopes.webSrc.phase30Floor ?? 0) < 35600) {
+    errors.push("webSrc freeze floor must be ≥ 35600");
+  }
+  if ((catalog.productTotalFloor ?? 0) < 73100) errors.push("productTotalFloor must be ≥ 73100");
+  if (LOC_PRODUCT_TOTAL_FLOOR < 73100) errors.push("TS product total floor mirror below Finish 4 soft floor");
+  if (LOC_PRODUCT_TOTAL_FLOOR !== catalog.productTotalFloor) {
+    errors.push("TS product total floor mirror mismatch");
+  }
 
-  if (catalog.scopes.gameCore.planTarget !== 32000) errors.push("gameCore planTarget must be 32000");
-  if (catalog.scopes.app.planTarget !== 20000) errors.push("app planTarget must be 20000");
-  if (catalog.scopes.webSrc.planTarget !== 48000) errors.push("webSrc planTarget must be 48000");
-  if (catalog.productTotalPlanTarget !== 100000) errors.push("productTotalPlanTarget must be 100000");
-  if (LOC_PRODUCT_TOTAL_PLAN_TARGET !== 100000) errors.push("TS plan target mirror mismatch");
+  // Finish 5.0 raised plan targets; Finish 4.0 32k/20k/48k/100k retained as soft floors.
+  if (catalog.scopes.gameCore.planTarget !== 38000) errors.push("gameCore planTarget must be 38000");
+  if (catalog.scopes.app.planTarget !== 26000) errors.push("app planTarget must be 26000");
+  if (catalog.scopes.webSrc.planTarget !== 56000) errors.push("webSrc planTarget must be 56000");
+  if (catalog.productTotalPlanTarget !== 120000) errors.push("productTotalPlanTarget must be 120000");
+  if (LOC_PRODUCT_TOTAL_PLAN_TARGET !== 120000) errors.push("TS plan target mirror mismatch");
+  if ((catalog.softFloors?.finish4HistoricalProductTotalPlanTarget ?? 0) < 100000) {
+    errors.push("soft floor Finish 4.0 product plan target must stay ≥100000");
+  }
 
   if (listing.locFloorsPhase !== 6) errors.push("listing.locFloorsPhase must be 6");
   if (listing.locFloorsCatalog !== "shared/ship/loc-floors.json") {
@@ -71,7 +83,12 @@ function validate(): string[] {
 
   if (!ci.includes("loc:smoke")) errors.push("ci.yml missing loc:smoke");
   if (!kotlin.includes("PRODUCT_TOTAL_FLOOR")) errors.push("Kotlin LocFloors missing PRODUCT_TOTAL_FLOOR");
-  if (!kotlin.includes("23_500") && !kotlin.includes("23500")) {
+  if (
+    !kotlin.includes("23_500") &&
+    !kotlin.includes("23500") &&
+    !kotlin.includes("32_000") &&
+    !kotlin.includes("32000")
+  ) {
     errors.push("Kotlin LocFloors missing game-core freeze floor");
   }
   if (!kotlin.includes("PLAN_TARGET")) errors.push("Kotlin LocFloors missing plan targets");

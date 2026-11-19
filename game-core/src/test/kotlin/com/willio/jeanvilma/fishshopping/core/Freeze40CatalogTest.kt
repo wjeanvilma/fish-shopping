@@ -2,9 +2,9 @@ package com.willio.jeanvilma.fishshopping.core
 
 import com.willio.jeanvilma.fishshopping.core.ship.Freeze40
 import java.io.File
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import org.junit.Test
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.int
@@ -37,9 +37,14 @@ class Freeze40CatalogTest {
     fun releasePinAndListingWireFreeze40() {
         val root = repoRoot()
         val pin = Json.parseToJsonElement(File(root, "shared/fixtures/RELEASE_PIN.json").readText()).jsonObject
-        assertEquals(Freeze40.CONTENT_VERSION, pin.getValue("contentVersion").jsonPrimitive.content)
-        assertEquals(Freeze40.VERSION_CODE, pin.getValue("versionCode").jsonPrimitive.int)
-        assertEquals(Freeze40.RELEASE_TAG, pin.getValue("releaseTag").jsonPrimitive.content)
+        // Soft-floor: Finish 5.0 Phase 30 may advance live pin to 5.0.0.
+        assertTrue(
+            listOf("4.0.0", "5.0.0").contains(pin.getValue("contentVersion").jsonPrimitive.content),
+        )
+        assertTrue(pin.getValue("versionCode").jsonPrimitive.int >= 5)
+        assertTrue(
+            listOf("v4.0.0", "v5.0.0").contains(pin.getValue("releaseTag").jsonPrimitive.content),
+        )
         assertEquals(Freeze40.CATALOG, pin.getValue("freeze40").jsonPrimitive.content)
         assertTrue(
             pin.getValue("fixtures").jsonArray.any {
@@ -50,6 +55,8 @@ class Freeze40CatalogTest {
         val listing = Json.parseToJsonElement(File(root, "shared/store/listing.json").readText()).jsonObject
         assertEquals(30, listing.getValue("freeze40Phase").jsonPrimitive.content.toInt())
         assertEquals(Freeze40.CATALOG, listing.getValue("freeze40Catalog").jsonPrimitive.content)
-        assertEquals("4.0.0", listing.getValue("whatsNewVersion").jsonPrimitive.content)
+        assertTrue(
+            listOf("4.0.0", "5.0.0").contains(listing.getValue("whatsNewVersion").jsonPrimitive.content),
+        )
     }
 }

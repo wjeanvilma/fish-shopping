@@ -1,0 +1,68 @@
+{
+  "phase": 14,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.harbors_11_12.v1",
+  "description": "Finish 5.0 Phase 14 \u2014 author harbors 11\u201312 (Aurora Inlet, Tideglass Bay) with layouts, specializations, eleven/twelve prestige circuit, landing quests, trophy galleries, and regenerated scenic blockouts. Schema stays 25.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "harborCount": 12,
+  "newHarborCount": 2,
+  "harbors1112Marker": "authored-finish-5.0-phase-14",
+  "newHarbors": [
+    {
+      "id": "harbor.aurora_inlet",
+      "name": "Aurora Inlet",
+      "requires": [
+        "prestige.ten_harbors"
+      ],
+      "specialization": "spec.aurora_shelf",
+      "blockout": "shared/assets/models/aurora_inlet_blockout.glb",
+      "landingQuest": "quest.aurora_inlet_landing",
+      "prestigeUnlock": "prestige.eleven_harbors",
+      "gallery": "gallery.aurora_inlet",
+      "theme": "aurora"
+    },
+    {
+      "id": "harbor.tideglass_bay",
+      "name": "Tideglass Bay",
+      "requires": [
+        "prestige.eleven_harbors"
+      ],
+      "specialization": "spec.tideglass_basin",
+      "blockout": "shared/assets/models/tideglass_bay_blockout.glb",
+      "landingQuest": "quest.tideglass_bay_landing",
+      "prestigeUnlock": "prestige.twelve_harbors",
+      "gallery": "gallery.tideglass_bay",
+      "theme": "tideglass"
+    }
+  ],
+  "circuitPrestige": [
+    "prestige.eleven_harbors",
+    "prestige.twelve_harbors"
+  ],
+  "travelFixture": "shared/fixtures/parity-harbors-11-12.json",
+  "blockoutTool": "shared/tools/generate_blockout.py",
+  "themesModule": "shared/tools/harbor_themes.py",
+  "authorTool": "shared/tools/author_harbors_11_12.py",
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "definitionOfDoneQuota": 12,
+  "validateScript": "npm run harbors1112:validate",
+  "checklist": [
+    "content-pack has 12 harbors including aurora_inlet + tideglass_bay",
+    "Blockouts regenerated for aurora_inlet + tideglass_bay GLBs",
+    "Prestige eleven/twelve + landing quests + galleries/curators wired",
+    "kickoff authoredHarbors=12 and authoredHarborsRemaining=0",
+    "DoD quotas.harbors = 12",
+    "parity-harbors-11-12 fixture + harbors1112:validate green",
+    "CI runs harbors1112:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/harbors-11-12.json",
+    "shared/fixtures/parity-harbors-11-12.json",
+    "shared/assets/models/aurora_inlet_blockout.glb",
+    "shared/assets/models/tideglass_bay_blockout.glb",
+    "shared/tools/author_harbors_11_12.py",
+    "web/src/ship/harbors1112.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Harbors1112.kt"
+  ]
+}

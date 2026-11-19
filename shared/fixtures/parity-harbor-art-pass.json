@@ -1,7 +1,7 @@
 {
   "schema": "fish.fixture.parity_harbor_art_pass.v1",
-  "description": "Finish 2.0 Phase 19 + Finish 3.0 Phase 8 + Finish 4.0 Phase 9/12: all 10 authored scenic harbor art markers, themes, and byte budgets.",
-  "authoredHarborMin": 10,
+  "description": "Finish 2.0 Phase 19 + Finish 3.0 Phase 8 + Finish 4.0 Phase 9/12 + Finish 5.0 Phase 14: all 12 authored scenic harbor art markers, themes, and byte budgets.",
+  "authoredHarborMin": 12,
   "harborArtMarker": "authored-finish-4.0-phase-9",
   "maxBytesPerHarbor": 1200000,
   "expect": {
@@ -64,6 +64,18 @@
         "harborId": "harbor.prism_reach",
         "theme": "prism",
         "asset": "prism_reach_blockout.glb",
+        "minHarborArtNodes": 10
+      },
+      {
+        "harborId": "harbor.aurora_inlet",
+        "theme": "aurora",
+        "asset": "aurora_inlet_blockout.glb",
+        "minHarborArtNodes": 10
+      },
+      {
+        "harborId": "harbor.tideglass_bay",
+        "theme": "tideglass",
+        "asset": "tideglass_bay_blockout.glb",
         "minHarborArtNodes": 10
       }
     ]

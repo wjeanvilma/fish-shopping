@@ -22,6 +22,7 @@ import {
   licensesCatalog,
   ossHeadline,
 } from "../store/licenses";
+import { WEB_E2E_IDS } from "../e2e/webE2eIds";
 import { formatAwayDuration, formatCoins, formatRushSeconds, prestigeRewardBits } from "./hudFormat";
 
 export function BusinessDashboardPanel({
@@ -150,6 +151,51 @@ export function BusinessDashboardPanel({
                   <span className="num">{Math.trunc(sp.sharePermille / 10)}%</span>
                 </li>
               ))}
+            </>
+          )}
+          {(dash.loansTaken > 0 || dash.loanOwed > 0 || dash.coinGoal > 0 || dash.ledgerLines.length > 0) && (
+            <>
+              <li>
+                <div className="grow">
+                  <strong>{t("dashboard.loanBook")}</strong>
+                  <div className="small muted">
+                    {formatCoins(dash.loanOwed)} owed
+                    {` · ${dash.loansTaken} taken · ${formatCoins(dash.loanRepaid)} repaid`}
+                  </div>
+                </div>
+                <span className="num">{formatCoins(dash.loanOwed)}</span>
+              </li>
+              <li>
+                <div className="grow">
+                  <strong>{t("dashboard.coinGoalProgress")}</strong>
+                  <div className="small muted">
+                    {dash.coinGoal > 0
+                      ? `${formatCoins(dash.coinGoal)} target · ${Math.trunc(dash.coinGoalProgressPermille / 10)}%`
+                      : "No coin goal set"}
+                  </div>
+                </div>
+                <span className="num">{Math.trunc(dash.coinGoalProgressPermille / 10)}%</span>
+              </li>
+              <li>
+                <div className="grow">
+                  <strong>{t("dashboard.ledgerCashflow")}</strong>
+                  <div className="small muted">
+                    {t("dashboard.contractShare")} {Math.trunc(dash.contractRevenueSharePermille / 10)}%
+                  </div>
+                </div>
+                <span className="num">{formatCoins(dash.ledgerNetCashflow)}</span>
+              </li>
+              {dash.ledgerLines.length > 0 && (
+                <li aria-label={t("a11y.dashboardLedgerSection")} data-testid={WEB_E2E_IDS.DASH_LEDGER}>
+                  <div className="grow">
+                    <strong>{t("dashboard.pierLedger")}</strong>
+                    <div className="small muted">{t("a11y.dashboardLedgerSection")}</div>
+                    {dash.ledgerLines.map((line) => (
+                      <div key={line} className="small muted num">{line}</div>
+                    ))}
+                  </div>
+                </li>
+              )}
             </>
           )}
           {dash.bottlenecks.length === 0 ? (

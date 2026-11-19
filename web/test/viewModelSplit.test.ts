@@ -19,16 +19,17 @@ describe("ViewModel split (Finish 4.0 Phase 4)", () => {
     expect(VIEWMODEL_SPLIT_SCHEMA).toBe("fish.ship.viewmodel_split.v1");
     expect(VIEWMODEL_SPLIT.plan).toBe("30_finish_4.0");
     expect(VIEWMODEL_SPLIT_MARKER).toBe("authored-finish-4.0-phase-4");
-    expect(VIEWMODEL_SPLIT.requiredFiles).toHaveLength(6);
+    expect(VIEWMODEL_SPLIT.requiredFiles.length).toBeGreaterThanOrEqual(6);
+    expect(VIEWMODEL_SPLIT.requiredFiles).toContain("vm/VmFishingIntents.kt");
     expect((storeListing as { viewModelSplitPhase?: number }).viewModelSplitPhase).toBe(4);
     expect(existsSync(resolve(root, VIEWMODEL_SPLIT.parityFixture))).toBe(true);
 
     const m = measureViewModelSplit(root);
     expect(m.viewModelSlim).toBe(true);
-    expect(m.viewModelLines).toBeLessThanOrEqual(1500);
+    expect(m.viewModelLines).toBeLessThanOrEqual(VIEWMODEL_SPLIT.viewModelMaxLines);
     expect(m.viewModelLines).toBeLessThan(1633);
     expect(m.extractedEnough).toBe(true);
-    expect(m.extractedFiles).toBeGreaterThanOrEqual(6);
+    expect(m.extractedFiles).toBeGreaterThanOrEqual(VIEWMODEL_SPLIT.extractedFileMin);
     expect(m.missingFiles).toEqual([]);
     expect(m.missingSymbols).toEqual([]);
     expect(m.viewModelStillDefines).toEqual([]);

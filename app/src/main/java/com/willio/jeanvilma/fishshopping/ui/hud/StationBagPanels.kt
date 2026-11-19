@@ -152,6 +152,47 @@ internal fun BagDetailPanel(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
+                // Finish 5.0 Phase 4 — spoil ETA + pressure from engine depth 1.
+                val eta = v.ticksUntilBagSpoil
+                if (eta != null) {
+                    Text(
+                        buildString {
+                            append("Spoil in ~")
+                            append((eta / 20).coerceAtLeast(0))
+                            append("s")
+                            if (v.bagSpoilPressurePermille > 1000) {
+                                append(" · pressure ")
+                                append(v.bagSpoilPressurePermille)
+                            }
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.85f),
+                    )
+                }
+            }
+            // Finish 5.0 Phase 4 — service / quest loop cues on the bag sheet.
+            if (v.serviceQueuePressurePermille >= 700) {
+                Text(
+                    buildString {
+                        append("Queue pressure ")
+                        append(v.serviceQueuePressurePermille)
+                        v.minPatienceTicksLeft?.let {
+                            append(" · patience ")
+                            append(it)
+                        }
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                )
+            }
+            v.nextQuestProgressPermille?.let { progress ->
+                if (progress >= 800) {
+                    Text(
+                        buildString { append("Quest nearly done · "); append(progress); append("/1000") },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
             if (v.preferredBaitId != null) {
                 TextButton(onClick = { onSelectBait(null) }, modifier = Modifier.heightIn(min = 48.dp)) {

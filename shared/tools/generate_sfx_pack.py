@@ -518,6 +518,64 @@ def spoil_clip(sr: int) -> list[float]:
     return synth(sr, 300, render)
 
 
+def cast_strike_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        twang = math.sin(2 * math.pi * (420 + 180 * t) * t) * math.exp(-t * 14) * 0.55
+        snap = math.sin(2 * math.pi * 980 * t) * math.exp(-t * 28) * 0.28
+        wash = (((i * 7919) & 255) / 255 - 0.5) * math.exp(-t * 18) * 0.18
+        return twang + snap + wash
+
+    return synth(sr, 220, render)
+
+
+def spoil_warn_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        warn = math.sin(2 * math.pi * (260 - 90 * t) * t) * env_adsr(i, n, 0.08, 0.25, 0.3, 0.4) * 0.4
+        drip = (((i * 1103515245 + 12345) & 0x7FFF) / 0x7FFF - 0.5) * math.exp(-t * 8) * 0.22
+        return warn + drip
+
+    return synth(sr, 280, render)
+
+
+def service_queue_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        tap = math.sin(2 * math.pi * 540 * t) * math.exp(-t * 22) * 0.35
+        murmer = math.sin(2 * math.pi * 180 * t) * env_adsr(i, n, 0.1, 0.3, 0.35, 0.4) * 0.28
+        if t > 0.08:
+            local = t - 0.08
+            tap += math.sin(2 * math.pi * 620 * local) * math.exp(-local * 24) * 0.25
+        return tap + murmer
+
+    return synth(sr, 260, render)
+
+
+def contract_deadline_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        tick = math.sin(2 * math.pi * 880 * t) * math.exp(-t * 20) * 0.32
+        low = math.sin(2 * math.pi * 140 * t) * env_adsr(i, n, 0.05, 0.2, 0.35, 0.45) * 0.38
+        if t > 0.1:
+            local = t - 0.1
+            tick += math.sin(2 * math.pi * 990 * local) * math.exp(-local * 22) * 0.28
+        return tick + low
+
+    return synth(sr, 300, render)
+
+
+def quest_near_clip(sr: int) -> list[float]:
+    def render(i, n, rate):
+        t = i / rate
+        chime = math.sin(2 * math.pi * 660 * t) * math.exp(-t * 12) * 0.35
+        lift = math.sin(2 * math.pi * (440 + 120 * t) * t) * env_adsr(i, n, 0.06, 0.22, 0.4, 0.4) * 0.32
+        spark = (((i * 9131) & 255) / 255 - 0.5) * math.exp(-t * 16) * 0.12
+        return chime + lift + spark
+
+    return synth(sr, 280, render)
+
+
 RENDERERS = {
     "catch": catch_clip,
     "machine_done": machine_done_clip,
@@ -550,6 +608,11 @@ RENDERERS = {
     "full_unlock": full_unlock_clip,
     "machine_break": machine_break_clip,
     "spoil": spoil_clip,
+    "cast_strike": cast_strike_clip,
+    "spoil_warn": spoil_warn_clip,
+    "service_queue": service_queue_clip,
+    "contract_deadline": contract_deadline_clip,
+    "quest_near": quest_near_clip,
 }
 
 

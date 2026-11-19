@@ -3,5 +3,5 @@
     <string name="app_name">Fish Shopping</string>
     <string name="store_short_description">Catch, cut, and sell fish in a cozy 3D harbor market.</string>
     <string name="store_tagline">Catch, cut, sell — run your harbor market</string>
-    <string name="store_whats_new">4.0.0 freeze — one hundred species, fifty quests, twelve machines, ten harbors, twelve rival markets, schema 25 endgame, parity lock 4.0, and Finish 4.0 ops. Schema 25; prior 3.0 saves still load.</string>
+    <string name="store_whats_new">5.0.0 freeze — one hundred twenty-five species, seventy-five quests, fourteen machines, twelve harbors, sixteen rival markets, schema 26 endgame crests, parity lock 5.0, and Finish 5.0 ops. Schema 26; prior 4.0 saves still load.</string>
 </resources>

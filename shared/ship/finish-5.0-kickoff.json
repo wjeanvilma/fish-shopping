@@ -1,0 +1,335 @@
+{
+  "phase": 1,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.finish5_kickoff.v1",
+  "description": "Finish 5.0 Phase 1 — kickoff + gap scoreboard from frozen 4.0.0. Pins Finish 4.0 as finished, locks live LOC/content baseline, and opens the 30-phase path to content 5.0.0 / ≥120k product LOC without padding.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "kickoffMarker": "authored-finish-5.0-phase-1",
+  "priorPlan": {
+    "id": "30_finish_4.0",
+    "status": "finished",
+    "freezeCatalog": "shared/ship/freeze-4.0.0.json",
+    "releaseTag": "v4.0.0",
+    "contentVersion": "4.0.0",
+    "schemaVersion": 25
+  },
+  "endState": {
+    "contentVersion": "5.0.0",
+    "schemaVersionMin": 26,
+    "releaseTag": "v5.0.0",
+    "versionName": "5.0.0",
+    "versionCode": 6,
+    "productLocMin": 120000,
+    "gameCoreLocMin": 38000,
+    "appLocMin": 26000,
+    "webSrcLocMin": 56000,
+    "harborsMin": 12,
+    "speciesMin": 125,
+    "authoredFishMin": 125,
+    "machinesMin": 14,
+    "questsMin": 75,
+    "seasonalMin": 16,
+    "baitsMin": 16,
+    "cosmeticsMin": 24,
+    "chainsMin": 7,
+    "rivalsMin": 16,
+    "paritySuitesMin": 20,
+    "i18nLocalesMin": 8,
+    "i18nUiKeysMin": 360,
+    "playwrightE2eMin": 12,
+    "composeE2eMin": 14
+  },
+  "baseline": {
+    "measuredAtPhase": 1,
+    "contentVersion": "4.0.0",
+    "schemaVersion": 26,
+    "gameCoreLoc": 28162,
+    "appLoc": 14691,
+    "webSrcLoc": 37322,
+    "productLoc": 80175,
+    "harbors": 12,
+    "species": 125,
+    "machines": 14,
+    "quests": 75,
+    "seasonalEvents": 16,
+    "baits": 16,
+    "cosmetics": 24,
+    "deliveryChains": 7,
+    "rivalMarkets": 16,
+    "authoredHarbors": 12,
+    "authoredFish": 125,
+    "harborBlockouts": 0,
+    "i18nLocales": 8,
+    "i18nUiKeys": 361,
+    "androidUiStringsCalls": 214,
+    "androidTextLiterals": 0,
+    "staffComingSoonReasons": 0,
+    "paritySuites": 16,
+    "playwrightE2e": 5,
+    "composeE2e": 7
+  },
+  "gaps": {
+    "authoredHarborsRemaining": 0,
+    "authoredFishRemaining": 0,
+    "productLocRemaining": 39825,
+    "speciesRemaining": 0,
+    "machinesRemaining": 0,
+    "questsRemaining": 0,
+    "engineDepthIncomplete": false,
+    "harborArt5Incomplete": false,
+    "fishArt5Incomplete": false,
+    "productArt5Incomplete": false,
+    "atmosphere5Incomplete": false,
+    "audioVfx5Incomplete": false,
+    "contentFloorsShort": false,
+    "endgameSchema26Pending": false,
+    "tutorialRetentionIncomplete": false,
+    "staffAi3Incomplete": false,
+    "economy3Incomplete": false,
+    "offlineCloud3Incomplete": false,
+    "uiParity5Incomplete": false,
+    "a11yI18n5Incomplete": false,
+    "stripeOps5Incomplete": false,
+    "deeplinkE2e5Thin": false,
+    "devicePerf5Incomplete": false,
+    "contentCli5Missing": false,
+    "parityLock5Missing": false
+  },
+  "gapTargets": {
+    "authoredHarbors": 12,
+    "authoredFish": 125,
+    "i18nLocales": 8,
+    "i18nUiKeysMin": 360,
+    "androidTextLiteralsMax": 0,
+    "staffComingSoonReasons": 0,
+    "productLoc": 120000,
+    "speciesMin": 125,
+    "machinesMin": 14,
+    "questsMin": 75,
+    "harborsMin": 12,
+    "seasonalMin": 16,
+    "baitsMin": 16,
+    "cosmeticsMin": 24,
+    "chainsMin": 7,
+    "rivalsMin": 16,
+    "paritySuitesMin": 20,
+    "playwrightE2eMin": 12,
+    "composeE2eMin": 14
+  },
+  "phases": [
+    {
+      "phase": 1,
+      "id": "kickoff",
+      "title": "Kickoff + gap scoreboard",
+      "validate": "finish5:validate"
+    },
+    {
+      "phase": 2,
+      "id": "engine-depth-1",
+      "title": "Engine depth 1 — fishing/mastery/spoilage",
+      "validate": "enginedepth1:validate"
+    },
+    {
+      "phase": 3,
+      "id": "engine-depth-2",
+      "title": "Engine depth 2 — customers/contracts/progression",
+      "validate": "enginedepth2:validate"
+    },
+    {
+      "phase": 4,
+      "id": "android-vm-depth",
+      "title": "Android VM/intent depth for new loops",
+      "validate": "androidvmdepth:validate"
+    },
+    {
+      "phase": 5,
+      "id": "host-presenter-depth",
+      "title": "GameHost + presenter depth",
+      "validate": "hostpresenterdepth:validate"
+    },
+    {
+      "phase": 6,
+      "id": "loc-midcheck",
+      "title": "LOC mid-check scoreboard",
+      "validate": "locmidcheck:validate"
+    },
+    {
+      "phase": 7,
+      "id": "harbor-art-5a",
+      "title": "Harbor art 5a — harbors 1–6 beyond blockout",
+      "validate": "harborart5a:validate"
+    },
+    {
+      "phase": 8,
+      "id": "harbor-art-5b",
+      "title": "Harbor art 5b — harbors 7–12",
+      "validate": "harborart5b:validate"
+    },
+    {
+      "phase": 9,
+      "id": "fish-art-5",
+      "title": "Fish art 5 — species 101–125 meshes",
+      "validate": "fishart5:validate"
+    },
+    {
+      "phase": 10,
+      "id": "product-art-5",
+      "title": "Product/cosmetic art presentation 5",
+      "validate": "productart5:validate"
+    },
+    {
+      "phase": 11,
+      "id": "atmosphere-5",
+      "title": "Atmosphere/cozy render depth 5",
+      "validate": "atmosphere5:validate"
+    },
+    {
+      "phase": 12,
+      "id": "audio-vfx-5",
+      "title": "Audio pack 5 + VFX juice 5",
+      "validate": "audiovfx5:validate"
+    },
+    {
+      "phase": 13,
+      "id": "species-125",
+      "title": "Species 101–125 + ecology + i18n",
+      "validate": "species125:validate"
+    },
+    {
+      "phase": 14,
+      "id": "harbors-11-12",
+      "title": "Harbors 11–12 with travel/prestige gates",
+      "validate": "harbors1112:validate"
+    },
+    {
+      "phase": 15,
+      "id": "machines-13-14",
+      "title": "Machines 13–14 + recipes/UI",
+      "validate": "machines1314:validate"
+    },
+    {
+      "phase": 16,
+      "id": "quests-contracts-5",
+      "title": "Quests→75, chains→7, contracts depth",
+      "validate": "quests5:validate"
+    },
+    {
+      "phase": 17,
+      "id": "endgame-3",
+      "title": "Endgame deepen + schema 26",
+      "validate": "endgame3:validate"
+    },
+    {
+      "phase": 18,
+      "id": "rivals-seasonal-5",
+      "title": "Rivals/seasonal/baits/cosmetics growth",
+      "validate": "rivalsseasonal5:validate"
+    },
+    {
+      "phase": 19,
+      "id": "tutorial-retention-5",
+      "title": "Tutorial friction + retention hooks",
+      "validate": "tutorialretention5:validate"
+    },
+    {
+      "phase": 20,
+      "id": "staff-ai-3",
+      "title": "Staff/worker AI depth wave 3",
+      "validate": "staffai3:validate"
+    },
+    {
+      "phase": 21,
+      "id": "economy-bank-3",
+      "title": "Economy/bank/dashboard depth 3",
+      "validate": "economy3:validate"
+    },
+    {
+      "phase": 22,
+      "id": "offline-cloud-3",
+      "title": "Offline/cloud/analytics hardening 3",
+      "validate": "offlinecloud3:validate"
+    },
+    {
+      "phase": 23,
+      "id": "ui-parity-5",
+      "title": "Web↔Android panel parity depth 5",
+      "validate": "uiparity5:validate"
+    },
+    {
+      "phase": 24,
+      "id": "a11y-i18n-5",
+      "title": "A11y depth 4 + i18n key growth (≥360)",
+      "validate": "a11yi18n5:validate"
+    },
+    {
+      "phase": 25,
+      "id": "stripe-ops-5",
+      "title": "Stripe/checkout live-ready catalog ops 5",
+      "validate": "stripeops5:validate"
+    },
+    {
+      "phase": 26,
+      "id": "deeplink-e2e-5",
+      "title": "Deep links + E2E floors ≥12/≥14",
+      "validate": "deeplinke2e5:validate"
+    },
+    {
+      "phase": 27,
+      "id": "device-perf-5",
+      "title": "Device/browser/perf matrix 5",
+      "validate": "deviceperf5:validate"
+    },
+    {
+      "phase": 28,
+      "id": "content-cli-5",
+      "title": "Content authoring CLI wave 5",
+      "validate": "contentcli5:validate"
+    },
+    {
+      "phase": 29,
+      "id": "parity-lock-5",
+      "title": "Parity lock 5.0 (≥20 suites)",
+      "validate": "parity5:validate"
+    },
+    {
+      "phase": 30,
+      "id": "freeze-5",
+      "title": "5.0.0 freeze & DoD",
+      "validate": "freeze5:validate"
+    }
+  ],
+  "definitionOfDone": "shared/ship/definition-of-done.json",
+  "locCatalog": "shared/ship/loc-floors.json",
+  "harborArtCatalog": "shared/ship/harbor-art-pass.json",
+  "fishArtCatalog": "shared/ship/fish-art-pass.json",
+  "priorFreezeCatalog": "shared/ship/freeze-4.0.0.json",
+  "i18nScaffold": "shared/ship/i18n-scaffold.json",
+  "parityFixture": "shared/fixtures/parity-finish-5.0-kickoff.json",
+  "validateScript": "npm run finish5:validate",
+  "smokeScript": "npm run finish5:smoke",
+  "checklist": [
+    "Finish 4.0 priorPlan marked finished; freeze-4.0.0.json still green",
+    "Kickoff catalog locks live baseline LOC from Finish 5 Phase 1 measure (80175)",
+    "Gap scoreboard lists content floors →125/75/12/14/16/16/24/7/16/20 and product LOC →120k",
+    "30 Finish 5.0 phase ids present and ordered 1–30 kickoff→freeze-5",
+    "Kotlin + TS mirrors match catalog; parity fixture marker locked",
+    "listing + RELEASE_PIN + DoD finish5Kickoff wired",
+    "CI runs finish5:validate + finish5:smoke",
+    "Content/version stays 4.0.0 / schema 25 until later Finish 5.0 bumps",
+    "loc-floors plan targets raised to 38k/26k/56k/120k; freeze anti-regression floors retained"
+  ],
+  "preflightGates": [
+    "shared/ship/finish-5.0-kickoff.json",
+    "shared/fixtures/parity-finish-5.0-kickoff.json",
+    "shared/ship/freeze-4.0.0.json",
+    "shared/ship/loc-floors.json",
+    "shared/ship/harbor-art-pass.json",
+    "shared/ship/fish-art-pass.json",
+    "shared/ship/definition-of-done.json",
+    "web/src/ship/finish5Kickoff.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Finish5Kickoff.kt",
+    "web/scripts/validate-finish-5-kickoff.ts",
+    "web/scripts/smoke-finish-5-kickoff.ts"
+  ]
+}

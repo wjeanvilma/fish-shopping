@@ -1,0 +1,23 @@
+{
+  "schema": "fish.fixtures.parity_loc_midcheck.v1",
+  "locMidcheckMarker": "authored-finish-5.0-phase-6",
+  "phase": 6,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "productLocMidcheck": 82280,
+    "productLocInterimFloor": 82000,
+    "productLocBaseline": 80175,
+    "productLocPlan": 120000,
+    "productLocProgressPercent": 5,
+    "schemaVersion": 25,
+    "contentVersion": "4.0.0",
+    "gates": [
+      "midcheck_locked",
+      "interim_soft_floors",
+      "kickoff_phase_wired",
+      "loc_floors_plan_targets",
+      "freeze4_soft_floor",
+      "ci_gate"
+    ]
+  }
+}

@@ -23,6 +23,6 @@ object ComposeUiTests {
         "app/src/androidTest/java/com/willio/jeanvilma/fishshopping/TitleMenuInstrumentedTest.kt"
     const val GRADLE_UNIT_TEST_TASK = ":app:testDebugUnitTest"
     const val GRADLE_UNIT_TEST_FILTER = "*ComposeUiIntegrationTest*"
-    /** Finish 4.0 Phase 26 soft-floor (was 16). */
-    const val MIN_TAG_COUNT = 24
+    /** Finish 5.0 Phase 26 soft-floor (was 24). */
+    const val MIN_TAG_COUNT = 32
 }

@@ -2,13 +2,13 @@
   "phase": 20,
   "plan": "30_finish_2.0",
   "schema": "fish.ship.fish_art_pass.v1",
-  "description": "Finish 2.0 Phase 20 + Finish 3.0 Phase 9 + Finish 4.0 Phases 7\u20138 \u2014 all 100 species authored multi-part FishArt meshes; licenses + size budgets; path contract unchanged.",
+  "description": "Finish 2.0 Phase 20 + Finish 3.0 Phase 9 + Finish 4.0 Phases 7\u20138 + Finish 5.0 Phase 9 \u2014 all 125 species authored multi-part FishArt meshes (101\u2013125 art-ahead of content); licenses + size budgets; path contract unchanged.",
   "contentVersion": "2.0.0",
   "schemaVersion": 23,
-  "authoredSpeciesMin": 100,
+  "authoredSpeciesMin": 125,
   "fishArtMarker": "authored-phase-20",
   "maxBytesPerFish": 32000,
-  "maxTotalAuthoredBytes": 3200000,
+  "maxTotalAuthoredBytes": 4000000,
   "generator": "shared/tools/generate_fish_stubs.py",
   "themesModule": "shared/tools/fish_themes.py",
   "authoredSpecies": [
@@ -511,6 +511,131 @@
       "speciesId": "species.plaza_tuna",
       "theme": "plaza_tuna",
       "asset": "shared/assets/models/fish_plaza_tuna.glb"
+    },
+    {
+      "speciesId": "species.mist_sprat",
+      "theme": "mist_sprat",
+      "asset": "shared/assets/models/fish_mist_sprat.glb"
+    },
+    {
+      "speciesId": "species.gilt_mist",
+      "theme": "gilt_mist",
+      "asset": "shared/assets/models/fish_gilt_mist.glb"
+    },
+    {
+      "speciesId": "species.veil_shad",
+      "theme": "veil_shad",
+      "asset": "shared/assets/models/fish_veil_shad.glb"
+    },
+    {
+      "speciesId": "species.prism_veil",
+      "theme": "prism_veil",
+      "asset": "shared/assets/models/fish_prism_veil.glb"
+    },
+    {
+      "speciesId": "species.dusk_mullet",
+      "theme": "dusk_mullet",
+      "asset": "shared/assets/models/fish_dusk_mullet.glb"
+    },
+    {
+      "speciesId": "species.bronze_dusk",
+      "theme": "bronze_dusk",
+      "asset": "shared/assets/models/fish_bronze_dusk.glb"
+    },
+    {
+      "speciesId": "species.shelf_blenny",
+      "theme": "shelf_blenny",
+      "asset": "shared/assets/models/fish_shelf_blenny.glb"
+    },
+    {
+      "speciesId": "species.opal_shelf",
+      "theme": "opal_shelf",
+      "asset": "shared/assets/models/fish_opal_shelf.glb"
+    },
+    {
+      "speciesId": "species.coral_scad",
+      "theme": "coral_scad",
+      "asset": "shared/assets/models/fish_coral_scad.glb"
+    },
+    {
+      "speciesId": "species.gilt_scad",
+      "theme": "gilt_scad",
+      "asset": "shared/assets/models/fish_gilt_scad.glb"
+    },
+    {
+      "speciesId": "species.storm_drum",
+      "theme": "storm_drum",
+      "asset": "shared/assets/models/fish_storm_drum.glb"
+    },
+    {
+      "speciesId": "species.thunder_storm",
+      "theme": "thunder_storm",
+      "asset": "shared/assets/models/fish_thunder_storm.glb"
+    },
+    {
+      "speciesId": "species.ember_ray",
+      "theme": "ember_ray",
+      "asset": "shared/assets/models/fish_ember_ray.glb"
+    },
+    {
+      "speciesId": "species.magma_ember",
+      "theme": "magma_ember",
+      "asset": "shared/assets/models/fish_magma_ember.glb"
+    },
+    {
+      "speciesId": "species.north_smelt",
+      "theme": "north_smelt",
+      "asset": "shared/assets/models/fish_north_smelt.glb"
+    },
+    {
+      "speciesId": "species.aurora_north",
+      "theme": "aurora_north",
+      "asset": "shared/assets/models/fish_aurora_north.glb"
+    },
+    {
+      "speciesId": "species.marina_jack",
+      "theme": "marina_jack",
+      "asset": "shared/assets/models/fish_marina_jack.glb"
+    },
+    {
+      "speciesId": "species.gilt_marina",
+      "theme": "gilt_marina",
+      "asset": "shared/assets/models/fish_gilt_marina.glb"
+    },
+    {
+      "speciesId": "species.lantern_pike",
+      "theme": "lantern_pike",
+      "asset": "shared/assets/models/fish_lantern_pike.glb"
+    },
+    {
+      "speciesId": "species.prism_lantern",
+      "theme": "prism_lantern",
+      "asset": "shared/assets/models/fish_prism_lantern.glb"
+    },
+    {
+      "speciesId": "species.brine_goby",
+      "theme": "brine_goby",
+      "asset": "shared/assets/models/fish_brine_goby.glb"
+    },
+    {
+      "speciesId": "species.crystal_brine",
+      "theme": "crystal_brine",
+      "asset": "shared/assets/models/fish_crystal_brine.glb"
+    },
+    {
+      "speciesId": "species.plaza_wrasse",
+      "theme": "plaza_wrasse",
+      "asset": "shared/assets/models/fish_plaza_wrasse.glb"
+    },
+    {
+      "speciesId": "species.crown_plaza",
+      "theme": "crown_plaza",
+      "asset": "shared/assets/models/fish_crown_plaza.glb"
+    },
+    {
+      "speciesId": "species.mist_tuna",
+      "theme": "mist_tuna",
+      "asset": "shared/assets/models/fish_mist_tuna.glb"
     }
   ],
   "parityFixture": "shared/fixtures/parity-fish-art-pass.json",
@@ -533,5 +658,10 @@
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/FishArtPass.kt",
     "shared/tools/fish_themes.py",
     "shared/tools/generate_fish_stubs.py"
-  ]
+  ],
+  "softFloors": {
+    "authoredSpeciesHistoricalMin": 100,
+    "artAheadAllowed": true,
+    "fishFinish5Marker": "fish-art-5"
+  }
 }

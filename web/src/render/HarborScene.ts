@@ -69,7 +69,7 @@ import {
   type ShakeKind,
   type WorldBurstCue,
 } from "./presenters";
-import { weatherAmbientProfile } from "./weatherAmbient";
+import { pressureAmbientIdForView, weatherAmbientProfile } from "./weatherAmbient";
 import { atmosphereFrame } from "./atmosphere";
 import {
   applyAtmosphereToWater,
@@ -851,7 +851,7 @@ export class HarborScene {
       }
     }
 
-    // Finish 2.0/3.0/4.0 — weather/festival/tide/rival/endgame ambient.
+    // Finish 2.0/3.0/4.0/5.0 — weather/festival/tide/rival/endgame/pressure ambient.
     const endgameMode = !v.endgameUnlocked
       ? "locked"
       : (v.endgameMarkCount ?? 0) > 0
@@ -868,6 +868,12 @@ export class HarborScene {
       tidePhaseId,
       !!v.rivalPressureActive || (v.activeRivalIds?.length ?? 0) > 0,
       endgameMode,
+      pressureAmbientIdForView(
+        v.bagSpoilPressurePermille ?? 0,
+        v.serviceQueuePressurePermille ?? 0,
+        v.ticksUntilNearestContractDeadline ?? null,
+        v.nextQuestProgressPermille ?? null,
+      ),
     );
     // Cozy art pass 5: continuous day/night + weather lighting.
     const atm = atmosphereFrame(v.dayProgressPermille ?? 400, v.weatherId, reducedMotion);

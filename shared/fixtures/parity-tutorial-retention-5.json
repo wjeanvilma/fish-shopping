@@ -1,0 +1,27 @@
+{
+  "schema": "fish.fixture.parity_tutorial_retention_5.v1",
+  "tutorialRetention5Marker": "authored-finish-5.0-phase-19",
+  "phase": 19,
+  "plan": "30_finish_5.0",
+  "description": "Finish 5.0 Phase 19: mid-game grill_line friction nudge + weekly rival board slot from week seed; daily boardSlots ≥5.",
+  "sampleFrictionStepId": "tutorial.grill_line",
+  "sampleWeeklyObjectiveId": "weekly.rival_week",
+  "sampleDailyObjectiveId": "daily.quest_push",
+  "expect": {
+    "schemaVersion": 26,
+    "contentVersion": "4.0.0",
+    "highFrictionMin": 7,
+    "nudgesMin": 7,
+    "dailyObjectivesMin": 14,
+    "boardSlotsMin": 5,
+    "weeklyObjectivesMin": 4,
+    "tutorialRetentionIncomplete": false,
+    "gates": [
+      "friction_midgame",
+      "daily_14",
+      "weekly_4",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

@@ -123,7 +123,8 @@ describe("Machines 11–12 (Finish 4.0 Phase 13)", () => {
       fx.process.expectOutput.quantity,
     );
 
-    expect(content.machines.length).toBe(fx.expectFinal.machineCount);
+    // Soft-floored: Finish 5.0 Phase 15 raises live machine count above Finish 4 floor.
+    expect(content.machines.length).toBeGreaterThanOrEqual(fx.expectFinal.machineCount);
     expect(sim.state.ownedUpgrades.has(fx.expectFinal.ownedUpgrade)).toBe(true);
   });
 

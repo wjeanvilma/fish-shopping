@@ -1,0 +1,30 @@
+{
+  "schema": "fish.fixtures.parity_a11y_depth_4.v1",
+  "a11yDepth4Marker": "authored-finish-5.0-phase-24",
+  "phase": 24,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "screenSurfaces": [
+      "goals_weekly",
+      "goals_endgame",
+      "dashboard_ledger",
+      "warehouse_stock",
+      "tutorial_friction"
+    ],
+    "contrastPairsMin": 2,
+    "liveRegions": [
+      "tutorial_friction",
+      "goals_weekly"
+    ],
+    "schemaVersion": 26,
+    "contentVersion": "4.0.0",
+    "a11yI18n5Incomplete": false,
+    "gates": [
+      "screens",
+      "contrast",
+      "live_regions",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

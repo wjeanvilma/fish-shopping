@@ -44,6 +44,21 @@ export function BagDetailPanel({ v, onSelectBait, onSelectTechnique, onClose }: 
           <button ref={closeRef} className="button ghost" onClick={onClose}>{t("common.close")}</button>
         </div>
         {v.bagFishSpoilActive && <p className="small danger">Fish in your bag can spoil.</p>}
+        {v.bagFishSpoilActive && v.ticksUntilBagSpoil != null && (
+          <p className="small danger">
+            Spoil in ~{Math.max(0, Math.floor(v.ticksUntilBagSpoil / 20))}s
+            {v.bagSpoilPressurePermille > 1000 ? ` · pressure ${v.bagSpoilPressurePermille}` : ""}
+          </p>
+        )}
+        {v.serviceQueuePressurePermille >= 700 && (
+          <p className="small muted">
+            Queue pressure {v.serviceQueuePressurePermille}
+            {v.minPatienceTicksLeft != null ? ` · patience ${v.minPatienceTicksLeft}` : ""}
+          </p>
+        )}
+        {v.nextQuestProgressPermille != null && v.nextQuestProgressPermille >= 800 && (
+          <p className="small">Quest nearly done · {v.nextQuestProgressPermille}/1000</p>
+        )}
         {v.preferredBaitId && (
           <p className="small">
             Preferred bait locked in.

@@ -23,7 +23,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from fish_themes import (  # noqa: E402
     AUTHORED_SPECIES,
+    FINISH5_ART_AHEAD_IDS,
+    FISH_ART_FINISH5_MIN,
     FISH_ART_MARKER,
+    FISH_FINISH5_MARKER,
     THEME_COLORS,
     authored_body,
     part_dorsal,
@@ -42,7 +45,9 @@ from glb_geometry import (  # noqa: E402
 )
 from product_themes import (  # noqa: E402
     COSMETIC_BANNER_MARKER,
+    COSMETIC_FINISH5_MARKER,
     PRODUCT_ART_MARKER,
+    PRODUCT_FINISH5_MARKER,
     accent_for,
     cosmetic_banner_parts,
     product_kind_for,
@@ -119,6 +124,18 @@ PRODUCT_COLORS = {
     "pickled_fillet": "#70A878",
     "relish_jar": "#88B060",
     "pickle_carton": "#609868",
+    "braised_fillet": "#B07040",
+    "braise_stew": "#C88848",
+    "braise_carton": "#A87850",
+    "glazed_fillet": "#D4A060",
+    "glaze_skewer": "#C89850",
+    "glaze_carton": "#B88848",
+    "poached_fillet": "#A8C8C8",
+    "poach_broth": "#C8B070",
+    "poach_carton": "#98B0A8",
+    "canned_fillet": "#C49858",
+    "can_medley": "#B88848",
+    "can_carton": "#A87840",
 }
 DEFAULT_PRODUCT = "#F2B9A0"
 
@@ -210,19 +227,23 @@ def write_authored_fish(
             "translation": translation,
             "part_scale": part_scale,
         })
+    extras = {
+        "stylized": True,
+        "silhouette": kind,
+        "phase": 20,
+        "fishArt": FISH_ART_MARKER,
+        "itemArt": FISH_ART_MARKER,
+        "fishTheme": theme,
+    }
+    if item_id in FINISH5_ART_AHEAD_IDS:
+        extras["fishFinish5"] = FISH_FINISH5_MARKER
+        extras["envArt"] = f"{FISH_ART_MARKER}+{FISH_FINISH5_MARKER}"
     out.write_bytes(build_multi_mesh_glb(
         name=item_id,
         generator=GENERATOR,
         parts=parts,
         scale=FISH_SCALE,
-        extras={
-            "stylized": True,
-            "silhouette": kind,
-            "phase": 20,
-            "fishArt": FISH_ART_MARKER,
-            "itemArt": FISH_ART_MARKER,
-            "fishTheme": theme,
-        },
+        extras=extras,
     ))
     return out
 
@@ -246,6 +267,8 @@ def write_product(out_dir: Path, item_id: str, asset: str, color: str, kind: str
             "itemArt": PRODUCT_ART_MARKER,
             "productArt": PRODUCT_ART_MARKER,
             "productKind": kind,
+            "productFinish5": PRODUCT_FINISH5_MARKER,
+            "envArt": f"{PRODUCT_ART_MARKER}+{PRODUCT_FINISH5_MARKER}",
         },
     ))
     return out
@@ -272,6 +295,8 @@ def write_cosmetic_banner(
             "itemArt": PRODUCT_ART_MARKER,
             "cosmeticArt": COSMETIC_BANNER_MARKER,
             "cosmeticId": cosmetic_id,
+            "cosmeticFinish5": COSMETIC_FINISH5_MARKER,
+            "envArt": f"{COSMETIC_BANNER_MARKER}+{COSMETIC_FINISH5_MARKER}",
         },
     ))
     return out
@@ -283,7 +308,9 @@ def main() -> int:
     out_dir = ROOT / "assets" / "models"
     out_dir.mkdir(parents=True, exist_ok=True)
     fish_n = authored_n = product_n = banner_n = 0
+    content_ids = set()
     for sp in content["species"]:
+        content_ids.add(sp["id"])
         asset = sp.get("asset")
         if not asset:
             continue
@@ -298,6 +325,16 @@ def main() -> int:
                 fish_color(sp["id"], sp.get("name", "")),
                 kind,
             )
+        fish_n += 1
+    # Finish 5.0 Phase 9 — art-ahead authored species not yet in content-pack.
+    for sid, theme in AUTHORED_SPECIES.items():
+        if sid in content_ids:
+            continue
+        short = sid.split(".", 1)[1]
+        asset = f"models/fish_{short}.glb"
+        kind = fish_kind(sid, short.replace("_", " "))
+        write_authored_fish(out_dir, sid, asset, kind, theme)
+        authored_n += 1
         fish_n += 1
     for prod in content["products"]:
         asset = prod.get("asset")
@@ -317,7 +354,10 @@ def main() -> int:
         f"{fish_n - authored_n} stub Phase 13), {product_n} products "
         f"(ProductArt Phase 10), {banner_n} cosmetic banners → {GENERATOR}"
     )
-    assert authored_n >= len(AUTHORED_SPECIES), "authored species missing from content-pack"
+    # Soft-floored Finish 5.0 Phase 9: authored may outpace content-pack (art-ahead).
+    assert authored_n >= min(len(AUTHORED_SPECIES), FISH_ART_FINISH5_MIN), (
+        "authored species missing from generator output"
+    )
     assert product_n >= 34, "expected ≥34 authored products"
     assert banner_n >= 12, "expected ≥12 cosmetic banners"
     return 0

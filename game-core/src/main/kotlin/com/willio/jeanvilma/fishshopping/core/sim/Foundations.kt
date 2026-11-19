@@ -48,8 +48,9 @@ object SimConstants {
      * 23: worker branch/schedule fields (Finish 2.0 Phase 15 — staff trees).
      * 24: beatenRivalIds + unlockedEndgameTiers + completedEndgameChallenges (Finish 3.0 Phase 15).
      * 25: endgameMarks (Finish 4.0 Phase 17 — endgame deepen).
+     * 26: endgameCrests (Finish 5.0 Phase 17 — endgame deepen).
      */
-    const val SCHEMA_VERSION = 25
+    const val SCHEMA_VERSION = 26
 }
 
 /** Integer arithmetic that refuses to leave the shared safe range. */

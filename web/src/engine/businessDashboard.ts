@@ -51,6 +51,15 @@ export interface BusinessDashboardView {
   activeScarcityTipPermille: number;
   reputationScorePermille: number;
   reputationLabel: string;
+  /** Finish 5.0 Phase 21 — pier ledger / loan book analytics. */
+  loanOwed: number;
+  loansTaken: number;
+  loanRepaid: number;
+  coinGoal: number;
+  coinGoalProgressPermille: number;
+  ledgerNetCashflow: number;
+  contractRevenueSharePermille: number;
+  ledgerLines: string[];
 }
 
 export function formatSession(totalSeconds: number): string {
@@ -83,6 +92,27 @@ function activeScarcityTipPermille(
   return best;
 }
 
+const LEDGER_LINE_TYPES = new Set([
+  "loan",
+  "loan_repay",
+  "loan_collect",
+  "sale",
+  "wage",
+  "contract_payout",
+  "contract_penalty",
+]);
+
+function buildLedgerLines(state: GameState): string[] {
+  const lines: string[] = [];
+  for (let i = state.ledger.length - 1; i >= 0 && lines.length < 6; i--) {
+    const r = state.ledger[i];
+    if (!LEDGER_LINE_TYPES.has(r.type)) continue;
+    const sign = r.coinDelta >= 0 ? "+" : "";
+    lines.push(`${r.type} ${sign}${r.coinDelta}`);
+  }
+  return lines;
+}
+
 export const BusinessDashboard = {
   build(
     content: ContentPack,
@@ -105,8 +135,17 @@ export const BusinessDashboard = {
     const spoiled = state.stat(Stats.ITEMS_SPOILED);
     const loanInterest = state.stat(Stats.LOAN_INTEREST_ACCRUED);
     const loanCollected = state.stat(Stats.LOAN_COLLECTED);
+    const loanRepaid = state.stat(Stats.LOAN_REPAID);
+    const loansTaken = state.stat(Stats.LOANS_TAKEN);
     const operatingCosts = wages + maintenance + repairs;
     const gross = committedRevenue + contractRevenue;
+    const ledgerNetCashflow = gross - operatingCosts - loanInterest - loanCollected;
+    const contractRevenueSharePermille =
+      gross > 0 ? Math.trunc((contractRevenue * 1000) / gross) : 0;
+    const coinGoalProgressPermille =
+      state.coinGoal > 0
+        ? Math.min(1000, Math.trunc((state.coins * 1000) / state.coinGoal))
+        : 0;
     const minutes = Math.trunc(sessionSeconds / 60);
     const revenuePerMinute = minutes > 0 ? Math.trunc(committedRevenue / minutes) : 0;
     const salesPerMinute = minutes > 0 ? Math.trunc(sales / minutes) : 0;
@@ -156,6 +195,14 @@ export const BusinessDashboard = {
       activeScarcityTipPermille: harbor ? activeScarcityTipPermille(content, state, harbor) : 1000,
       reputationScorePermille: ReputationSystem.scorePermille(content, state),
       reputationLabel: ReputationSystem.bandLabel(content, state),
+      loanOwed: state.loanOwed,
+      loansTaken,
+      loanRepaid,
+      coinGoal: state.coinGoal,
+      coinGoalProgressPermille,
+      ledgerNetCashflow,
+      contractRevenueSharePermille,
+      ledgerLines: buildLedgerLines(state),
     };
   },
 };

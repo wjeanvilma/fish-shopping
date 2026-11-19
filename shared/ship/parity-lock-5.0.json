@@ -1,0 +1,91 @@
+{
+  "phase": 29,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.parity_lock_5.v1",
+  "description": "Finish 5.0 Phase 29 — Parity lock 5.0: expand parity-lock.json suites for machines 13–14, quests/contracts-5, endgame-3/schema 26, and rivals-seasonal-5. Closes kickoff gap parityLock5Missing. Soft-floors Finish 2.0/3.0/4.0 parity gates (8/12/16). Schema stays 26 / content 4.0.0.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 26,
+  "parityLock5Marker": "authored-finish-5.0-phase-29",
+  "closesGap": "parityLock5Missing",
+  "parityLockCatalog": "shared/fixtures/parity-lock.json",
+  "extendsParityLock4": "shared/ship/parity-lock-4.0.json",
+  "extendsParityLock3": "shared/ship/parity-lock-3.0.json",
+  "extendsParityLock2": "shared/ship/parity-lock-2.0.json",
+  "suiteFloor": 20,
+  "finish2SuiteFloor": 4,
+  "finish3SuiteFloor": 4,
+  "finish4SuiteFloor": 4,
+  "finish5SuiteFloor": 4,
+  "requiredFinish5SuiteIds": [
+    "machines_13_14",
+    "quests_contracts_5",
+    "endgame_3",
+    "rivals_seasonal_5"
+  ],
+  "requiredFinish4SuiteIds": [
+    "machines_11_12",
+    "quests_contracts_4",
+    "rival_markets_2",
+    "endgame_2"
+  ],
+  "requiredFinish3SuiteIds": [
+    "rival_markets",
+    "schema24_endgame",
+    "machines_9_10",
+    "quests_contracts_3"
+  ],
+  "requiredFinish2SuiteIds": [
+    "achievements",
+    "weather_tide",
+    "fishing_mastery",
+    "festival_weekends"
+  ],
+  "requiredBaselineSuiteIds": [
+    "prng",
+    "starter_line",
+    "entitlements_unlock",
+    "legacy_migrations"
+  ],
+  "parityFixture": "shared/fixtures/parity-parity-lock-5.0.json",
+  "validateScript": "npm run parity5:validate",
+  "softParity4Validate": "npm run parity4:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "authorTool": "shared/tools/author_parity_lock_5.py",
+  "softFloors": {
+    "finish2HistoricalSuiteFloor": 8,
+    "finish3HistoricalSuiteFloor": 12,
+    "finish4HistoricalSuiteFloor": 16,
+    "finish2SuiteFloor": 4,
+    "finish3SuiteFloor": 4,
+    "finish4SuiteFloor": 4,
+    "note": "parity2/parity3/parity4 stay green on historical 8/12/16 suite floors; Phase 29 enforces live ≥20 + 4 Finish 5.0 suites."
+  },
+  "checklist": [
+    "parity-lock.json lists ≥20 suites including 4 Finish 5.0 system suites",
+    "machines_13_14 / quests_contracts_5 / endgame_3 / rivals_seasonal_5 fixtures exist",
+    "finish5ParityLockPhase=29; Finish 5.0 gates true",
+    "Finish 2/3/4 parity validates still green (soft floors)",
+    "parity-parity-lock-5.0 + parity5:validate green",
+    "CI runs parity5:validate",
+    "kickoff gaps.parityLock5Missing=false",
+    "schema stays 26 / content 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/parity-lock-5.0.json",
+    "shared/fixtures/parity-lock.json",
+    "shared/fixtures/parity-parity-lock-5.0.json",
+    "shared/ship/parity-lock-4.0.json",
+    "shared/ship/parity-lock-3.0.json",
+    "shared/ship/parity-lock-2.0.json",
+    "shared/fixtures/parity-machines-13-14.json",
+    "shared/fixtures/parity-quests-contracts-5.json",
+    "shared/fixtures/parity-endgame-3.json",
+    "shared/fixtures/parity-rivals-seasonal-5.json",
+    "web/src/ship/parityLock5.ts",
+    "web/src/engine/parityLock.ts",
+    "web/scripts/validate-parity-lock-5.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ParityLock5.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/ParityLock.kt"
+  ]
+}

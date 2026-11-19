@@ -276,6 +276,90 @@
       "powerNeutral": true,
       "meshAsset": "models/cosmetic_banner_aurora_crest.glb",
       "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_aurora_bunting",
+      "sku": "fish.cosmetic.aurora_bunting",
+      "title": "Aurora bunting",
+      "swatchRgb": [
+        90,
+        200,
+        180
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_aurora_bunting.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_tideglass_pennant",
+      "sku": "fish.cosmetic.tideglass_pennant",
+      "title": "Tideglass pennant",
+      "swatchRgb": [
+        120,
+        190,
+        220
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_tideglass_pennant.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_inlet_flag",
+      "sku": "fish.cosmetic.inlet_flag",
+      "title": "Inlet flag",
+      "swatchRgb": [
+        70,
+        140,
+        200
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_inlet_flag.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_bay_streamer",
+      "sku": "fish.cosmetic.bay_streamer",
+      "title": "Bay streamer",
+      "swatchRgb": [
+        160,
+        210,
+        230
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_bay_streamer.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_poach_ribbon",
+      "sku": "fish.cosmetic.poach_ribbon",
+      "title": "Poach ribbon",
+      "swatchRgb": [
+        210,
+        170,
+        110
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_poach_ribbon.glb",
+      "minCosmeticArtNodes": 4
+    },
+    {
+      "cosmeticId": "banner.iap_can_crest",
+      "sku": "fish.cosmetic.can_crest",
+      "title": "Can crest",
+      "swatchRgb": [
+        180,
+        140,
+        90
+      ],
+      "source": "iap",
+      "powerNeutral": true,
+      "meshAsset": "models/cosmetic_banner_can_crest.glb",
+      "minCosmeticArtNodes": 4
     }
   ],
   "fallback": {

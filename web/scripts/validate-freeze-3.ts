@@ -78,15 +78,15 @@ function validate(): string[] {
   }
 
   // Soft floor: live pin may advance to Finish 4.0; freeze-3.0.0 catalog stays historical.
-  if (!["3.0.0", "4.0.0"].includes(pin.contentVersion)) {
-    errors.push("RELEASE_PIN contentVersion must be 3.0.0 or 4.0.0");
+  if (!["3.0.0", "4.0.0", "5.0.0"].includes(pin.contentVersion)) {
+    errors.push("RELEASE_PIN contentVersion must be 3.0.0, 4.0.0, or 5.0.0");
   }
-  if (!["3.0.0", "4.0.0"].includes(pin.versionName)) {
-    errors.push("RELEASE_PIN versionName must be 3.0.0 or 4.0.0");
+  if (!["3.0.0", "4.0.0", "5.0.0"].includes(pin.versionName)) {
+    errors.push("RELEASE_PIN versionName must be 3.0.0, 4.0.0, or 5.0.0");
   }
   if ((pin.versionCode ?? 0) < 4) errors.push("RELEASE_PIN versionCode must be ≥ 4");
-  if (!["v3.0.0", "v4.0.0"].includes(pin.releaseTag)) {
-    errors.push("RELEASE_PIN releaseTag must be v3.0.0 or v4.0.0");
+  if (!["v3.0.0", "v4.0.0", "v5.0.0"].includes(pin.releaseTag)) {
+    errors.push("RELEASE_PIN releaseTag must be v3.0.0, v4.0.0, or v5.0.0");
   }
   if (pin.schemaVersion < 24) errors.push("RELEASE_PIN schemaVersion must be >= 24");
   if (pin.freeze30 !== "shared/ship/freeze-3.0.0.json") errors.push("RELEASE_PIN.freeze30 path");
@@ -95,11 +95,11 @@ function validate(): string[] {
   if (!pin.fixtures?.includes("parity-freeze-3.0.0.json")) {
     errors.push("RELEASE_PIN.fixtures missing parity-freeze-3.0.0.json");
   }
-  if (!["3.0.0", "4.0.0"].includes(pack.contentVersion)) {
-    errors.push("content-pack must be 3.0.0 or 4.0.0");
+  if (!["3.0.0", "4.0.0", "5.0.0"].includes(pack.contentVersion)) {
+    errors.push("content-pack must be 3.0.0, 4.0.0, or 5.0.0");
   }
-  if (!["3.0.0", "4.0.0"].includes(pkg.version)) {
-    errors.push("web/package.json version must be 3.0.0 or 4.0.0");
+  if (!["3.0.0", "4.0.0", "5.0.0"].includes(pkg.version)) {
+    errors.push("web/package.json version must be 3.0.0, 4.0.0, or 5.0.0");
   }
 
   const floors = FREEZE_30_CONTENT_FLOORS;
@@ -142,13 +142,15 @@ function validate(): string[] {
     if (freeze.catalog !== "shared/ship/freeze-3.0.0.json") errors.push("finish3Freeze.catalog mismatch");
     if (freeze.versionCode !== 4) errors.push("finish3Freeze.versionCode must be 4");
   }
-  if (!["3.0.0", "4.0.0"].includes(dod.contentVersion)) {
-    errors.push("DoD contentVersion must be 3.0.0 or 4.0.0");
+  if (!["3.0.0", "4.0.0", "5.0.0"].includes(dod.contentVersion)) {
+    errors.push("DoD contentVersion must be 3.0.0, 4.0.0, or 5.0.0");
   }
-  if (!["v3.0.0", "v4.0.0"].includes(dod.releaseTag)) {
-    errors.push("DoD releaseTag must be v3.0.0 or v4.0.0");
+  if (!["v3.0.0", "v4.0.0", "v5.0.0"].includes(dod.releaseTag)) {
+    errors.push("DoD releaseTag must be v3.0.0, v4.0.0, or v5.0.0");
   }
-  if (![24, 25].includes(dod.schemaVersion)) errors.push("DoD schemaVersion must be 24 or 25");
+  if (![24, 25, 26].includes(dod.schemaVersion)) {
+    errors.push("DoD schemaVersion must be 24, 25, or 26");
+  }
   if (dod.completeTag !== "v1.0-complete") errors.push("DoD completeTag archive must stay v1.0-complete");
   if (dod.closeout?.status !== "archived") errors.push("post-1.0 closeout must stay archived");
   if (dod.finish2Freeze?.releaseTag !== "v2.0.0") {
@@ -163,10 +165,10 @@ function validate(): string[] {
     errors.push("loc-floors.enforceMode must be freeze_anti_regression");
   }
   if (LOC_FLOORS.enforceFloors !== true) errors.push("LOC_FLOORS.enforceFloors mirror must be true");
-  if ((loc.scopes?.gameCore?.planTarget ?? 0) !== 32000) errors.push("planTarget gameCore must be 32000");
-  if ((loc.scopes?.app?.planTarget ?? 0) !== 20000) errors.push("planTarget app must be 20000");
-  if ((loc.scopes?.webSrc?.planTarget ?? 0) !== 48000) errors.push("planTarget webSrc must be 48000");
-  if ((loc.productTotalPlanTarget ?? 0) !== 100000) errors.push("productTotalPlanTarget must be 100000");
+  if ((loc.scopes?.gameCore?.planTarget ?? 0) < 32000) errors.push("planTarget gameCore must be ≥32000 (Finish 4 soft floor)");
+  if ((loc.scopes?.app?.planTarget ?? 0) < 20000) errors.push("planTarget app must be ≥20000 (Finish 4 soft floor)");
+  if ((loc.scopes?.webSrc?.planTarget ?? 0) < 48000) errors.push("planTarget webSrc must be ≥48000 (Finish 4 soft floor)");
+  if ((loc.productTotalPlanTarget ?? 0) < 100000) errors.push("productTotalPlanTarget must be ≥100000 (Finish 4 soft floor)");
   const board = measureLocScoreboard(root);
   if (!board.gameCore.met) {
     errors.push(`game-core LOC ${board.gameCore.lines} < freeze floor ${board.gameCore.floor}`);
@@ -183,17 +185,18 @@ function validate(): string[] {
   if (listing.freeze30Catalog !== "shared/ship/freeze-3.0.0.json") {
     errors.push("listing.freeze30Catalog mismatch");
   }
-  if (!["3.0.0", "4.0.0"].includes(listing.whatsNewVersion)) {
-    errors.push("listing.whatsNewVersion must be 3.0.0 or 4.0.0");
+  if (!["3.0.0", "4.0.0", "5.0.0"].includes(listing.whatsNewVersion)) {
+    errors.push("listing.whatsNewVersion must be 3.0.0, 4.0.0, or 5.0.0");
   }
-  if (!["3.0.0", "4.0.0"].includes(listingCopy.copy?.whatsNewVersion)) {
-    errors.push("listing-copy whatsNewVersion must be 3.0.0 or 4.0.0");
+  if (!["3.0.0", "4.0.0", "5.0.0"].includes(listingCopy.copy?.whatsNewVersion)) {
+    errors.push("listing-copy whatsNewVersion must be 3.0.0, 4.0.0, or 5.0.0");
   }
   if (
     !androidEn.includes("3.0.0") &&
-    !androidEn.includes("4.0.0")
+    !androidEn.includes("4.0.0") &&
+    !androidEn.includes("5.0.0")
   ) {
-    errors.push("Android values/strings.xml must mention 3.0.0 or 4.0.0 whats-new");
+    errors.push("Android values/strings.xml must mention 3.0.0–5.0.0 whats-new");
   }
 
   if (pin.storeRelease?.contentVersion !== "1.0.0") {

@@ -50,10 +50,50 @@ object EconomySystem {
             .coerceAtLeast(0)
     }
 
+    /**
+     * Mean spoil tier of raw fish in the bag, as permille (tier×1000).
+     * Empty bag → 2000 (neutral tier-2 baseline).
+     */
+    fun meanBagSpoilTierPermille(content: ContentPack, s: GameState): Int {
+        var weighted = 0L
+        var units = 0L
+        for ((id, qty) in s.player.bag.contents()) {
+            if (id !in content.speciesById || qty <= 0) continue
+            weighted += spoilTier(content, id).toLong() * qty
+            units += qty
+        }
+        if (units <= 0L) return 2000
+        return ((weighted * 1000L) / units).toInt()
+    }
+
+    /**
+     * Finish 5.0 Phase 2 — bag spoil pressure from mean fish spoil tier.
+     * 1000 = neutral (mean tier 2). Higher → shorter spoil period.
+     */
+    fun bagSpoilPressurePermille(content: ContentPack, s: GameState): Int {
+        val mean = meanBagSpoilTierPermille(content, s)
+        val delta = (mean - 2000) / 10
+        return (1000 + delta).coerceIn(750, 1400)
+    }
+
     fun bagFishSpoilPeriodTicks(content: ContentPack, s: GameState): Int {
         val base = content.economy.bagFishSpoilPeriodTicks.toLong()
-        val scaled = SafeMath.multiply(base, s.bagSpoilPeriodMultPermille.toLong()) / 1000L
-        return scaled.toInt().coerceAtLeast(1)
+        val iced = SafeMath.multiply(base, s.bagSpoilPeriodMultPermille.toLong()) / 1000L
+        val pressure = bagSpoilPressurePermille(content, s).toLong().coerceAtLeast(1L)
+        return ((iced * 1000L) / pressure).toInt().coerceAtLeast(1)
+    }
+
+    /** Ticks until the next bag fish spoil tick; null when spoilage inactive or bag empty of fish. */
+    fun ticksUntilBagSpoil(content: ContentPack, s: GameState): Int? {
+        if (!unlocked(content, s)) return null
+        if (content.economy.bagFishSpoilUnits <= 0) return null
+        var fishUnits = 0
+        for ((id, qty) in s.player.bag.contents()) {
+            if (id in content.speciesById) fishUnits += qty
+        }
+        if (fishUnits <= 0) return null
+        val period = bagFishSpoilPeriodTicks(content, s)
+        return (period - s.bagSpoilAccrualTicks).coerceAtLeast(0)
     }
 
     fun counterSpoilPeriodTicks(content: ContentPack, s: GameState): Int {

@@ -116,6 +116,7 @@ object SnapshotCodec {
                 JsonArray(s.completedEndgameChallenges.map { JsonPrimitive(it) }),
             )
             put("endgameMarks", JsonArray(s.endgameMarks.map { JsonPrimitive(it) }))
+            put("endgameCrests", JsonArray(s.endgameCrests.map { JsonPrimitive(it) }))
             put("unlockedCosmetics", JsonArray(s.unlockedCosmetics.map { JsonPrimitive(it) }))
             put("ownedDecor", JsonArray(s.ownedDecor.map { JsonPrimitive(it) }))
             put("fullHarborUnlock", s.fullHarborUnlock)
@@ -241,6 +242,7 @@ object SnapshotCodec {
      *  - v22 -> v23: worker activeBranchId / unlockedBranchIds / branchTrainingXp / scheduleId (Phase 15).
      *  - v23 -> v24: beatenRivalIds + unlockedEndgameTiers + completedEndgameChallenges (Finish 3.0 Phase 15).
      *  - v24 -> v25: endgameMarks (Finish 4.0 Phase 17 endgame deepen).
+     *  - v25 -> v26: endgameCrests (Finish 5.0 Phase 17 endgame deepen).
      */
     private fun readState(content: ContentPack, n: Node, version: Int): GameState {
         val harborId = n["harborId"].string()
@@ -434,6 +436,11 @@ object SnapshotCodec {
             n["endgameMarks"].list { it.string() }
                 .filter { it.startsWith("endgame.mark.") }
                 .forEach { s.endgameMarks += it }
+        }
+        if (version >= 26) {
+            n["endgameCrests"].list { it.string() }
+                .filter { it.startsWith("endgame.crest.") }
+                .forEach { s.endgameCrests += it }
         }
         if (version >= 16) {
             n["ownedDecor"].list { it.string() }

@@ -66,6 +66,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -77,6 +78,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.willio.jeanvilma.fishshopping.core.i18n.UiStrings
+import com.willio.jeanvilma.fishshopping.ui.ComposeUiTags
 import com.willio.jeanvilma.fishshopping.core.store.LicensesNotice
 import com.willio.jeanvilma.fishshopping.core.store.StoreListing
 import com.willio.jeanvilma.fishshopping.core.sim.ContextCard
@@ -125,15 +127,34 @@ internal fun WarehousePanel(
     onClose: () -> Unit,
     modifier: Modifier,
 ) {
-    Surface(modifier.managementSheet(maxWidth = 440.dp, maxHeight = 420.dp), shape = PanelShape, color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp) {
+    Surface(
+        modifier
+            .testTag(ComposeUiTags.WAREHOUSE_PANEL)
+            .managementSheet(maxWidth = 440.dp, maxHeight = 420.dp)
+            .a11yPane("panels.warehouse"),
+        shape = PanelShape,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 8.dp,
+    ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(UiStrings.t("panels.warehouse"), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) { Text(UiStrings.t("common.close")) }
             }
-            Text(buildString { append("Available "); append((warehouse.available).toString()); append(" · Reserved "); append((warehouse.reserved).toString()); append(" · Total "); append((warehouse.quantity).toString()) },
+            Text(
+                UiStrings.t(
+                    "warehouse.availableReserved",
+                    mapOf(
+                        "available" to warehouse.available,
+                        "reserved" to warehouse.reserved,
+                        "total" to warehouse.quantity,
+                    ),
+                ),
                 style = Tabular,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                modifier = Modifier.semantics {
+                    contentDescription = UiStrings.t("a11y.warehouseSection")
+                },
             )
             if (!warehouse.reconcileOk) {
                 Text(

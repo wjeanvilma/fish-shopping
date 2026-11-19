@@ -2,7 +2,7 @@
   "phase": 22,
   "plan": "30_finish_3.0",
   "schema": "fish.ship.web_e2e.v1",
-  "description": "Finish 3.0 Phase 22 — Web Playwright E2E smoke. Finish 4.0 Phase 26 soft-floors minIdCount≥24 and expands scenarios.",
+  "description": "Finish 3.0 Phase 22 — Web Playwright E2E smoke. Finish 5.0 Phase 26 soft-floors minIdCount≥32 and expands scenarios to ≥12.",
   "contentVersion": "2.0.0",
   "schemaVersion": 24,
   "webE2eMarker": "authored-finish-3.0-phase-22",
@@ -12,13 +12,20 @@
   "smokeSpec": "web/e2e/smoke.spec.ts",
   "npmScript": "e2e:smoke",
   "installBrowsersScript": "e2e:install",
-  "minIdCount": 24,
+  "minIdCount": 32,
   "scenarios": [
     "title_play_pause_resume",
     "analytics_decline_goals_nav",
     "staff_map_nav_opens",
     "jobs_dash_nav_opens",
-    "deep_link_panel_staff"
+    "deep_link_panel_staff",
+    "warehouse_upgrades_nav_opens",
+    "deep_link_panel_warehouse",
+    "deep_link_panel_weekly",
+    "deep_link_panel_ledger",
+    "deep_link_hash_endgame",
+    "pause_settings_opens",
+    "photo_decor_nav_opens"
   ],
   "kickoffCatalog": "shared/ship/finish-3.0-kickoff.json",
   "parityFixture": "shared/fixtures/parity-web-e2e.json",
@@ -40,5 +47,6 @@
     "web/src/ship/webE2e.ts",
     "web/scripts/validate-web-e2e.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/WebE2e.kt"
-  ]
+  ],
+  "finish5DeeplinkE2ePhase": 26
 }

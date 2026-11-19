@@ -1,5 +1,6 @@
 /**
- * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 + Finish 4.0 Phase 28 — content authoring id helpers.
+ * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 + Finish 4.0 Phase 28 + Finish 5.0 Phase 28 —
+ * content authoring id helpers.
  */
 
 const SLUG = /^[a-z][a-z0-9_]*$/;
@@ -13,7 +14,14 @@ export type ExpansionScaffoldKind = "contract" | "bait" | "decor";
 /** Finish 4.0 Phase 28 wave-3 kinds. */
 export type Wave3ScaffoldKind = "machine" | "rival";
 
-export type ScaffoldKind = CoreScaffoldKind | ExpansionScaffoldKind | Wave3ScaffoldKind;
+/** Finish 5.0 Phase 28 wave-5 kinds. */
+export type Wave5ScaffoldKind = "seasonal" | "endgame" | "cosmetic";
+
+export type ScaffoldKind =
+  | CoreScaffoldKind
+  | ExpansionScaffoldKind
+  | Wave3ScaffoldKind
+  | Wave5ScaffoldKind;
 
 export const SCAFFOLD_KINDS: CoreScaffoldKind[] = ["species", "quest", "harbor"];
 
@@ -21,10 +29,13 @@ export const SCAFFOLD_KINDS_2: ExpansionScaffoldKind[] = ["contract", "bait", "d
 
 export const SCAFFOLD_KINDS_3: Wave3ScaffoldKind[] = ["machine", "rival"];
 
+export const SCAFFOLD_KINDS_5: Wave5ScaffoldKind[] = ["seasonal", "endgame", "cosmetic"];
+
 export const ALL_SCAFFOLD_KINDS: ScaffoldKind[] = [
   ...SCAFFOLD_KINDS,
   ...SCAFFOLD_KINDS_2,
   ...SCAFFOLD_KINDS_3,
+  ...SCAFFOLD_KINDS_5,
 ];
 
 const PREFIXES: Record<ScaffoldKind, string> = {
@@ -36,6 +47,9 @@ const PREFIXES: Record<ScaffoldKind, string> = {
   decor: "decor.",
   machine: "machine.",
   rival: "rival.",
+  seasonal: "event.",
+  endgame: "endgame.tier.",
+  cosmetic: "entitlement.cosmetic.",
 };
 
 export function normalizeSlug(raw: string): string {

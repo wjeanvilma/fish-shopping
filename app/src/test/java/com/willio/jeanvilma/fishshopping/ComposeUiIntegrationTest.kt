@@ -23,6 +23,7 @@ import org.robolectric.annotation.Config
 /**
  * Finish 3.0 Phase 21 — Compose UI integration tests (Robolectric / JVM).
  * Finish 4.0 Phase 26 — HUD nav toolbar + expanded tag floor.
+ * Finish 5.0 Phase 26 — Finish 5 surface tags + ≥14 scenarios.
  * Covers title menu, analytics consent, offline summary, pause, and HUD nav.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -180,5 +181,121 @@ class ComposeUiIntegrationTest {
         assertEquals(1, map)
         assertEquals(1, jobs)
         assertEquals(1, dash)
+    }
+
+    @Test
+    fun hudNavWarehouseGoalsFire() {
+        var warehouse = 0
+        var goals = 0
+        composeRule.setContent {
+            FishShoppingTheme {
+                HudNavToolbarContent(
+                    onPause = {},
+                    onMap = {},
+                    onWarehouse = { warehouse++ },
+                    onGoals = { goals++ },
+                    onJobs = {},
+                    onStaff = {},
+                    onDash = {},
+                    onUpgrades = {},
+                )
+            }
+        }
+        composeRule.onNodeWithTag(ComposeUiTags.NAV_WAREHOUSE).performClick()
+        composeRule.onNodeWithTag(ComposeUiTags.NAV_GOALS).performClick()
+        assertEquals(1, warehouse)
+        assertEquals(1, goals)
+    }
+
+    @Test
+    fun hudNavStaffUpgradesFire() {
+        var staff = 0
+        var upgrades = 0
+        composeRule.setContent {
+            FishShoppingTheme {
+                HudNavToolbarContent(
+                    onPause = {},
+                    onMap = {},
+                    onWarehouse = {},
+                    onGoals = {},
+                    onJobs = {},
+                    onStaff = { staff++ },
+                    onDash = {},
+                    onUpgrades = { upgrades++ },
+                )
+            }
+        }
+        composeRule.onNodeWithTag(ComposeUiTags.NAV_STAFF).performClick()
+        composeRule.onNodeWithTag(ComposeUiTags.NAV_UPGRADES).performClick()
+        assertEquals(1, staff)
+        assertEquals(1, upgrades)
+    }
+
+    @Test
+    fun composeUiTagsFinish5Floor() {
+        assertTrue(ComposeUiTags.ALL.size >= 32)
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.GOALS_WEEKLY))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.GOALS_ENDGAME))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.DASH_LEDGER))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.WAREHOUSE_PANEL))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.FRICTION_NUDGE))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.DEEPLINK_READY))
+        assertEquals(ComposeUiTags.ALL.size, ComposeUiTags.ALL.toSet().size)
+    }
+
+    @Test
+    fun titleBrandDisplayed() {
+        composeRule.setContent {
+            FishShoppingTheme {
+                TitleMenuContent(
+                    hasSave = false,
+                    onContinue = {},
+                    onNewGameRequest = {},
+                    onPlay = {},
+                )
+            }
+        }
+        composeRule.onNodeWithTag(ComposeUiTags.TITLE_BRAND).assertIsDisplayed()
+    }
+
+    @Test
+    fun pauseRootStable() {
+        composeRule.setContent {
+            FishShoppingTheme {
+                PausePanel(onResume = {}, onSettings = {}, onTitle = {})
+            }
+        }
+        composeRule.onNodeWithTag(ComposeUiTags.PAUSE_ROOT).assertIsDisplayed()
+    }
+
+    @Test
+    fun offlineRootStable() {
+        val report = OfflineReport(
+            elapsedMillis = 1_000L,
+            ticksCredited = 20L,
+            capped = false,
+            coinsDelta = 1L,
+            fishCaught = 0L,
+            sales = 0L,
+            itemsSold = 0L,
+            workerFishCaught = 0L,
+            workerItemsMoved = 0L,
+        )
+        composeRule.setContent {
+            FishShoppingTheme {
+                OfflineSummaryPanel(
+                    report = report,
+                    onContinue = {},
+                    modifier = androidx.compose.ui.Modifier,
+                )
+            }
+        }
+        composeRule.onNodeWithTag(ComposeUiTags.OFFLINE_ROOT).assertIsDisplayed()
+    }
+
+    @Test
+    fun deeplinkReadyTagPresent() {
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.DEEPLINK_READY))
+        assertEquals("deeplink.ready", ComposeUiTags.DEEPLINK_READY)
     }
 }

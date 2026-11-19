@@ -129,6 +129,7 @@ object MasterySystem {
         speciesId: String,
         timingTier: TimingTier,
         rare: Boolean,
+        xpMultPermille: Int = 1000,
     ) {
         val s = ctx.state
         val m = ctx.content.fishingMastery
@@ -139,6 +140,7 @@ object MasterySystem {
             TimingTier.MISS -> Unit
         }
         if (rare) gain += m.xpRareCatch
+        gain = (gain * xpMultPermille.coerceAtLeast(1)) / 1000
         if (gain <= 0) return
 
         val before = xpOf(s, speciesId)

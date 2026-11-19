@@ -67,18 +67,6 @@ class VmEconomyIntents(
         host.enqueuePanelCommand(Command.DeliverContract(contractId, UUID.randomUUID().toString()))
     }
 
-    fun buyBait(baitId: String) {
-        host.enqueuePanelCommand(Command.BuyBait(baitId, UUID.randomUUID().toString()))
-    }
-
-    fun selectBait(baitId: String?) {
-        host.enqueuePanelCommand(Command.SelectBait(baitId))
-    }
-
-    fun selectTechnique(techniqueId: String?) {
-        host.enqueuePanelCommand(Command.SelectTechnique(techniqueId))
-    }
-
     fun trainWorkerBranch(workerId: String, branchId: String) {
         host.enqueuePanelCommand(
             Command.TrainWorkerBranch(workerId, branchId, UUID.randomUUID().toString()),
@@ -97,9 +85,8 @@ class VmEconomyIntents(
         host.enqueuePanelCommand(Command.ClaimDailyGoal(objectiveId, UUID.randomUUID().toString()))
     }
 
-    fun reel() {
-        if (host.panelBlocksWorld()) return
-        host.enqueueCommand(Command.Reel)
+    fun claimWeeklyGoal(objectiveId: String) {
+        host.enqueuePanelCommand(Command.ClaimWeeklyGoal(objectiveId, UUID.randomUUID().toString()))
     }
 
     fun cycleStationRecipe(stationId: String) {

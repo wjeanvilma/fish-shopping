@@ -1,0 +1,31 @@
+{
+  "schema": "fish.fixture.parity_rivals_seasonal_5.v1",
+  "rivalsSeasonal5Marker": "authored-finish-5.0-phase-18",
+  "phase": 18,
+  "plan": "30_finish_5.0",
+  "description": "Finish 5.0 Phase 18: aurora dawn activates Aurora Hawker + Glass Syndicate; floors rivals/seasonal/baits/cosmetics met; contentFloorsShort closed.",
+  "harborId": "harbor.aurora_inlet",
+  "seed": 1818,
+  "sampleRivalId": "rival.aurora_hawker",
+  "sampleEventId": "event.aurora_inlet_lights",
+  "sampleBaitId": "bait.aurora_nibble",
+  "sampleCosmeticId": "banner.iap_aurora_bunting",
+  "expect": {
+    "rivalsMin": 16,
+    "seasonalEventsMin": 16,
+    "baitsMin": 16,
+    "cosmeticsMin": 24,
+    "schemaVersion": 26,
+    "contentVersion": "4.0.0",
+    "contentFloorsShort": false,
+    "gates": [
+      "rivals_16",
+      "seasonal_16",
+      "baits_16",
+      "cosmetics_24",
+      "harbors_covered",
+      "kickoff_floors",
+      "ci_gate"
+    ]
+  }
+}

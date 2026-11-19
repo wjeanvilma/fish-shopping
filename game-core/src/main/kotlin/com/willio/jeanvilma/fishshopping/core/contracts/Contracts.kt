@@ -80,6 +80,27 @@ object ContractSystem {
         return slots.coerceAtLeast(1)
     }
 
+    /** Finish 5.0 Phase 3 — ticks until nearest active contract deadline. */
+    fun ticksUntilNearestDeadline(state: GameState): Int? {
+        if (state.activeContracts.isEmpty()) return null
+        var best: Int? = null
+        for (c in state.activeContracts) {
+            val left = (c.deadlineTick - state.tick).toInt().coerceAtLeast(0)
+            best = best?.let { minOf(it, left) } ?: left
+        }
+        return best
+    }
+
+    /**
+     * Finish 5.0 Phase 3 — board pressure from fail streak (0..1000+).
+     * 1000 = at failStreakThreshold (offer weight / slot penalties apply).
+     */
+    fun contractBoardPressurePermille(content: ContentPack, state: GameState): Int {
+        if (!boardUnlocked(content, state)) return 0
+        val threshold = content.contracts.failStreakThreshold.coerceAtLeast(1)
+        return ((failStreak(state).toLong() * 1000L) / threshold.toLong()).toInt()
+    }
+
     fun step(ctx: StepContext) {
         expireDeadlines(ctx)
         maybeRefreshBoard(ctx)

@@ -13,7 +13,7 @@ object TutorialFriction {
     /** Content version when Phase 22 copy patches landed (live pack may be newer). */
     const val FROZEN_AT_CONTENT_VERSION = "1.0.0"
     const val SCHEMA_VERSION = 21
-    const val DEFAULT_HINT_AFTER_MS = 10_000
+    const val DEFAULT_HINT_AFTER_MS = 9_000
 
     val HIGH_FRICTION_STEP_IDS: List<String> = listOf(
         "tutorial.catch_three",
@@ -21,16 +21,20 @@ object TutorialFriction {
         "tutorial.buy_upgrade",
         "tutorial.first_contract",
         "tutorial.hire_staff",
+        "tutorial.grill_line",
+        "tutorial.plot_marker",
     )
 
     data class Nudge(val stepId: String, val hintAfterMs: Int, val nudge: String)
 
     val NUDGES: List<Nudge> = listOf(
-        Nudge("tutorial.catch_three", 8_000, "Tip: hold Cast to charge, release timing into the green Reel window"),
-        Nudge("tutorial.deliver_cutter", 9_000, "Tip: walk onto the left teal pad — dropping nearby is not enough"),
-        Nudge("tutorial.buy_upgrade", 10_000, "Tip: tap Upgrades (or press U) — Bag capacity is the first buy"),
-        Nudge("tutorial.first_contract", 12_000, "Tip: Jobs lists contracts; accept one, then carry the goods to the drop"),
-        Nudge("tutorial.hire_staff", 12_000, "Tip: keep selling until Make 10 sales, then Staff unlocks Hire"),
+        Nudge("tutorial.catch_three", 7000, "Tip: hold Cast to charge, release into the green Reel window — early taps miss"),
+        Nudge("tutorial.deliver_cutter", 8000, "Tip: walk fully onto the left teal In pad — dropping beside it does nothing"),
+        Nudge("tutorial.buy_upgrade", 9000, "Tip: tap Upgrades (or press U) — Bag capacity is the first buy"),
+        Nudge("tutorial.first_contract", 10000, "Tip: Jobs lists contracts; accept one, then carry the goods to the drop"),
+        Nudge("tutorial.hire_staff", 11000, "Tip: keep selling until Make 10 sales, then Staff unlocks Hire"),
+        Nudge("tutorial.grill_line", 10000, "Tip: the grill In pad is charcoal-side — walk onto it with fish in the bag"),
+        Nudge("tutorial.plot_marker", 11000, "Tip: stand centered on the glowing expansion marker, then confirm the spend"),
     )
 
     fun nudgeFor(stepId: String): Nudge? = NUDGES.firstOrNull { it.stepId == stepId }

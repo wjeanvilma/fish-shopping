@@ -70,6 +70,16 @@ object FishingSystem {
             p.fishingProgress = 0
             p.fishingCatchTicks = catchTicksFor(effectiveCatchSpeed(ctx.content, ctx.state, pick.id), pick.catchTicks)
             p.reelAttemptedThisCast = false
+            p.lastCastPhase = CastPhase.WAITING
+            ctx.emit(
+                GameEvent.CastPhaseChanged(
+                    ctx.state.tick,
+                    CastPhases.wireName(CastPhase.WAITING),
+                    pick.id,
+                    zone.id,
+                ),
+            )
+            ctx.state.bumpStat(Stats.CAST_PHASE_TRANSITIONS)
         }
 
         val species = ctx.content.speciesById.getValue(p.fishingSpecies!!)
@@ -81,11 +91,24 @@ object FishingSystem {
         p.fishingCatchTicks = duration
 
         var reelTier = TimingTier.MISS
+        var reelPhase = CastPhases.phaseAt(p.fishingProgress, duration, ctx.content, ctx.state)
         if (p.reelRequested) {
             p.reelRequested = false
             if (!p.reelAttemptedThisCast) {
                 p.reelAttemptedThisCast = true
+                reelPhase = CastPhases.phaseAt(p.fishingProgress, duration, ctx.content, ctx.state)
                 reelTier = timingTierAt(ctx.content, ctx.state, p.fishingProgress, duration)
+                if (reelPhase == CastPhase.STRIKE && reelTier != TimingTier.MISS) {
+                    ctx.state.bumpStat(Stats.CAST_STRIKE_REELS)
+                    ctx.emit(
+                        GameEvent.CastStrikeReel(
+                            ctx.state.tick,
+                            species.id,
+                            zone.id,
+                            reelTier,
+                        ),
+                    )
+                }
                 if (reelTier != TimingTier.MISS) {
                     // Finish the cast immediately on a Good or Perfect reel.
                     p.fishingProgress = duration
@@ -94,9 +117,22 @@ object FishingSystem {
         }
 
         if (reelTier == TimingTier.MISS) p.fishingProgress++
+        val nextPhase = CastPhases.phaseAt(p.fishingProgress, duration, ctx.content, ctx.state)
+        if (p.lastCastPhase != nextPhase) {
+            p.lastCastPhase = nextPhase
+            ctx.state.bumpStat(Stats.CAST_PHASE_TRANSITIONS)
+            ctx.emit(
+                GameEvent.CastPhaseChanged(
+                    ctx.state.tick,
+                    CastPhases.wireName(nextPhase),
+                    species.id,
+                    zone.id,
+                ),
+            )
+        }
         if (p.fishingProgress < duration) return
 
-        commitCatch(ctx, zone.id, spot.zoneId, species.id, reelTier)
+        commitCatch(ctx, zone.id, spot.zoneId, species.id, reelTier, reelPhase)
         clearCast(p)
     }
 
@@ -234,6 +270,7 @@ object FishingSystem {
         spotZoneId: String,
         rolledSpeciesId: String,
         timingTier: TimingTier,
+        castPhase: CastPhase = CastPhase.FIGHT,
     ) {
         val s = ctx.state
         val p = s.player
@@ -288,7 +325,13 @@ object FishingSystem {
             }
             val timingBonus = timingTier != TimingTier.MISS
             val (size, value, personalBest) = TrophySystem.record(ctx, finalSpecies.id, timingTier)
-            MasterySystem.grantCatchXp(ctx, finalSpecies.id, timingTier, rare)
+            MasterySystem.grantCatchXp(
+                ctx,
+                finalSpecies.id,
+                timingTier,
+                rare,
+                CastPhases.strikeXpMultPermille(castPhase, timingTier),
+            )
             ctx.emit(
                 GameEvent.FishCaught(
                     s.tick, finalSpecies.id, zoneId,
@@ -315,6 +358,7 @@ object FishingSystem {
         p.fishingCatchTicks = 0
         p.reelAttemptedThisCast = false
         p.activeBaitId = null
+        p.lastCastPhase = null
     }
 
     private fun regenerate(ctx: StepContext) {

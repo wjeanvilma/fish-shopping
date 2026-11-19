@@ -79,7 +79,8 @@ describe("content CLI 3 (Finish 4.0 Phase 28)", () => {
         encoding: "utf8",
       },
     );
-    expect(floors).toContain("OK content pack meets Finish 4.0 floors");
+    // Soft-floor: Finish 5.0 Phase 28 raised --check-floors to Finish 5.0 mins.
+    expect(floors).toMatch(/OK content pack meets Finish [45]\.0 floors/);
 
     const out = execFileSync("npx", ["vite-node", "scripts/validate-content-cli-3.ts"], {
       cwd: resolve(root, "web"),

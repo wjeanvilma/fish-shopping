@@ -4,7 +4,7 @@
   "phase": 10,
   "plan": "30_finish_4.0",
   "expect": {
-    "authoredProductTarget": 40,
+    "authoredProductTarget": 46,
     "cosmeticBannerTarget": 12,
     "minProductArtNodes": 4,
     "productArtIncomplete": false,

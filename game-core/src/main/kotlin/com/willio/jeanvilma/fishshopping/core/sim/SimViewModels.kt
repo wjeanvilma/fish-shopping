@@ -27,6 +27,11 @@ data class SimView(
     val fishingTimingWindow: Boolean,
     /** Current reel tier while casting: perfect / good / null outside the window. */
     val fishingTimingTier: String?,
+    /** Finish 5.0 Phase 2 — waiting / strike / fight while casting. */
+    val castPhase: String? = null,
+    /** Finish 5.0 Phase 2 — strike band as 0..1 of cast duration. */
+    val castStrikeStart01: Float = 0.4f,
+    val castStrikeEnd01: Float = 0.58f,
     /** Phase 19: Good reel window as 0..1 of cast duration (presentation). */
     val timingGoodStart01: Float = 0.65f,
     val timingGoodEnd01: Float = 0.85f,
@@ -117,9 +122,21 @@ data class SimView(
     /** Finish 2.0 Phase 17 — consecutive contract fails (board pressure). */
     val contractFailStreak: Int = 0,
     val contractFailStreakThreshold: Int = 3,
+    /** Finish 5.0 Phase 3 — queue fill pressure across unlocked counters. */
+    val serviceQueuePressurePermille: Int = 0,
+    /** Finish 5.0 Phase 3 — lowest patience among arrived customers. */
+    val minPatienceTicksLeft: Int? = null,
+    /** Finish 5.0 Phase 3 — ticks until nearest active contract deadline. */
+    val ticksUntilNearestContractDeadline: Int? = null,
+    /** Finish 5.0 Phase 3 — fail-streak board pressure (1000 = at threshold). */
+    val contractBoardPressurePermille: Int = 0,
+    /** Finish 5.0 Phase 3 — progress toward next unlocked quest (0..1000). */
+    val nextQuestProgressPermille: Int? = null,
     /** Finish 2.0 Phase 18 — local login streak + today's dailies (Goals panel). */
     val dailyLoginStreak: Int = 0,
     val dailyGoals: List<DailyGoalView> = emptyList(),
+    /** Finish 5.0 Phase 23 — weekly retention board (Goals panel). */
+    val weeklyGoals: List<DailyGoalView> = emptyList(),
     /** Soft sinks unlocked (maintenance + spoilage). */
     val economyUnlocked: Boolean,
     val economyLockedReason: String?,
@@ -127,6 +144,10 @@ data class SimView(
     val maintenanceCoinsPerStation: Int,
     /** True while bag fish spoilage is active. */
     val bagFishSpoilActive: Boolean,
+    /** Finish 5.0 Phase 2 — ticks until next bag spoil; null when inactive/empty. */
+    val ticksUntilBagSpoil: Int? = null,
+    /** Finish 5.0 Phase 2 — mean-tier spoil pressure (1000 = neutral). */
+    val bagSpoilPressurePermille: Int = 1000,
     val prestigeUnlocked: Boolean,
     val prestigeLockedReason: String?,
     /** Harbor rating stars 0..5 from lifetime revenue. */
@@ -148,6 +169,8 @@ data class SimView(
     val beatenRivalCount: Int,
     val endgameMarkCount: Int,
     val endgameMarks: List<String>,
+    val endgameCrestCount: Int,
+    val endgameCrests: List<String>,
     val endgameTiers: List<EndgameTierView>,
     val endgameChallenges: List<EndgameChallengeView>,
     /** Finish 2.0 Phase 11 — lifetime achievements for Settings / HUD. */
@@ -266,6 +289,15 @@ data class BusinessDashboardView(
     val activeScarcityTipPermille: Int = 1000,
     val reputationScorePermille: Int = 0,
     val reputationLabel: String = "",
+    /** Finish 5.0 Phase 21 — pier ledger / loan book analytics. */
+    val loanOwed: Long = 0,
+    val loansTaken: Long = 0,
+    val loanRepaid: Long = 0,
+    val coinGoal: Long = 0,
+    val coinGoalProgressPermille: Int = 0,
+    val ledgerNetCashflow: Long = 0,
+    val contractRevenueSharePermille: Int = 0,
+    val ledgerLines: List<String> = emptyList(),
 )
 
 /** Finish 2.0 Phase 18 — one daily board objective. */

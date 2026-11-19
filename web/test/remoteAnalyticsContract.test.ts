@@ -89,4 +89,10 @@ describe("remote analytics sink contracts (Finish 4.0 Phase 27)", () => {
     expect(policy.batch.maxFlushRetries).toBe(REMOTE_MAX_FLUSH_RETRIES);
     expect(policy.batch.retryBackoffMs).toBe(REMOTE_RETRY_BACKOFF_MS);
   });
+
+  it("flush slice empty queue short-circuits without posting", () => {
+    const queue: Parameters<typeof enqueueRemoteEvent>[0] = [];
+    const slice = takeRemoteFlushSlice(queue, 4, "web");
+    expect(slice).toBeNull();
+  });
 });

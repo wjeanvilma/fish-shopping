@@ -1,0 +1,123 @@
+{
+  "phase": 24,
+  "plan": "30_finish_5.0",
+  "schema": "fish.a11y.accessibility_depth_4.v1",
+  "description": "Finish 5.0 Phase 24 — a11y depth 4 for weekly/endgame goals, dashboard ledger, warehouse stock, and tutorial friction. Extends depth-3; presentation-only; schema 26.",
+  "extendsCatalog": "shared/a11y/accessibility-depth-3.json",
+  "extendsDepth2Catalog": "shared/a11y/accessibility-depth-2.json",
+  "extendsDepth1Catalog": "shared/a11y/accessibility-depth.json",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 26,
+  "simHzInvariant": 20,
+  "wcag": {
+    "normalTextMin": 4.5,
+    "largeOrUiMin": 3.0
+  },
+  "screenSurfaceMin": 5,
+  "contrastPairMin": 2,
+  "uiA11yStringKeyMin": 30,
+  "liveRegionMin": 2,
+  "screenSurfaces": [
+    {
+      "id": "goals_weekly",
+      "webDialogLabelKey": "nav.goals",
+      "androidPaneTitleKey": "nav.goals",
+      "sectionLabelKey": "a11y.weeklyGoalsSection",
+      "initialFocus": "close",
+      "keyboardPath": "KeyG Goals → Weekly board"
+    },
+    {
+      "id": "goals_endgame",
+      "webDialogLabelKey": "nav.goals",
+      "androidPaneTitleKey": "nav.goals",
+      "sectionLabelKey": "a11y.endgameSection",
+      "initialFocus": "close",
+      "keyboardPath": "KeyG Goals → Endgame board"
+    },
+    {
+      "id": "dashboard_ledger",
+      "webDialogLabelKey": "panels.dashboard",
+      "androidPaneTitleKey": "panels.dashboard",
+      "sectionLabelKey": "a11y.dashboardLedgerSection",
+      "initialFocus": "close",
+      "keyboardPath": "KeyY Dashboard → Pier ledger"
+    },
+    {
+      "id": "warehouse_stock",
+      "webDialogLabelKey": "panels.warehouse",
+      "androidPaneTitleKey": "panels.warehouse",
+      "sectionLabelKey": "a11y.warehouseSection",
+      "initialFocus": "close",
+      "keyboardPath": "Warehouse panel"
+    },
+    {
+      "id": "tutorial_friction",
+      "webDialogLabelKey": "hud.frictionNudge",
+      "androidPaneTitleKey": "hud.frictionNudge",
+      "sectionLabelKey": "a11y.frictionNudgeLive",
+      "initialFocus": "n/a",
+      "keyboardPath": "HUD objective friction nudge"
+    }
+  ],
+  "contrastPairs": [
+    {
+      "id": "deep_ink_on_surface",
+      "fg": "#0B2A3A",
+      "bg": "#FBF7EF",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Finish 5 deep ink on light surface"
+    },
+    {
+      "id": "action_ink_on_surface",
+      "fg": "#00666A",
+      "bg": "#FBF7EF",
+      "role": "large_or_ui",
+      "minRatio": 3.0,
+      "use": "Finish 5 action ink on light surface"
+    }
+  ],
+  "liveRegions": [
+    "tutorial_friction",
+    "goals_weekly"
+  ],
+  "talkBack": {
+    "android": {
+      "requirePaneTitleOnWarehouseDashboard": true,
+      "weeklyEndgameSectionLabels": true,
+      "frictionNudgeLiveRegion": true,
+      "ledgerSectionLabels": true
+    },
+    "web": {
+      "frictionAriaLive": "polite",
+      "weeklyGoalsAriaLive": "polite",
+      "dialogRoleOnWarehouseDashboard": true,
+      "ledgerAriaLabel": true,
+      "initialFocusClose": true
+    }
+  },
+  "reducedMotion": {
+    "honorsSettingsToggle": true,
+    "crossRef": "shared/ship/vfx-juice-5.json"
+  },
+  "keyboardDocumentedSurfaces": [
+    "Goals weekly board (G)",
+    "Goals endgame board (G)",
+    "Dashboard pier ledger (Y)",
+    "Warehouse stock",
+    "Tutorial friction HUD nudge"
+  ],
+  "sourcePins": {
+    "depth3": "shared/a11y/accessibility-depth-3.json",
+    "webApp": "web/src/ui/App.tsx",
+    "androidGameScreen": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt",
+    "webCss": "web/src/ui/styles.css"
+  },
+  "manualChecklist": [
+    "TalkBack: Weekly/endgame sections in Goals",
+    "TalkBack: Dashboard ledger + Warehouse pane titles",
+    "Keyboard: G/Y + Esc; friction tip announces politely",
+    "Live regions announce friction nudge + weekly goals",
+    "Contrast: deep/action ink on #FBF7EF"
+  ]
+}

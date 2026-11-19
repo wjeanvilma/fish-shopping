@@ -14,12 +14,16 @@ object DeepLinkRoutes {
     const val CUSTOM_HOST = "open"
     const val ASSET_LINKS_PATH = ".well-known/assetlinks.json"
 
-    /** Finish 4.0 Phase 26 soft-floor: expanded aliases (≥28). Mirrors routes.json. */
+    /** Finish 5.0 Phase 26 soft-floor: expanded aliases (≥40). Mirrors routes.json. */
     val PANEL_ALIASES: Map<String, ShellPanelId> = mapOf(
         "goals" to ShellPanelId.QUESTS,
         "daily" to ShellPanelId.QUESTS,
         "quests" to ShellPanelId.QUESTS,
         "objectives" to ShellPanelId.QUESTS,
+        "weekly" to ShellPanelId.QUESTS,
+        "weeklygoals" to ShellPanelId.QUESTS,
+        "endgame" to ShellPanelId.QUESTS,
+        "retention" to ShellPanelId.QUESTS,
         "jobs" to ShellPanelId.CONTRACTS,
         "contracts" to ShellPanelId.CONTRACTS,
         "staff" to ShellPanelId.STAFF,
@@ -34,9 +38,13 @@ object DeepLinkRoutes {
         "bank" to ShellPanelId.DASHBOARD,
         "business" to ShellPanelId.DASHBOARD,
         "ledger" to ShellPanelId.DASHBOARD,
+        "pierledger" to ShellPanelId.DASHBOARD,
+        "cashflow" to ShellPanelId.DASHBOARD,
         "settings" to ShellPanelId.SETTINGS,
         "options" to ShellPanelId.SETTINGS,
         "cosmetics" to ShellPanelId.SETTINGS,
+        "licenses" to ShellPanelId.SETTINGS,
+        "decor" to ShellPanelId.SETTINGS,
         "codex" to ShellPanelId.SPECIES_BOOK,
         "species" to ShellPanelId.SPECIES_BOOK,
         "journal" to ShellPanelId.SPECIES_BOOK,
@@ -51,6 +59,8 @@ object DeepLinkRoutes {
         "pier" to ShellPanelId.STATION,
         "pause" to ShellPanelId.PAUSE,
         "menu" to ShellPanelId.PAUSE,
+        "friction" to ShellPanelId.PAUSE,
+        "photo" to ShellPanelId.PAUSE,
     )
 
     data class Intent(

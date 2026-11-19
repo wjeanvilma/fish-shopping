@@ -1,0 +1,21 @@
+{
+  "schema": "fish.fixtures.parity_audio_pack_5.v1",
+  "audioPackMarker": "authored-finish-5.0-phase-12",
+  "phase": 12,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "newStingerMin": 5,
+    "newBedMin": 1,
+    "schemaVersion": 25,
+    "contentVersion": "4.0.0",
+    "audioVfx5IncompleteClosed": true,
+    "gates": [
+      "stingers",
+      "beds",
+      "ducking_frozen",
+      "gap_closed",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

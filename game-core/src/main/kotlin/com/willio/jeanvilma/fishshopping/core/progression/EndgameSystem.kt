@@ -29,7 +29,8 @@ object EndgameSystem {
         s.completedPrestige.size >= tier.requiresPrestigeCount &&
             s.beatenRivalIds.size >= tier.requiresRivalBeats &&
             s.completedEndgameChallenges.size >= tier.requiresChallenges &&
-            s.endgameMarks.size >= tier.requiresMarks
+            s.endgameMarks.size >= tier.requiresMarks &&
+            s.endgameCrests.size >= tier.requiresCrests
 
     fun step(ctx: StepContext) {
         if (!boardUnlocked(ctx.content, ctx.state)) return
@@ -62,6 +63,11 @@ object EndgameSystem {
         if (mark != null && mark !in s.endgameMarks) {
             s.endgameMarks += mark
             s.bumpStat(Stats.ENDGAME_MARKS_EARNED)
+        }
+        val crest = ch.grantsCrest
+        if (crest != null && crest !in s.endgameCrests) {
+            s.endgameCrests += crest
+            s.bumpStat(Stats.ENDGAME_CRESTS_EARNED)
         }
         if (ch.rewardCoins > 0L) {
             s.coins = SafeMath.creditCoins(s.coins, ch.rewardCoins)

@@ -1,0 +1,64 @@
+{
+  "phase": 2,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.engine_depth_1.v1",
+  "description": "Finish 5.0 Phase 2 — engine depth 1: cast-phase FSM (waiting→strike→fight), strike mastery XP, bag spoil pressure + spoil ETA on SimView. Schema stays 25 / content 4.0.0 (ephemeral only).",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "engineDepth1Marker": "authored-finish-5.0-phase-2",
+  "castPhases": ["waiting", "strike", "fight"],
+  "castPhaseMin": 3,
+  "requiredStats": [
+    "stat.cast_phase_transitions",
+    "stat.cast_strike_reels"
+  ],
+  "requiredEvents": [
+    "cast_phase_changed",
+    "cast_strike_reel"
+  ],
+  "viewFields": [
+    "castPhase",
+    "castStrikeStart01",
+    "castStrikeEnd01",
+    "ticksUntilBagSpoil",
+    "bagSpoilPressurePermille"
+  ],
+  "strikeXpPerfectPermille": 1250,
+  "strikeXpGoodPermille": 1100,
+  "waitingEndPermille": 400,
+  "strikeEndPermille": 580,
+  "parityFixture": "shared/fixtures/parity-engine-depth-1.json",
+  "authorTool": "shared/tools/author_engine_depth_1.py",
+  "validateScript": "npm run enginedepth1:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "checklist": [
+    "Cast FSM waiting→strike→fight with events/stats (web↔Kotlin)",
+    "Strike-window reel grants mastery XP mult",
+    "Bag spoil period scales by mean fish spoil tier",
+    "SimView exposes castPhase + ticksUntilBagSpoil + bagSpoilPressurePermille",
+    "Fishing context coaching keyed to cast phase",
+    "engineDepthIncomplete gap closed",
+    "enginedepth1:validate green in CI",
+    "schema stays 25"
+  ],
+  "preflightGates": [
+    "shared/ship/engine-depth-1.json",
+    "shared/fixtures/parity-engine-depth-1.json",
+    "shared/ship/finish-5.0-kickoff.json",
+    "web/src/engine/systems/castPhases.ts",
+    "web/src/engine/systems/fishing.ts",
+    "web/src/engine/systems.ts",
+    "web/src/engine/view.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/fishing/CastPhases.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/fishing/FishingSystem.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/fishing/Mastery.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/economy/Economy.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/SimView.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/SimViewModels.kt",
+    "web/src/ship/engineDepth1.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/EngineDepth1.kt",
+    "web/scripts/validate-engine-depth-1.ts",
+    "shared/tools/author_engine_depth_1.py"
+  ]
+}

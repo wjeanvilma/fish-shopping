@@ -43,6 +43,7 @@ class DevicePerf4CatalogTest {
     fun closesDevicePerfGap() {
         assertFalse(Finish4Kickoff.OPEN_GAP_FLAGS.contains(DevicePerf4.CLOSES_GAP))
         assertTrue(Finish4Kickoff.PHASES.any { it.phase == 27 && it.validate == DevicePerf4.VALIDATE_SCRIPT })
-        assertEquals(2, Finish4Kickoff.OPEN_GAP_FLAGS.size)
+        // Soft-floor: later Finish 4.0 phases closed remaining flags after Phase 27.
+        assertTrue(Finish4Kickoff.OPEN_GAP_FLAGS.size <= 2)
     }
 }

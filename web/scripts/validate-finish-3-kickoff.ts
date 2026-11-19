@@ -220,8 +220,8 @@ function validate(): string[] {
   if (locBoard.webSrc.lines < b.webSrcLoc - 50) {
     errors.push(`web/src LOC ${locBoard.webSrc.lines} regressed below baseline ${b.webSrcLoc}`);
   }
-  if (LOC_FLOORS.productTotalPlanTarget !== 100000) {
-    errors.push("loc-floors plan target must be 100000 (Finish 4.0)");
+  if ((LOC_FLOORS.productTotalPlanTarget ?? 0) < 100000) {
+    errors.push("loc-floors plan target must be ≥100000 (Finish 4 soft floor)");
   }
 
   if (listing.finish3KickoffPhase !== 1) errors.push("listing.finish3KickoffPhase must be 1");

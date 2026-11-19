@@ -19,6 +19,11 @@ data class OfflineReport(
     val maintenancePaid: Long = 0,
     val itemsSpoiled: Long = 0,
     val rivalBeats: Long = 0,
+    /** Finish 5.0 Phase 22 — offline sim fidelity deltas. */
+    val wagesPaid: Long = 0,
+    val repairSpent: Long = 0,
+    val loanInterestAccrued: Long = 0,
+    val revenueDelta: Long = 0,
     /** Finish 2.0 Phase 18 — narrative lines for the away summary / dashboard. */
     val journalLines: List<String> = emptyList(),
 ) {
@@ -26,7 +31,8 @@ data class OfflineReport(
         get() = coinsDelta != 0L || fishCaught > 0L || sales > 0L ||
             workerFishCaught > 0L || workerItemsMoved > 0L ||
             contractsCompleted > 0L || maintenancePaid > 0L || itemsSpoiled > 0L ||
-            rivalBeats > 0L || journalLines.isNotEmpty()
+            rivalBeats > 0L || wagesPaid > 0L || repairSpent > 0L ||
+            loanInterestAccrued > 0L || revenueDelta > 0L || journalLines.isNotEmpty()
 }
 
 /**
@@ -49,6 +55,10 @@ fun applyOffline(sim: Simulation, elapsedMillis: Long): OfflineReport {
     val beforeMaintenance = sim.state.stat(Stats.MAINTENANCE_PAID)
     val beforeSpoiled = sim.state.stat(Stats.ITEMS_SPOILED)
     val beforeRivalBeats = sim.state.stat(Stats.RIVAL_BEATS)
+    val beforeWages = sim.state.stat(Stats.WAGES_PAID)
+    val beforeRepairs = sim.state.stat(Stats.REPAIR_SPENT)
+    val beforeLoanInterest = sim.state.stat(Stats.LOAN_INTEREST_ACCRUED)
+    val beforeRevenue = sim.state.stat(Stats.REVENUE)
 
     if (ticks > 0L) {
         val player = sim.state.player
@@ -86,5 +96,9 @@ fun applyOffline(sim: Simulation, elapsedMillis: Long): OfflineReport {
         maintenancePaid = sim.state.stat(Stats.MAINTENANCE_PAID) - beforeMaintenance,
         itemsSpoiled = sim.state.stat(Stats.ITEMS_SPOILED) - beforeSpoiled,
         rivalBeats = sim.state.stat(Stats.RIVAL_BEATS) - beforeRivalBeats,
+        wagesPaid = sim.state.stat(Stats.WAGES_PAID) - beforeWages,
+        repairSpent = sim.state.stat(Stats.REPAIR_SPENT) - beforeRepairs,
+        loanInterestAccrued = sim.state.stat(Stats.LOAN_INTEREST_ACCRUED) - beforeLoanInterest,
+        revenueDelta = sim.state.stat(Stats.REVENUE) - beforeRevenue,
     )
 }

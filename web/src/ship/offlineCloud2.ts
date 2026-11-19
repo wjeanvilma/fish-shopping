@@ -139,10 +139,11 @@ export function measureOfflineCloud2(repoRoot: string): OfflineCloud2Measure {
         titleTsx.includes(f) &&
         titleKt.includes(f),
     ),
+    // Finish 5.0 Phase 22 soft-floor: later waves may raise retries; keep ≥ historical mins.
     analyticsRetryWired:
       policy.batch?.requeueOnFlushFailure === true &&
-      policy.batch?.maxFlushRetries === OFFLINE_CLOUD_2.analyticsRetry.maxFlushRetries &&
-      policy.batch?.retryBackoffMs === OFFLINE_CLOUD_2.analyticsRetry.retryBackoffMs &&
+      (policy.batch?.maxFlushRetries ?? 0) >= OFFLINE_CLOUD_2.analyticsRetry.maxFlushRetries &&
+      (policy.batch?.retryBackoffMs ?? 0) >= OFFLINE_CLOUD_2.analyticsRetry.retryBackoffMs &&
       remoteTs.includes("requeueRemoteFlushSlice") &&
       remoteKt.includes("requeueFlushSlice") &&
       policyKt.includes("REQUEUE_ON_FLUSH_FAILURE"),

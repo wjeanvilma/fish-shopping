@@ -1,0 +1,52 @@
+{
+  "schema": "fish.fixture.parity_deeplink_e2e_5.v1",
+  "description": "Finish 5.0 Phase 26: deep-link + E2E/Compose ≥12/≥14 expectations.",
+  "deeplinkE2e5Marker": "authored-finish-5.0-phase-26",
+  "expect": {
+    "closesGap": "deeplinkE2e5Thin",
+    "deeplinkE2e5Thin": false,
+    "schemaVersion": 26,
+    "contentVersion": "4.0.0",
+    "panelAliasFloor": 40,
+    "hashAliasFloor": 24,
+    "minIdCount": 32,
+    "minTagCount": 32,
+    "webScenarioFloor": 12,
+    "composeScenarioFloor": 14,
+    "uriVectorFloor": 12,
+    "requiredAliases": [
+      "weekly",
+      "endgame",
+      "pierledger",
+      "friction",
+      "licenses",
+      "warehouse"
+    ],
+    "requiredIds": [
+      "goals.weekly",
+      "goals.endgame",
+      "dash.ledger",
+      "warehouse.panel",
+      "friction.nudge"
+    ],
+    "requiredTags": [
+      "goals.weekly",
+      "goals.endgame",
+      "dash.ledger",
+      "warehouse.panel",
+      "friction.nudge"
+    ],
+    "smokeMustContain": [
+      "warehouse and upgrades nav open",
+      "deep link panel=weekly",
+      "deep link panel=pierledger",
+      "deep link hash endgame",
+      "photo and decor nav open"
+    ],
+    "robolectricMustContain": [
+      "hudNavWarehouseGoalsFire",
+      "hudNavStaffUpgradesFire",
+      "composeUiTagsFinish5Floor"
+    ]
+  }
+}

@@ -4,7 +4,7 @@
  */
 import type { ContentPack } from "./content";
 import { Stats, type GameState } from "./state";
-import { CustomerSystem, EconomySystem, MasterySystem, ProgressionSystem, ReputationSystem } from "./systems";
+import { ContractSystem, CustomerSystem, EconomySystem, MasterySystem, ProgressionSystem, ReputationSystem } from "./systems";
 
 export interface ObjectiveView {
   /** Short label: NEXT / GOAL / TIP */
@@ -123,6 +123,33 @@ export function emptyStateTip(content: ContentPack, state: GameState): string | 
     state.stat(Stats.CONTRACTS_COMPLETED) === 0
   ) {
     return "No active jobs — take a harbor contract from the Jobs board";
+  }
+
+  // Finish 5.0 Phase 3 — customers / contracts / progression pressure tips.
+  if (harbor) {
+    const rush = CustomerSystem.activeRush(harbor, state.tick);
+    const queuePressure = CustomerSystem.serviceQueuePressurePermille(content, state, harbor);
+    if (rush && queuePressure >= 700) {
+      return "Rush hour is packing the line — keep counters stocked and moving";
+    }
+    const minPatience = CustomerSystem.minPatienceTicksLeft(state);
+    if (minPatience !== null && minPatience <= 40 && waiting > 0) {
+      return "Front of the line is impatient — serve them before they walk out";
+    }
+  }
+  if (contractsUnlocked) {
+    const boardPressure = ContractSystem.contractBoardPressurePermille(content, state);
+    if (boardPressure >= 1000) {
+      return "Contract fail streak is cutting the Jobs board — deliver on time";
+    }
+    const deadline = ContractSystem.ticksUntilNearestDeadline(state);
+    if (deadline !== null && deadline <= 200) {
+      return "A harbor contract is almost due — deliver before the penalty hits";
+    }
+  }
+  const questProgress = ProgressionSystem.nextQuestProgressPermille(content, state);
+  if (questProgress !== null && questProgress >= 800 && questProgress < 1000) {
+    return "Quest nearly done — finish the goal to claim the reward";
   }
 
   if (EconomySystem.unlocked(content, state)) {

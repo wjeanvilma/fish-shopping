@@ -1,0 +1,77 @@
+{
+  "phase": 6,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.loc_midcheck.v1",
+  "description": "Finish 5.0 Phase 6 — LOC mid-check scoreboard after engine/VM/host depth (Phases 2–5). Locks measured cut vs Phase 1 baseline and 120k plan; optional interim soft floors. Schema stays 25 / content 4.0.0. Phase 30 freeze anti-regression unchanged.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "locMidcheckMarker": "authored-finish-5.0-phase-6",
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "locCatalog": "shared/ship/loc-floors.json",
+  "priorFreezeCatalog": "shared/ship/freeze-4.0.0.json",
+  "planTargets": {
+    "gameCoreLoc": 38000,
+    "appLoc": 26000,
+    "webSrcLoc": 56000,
+    "productLoc": 120000
+  },
+  "priorBaseline": {
+    "source": "finish-5.0-kickoff.json#baseline",
+    "measuredAtPhase": 1,
+    "gameCoreLoc": 28162,
+    "appLoc": 14691,
+    "webSrcLoc": 37322,
+    "productLoc": 80175
+  },
+  "midcheck": {
+    "measuredAtPhase": 6,
+    "afterPhases": [
+      "engine-depth-1",
+      "engine-depth-2",
+      "android-vm-depth",
+      "host-presenter-depth"
+    ],
+    "gameCoreLoc": 28908,
+    "appLoc": 14845,
+    "webSrcLoc": 38527,
+    "productLoc": 82280,
+    "productLocProgressPercent": 5,
+    "productLocProgressPermille": 52,
+    "productLocRemainingToPlan": 37720
+  },
+  "interimSoftFloors": {
+    "enabled": true,
+    "note": "Anti-regression soft floors until Phase 30 freeze; set slightly under midcheck measured.",
+    "gameCoreLoc": 28800,
+    "appLoc": 14750,
+    "webSrcLoc": 38400,
+    "productLoc": 82000
+  },
+  "midcheckSlackLines": 500,
+  "enforceMode": "freeze_anti_regression_until_phase_30",
+  "parityFixture": "shared/fixtures/parity-loc-midcheck.json",
+  "authorTool": "shared/tools/author_loc_midcheck.py",
+  "validateScript": "npm run locmidcheck:validate",
+  "smokeScript": "npm run locmidcheck:smoke",
+  "checklist": [
+    "Midcheck LOC locked after Phases 2–5 depth work",
+    "Live measure ≥ interim soft floors and Phase 1 baseline",
+    "loc-floors plan targets 38k/26k/56k/120k unchanged",
+    "freeze-4.0.0 soft floor still green (Finish 4)",
+    "No padding / duplicate files in product roots",
+    "locmidcheck:validate green in CI",
+    "schema stays 25 / content 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/loc-midcheck.json",
+    "shared/fixtures/parity-loc-midcheck.json",
+    "shared/ship/finish-5.0-kickoff.json",
+    "shared/ship/loc-floors.json",
+    "shared/ship/freeze-4.0.0.json",
+    "web/src/ship/locMidcheck.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/LocMidcheck.kt",
+    "web/scripts/validate-loc-midcheck.ts",
+    "web/scripts/smoke-loc-midcheck.ts",
+    "shared/tools/author_loc_midcheck.py"
+  ]
+}

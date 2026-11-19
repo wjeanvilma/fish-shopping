@@ -86,8 +86,9 @@ describe("Finish 4.0 Phase 1 kickoff", () => {
     expect(summaryLine(board)).toContain(`openFlags=${FINISH4_OPEN_GAP_FLAGS.length}`);
 
     const art = measureArtCounts(root);
-    expect(art.authoredHarbors).toBe(10);
-    expect(art.authoredFish).toBe(100);
+    // Soft-floored: Finish 5.0 Phase 14/9 raise live authored counts above Finish 4 baseline.
+    expect(art.authoredHarbors).toBeGreaterThanOrEqual(10);
+    expect(art.authoredFish).toBeGreaterThanOrEqual(100);
 
     const pin = JSON.parse(readFileSync(resolve(root, "shared/fixtures/RELEASE_PIN.json"), "utf8"));
     expect(pin.finish4Kickoff).toBe("shared/ship/finish-4.0-kickoff.json");

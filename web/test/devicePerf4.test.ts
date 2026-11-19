@@ -24,7 +24,8 @@ describe("device perf 4 (Finish 4.0 Phase 27)", () => {
   it("locks floors, upgrade path, and closes devicePerfIncomplete", () => {
     expect(DEVICE_PERF_4_PHASE).toBe(27);
     expect(DEVICE_PERF_HARBOR_CACHE_FLOOR).toBe(3);
-    expect(HARBOR_CACHE_LIMIT).toBe(3);
+    // Soft-floor: Finish 5.0 Phase 27 may raise live harbor LRU past 3.
+    expect(HARBOR_CACHE_LIMIT).toBeGreaterThanOrEqual(3);
     expect(FRAME_OVER_BUDGET_MULT).toBe(1.12);
     expect(FRAME_UNDER_BUDGET_MULT).toBe(0.85);
     expect(FRAME_DOWNGRADE_STREAK).toBe(75);

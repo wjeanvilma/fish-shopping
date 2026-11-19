@@ -1,0 +1,131 @@
+{
+  "phase": 28,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.content_cli_5.v1",
+  "description": "Finish 5.0 Phase 28 \u2014 content authoring CLI wave 5. Adds seasonal/endgame/cosmetic scaffolds and --check-floors for Finish 5.0 pack mins (species\u2265125, quests\u226575, harbors\u226512, machines\u226514, rivals\u226516, baits\u226516, seasonal\u226516, cosmetics\u226524, chains\u22657). Extends Finish 4.0 contentcli3 via soft floors. Closes kickoff gap contentCli5Missing. Schema stays 26 / content 4.0.0.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 26,
+  "contentCli5Marker": "authored-finish-5.0-phase-28",
+  "closesGap": "contentCli5Missing",
+  "extendsContentCli3": "shared/ship/content-cli-3.json",
+  "extendsContentCli2": "shared/ship/content-cli-2.json",
+  "extendsContentCli": "shared/ship/content-authoring-cli.json",
+  "moduleRoot": "shared/tools/content_cli/",
+  "pythonWrapper": "shared/tools/content_scaffold.py",
+  "examplesDir": "shared/content/scaffolds/examples",
+  "coreScaffoldKinds": [
+    "species",
+    "quest",
+    "harbor"
+  ],
+  "expansionScaffoldKinds": [
+    "contract",
+    "bait",
+    "decor"
+  ],
+  "wave3ScaffoldKinds": [
+    "machine",
+    "rival"
+  ],
+  "wave5ScaffoldKinds": [
+    "seasonal",
+    "endgame",
+    "cosmetic"
+  ],
+  "scaffoldKinds": [
+    "species",
+    "quest",
+    "harbor",
+    "contract",
+    "bait",
+    "decor",
+    "machine",
+    "rival",
+    "seasonal",
+    "endgame",
+    "cosmetic"
+  ],
+  "scaffoldKindMin": 11,
+  "exampleFileMin": 11,
+  "features": [
+    "list",
+    "check-pack",
+    "check-floors",
+    "machine",
+    "rival",
+    "seasonal",
+    "endgame",
+    "cosmetic"
+  ],
+  "featureMin": 8,
+  "packFloors": {
+    "speciesMin": 125,
+    "questsMin": 75,
+    "harborsMin": 12,
+    "machinesMin": 14,
+    "rivalsMin": 16,
+    "baitsMin": 16,
+    "seasonalMin": 16,
+    "cosmeticsMin": 24,
+    "chainsMin": 7
+  },
+  "contentValidateStillGreen": true,
+  "parityFixture": "shared/fixtures/parity-content-cli-5.json",
+  "validateScript": "npm run contentcli5:validate",
+  "softContentCli3Validate": "npm run contentcli3:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "authorTool": "shared/tools/author_content_cli_5.py",
+  "softFloors": {
+    "contentCliHistoricalKindMin": 3,
+    "contentCli2HistoricalKindMin": 6,
+    "contentCli3HistoricalKindMin": 8,
+    "contentCli3HistoricalExampleMin": 8,
+    "finish4PackSpeciesMin": 100,
+    "finish4PackQuestsMin": 50,
+    "note": "contentcli/contentcli2/contentcli3 stay green on historical kind floors; Phase 28 enforces 11 kinds + Finish 5.0 pack floors."
+  },
+  "manualCommands": [
+    "cd web && npm run content:scaffold -- --list",
+    "cd web && npm run content:scaffold -- --check-floors",
+    "cd web && npm run content:scaffold -- seasonal --id aurora_tide --dry-run",
+    "cd web && npm run content:scaffold -- endgame --id crest_harbor --dry-run",
+    "cd web && npm run content:scaffold -- cosmetic --id aurora_bunting --check-pack --dry-run",
+    "cd web && npm run contentcli3:validate",
+    "cd web && npm run contentcli5:validate"
+  ],
+  "checklist": [
+    "\u226511 scaffold kinds (prior 8 + seasonal/endgame/cosmetic)",
+    "\u226511 committed example fragments under scaffolds/examples",
+    "--list, --check-pack, and --check-floors work; never auto-merge content-pack.json",
+    "Ajv/structural fragment validation for seasonal/endgame/cosmetic",
+    "Pack floors meet Finish 5.0 species/quests/harbors/machines/rivals/baits/seasonal/cosmetics/chains",
+    "Finish 4.0 contentcli3:validate still green (soft floors)",
+    "parity-content-cli-5 + contentcli5:validate green",
+    "CI runs contentcli5:validate",
+    "kickoff gaps.contentCli5Missing=false",
+    "schema stays 26 / content 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/content-cli-5.json",
+    "shared/fixtures/parity-content-cli-5.json",
+    "shared/ship/content-cli-3.json",
+    "shared/ship/content-cli-2.json",
+    "shared/ship/content-authoring-cli.json",
+    "shared/tools/content_cli/ids.ts",
+    "shared/tools/content_cli/scaffolds.ts",
+    "shared/tools/content_cli/validateFragment.ts",
+    "shared/tools/content_cli/packIds.ts",
+    "shared/tools/content_cli/packFloors.ts",
+    "shared/tools/content_cli/cli.ts",
+    "shared/tools/content_scaffold.py",
+    "shared/content/scaffolds/examples/event.scaffold_aurora_tide.json",
+    "shared/content/scaffolds/examples/endgame.tier.scaffold_crest_harbor.json",
+    "shared/content/scaffolds/examples/entitlement.cosmetic.scaffold_aurora_bunting.json",
+    "web/scripts/content-scaffold.ts",
+    "web/scripts/validate-content-cli-5.ts",
+    "web/src/contentAuthoring/scaffoldValidate.ts",
+    "web/src/ship/contentCli5.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ContentCli5.kt"
+  ]
+}

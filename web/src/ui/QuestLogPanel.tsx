@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
-import type { ActiveContractView, AutomationIssueView, BaitOfferView, BankView, BusinessDashboardView, ContextCard, ContractOfferView, CosmeticIapOfferView, DailyGoalView, DecorOfferView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SeasonalEventBannerView, SimView, SpeciesBookView, StaffGearView, StaffHireView, StationView, TrophySetView, UpgradeView, WarehouseView, WorkerView } from "../engine";
+import type { ActiveContractView, AutomationIssueView, BaitOfferView, BankView, BusinessDashboardView, ContextCard, ContractOfferView, CosmeticIapOfferView, DailyGoalView, DecorOfferView, EndgameChallengeView, EndgameTierView, HarborMapEntryView, OfflineReport, PrestigeView, QuestView, SeasonalEventBannerView, SimView, SpeciesBookView, StaffGearView, StaffHireView, StationView, TrophySetView, UpgradeView, WarehouseView, WorkerView } from "../engine";
 import { VOLUME_STEPS } from "../audio/audioBus";
 import type { GameSettings, JoystickScale, SaveStatusView } from "../game/settingsStore";
 import { t } from "../i18n/strings";
@@ -23,6 +23,7 @@ import {
   ossHeadline,
 } from "../store/licenses";
 import { cosmeticTitle } from "../engine/cosmeticPresentation";
+import { WEB_E2E_IDS } from "../e2e/webE2eIds";
 import { formatCoins, formatRushSeconds, prestigeRewardBits } from "./hudFormat";
 
 export function QuestLogPanel({
@@ -58,6 +59,14 @@ export function QuestLogPanel({
   dailyLoginStreak,
   dailyGoals,
   onClaimDailyGoal,
+  weeklyGoals,
+  onClaimWeeklyGoal,
+  endgameUnlocked,
+  endgameLockedReason,
+  endgameMarkCount,
+  endgameCrestCount,
+  endgameTiers,
+  endgameChallenges,
   onClose,
 }: {
   quests: QuestView[];
@@ -92,6 +101,14 @@ export function QuestLogPanel({
   dailyLoginStreak: number;
   dailyGoals: DailyGoalView[];
   onClaimDailyGoal: (objectiveId: string) => void;
+  weeklyGoals: DailyGoalView[];
+  onClaimWeeklyGoal: (objectiveId: string) => void;
+  endgameUnlocked: boolean;
+  endgameLockedReason: string | null;
+  endgameMarkCount: number;
+  endgameCrestCount: number;
+  endgameTiers: EndgameTierView[];
+  endgameChallenges: EndgameChallengeView[];
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -146,6 +163,86 @@ export function QuestLogPanel({
               </li>
             ))
           )}
+          <li
+            aria-label={t("a11y.weeklyGoalsSection")}
+            aria-live="polite"
+            data-testid={WEB_E2E_IDS.GOALS_WEEKLY}
+          >
+            <div className="grow">
+              <strong>{t("a11y.weeklyGoalsSection")}</strong>
+              <div className="small muted">{t("goals.weeklyEmpty")}</div>
+              <div className="small muted">{t("a11y.weeklyGoalsLive")}</div>
+            </div>
+            <span className="num">{weeklyGoals.length > 0 ? weeklyGoals.length : "—"}</span>
+          </li>
+          {weeklyGoals.length === 0 ? (
+            <li>
+              <div className="grow">
+                <div className="small muted">{t("goals.weeklyEmpty")}</div>
+              </div>
+            </li>
+          ) : (
+            weeklyGoals.map((g) => (
+              <li key={`weekly:${g.objectiveId}`}>
+                <div className="grow">
+                  <strong>{g.name}</strong>
+                  <div className="small">{g.description}</div>
+                  <div className="small reward">Reward: {formatCoins(g.rewardCoins)}</div>
+                  {!g.claimed && (
+                    <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={g.target} aria-valuenow={g.progress}>
+                      <div style={{ width: `${Math.min(100, Math.max(0, (g.progress / Math.max(1, g.target)) * 100))}%` }} />
+                    </div>
+                  )}
+                </div>
+                {g.claimed ? (
+                  <span className="owned">Claimed</span>
+                ) : g.claimEnabled ? (
+                  <button className="button" onClick={() => onClaimWeeklyGoal(g.objectiveId)}>
+                    Claim
+                  </button>
+                ) : (
+                  <span className="num">{g.progress}/{g.target}</span>
+                )}
+              </li>
+            ))
+          )}
+          <li aria-label={t("a11y.endgameSection")} data-testid={WEB_E2E_IDS.GOALS_ENDGAME}>
+            <div className="grow">
+              <strong>{t("a11y.endgameSection")}</strong>
+              {!endgameUnlocked ? (
+                <div className="small danger">{endgameLockedReason ?? t("endgame.locked")}</div>
+              ) : (
+                <div className="small reward">
+                  {t("endgame.marks")} {endgameMarkCount} · {t("endgame.crests")} {endgameCrestCount}
+                </div>
+              )}
+            </div>
+            <span className={endgameUnlocked ? "owned" : "muted"}>
+              {endgameUnlocked ? "Open" : "Locked"}
+            </span>
+          </li>
+          {endgameUnlocked && endgameTiers.map((tier) => (
+            <li key={tier.id}>
+              <div className="grow">
+                <strong>{tier.name}</strong>
+                <div className="small">{tier.description}</div>
+                <div className="small muted">
+                  Prestige {tier.requiresPrestigeCount} · rivals {tier.requiresRivalBeats} · challenges {tier.requiresChallenges}
+                </div>
+              </div>
+              <span className="num">{tier.status}</span>
+            </li>
+          ))}
+          {endgameUnlocked && endgameChallenges.map((ch) => (
+            <li key={ch.id}>
+              <div className="grow">
+                <strong>{ch.name}</strong>
+                <div className="small">{ch.description}</div>
+                <div className="small reward">Reward: {formatCoins(ch.rewardCoins)}</div>
+              </div>
+              <span className="num">{ch.status === "completed" ? "Done" : `${ch.progress}/${ch.goalAtLeast}`}</span>
+            </li>
+          ))}
           {seasonalEvent && (
             <li aria-label={t("a11y.festivalSection")}>
               <div className="grow">

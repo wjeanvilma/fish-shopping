@@ -54,9 +54,18 @@ function validate(): string[] {
   if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
   if (catalog.gameHostMaxLines !== 1400) errors.push("gameHostMaxLines must be 1400");
   if (catalog.harborRendererMaxLines !== 780) errors.push("harborRendererMaxLines must be 780");
-  if (catalog.extractedFileMin !== 12) errors.push("extractedFileMin must be 12");
-  if ((catalog.requiredFiles as string[]).length !== 16) {
-    errors.push("requiredFiles must list 16 modules");
+  // Finish 5.0 Phase 5 soft-floors: fishing intents raised extracted floors.
+  if ((catalog.extractedFileMin ?? 0) < 12) {
+    errors.push("extractedFileMin soft-floor must be ≥12");
+  }
+  if ((catalog.softFloors?.extractedFileHistoricalMin ?? 0) < 12) {
+    errors.push("soft floor extractedFileHistoricalMin must stay ≥12");
+  }
+  if ((catalog.requiredFiles as string[]).length < 16) {
+    errors.push("requiredFiles must list ≥16 modules");
+  }
+  if (!(catalog.requiredFiles as string[]).includes("web/src/game/host/hostFishingIntents.ts")) {
+    errors.push("requiredFiles must include hostFishingIntents.ts after Finish 5 Phase 5");
   }
 
   const measure = measureGameHostSplit(root);

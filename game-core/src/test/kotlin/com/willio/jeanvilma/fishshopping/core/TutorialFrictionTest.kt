@@ -47,12 +47,15 @@ class TutorialFrictionTest {
         }
 
         assertNull(TutorialFriction.nudgeText(null, 99_000))
-        assertNull(TutorialFriction.nudgeText("tutorial.catch_three", 7_999))
+        assertNull(TutorialFriction.nudgeText("tutorial.catch_three", 6_999))
         assertEquals(
-            "Tip: hold Cast to charge, release timing into the green Reel window",
-            TutorialFriction.nudgeText("tutorial.catch_three", 8_000),
+            "Tip: hold Cast to charge, release into the green Reel window — early taps miss",
+            TutorialFriction.nudgeText("tutorial.catch_three", 7_000),
         )
         assertTrue(TutorialFriction.isHighFriction("tutorial.hire_staff"))
+        // Finish 5.0 Phase 19 soft-floor: mid-game friction steps.
+        assertTrue(TutorialFriction.isHighFriction("tutorial.grill_line"))
+        assertTrue(TutorialFriction.isHighFriction("tutorial.plot_marker"))
     }
 
     @Test
@@ -60,7 +63,9 @@ class TutorialFrictionTest {
         val catalog = Json.parseToJsonElement(File(root, TutorialFriction.CATALOG).readText()).jsonObject
         val pack = Json.parseToJsonElement(File(root, TutorialFriction.CONTENT_PACK).readText()).jsonObject
         assertTrue(
-            pack.getValue("contentVersion").jsonPrimitive.content in setOf("1.0.0", "1.0.1", "2.0.0", "3.0.0"),
+            pack.getValue("contentVersion").jsonPrimitive.content in setOf(
+                "1.0.0", "1.0.1", "2.0.0", "3.0.0", "4.0.0",
+            ),
         )
         val pin = Json.parseToJsonElement(File(root, "shared/fixtures/RELEASE_PIN.json").readText()).jsonObject
         assertTrue(pin.getValue("schemaVersion").jsonPrimitive.content.toInt() >= TutorialFriction.SCHEMA_VERSION)

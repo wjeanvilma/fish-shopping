@@ -1,0 +1,94 @@
+{
+  "phase": 16,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.quests_contracts_5.v1",
+  "description": "Finish 5.0 Phase 16 — raise authored quests to ≥75, delivery chains to ≥7 (aurora run + tideglass ferry), and deepen reputation-gated / board contracts. Schema stays 25 / content 4.0.0.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "questsContracts5Marker": "authored-finish-5.0-phase-16",
+  "questsMin": 75,
+  "deliveryChainsMin": 7,
+  "reputationGatedMin": 9,
+  "contractTemplatesMin": 70,
+  "newQuests": [
+    "quest.poach_line",
+    "quest.can_line",
+    "quest.aurora_curator",
+    "quest.tideglass_curator",
+    "quest.harbor_dozen",
+    "quest.chain_commodore",
+    "quest.poach_gourmet",
+    "quest.can_stockist",
+    "quest.board_marshal",
+    "quest.perfect_circuit",
+    "quest.cast_strike_wave",
+    "quest.pressure_cook",
+    "quest.spoil_watch",
+    "quest.critic_salon",
+    "quest.tourist_armada",
+    "quest.night_armada",
+    "quest.staff_maestro",
+    "quest.branch_trainer",
+    "quest.rival_rout",
+    "quest.endgame_marks",
+    "quest.bank_sovereign",
+    "quest.revenue_crown",
+    "quest.legend_circuit"
+  ],
+  "newChains": [
+    "chain.aurora_run",
+    "chain.tideglass_ferry"
+  ],
+  "newChainHeads": [
+    "contract.chain_aurora_catch",
+    "contract.chain_tide_catch"
+  ],
+  "newReputationGated": [
+    "contract.poach_trust",
+    "contract.aurora_vip",
+    "contract.can_legend"
+  ],
+  "newBoardContracts": [
+    "contract.poach_broth_order",
+    "contract.can_medley_platter",
+    "contract.aurora_jack_basket",
+    "contract.brine_goby_crate"
+  ],
+  "extendsQuestsContracts4": "shared/ship/quests-contracts-4.json",
+  "parityFixture": "shared/fixtures/parity-quests-contracts-5.json",
+  "authorTool": "shared/tools/author_quests_contracts_5.py",
+  "validateScript": "npm run quests5:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "checklist": [
+    "≥75 authored quests chained past market_legend",
+    "≥7 delivery chains including aurora_run + tideglass_ferry",
+    "≥9 reputation-gated contract templates",
+    "≥70 contract templates with board depth SKUs",
+    "content-strings 8 locales + ContentStrings.kt for new ids",
+    "Finish 4.0 quests4:validate still green (historical floors)",
+    "parity-quests-contracts-5 + quests5:validate green",
+    "CI runs quests5:validate",
+    "kickoff baseline.quests=75 / deliveryChains=7 / questsRemaining=0",
+    "schema stays 25 / content 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/quests-contracts-5.json",
+    "shared/fixtures/parity-quests-contracts-5.json",
+    "shared/ship/quests-contracts-4.json",
+    "shared/content/content-pack.json",
+    "shared/i18n/content-strings.en.json",
+    "shared/i18n/content-strings.es.json",
+    "shared/i18n/content-strings.pt.json",
+    "shared/tools/author_quests_contracts_5.py",
+    "web/src/ship/questsContracts5.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/QuestsContracts5.kt",
+    "web/scripts/validate-quests-contracts-5.ts"
+  ],
+  "measured": {
+    "quests": 75,
+    "deliveryChains": 7,
+    "reputationGated": 10,
+    "contractTemplates": 72
+  }
+}

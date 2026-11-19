@@ -1,0 +1,22 @@
+{
+  "schema": "fish.fixtures.parity_i18n_growth_5.v1",
+  "i18nGrowth5Marker": "authored-finish-5.0-phase-24",
+  "phase": 24,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "uiStringKeyMin": 360,
+    "localeMin": 8,
+    "a11yStringKeyMin": 30,
+    "androidTextLiteralsMax": 0,
+    "schemaVersion": 26,
+    "contentVersion": "4.0.0",
+    "a11yI18n5Incomplete": false,
+    "gates": [
+      "key_floor",
+      "locale_parity",
+      "a11y_keys",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

@@ -73,7 +73,7 @@ function validate(): string[] {
   if (catalog.fromSchema !== 23 || catalog.toSchema !== 24) errors.push("from/to schema");
   if (SCHEMA_24_VERSION !== 24) errors.push("SCHEMA_24_VERSION mismatch");
   if (SCHEMA_VERSION < 24) errors.push("engine SCHEMA_VERSION must be >= 24");
-  if (!/SCHEMA_VERSION = 2[45]/.test(foundationsKt)) {
+  if (!/SCHEMA_VERSION = (2[4-9]|[3-9]\d)/.test(foundationsKt)) {
     errors.push("Kotlin SCHEMA_VERSION must be >= 24");
   }
   if (catalog.contentVersion !== "2.0.0") errors.push("contentVersion must stay 2.0.0");
@@ -188,7 +188,7 @@ function validate(): string[] {
     errors.push("missing mutate_phase15_endgame.py");
   }
 
-  if (!/"schemaVersion"\s*:\s*2[45]/.test(currentSnap)) {
+  if (!/"schemaVersion"\s*:\s*(2[4-9]|[3-9]\d)/.test(currentSnap)) {
     errors.push("current starter-line snapshot must be schema >= 24");
   }
   if (legacy23.schemaVersion !== 23) errors.push("legacy v23 fixture schemaVersion must be 23");

@@ -1,0 +1,82 @@
+{
+  "phase": 7,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.harbor_art_5a.v1",
+  "description": "Finish 5.0 Phase 7 — harbor art 5a: pass-catalog harbors 1–6 beyond blockout with Finish 5 presentation lock (harborFinish5=harbor-art-5a). Keeps scenic/cozy sockets. Schema stays 25 / content 4.0.0. harborArt5Incomplete stays open until 5b.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "harborArt5aMarker": "authored-finish-5.0-phase-7",
+  "harborFinish5Marker": "harbor-art-5a",
+  "harborArtPassCatalog": "shared/ship/harbor-art-pass.json",
+  "harborArtMarker": "authored-finish-4.0-phase-9",
+  "harborScenicMarker": "harbor-art-3",
+  "cozyArtMarker": "cozy-art-5",
+  "finish5HarborTarget": 6,
+  "minHarborArtNodes": 10,
+  "themesModule": "shared/tools/harbor_themes.py",
+  "generator": "shared/tools/generate_blockout.py",
+  "cozyThemeModule": "shared/tools/cozy_theme_art.py",
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-harbor-art-5a.json",
+  "authorTool": "shared/tools/author_harbor_art_5a.py",
+  "validateScript": "npm run harborart5a:validate",
+  "finish5Harbors": [
+    {
+      "harborId": "harbor.sunrise_pier",
+      "theme": "sunrise",
+      "asset": "shared/assets/models/sunrise_pier_blockout.glb"
+    },
+    {
+      "harborId": "harbor.coral_lagoon",
+      "theme": "coral",
+      "asset": "shared/assets/models/coral_lagoon_blockout.glb"
+    },
+    {
+      "harborId": "harbor.storm_quay",
+      "theme": "storm",
+      "asset": "shared/assets/models/storm_quay_blockout.glb"
+    },
+    {
+      "harborId": "harbor.moon_cove",
+      "theme": "moon",
+      "asset": "shared/assets/models/moon_cove_blockout.glb"
+    },
+    {
+      "harborId": "harbor.obsidian_jetty",
+      "theme": "obsidian",
+      "asset": "shared/assets/models/obsidian_jetty_blockout.glb"
+    },
+    {
+      "harborId": "harbor.northlight_harbor",
+      "theme": "northlight",
+      "asset": "shared/assets/models/northlight_harbor_blockout.glb"
+    }
+  ],
+  "checklist": [
+    "Pass-catalog harbors 1–6 carry extras.harborFinish5=harbor-art-5a",
+    "envArt includes harbor-art-5a while retaining harbor-art-3 + cozy-art-5",
+    "Each 5a harbor has ≥10 HarborArt_* scenic nodes",
+    "authoredHarbors stays 10 until Phase 8 harbor-art-5b",
+    "gaps.harborArt5Incomplete stays true until 5b",
+    "harborart5a:validate green in CI",
+    "schema stays 25 / content 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/harbor-art-5a.json",
+    "shared/fixtures/parity-harbor-art-5a.json",
+    "shared/ship/harbor-art-pass.json",
+    "shared/ship/finish-5.0-kickoff.json",
+    "shared/tools/harbor_themes.py",
+    "shared/tools/generate_blockout.py",
+    "shared/assets/models/sunrise_pier_blockout.glb",
+    "shared/assets/models/coral_lagoon_blockout.glb",
+    "shared/assets/models/storm_quay_blockout.glb",
+    "shared/assets/models/moon_cove_blockout.glb",
+    "shared/assets/models/obsidian_jetty_blockout.glb",
+    "shared/assets/models/northlight_harbor_blockout.glb",
+    "web/src/ship/harborArt5a.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/HarborArt5a.kt",
+    "web/scripts/validate-harbor-art-5a.ts",
+    "shared/tools/author_harbor_art_5a.py"
+  ]
+}

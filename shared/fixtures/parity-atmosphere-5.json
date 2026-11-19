@@ -1,0 +1,27 @@
+{
+  "schema": "fish.fixtures.parity_atmosphere_5.v1",
+  "atmosphere5Marker": "authored-finish-5.0-phase-11",
+  "atmosphereFinish5Marker": "atmosphere-5",
+  "cozyArtMarker": "cozy-art-5",
+  "phase": 11,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "finish5HarborTarget": 10,
+    "schemaVersion": 25,
+    "contentVersion": "4.0.0",
+    "atmosphere5IncompleteClosed": true,
+    "gates": [
+      "harbors_stamped",
+      "cozy_sockets",
+      "render_modules",
+      "gap_closed",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ],
+    "atmosphereSamples": [
+      { "dayProgressPermille": 250, "weatherId": "clear" },
+      { "dayProgressPermille": 500, "weatherId": "rain" },
+      { "dayProgressPermille": 850, "weatherId": "fog" }
+    ]
+  }
+}

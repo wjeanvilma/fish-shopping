@@ -47,6 +47,7 @@ export type SystemsBridge = {
     speciesId: string,
     timingTier: TimingTier,
     rare: boolean,
+    xpMultPermille?: number,
   ) => void;
   seasonalScaledWeight: (
     base: number,

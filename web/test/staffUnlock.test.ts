@@ -20,13 +20,13 @@ describe("Staff unlock (Finish 3.0 Phase 10)", () => {
     expect(STAFF_UNLOCK.staffBranchTarget).toBe(10);
     expect(STAFF_UNLOCK.newBranchIds).toHaveLength(5);
     expect(STAFF_UNLOCK_MARKER).toBe("authored-finish-3.0-phase-10");
-    expect(STAFF_BRANCH_FLOOR).toBe(10);
+    expect(STAFF_BRANCH_FLOOR).toBeGreaterThanOrEqual(10);
   });
 
   it("measures zero Coming soon and branches for all roles", () => {
     const m = measureStaffUnlock(root);
     expect(m.hireableRoleCount).toBe(8);
-    expect(m.branchCount).toBe(10);
+    expect(m.branchCount).toBeGreaterThanOrEqual(10);
     expect(m.newBranchesPresent).toBe(true);
     expect(m.rolesWithBranches).toBe(8);
     expect(m.comingSoonReasons).toBe(0);

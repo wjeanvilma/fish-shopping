@@ -22,6 +22,7 @@ import {
   licensesCatalog,
   ossHeadline,
 } from "../store/licenses";
+import { WEB_E2E_IDS } from "../e2e/webE2eIds";
 import { formatAwayDuration, formatCoins, formatRushSeconds, prestigeRewardBits } from "./hudFormat";
 
 export function WarehousePanel({ warehouse, onClose }: { warehouse: WarehouseView; onClose: () => void }) {
@@ -29,13 +30,24 @@ export function WarehousePanel({ warehouse, onClose }: { warehouse: WarehouseVie
   useEffect(() => closeRef.current?.focus(), []);
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label="Warehouse" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="panel sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("panels.warehouse")}
+        data-testid={WEB_E2E_IDS.WAREHOUSE_PANEL}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sheet-header">
-          <h2>Warehouse</h2>
-          <button ref={closeRef} className="button ghost" onClick={onClose}>Close</button>
+          <h2>{t("panels.warehouse")}</h2>
+          <button ref={closeRef} className="button ghost" onClick={onClose}>{t("common.close")}</button>
         </div>
-        <div className="small muted num">
-          Available {warehouse.available} · Reserved {warehouse.reserved} · Total {warehouse.quantity}
+        <div className="small muted num" aria-label={t("a11y.warehouseSection")}>
+          {t("warehouse.availableReserved", {
+            available: warehouse.available,
+            reserved: warehouse.reserved,
+            total: warehouse.quantity,
+          })}
         </div>
         {!warehouse.reconcileOk && (
           <div className="small danger" role="alert">
@@ -43,7 +55,7 @@ export function WarehousePanel({ warehouse, onClose }: { warehouse: WarehouseVie
           </div>
         )}
         {warehouse.empty ? (
-          <p className="muted">No stock yet — catch fish, run stations, or stock a counter.</p>
+          <p className="muted">{t("warehouse.empty")}</p>
         ) : (
           <ul className="upgrade-list">
             {warehouse.lines.map((line) => (

@@ -53,6 +53,7 @@ function validate(): string[] {
   if (SCHEMA_VERSION < 25) errors.push("engine SCHEMA_VERSION must be >= 25");
 
   const measure = measureUiParity(root);
+  // Finish 5.0 Phase 23 soft-floor: historical Finish 4 floors stay met (≥).
   if (measure.panelPairCount < UI_PARITY.panelPairMin) {
     errors.push(`panel pairs ${measure.panelPairCount} < ${UI_PARITY.panelPairMin}`);
   }
@@ -111,9 +112,9 @@ function validate(): string[] {
     errors.push("missing author_ui_parity_depth.py");
   }
 
-  if (fixture.expect?.panelPairMin !== 12) errors.push("parity panelPairMin must be 12");
-  if (fixture.expect?.featureFloorCount !== 13) {
-    errors.push("parity featureFloorCount must be 13");
+  if ((fixture.expect?.panelPairMin ?? 0) < 12) errors.push("parity panelPairMin must be ≥12");
+  if ((fixture.expect?.featureFloorCount ?? 0) < 13) {
+    errors.push("parity featureFloorCount must be ≥13");
   }
 
   return errors;

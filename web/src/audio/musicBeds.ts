@@ -2,7 +2,8 @@
  * Phase 20 (post-1.0) — authored harbor/shop music beds + ducking helpers.
  * Finish 2.0 Phase 21 adds festival + storm beds; ducking policy unchanged.
  * Finish 3.0 Phase 23 adds night + rival beds; ducking stays frozen.
- * Finish 4.0 Phase 23 adds endgame + ledger beds; ducking stays frozen.
+ * Finish 4.0 Phase 23 adds endgame + ledger beds; Finish 5.0 Phase 12 adds pressure bed;
+ * ducking stays frozen.
  */
 import musicPackJson from "../../../shared/audio/music-pack.json";
 
@@ -14,7 +15,8 @@ export type MusicBedId =
   | "night"
   | "rival"
   | "endgame"
-  | "ledger";
+  | "ledger"
+  | "pressure";
 
 export interface MusicPackCatalog {
   phase: number;
@@ -41,6 +43,7 @@ export interface MusicPackCatalog {
     nightWhen?: string[];
     endgameWhen?: string[];
     ledgerWhen?: string[];
+    pressureWhen?: string[];
     shopWhen: string[];
     harborOtherwise: boolean;
   };
@@ -63,6 +66,7 @@ export const MUSIC_BED_IDS: readonly MusicBedId[] = musicPack.beds.map((b) => b.
 export const MUSIC_PACK2_BED_IDS: readonly MusicBedId[] = ["festival", "storm"];
 export const MUSIC_PACK3_BED_IDS: readonly MusicBedId[] = ["night", "rival"];
 export const MUSIC_PACK4_BED_IDS: readonly MusicBedId[] = ["endgame", "ledger"];
+export const MUSIC_PACK5_BED_IDS: readonly MusicBedId[] = ["pressure"];
 
 export function musicPublicPath(bed: MusicBedId): string {
   return `/music/${bed}.wav`;
@@ -70,7 +74,7 @@ export function musicPublicPath(bed: MusicBedId): string {
 
 /**
  * Resolve music bed from presentation context.
- * Priority: festival > storm > rival > night > endgame > ledger > shop > harbor.
+ * Priority: festival > storm > rival > night > endgame > ledger > pressure > shop > harbor.
  */
 export function musicBedForPanels(
   stationOpen: boolean,
@@ -80,6 +84,7 @@ export function musicBedForPanels(
   nightActive = false,
   endgameActive = false,
   ledgerActive = false,
+  pressureActive = false,
 ): MusicBedId {
   if (festivalActive) return "festival";
   if (stormActive) return "storm";
@@ -87,6 +92,7 @@ export function musicBedForPanels(
   if (nightActive) return "night";
   if (endgameActive) return "endgame";
   if (ledgerActive) return "ledger";
+  if (pressureActive) return "pressure";
   return stationOpen ? "shop" : "harbor";
 }
 

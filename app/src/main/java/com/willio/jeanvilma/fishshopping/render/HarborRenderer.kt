@@ -679,7 +679,7 @@ class HarborRenderer(private val context: Context) {
             }
         }
 
-        // Finish 2.0/3.0/4.0 — weather/festival/tide/rival/endgame ambient.
+        // Finish 2.0/3.0/4.0/5.0 — weather/festival/tide/rival/endgame/pressure ambient.
         val ambient = weatherAmbientProfile(
             weatherId = sim.weatherId,
             festivalActive = sim.seasonalEvent != null,
@@ -690,6 +690,12 @@ class HarborRenderer(private val context: Context) {
             tidePhaseId = sim.dayPartId.ifBlank { "day" },
             rivalActive = sim.rivalPressureActive || sim.activeRivalIds.isNotEmpty(),
             endgameMode = endgameAmbientIdForView(sim.endgameUnlocked, sim.endgameMarkCount),
+            pressureMode = pressureAmbientIdForView(
+                sim.bagSpoilPressurePermille,
+                sim.serviceQueuePressurePermille,
+                sim.ticksUntilNearestContractDeadline,
+                sim.nextQuestProgressPermille,
+            ),
         )
         cozy.apply(sim, reducedMotion, floatArrayOf(ambient.skyR, ambient.skyG, ambient.skyB))
         cozy.syncDecor(sim)

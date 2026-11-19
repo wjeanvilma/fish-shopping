@@ -64,6 +64,24 @@
         "panel": "station",
         "harborId": null,
         "source": "query"
+      },
+      {
+        "uri": "https://wjeanvilma.github.io/fish-shopping/play/?panel=weekly",
+        "panel": "quests",
+        "harborId": null,
+        "source": "query"
+      },
+      {
+        "uri": "https://wjeanvilma.github.io/fish-shopping/play/?go=pierledger",
+        "panel": "dashboard",
+        "harborId": null,
+        "source": "query"
+      },
+      {
+        "uri": "https://wjeanvilma.github.io/fish-shopping/play/#endgame",
+        "panel": "quests",
+        "harborId": null,
+        "source": "hash"
       }
     ],
     "manifestMustContain": [

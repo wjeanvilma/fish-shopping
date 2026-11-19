@@ -52,8 +52,9 @@ function validate(): string[] {
   if (catalog.schemaVersion !== 23) errors.push("catalog schemaVersion must be 23");
   if (SCHEMA_VERSION < 23) errors.push("engine SCHEMA_VERSION must be >= 23");
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
-  if (catalog.authoredSpeciesMin !== 100 || AUTHORED_FISH_FLOOR !== 100) {
-    errors.push("authoredSpeciesMin must be 100");
+  // Soft-floored Finish 5.0 Phase 9: authoredSpeciesMin raised to 125 (art-ahead).
+  if ((catalog.authoredSpeciesMin ?? 0) < 100 || AUTHORED_FISH_FLOOR < 100) {
+    errors.push("authoredSpeciesMin soft-floor must be ≥100");
   }
   if (catalog.fishArtMarker !== FISH_ART_MARKER) errors.push("fishArtMarker mirror mismatch");
   if ((dod.quotas?.authoredFishSpecies ?? 0) < 100) {
@@ -88,14 +89,20 @@ function validate(): string[] {
     errors.push("parity fixture species count must match catalog");
   }
 
+  const artAheadOk =
+    catalog.softFloors?.artAheadAllowed === true ||
+    (catalog.authoredSpeciesMin ?? 0) >= 125;
   const hashes = new Map<string, string>();
   let authoredBytes = 0;
   const authoredIds = new Set<string>();
   for (const entry of catalog.authoredSpecies) {
     authoredIds.add(entry.speciesId);
     if (!content.speciesById.has(entry.speciesId)) {
-      errors.push(`unknown species ${entry.speciesId}`);
-      continue;
+      // Finish 5.0 Phase 9 — art-ahead meshes may precede content-pack (Phase 13).
+      if (!artAheadOk) {
+        errors.push(`unknown species ${entry.speciesId}`);
+        continue;
+      }
     }
     const assetPath = resolve(root, entry.asset);
     if (!existsSync(assetPath)) {

@@ -19,8 +19,11 @@ object RemoteAnalyticsPolicy {
     const val RESYNC_SANITIZE_ON_FLUSH = true
     /** Finish 4.0 Phase 21 — requeue failed flush slices instead of dropping. */
     const val REQUEUE_ON_FLUSH_FAILURE = true
-    const val MAX_FLUSH_RETRIES = 3
+    /** Finish 5.0 Phase 22 — deeper retry / dead-letter policy. */
+    const val MAX_FLUSH_RETRIES = 5
     const val RETRY_BACKOFF_MS = 2_000L
+    const val RETRY_JITTER_MS = 500L
+    const val DEAD_LETTER_AFTER_MAX_RETRIES = true
 
     const val WEB_ENV_KEY = "VITE_ANALYTICS_API_BASE"
     const val ANDROID_META_KEY = "fish.analytics.apiBase"
@@ -119,6 +122,16 @@ object RemoteAnalyticsPolicy {
             }
         }
     }
+
+    /** Finish 5.0 Phase 22 — backoff with optional jitter. */
+    fun retryDelayMs(flushFailures: Int, jitterMs: Long = 0L): Long {
+        val base = RETRY_BACKOFF_MS * flushFailures.coerceAtLeast(1)
+        return base + jitterMs.coerceIn(0L, RETRY_JITTER_MS)
+    }
+
+    /** Finish 5.0 Phase 22 — drop failed slice once retries are exhausted. */
+    fun shouldDeadLetter(flushFailures: Int): Boolean =
+        DEAD_LETTER_AFTER_MAX_RETRIES && flushFailures >= MAX_FLUSH_RETRIES
 
     fun enqueue(
         queue: MutableList<QueuedEvent>,

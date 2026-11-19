@@ -15,6 +15,9 @@ from cozy_kit import Mesh, Rng, mix, shade
 
 COZY_ART_MARKER = "cozy-art-5"
 
+# Finish 5.0 Phase 11 — atmosphere/cozy render depth lock on harbor GLBs.
+ATMOSPHERE_FINISH5_MARKER = "atmosphere-5"
+
 WOOD = "#B9875A"
 WOOD_DARK = "#7A5636"
 METAL = "#AEB8BF"
@@ -178,6 +181,26 @@ def glazer(body: str) -> Mesh:
     return _norm_y(m)
 
 
+def poacher(body: str) -> Mesh:
+    m = Mesh()
+    _machine_base(m, body, 0.55)
+    m.cylinder((0, 0.64, 0), 0.36, 0.28, "#4A7A88", seg=14)                           # bath
+    m.cylinder((0, 0.90, 0), 0.38, 0.04, "#5A8A98", seg=14, radius_top=0.32)          # lid
+    for x in (-0.18, 0.18):
+        m.box((x, 0.78, 0), (0.04, 0.22, 0.40), "#D0D8E0")                            # rack rails
+    return _norm_y(m)
+
+
+def canner(body: str) -> Mesh:
+    m = Mesh()
+    _machine_base(m, body, 0.58)
+    m.cylinder((0, 0.70, 0), 0.32, 0.70, "#8A6A48", seg=14)                           # retort
+    m.cylinder((0, 1.08, 0), 0.28, 0.08, "#6A5040", seg=12)                           # lid band
+    m.sphere((0.30, 0.78, 0.20), 0.07, GOLD, seg=8, rings=4)                           # gauge
+    m.box((0, 0.55, 0.36), (0.28, 0.28, 0.14), "#C4A070")                             # can chute
+    return _norm_y(m)
+
+
 def counter(body: str) -> Mesh:
     """Market stall: wooden counter (worktop at 0.74 m) + striped awning on posts."""
     m = Mesh()
@@ -206,7 +229,7 @@ def counter(body: str) -> Mesh:
 MACHINE_BUILDERS = {
     "cutter": cutter, "smoker": smoker, "grill": grill, "chiller": chiller, "fryer": fryer,
     "packer": packer, "steamer": steamer, "kiln": kiln, "press": press, "pickler": pickler,
-    "braiser": braiser, "glazer": glazer, "counter": counter,
+    "braiser": braiser, "glazer": glazer, "poacher": poacher, "canner": canner, "counter": counter,
 }
 
 

@@ -5,6 +5,7 @@ import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 /**
  * Presentation-only frame timing (Phase 26 device matrix).
  * Finish 4.0 Phase 27 — tighter streaks/mult + soft auto-upgrade toward requested preset.
+ * Finish 5.0 Phase 27 — harbor LRU 4 for 12-harbor travel.
  * Never touches the 20 Hz sim. Mirrors shared/perf/device-matrix.json (android).
  */
 enum class FrameBudgetAction {
@@ -78,8 +79,8 @@ class FrameTiming(
         const val OVER_BUDGET_MULT = 1.12
         const val UNDER_BUDGET_MULT = 0.85
 
-        /** Harbor GLB LRU size (matches web / device-matrix.json). Finish 4.0 → 3. */
-        const val HARBOR_CACHE_LIMIT = 3
+        /** Harbor GLB LRU size (matches web / device-matrix.json). Finish 5.0 → 4. */
+        const val HARBOR_CACHE_LIMIT = 4
 
         fun downgrade(quality: QualityPreset): QualityPreset = when (quality) {
             QualityPreset.HIGH -> QualityPreset.MEDIUM

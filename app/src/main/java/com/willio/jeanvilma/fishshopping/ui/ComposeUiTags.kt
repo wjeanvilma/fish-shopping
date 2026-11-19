@@ -2,7 +2,7 @@ package com.willio.jeanvilma.fishshopping.ui
 
 /**
  * Finish 3.0 Phase 21 — stable Compose test tags for UI integration tests.
- * Finish 4.0 Phase 26 expands nav/chrome tags (soft-floor ≥24).
+ * Finish 5.0 Phase 26 expands Finish 5 surface tags (soft-floor ≥32).
  * Presentation-only; never affects sim.
  */
 object ComposeUiTags {
@@ -38,6 +38,11 @@ object ComposeUiTags {
     const val DECOR_PLACE = "decor.place"
     const val HUD_TOOLBAR = "hud.toolbar"
     const val DEEPLINK_READY = "deeplink.ready"
+    const val GOALS_WEEKLY = "goals.weekly"
+    const val GOALS_ENDGAME = "goals.endgame"
+    const val DASH_LEDGER = "dash.ledger"
+    const val WAREHOUSE_PANEL = "warehouse.panel"
+    const val FRICTION_NUDGE = "friction.nudge"
 
     val ALL: List<String> = listOf(
         TITLE_ROOT,
@@ -69,5 +74,10 @@ object ComposeUiTags {
         DECOR_PLACE,
         HUD_TOOLBAR,
         DEEPLINK_READY,
+        GOALS_WEEKLY,
+        GOALS_ENDGAME,
+        DASH_LEDGER,
+        WAREHOUSE_PANEL,
+        FRICTION_NUDGE,
     )
 }

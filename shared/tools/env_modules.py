@@ -207,6 +207,28 @@ def glazer_module():
     return _finish(pos, nrm, idx)
 
 
+def poacher_module():
+    """Harbor poacher: bath pan, rack rails, steam lid."""
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.30, 0.0), (0.95, 0.50, 0.80))  # bath base
+    add_box(pos, nrm, idx, (0.0, 0.58, 0.0), (0.85, 0.16, 0.70))  # water line
+    add_box(pos, nrm, idx, (-0.28, 0.78, 0.0), (0.08, 0.28, 0.55))  # rack rail
+    add_box(pos, nrm, idx, (0.28, 0.78, 0.0), (0.08, 0.28, 0.55))
+    add_box(pos, nrm, idx, (0.0, 0.95, 0.0), (0.80, 0.08, 0.65))  # steam lid
+    return _finish(pos, nrm, idx)
+
+
+def canner_module():
+    """Harbor canner: retort drum, gauge, can chute."""
+    pos, nrm, idx = [], [], []
+    add_box(pos, nrm, idx, (0.0, 0.40, 0.0), (0.85, 0.75, 0.70))  # retort
+    add_box(pos, nrm, idx, (0.0, 0.85, 0.0), (0.70, 0.12, 0.55))  # lid band
+    add_box(pos, nrm, idx, (0.38, 0.70, 0.0), (0.18, 0.18, 0.18))  # gauge
+    add_box(pos, nrm, idx, (0.0, 0.45, 0.42), (0.40, 0.35, 0.16))  # can chute
+    add_box(pos, nrm, idx, (0.0, 1.05, 0.0), (0.20, 0.20, 0.20))  # vent
+    return _finish(pos, nrm, idx)
+
+
 MODULE_BUILDERS = {
     "pier": pier_deck_module,
     "ground": ground_module,
@@ -224,6 +246,8 @@ MODULE_BUILDERS = {
     "pickler": pickler_module,
     "braiser": braiser_module,
     "glazer": glazer_module,
+    "poacher": poacher_module,
+    "canner": canner_module,
 }
 
 MODULE_COLORS = {
@@ -243,6 +267,8 @@ MODULE_COLORS = {
     "pickler": "#5A8A6A",
     "braiser": "#A06040",
     "glazer": "#6A90B0",
+    "poacher": "#5A98A8",
+    "canner": "#8A6A48",
 }
 
 # World Y height (metres) when node scale Y = height / 1.0 after normalize.
@@ -263,4 +289,6 @@ MODULE_HEIGHTS = {
     "pickler": 1.40,
     "braiser": 1.35,
     "glazer": 1.35,
+    "poacher": 1.35,
+    "canner": 1.40,
 }

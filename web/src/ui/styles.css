@@ -217,6 +217,7 @@ body { background: var(--sky); overflow: hidden; overscroll-behavior: none; -web
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 20%, transparent);
 }
 .timing-band { position: absolute; top: 0; bottom: 0; }
+.timing-band.strike { background: color-mix(in srgb, var(--warn, #c97b2a) 35%, transparent); }
 .timing-band.good { background: color-mix(in srgb, var(--action) 55%, transparent); }
 .timing-band.perfect { background: color-mix(in srgb, var(--reward) 75%, transparent); }
 .timing-needle {

@@ -6,6 +6,7 @@ import {
   AchievementSystem, AutomationSystem, BaitSystem, BankSystem, ContractSystem, CosmeticsIapSystem, CustomerSystem, DailyGoalsSystem, DecorSystem, EconomySystem, EndgameSystem, FishingSystem, FullUnlockSystem, HarborTravelSystem, MovementSystem, PlotSystem, PrestigeSystem, ProductionSystem, ProgressionSystem, RivalMarketSystem, SeasonalEventSystem, WeatherSystem, MasterySystem, StaffTreesSystem,
   StepContext, TransferSystem, UpgradeSystem, WorkerSystem, invariantProblems,
 } from "./systems";
+import { WeeklyGoalsSystem } from "./weeklyGoals";
 
 export class Simulation {
   get harbor(): HarborDef {
@@ -38,6 +39,7 @@ export class Simulation {
     EndgameSystem.step(ctx);
     AchievementSystem.step(ctx);
     DailyGoalsSystem.step(ctx);
+    WeeklyGoalsSystem.step(ctx);
     WeatherSystem.step(ctx);
     SeasonalEventSystem.step(ctx);
     ContractSystem.step(ctx);
@@ -148,6 +150,9 @@ export class Simulation {
         break;
       case "claim_daily_goal":
         DailyGoalsSystem.claim(ctx, c.objectiveId, c.requestId);
+        break;
+      case "claim_weekly_goal":
+        WeeklyGoalsSystem.claim(ctx, c.objectiveId, c.requestId);
         break;
       case "buy_bait":
         BaitSystem.buy(ctx, c.baitId, c.requestId);

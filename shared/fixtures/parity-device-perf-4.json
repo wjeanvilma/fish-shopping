@@ -27,7 +27,7 @@
       "FRAME_UPGRADE_STREAK",
       "UNDER_BUDGET_MULT",
       "FrameBudgetAction",
-      "HARBOR_CACHE_LIMIT = 3"
+      "HARBOR_CACHE_LIMIT"
     ],
     "analyticsContractMustContain": [
       "consent fail-closed",

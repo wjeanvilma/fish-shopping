@@ -65,10 +65,22 @@ import {
   type WorldBurstCue,
 } from "../render/presenters";
 import { HostEconomyIntents } from "./host/hostEconomyIntents";
+import { HostFishingIntents } from "./host/hostFishingIntents";
+import { loopHudSnapshotFrom, type LoopHudSnapshot } from "./loopHudSnapshot";
 import { HostIapIntents } from "./host/hostIapIntents";
 import { HostShellIntents } from "./host/hostShellIntents";
 import { HostTravelIntents } from "./host/hostTravelIntents";
 import { processHostStep } from "./host/hostStepBus";
+import {
+  EMPTY_PRESSURE_FLAGS,
+  edgePressureSfx,
+  pressureFlagsFromView,
+  type PressureFlags,
+} from "../audio/pressureJuice";
+import {
+  resolveContractDeadlineBurst,
+  resolveQuestNearBurst,
+} from "../render/presenters";
 import { stickFromTapTarget, type TapTarget } from "../presenters/tapToMove";
 
 export type { HostState } from "./host/hostState";
@@ -128,9 +140,12 @@ export class GameHost {
   private pendingBursts: WorldBurstCue[] = [];
   /** Phase 21 screen-shake kinds (drained each frame by the scene). */
   private pendingShakes: ShakeKind[] = [];
+  /** Finish 5.0 Phase 12 — previous pressure edge flags for warn stingers. */
+  private pressureFlags: PressureFlags = { ...EMPTY_PRESSURE_FLAGS };
 
   private readonly shellIntents = new HostShellIntents(this);
   private readonly economyIntents = new HostEconomyIntents(this);
+  private readonly fishingIntents = new HostFishingIntents(this);
   private readonly travelIntents = new HostTravelIntents(this, this.shellIntents);
   private readonly iapIntents = new HostIapIntents(this);
 
@@ -177,7 +192,7 @@ export class GameHost {
     this.syncMusicBed();
   }
 
-  /** Finish 2.0/3.0/4.0: festival/storm/rival/night/endgame/ledger beds; ducking unchanged. */
+  /** Finish 2.0/3.0/4.0/5.0: festival/storm/rival/night/endgame/ledger/pressure beds; ducking unchanged. */
   private syncMusicBed(): void {
     const v = this.latestView;
     const festivalActive = !!v?.seasonalEvent;
@@ -189,6 +204,12 @@ export class GameHost {
     const nightActive = tide === "night" || tide === "dusk";
     const endgameActive = !!v?.endgameUnlocked;
     const ledgerActive = (v?.bank?.loanOwed ?? 0) > 0;
+    const pressureActive =
+      (v?.bagSpoilPressurePermille ?? 0) > 1000 ||
+      (v?.serviceQueuePressurePermille ?? 0) >= 700 ||
+      (v?.ticksUntilNearestContractDeadline != null &&
+        v.ticksUntilNearestContractDeadline <= 200) ||
+      (v?.nextQuestProgressPermille != null && v.nextQuestProgressPermille >= 800);
     this.audio.syncMusicBedFromPanels(
       this.panels.isOpen("station"),
       festivalActive,
@@ -197,6 +218,7 @@ export class GameHost {
       nightActive,
       endgameActive,
       ledgerActive,
+      pressureActive,
     );
   }
 
@@ -602,6 +624,20 @@ export class GameHost {
       pendingShakes: this.pendingShakes,
       setLatestView: (v) => { this.latestView = v; },
     });
+    // Finish 5.0 Phase 12 — rising-edge pressure warn SFX + juice.
+    const nextFlags = pressureFlagsFromView(this.latestView);
+    const edgeCues = edgePressureSfx(this.pressureFlags, nextFlags);
+    for (const cue of edgeCues) this.audio.play(cue);
+    if (this.latestView) {
+      if (edgeCues.includes("contract_deadline")) {
+        this.pendingBursts.push(resolveContractDeadlineBurst(this.latestView));
+        this.pendingShakes.push("contract_deadline");
+      }
+      if (edgeCues.includes("quest_near")) {
+        this.pendingBursts.push(resolveQuestNearBurst(this.latestView));
+      }
+    }
+    this.pressureFlags = nextFlags;
   }
 
   // ---- intent ------------------------------------------------------------------------
@@ -794,6 +830,7 @@ export class GameHost {
   }
 
   claimDailyGoal(objectiveId: string): void { this.economyIntents.claimDailyGoal(objectiveId); }
+  claimWeeklyGoal(objectiveId: string): void { this.economyIntents.claimWeeklyGoal(objectiveId); }
 
   /** Presentation settings (mute, volumes, haptics, quality, a11y, cloud). Not part of the parity save. */
   updateSettings(partial: Partial<GameSettings>): void {
@@ -1134,15 +1171,21 @@ export class GameHost {
 
   travelToHarbor(harborId: string): void { this.travelIntents.travelToHarbor(harborId); }
 
-  buyBait(baitId: string): void { this.economyIntents.buyBait(baitId); }
+  buyBait(baitId: string): void { this.fishingIntents.buyBait(baitId); }
 
-  selectBait(baitId: string | null): void { this.economyIntents.selectBait(baitId); }
+  selectBait(baitId: string | null): void { this.fishingIntents.selectBait(baitId); }
 
   selectTechnique(techniqueId: string | null): void {
-    this.economyIntents.selectTechnique(techniqueId);
+    this.fishingIntents.selectTechnique(techniqueId);
   }
 
-  reel(): void { this.economyIntents.reel(); }
+  reel(): void { this.fishingIntents.reel(); }
+
+  /** Finish 5.0 Phase 5 — loop HUD snapshot from latest SimView. */
+  loopHudSnapshot(): LoopHudSnapshot | null {
+    if (!this.latestView) return null;
+    return loopHudSnapshotFrom(this.latestView);
+  }
 
   /** Cycle Auto → each recipe → Auto for a station (no tick advance). */
   cycleStationRecipe(stationId: string): void {

@@ -1,0 +1,183 @@
+{
+  "phase": 13,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.species_125.v1",
+  "description": "Finish 5.0 Phase 13 — lock species 101–125 into content-pack with ecology depth (8 new habitats covering all 25 wave ids) + full 8-locale content i18n. Closes gaps.speciesRemaining. Schema stays 25 / content 4.0.0.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "speciesCount": 125,
+  "newSpeciesCount": 25,
+  "habitatCount": 24,
+  "newHabitatCount": 8,
+  "species125Marker": "authored-finish-5.0-phase-13",
+  "priorSpeciesFloor": 100,
+  "fishArt5Catalog": "shared/ship/fish-art-5.json",
+  "gapClosed": "speciesRemaining",
+  "gapClosedValue": 0,
+  "newBaseSpecies": [
+    {
+      "id": "species.mist_sprat",
+      "name": "Mist sprat",
+      "rareUpgrade": "species.gilt_mist",
+      "harbors": ["harbor.sunrise_pier"],
+      "gallery": "gallery.sunrise_pier",
+      "habitat": "habitat.mist_rail"
+    },
+    {
+      "id": "species.veil_shad",
+      "name": "Veil shad",
+      "rareUpgrade": "species.prism_veil",
+      "harbors": ["harbor.sunrise_pier"],
+      "gallery": "gallery.sunrise_pier",
+      "habitat": "habitat.veil_glow"
+    },
+    {
+      "id": "species.dusk_mullet",
+      "name": "Dusk mullet",
+      "rareUpgrade": "species.bronze_dusk",
+      "harbors": ["harbor.moon_cove"],
+      "gallery": "gallery.moon_cove",
+      "habitat": "habitat.dusk_ledge"
+    },
+    {
+      "id": "species.shelf_blenny",
+      "name": "Shelf blenny",
+      "rareUpgrade": "species.opal_shelf",
+      "harbors": ["harbor.moon_cove"],
+      "gallery": "gallery.moon_cove",
+      "habitat": "habitat.shelf_rim"
+    },
+    {
+      "id": "species.coral_scad",
+      "name": "Coral scad",
+      "rareUpgrade": "species.gilt_scad",
+      "harbors": ["harbor.coral_lagoon"],
+      "gallery": "gallery.coral_lagoon",
+      "habitat": "habitat.scad_reef"
+    },
+    {
+      "id": "species.storm_drum",
+      "name": "Storm drum",
+      "rareUpgrade": "species.thunder_storm",
+      "harbors": ["harbor.storm_quay"],
+      "gallery": "gallery.storm_quay",
+      "habitat": "habitat.drum_chop"
+    },
+    {
+      "id": "species.ember_ray",
+      "name": "Ember ray",
+      "rareUpgrade": "species.magma_ember",
+      "harbors": ["harbor.ember_wharf"],
+      "gallery": "gallery.ember_wharf",
+      "habitat": "habitat.ray_kiln"
+    },
+    {
+      "id": "species.north_smelt",
+      "name": "North smelt",
+      "rareUpgrade": "species.aurora_north",
+      "harbors": ["harbor.northlight_harbor"],
+      "gallery": "gallery.northlight_harbor",
+      "habitat": "habitat.finish5_cut"
+    },
+    {
+      "id": "species.marina_jack",
+      "name": "Marina jack",
+      "rareUpgrade": "species.gilt_marina",
+      "harbors": ["harbor.grand_marina"],
+      "gallery": "gallery.grand_marina",
+      "habitat": "habitat.finish5_cut"
+    },
+    {
+      "id": "species.lantern_pike",
+      "name": "Lantern pike",
+      "rareUpgrade": "species.prism_lantern",
+      "harbors": ["harbor.mist_cove"],
+      "gallery": "gallery.mist_cove",
+      "habitat": "habitat.finish5_cut"
+    },
+    {
+      "id": "species.brine_goby",
+      "name": "Brine goby",
+      "rareUpgrade": "species.crystal_brine",
+      "harbors": ["harbor.obsidian_jetty"],
+      "gallery": "gallery.obsidian_jetty",
+      "habitat": "habitat.finish5_cut"
+    },
+    {
+      "id": "species.plaza_wrasse",
+      "name": "Plaza wrasse",
+      "rareUpgrade": "species.crown_plaza",
+      "harbors": ["harbor.prism_reach"],
+      "gallery": "gallery.prism_reach",
+      "habitat": "habitat.finish5_cut"
+    },
+    {
+      "id": "species.mist_tuna",
+      "name": "Mist tuna",
+      "rareUpgrade": null,
+      "harbors": ["harbor.mist_cove"],
+      "gallery": "gallery.mist_cove",
+      "habitat": "habitat.finish5_cut"
+    }
+  ],
+  "newRareSpecies": [
+    "species.gilt_mist",
+    "species.prism_veil",
+    "species.bronze_dusk",
+    "species.opal_shelf",
+    "species.gilt_scad",
+    "species.thunder_storm",
+    "species.magma_ember",
+    "species.aurora_north",
+    "species.gilt_marina",
+    "species.prism_lantern",
+    "species.crystal_brine",
+    "species.crown_plaza"
+  ],
+  "habitatIds": [
+    "habitat.mist_rail",
+    "habitat.veil_glow",
+    "habitat.dusk_ledge",
+    "habitat.shelf_rim",
+    "habitat.scad_reef",
+    "habitat.drum_chop",
+    "habitat.ray_kiln",
+    "habitat.finish5_cut"
+  ],
+  "allHabitatFloor": 24,
+  "rareGallery": "gallery.rare_gallery",
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-species-125.json",
+  "authorTool": "shared/tools/author_species_125.py",
+  "validateScript": "npm run species125:validate",
+  "i18n": {
+    "locales": ["en", "es", "pt", "fr", "ht", "it", "ca", "ru"],
+    "contentStringsEn": "shared/i18n/content-strings.en.json",
+    "waveKeyCount": 25,
+    "habitatKeyCount": 8,
+    "requireTranslatedLocales": true,
+    "requireNonEnglishPassthrough": ["es", "pt", "fr", "ht", "it", "ca", "ru"]
+  },
+  "checklist": [
+    "content-pack has 125 species including Phase 9 art-ahead wave + rares",
+    "ecology.habitats ≥24 with 8 Phase 13 pockets covering all 25 wave ids",
+    "All 8 locales translate wave species + new habitats (non-EN ≠ EN)",
+    "Codex entries for all 125 species",
+    "kickoff baseline.species = 125; speciesRemaining = 0",
+    "species125:validate green in CI",
+    "schema stays 25 / content 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/species-125.json",
+    "shared/fixtures/parity-species-125.json",
+    "shared/ship/fish-art-5.json",
+    "shared/ship/finish-5.0-kickoff.json",
+    "shared/tools/author_species_125.py",
+    "shared/assets/models/fish_mist_sprat.glb",
+    "shared/assets/models/fish_mist_tuna.glb",
+    "web/src/ship/species125.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Species125.kt",
+    "web/scripts/validate-species-125.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/world/EcologySystem.kt"
+  ]
+}

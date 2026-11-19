@@ -1,0 +1,22 @@
+{
+  "schema": "fish.fixtures.parity_engine_depth_2.v1",
+  "engineDepth2Marker": "authored-finish-5.0-phase-3",
+  "phase": 3,
+  "plan": "30_finish_5.0",
+  "expect": {
+    "viewFieldMin": 5,
+    "coachingContextMin": 5,
+    "queuePressureTipPermille": 700,
+    "impatientPatienceMaxTicks": 40,
+    "contractDeadlineWarnTicks": 200,
+    "questNearCompletePermille": 800,
+    "schemaVersion": 25,
+    "contentVersion": "4.0.0",
+    "gates": [
+      "view_fields",
+      "coaching_contexts",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

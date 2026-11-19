@@ -176,6 +176,9 @@ internal fun TimingMeter(
     perfectEnd: Float,
     tier: String?,
     modifier: Modifier = Modifier,
+    /** Finish 5.0 Phase 4 — cast strike band overlay (0..1 of cast duration). */
+    strikeStart: Float? = null,
+    strikeEnd: Float? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
     val border = when (tier) {
@@ -185,12 +188,22 @@ internal fun TimingMeter(
     }
     val goodBand = scheme.primary.copy(alpha = 0.45f)
     val perfectBand = scheme.secondary.copy(alpha = 0.7f)
+    val strikeBand = scheme.tertiary.copy(alpha = 0.28f)
     val needle = scheme.onSurface
     androidx.compose.foundation.Canvas(
         modifier = modifier.background(scheme.onSurface.copy(alpha = 0.18f), RoundedCornerShape(999.dp)),
     ) {
         val w = size.width
         val h = size.height
+        if (strikeStart != null && strikeEnd != null) {
+            val strikeL = strikeStart.coerceIn(0f, 1f) * w
+            val strikeR = strikeEnd.coerceIn(0f, 1f) * w
+            drawRect(
+                color = strikeBand,
+                topLeft = androidx.compose.ui.geometry.Offset(strikeL, 0f),
+                size = androidx.compose.ui.geometry.Size((strikeR - strikeL).coerceAtLeast(0f), h),
+            )
+        }
         val goodL = goodStart.coerceIn(0f, 1f) * w
         val goodR = goodEnd.coerceIn(0f, 1f) * w
         val perfectL = perfectStart.coerceIn(0f, 1f) * w

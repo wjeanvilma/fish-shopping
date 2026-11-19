@@ -1,7 +1,7 @@
 {
   "phase": 15,
   "schema": "fish.perf.budget_gate.v1",
-  "description": "Post-1.0 Phase 15 \u2014 CI smoke + fail criteria enforcing Phase 26 device-matrix budgets. Finish 4.0 Phase 27 tightens streaks/mult + soft auto-upgrade smoke. Presentation-only; never changes the 20 Hz sim.",
+  "description": "Post-1.0 Phase 15 — CI smoke + fail criteria enforcing device-matrix budgets. Finish 5.0 Phase 27 raises harbor LRU + denser presenter caps for 12 harbors.",
   "phase26Catalog": "shared/perf/device-matrix.json",
   "finish4Phase": 27,
   "npmScript": "perf:budget",
@@ -37,18 +37,18 @@
   "presenterCaps": {
     "crowd": {
       "low": 3,
-      "medium": 5,
-      "high": 8
+      "medium": 6,
+      "high": 10
     },
     "fly": {
       "low": 4,
-      "medium": 8,
-      "high": 12
+      "medium": 10,
+      "high": 16
     },
     "burst": {
       "low": 2,
-      "medium": 4,
-      "high": 8
+      "medium": 5,
+      "high": 10
     }
   },
   "vfxJuicePhase": 21,
@@ -63,7 +63,7 @@
     "high": 1.0
   },
   "maxShakeAmplitudeM": 0.12,
-  "harborCacheLimit": 3,
+  "harborCacheLimit": 4,
   "smoke": {
     "syntheticDowngradeStreak": 3,
     "syntheticUpgradeStreak": 3,
@@ -79,21 +79,25 @@
     "androidPresenters": "app/src/main/java/com/willio/jeanvilma/fishshopping/render/Presenters.kt"
   },
   "deviceChecklist": [
-    "Android mid-tier phone @ medium: EMA frame \u226433.3ms steady; soft-downgrade after ~1.3s sustained miss",
-    "Android low: allow \u226440ms; crowd\u22643 fly\u22644 burst\u22642",
+    "Android mid-tier phone @ medium: EMA frame ≤33.3ms steady; soft-downgrade after ~1.3s sustained miss",
+    "Android low: allow ≤40ms; crowd≤3 fly≤4 burst≤2",
     "Android: after sustained under-budget, soft-upgrade toward requested preset (never above)",
-    "Web Chrome desktop @ medium: \u226416.7ms target; CSS height capped at 1080; DPR\u22641.5",
-    "Web high\u2192medium\u2192low auto-downgrade + reverse upgrade steps only (never touches sim Hz)",
-    "Harbor GLB LRU \u22643 on both platforms (10-harbor travel)"
+    "Web Chrome desktop @ medium: ≤16.7ms target; CSS height capped at 1080; DPR≤1.5",
+    "Web high→medium→low auto-downgrade + reverse upgrade steps only (never touches sim Hz)",
+    "Harbor GLB LRU ≤3 on both platforms (10-harbor travel)",
+    "Harbor GLB LRU ≥4 on both platforms (12-harbor travel)"
   ],
   "failCriteria": [
     "CI: web/android frameTargetMs drift from device-matrix.json",
     "CI: presenter caps (crowd/fly/burst) mismatch across TS/Kotlin",
     "CI: synthetic FrameTiming smoke does not request downgrade after streak",
     "CI: synthetic FrameTiming smoke does not request upgrade after under-budget streak",
-    "Device: sustained >1.12\u00d7 budget with no quality step-down",
+    "Device: sustained >1.12× budget with no quality step-down",
     "Device: any quality change alters 20 Hz sim tick rate"
   ],
   "vfxJuice4Phase": 23,
-  "vfxJuice4Catalog": "shared/ship/vfx-juice-4.json"
+  "vfxJuice4Catalog": "shared/ship/vfx-juice-4.json",
+  "vfxJuice5Phase": 12,
+  "vfxJuice5Catalog": "shared/ship/vfx-juice-5.json",
+  "finish5Phase": 27
 }

@@ -276,6 +276,11 @@ object StarterLineFixture {
                 put("objectiveId", c.objectiveId)
                 put("requestId", c.requestId)
             }
+            is Command.ClaimWeeklyGoal -> {
+                put("type", "claim_weekly_goal")
+                put("objectiveId", c.objectiveId)
+                put("requestId", c.requestId)
+            }
             is Command.TravelToHarbor -> {
                 put("type", "travel_to_harbor")
                 put("harborId", c.harborId)
@@ -382,6 +387,10 @@ object StarterLineFixture {
         "deliver_contract" -> Command.DeliverContract(o["contractId"]!!.jsonPrimitive.content, o["requestId"]!!.jsonPrimitive.content)
         "sync_wall_clock" -> Command.SyncWallClock(o["epochMs"]!!.jsonPrimitive.long)
         "claim_daily_goal" -> Command.ClaimDailyGoal(
+            o["objectiveId"]!!.jsonPrimitive.content,
+            o["requestId"]!!.jsonPrimitive.content,
+        )
+        "claim_weekly_goal" -> Command.ClaimWeeklyGoal(
             o["objectiveId"]!!.jsonPrimitive.content,
             o["requestId"]!!.jsonPrimitive.content,
         )

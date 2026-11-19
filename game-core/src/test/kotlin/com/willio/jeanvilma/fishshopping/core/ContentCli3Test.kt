@@ -3,10 +3,10 @@ package com.willio.jeanvilma.fishshopping.core
 import com.willio.jeanvilma.fishshopping.core.ship.ContentCli3
 import com.willio.jeanvilma.fishshopping.core.ship.Finish4Kickoff
 import java.io.File
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import org.junit.Test
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -17,7 +17,7 @@ class ContentCli3Test {
     @Test
     fun contentCli3CatalogLocksWave3FloorsAndClosesGap() {
         val catalog = File(root, ContentCli3.CATALOG)
-        assertTrue(catalog.exists(), "missing ${ContentCli3.CATALOG}")
+        assertTrue("missing ${ContentCli3.CATALOG}", catalog.exists())
         val json = Json.parseToJsonElement(catalog.readText()).jsonObject
         assertEquals(
             ContentCli3.CONTENT_CLI_3_MARKER,

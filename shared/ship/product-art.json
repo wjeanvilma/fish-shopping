@@ -2,13 +2,13 @@
   "phase": 10,
   "plan": "30_finish_4.0",
   "schema": "fish.ship.product_art.v1",
-  "description": "Finish 4.0 Phase 10/13/18 — product/cosmetic art presentation. Authors multi-part ProductArt meshes for all products, authored cosmetic banner GLBs for 18 IAP banners, and counter tray presentation depth. Schema stays 25 / content 3.0.0.",
+  "description": "Finish 4.0 Phase 10/13 + Finish 5.0 Phase 15 — product/cosmetic art presentation pass. Authors multi-part ProductArt meshes for all 46 products, authored cosmetic banner GLBs, and counter tray presentation depth. Schema stays 25 / content 4.0.0.",
   "contentVersion": "3.0.0",
   "schemaVersion": 24,
   "productArtMarker": "authored-finish-4.0-phase-10",
   "cosmeticBannerMarker": "cosmetic-banner-phase-10",
-  "authoredProductTarget": 40,
-  "cosmeticBannerTarget": 18,
+  "authoredProductTarget": 46,
+  "cosmeticBannerTarget": 24,
   "minProductArtNodes": 4,
   "minCosmeticArtNodes": 4,
   "themesModule": "shared/tools/product_themes.py",
@@ -152,7 +152,7 @@
     },
     {
       "productId": "product.harbor_broth",
-      "kind": "portion",
+      "kind": "soup",
       "asset": "shared/assets/models/product_harbor_broth.glb"
     },
     {
@@ -234,6 +234,36 @@
       "productId": "product.glaze_carton",
       "kind": "carton",
       "asset": "shared/assets/models/product_glaze_carton.glb"
+    },
+    {
+      "productId": "product.poached_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_poached_fillet.glb"
+    },
+    {
+      "productId": "product.poach_broth",
+      "kind": "soup",
+      "asset": "shared/assets/models/product_poach_broth.glb"
+    },
+    {
+      "productId": "product.poach_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_poach_carton.glb"
+    },
+    {
+      "productId": "product.canned_fillet",
+      "kind": "fillet",
+      "asset": "shared/assets/models/product_canned_fillet.glb"
+    },
+    {
+      "productId": "product.can_medley",
+      "kind": "skewer",
+      "asset": "shared/assets/models/product_can_medley.glb"
+    },
+    {
+      "productId": "product.can_carton",
+      "kind": "carton",
+      "asset": "shared/assets/models/product_can_carton.glb"
     }
   ],
   "cosmeticBanners": [
@@ -308,6 +338,30 @@
     {
       "cosmeticId": "banner.iap_aurora_crest",
       "asset": "shared/assets/models/cosmetic_banner_aurora_crest.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_aurora_bunting",
+      "asset": "shared/assets/models/cosmetic_banner_aurora_bunting.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_tideglass_pennant",
+      "asset": "shared/assets/models/cosmetic_banner_tideglass_pennant.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_inlet_flag",
+      "asset": "shared/assets/models/cosmetic_banner_inlet_flag.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_bay_streamer",
+      "asset": "shared/assets/models/cosmetic_banner_bay_streamer.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_poach_ribbon",
+      "asset": "shared/assets/models/cosmetic_banner_poach_ribbon.glb"
+    },
+    {
+      "cosmeticId": "banner.iap_can_crest",
+      "asset": "shared/assets/models/cosmetic_banner_can_crest.glb"
     }
   ],
   "checklist": [
@@ -328,5 +382,9 @@
     "web/src/ship/productArt.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ProductArt.kt",
     "web/scripts/validate-product-art.ts"
-  ]
+  ],
+  "softFloors": {
+    "productFinish5Marker": "product-art-5",
+    "cosmeticFinish5Marker": "product-art-5"
+  }
 }

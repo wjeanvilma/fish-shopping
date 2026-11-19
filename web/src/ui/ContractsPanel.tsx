@@ -24,7 +24,12 @@ import {
 } from "../store/licenses";
 import { formatAwayDuration, formatCoins, formatRushSeconds, prestigeRewardBits } from "./hudFormat";
 
-export function ContractsPanel({ unlocked, lockedReason, offers, active, refreshTicksLeft, failStreak, failStreakThreshold, onAccept, onDeliver, onClose }: {
+export function ContractsPanel({
+  unlocked, lockedReason, offers, active, refreshTicksLeft, failStreak, failStreakThreshold,
+  ticksUntilNearestContractDeadline = null,
+  contractBoardPressurePermille = 0,
+  onAccept, onDeliver, onClose,
+}: {
   unlocked: boolean;
   lockedReason: string | null;
   offers: ContractOfferView[];
@@ -32,6 +37,10 @@ export function ContractsPanel({ unlocked, lockedReason, offers, active, refresh
   refreshTicksLeft: number;
   failStreak: number;
   failStreakThreshold: number;
+  /** Finish 5.0 Phase 5 — nearest active deadline ticks. */
+  ticksUntilNearestContractDeadline?: number | null;
+  /** Finish 5.0 Phase 5 — fail-streak board pressure (1000 = at threshold). */
+  contractBoardPressurePermille?: number;
   onAccept: (offerId: string) => void;
   onDeliver: (contractId: string) => void;
   onClose: () => void;
@@ -49,12 +58,22 @@ export function ContractsPanel({ unlocked, lockedReason, offers, active, refresh
             )}
             {unlocked && failStreak > 0 && (
               <div
-                className={`small ${failStreak >= failStreakThreshold ? "danger" : "muted"}`}
+                className={`small ${failStreak >= failStreakThreshold || contractBoardPressurePermille >= 1000 ? "danger" : "muted"}`}
                 role="status"
                 aria-label={t("a11y.failStreak", { count: failStreak })}
               >
                 {t("a11y.failStreak", { count: failStreak })}
-                {failStreak >= failStreakThreshold ? " · board pressure on" : ""}
+                {failStreak >= failStreakThreshold || contractBoardPressurePermille >= 1000
+                  ? " · board pressure on"
+                  : ""}
+              </div>
+            )}
+            {unlocked && ticksUntilNearestContractDeadline != null && (
+              <div
+                className={`small ${ticksUntilNearestContractDeadline <= 200 ? "danger" : "muted"}`}
+                role="status"
+              >
+                Nearest deadline · {formatRushSeconds(ticksUntilNearestContractDeadline)}s
               </div>
             )}
           </div>

@@ -26,6 +26,10 @@ data class CloudConflictView(
     val reasonCode: String,
     /** Finish 4.0 Phase 21 — short UX hints describing local vs remote diffs. */
     val diffHints: List<String>,
+    /** Finish 5.0 Phase 22 — conflict severity + sync diagnostics. */
+    val severity: String = "low",
+    val ageSkewMs: Long = 0L,
+    val syncDiagnostics: List<String> = emptyList(),
     val recommended: SyncSource,
     val local: SnapshotChoiceRow,
     val remote: SnapshotChoiceRow,
@@ -80,6 +84,9 @@ object SnapshotChoice {
             reason = offer.reason,
             reasonCode = offer.reasonCode,
             diffHints = offer.diffHints,
+            severity = offer.severity.name.lowercase(),
+            ageSkewMs = offer.ageSkewMs,
+            syncDiagnostics = offer.syncDiagnostics,
             recommended = offer.recommended,
             local = row(offer.local, "This device", content, offer.recommended == SyncSource.LOCAL, nowMs),
             remote = row(offer.remote, "Cloud", content, offer.recommended == SyncSource.REMOTE, nowMs),

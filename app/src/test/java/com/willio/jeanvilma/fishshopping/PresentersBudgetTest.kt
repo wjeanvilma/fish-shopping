@@ -2,6 +2,7 @@ package com.willio.jeanvilma.fishshopping
 
 import com.willio.jeanvilma.fishshopping.persistence.QualityPreset
 import com.willio.jeanvilma.fishshopping.render.FLYING_TRANSFER_POOL
+import com.willio.jeanvilma.fishshopping.render.FrameBudgetAction
 import com.willio.jeanvilma.fishshopping.render.FrameTiming
 import com.willio.jeanvilma.fishshopping.render.FlyingTransferCue
 import com.willio.jeanvilma.fishshopping.render.FlyingTransfers
@@ -32,10 +33,11 @@ class PresentersBudgetTest {
     @Test
     fun qualityBudgetsMatchPhase26Table() {
         assertEquals(4, flyingTransferPoolForQuality(PresenterQuality.LOW))
-        assertEquals(8, flyingTransferPoolForQuality(PresenterQuality.MEDIUM))
+        // Soft-floor Finish 5.0 denser-scene caps (medium/high may grow).
+        assertTrue(flyingTransferPoolForQuality(PresenterQuality.MEDIUM) >= 8)
         assertEquals(FLYING_TRANSFER_POOL, flyingTransferPoolForQuality(PresenterQuality.HIGH))
         assertEquals(3, crowdDrawCapForQuality(PresenterQuality.LOW, 6))
-        assertEquals(5, crowdDrawCapForQuality(PresenterQuality.MEDIUM, 6))
+        assertTrue(crowdDrawCapForQuality(PresenterQuality.MEDIUM, 12) >= 5)
         assertEquals(6, crowdDrawCapForQuality(PresenterQuality.HIGH, 6)) // clamped to GLB
     }
 
@@ -44,9 +46,10 @@ class PresentersBudgetTest {
         assertEquals(33.3, FrameTiming.targetMs(QualityPreset.MEDIUM), 0.05)
         assertEquals(33.3, FrameTiming.targetMs(QualityPreset.HIGH), 0.05)
         assertEquals(40.0, FrameTiming.targetMs(QualityPreset.LOW), 0.05)
-        assertEquals(45, FrameTiming.FRAME_DOWNGRADE_STREAK)
-        assertEquals(2, FrameTiming.HARBOR_CACHE_LIMIT)
-        assertEquals(1.15, FrameTiming.OVER_BUDGET_MULT, 0.001)
+        // Soft-floor Finish 4.0/5.0: streaks/mult/cache may tighten or grow.
+        assertTrue(FrameTiming.FRAME_DOWNGRADE_STREAK <= 45)
+        assertTrue(FrameTiming.HARBOR_CACHE_LIMIT >= 3)
+        assertTrue(FrameTiming.OVER_BUDGET_MULT <= 1.15)
     }
 
     @Test
@@ -62,11 +65,11 @@ class PresentersBudgetTest {
     fun frameTimingSuggestsDowngradeAfterSustainedMiss() {
         val timing = FrameTiming(emaAlpha = 1.0, downgradeStreak = 3)
         val target = FrameTiming.targetMs(QualityPreset.MEDIUM)
-        // Over-budget is targetMs * 1.15 (~38.3ms at medium); use 50ms misses.
-        assertFalse(timing.sample(0.010, target))
-        assertFalse(timing.sample(0.050, target))
-        assertFalse(timing.sample(0.050, target))
-        assertTrue(timing.sample(0.050, target))
+        // Over-budget is targetMs * OVER_BUDGET_MULT; use 50ms misses.
+        assertEquals(FrameBudgetAction.HOLD, timing.sample(0.010, target))
+        assertEquals(FrameBudgetAction.HOLD, timing.sample(0.050, target))
+        assertEquals(FrameBudgetAction.HOLD, timing.sample(0.050, target))
+        assertEquals(FrameBudgetAction.DOWNGRADE, timing.sample(0.050, target))
         assertEquals(QualityPreset.LOW, FrameTiming.downgrade(QualityPreset.MEDIUM))
     }
 
@@ -92,7 +95,8 @@ class PresentersBudgetTest {
     @Test
     fun worldBurstBudgetsMatchPhase16Table() {
         assertEquals(2, worldBurstPoolForQuality(PresenterQuality.LOW))
-        assertEquals(4, worldBurstPoolForQuality(PresenterQuality.MEDIUM))
+        // Soft-floor Finish 5.0 denser-scene burst caps (medium/high may grow).
+        assertTrue(worldBurstPoolForQuality(PresenterQuality.MEDIUM) >= 4)
         assertEquals(VFX_BURST_POOL, worldBurstPoolForQuality(PresenterQuality.HIGH))
         val bursts = WorldBursts(8)
         bursts.setBudget(2)

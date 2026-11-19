@@ -1,29 +1,29 @@
 {
   "phase": 30,
   "schema": "fish.ship.definition_of_done.v1",
-  "releaseTag": "v4.0.0",
+  "releaseTag": "v5.0.0",
   "completeTag": "v1.0-complete",
-  "contentVersion": "4.0.0",
-  "schemaVersion": 25,
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
   "quotas": {
-    "harbors": 10,
-    "speciesMin": 100,
-    "machineClasses": 12,
-    "rivalMarkets": 12,
+    "harbors": 12,
+    "speciesMin": 125,
+    "machineClasses": 14,
+    "rivalMarkets": 16,
     "achievements": 14,
-    "codexEntries": 100,
+    "codexEntries": 125,
     "weatherPatterns": 5,
     "tidePhases": 4,
     "masteryTechniques": 6,
     "masteryCoachingTips": 8,
-    "staffBranches": 10,
-    "staffSchedules": 2,
-    "seasonalEvents": 12,
-    "deliveryChains": 2,
+    "staffBranches": 13,
+    "staffSchedules": 3,
+    "seasonalEvents": 16,
+    "deliveryChains": 7,
     "reputationGatedContracts": 2,
-    "dailyObjectives": 6,
-    "authoredHarborScenes": 10,
-    "authoredFishSpecies": 100,
+    "dailyObjectives": 14,
+    "authoredHarborScenes": 12,
+    "authoredFishSpecies": 125,
     "audioPack2Stingers": 7,
     "audioPack2Beds": 2,
     "audioPack3Stingers": 8,
@@ -43,16 +43,16 @@
     "remoteAnalyticsBatchMax": 20,
     "checkoutApiRoutes": 3,
     "cloudQaScenarios": 12,
-    "contentScaffoldKinds": 8,
+    "contentScaffoldKinds": 11,
     "supportOps2FeatureFaq": 6,
     "supportOps2RefundRows": 4,
-    "parityLockSuites": 16,
+    "parityLockSuites": 20,
     "parityLockFinish2Suites": 4,
     "parityLockFinish3Suites": 4,
     "parityLockFinish4Suites": 4,
-    "quests": 50,
-    "cosmetics": 18,
-    "baits": 12,
+    "quests": 75,
+    "cosmetics": 24,
+    "baits": 16,
     "audioPack4Stingers": 9,
     "audioPack4Beds": 2,
     "vfxJuice4BurstKinds": 7,
@@ -62,7 +62,31 @@
     "a11yDepth3ContrastPairs": 2,
     "i18nUiKeysGrowth4": 280,
     "stripeOpsSkus": 19,
-    "stripeOpsPriceMapped": 19
+    "stripeOpsPriceMapped": 19,
+    "audioPack5Stingers": 5,
+    "audioPack5Beds": 1,
+    "vfxJuice5BurstKinds": 5,
+    "vfxJuice5ShakeKinds": 2,
+    "pressureAmbientModes": 3,
+    "endgameTiers": 8,
+    "endgameChallenges": 12,
+    "weeklyObjectives": 4,
+    "a11yDepth4Screens": 5,
+    "a11yDepth4ContrastPairs": 2,
+    "i18nUiKeysGrowth5": 360,
+    "stripeOps5Skus": 25,
+    "stripeOps5Cosmetics": 24,
+    "stripeOps5PriceMapped": 25,
+    "playwrightE2eScenarios": 12,
+    "composeE2eScenarios": 14,
+    "deeplinkPanelAliases": 40,
+    "harborCacheLimit": 4,
+    "androidDeviceClasses": 5,
+    "browserTargets": 5,
+    "contentCliScaffoldKinds": 11,
+    "questsMin": 75,
+    "harborsMin": 12,
+    "parityLockFinish5Suites": 4
   },
   "checks": [
     "blueprint_quotas",
@@ -326,7 +350,7 @@
       "catalog": "shared/ship/complete-tag.json"
     }
   },
-  "notes": "Finish 4.0 Phase 18 cosmetics-iap-4 complete (cosmetics≥18 power-neutral); Phases 1–17 remain green. Content stays 3.0.0 / schema 25. Finish 3.0 freeze stays ready_for_release_tag; Finish 2.0 historical. LOC freeze floors anti-regression at 3.0 cut; Finish 4.0 plan targets 32k/20k/48k/100k. Deploy/tag remain manual.",
+  "notes": "Finish 5.0 Phase 30 freeze-5 complete (5.0.0 / schema 26 / versionCode 6); Phases 1–29 remain green. LOC freeze anti-regression at measured cut; plan targets retained without padding. Deploy/tag remain manual.",
   "harbors910": {
     "phase": 12,
     "plan": "30_finish_4.0",
@@ -1589,6 +1613,654 @@
       "npm run dod:validate",
       "git tag -a v4.0.0 -m \"Fish Shopping 4.0.0 freeze\"",
       "Archive Finish 4.0 plan status as finished"
+    ]
+  },
+  "finish5Kickoff": {
+    "phase": 1,
+    "plan": "30_finish_5.0",
+    "status": "frozen",
+    "statusValues": [
+      "active",
+      "in_progress",
+      "frozen"
+    ],
+    "kickoffMarker": "authored-finish-5.0-phase-1",
+    "catalog": "shared/ship/finish-5.0-kickoff.json",
+    "parityFixture": "shared/fixtures/parity-finish-5.0-kickoff.json",
+    "validateScript": "npm run finish5:validate",
+    "smokeScript": "npm run finish5:smoke",
+    "priorPlan": "30_finish_4.0",
+    "endReleaseTag": "v5.0.0",
+    "checklist": [
+      "Finish 4.0 prior plan marked finished; freeze-4.0.0 remains green",
+      "Gap scoreboard locks content floors →125/75/12/14 and product LOC →120k",
+      "30 Finish 5.0 phases listed kickoff→freeze-5",
+      "finish5:validate + finish5:smoke green in CI"
+    ]
+  },
+  "engineDepth1": {
+    "phase": 2,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "engineDepth1Marker": "authored-finish-5.0-phase-2",
+    "catalog": "shared/ship/engine-depth-1.json",
+    "parityFixture": "shared/fixtures/parity-engine-depth-1.json",
+    "validateScript": "npm run enginedepth1:validate",
+    "checklist": [
+      "Cast FSM waiting→strike→fight",
+      "Strike mastery XP mult",
+      "Bag spoil pressure + ETA",
+      "engineDepthIncomplete closed",
+      "enginedepth1:validate green in CI"
+    ]
+  },
+  "engineDepth2": {
+    "phase": 3,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "engineDepth2Marker": "authored-finish-5.0-phase-3",
+    "catalog": "shared/ship/engine-depth-2.json",
+    "parityFixture": "shared/fixtures/parity-engine-depth-2.json",
+    "validateScript": "npm run enginedepth2:validate",
+    "checklist": [
+      "Service queue + patience pressure",
+      "Contract deadline + fail-streak pressure",
+      "Next quest progress",
+      "Coaching tips for rush/queue/deadline/quest",
+      "enginedepth2:validate green in CI"
+    ]
+  },
+  "androidVmDepth": {
+    "phase": 4,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "androidVmDepthMarker": "authored-finish-5.0-phase-4",
+    "catalog": "shared/ship/android-vm-depth.json",
+    "parityFixture": "shared/fixtures/parity-android-vm-depth.json",
+    "validateScript": "npm run androidvmdepth:validate",
+    "checklist": [
+      "VmFishingIntents extracted",
+      "LoopHudSnapshot covers engine-depth view fields",
+      "HUD bindings for cast/spoil/service/contract/quest",
+      "androidvmdepth:validate green in CI"
+    ]
+  },
+  "hostPresenterDepth": {
+    "phase": 5,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "hostPresenterDepthMarker": "authored-finish-5.0-phase-5",
+    "catalog": "shared/ship/host-presenter-depth.json",
+    "parityFixture": "shared/fixtures/parity-host-presenter-depth.json",
+    "validateScript": "npm run hostpresenterdepth:validate",
+    "checklist": [
+      "HostFishingIntents extracted",
+      "loopHudSnapshot covers engine-depth view fields",
+      "Web HUD bindings for cast/spoil/service/contract/quest",
+      "hostpresenterdepth:validate green in CI"
+    ]
+  },
+  "locMidcheck": {
+    "phase": 6,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "locMidcheckMarker": "authored-finish-5.0-phase-6",
+    "catalog": "shared/ship/loc-midcheck.json",
+    "parityFixture": "shared/fixtures/parity-loc-midcheck.json",
+    "validateScript": "npm run locmidcheck:validate",
+    "smokeScript": "npm run locmidcheck:smoke",
+    "checklist": [
+      "Midcheck LOC locked after Phases 2–5",
+      "Interim soft floors + Phase 1 baseline anti-regression",
+      "Plan targets 38k/26k/56k/120k unchanged",
+      "locmidcheck:validate green in CI"
+    ]
+  },
+  "harborArt5a": {
+    "phase": 7,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "harborArt5aMarker": "authored-finish-5.0-phase-7",
+    "catalog": "shared/ship/harbor-art-5a.json",
+    "parityFixture": "shared/fixtures/parity-harbor-art-5a.json",
+    "validateScript": "npm run harborart5a:validate",
+    "checklist": [
+      "Pass harbors 1–6 stamped harborFinish5=harbor-art-5a",
+      "≥10 HarborArt_* nodes retained with scenic+cozy markers",
+      "authoredHarbors stays 10; harborArt5Incomplete open until 5b",
+      "harborart5a:validate green in CI"
+    ]
+  },
+  "harborArt5b": {
+    "phase": 8,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "harborArt5bMarker": "authored-finish-5.0-phase-8",
+    "catalog": "shared/ship/harbor-art-5b.json",
+    "parityFixture": "shared/fixtures/parity-harbor-art-5b.json",
+    "validateScript": "npm run harborart5b:validate",
+    "checklist": [
+      "Pass harbors 7–10 stamped harborFinish5=harbor-art-5b",
+      "gaps.harborArt5Incomplete closed",
+      "authoredHarbors reaches 12 after Phase 14",
+      "harborart5b:validate green in CI"
+    ]
+  },
+  "fishArt5": {
+    "phase": 9,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "fishArt5Marker": "authored-finish-5.0-phase-9",
+    "catalog": "shared/ship/fish-art-5.json",
+    "parityFixture": "shared/fixtures/parity-fish-art-5.json",
+    "validateScript": "npm run fishart5:validate",
+    "checklist": [
+      "25 art-ahead meshes for species 101–125 stamped fishFinish5=fish-art-5",
+      "fish-art-pass authoredSpecies = 125",
+      "gaps.fishArt5Incomplete closed; authoredFishRemaining = 0",
+      "speciesRemaining stays 25 until Phase 13",
+      "fishart5:validate green in CI"
+    ]
+  },
+  "productArt5": {
+    "phase": 10,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "productArt5Marker": "authored-finish-5.0-phase-10",
+    "catalog": "shared/ship/product-art-5.json",
+    "parityFixture": "shared/fixtures/parity-product-art-5.json",
+    "validateScript": "npm run productart5:validate",
+    "checklist": [
+      "40 products + 18 banners stamped product/cosmetic Finish 5",
+      "gaps.productArt5Incomplete closed",
+      "productart:validate still green",
+      "productart5:validate green in CI"
+    ]
+  },
+  "atmosphere5": {
+    "phase": 11,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "atmosphere5Marker": "authored-finish-5.0-phase-11",
+    "catalog": "shared/ship/atmosphere-5.json",
+    "parityFixture": "shared/fixtures/parity-atmosphere-5.json",
+    "validateScript": "npm run atmosphere5:validate",
+    "checklist": [
+      "All 10 harbors stamped atmosphereFinish5=atmosphere-5",
+      "Water/Foam/LampGlow sockets retained with cozy-art-5",
+      "gaps.atmosphere5Incomplete closed",
+      "atmosphere5:validate green in CI"
+    ]
+  },
+  "audioPack5": {
+    "phase": 12,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "audioPackMarker": "authored-finish-5.0-phase-12",
+    "catalog": "shared/ship/audio-pack-5.json",
+    "parityFixture": "shared/fixtures/parity-audio-pack-5.json",
+    "validateScript": "npm run audiovfx5:validate",
+    "checklist": [
+      "≥5 pack-5 stingers",
+      "≥1 pack-5 bed (pressure)",
+      "ducking frozen",
+      "gaps.audioVfx5Incomplete closed",
+      "audiovfx5:validate green in CI"
+    ]
+  },
+  "vfxJuice5": {
+    "phase": 12,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "vfxJuice5Marker": "authored-finish-5.0-phase-12",
+    "catalog": "shared/ship/vfx-juice-5.json",
+    "parityFixture": "shared/fixtures/parity-vfx-juice-5.json",
+    "validateScript": "npm run audiovfx5:validate",
+    "checklist": [
+      "≥5 event bursts",
+      "≥2 Finish 5 shakes",
+      "≥3 pressure ambient modes",
+      "gaps.audioVfx5Incomplete closed",
+      "audiovfx5:validate green in CI"
+    ]
+  },
+  "species125": {
+    "phase": 13,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "species125Marker": "authored-finish-5.0-phase-13",
+    "catalog": "shared/ship/species-125.json",
+    "parityFixture": "shared/fixtures/parity-species-125.json",
+    "validateScript": "npm run species125:validate",
+    "checklist": [
+      "125 species in content-pack + codex",
+      "≥24 habitats with Phase 13 wave coverage",
+      "8-locale content i18n for wave + habitats",
+      "gaps.speciesRemaining = 0",
+      "species125:validate green in CI"
+    ]
+  },
+  "harbors1112": {
+    "phase": 14,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "harbors1112Marker": "authored-finish-5.0-phase-14",
+    "catalog": "shared/ship/harbors-11-12.json",
+    "parityFixture": "shared/fixtures/parity-harbors-11-12.json",
+    "validateScript": "npm run harbors1112:validate",
+    "checklist": [
+      "12 harbors including aurora_inlet + tideglass_bay",
+      "prestige eleven/twelve + landing quests + galleries wired",
+      "kickoff authoredHarborsRemaining = 0",
+      "harbors1112:validate green in CI"
+    ]
+  },
+  "machines1314": {
+    "phase": 15,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "machines1314Marker": "authored-finish-5.0-phase-15",
+    "catalog": "shared/ship/machines-13-14.json",
+    "parityFixture": "shared/fixtures/parity-machines-13-14.json",
+    "validateScript": "npm run machines1314:validate",
+    "checklist": [
+      "14 machine classes including poacher + canner",
+      "recipes + products + plots on all 12 harbors",
+      "kickoff machinesRemaining = 0",
+      "machines1314:validate green in CI"
+    ]
+  },
+  "questsContracts5": {
+    "phase": 16,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "questsContracts5Marker": "authored-finish-5.0-phase-16",
+    "catalog": "shared/ship/quests-contracts-5.json",
+    "parityFixture": "shared/fixtures/parity-quests-contracts-5.json",
+    "validateScript": "npm run quests5:validate",
+    "checklist": [
+      "≥75 quests chained past market_legend",
+      "≥7 delivery chains (aurora_run + tideglass_ferry)",
+      "≥9 reputation-gated contracts + board depth",
+      "kickoff questsRemaining = 0",
+      "quests5:validate green in CI"
+    ]
+  },
+  "endgame3": {
+    "phase": 17,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "endgame3Marker": "authored-finish-5.0-phase-17",
+    "catalog": "shared/ship/endgame-3.json",
+    "parityFixture": "shared/fixtures/parity-endgame-3.json",
+    "validateScript": "npm run endgame3:validate",
+    "checklist": [
+      "schema 26 live + v25→v26 migration",
+      "≥8 tiers / ≥12 challenges + crests",
+      "kickoff endgameSchema26Pending = false",
+      "endgame3:validate green in CI"
+    ]
+  },
+  "rivalsSeasonal5": {
+    "phase": 18,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "rivalsSeasonal5Marker": "authored-finish-5.0-phase-18",
+    "catalog": "shared/ship/rivals-seasonal-5.json",
+    "parityFixture": "shared/fixtures/parity-rivals-seasonal-5.json",
+    "validateScript": "npm run rivalsseasonal5:validate",
+    "checklist": [
+      "rivals≥16 / seasonal≥16 / baits≥16 / cosmetics≥24",
+      "all 12 harbors rival-covered",
+      "kickoff contentFloorsShort=false",
+      "rivalsseasonal5:validate green in CI"
+    ]
+  },
+  "tutorialRetention5": {
+    "phase": 19,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "tutorialRetention5Marker": "authored-finish-5.0-phase-19",
+    "catalog": "shared/ship/tutorial-retention-5.json",
+    "parityFixture": "shared/fixtures/parity-tutorial-retention-5.json",
+    "validateScript": "npm run tutorialretention5:validate",
+    "checklist": [
+      "mid-game friction + first-session copy rewrite",
+      "daily ≥14 / boardSlots ≥5",
+      "weekly ≥4 + reminder policy",
+      "kickoff tutorialRetentionIncomplete=false",
+      "tutorialretention5:validate green in CI"
+    ]
+  },
+  "staffAi3": {
+    "phase": 20,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "staffAi3Marker": "authored-finish-5.0-phase-20",
+    "catalog": "shared/ship/staff-ai-3.json",
+    "parityFixture": "shared/fixtures/parity-staff-ai-3.json",
+    "validateScript": "npm run staffai3:validate",
+    "checklist": [
+      "rush_marshal / circuit_boss / smoke_queue specialties",
+      "peak_tide schedule + day-part boost",
+      "failure_recover from blockedReason",
+      "kickoff staffAi3Incomplete=false",
+      "staffai3:validate green in CI"
+    ]
+  },
+  "economy3": {
+    "phase": 21,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "economy3Marker": "authored-finish-5.0-phase-21",
+    "catalog": "shared/ship/economy-bank-3.json",
+    "parityFixture": "shared/fixtures/parity-economy-bank-3.json",
+    "validateScript": "npm run economy3:validate",
+    "checklist": [
+      "loans ≥5 / goals ≥12",
+      "dashboard ledger analytics",
+      "web↔Android ledger UX",
+      "kickoff economy3Incomplete=false",
+      "economy3:validate green in CI"
+    ]
+  },
+  "offlineCloud3": {
+    "phase": 22,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "offlineCloud3Marker": "authored-finish-5.0-phase-22",
+    "catalog": "shared/ship/offline-cloud-3.json",
+    "parityFixture": "shared/fixtures/parity-offline-cloud-3.json",
+    "validateScript": "npm run offlinecloud3:validate",
+    "checklist": [
+      "offline journal fidelity deltas",
+      "conflict severity/ageSkew/syncDiagnostics UX",
+      "cloud queue sync diagnostics",
+      "analytics dead-letter + jitter",
+      "kickoff offlineCloud3Incomplete=false",
+      "offlinecloud3:validate green in CI"
+    ]
+  },
+  "uiParity5": {
+    "phase": 23,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "uiParity5Marker": "authored-finish-5.0-phase-23",
+    "catalog": "shared/ship/ui-parity-5.json",
+    "parityFixture": "shared/fixtures/parity-ui-parity-5.json",
+    "validateScript": "npm run uiparity5:validate",
+    "checklist": [
+      "≥14 panel pairs / ≥18 feature floors",
+      "weekly + endgame Goals surfaces",
+      "tutorial friction host parity",
+      "kickoff uiParity5Incomplete=false",
+      "uiparity5:validate green in CI"
+    ]
+  },
+  "a11yDepth4": {
+    "phase": 24,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "a11yDepth4Marker": "authored-finish-5.0-phase-24",
+    "catalog": "shared/ship/a11y-depth-4.json",
+    "parityFixture": "shared/fixtures/parity-a11y-depth-4.json",
+    "validateScript": "npm run a11yi18n5:validate",
+    "checklist": [
+      "≥5 depth-4 screen surfaces",
+      "≥2 Finish 5 contrast pairs",
+      "≥2 live regions",
+      "a11yi18n5:validate green in CI"
+    ]
+  },
+  "i18nGrowth5": {
+    "phase": 24,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "i18nGrowth5Marker": "authored-finish-5.0-phase-24",
+    "catalog": "shared/ship/i18n-growth-5.json",
+    "parityFixture": "shared/fixtures/parity-i18n-growth-5.json",
+    "validateScript": "npm run a11yi18n5:validate",
+    "checklist": [
+      "≥360 UI keys across 8 locales",
+      "≥30 a11y.* keys",
+      "Android Text(\" literals = 0",
+      "a11yi18n5:validate green in CI"
+    ]
+  },
+  "stripeOps5": {
+    "phase": 25,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "stripeOps5Marker": "authored-finish-5.0-phase-25",
+    "catalog": "shared/ship/stripe-ops-5.json",
+    "opsCatalog": "shared/ops/stripe-ops-5.json",
+    "parityFixture": "shared/fixtures/parity-stripe-ops-5.json",
+    "validateScript": "npm run stripeops5:validate",
+    "checklist": [
+      "≥25 SKUs synced (25 live)",
+      "≥24 cosmetics (24 live)",
+      "Webhook idempotency + finish5CatalogOk readiness",
+      "Kickoff stripeOps5Incomplete closed",
+      "stripeops5:validate green in CI"
+    ]
+  },
+  "deeplinkE2e5": {
+    "phase": 26,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "deeplinkE2e5Marker": "authored-finish-5.0-phase-26",
+    "catalog": "shared/ship/deeplink-e2e-5.json",
+    "parityFixture": "shared/fixtures/parity-deeplink-e2e-5.json",
+    "validateScript": "npm run deeplinke2e5:validate",
+    "checklist": [
+      "≥12 Playwright / ≥14 Compose scenarios",
+      "≥40 panel aliases / ≥24 hash aliases",
+      "Kickoff deeplinkE2e5Thin closed",
+      "deeplinke2e5:validate green in CI"
+    ]
+  },
+  "devicePerf5": {
+    "phase": 27,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "devicePerf5Marker": "authored-finish-5.0-phase-27",
+    "catalog": "shared/ship/device-perf-5.json",
+    "parityFixture": "shared/fixtures/parity-device-perf-5.json",
+    "validateScript": "npm run deviceperf5:validate",
+    "checklist": [
+      "Harbor LRU ≥4",
+      "Android classes ≥5 / browsers ≥5",
+      "Kickoff devicePerf5Incomplete closed",
+      "deviceperf5:validate green in CI"
+    ]
+  },
+  "contentCli5": {
+    "phase": 28,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "contentCli5Marker": "authored-finish-5.0-phase-28",
+    "catalog": "shared/ship/content-cli-5.json",
+    "parityFixture": "shared/fixtures/parity-content-cli-5.json",
+    "validateScript": "npm run contentcli5:validate",
+    "checklist": [
+      "≥11 scaffold kinds",
+      "Finish 5.0 --check-floors green",
+      "Kickoff contentCli5Missing closed",
+      "contentcli5:validate green in CI"
+    ]
+  },
+  "parityLock5": {
+    "phase": 29,
+    "plan": "30_finish_5.0",
+    "status": "complete",
+    "statusValues": [
+      "pending",
+      "complete"
+    ],
+    "parityLock5Marker": "authored-finish-5.0-phase-29",
+    "catalog": "shared/ship/parity-lock-5.0.json",
+    "parityFixture": "shared/fixtures/parity-parity-lock-5.0.json",
+    "validateScript": "npm run parity5:validate",
+    "checklist": [
+      "≥20 parity suites",
+      "4 Finish 5.0 system suites locked",
+      "Kickoff parityLock5Missing closed",
+      "parity5:validate green in CI"
+    ]
+  },
+  "finish5Freeze": {
+    "phase": 30,
+    "plan": "30_finish_5.0",
+    "status": "ready_for_release_tag",
+    "statusValues": [
+      "ready_for_release_tag",
+      "tag_cut",
+      "archived"
+    ],
+    "releaseTag": "v5.0.0",
+    "contentVersion": "5.0.0",
+    "schemaVersion": 26,
+    "versionName": "5.0.0",
+    "versionCode": 6,
+    "catalog": "shared/ship/freeze-5.0.0.json",
+    "validateScript": "npm run freeze5:validate",
+    "locEnforceMode": "freeze_anti_regression",
+    "completeTagArchived": "v1.0-complete",
+    "finish2ReleaseTagArchived": "v2.0.0",
+    "finish3ReleaseTagArchived": "v3.0.0",
+    "finish4ReleaseTagArchived": "v4.0.0",
+    "checklist": [
+      "RELEASE_PIN + content-pack at 5.0.0 / schema 26 / versionCode 6",
+      "Content floors ≥12 harbors / 125 species / 14 machines / 75 quests / 16 seasonal / 16 baits / 24 cosmetics / 16 rivals / 20 parity",
+      "LOC freeze anti-regression floors green; plan targets retained without padding",
+      "Finish 4.0 + Finish 3.0 + Finish 2.0 freeze + post-1.0 closeout remain historical/archived",
+      "freeze5:validate + freeze4:validate + freeze3:validate + freeze2:validate + dod:validate green in CI",
+      "Annotated git tag v5.0.0 remains operator-manual"
+    ],
+    "manualCommands": [
+      "npm run freeze5:validate",
+      "npm run freeze4:validate",
+      "npm run freeze3:validate",
+      "npm run freeze2:validate",
+      "npm run dod:validate",
+      "git tag -a v5.0.0 -m \"Fish Shopping 5.0.0 freeze\"",
+      "Archive Finish 5.0 plan status as finished"
     ]
   }
 }

@@ -9,6 +9,8 @@ import stormQuaySceneUrl from "../../../shared/assets/models/storm_quay_blockout
 import emberWharfSceneUrl from "../../../shared/assets/models/ember_wharf_blockout.glb?url";
 import mistCoveSceneUrl from "../../../shared/assets/models/mist_cove_blockout.glb?url";
 import prismReachSceneUrl from "../../../shared/assets/models/prism_reach_blockout.glb?url";
+import auroraInletSceneUrl from "../../../shared/assets/models/aurora_inlet_blockout.glb?url";
+import tideglassBaySceneUrl from "../../../shared/assets/models/tideglass_bay_blockout.glb?url";
 import type { SimView } from "../engine";
 import { CameraRig } from "../game/cameraRig";
 import { t } from "../i18n/strings";
@@ -70,6 +72,8 @@ const BLOCKOUT_URLS: Record<string, string> = {
   "ember_wharf_blockout.glb": emberWharfSceneUrl,
   "mist_cove_blockout.glb": mistCoveSceneUrl,
   "prism_reach_blockout.glb": prismReachSceneUrl,
+  "aurora_inlet_blockout.glb": auroraInletSceneUrl,
+  "tideglass_bay_blockout.glb": tideglassBaySceneUrl,
 };
 
 /** Track viewport aspect so portrait chrome follows resized windows, not only OS orientation. */
@@ -474,7 +478,18 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
             {v.objective.detail ? <span className="objective-detail"> {v.objective.detail}</span> : null}
           </div>
           <div>{v.objective.text}</div>
-          {frictionNudge ? <div className="small muted" style={{ marginTop: 6 }}>{frictionNudge}</div> : null}
+          {frictionNudge ? (
+            <div
+              className="small muted"
+              style={{ marginTop: 6 }}
+              role="status"
+              aria-live="polite"
+              aria-label={t("a11y.frictionNudgeLive")}
+              data-testid={WEB_E2E_IDS.FRICTION_NUDGE}
+            >
+              {frictionNudge}
+            </div>
+          ) : null}
         </div>
       )}
       {touch ? (
@@ -506,6 +521,14 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
       )}
       {v.fishingCanReel && (
         <div className="reel-stack">
+          {v.castPhase && (
+            <div className="small muted" aria-live="polite">
+              {v.castPhase === "waiting" ? "Waiting…"
+                : v.castPhase === "strike" ? "Strike!"
+                  : v.castPhase === "fight" ? "Fighting"
+                    : v.castPhase}
+            </div>
+          )}
           {state.settings.timingAssist && v.fishingProgress != null && (
             <TimingMeter
               progress01={v.fishingProgress}
@@ -514,6 +537,8 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
               perfectStart={v.timingPerfectStart01}
               perfectEnd={v.timingPerfectEnd01}
               tier={v.fishingTimingTier}
+              strikeStart={v.castStrikeStart01}
+              strikeEnd={v.castStrikeEnd01}
             />
           )}
           <button
@@ -522,7 +547,10 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           >
             {state.settings.shapeCues && v.fishingTimingTier === "perfect" ? "★ " : ""}
             {state.settings.shapeCues && v.fishingTimingTier === "good" ? "● " : ""}
-            {v.fishingTimingTier === "perfect" ? "Perfect!" : v.fishingTimingTier === "good" ? "Good!" : "Reel"} <kbd>F</kbd>
+            {v.fishingTimingTier === "perfect" ? "Perfect!"
+              : v.fishingTimingTier === "good" ? "Good!"
+                : v.castPhase === "strike" ? "Strike reel!"
+                  : "Reel"} <kbd>F</kbd>
           </button>
         </div>
       )}
@@ -604,6 +632,14 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           dailyLoginStreak={v.dailyLoginStreak}
           dailyGoals={v.dailyGoals}
           onClaimDailyGoal={(id) => host.claimDailyGoal(id)}
+          weeklyGoals={v.weeklyGoals}
+          onClaimWeeklyGoal={(id) => host.claimWeeklyGoal(id)}
+          endgameUnlocked={v.endgameUnlocked}
+          endgameLockedReason={v.endgameLockedReason}
+          endgameMarkCount={v.endgameMarkCount}
+          endgameCrestCount={v.endgameCrestCount}
+          endgameTiers={v.endgameTiers}
+          endgameChallenges={v.endgameChallenges}
           onClose={() => {
             host.setPreviewCosmeticId(null);
             host.setQuestsOpen(false);
@@ -622,6 +658,8 @@ function Hud({ host, state, portrait }: { host: GameHost; state: HostState; port
           refreshTicksLeft={v.contractRefreshTicksLeft}
           failStreak={v.contractFailStreak}
           failStreakThreshold={v.contractFailStreakThreshold}
+          ticksUntilNearestContractDeadline={v.ticksUntilNearestContractDeadline}
+          contractBoardPressurePermille={v.contractBoardPressurePermille}
           onAccept={(id) => host.acceptContract(id)}
           onDeliver={(id) => host.deliverContract(id)}
           onClose={() => host.setContractsOpen(false)}

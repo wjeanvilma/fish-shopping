@@ -332,6 +332,42 @@ internal fun CloudConflictPanel(conflict: CloudConflictView, vm: GameViewModel) 
                     }
                 }
             }
+            Text(
+                buildString {
+                    append(UiStrings.t("cloud.severity"))
+                    append(": ")
+                    append(conflict.severity)
+                    if (conflict.ageSkewMs > 0L) {
+                        append(" · ")
+                        append(UiStrings.t("cloud.ageSkew"))
+                        append(' ')
+                        append(conflict.ageSkewMs / 1000L)
+                        append('s')
+                    }
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            )
+            if (conflict.syncDiagnostics.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        UiStrings.t("cloud.syncDiagnostics"),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                    )
+                    for (line in conflict.syncDiagnostics) {
+                        Text(
+                            buildString {
+                                append('\u2022')
+                                append(' ')
+                                append(line)
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        )
+                    }
+                }
+            }
             SnapshotChoiceCard(conflict.local)
             SnapshotChoiceCard(conflict.remote)
             Button(

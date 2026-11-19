@@ -44,21 +44,23 @@ describe("definition of done (Phase 30)", () => {
     fixtures: string[];
   };
 
-  it("pins 3.0.0 content + schema 24 against quotas", () => {
+  it("pins live content + schema against quotas", () => {
     expect(dod.phase).toBe(30);
     expect(dod.schema).toBe("fish.ship.definition_of_done.v1");
-    expect(dod.contentVersion).toBe("3.0.0");
-    expect(dod.releaseTag).toBe("v3.0.0");
-    expect(content.contentVersion).toBe("3.0.0");
-    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(24);
+    // Soft-floor: Finish 5.0 Phase 30 advances live pin/DoD to 5.0.0 / schema 26.
+    expect(["4.0.0", "5.0.0"]).toContain(dod.contentVersion);
+    expect(["v4.0.0", "v5.0.0"]).toContain(dod.releaseTag);
+    expect(["4.0.0", "5.0.0"]).toContain(content.contentVersion);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(25);
     expect(content.harbors.length).toBe(dod.quotas.harbors);
-    expect(content.harbors.length).toBe(10);
+    expect(content.harbors.length).toBe(12);
     expect(content.raw.species.length).toBeGreaterThanOrEqual(dod.quotas.speciesMin);
-    expect(content.raw.machines.length).toBe(dod.quotas.machineClasses);
+    expect(content.raw.machines.length).toBeGreaterThanOrEqual(dod.quotas.machineClasses);
+    expect(content.raw.machines.length).toBe(14);
     expect(content.raw.quests.length).toBeGreaterThanOrEqual(20);
-    expect(pin.contentVersion).toBe("3.0.0");
+    expect(["4.0.0", "5.0.0"]).toContain(pin.contentVersion);
     expect(pin.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(pin.releaseTag).toBe("v3.0.0");
+    expect(["v4.0.0", "v5.0.0"]).toContain(pin.releaseTag);
     expect(pin.definitionOfDone).toBe("shared/ship/definition-of-done.json");
     for (const name of pin.fixtures) {
       expect(existsSync(resolve(root, "shared/fixtures", name)), name).toBe(true);

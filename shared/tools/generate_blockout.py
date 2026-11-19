@@ -51,6 +51,10 @@ from harbor_themes import (  # noqa: E402
     HARBOR_ART_BUILDERS,
     HARBOR_ART_COLORS,
     HARBOR_ART_MARKER,
+    HARBOR_FINISH5_5A_MARKER,
+    HARBOR_FINISH5_5A_THEMES,
+    HARBOR_FINISH5_5B_MARKER,
+    HARBOR_FINISH5_5B_THEMES,
     HARBOR_SCENIC_MARKER,
     THEME_PALETTE,
     THEME_PLACEMENTS,
@@ -86,7 +90,7 @@ def _machine_key(obstacle_id: str) -> str:
     oid = obstacle_id.lower()
     for key in (
         "smoker", "grill", "chiller", "fryer", "packer", "steamer", "kiln",
-        "press", "pickler", "braiser", "glazer", "cutter", "counter",
+        "press", "pickler", "braiser", "glazer", "poacher", "canner", "cutter", "counter",
     ):
         if key in oid:
             return key
@@ -344,10 +348,26 @@ def build(content, harbor):
         "cozyArt": cozy_art.COZY_ART_MARKER,
     }
     if theme:
-        extras["envArt"] = f"modular-phase-14+harbor-art-19+{HARBOR_SCENIC_MARKER}+{cozy_art.COZY_ART_MARKER}"
+        env_bits = [
+            "modular-phase-14",
+            "harbor-art-19",
+            HARBOR_SCENIC_MARKER,
+            cozy_art.COZY_ART_MARKER,
+        ]
+        if theme in HARBOR_FINISH5_5A_THEMES:
+            env_bits.append(HARBOR_FINISH5_5A_MARKER)
+        if theme in HARBOR_FINISH5_5B_THEMES:
+            env_bits.append(HARBOR_FINISH5_5B_MARKER)
+        env_bits.append(cozy_art.ATMOSPHERE_FINISH5_MARKER)
+        extras["envArt"] = "+".join(env_bits)
         extras["harborArt"] = HARBOR_ART_MARKER
         extras["harborTheme"] = theme
         extras["harborScenic"] = HARBOR_SCENIC_MARKER
+        extras["atmosphereFinish5"] = cozy_art.ATMOSPHERE_FINISH5_MARKER
+        if theme in HARBOR_FINISH5_5A_THEMES:
+            extras["harborFinish5"] = HARBOR_FINISH5_5A_MARKER
+        elif theme in HARBOR_FINISH5_5B_THEMES:
+            extras["harborFinish5"] = HARBOR_FINISH5_5B_MARKER
 
     gltf = {
         "asset": {"version": "2.0", "generator": "fish-shopping generate_blockout.py"},

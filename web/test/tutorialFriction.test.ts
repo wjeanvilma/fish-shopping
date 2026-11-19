@@ -25,12 +25,15 @@ describe("Tutorial friction (post-1.0 Phase 22)", () => {
     expect(tutorialFriction.schemaVersion).toBe(21);
     expect(tutorialFriction.constraints.noAdvanceOnChanges).toBe(true);
     expect(tutorialFriction.constraints.noContentVersionBump).toBe(true);
+    // Finish 5.0 Phase 19 soft-floor: mid-game grill_line + plot_marker joined the funnel.
     expect(tutorialFriction.funnel.highFrictionStepIds).toEqual([
       "tutorial.catch_three",
       "tutorial.deliver_cutter",
       "tutorial.buy_upgrade",
       "tutorial.first_contract",
       "tutorial.hire_staff",
+      "tutorial.grill_line",
+      "tutorial.plot_marker",
     ]);
   });
 
@@ -48,8 +51,8 @@ describe("Tutorial friction (post-1.0 Phase 22)", () => {
   it("dwell nudges gate on hintAfterMs for high-friction steps", () => {
     expect(frictionNudgeText(null, 99_000)).toBeNull();
     expect(frictionNudgeText("tutorial.walk_to_pier", 99_000)).toBeNull();
-    expect(frictionNudgeText("tutorial.catch_three", 7_999)).toBeNull();
-    expect(frictionNudgeText("tutorial.catch_three", 8_000)).toMatch(/^Tip:/);
+    expect(frictionNudgeText("tutorial.catch_three", 6_999)).toBeNull();
+    expect(frictionNudgeText("tutorial.catch_three", 7_000)).toMatch(/^Tip:/);
     expect(isHighFrictionStep("tutorial.hire_staff")).toBe(true);
     expect(isHighFrictionStep("tutorial.walk_to_pier")).toBe(false);
   });

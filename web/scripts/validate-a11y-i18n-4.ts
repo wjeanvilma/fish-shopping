@@ -157,6 +157,7 @@ function validate(): string[] {
   if (i18nShip.a11yStringKeyMin !== 20 || A11Y_STRING_KEY_FLOOR_4 !== 20) {
     errors.push("a11yStringKeyMin must be 20");
   }
+  // Finish 5.0 Phase 24 soft-floor: live keyMin may grow beyond Finish 4.0's 280.
   if ((index.keyMin ?? 0) < 280) errors.push("ui-strings.json keyMin must be ≥280");
   const enKeys = Object.keys(en.strings ?? {});
   const esKeys = Object.keys(es.strings ?? {});

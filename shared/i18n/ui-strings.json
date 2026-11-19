@@ -1,7 +1,7 @@
 {
   "schema": "fish.i18n.ui_strings.v1",
-  "phase": 23,
-  "plan": "30_finish_2.0",
+  "phase": 24,
+  "plan": "30_finish_5.0",
   "description": "UI chrome string catalogs (en + es + pt + fr + ht + it + ca + ru).",
   "defaultLocale": "en",
   "supportedLocales": [
@@ -24,7 +24,7 @@
     "ca": "shared/i18n/ui-strings.ca.json",
     "ru": "shared/i18n/ui-strings.ru.json"
   },
-  "keyMin": 280,
+  "keyMin": 360,
   "namespaces": [
     "a11y",
     "achievements",

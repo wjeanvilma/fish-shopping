@@ -1,0 +1,75 @@
+{
+  "phase": 4,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.android_vm_depth.v1",
+  "description": "Finish 5.0 Phase 4 — Android VM/intent depth for Finish 5 engine loops: VmFishingIntents extraction, LoopHudSnapshot, HUD bindings for cast/spoil/service/contract/quest pressure. Schema stays 25 / content 4.0.0.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "androidVmDepthMarker": "authored-finish-5.0-phase-4",
+  "viewFields": [
+    "castPhase",
+    "castStrikeStart01",
+    "castStrikeEnd01",
+    "ticksUntilBagSpoil",
+    "bagSpoilPressurePermille",
+    "serviceQueuePressurePermille",
+    "minPatienceTicksLeft",
+    "ticksUntilNearestContractDeadline",
+    "contractBoardPressurePermille",
+    "nextQuestProgressPermille"
+  ],
+  "viewFieldMin": 10,
+  "requiredFiles": [
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmFishingIntents.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/LoopHudSnapshot.kt"
+  ],
+  "requiredSymbols": {
+    "VmFishingIntents.kt": ["class VmFishingIntents", "fun reel", "fun buyBait", "fun selectBait", "fun selectTechnique"],
+    "LoopHudSnapshot.kt": ["data class LoopHudSnapshot", "fun from"],
+    "GameViewModel.kt": ["VmFishingIntents", "fun loopHudSnapshot", "fun reel"]
+  },
+  "hudBindings": {
+    "GameScreen.kt": ["castPhase", "castStrikeStart01", "castStrikeEnd01"],
+    "StationBagPanels.kt": [
+      "ticksUntilBagSpoil",
+      "bagSpoilPressurePermille",
+      "serviceQueuePressurePermille",
+      "minPatienceTicksLeft",
+      "nextQuestProgressPermille"
+    ],
+    "ContractsPanel.kt": [
+      "ticksUntilNearestContractDeadline",
+      "contractBoardPressurePermille"
+    ]
+  },
+  "parityFixture": "shared/fixtures/parity-android-vm-depth.json",
+  "authorTool": "shared/tools/author_android_vm_depth.py",
+  "validateScript": "npm run androidvmdepth:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "checklist": [
+    "VmFishingIntents extracted (reel/bait/technique)",
+    "LoopHudSnapshot exposes all 10 engine-depth view fields",
+    "GameScreen cast phase + strike meter bands",
+    "Bag spoil ETA/pressure + queue/quest cues",
+    "ContractsPanel deadline ETA + board pressure",
+    "androidvmdepth:validate green in CI",
+    "schema stays 25"
+  ],
+  "preflightGates": [
+    "shared/ship/android-vm-depth.json",
+    "shared/fixtures/parity-android-vm-depth.json",
+    "shared/ship/finish-5.0-kickoff.json",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmFishingIntents.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/LoopHudSnapshot.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/StationBagPanels.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/ContractsPanel.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/HudChrome.kt",
+    "web/src/ship/androidVmDepth.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/AndroidVmDepth.kt",
+    "web/scripts/validate-android-vm-depth.ts",
+    "shared/tools/author_android_vm_depth.py"
+  ]
+}

@@ -36,6 +36,9 @@ export interface SnapshotSummary {
   checksum: string;
 }
 
+/** Finish 5.0 Phase 22 — conflict severity for UX polish. */
+export type CloudConflictSeverity = "low" | "medium" | "high";
+
 /** When both local and remote are valid but differ, UI must ask before applying. */
 export interface CloudConflictOffer {
   local: SnapshotSummary;
@@ -46,6 +49,12 @@ export interface CloudConflictOffer {
   reasonCode: string;
   /** Finish 4.0 Phase 21 — short UX hints describing local vs remote diffs. */
   diffHints: string[];
+  /** Finish 5.0 Phase 22 — UX severity from coin/playtime skew. */
+  severity: CloudConflictSeverity;
+  /** Finish 5.0 Phase 22 — absolute save-age skew in ms. */
+  ageSkewMs: number;
+  /** Finish 5.0 Phase 22 — short sync diagnostic lines. */
+  syncDiagnostics: string[];
   localText: string;
   remoteText: string;
 }
@@ -146,6 +155,42 @@ export function cloudConflictDiffHints(local: SnapshotSummary, remote: SnapshotS
   return hints;
 }
 
+/** Finish 5.0 Phase 22 — severity from coin / playtime / harbor skew. */
+export function cloudConflictSeverity(
+  local: SnapshotSummary,
+  remote: SnapshotSummary,
+): CloudConflictSeverity {
+  const coinSkew = Math.abs(remote.coins - local.coins);
+  const tickSkew = Math.abs(remote.tick - local.tick);
+  const harborSkew = local.harborId && remote.harborId && local.harborId !== remote.harborId;
+  if (coinSkew >= 500 || tickSkew >= 20_000 || harborSkew) return "high";
+  if (coinSkew >= 50 || tickSkew >= 2_000) return "medium";
+  return "low";
+}
+
+export function cloudConflictAgeSkewMs(local: SnapshotSummary, remote: SnapshotSummary): number {
+  return Math.abs(remote.savedAtEpochMs - local.savedAtEpochMs);
+}
+
+/** Finish 5.0 Phase 22 — compact sync diagnostics for conflict UX. */
+export function cloudConflictSyncDiagnostics(
+  local: SnapshotSummary,
+  remote: SnapshotSummary,
+  severity: CloudConflictSeverity = cloudConflictSeverity(local, remote),
+): string[] {
+  const ageSkewMs = cloudConflictAgeSkewMs(local, remote);
+  const lines: string[] = [
+    `severity ${severity}`,
+    `age skew ${Math.trunc(ageSkewMs / 1000)}s`,
+    `coin delta ${remote.coins - local.coins}`,
+    `tick delta ${remote.tick - local.tick}`,
+  ];
+  if (local.harborId !== remote.harborId) {
+    lines.push(`harbor ${local.harborId || "?"} → ${remote.harborId || "?"}`);
+  }
+  return lines;
+}
+
 /**
  * Phase 11: when both sides are checksum-valid and differ, return a dual-choice
  * offer. Recommended side follows chooseCloudSnapshot. Null means auto-apply is fine.
@@ -162,6 +207,7 @@ export function cloudConflictOffer(
   const recommended: SyncSource = decision.source === "remote" ? "remote" : "local";
   const localSummary = summaryOf(local, "local");
   const remoteSummary = summaryOf(remote, "remote");
+  const severity = cloudConflictSeverity(localSummary, remoteSummary);
   return {
     local: localSummary,
     remote: remoteSummary,
@@ -169,6 +215,9 @@ export function cloudConflictOffer(
     reason: decision.reason,
     reasonCode: cloudConflictReasonCode(decision.reason),
     diffHints: cloudConflictDiffHints(localSummary, remoteSummary),
+    severity,
+    ageSkewMs: cloudConflictAgeSkewMs(localSummary, remoteSummary),
+    syncDiagnostics: cloudConflictSyncDiagnostics(localSummary, remoteSummary, severity),
     localText: local.text,
     remoteText: remote.text,
   };

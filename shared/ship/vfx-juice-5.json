@@ -1,0 +1,109 @@
+{
+  "phase": 12,
+  "plan": "30_finish_5.0",
+  "schema": "fish.ship.vfx_juice_5.v1",
+  "description": "Finish 5.0 Phase 12 — cast/spoil/break/deadline/quest bursts + cast/deadline shakes + pressure ambient; extends juice 4; presentation-only; closes gaps.audioVfx5Incomplete; schema stays 25 / content 4.0.0.",
+  "contentVersion": "4.0.0",
+  "schemaVersion": 25,
+  "extendsCatalog": "shared/perf/vfx-juice.json",
+  "extendsJuice4Catalog": "shared/ship/vfx-juice-4.json",
+  "budgetGateCatalog": "shared/perf/budget-gate.json",
+  "simHzInvariant": 20,
+  "vfxJuice5Marker": "authored-finish-5.0-phase-12",
+  "eventBurstMin": 5,
+  "eventShakeMin": 2,
+  "pressureAmbientMin": 3,
+  "eventBursts": {
+    "kinds": [
+      "cast_strike",
+      "spoil",
+      "machine_break",
+      "contract_deadline",
+      "quest_near"
+    ],
+    "durationSec": {
+      "cast_strike": 0.35,
+      "spoil": 0.4,
+      "machine_break": 0.45,
+      "contract_deadline": 0.4,
+      "quest_near": 0.35
+    },
+    "sharesBurstPool": true
+  },
+  "eventShake": {
+    "kinds": [
+      "cast_strike",
+      "contract_deadline"
+    ],
+    "durationSec": 0.18,
+    "maxAmplitudeM": 0.12,
+    "amplitudeM": {
+      "cast_strike": 0.06,
+      "contract_deadline": 0.07
+    },
+    "scaleByQuality": {
+      "low": 0.5,
+      "medium": 0.85,
+      "high": 1.0
+    },
+    "disabledWhenReducedMotion": true
+  },
+  "ambientPressure": {
+    "modes": [
+      "calm",
+      "rising",
+      "critical"
+    ],
+    "consumesBurstPool": false,
+    "risingPermille": 700,
+    "criticalPermille": 1000,
+    "contractDeadlineWarnTicks": 200,
+    "questNearCompletePermille": 800
+  },
+  "eventMap": {
+    "cast_strike_reel": {
+      "burst": "cast_strike",
+      "shake": "cast_strike"
+    },
+    "items_spoiled": {
+      "burst": "spoil"
+    },
+    "machine_broke": {
+      "burst": "machine_break"
+    },
+    "contract_deadline_warn": {
+      "burst": "contract_deadline",
+      "shake": "contract_deadline"
+    },
+    "quest_near_complete": {
+      "burst": "quest_near"
+    }
+  },
+  "gapClosed": "audioVfx5Incomplete",
+  "gapClosedValue": false,
+  "parityFixture": "shared/fixtures/parity-vfx-juice-5.json",
+  "validateScript": "npm run audiovfx5:validate",
+  "kickoffCatalog": "shared/ship/finish-5.0-kickoff.json",
+  "checklist": [
+    "≥5 new event burst kinds",
+    "≥2 new shake kinds (cast_strike/contract_deadline)",
+    "≥3 pressure ambient modes",
+    "GameHost + GameViewModel wire Finish 5.0 events",
+    "HarborScene + HarborRenderer apply pressure ambient",
+    "gaps.audioVfx5Incomplete closed",
+    "audiovfx5:validate green in CI",
+    "schema stays 25 / content 4.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/vfx-juice-5.json",
+    "shared/fixtures/parity-vfx-juice-5.json",
+    "shared/perf/budget-gate.json",
+    "web/src/ship/vfxJuice5.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/VfxJuice5.kt",
+    "web/src/render/presenters/vfx.ts",
+    "web/src/render/weatherAmbient.ts",
+    "web/src/game/host/hostStepBus.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/render/PresentersVfx.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt"
+  ]
+}

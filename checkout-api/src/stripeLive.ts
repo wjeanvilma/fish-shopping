@@ -252,7 +252,22 @@ export function applyStripeCheckoutCompleted(
   return { ok: true, webProductId };
 }
 
-/** Finish 4.0 Phase 25 — live-ready catalog ops readiness snapshot. */
+/** Finish 4.0 sku floor kept as soft historical min for stripeops4:validate. */
+export const STRIPE_OPS_4_SKU_FLOOR = 19;
+/** Finish 5.0 Phase 25 — live catalog floor (≥25 SKUs / ≥24 cosmetics). */
+export const STRIPE_OPS_5_SKU_FLOOR = 25;
+export const STRIPE_OPS_5_COSMETIC_SKU_FLOOR = 24;
+
+function countCosmeticSkus(catalogPath: string = productsPath()): number {
+  const raw = JSON.parse(readFileSync(catalogPath, "utf8")) as {
+    products?: Array<{ sku?: string; status?: string }>;
+  };
+  return (raw.products ?? []).filter(
+    (p) => p.status !== "inactive" && (p.sku ?? "").includes(".cosmetic."),
+  ).length;
+}
+
+/** Finish 4.0/5.0 — live-ready catalog ops readiness snapshot. */
 export function stripeOpsReadiness(
   env: Record<string, string | undefined> = process.env,
   priceMap: Map<string, string> = loadStripePriceMap(),
@@ -262,26 +277,38 @@ export function stripeOpsReadiness(
   priceMapOk: boolean;
   priceMapSize: number;
   skuFloor: number;
+  cosmeticSkuFloor: number;
+  cosmeticSkuCount: number;
+  finish5CatalogOk: boolean;
   live: boolean;
   stripeConfigured: boolean;
   liveReady: boolean;
   webhookSecretConfigured: boolean;
   mode: string;
 } {
-  const skuFloor = 19;
+  const skuFloor = STRIPE_OPS_5_SKU_FLOOR;
+  const cosmeticSkuFloor = STRIPE_OPS_5_COSMETIC_SKU_FLOOR;
   const priceMapSize = priceMap.size;
-  const catalogOk = priceMapSize >= skuFloor;
+  const cosmeticSkuCount = countCosmeticSkus();
+  const finish5CatalogOk =
+    priceMapSize >= skuFloor && cosmeticSkuCount >= cosmeticSkuFloor;
+  // catalogOk stays true when Finish 4 soft floor (≥19) is met so prior validates stay green.
+  const catalogOk = priceMapSize >= STRIPE_OPS_4_SKU_FLOOR;
   const priceMapOk = catalogOk;
   const live = isLiveMode(env);
   const configured = stripeConfigured(env);
   const webhookSecretConfigured = stripeWebhookSecret(env).length > 0;
-  const liveReady = live && configured && webhookSecretConfigured && priceMapOk;
+  const liveReady =
+    live && configured && webhookSecretConfigured && priceMapOk && finish5CatalogOk;
   return {
     ok: catalogOk && priceMapOk,
     catalogOk,
     priceMapOk,
     priceMapSize,
     skuFloor,
+    cosmeticSkuFloor,
+    cosmeticSkuCount,
+    finish5CatalogOk,
     live,
     stripeConfigured: configured,
     liveReady,

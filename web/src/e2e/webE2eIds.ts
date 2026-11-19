@@ -1,6 +1,6 @@
 /**
  * Finish 3.0 Phase 22 — stable web E2E test ids (mirrors Android ComposeUiTags).
- * Finish 4.0 Phase 26 expands nav/chrome ids (soft-floor ≥24).
+ * Finish 5.0 Phase 26 expands Finish 5 surface ids (soft-floor ≥32).
  * Wired as data-testid; presentation-only.
  */
 export const WEB_E2E_IDS = {
@@ -33,6 +33,11 @@ export const WEB_E2E_IDS = {
   DECOR_PLACE: "decor.place",
   HUD_TOOLBAR: "hud.toolbar",
   DEEPLINK_READY: "deeplink.ready",
+  GOALS_WEEKLY: "goals.weekly",
+  GOALS_ENDGAME: "goals.endgame",
+  DASH_LEDGER: "dash.ledger",
+  WAREHOUSE_PANEL: "warehouse.panel",
+  FRICTION_NUDGE: "friction.nudge",
 } as const;
 
 export type WebE2eId = (typeof WEB_E2E_IDS)[keyof typeof WEB_E2E_IDS];

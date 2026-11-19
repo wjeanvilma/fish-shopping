@@ -19,7 +19,8 @@ describe("GameHost split (Finish 4.0 Phase 6)", () => {
     expect(GAMEHOST_SPLIT_SCHEMA).toBe("fish.ship.gamehost_split.v1");
     expect(GAMEHOST_SPLIT.plan).toBe("30_finish_4.0");
     expect(GAMEHOST_SPLIT_MARKER).toBe("authored-finish-4.0-phase-6");
-    expect(GAMEHOST_SPLIT.requiredFiles).toHaveLength(16);
+    expect(GAMEHOST_SPLIT.requiredFiles.length).toBeGreaterThanOrEqual(16);
+    expect(GAMEHOST_SPLIT.requiredFiles).toContain("web/src/game/host/hostFishingIntents.ts");
     expect((storeListing as { gameHostSplitPhase?: number }).gameHostSplitPhase).toBe(6);
     expect(existsSync(resolve(root, GAMEHOST_SPLIT.parityFixture))).toBe(true);
 

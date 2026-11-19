@@ -19,7 +19,8 @@ object GameHostSplit {
     const val HARBOR_RENDERER_PATH =
         "app/src/main/java/com/willio/jeanvilma/fishshopping/render/HarborRenderer.kt"
     const val HARBOR_RENDERER_MAX_LINES = 780
-    const val EXTRACTED_FILE_MIN = 12
+    const val EXTRACTED_FILE_MIN = 13
+    const val EXTRACTED_FILE_HISTORICAL_MIN = 12
     const val GAP_FLAG_CLOSED = "gameHostSplitIncomplete"
 
     val REQUIRED_FILES: List<String> = listOf(
@@ -27,6 +28,7 @@ object GameHostSplit {
         "web/src/game/host/hostIntentHost.ts",
         "web/src/game/host/hostShellIntents.ts",
         "web/src/game/host/hostEconomyIntents.ts",
+        "web/src/game/host/hostFishingIntents.ts",
         "web/src/game/host/hostTravelIntents.ts",
         "web/src/game/host/hostIapIntents.ts",
         "web/src/game/host/hostStepBus.ts",
