@@ -105,6 +105,21 @@ class AnalyticsBus(
         track(Analytics.saveRecovery(source))
     }
 
+    /** Finish 6.0 Phase 26: nest endgame sigil progress. */
+    fun onNestSigilEarned(sigilId: String, count: Int) {
+        track(Analytics.nestSigilEarned(sigilId, count))
+    }
+
+    /** Finish 6.0 Phase 26: nest contract settlement. */
+    fun onNestContractSettled(contractId: String, coins: Long) {
+        track(Analytics.nestContractSettled(contractId, coins))
+    }
+
+    /** Finish 6.0 Phase 26: loadtest bank probe telemetry. */
+    fun onLoadtestBankProbed(bank: String, floorsMet: Boolean) {
+        track(Analytics.loadtestBankProbed(bank, floorsMet, "android"))
+    }
+
     fun onFrameSample(emaMs: Double, quality: QualityPreset) {
         if (!consent || emaMs <= 0.0) return
         frameSamples += 1

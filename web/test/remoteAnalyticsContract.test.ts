@@ -95,4 +95,19 @@ describe("remote analytics sink contracts (Finish 4.0 Phase 27)", () => {
     const slice = takeRemoteFlushSlice(queue, 4, "web");
     expect(slice).toBeNull();
   });
+
+  it("nest loadtest probe event sanitizes without PII", () => {
+    const event = Analytics.loadtestBankProbed("dual", true, "web");
+    expect(event.name).toBe("loadtest_bank_probed");
+    expect(event.props.bank).toBe("dual");
+    expect(event.props.floorsMet).toBe(true);
+    expect(event.props.platform).toBe("web");
+    expect(event.props).not.toHaveProperty("uid");
+    expect(event.props).not.toHaveProperty("save");
+    const queue: Parameters<typeof enqueueRemoteEvent>[0] = [];
+    enqueueRemoteEvent(queue, event, 10);
+    const slice = takeRemoteFlushSlice(queue, 11, "web");
+    expect(slice?.events).toHaveLength(1);
+    expect(slice?.events[0]?.name).toBe("loadtest_bank_probed");
+  });
 });

@@ -22,6 +22,7 @@ import {
   licensesCatalog,
   ossHeadline,
 } from "../store/licenses";
+import { WEB_E2E_IDS } from "../e2e/webE2eIds";
 import { formatAwayDuration, formatCoins, formatRushSeconds, prestigeRewardBits } from "./hudFormat";
 
 export function StaffPanel({ staff, workers, staffGear, automationIssues, stations, onShiftCount, freeOnShiftSlots, overtimeOnShiftCount, wagePerWorkerPerHour, maintenanceCoinsPerStation, economyUnlocked, bagFishSpoilActive, coins, onOpenDashboard, onHire, onSetShift, onAssignGear, onUnequipGear, onTrainBranch, onSelectBranch, onSetSchedule, onRepair, onClose }: {
@@ -101,7 +102,12 @@ export function StaffPanel({ staff, workers, staffGear, automationIssues, statio
                     </div>
                   )}
                   {w.branches.length > 0 && (
-                    <div className="small" style={{ marginTop: 4 }} aria-label={t("a11y.staffTrainSection")}>
+                    <div
+                      className="small"
+                      style={{ marginTop: 4 }}
+                      aria-label={t("a11y.staffTrainSection")}
+                      data-testid={WEB_E2E_IDS.STAFF_TRAIN}
+                    >
                       {t("staff.trainSection")}
                       {w.activeBranchName ? `: ${w.activeBranchName}` : ""}
                       <div>

@@ -35,6 +35,12 @@ import { peekSnapshot, summaryOf, type CloudConflictOffer, type SyncSource } fro
 import { CameraRig } from "./cameraRig";
 import { resolveVisibleCosmetic, sanitizeEquippedCosmetic } from "../engine/cosmeticPresentation";
 import { STORAGE_UNAVAILABLE_TOAST } from "./lifecyclePolicy";
+import {
+  LOADTEST_SAVE_BANK,
+  LOADTEST_TELEMETRY_BANK,
+  measureLoadtestBanksInBrowser,
+  type LoadtestBankProbe,
+} from "../ship/loadtestBanks";
 import { openSaveStore, type SaveStore } from "./saveStore";
 import {
   formatLastSavedLabel,
@@ -71,6 +77,8 @@ import { HostIapIntents } from "./host/hostIapIntents";
 import { HostShellIntents } from "./host/hostShellIntents";
 import { HostTravelIntents } from "./host/hostTravelIntents";
 import { processHostStep } from "./host/hostStepBus";
+import { HostCloudBoot } from "./host/hostCloudBoot";
+import { HostEntitlements } from "./host/hostEntitlements";
 import {
   EMPTY_PRESSURE_FLAGS,
   edgePressureSfx,
@@ -78,7 +86,16 @@ import {
   type PressureFlags,
 } from "../audio/pressureJuice";
 import {
+  EMPTY_NEST_FLAGS,
+  edgeNestSfx,
+  nestActiveFromFlags,
+  nestFlagsFromView,
+  type NestFlags,
+} from "../audio/nestJuice";
+import {
+  resolveAuroraCrestBurst,
   resolveContractDeadlineBurst,
+  resolveNestSettleBurst,
   resolveQuestNearBurst,
 } from "../render/presenters";
 import { stickFromTapTarget, type TapTarget } from "../presenters/tapToMove";
@@ -90,42 +107,42 @@ import type { HostState } from "./host/hostState";
 const START_HARBOR = "harbor.sunrise_pier";
 
 export class GameHost {
-  private state: HostState = { status: "loading" };
+  state: HostState = { status: "loading" };
   private readonly listeners = new Set<() => void>();
   private readonly messageListeners = new Set<(m: string) => void>();
-  private readonly commands: Command[] = [];
+  readonly commands: Command[] = [];
   private readonly clock = new FixedStepClock();
-  private content: ContentPack | null = null;
-  private sim: Simulation | null = null;
-  private store: SaveStore | null = null;
-  private settings: GameSettings = (() => {
+  content: ContentPack | null = null;
+  sim: Simulation | null = null;
+  store: SaveStore | null = null;
+  settings: GameSettings = (() => {
     const s = loadSettings();
     applyLocaleFromSettings(s);
     applyThemeFromSettings(s);
     return s;
   })();
   private readonly audio = new AudioBus();
-  private readonly cloud = new CloudSyncCoordinator();
+  readonly cloud = new CloudSyncCoordinator();
   readonly billing: EntitlementBilling = createEntitlementBilling();
   readonly pendingEntitlements = new PendingEntitlementLedger();
-  private allowSaving = true;
-  private rotateOnNextSave = true;
+  allowSaving = true;
+  rotateOnNextSave = true;
   private readonly panels = new ShellPanelController();
-  private running = false;
-  private booting = false;
+  running = false;
+  booting = false;
   /** Finish 3.0 Phase 20 — deep link queued until Ready after boot. */
-  private pendingDeepLink: DeepLinkIntent | null = null;
-  private lastMove = { x: 0, z: 0 };
+  pendingDeepLink: DeepLinkIntent | null = null;
+  lastMove = { x: 0, z: 0 };
   private lastHudPublishMs = 0;
-  private saveChain: Promise<void> = Promise.resolve();
-  private lastCheckpointEpochMs: number | null = null;
-  private pendingOfflineReport: OfflineReport | null = null;
+  saveChain: Promise<void> = Promise.resolve();
+  lastCheckpointEpochMs: number | null = null;
+  pendingOfflineReport: OfflineReport | null = null;
   /** Phase 11: parked dual-snapshot choice (texts kept until the player picks). */
-  private pendingConflict: CloudConflictOffer | null = null;
-  private cloudConflictView: CloudConflictView | null = null;
+  pendingConflict: CloudConflictOffer | null = null;
+  cloudConflictView: CloudConflictView | null = null;
   /** Phase 11: parked corrupt-latest → previous recovery. */
-  private pendingRecoveryText: string | null = null;
-  private localRecoveryView: LocalRecoveryView | null = null;
+  pendingRecoveryText: string | null = null;
+  localRecoveryView: LocalRecoveryView | null = null;
   /** Presentation-only tap-to-move destination (cleared by stick/keys or on arrival). */
   private tapTarget: TapTarget | null = null;
   /** True while joystick/keyboard is holding a non-zero stick. */
@@ -135,19 +152,26 @@ export class GameHost {
   latestView: SimView | null = null;
 
   /** Presentation-only flying transfer cues (drained each frame by the scene). */
-  private pendingFlying: FlyingTransferCue[] = [];
+  pendingFlying: FlyingTransferCue[] = [];
   /** Phase 16/21 world bursts (catch / pay / celebrate / machine_done). */
-  private pendingBursts: WorldBurstCue[] = [];
+  pendingBursts: WorldBurstCue[] = [];
   /** Phase 21 screen-shake kinds (drained each frame by the scene). */
-  private pendingShakes: ShakeKind[] = [];
+  pendingShakes: ShakeKind[] = [];
   /** Finish 5.0 Phase 12 — previous pressure edge flags for warn stingers. */
   private pressureFlags: PressureFlags = { ...EMPTY_PRESSURE_FLAGS };
+  private nestFlags: NestFlags = { ...EMPTY_NEST_FLAGS };
+  /** Large shared loadtest banks probed at boot (header + size only). */
+  private loadtestProbes: { save: LoadtestBankProbe; telemetry: LoadtestBankProbe; floorsMet: boolean } | null =
+    null;
 
   private readonly shellIntents = new HostShellIntents(this);
   private readonly economyIntents = new HostEconomyIntents(this);
   private readonly fishingIntents = new HostFishingIntents(this);
   private readonly travelIntents = new HostTravelIntents(this, this.shellIntents);
   private readonly iapIntents = new HostIapIntents(this);
+  /** Finish 6.0 Phase 5 — cloud boot / entitlement helpers. */
+  readonly cloudBoot = new HostCloudBoot(this);
+  readonly entitlements = new HostEntitlements(this);
 
   private starting: Promise<void> | null = null;
 
@@ -192,7 +216,7 @@ export class GameHost {
     this.syncMusicBed();
   }
 
-  /** Finish 2.0/3.0/4.0/5.0: festival/storm/rival/night/endgame/ledger/pressure beds; ducking unchanged. */
+  /** Finish 2.0/3.0/4.0/5.0/6.0: festival/storm/rival/night/endgame/ledger/pressure/nest beds; ducking unchanged. */
   private syncMusicBed(): void {
     const v = this.latestView;
     const festivalActive = !!v?.seasonalEvent;
@@ -210,6 +234,7 @@ export class GameHost {
       (v?.ticksUntilNearestContractDeadline != null &&
         v.ticksUntilNearestContractDeadline <= 200) ||
       (v?.nextQuestProgressPermille != null && v.nextQuestProgressPermille >= 800);
+    const nestActive = nestActiveFromFlags(nestFlagsFromView(v, nightActive));
     this.audio.syncMusicBedFromPanels(
       this.panels.isOpen("station"),
       festivalActive,
@@ -219,10 +244,11 @@ export class GameHost {
       endgameActive,
       ledgerActive,
       pressureActive,
+      nestActive,
     );
   }
 
-  private applyAnalyticsConsent(): void {
+  applyAnalyticsConsent(): void {
     sharedAnalyticsBus.setConsent(this.settings.analyticsConsent);
     if (this.settings.analyticsConsent) sharedAnalyticsBus.onSessionStart();
   }
@@ -257,6 +283,38 @@ export class GameHost {
     this.audio.unlock();
   }
 
+  /** Latest probe of the shared loadtest save/telemetry banks (null until boot probe). */
+  loadtestBankProbes(): {
+    save: LoadtestBankProbe;
+    telemetry: LoadtestBankProbe;
+    floorsMet: boolean;
+  } | null {
+    return this.loadtestProbes;
+  }
+
+  /** Re-run browser probe against /loadtest/*.json (served from shared/fixtures). */
+  async probeLoadtestBanks(): Promise<{
+    save: LoadtestBankProbe;
+    telemetry: LoadtestBankProbe;
+    floorsMet: boolean;
+  } | null> {
+    try {
+      const measured = await measureLoadtestBanksInBrowser();
+      this.loadtestProbes = measured;
+      // Touch refs so tree-shaking keeps bank URLs wired into the app bundle surface.
+      void LOADTEST_SAVE_BANK.webUrl;
+      void LOADTEST_TELEMETRY_BANK.webUrl;
+      // Finish 6.0 Phase 26 — nest analytics + loadtest probe telemetry.
+      sharedAnalyticsBus.onLoadtestBankProbed("save", measured.save.floorsMet);
+      sharedAnalyticsBus.onLoadtestBankProbed("telemetry", measured.telemetry.floorsMet);
+      sharedAnalyticsBus.onLoadtestBankProbed("dual", measured.floorsMet);
+      return measured;
+    } catch {
+      this.loadtestProbes = null;
+      return null;
+    }
+  }
+
   /** Phase 28: Web Audio unlocked after a user gesture. */
   audioUnlocked(): boolean {
     return this.audio.isUnlocked;
@@ -277,6 +335,8 @@ export class GameHost {
       this.applyAnalyticsConsent();
       this.syncDailyGoalReminders();
       await this.consumeBillingReturnQuery();
+      // Shared ~90MB loadtest banks — header/size probe keeps boot light.
+      await this.probeLoadtestBanks();
       // Finish 3.0 Phase 20 — capture panel/harbor query/hash before Title.
       const deep = parseLocation();
       if (deep.panel || deep.harborId) this.pendingDeepLink = deep;
@@ -310,148 +370,33 @@ export class GameHost {
     }
   }
 
-  /** Phase 11: apply the player's dual-snapshot choice. */
   async resolveCloudConflict(source: SyncSource): Promise<void> {
-    if (this.booting || this.state.status !== "title" || !this.content || !this.store) return;
-    const offer = this.pendingConflict;
-    if (!offer || (source !== "local" && source !== "remote")) return;
-    this.booting = true;
-    try {
-      const text = source === "remote" ? offer.remoteText : offer.localText;
-      await this.store.write(text, true);
-      const decoded = decodeSnapshotEnvelope(this.content, text);
-      this.clearSaveChoiceUi();
-      sharedAnalyticsBus.onSaveRecovery(source === "remote" ? "cloud_remote" : "cloud_local");
-      this.say(source === "remote" ? "Restored cloud save" : "Kept this device's save");
-      this.bootSim(decoded.state, decoded.savedAtEpochMs);
-      // Phase 3: store IAP remains SoT after local/remote choice.
-      await this.reconcileEntitlementsFromStore();
-    } catch (e) {
-      this.allowSaving = !(e instanceof NewerSaveError);
-      this.clearSaveChoiceUi();
-      this.setState({ status: "failed", message: e instanceof Error ? e.message : String(e) });
-    } finally {
-      this.booting = false;
-    }
+    return this.cloudBoot.resolveCloudConflict(source);
   }
 
-  /** Phase 11: load the previous backup after a corrupt latest. */
   async confirmLocalRecovery(): Promise<void> {
-    if (this.booting || this.state.status !== "title" || !this.content || !this.store) return;
-    const text = this.pendingRecoveryText;
-    if (!text) return;
-    this.booting = true;
-    try {
-      const decoded = decodeSnapshotEnvelope(this.content, text);
-      this.rotateOnNextSave = false;
-      this.clearSaveChoiceUi();
-      sharedAnalyticsBus.onSaveRecovery("local_previous");
-      this.say("Recovered your previous save");
-      this.bootSim(decoded.state, decoded.savedAtEpochMs);
-      await this.reconcileEntitlementsFromStore();
-    } catch (e) {
-      this.allowSaving = !(e instanceof NewerSaveError);
-      this.clearSaveChoiceUi();
-      this.setState({ status: "failed", message: e instanceof Error ? e.message : String(e) });
-    } finally {
-      this.booting = false;
-    }
+    return this.cloudBoot.confirmLocalRecovery();
   }
 
-  /** Phase 11: dismiss recovery dialog and stay on the title screen. */
   dismissLocalRecovery(): void {
-    if (this.state.status !== "title") return;
-    this.clearSaveChoiceUi();
-    void this.refreshTitleHasSave();
+    this.cloudBoot.dismissLocalRecovery();
   }
-
-  private clearSaveChoiceUi(): void {
-    this.pendingConflict = null;
-    this.cloudConflictView = null;
-    this.pendingRecoveryText = null;
-    this.localRecoveryView = null;
+  clearSaveChoiceUi(): void {
+    this.cloudBoot.clearSaveChoiceUi();
   }
-
   private async refreshTitleHasSave(): Promise<void> {
-    let hasSave = false;
-    if (this.store) {
-      try {
-        hasSave = (await this.store.readCandidates()).length > 0;
-      } catch {
-        hasSave = this.allowSaving;
-      }
-    }
-    this.publishTitle(hasSave);
+    return this.cloudBoot.refreshTitleHasSave();
   }
 
-  /** Wipe slots and start a new harbor. Title screen confirms before calling this. */
   async newGame(): Promise<void> {
-    if (this.booting || this.state.status !== "title" || !this.content || !this.store) return;
-    this.booting = true;
-    try {
-      this.clearSaveChoiceUi();
-      await this.cloud.clearRemote(this.settings);
-      await this.store.clear();
-      this.rotateOnNextSave = true;
-      const state = GameState.newGame(this.content, START_HARBOR, (Math.random() * 2 ** 32) | 0);
-      this.bootSim(state, null);
-      // Phase 3: paid unlocks survive new-game wipe of harbor progress.
-      await this.reconcileEntitlementsFromStore();
-    } catch (e) {
-      this.setState({ status: "failed", message: e instanceof Error ? e.message : String(e) });
-    } finally {
-      this.booting = false;
-    }
+    return this.cloudBoot.newGame();
   }
 
-  /** Checkpoint and leave the harbor. The simulation stays in memory until the next boot. */
   async returnToTitle(): Promise<void> {
-    this.running = false;
-    this.enqueueMove(0, 0);
-    if (this.sim && this.commands.length > 0) this.step(this.sim);
-    this.save();
-    this.clearPanels();
-    this.clearSaveChoiceUi();
-    this.pendingOfflineReport = null;
-    this.commands.length = 0;
-    this.pendingFlying = [];
-    this.pendingBursts = [];
-    this.lastMove = { x: 0, z: 0 };
-    try {
-      await this.saveChain;
-    } catch {
-      // save() already logged the failure
-    }
-    let hasSave = false;
-    if (this.store) {
-      try {
-        hasSave = (await this.store.readCandidates()).length > 0;
-      } catch {
-        hasSave = this.allowSaving;
-      }
-    }
-    this.publishTitle(hasSave);
+    return this.cloudBoot.returnToTitle();
   }
-
   private bootSim(state: GameState, savedAtEpochMs: number | null): void {
-    this.commands.length = 0;
-    this.lastMove = { x: 0, z: 0 };
-    this.pendingFlying = [];
-    this.pendingBursts = [];
-    this.pendingOfflineReport = null;
-    this.clearPanels();
-    sharedAnalyticsBus.resetSessionFlags();
-    this.applyAnalyticsConsent();
-    this.sim = new Simulation(this.content!, state);
-    this.lastCheckpointEpochMs = savedAtEpochMs;
-    this.applyPendingOffline(Date.now());
-    this.syncWallClock(Date.now());
-    if (this.pendingOfflineReport !== null || savedAtEpochMs !== null) this.save();
-    this.latestView = buildView(this.sim);
-    if (this.store && !this.store.persistent) this.say(STORAGE_UNAVAILABLE_TOAST);
-    this.publish(true);
-    this.resume();
-    this.flushPendingDeepLink();
+    this.cloudBoot.bootSim(state, savedAtEpochMs);
   }
 
   /**
@@ -470,7 +415,7 @@ export class GameHost {
     });
   }
 
-  private flushPendingDeepLink(): void {
+  flushPendingDeepLink(): void {
     const pending = this.pendingDeepLink;
     this.pendingDeepLink = null;
     if (pending && (pending.panel || pending.harborId)) {
@@ -484,7 +429,7 @@ export class GameHost {
     if (typeof location !== "undefined") stripDeepLinkQuery(location.search);
   }
 
-  private publishTitle(hasSave: boolean): void {
+  publishTitle(hasSave: boolean): void {
     this.setState({
       status: "title",
       hasSave,
@@ -494,62 +439,8 @@ export class GameHost {
     });
   }
 
-  /**
-   * Load the chosen snapshot, or park Phase 11 choice/recovery UI and return null.
-   */
   private async restoreOrCreate(content: ContentPack): Promise<{ state: GameState; savedAtEpochMs: number | null } | null> {
-    const candidates = await this.store!.readCandidates();
-    const localLatest = candidates.find(([label]) => label === "latest")?.[1] ?? null;
-    const pull = await this.cloud.pullMerge(this.settings, localLatest);
-    if (pull.settings !== this.settings) {
-      this.settings = pull.settings;
-      saveSettings(this.settings);
-    }
-    if (pull.conflict) {
-      this.pendingConflict = pull.conflict;
-      this.cloudConflictView = cloudConflictView(pull.conflict, content);
-      this.localRecoveryView = null;
-      this.pendingRecoveryText = null;
-      this.publishTitle(true);
-      return null;
-    }
-    if (pull.decision.source === "remote" && pull.decision.text) {
-      try {
-        await this.store!.write(pull.decision.text, true);
-        const decoded = decodeSnapshotEnvelope(content, pull.decision.text);
-        this.say("Restored newer cloud save");
-        return decoded;
-      } catch (e) {
-        console.warn("Cloud save unusable:", e);
-      }
-    }
-    let latestCorrupt = false;
-    for (const [label, text] of candidates) {
-      try {
-        const decoded = decodeSnapshotEnvelope(content, text);
-        if (label !== "latest") {
-          if (latestCorrupt) {
-            const peeked = peekSnapshot(text);
-            if (peeked) {
-              this.pendingRecoveryText = text;
-              this.localRecoveryView = localRecoveryView(summaryOf(peeked, "local"), content);
-              this.pendingConflict = null;
-              this.cloudConflictView = null;
-              this.publishTitle(true);
-              return null;
-            }
-          }
-          this.rotateOnNextSave = false;
-          this.say("Recovered your previous save");
-        }
-        return decoded;
-      } catch (e) {
-        if (e instanceof NewerSaveError) throw e; // never overwrite a newer app's save
-        if (label === "latest") latestCorrupt = true;
-        console.warn(`Save '${label}' unusable:`, e);
-      }
-    }
-    return { state: GameState.newGame(content, START_HARBOR, (Math.random() * 2 ** 32) | 0), savedAtEpochMs: null };
+    return this.cloudBoot.restoreOrCreate(content);
   }
 
   // ---- loop -------------------------------------------------------------------------
@@ -577,7 +468,7 @@ export class GameHost {
     this.publish(true);
   }
 
-  private applyPendingOffline(nowEpochMs: number): void {
+  applyPendingOffline(nowEpochMs: number): void {
     const sim = this.sim;
     if (!sim) return;
     const since = this.lastCheckpointEpochMs;
@@ -611,7 +502,7 @@ export class GameHost {
     if (ticks > 0) this.publish(false);
   }
 
-  private step(sim: Simulation): void {
+  step(sim: Simulation): void {
     processHostStep(sim, this.commands, {
       say: (m) => this.say(m),
       save: () => this.save(),
@@ -638,6 +529,23 @@ export class GameHost {
       }
     }
     this.pressureFlags = nextFlags;
+    // Finish 6.0 Phase 12 — rising-edge nest settle / aurora SFX + juice.
+    const tide = this.latestView?.tidePhaseId ?? "";
+    const nightActive = tide === "night" || tide === "dusk";
+    const nextNest = nestFlagsFromView(this.latestView, nightActive);
+    const nestEdges = edgeNestSfx(this.nestFlags, nextNest);
+    for (const cue of nestEdges) this.audio.play(cue);
+    if (this.latestView) {
+      if (nestEdges.includes("nest_settle")) {
+        this.pendingBursts.push(resolveNestSettleBurst(this.latestView));
+        this.pendingShakes.push("nest_settle");
+      }
+      if (nestEdges.includes("aurora_crest")) {
+        this.pendingBursts.push(resolveAuroraCrestBurst(this.latestView));
+        this.pendingShakes.push("aurora_crest");
+      }
+    }
+    this.nestFlags = nextNest;
   }
 
   // ---- intent ------------------------------------------------------------------------
@@ -676,7 +584,7 @@ export class GameHost {
     }
   }
 
-  private enqueueMove(screenX: number, screenY: number): void {
+  enqueueMove(screenX: number, screenY: number): void {
     const [wx, wz] = CameraRig.screenToWorld(screenX, screenY);
     const clamp = (v: number) => Math.max(-INPUT_SCALE, Math.min(INPUT_SCALE, Math.round(v * INPUT_SCALE)));
     const move = { x: clamp(wx), z: clamp(wz) };
@@ -730,7 +638,7 @@ export class GameHost {
     this.commitNow({ type: "store_decor", decorId });
   }
 
-  private clearPanels(): void {
+  clearPanels(): void {
     this.panels.closeAll();
   }
 
@@ -1022,54 +930,11 @@ export class GameHost {
   /** Phase 23: restore purchases and grant if the store says owned. */
   restoreFullHarborUnlock(): void { this.iapIntents.restoreFullHarborUnlock(); }
 
-  /**
-   * Phase 2 (post-1.0): after hosted checkout redirect (`?billing=success&session_id=`),
-   * fulfill entitlements and strip the query so refresh does not re-fulfill.
-   */
   private async consumeBillingReturnQuery(): Promise<void> {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const billing = params.get("billing");
-    if (billing === "cancel") {
-      this.say("Checkout canceled");
-      this.stripBillingQuery();
-      return;
-    }
-    if (billing !== "success") return;
-    const sessionId = params.get("session_id") ?? params.get("sessionId");
-    if (!sessionId) {
-      this.stripBillingQuery();
-      return;
-    }
-    if (!isProductionWebBilling(this.billing)) {
-      this.stripBillingQuery();
-      return;
-    }
-    try {
-      const owned = await this.billing.completeCheckoutReturn(sessionId, this.settings.cloudAccountId);
-      for (const row of owned) {
-        this.pendingEntitlements.enqueue(row.sku, row.purchaseToken, row.grantsCosmetic);
-      }
-      // Title boot has no sim yet — ledger keeps grants until continue/newGame reconcile.
-      if (owned.length > 0 && this.sim) {
-        this.applyStoreOwned(owned, true);
-      } else if (owned.length > 0) {
-        this.say(`Purchase saved — continue to apply ${owned.length}`);
-      }
-    } catch (err) {
-      this.say(err instanceof Error ? err.message : "Checkout fulfill failed");
-    } finally {
-      this.stripBillingQuery();
-    }
+    return this.entitlements.consumeBillingReturnQuery();
   }
-
   private stripBillingQuery(): void {
-    if (typeof window === "undefined" || !window.history?.replaceState) return;
-    const url = new URL(window.location.href);
-    url.searchParams.delete("billing");
-    url.searchParams.delete("session_id");
-    url.searchParams.delete("sessionId");
-    window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+    this.entitlements.stripBillingQuery();
   }
 
   /** Phase 24: purchase a power-neutral cosmetic SKU. */
@@ -1078,57 +943,11 @@ export class GameHost {
   /** Phase 24 / post-1.0 Phase 2+3: restore all entitlements (full unlock + cosmetics). */
   restorePurchases(): void { this.iapIntents.restorePurchases(); }
 
-  /**
-   * Phase 3: store is SoT for paid SKUs — merge restore + pending ledger into the live save,
-   * apply only missing flags/receipts, checkpoint, then ack the ledger.
-   */
-  private async reconcileEntitlementsFromStore(): Promise<void> {
-    const owned = await this.billing.restoreAll(this.settings.cloudAccountId).catch(() => [] as RestoredEntitlement[]);
-    this.applyStoreOwned(owned, false);
+  async reconcileEntitlementsFromStore(): Promise<void> {
+    return this.entitlements.reconcileEntitlementsFromStore();
   }
-
   applyStoreOwned(owned: RestoredEntitlement[], announceRestore: boolean): void {
-    const sim = this.sim;
-    if (!sim) return;
-    const storeRows: StoreOwned[] = owned.map((row) => ({
-      sku: row.sku,
-      purchaseToken: row.purchaseToken,
-      grantsCosmetic: row.grantsCosmetic,
-    }));
-    const merged = mergeStoreAndPending(storeRows, this.pendingEntitlements.all());
-    const needs = neededGrants(merged, entitlementSnapshotOf(sim.state));
-    if (needs.length === 0) {
-      this.pendingEntitlements.ackRequestIds(new Set(sim.state.purchaseReceipts.keys()));
-      if (announceRestore) {
-        const n = merged.length;
-        this.say(n === 0 ? "No purchases to restore" : `Restored ${n} purchase${n === 1 ? "" : "s"}`);
-      }
-      return;
-    }
-    for (const need of needs) {
-      this.pendingEntitlements.enqueue(need.sku, need.purchaseToken, need.cosmeticId);
-      if (need.cosmeticId) {
-        this.commands.push({
-          type: "grant_iap_cosmetic",
-          cosmeticId: need.cosmeticId,
-          requestId: need.requestId,
-        });
-      } else {
-        this.commands.push({
-          type: "grant_full_harbor_unlock",
-          requestId: need.requestId,
-        });
-      }
-    }
-    this.step(sim);
-    this.publish(true);
-    this.save();
-    this.pendingEntitlements.ackRequestIds(new Set(sim.state.purchaseReceipts.keys()));
-    if (announceRestore) {
-      this.say(`Restored ${merged.length} purchase${merged.length === 1 ? "" : "s"}`);
-    } else if (needs.some((n) => !n.cosmeticId && n.reason.includes("flag")) && sim.state.fullHarborUnlock) {
-      this.say("Harbor unlock restored");
-    }
+    this.entitlements.applyStoreOwned(owned, announceRestore);
   }
 
   repairMachine(stationId: string): void { this.economyIntents.repairMachine(stationId); }
@@ -1267,7 +1086,7 @@ export class GameHost {
     });
   }
 
-  private setState(s: HostState): void {
+  setState(s: HostState): void {
     this.state = s;
     this.listeners.forEach((l) => l());
   }

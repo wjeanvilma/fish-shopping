@@ -73,6 +73,10 @@ function validate(): string[] {
     resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt"),
     "utf8",
   );
+  const vmStepBusKt = readFileSync(
+    resolve(root, "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmStepBus.kt"),
+    "utf8",
+  );
 
   if (audioCat.phase !== 12 || vfxCat.phase !== 12) errors.push("phase expected 12");
   if (audioCat.schema !== AUDIO_PACK_5_SCHEMA) errors.push("audio schema mismatch");
@@ -158,7 +162,9 @@ function validate(): string[] {
     if (!hostBus.includes(`resolve${camel}Burst`) && !vfxTs.includes(`resolve${camel}Burst`)) {
       errors.push(`missing resolve${camel}Burst`);
     }
-    if (!vmKt.includes(`resolve${camel}Burst`)) errors.push(`GameViewModel missing resolve${camel}Burst`);
+    if (!vmKt.includes(`resolve${camel}Burst`) && !vmStepBusKt.includes(`resolve${camel}Burst`)) {
+      errors.push(`GameViewModel/VmStepBus missing resolve${camel}Burst`);
+    }
   }
   for (const kind of VFX_JUICE_5.eventShake.kinds) {
     if (!vfxTs.includes(`"${kind}"`)) errors.push(`vfx.ts missing shake kind ${kind}`);

@@ -73,15 +73,15 @@ function validate(): string[] {
     errors.push("schemaVersion must stay 26");
   }
   if (SCHEMA_VERSION < 26) errors.push("engine SCHEMA_VERSION must be >= 26");
-  if (!["4.0.0", "5.0.0"].includes(pack.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0 or 5.0.0");
-  if (pack.saveSchemaVersion !== 26) errors.push("content-pack.saveSchemaVersion must be 26");
+  if (!["4.0.0", "5.0.0", "6.0.0"].includes(pack.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0, 5.0.0, or 6.0.0");
+  if (pack.saveSchemaVersion < 26) errors.push("content-pack.saveSchemaVersion must be >= 26");
   if (catalog.closesGap !== "stripeOps5Incomplete") errors.push("closesGap mismatch");
-  if (catalog.skuFloor !== 25 || STRIPE_OPS_5_SKU_FLOOR !== 25) errors.push("skuFloor must be 25");
-  if (catalog.cosmeticSkuFloor !== 24 || STRIPE_OPS_5_COSMETIC_FLOOR !== 24) {
-    errors.push("cosmeticSkuFloor must be 24");
+  if (catalog.skuFloor < 25 || STRIPE_OPS_5_SKU_FLOOR < 25) errors.push("skuFloor must be ≥25");
+  if (catalog.cosmeticSkuFloor < 24 || STRIPE_OPS_5_COSMETIC_FLOOR < 24) {
+    errors.push("cosmeticSkuFloor must be ≥24");
   }
-  if (catalog.priceMapFloor !== 25 || STRIPE_OPS_5_PRICE_MAP_FLOOR !== 25) {
-    errors.push("priceMapFloor must be 25");
+  if (catalog.priceMapFloor < 25 || STRIPE_OPS_5_PRICE_MAP_FLOOR < 25) {
+    errors.push("priceMapFloor must be ≥25");
   }
   if (catalog.readinessPath !== STRIPE_OPS_5_READINESS_PATH) errors.push("readinessPath mismatch");
   if ((ops.cutoverChecklist?.length ?? 0) < catalog.cutoverChecklistMin) {
@@ -162,7 +162,7 @@ function validate(): string[] {
   }
 
   const active = (products.products as any[]).filter((p) => p.status === "active");
-  if (active.length < 25) errors.push(`checkout products active ${active.length} < 25`);
+  if (active.length < 25) errors.push(`checkout products active ${active.length} < 25`); // soft-floor ≥25
   for (const p of active) {
     if (!(p.stripePriceId ?? "").trim()) errors.push(`missing stripePriceId for ${p.webProductId}`);
   }

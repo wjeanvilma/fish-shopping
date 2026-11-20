@@ -1,0 +1,90 @@
+{
+  "phase": 25,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ops.stripe_ops_6.v1",
+  "description": "Finish 6.0 Phase 25 — live-ready Stripe/checkout catalog ops refresh for nest cosmetics (≥31 active / ≥30 cosmetics). Secrets never committed.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "stripeOps6Marker": "authored-finish-6.0-phase-25",
+  "extendsStripeOps5": "shared/ops/stripe-ops-5.json",
+  "extendsStripeLive": "shared/ship/stripe-live-checkout.json",
+  "productsCatalog": "shared/billing/web-checkout-products.json",
+  "storeCatalogSync": "shared/billing/store-catalog-sync.json",
+  "skuFloor": 31,
+  "cosmeticSkuFloor": 30,
+  "priceMapFloor": 31,
+  "readinessPath": "/v1/ops/readiness",
+  "healthPath": "/health",
+  "webhookPath": "/v1/stripe/webhook",
+  "webhookIdempotency": {
+    "required": true,
+    "storeField": "processedStripeEventIds",
+    "duplicateResponse": {
+      "received": true,
+      "duplicate": true
+    }
+  },
+  "readinessFields": [
+    "ok",
+    "catalogOk",
+    "priceMapOk",
+    "priceMapSize",
+    "skuFloor",
+    "cosmeticSkuFloor",
+    "cosmeticSkuCount",
+    "finish5CatalogOk",
+    "finish6CatalogOk",
+    "liveReady"
+  ],
+  "cutoverChecklist": [
+    "billing:validate green (entitlements ↔ Play/web/checkout catalogs)",
+    "Every active SKU has stripePriceId placeholder or STRIPE_PRICE_* override",
+    "CHECKOUT_API_MODE=stub still completes instant checkout",
+    "Live without STRIPE_SECRET_KEY returns 503 (no sandbox fallback)",
+    "Webhook signature verify + idempotent replay of same event id",
+    "GET /v1/ops/readiness reports catalogOk + priceMapOk + finish6CatalogOk",
+    "Stripe Dashboard webhook endpoint points at POST /v1/stripe/webhook",
+    "Replace price_test_* placeholders with live price ids before production traffic",
+    "Finish 6 cosmetics (≥30) synced into Play/web/console/checkout",
+    "Nest saffron/cobalt/roast/ferment banners price-mapped",
+    "stripeops6:validate green; soft stripeops5:validate still green"
+  ],
+  "envPlaceholders": [
+    "CHECKOUT_API_MODE",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "STRIPE_PRICE_*"
+  ],
+  "manualOps": [
+    {
+      "id": "sync_catalogs",
+      "title": "Sync store catalogs",
+      "body": "Run python3 shared/tools/author_stripe_ops_6.py then npm run billing:validate after adding nest cosmetics. Mirrors entitlements into Play/web/checkout product tables."
+    },
+    {
+      "id": "map_live_prices",
+      "title": "Map live Stripe prices",
+      "body": "Create Stripe Prices for each webProductId, then set stripePriceId or STRIPE_PRICE_<SKU> env overrides. Never commit live secret keys."
+    },
+    {
+      "id": "cutover_live",
+      "title": "Cut over to live mode",
+      "body": "Set CHECKOUT_API_MODE=live with STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET. Confirm /v1/ops/readiness liveReady=true and finish6CatalogOk=true before traffic."
+    },
+    {
+      "id": "refund_verify",
+      "title": "Refund verify",
+      "body": "After a Stripe refund, confirm GET /v1/entitlements no longer returns the SKU for that cloudAccountId (or re-reconcile per entitlement-reconcile.json)."
+    },
+    {
+      "id": "finish5_drift_audit",
+      "title": "Finish 5 catalog drift audit (soft)",
+      "body": "Diff entitlements.json cosmetics vs web-checkout-products.json for Finish 5 floors (≥24). Soft-floor stays green under Finish 6 sync."
+    },
+    {
+      "id": "finish6_nest_drift_audit",
+      "title": "Finish 6 nest catalog drift audit",
+      "body": "Diff entitlements.json nest cosmetics (saffron/cobalt/roast/ferment) vs web-checkout-products.json. Any missing nest banners must be synced before freeze-6."
+    }
+  ]
+}

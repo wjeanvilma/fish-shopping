@@ -33,6 +33,7 @@ export interface RemoteAnalyticsPolicyCatalog {
     retryBackoffMs?: number;
     retryJitterMs?: number;
     deadLetterAfterMaxRetries?: boolean;
+    circuitBreakerAfterDeadLetters?: number;
   };
   envelope: {
     requiredFields: string[];
@@ -57,6 +58,8 @@ export const REMOTE_RETRY_BACKOFF_MS = REMOTE_ANALYTICS_POLICY.batch.retryBackof
 export const REMOTE_RETRY_JITTER_MS = REMOTE_ANALYTICS_POLICY.batch.retryJitterMs ?? 0;
 export const REMOTE_DEAD_LETTER_AFTER_MAX_RETRIES =
   REMOTE_ANALYTICS_POLICY.batch.deadLetterAfterMaxRetries === true;
+export const REMOTE_CIRCUIT_BREAKER_AFTER_DEAD_LETTERS =
+  REMOTE_ANALYTICS_POLICY.batch.circuitBreakerAfterDeadLetters ?? 0;
 export const REMOTE_WEB_ENV_KEY = REMOTE_ANALYTICS_POLICY.client.webEnvKey;
 export const REMOTE_LOCAL_DEFAULT_BASE = REMOTE_ANALYTICS_POLICY.client.localEmulatorDefaultBase;
 
@@ -69,6 +72,14 @@ export function remoteRetryDelayMs(flushFailures: number, jitterMs = 0): number 
 
 export function shouldDeadLetterRemoteFlush(flushFailures: number): boolean {
   return REMOTE_DEAD_LETTER_AFTER_MAX_RETRIES && flushFailures >= REMOTE_MAX_FLUSH_RETRIES;
+}
+
+/** Finish 6.0 Phase 18 — open analytics circuit after repeated dead-letters. */
+export function remoteAnalyticsCircuitOpen(deadLetterCount: number): boolean {
+  return (
+    REMOTE_CIRCUIT_BREAKER_AFTER_DEAD_LETTERS > 0 &&
+    deadLetterCount >= REMOTE_CIRCUIT_BREAKER_AFTER_DEAD_LETTERS
+  );
 }
 
 export interface QueuedRemoteEvent {

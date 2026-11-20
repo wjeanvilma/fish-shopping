@@ -112,6 +112,10 @@ class HarborRenderer(private val context: Context) {
     private var sessionQuality = QualityPreset.MEDIUM
     private var appliedQuality: QualityPreset? = null
     private val frameTiming = FrameTiming()
+    /** Finish 6.0 Phase 21 — presenter/render CPU snapshot harness (shares FrameTiming). */
+    private val cpuHarness = PresenterCpuHarness(timing = frameTiming)
+    @Volatile
+    private var lastCpuSnapshot: PresenterCpuSnapshot? = null
 
     private data class FadeZone(val entity: Int, val x: Double, val z: Double)
 
@@ -195,6 +199,9 @@ class HarborRenderer(private val context: Context) {
 
     /** Visible for tests — warm harbors currently retained. */
     fun harborCacheSize(): Int = harborCache.size
+
+    /** Finish 6.0 Phase 21 — last presenter/render CPU snapshot (null until first frame sample). */
+    fun presenterCpuSnapshot(): PresenterCpuSnapshot? = lastCpuSnapshot
 
     private fun snapshotCurrentHarbor(path: String): HarborCacheEntry {
         val a = asset ?: error("no asset to snapshot")
@@ -490,7 +497,8 @@ class HarborRenderer(private val context: Context) {
         lastFrameNanos = frameTimeNanos
         elapsed += dt
         if (dt > 0.0) {
-            when (frameTiming.sample(dt, FrameTiming.targetMs(sessionQuality))) {
+            cpuHarness.beginStage(PresenterCpuStage.QUALITY_BIND)
+            when (cpuHarness.sampleFrame(dt, sessionQuality)) {
                 FrameBudgetAction.DOWNGRADE -> {
                     val next = FrameTiming.downgrade(sessionQuality)
                     if (next != sessionQuality) {
@@ -510,6 +518,13 @@ class HarborRenderer(private val context: Context) {
                 }
                 FrameBudgetAction.HOLD -> Unit
             }
+            cpuHarness.endStage(PresenterCpuStage.QUALITY_BIND)
+            val nestPressure = ((sim.bagSpoilPressurePermille * 0.5) + (sim.serviceQueuePressurePermille * 0.5))
+                .toInt()
+                .coerceIn(0, 1000)
+            cpuHarness.setNestHudPressurePermille(nestPressure)
+            cpuHarness.recordStageMs(PresenterCpuStage.NEST_HUD, max(0.05, nestPressure / 1000.0))
+            lastCpuSnapshot = cpuHarness.snapshot()
         }
         if (dt > 0.0) {
             com.willio.jeanvilma.fishshopping.analytics.AnalyticsBus.shared
@@ -695,6 +710,10 @@ class HarborRenderer(private val context: Context) {
                 sim.serviceQueuePressurePermille,
                 sim.ticksUntilNearestContractDeadline,
                 sim.nextQuestProgressPermille,
+            ),
+            nestMode = nestAmbientIdForView(
+                sim.decorPlacements.size,
+                sim.tidePhaseId == "night" || sim.tidePhaseId == "dusk",
             ),
         )
         cozy.apply(sim, reducedMotion, floatArrayOf(ambient.skyR, ambient.skyG, ambient.skyB))

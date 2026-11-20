@@ -110,8 +110,8 @@ function validate(): string[] {
     errors.push("schemaVersion must stay 26");
   }
   if (SCHEMA_VERSION < 26) errors.push("engine SCHEMA_VERSION must be >= 26");
-  if (!["4.0.0", "5.0.0"].includes(pack.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0 or 5.0.0");
-  if (pack.saveSchemaVersion !== 26) errors.push("content-pack.saveSchemaVersion must be 26");
+  if (!["4.0.0", "5.0.0", "6.0.0"].includes(pack.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0, 5.0.0, or 6.0.0");
+  if (pack.saveSchemaVersion < 26) errors.push("content-pack.saveSchemaVersion must be >= 26");
   if (a11yShip.simHzInvariant !== 20) errors.push("simHzInvariant must be 20");
 
   if (a11yShip.screenSurfaceMin !== 5 || SCREEN_SURFACE_FLOOR_4 !== 5) {

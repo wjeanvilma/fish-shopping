@@ -204,6 +204,54 @@
       "status": "active",
       "type": "non_consumable",
       "stripePriceId": "price_test_fish_cosmetic_can_crest"
+    },
+    {
+      "webProductId": "fish.cosmetic.saffron_bunting",
+      "sku": "fish.cosmetic.saffron_bunting",
+      "androidProductId": "fish_cosmetic_saffron_bunting",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_saffron_bunting"
+    },
+    {
+      "webProductId": "fish.cosmetic.cobalt_pennant",
+      "sku": "fish.cosmetic.cobalt_pennant",
+      "androidProductId": "fish_cosmetic_cobalt_pennant",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_cobalt_pennant"
+    },
+    {
+      "webProductId": "fish.cosmetic.quay_flag",
+      "sku": "fish.cosmetic.quay_flag",
+      "androidProductId": "fish_cosmetic_quay_flag",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_quay_flag"
+    },
+    {
+      "webProductId": "fish.cosmetic.sound_streamer",
+      "sku": "fish.cosmetic.sound_streamer",
+      "androidProductId": "fish_cosmetic_sound_streamer",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_sound_streamer"
+    },
+    {
+      "webProductId": "fish.cosmetic.roast_ribbon",
+      "sku": "fish.cosmetic.roast_ribbon",
+      "androidProductId": "fish_cosmetic_roast_ribbon",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_roast_ribbon"
+    },
+    {
+      "webProductId": "fish.cosmetic.ferment_crest",
+      "sku": "fish.cosmetic.ferment_crest",
+      "androidProductId": "fish_cosmetic_ferment_crest",
+      "status": "active",
+      "type": "non_consumable",
+      "stripePriceId": "price_test_fish_cosmetic_ferment_crest"
     }
   ]
 }

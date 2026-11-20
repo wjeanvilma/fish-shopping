@@ -156,6 +156,21 @@ internal fun OfflineSummaryPanel(report: OfflineReport, onContinue: () -> Unit, 
                     contentDescription = UiStrings.t("a11y.offlineSection")
                 },
             )
+            val nestJournalActive =
+                report.loanRepaid > 0L ||
+                    report.contractRevenue > 0L ||
+                    report.rivalSalesStolen > 0L ||
+                    report.endgameSigilsEarned > 0L
+            if (nestJournalActive) {
+                Text(
+                    UiStrings.t("offline.nestJournal"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                    modifier = Modifier.semantics {
+                        contentDescription = UiStrings.t("a11y.offlineNestJournal")
+                    },
+                )
+            }
             val lines = buildList {
                 if (report.coinsDelta != 0L) {
                     val delta = "${if (report.coinsDelta > 0) "+" else ""}${formatCoins(report.coinsDelta)}"

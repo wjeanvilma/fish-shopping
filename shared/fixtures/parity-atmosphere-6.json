@@ -1,0 +1,23 @@
+{
+  "schema": "fish.fixtures.parity_atmosphere_6.v1",
+  "atmosphere6Marker": "authored-finish-6.0-phase-11",
+  "atmosphereFinish6Marker": "atmosphere-6",
+  "atmosphereFinish5Marker": "atmosphere-5",
+  "phase": 11,
+  "plan": "30_finish_6.0",
+  "expect": {
+    "finish6HarborTarget": 14,
+    "schemaVersion": 26,
+    "contentVersion": "5.0.0",
+    "atmosphere6IncompleteClosed": true,
+    "openGapFlagMin": 1,
+    "gates": [
+      "harbors_stamped",
+      "sockets_present",
+      "render_modules",
+      "gap_closed",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

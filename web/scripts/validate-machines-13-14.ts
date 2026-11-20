@@ -116,6 +116,7 @@ function validate(): string[] {
       errors.push("DoD machines1314 marker mismatch");
     }
   }
+  // Soft-floor: Finish 6.0 Phase 9 raised quotas.machineClasses to 16.
   if ((dod.quotas?.machineClasses ?? 0) < 14) {
     errors.push("DoD quotas.machineClasses must be ≥ 14");
   }

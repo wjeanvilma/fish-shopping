@@ -87,6 +87,10 @@ object Stats {
     const val SMOKER_QUEUE_FEEDS = "stat.smoker_queue_feeds"
     const val SCHEDULE_TASK_BOOSTS = "stat.schedule_task_boosts"
     const val WORKER_FAILURE_RECOVERIES = "stat.worker_failure_recoveries"
+    /** Finish 6.0 Phase 16 — staff AI wave 4 nest specialties. */
+    const val ICE_RUNNER_NEST_CHILLS = "stat.ice_runner_nest_chills"
+    const val GREETER_NEST_HOSTS = "stat.greeter_nest_hosts"
+    const val PORTER_NEST_HAULS = "stat.porter_nest_hauls"
     /** Finish 3.0 Phase 14 — rival NPC market siphon / player beat counters. */
     const val RIVAL_SALES_STOLEN = "stat.rival_sales_stolen"
     const val RIVAL_UNDERCUTS = "stat.rival_undercuts"
@@ -98,6 +102,8 @@ object Stats {
     const val ENDGAME_MARKS_EARNED = "stat.endgame_marks_earned"
     /** Finish 5.0 Phase 17 — crests granted by deepen challenges. */
     const val ENDGAME_CRESTS_EARNED = "stat.endgame_crests_earned"
+    /** Finish 6.0 Phase 14 — sigils granted by deepen challenges. */
+    const val ENDGAME_SIGILS_EARNED = "stat.endgame_sigils_earned"
     const val DECOR_BOUGHT = "stat.decor_bought"
     const val MACHINES_BROKEN = "stat.machines_broken"
     const val MACHINES_SLOWED = "stat.machines_slowed"
@@ -128,8 +134,9 @@ object Stats {
         FISHER_TROPHY_CASTS, PORTER_RELAY_PICKUPS, CASHIER_QUICK_TILLS,
         SUPERVISOR_RUSH_MARSHALS, OPERATOR_CIRCUIT_LINKS, SMOKER_QUEUE_FEEDS,
         SCHEDULE_TASK_BOOSTS, WORKER_FAILURE_RECOVERIES,
+        ICE_RUNNER_NEST_CHILLS, GREETER_NEST_HOSTS, PORTER_NEST_HAULS,
         RIVAL_SALES_STOLEN, RIVAL_UNDERCUTS, RIVAL_BEATS,
-        ENDGAME_TIERS_UNLOCKED, ENDGAME_CHALLENGES_COMPLETED, ENDGAME_MARKS_EARNED, ENDGAME_CRESTS_EARNED, DECOR_BOUGHT,
+        ENDGAME_TIERS_UNLOCKED, ENDGAME_CHALLENGES_COMPLETED, ENDGAME_MARKS_EARNED, ENDGAME_CRESTS_EARNED, ENDGAME_SIGILS_EARNED, DECOR_BOUGHT,
         MACHINES_BROKEN, MACHINES_SLOWED, MACHINES_REPAIRED, REPAIR_SPENT,
         LOANS_TAKEN, LOAN_INTEREST_ACCRUED, LOAN_REPAID, LOAN_COLLECTED, COIN_GOALS_REACHED,
     )
@@ -412,6 +419,8 @@ class GameState(
     val endgameMarks = TreeSet<String>()
     /** Finish 5.0 Phase 17 / schema 26 — crests from deepen challenges. */
     val endgameCrests = TreeSet<String>()
+    /** Finish 6.0 Phase 14 — nest sigils from deepen challenges. */
+    val endgameSigils = TreeSet<String>()
     val unlockedCosmetics = TreeSet<String>()
     /** Phase 23 owned shop decor (placable cosmetics). */
     val ownedDecor = TreeSet<String>()

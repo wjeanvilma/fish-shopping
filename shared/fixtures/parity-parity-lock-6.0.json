@@ -1,0 +1,65 @@
+{
+  "schema": "fish.fixture.parity_parity_lock_6.v1",
+  "description": "Finish 6.0 Phase 29: parity-lock 6.0 suite floors and required Finish 6.0 system fixtures.",
+  "parityLock6Marker": "authored-finish-6.0-phase-29",
+  "suiteFloor": 24,
+  "finish2SuiteFloor": 4,
+  "finish3SuiteFloor": 4,
+  "finish4SuiteFloor": 4,
+  "finish5SuiteFloor": 4,
+  "finish6SuiteFloor": 4,
+  "simHzInvariant": 20,
+  "expect": {
+    "closesGap": "parityLock6Missing",
+    "parityLock6Missing": false,
+    "openGapFlagMin": 0,
+    "baselineSuiteIds": [
+      "prng",
+      "starter_line",
+      "entitlements_unlock",
+      "legacy_migrations"
+    ],
+    "finish2SuiteIds": [
+      "achievements",
+      "weather_tide",
+      "fishing_mastery",
+      "festival_weekends"
+    ],
+    "finish3SuiteIds": [
+      "rival_markets",
+      "schema24_endgame",
+      "machines_9_10",
+      "quests_contracts_3"
+    ],
+    "finish4SuiteIds": [
+      "machines_11_12",
+      "quests_contracts_4",
+      "rival_markets_2",
+      "endgame_2"
+    ],
+    "finish5SuiteIds": [
+      "machines_13_14",
+      "quests_contracts_5",
+      "endgame_3",
+      "rivals_seasonal_5"
+    ],
+    "finish6SuiteIds": [
+      "machines_15_16",
+      "quests_contracts_6",
+      "endgame_4",
+      "rivals_seasonal_6"
+    ],
+    "finish6Fixtures": [
+      "shared/fixtures/parity-machines-15-16.json",
+      "shared/fixtures/parity-quests-contracts-6.json",
+      "shared/fixtures/parity-endgame-4.json",
+      "shared/fixtures/parity-rivals-seasonal-6.json"
+    ],
+    "gates": [
+      "machines1516RecipesParity",
+      "questsContracts6FloorsMet",
+      "endgameSchema27Persisted",
+      "rivalsSeasonal6FloorsMet"
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "phase": 9,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.machines_15_16.v1",
+  "description": "Finish 6.0 Phase 9 \u2014 author machine classes 15\u201316 (Harbor roaster + Harbor fermenter) with recipe graphs, unlock plots on all 14 harbors, and product SKUs. Schema stays 26.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "machineCount": 16,
+  "newMachineCount": 2,
+  "machines1516Marker": "authored-finish-6.0-phase-9",
+  "newMachines": [
+    {
+      "id": "machine.harbor_roaster",
+      "name": "Harbor roaster",
+      "unlockUpgrade": "upgrade.harbor_roaster",
+      "recipeCount": 6,
+      "sampleRecipe": "recipe.roast_fillet",
+      "products": [
+        "product.roasted_fillet",
+        "product.roast_chip",
+        "product.roast_carton"
+      ],
+      "moduleGlb": "shared/assets/models/modules/roaster.glb"
+    },
+    {
+      "id": "machine.harbor_fermenter",
+      "name": "Harbor fermenter",
+      "unlockUpgrade": "upgrade.harbor_fermenter",
+      "recipeCount": 6,
+      "sampleRecipe": "recipe.ferment_fillet",
+      "products": [
+        "product.fermented_fillet",
+        "product.ferment_paste",
+        "product.ferment_carton"
+      ],
+      "moduleGlb": "shared/assets/models/modules/fermenter.glb"
+    }
+  ],
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-machines-15-16.json",
+  "authorTool": "shared/tools/author_machines_15_16.py",
+  "validateScript": "npm run machines1516:validate",
+  "checklist": [
+    "content-pack has 16 machine classes including harbor_roaster and harbor_fermenter",
+    "Unlock upgrades + expansion plots on all 14 harbors",
+    "Recipe graph produces new retail/wholesale SKUs",
+    "Product + module GLBs regenerated; harbor blockouts refreshed",
+    "Kickoff machinesRemaining = 0; baseline.machines stays 14",
+    "machines1516:validate green in CI",
+    "schema stays 26"
+  ],
+  "preflightGates": [
+    "shared/ship/machines-15-16.json",
+    "shared/fixtures/parity-machines-15-16.json",
+    "shared/ship/finish-6.0-kickoff.json",
+    "shared/tools/author_machines_15_16.py",
+    "shared/assets/models/modules/roaster.glb",
+    "shared/assets/models/modules/fermenter.glb",
+    "shared/assets/models/product_roasted_fillet.glb",
+    "shared/assets/models/product_fermented_fillet.glb",
+    "web/src/ship/machines1516.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Machines1516.kt",
+    "web/scripts/validate-machines-15-16.ts"
+  ]
+}

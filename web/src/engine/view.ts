@@ -538,6 +538,8 @@ export interface SimView {
   endgameMarks: string[];
   endgameCrestCount: number;
   endgameCrests: string[];
+  endgameSigilCount: number;
+  endgameSigils: string[];
   endgameLockedReason: string | null;
   beatenRivalCount: number;
   endgameTiers: EndgameTierView[];
@@ -1299,6 +1301,8 @@ export function buildView(sim: Simulation): SimView {
     endgameMarks: [...s.endgameMarks].sort(compareStrings),
     endgameCrestCount: s.endgameCrests.size,
     endgameCrests: [...s.endgameCrests].sort(compareStrings),
+    endgameSigilCount: s.endgameSigils.size,
+    endgameSigils: [...s.endgameSigils].sort(compareStrings),
     endgameTiers: c.endgame.tiers.map((t) => {
       const unlocked = s.unlockedEndgameTiers.has(t.id);
       return {

@@ -259,7 +259,7 @@ export function QuestLogPanel({
               <span className="num">Event</span>
             </li>
           )}
-          <li aria-label={t("a11y.bankSection")}>
+          <li aria-label={t("a11y.bankSection")} data-testid={WEB_E2E_IDS.NEST_LOANS}>
             <div className="grow">
               <strong>{t("bank.title")}</strong>
               {!bank.unlocked ? (
@@ -292,12 +292,23 @@ export function QuestLogPanel({
                     unlocked: bank.canTakeLoan,
                     lockedReason: null,
                     canTake: bank.canTakeLoan,
-                  }]).map((product) => (
-                    <div key={product.id} style={{ marginTop: 6 }}>
+                  }]).map((product) => {
+                    const nestLoan =
+                      product.id === "loan.nest_ember" || product.id === "loan.saffron_crest";
+                    return (
+                    <div
+                      key={product.id}
+                      style={{ marginTop: 6 }}
+                      data-nest-loan={nestLoan ? product.id : undefined}
+                      aria-label={nestLoan ? t("a11y.nestLoanSection") : undefined}
+                    >
                       <div className="small">
                         <strong>{product.name}</strong>
                         {" · "}Borrow {formatCoins(product.principal)} · repay {formatCoins(product.repayAmount)}
                         {" "}in {formatRushSeconds(product.termTicks)}s
+                        {nestLoan ? (
+                          <span className="small muted"> · {t("bank.nestLoanBadge")}</span>
+                        ) : null}
                       </div>
                       {product.lockedReason && (
                         <div className="small danger">{product.lockedReason}</div>
@@ -310,7 +321,8 @@ export function QuestLogPanel({
                         Take {product.name} · {formatCoins(product.principal)}
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </>
               )}
             </div>

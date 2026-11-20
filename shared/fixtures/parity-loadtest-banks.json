@@ -1,0 +1,15 @@
+{
+  "$schema": "fish.fixtures.parity_loadtest_banks.v1",
+  "loadtestBanksMarker": "authored-finish-6.0-phase-26",
+  "saveBank": "shared/fixtures/loadtest-save-bank.json",
+  "telemetryBank": "shared/fixtures/loadtest-telemetry-bank.json",
+  "minBytesEach": 85000000,
+  "wired": {
+    "webShip": "web/src/ship/loadtestBanks.ts",
+    "webHost": "web/src/game/GameHost.ts",
+    "androidShip": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/LoadtestBanks.kt",
+    "androidVm": "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt",
+    "androidAssets": "shared/fixtures (packaged via app/build.gradle.kts)"
+  },
+  "schemaVersionFloor": 27
+}

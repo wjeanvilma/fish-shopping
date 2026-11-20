@@ -12,7 +12,6 @@ import androidx.lifecycle.viewModelScope
 import com.willio.jeanvilma.fishshopping.analytics.AnalyticsBus
 import com.willio.jeanvilma.fishshopping.audio.AudioBus
 import com.willio.jeanvilma.fishshopping.audio.SfxCue
-import com.willio.jeanvilma.fishshopping.audio.sfxFromEvent
 import com.willio.jeanvilma.fishshopping.billing.EntitlementBillings
 import com.willio.jeanvilma.fishshopping.billing.PendingEntitlementLedger
 import com.willio.jeanvilma.fishshopping.billing.PurchaseOutcome
@@ -23,6 +22,7 @@ import com.willio.jeanvilma.fishshopping.cloud.CloudSyncCoordinator
 import com.willio.jeanvilma.fishshopping.core.content.BalanceExport
 import com.willio.jeanvilma.fishshopping.core.content.ContentLoader
 import com.willio.jeanvilma.fishshopping.core.content.ContentPack
+import com.willio.jeanvilma.fishshopping.core.ship.LoadtestBanks
 import com.willio.jeanvilma.fishshopping.core.persistence.CloudConflictOffer
 import com.willio.jeanvilma.fishshopping.core.persistence.CloudSync
 import com.willio.jeanvilma.fishshopping.core.persistence.NewerSaveException
@@ -30,7 +30,6 @@ import com.willio.jeanvilma.fishshopping.core.persistence.SnapshotCodec
 import com.willio.jeanvilma.fishshopping.core.persistence.SyncSource
 import com.willio.jeanvilma.fishshopping.core.sim.Command
 import com.willio.jeanvilma.fishshopping.core.sim.FixedStepClock
-import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
 import com.willio.jeanvilma.fishshopping.core.sim.GameState
 import com.willio.jeanvilma.fishshopping.core.sim.OfflineReport
 import com.willio.jeanvilma.fishshopping.core.deeplink.DeepLinkRoutes
@@ -48,6 +47,11 @@ import com.willio.jeanvilma.fishshopping.game.vm.VmShellIntents
 import com.willio.jeanvilma.fishshopping.game.vm.VmStationIntentHost
 import com.willio.jeanvilma.fishshopping.game.vm.VmTravelIntentHost
 import com.willio.jeanvilma.fishshopping.game.vm.VmTravelIntents
+import com.willio.jeanvilma.fishshopping.game.vm.VmStepBus
+import com.willio.jeanvilma.fishshopping.game.vm.VmStepSink
+import com.willio.jeanvilma.fishshopping.game.vm.VmCloudBoot
+import com.willio.jeanvilma.fishshopping.game.vm.VmCloudBootHost
+import com.willio.jeanvilma.fishshopping.game.vm.VmRestored
 import com.willio.jeanvilma.fishshopping.core.sim.SimConstants
 import com.willio.jeanvilma.fishshopping.core.sim.SimView
 import com.willio.jeanvilma.fishshopping.core.sim.Simulation
@@ -63,34 +67,8 @@ import com.willio.jeanvilma.fishshopping.persistence.SnapshotStore
 import com.willio.jeanvilma.fishshopping.render.FlyingTransferCue
 import com.willio.jeanvilma.fishshopping.render.ShakeKind
 import com.willio.jeanvilma.fishshopping.render.WorldBurstCue
-import com.willio.jeanvilma.fishshopping.render.resolveAchievementBurst
-import com.willio.jeanvilma.fishshopping.render.resolveBaitBurst
-import com.willio.jeanvilma.fishshopping.render.resolveCastStrikeBurst
-import com.willio.jeanvilma.fishshopping.render.resolveCatchBurst
-import com.willio.jeanvilma.fishshopping.render.resolveCelebrateBurst
-import com.willio.jeanvilma.fishshopping.render.resolveContractAcceptBurst
-import com.willio.jeanvilma.fishshopping.render.resolveContractDeadlineBurst
-import com.willio.jeanvilma.fishshopping.render.resolveContractDoneBurst
-import com.willio.jeanvilma.fishshopping.render.resolveCosmeticBurst
-import com.willio.jeanvilma.fishshopping.render.resolveDecorBurst
-import com.willio.jeanvilma.fishshopping.render.resolveEndgameChallengeBurst
-import com.willio.jeanvilma.fishshopping.render.resolveEndgameTierBurst
-import com.willio.jeanvilma.fishshopping.render.resolveFestivalBurst
-import com.willio.jeanvilma.fishshopping.render.resolveFlyingTransfer
-import com.willio.jeanvilma.fishshopping.render.resolveFullUnlockBurst
-import com.willio.jeanvilma.fishshopping.render.resolveGoalClaimBurst
-import com.willio.jeanvilma.fishshopping.render.resolveHarborTravelBurst
-import com.willio.jeanvilma.fishshopping.render.resolveHireBurst
-import com.willio.jeanvilma.fishshopping.render.resolveLoanBurst
-import com.willio.jeanvilma.fishshopping.render.resolveMachineBreakBurst
-import com.willio.jeanvilma.fishshopping.render.resolveMachineDoneBurst
-import com.willio.jeanvilma.fishshopping.render.resolvePayBurst
-import com.willio.jeanvilma.fishshopping.render.resolvePrestigeBurst
-import com.willio.jeanvilma.fishshopping.render.resolveQuestNearBurst
-import com.willio.jeanvilma.fishshopping.render.resolveRivalBeatBurst
-import com.willio.jeanvilma.fishshopping.render.resolveSpoilBurst
-import com.willio.jeanvilma.fishshopping.render.resolveTrophySetBurst
 import com.willio.jeanvilma.fishshopping.core.ship.VfxJuice5
+import com.willio.jeanvilma.fishshopping.core.ship.VfxJuice6
 import com.willio.jeanvilma.fishshopping.ui.hud.TapTarget
 import com.willio.jeanvilma.fishshopping.ui.hud.stickFromTapTarget
 import kotlin.math.hypot
@@ -125,7 +103,9 @@ class GameViewModel(app: Application) :
     VmShellIntentHost,
     VmTravelIntentHost,
     VmStationIntentHost,
-    VmIapIntentHost {
+    VmIapIntentHost,
+    VmStepSink,
+    VmCloudBootHost {
 
     // Finish 4.0 Phase 4 — intent modules (shell / economy / travel / IAP).
     private val shellIntents = VmShellIntents(this)
@@ -139,10 +119,10 @@ class GameViewModel(app: Application) :
     private val simDispatcher = simExecutor.asCoroutineDispatcher()
     // Plain executors (not viewModelScope) so a final save still completes while the ViewModel is cleared.
     private val ioExecutor = Executors.newSingleThreadExecutor { Thread(it, "fish-save") }
-    private val store = SnapshotStore(app.filesDir)
-    private val settingsStore = SettingsStore(app)
-    private val audio = AudioBus(app)
-    private val cloud = CloudSyncCoordinator(app)
+    override val store = SnapshotStore(app.filesDir)
+    override val settingsStore = SettingsStore(app)
+    override val audio = AudioBus(app)
+    override val cloud = CloudSyncCoordinator(app)
     override val billing = EntitlementBillings.create(app)
     override val pendingEntitlements = PendingEntitlementLedger(app)
 
@@ -153,15 +133,14 @@ class GameViewModel(app: Application) :
     val messages: SharedFlow<String> = _messages
 
     @Volatile
-    var latestView: SimView? = null
-        private set
+    override var latestView: SimView? = null
 
     /** Presentation-only flying transfer cues for the harbor renderer (drained each frame). */
-    private val flyingTransfers = ConcurrentLinkedQueue<FlyingTransferCue>()
+    override val flyingTransfers = ConcurrentLinkedQueue<FlyingTransferCue>()
     /** Phase 16/21 world bursts (catch / pay / celebrate / machine_done). */
-    private val worldBursts = ConcurrentLinkedQueue<WorldBurstCue>()
+    override val worldBursts = ConcurrentLinkedQueue<WorldBurstCue>()
     /** Phase 21 screen-shake kinds (drained each frame by the renderer). */
-    private val pendingShakes = ConcurrentLinkedQueue<ShakeKind>()
+    override val pendingShakes = ConcurrentLinkedQueue<ShakeKind>()
 
     private val commands = ConcurrentLinkedQueue<Command>()
 
@@ -225,24 +204,24 @@ class GameViewModel(app: Application) :
     /** Finish 3.0 Phase 20 — deep link queued until Ready after boot. */
     private var pendingDeepLink: DeepLinkRoutes.Intent? = null
     @Volatile
-    private var settings: GameSettings = settingsStore.load()
+    override var settings: GameSettings = settingsStore.load()
     private var allowSaving = true
     /** False after recovering from the backup, so the corrupt latest never overwrites it. */
-    private var rotateOnNextSave = true
+    override var rotateOnNextSave = true
     private var lastHudPublishNanos = 0L
 
-    private val panels = ShellPanelController()
+    override val panels = ShellPanelController()
     private var lastMove = Command.Move(0, 0)
     private var loopJob: Job? = null
     /** Wall clock of the last checkpoint; used for offline catch-up on resume/load. */
     private var lastCheckpointEpochMs: Long? = null
     private var pendingOfflineReport: OfflineReport? = null
     /** Phase 11: parked dual-snapshot choice (texts kept until the player picks). */
-    private var pendingConflict: CloudConflictOffer? = null
-    private var cloudConflictView: CloudConflictView? = null
+    override var pendingConflict: CloudConflictOffer? = null
+    override var cloudConflictView: CloudConflictView? = null
     /** Phase 11: parked corrupt-latest → previous recovery. */
-    private var pendingRecoveryText: String? = null
-    private var localRecoveryView: LocalRecoveryView? = null
+    override var pendingRecoveryText: String? = null
+    override var localRecoveryView: LocalRecoveryView? = null
     /** Presentation-only tap-to-move destination (cleared by stick/keys or on arrival). */
     @Volatile
     private var tapTarget: TapTarget? = null
@@ -359,6 +338,10 @@ class GameViewModel(app: Application) :
         viewModelScope.launch(simDispatcher) { load() }
     }
 
+    /** Latest probe of the shared ~90MB loadtest banks (null if assets missing). */
+    @Volatile
+    private var loadtestProbes: Pair<LoadtestBanks.Probe, LoadtestBanks.Probe>? = null
+
     /** Content and save presence only. The simulation is created from the title screen. */
     private fun load() {
         try {
@@ -370,6 +353,7 @@ class GameViewModel(app: Application) :
             applyAudioSettings()
             applyAnalyticsConsent()
             syncDailyGoalReminders()
+            loadtestProbes = probeLoadtestBanks()
             publishTitle(store.readCandidates().isNotEmpty())
         } catch (e: NewerSaveException) {
             allowSaving = false
@@ -377,6 +361,42 @@ class GameViewModel(app: Application) :
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start", e)
             _ui.value = GameUiState.Failed("Could not load game content: ${e.message}")
+        }
+    }
+
+    /** Header/size probe of packaged loadtest banks (does not parse the full ~90MB). */
+    fun loadtestBankProbes(): Pair<LoadtestBanks.Probe, LoadtestBanks.Probe>? = loadtestProbes
+
+    private fun probeLoadtestBanks(): Pair<LoadtestBanks.Probe, LoadtestBanks.Probe>? = try {
+        val assets = getApplication<Application>().assets
+        val save = probeAssetBank(assets, LoadtestBanks.SAVE_ASSET, LoadtestBanks.SAVE_SCHEMA)
+        val tele = probeAssetBank(assets, LoadtestBanks.TELEMETRY_ASSET, LoadtestBanks.TELEMETRY_SCHEMA)
+        val floors = save.floorsMet && tele.floorsMet
+        Log.i(TAG, "Loadtest banks ready save=${save.bytes} tele=${tele.bytes} floors=$floors")
+        // Finish 6.0 Phase 26 — nest analytics + loadtest probe telemetry.
+        AnalyticsBus.shared.onLoadtestBankProbed("save", save.floorsMet)
+        AnalyticsBus.shared.onLoadtestBankProbed("telemetry", tele.floorsMet)
+        AnalyticsBus.shared.onLoadtestBankProbed("dual", floors)
+        save to tele
+    } catch (e: Exception) {
+        Log.w(TAG, "Loadtest banks not packaged or unreadable", e)
+        null
+    }
+
+    private fun probeAssetBank(
+        assets: android.content.res.AssetManager,
+        asset: String,
+        expectedSchema: String,
+    ): LoadtestBanks.Probe = try {
+        assets.openFd(asset).use { fd ->
+            fd.createInputStream().use { stream ->
+                LoadtestBanks.probeStream(asset, fd.length, stream, expectedSchema)
+            }
+        }
+    } catch (_: Exception) {
+        // Compressed asset fallback: header-only probe with known floor size.
+        assets.open(asset).use { stream ->
+            LoadtestBanks.probeStream(asset, LoadtestBanks.MIN_BYTES, stream, expectedSchema)
         }
     }
 
@@ -572,7 +592,7 @@ class GameViewModel(app: Application) :
         travelIntents.consumeDeepLink(intent)
     }
 
-    private fun publishTitle(hasSave: Boolean) {
+    override fun publishTitle(hasSave: Boolean) {
         _ui.value = GameUiState.Title(
             hasSave = hasSave,
             cloudConflict = cloudConflictView,
@@ -597,69 +617,9 @@ class GameViewModel(app: Application) :
         runCatching { done.await(2, TimeUnit.SECONDS) }
     }
 
-    private data class Restored(val state: GameState, val savedAtEpochMs: Long?)
+    private fun restoreOrCreate(pack: ContentPack): VmRestored? =
+        VmCloudBoot.restoreOrCreate(this, pack, START_HARBOR)
 
-    /**
-     * Latest valid snapshot, falling back to the previous one (blueprint "Recovery").
-     * Returns null when Phase 11 parks a cloud-conflict or corrupt-latest dialog.
-     */
-    private fun restoreOrCreate(pack: ContentPack): Restored? {
-        val candidates = store.readCandidates()
-        val localLatest = candidates.firstOrNull { it.first == "latest" }?.second
-        val pull = cloud.pullMerge(settings, localLatest)
-        if (pull.settings != settings) {
-            settings = pull.settings
-            settingsStore.save(settings)
-        }
-        val conflict = pull.conflict
-        if (conflict != null) {
-            pendingConflict = conflict
-            cloudConflictView = SnapshotChoice.conflictView(conflict, pack)
-            localRecoveryView = null
-            pendingRecoveryText = null
-            publishTitle(hasSave = true)
-            return null
-        }
-        if (pull.decision.source == SyncSource.REMOTE && pull.decision.text != null) {
-            runCatching {
-                store.write(pull.decision.text!!, rotate = true)
-                val decoded = SnapshotCodec.decodeEnvelope(pack, pull.decision.text!!)
-                _messages.tryEmit("Restored newer cloud save")
-                return Restored(decoded.state, decoded.savedAtEpochMs)
-            }.onFailure { Log.w(TAG, "Cloud save unusable: ${it.message}") }
-        }
-        var latestCorrupt = false
-        for ((label, text) in candidates) {
-            try {
-                val decoded = SnapshotCodec.decodeEnvelope(pack, text)
-                if (label != "latest") {
-                    if (latestCorrupt) {
-                        val peeked = CloudSync.peek(text)
-                        if (peeked != null) {
-                            pendingRecoveryText = text
-                            localRecoveryView = SnapshotChoice.recoveryView(
-                                CloudSync.summaryOf(peeked, SyncSource.LOCAL),
-                                pack,
-                            )
-                            pendingConflict = null
-                            cloudConflictView = null
-                            publishTitle(hasSave = true)
-                            return null
-                        }
-                    }
-                    rotateOnNextSave = false
-                    _messages.tryEmit("Recovered your previous save")
-                }
-                return Restored(decoded.state, decoded.savedAtEpochMs)
-            } catch (e: NewerSaveException) {
-                throw e // never overwrite a save from a newer app
-            } catch (e: Exception) {
-                if (label == "latest") latestCorrupt = true
-                Log.w(TAG, "Save '$label' unusable: ${e.message}")
-            }
-        }
-        return Restored(GameState.newGame(pack, START_HARBOR, Random.nextInt()), null)
-    }
 
     /** Called from Activity.onStart. No-ops until a harbor simulation is on screen. */
     fun resume() {
@@ -964,8 +924,8 @@ class GameViewModel(app: Application) :
         syncMusicBed()
     }
 
-    /** Finish 2.0/3.0/4.0/5.0: festival/storm/rival/night/endgame/ledger/pressure beds; ducking unchanged. */
-    private fun syncMusicBed() {
+    /** Finish 2.0/3.0/4.0/5.0/6.0: festival/storm/rival/night/endgame/ledger/pressure/nest beds; ducking unchanged. */
+    override fun syncMusicBed() {
         val v = latestView
         val festivalActive = v?.seasonalEvent != null
         val weatherId = v?.weatherId.orEmpty()
@@ -980,6 +940,10 @@ class GameViewModel(app: Application) :
                 (v?.serviceQueuePressurePermille ?: 0) >= VfxJuice5.RISING_PERMILLE ||
                 ((v?.ticksUntilNearestContractDeadline ?: Int.MAX_VALUE) <= VfxJuice5.CONTRACT_DEADLINE_WARN_TICKS) ||
                 ((v?.nextQuestProgressPermille ?: 0) >= VfxJuice5.QUEST_NEAR_COMPLETE_PERMILLE)
+        val placements = v?.decorPlacements?.size ?: 0
+        val nestActive =
+            placements >= VfxJuice6.SETTLED_MIN_PLACEMENTS ||
+                (nightActive && placements >= VfxJuice6.ROOSTING_MIN_PLACEMENTS)
         audio.syncMusicBedFromPanels(
             panels.isOpen(ShellPanelId.STATION),
             festivalActive,
@@ -989,6 +953,7 @@ class GameViewModel(app: Application) :
             endgameActive,
             ledgerActive,
             pressureActive,
+            nestActive,
         )
     }
 
@@ -1131,381 +1096,11 @@ class GameViewModel(app: Application) :
     fun cycleStationRecipe(stationId: String) = economyIntents.cycleStationRecipe(stationId)
 
     private fun step(s: Simulation) {
-        val batch = ArrayList<Command>()
-        var next = commands.poll()
-        while (next != null) {
-            batch += next
-            next = commands.poll()
-        }
-        val events = s.step(batch)
-        AnalyticsBus.shared.onGameEvents(events, s.state)
-        var transaction = false
-        val transferred = ArrayList<GameEvent.ItemsTransferred>()
-        val payCustomers = ArrayList<String>()
-        val machineDone = ArrayList<String>()
-        var celebrate = false
-        var catchCount = 0
-        var achievementBurst = false
-        var festivalBurst = false
-        var contractDoneBurst = false
-        var goalClaimBurst = false
-        var rivalBeatBurst = false
-        var prestigeBurst = false
-        var trophySetBurst = false
-        var harborTravelBurst = false
-        var hireBurst = false
-        var loanBurst = false
-        var decorBurst = false
-        var cosmeticBurst = false
-        var endgameTierBurst = false
-        var endgameChallengeBurst = false
-        var contractAcceptBurst = false
-        var baitBurst = false
-        var fullUnlockBurst = false
-        var castStrikeBurst = false
-        var spoilBurst = false
-        var machineBreakBurst = false
-        var machineBreakStationId: String? = null
-        var prevSpoilWarn = (latestView?.bagSpoilPressurePermille ?: 0) > VfxJuice5.CRITICAL_PERMILLE
-        var prevServiceQueue = (latestView?.serviceQueuePressurePermille ?: 0) >= VfxJuice5.RISING_PERMILLE
-        var prevDeadline =
-            (latestView?.ticksUntilNearestContractDeadline ?: Int.MAX_VALUE) <= VfxJuice5.CONTRACT_DEADLINE_WARN_TICKS
-        var prevQuestNear =
-            (latestView?.nextQuestProgressPermille ?: 0) >= VfxJuice5.QUEST_NEAR_COMPLETE_PERMILLE
-        for (e in events) {
-            sfxFromEvent(e)?.let { audio.play(it) }
-            when (e) {
-                is GameEvent.ItemsTransferred -> transferred += e
-                is GameEvent.BatchCompleted -> {
-                    machineDone += e.stationId
-                    pendingShakes.offer(ShakeKind.CUT)
-                }
-                is GameEvent.SaleCommitted -> {
-                    val tip = when {
-                        e.tipped && e.preferenceMet -> " Premium tip!"
-                        !e.preferenceMet -> " (substituted)"
-                        else -> ""
-                    }
-                    _messages.tryEmit("+${e.coins} coins$tip")
-                    payCustomers += e.customerId
-                    pendingShakes.offer(ShakeKind.SALE)
-                    transaction = true
-                }
-                is GameEvent.FishCaught -> {
-                    catchCount += 1
-                    pendingShakes.offer(ShakeKind.CATCH)
-                    if (e.personalBest) {
-                        val name = s.content.itemName(e.speciesId)
-                        _messages.tryEmit("New trophy: $name · ${e.sizePermille}%")
-                        celebrate = true
-                        transaction = true
-                    } else if (e.timingBonus) {
-                        val tip = s.content.speciesById[e.speciesId]?.baseValue ?: 0L
-                        _messages.tryEmit("Perfect reel! +$tip")
-                        celebrate = true
-                        transaction = true
-                    }
-                    if (e.rareUpgrade) {
-                        _messages.tryEmit("Rare catch: ${s.content.speciesById[e.speciesId]?.name ?: e.speciesId}")
-                        celebrate = true
-                        transaction = true
-                    }
-                }
-                is GameEvent.TrophySetCompleted -> {
-                    val setName = s.content.trophySetsById[e.setId]?.name ?: e.setId
-                    _messages.tryEmit("Gallery complete: $setName")
-                    trophySetBurst = true
-                    transaction = true
-                }
-                is GameEvent.CoinGoalReached -> {
-                    _messages.tryEmit("Coin goal reached!")
-                    celebrate = true
-                    transaction = true
-                }
-                is GameEvent.FishingSpotDepleted -> {
-                    _messages.tryEmit("Pier empty — fish are returning")
-                    transaction = true
-                }
-                is GameEvent.RushStarted -> {
-                    _messages.tryEmit("${e.name}!")
-                    celebrate = true
-                    transaction = true
-                }
-                is GameEvent.MachineIdleAlert -> {
-                    val name = s.content.machinesById[e.machineId]?.name ?: e.stationId
-                    _messages.tryEmit("$name: ${e.reason}")
-                    transaction = true
-                }
-                is GameEvent.UpgradePurchased -> if (!e.replayed) {
-                    _messages.tryEmit("Bought ${s.content.upgradesById[e.upgradeId]?.name ?: e.upgradeId}")
-                    transaction = true
-                }
-                is GameEvent.FullHarborUnlockGranted -> if (!e.replayed) {
-                    _messages.tryEmit("All harbors unlocked")
-                    fullUnlockBurst = true
-                    transaction = true
-                }
-                is GameEvent.IapCosmeticGranted -> if (!e.replayed) {
-                    _messages.tryEmit("Unlocked ${e.cosmeticId}")
-                    cosmeticBurst = true
-                    transaction = true
-                }
-                is GameEvent.DecorPlaced -> _messages.tryEmit(
-                    "${if (e.moved) "Moved" else "Placed"} ${s.content.decorById[e.decorId]?.name ?: e.decorId}",
-                )
-                is GameEvent.DecorStored -> _messages.tryEmit("Stored ${s.content.decorById[e.decorId]?.name ?: e.decorId}")
-                is GameEvent.DecorPlaceRejected -> _messages.tryEmit(e.reason)
-                is GameEvent.DecorPurchased -> if (!e.replayed) {
-                    _messages.tryEmit("Decor: ${s.content.decorById[e.decorId]?.name ?: e.decorId}")
-                    decorBurst = true
-                    transaction = true
-                }
-                is GameEvent.EndgameTierUnlocked -> {
-                    _messages.tryEmit("Endgame tier unlocked (+${e.coinsRewarded})")
-                    endgameTierBurst = true
-                    transaction = true
-                }
-                is GameEvent.EndgameChallengeCompleted -> {
-                    _messages.tryEmit("Endgame challenge cleared (+${e.coinsRewarded})")
-                    endgameChallengeBurst = true
-                    transaction = true
-                }
-                is GameEvent.BaitPurchased -> if (!e.replayed) {
-                    _messages.tryEmit("Bait purchased")
-                    baitBurst = true
-                    transaction = true
-                }
-                is GameEvent.MachineBroke -> {
-                    _messages.tryEmit("Machine broke: ${s.content.machinesById[e.machineId]?.name ?: e.stationId}")
-                    machineBreakBurst = true
-                    machineBreakStationId = e.stationId
-                    transaction = true
-                }
-                is GameEvent.CastStrikeReel -> {
-                    castStrikeBurst = true
-                }
-                is GameEvent.IapCosmeticRejected -> {
-                    _messages.tryEmit(e.reason)
-                    transaction = true
-                }
-                is GameEvent.PurchaseRejected -> { _messages.tryEmit(e.reason); transaction = true }
-                is GameEvent.WorkerHired -> if (!e.replayed) {
-                    _messages.tryEmit("Hired ${s.content.workersById[e.roleId]?.name ?: e.roleId}")
-                    hireBurst = true
-                    transaction = true
-                }
-                is GameEvent.RivalMarketOpened -> {
-                    _messages.tryEmit("Rival open: ${e.name}")
-                    transaction = true
-                }
-                is GameEvent.RivalSaleStolen -> {
-                    _messages.tryEmit("Rival stole a sale")
-                    transaction = true
-                }
-                is GameEvent.RivalBeaten -> {
-                    _messages.tryEmit("Rival beaten!")
-                    rivalBeatBurst = true
-                    transaction = true
-                }
-                is GameEvent.LoanTaken -> if (!e.replayed) {
-                    _messages.tryEmit("Loan +${e.principal}")
-                    loanBurst = true
-                    transaction = true
-                }
-                is GameEvent.WorkerLeveledUp -> {
-                    val name = s.content.workersById[e.roleId]?.name ?: e.roleId
-                    _messages.tryEmit("$name reached level ${e.level}")
-                }
-                is GameEvent.WorkerShiftChanged -> {
-                    val name = s.content.workersById[e.roleId]?.name ?: e.roleId
-                    _messages.tryEmit(if (e.onShift) "$name on shift" else "$name off shift")
-                }
-                is GameEvent.HireRejected -> { _messages.tryEmit(e.reason); transaction = true }
-                is GameEvent.WagesPaid -> {
-                    _messages.tryEmit("Paid ${e.coins} coins in wages")
-                    transaction = true
-                }
-                is GameEvent.QuestCompleted -> {
-                    val name = s.content.questsById[e.questId]?.name ?: e.questId
-                    val tip = buildString {
-                        append("Goal complete: $name")
-                        if (e.coinsRewarded > 0) append(" (+${e.coinsRewarded})")
-                    }
-                    _messages.tryEmit(tip)
-                    transaction = true
-                }
-                is GameEvent.PrestigeUnlocked -> {
-                    val name = s.content.prestigeMilestonesById[e.prestigeId]?.name ?: e.prestigeId
-                    val tip = buildString {
-                        append("Prestige: $name")
-                        if (e.coinsRewarded > 0) append(" (+${e.coinsRewarded})")
-                    }
-                    _messages.tryEmit(tip)
-                    prestigeBurst = true
-                    transaction = true
-                }
-                is GameEvent.AchievementUnlocked -> {
-                    val name = s.content.achievementsById[e.achievementId]?.name ?: e.achievementId
-                    val tip = buildString {
-                        append("Achievement: $name")
-                        if (e.coinsRewarded > 0) append(" (+${e.coinsRewarded})")
-                    }
-                    _messages.tryEmit(tip)
-                    achievementBurst = true
-                    transaction = true
-                }
-                is GameEvent.SeasonalEventStarted -> {
-                    _messages.tryEmit("${e.name}!")
-                    festivalBurst = true
-                    transaction = true
-                }
-                is GameEvent.WeatherChanged -> _messages.tryEmit("Weather: ${e.name}")
-                is GameEvent.TideChanged -> _messages.tryEmit("Tide: ${e.name}")
-                is GameEvent.MasteryLevelUp -> {
-                    val name = s.content.speciesById[e.speciesId]?.name ?: e.speciesId
-                    _messages.tryEmit("Mastery: $name Lv ${e.level}")
-                }
-                is GameEvent.WorkerBranchUnlocked -> {
-                    val name = s.content.staffBranchesById[e.branchId]?.name ?: e.branchId
-                    _messages.tryEmit("Unlocked $name")
-                }
-                is GameEvent.WorkerBranchTrainRejected -> {
-                    _messages.tryEmit(e.reason)
-                    transaction = true
-                }
-                is GameEvent.ContractAccepted -> if (!e.replayed) {
-                    _messages.tryEmit("Contract accepted")
-                    contractAcceptBurst = true
-                    transaction = true
-                }
-                is GameEvent.ContractCompleted -> {
-                    _messages.tryEmit("Contract complete +${e.payout}")
-                    contractDoneBurst = true
-                    transaction = true
-                }
-                is GameEvent.ContractFailed -> {
-                    _messages.tryEmit(
-                        if (e.penaltyPaid > 0) "Contract failed −${e.penaltyPaid}" else "Contract failed",
-                    )
-                    transaction = true
-                }
-                is GameEvent.ContractRejected -> { _messages.tryEmit(e.reason); transaction = true }
-                is GameEvent.DailyGoalClaimed -> if (!e.replayed) {
-                    val name = s.content.dailyObjectivesById[e.objectiveId]?.name ?: e.objectiveId
-                    _messages.tryEmit("Daily claimed: $name (+${e.payout})")
-                    goalClaimBurst = true
-                    transaction = true
-                }
-                is GameEvent.DailyGoalRejected -> { _messages.tryEmit(e.reason); transaction = true }
-                is GameEvent.HarborTraveled -> if (!e.replayed) {
-                    val name = s.content.harborsById[e.toHarborId]?.name ?: e.toHarborId
-                    _messages.tryEmit("Traveled to $name")
-                    panels.close(ShellPanelId.MAP)
-                    flyingTransfers.clear()
-                    worldBursts.clear()
-                    pendingShakes.clear()
-                    harborTravelBurst = true
-                    transaction = true
-                }
-                is GameEvent.TravelRejected -> { _messages.tryEmit(e.reason); transaction = true }
-                is GameEvent.MaintenancePaid -> {
-                    _messages.tryEmit("Upkeep −${e.coins} coins")
-                    transaction = true
-                }
-                is GameEvent.ItemsSpoiled -> {
-                    val n = e.items.sumOf { it.quantity }
-                    val where = if (e.location == "bag") "in bag" else "on counter"
-                    _messages.tryEmit("Spoiled $n $where")
-                    spoilBurst = true
-                    transaction = true
-                }
-                is GameEvent.CheckpointRequested -> save()
-                else -> Unit
-            }
-        }
-        latestView = s.view()
-        syncMusicBed()
-        val view = latestView
-        if (view != null) {
-            for (e in transferred) {
-                resolveFlyingTransfer(view, e.from, e.to, e.itemId)?.let { flyingTransfers.offer(it) }
-            }
-            repeat(catchCount) { worldBursts.offer(resolveCatchBurst(view)) }
-            for (customerId in payCustomers) worldBursts.offer(resolvePayBurst(view, customerId))
-            for (stationId in machineDone) {
-                resolveMachineDoneBurst(view, stationId)?.let { worldBursts.offer(it) }
-            }
-            if (celebrate) {
-                worldBursts.offer(resolveCelebrateBurst(view))
-                pendingShakes.offer(ShakeKind.CELEBRATE)
-            }
-            // Finish 2.0 Phase 22 + Finish 3.0 Phase 24 visual juice (shared burst pool).
-            if (achievementBurst) {
-                worldBursts.offer(resolveAchievementBurst(view))
-                pendingShakes.offer(ShakeKind.ACHIEVEMENT)
-            }
-            if (festivalBurst) {
-                worldBursts.offer(resolveFestivalBurst(view))
-                pendingShakes.offer(ShakeKind.FESTIVAL)
-            }
-            if (contractDoneBurst) worldBursts.offer(resolveContractDoneBurst(view))
-            if (goalClaimBurst) worldBursts.offer(resolveGoalClaimBurst(view))
-            if (rivalBeatBurst) {
-                worldBursts.offer(resolveRivalBeatBurst(view))
-                pendingShakes.offer(ShakeKind.RIVAL_BEAT)
-            }
-            if (prestigeBurst) {
-                worldBursts.offer(resolvePrestigeBurst(view))
-                pendingShakes.offer(ShakeKind.PRESTIGE)
-            }
-            if (trophySetBurst) worldBursts.offer(resolveTrophySetBurst(view))
-            if (harborTravelBurst) worldBursts.offer(resolveHarborTravelBurst(view))
-            if (hireBurst) worldBursts.offer(resolveHireBurst(view))
-            if (loanBurst) worldBursts.offer(resolveLoanBurst(view))
-            // Finish 4.0 Phase 23 visual juice.
-            if (decorBurst) worldBursts.offer(resolveDecorBurst(view))
-            if (cosmeticBurst) worldBursts.offer(resolveCosmeticBurst(view))
-            if (endgameTierBurst) {
-                worldBursts.offer(resolveEndgameTierBurst(view))
-                pendingShakes.offer(ShakeKind.ENDGAME_TIER)
-            }
-            if (endgameChallengeBurst) {
-                worldBursts.offer(resolveEndgameChallengeBurst(view))
-                pendingShakes.offer(ShakeKind.ENDGAME_CHALLENGE)
-            }
-            if (contractAcceptBurst) worldBursts.offer(resolveContractAcceptBurst(view))
-            if (baitBurst) worldBursts.offer(resolveBaitBurst(view))
-            if (fullUnlockBurst) worldBursts.offer(resolveFullUnlockBurst(view))
-            // Finish 5.0 Phase 12 visual juice.
-            if (castStrikeBurst) {
-                worldBursts.offer(resolveCastStrikeBurst(view))
-                pendingShakes.offer(ShakeKind.CAST_STRIKE)
-            }
-            if (spoilBurst) worldBursts.offer(resolveSpoilBurst(view))
-            if (machineBreakBurst) worldBursts.offer(resolveMachineBreakBurst(view, machineBreakStationId))
-            val spoilWarn = view.bagSpoilPressurePermille > VfxJuice5.CRITICAL_PERMILLE
-            val serviceQueue = view.serviceQueuePressurePermille >= VfxJuice5.RISING_PERMILLE
-            val deadline =
-                (view.ticksUntilNearestContractDeadline ?: Int.MAX_VALUE) <= VfxJuice5.CONTRACT_DEADLINE_WARN_TICKS
-            val questNear =
-                (view.nextQuestProgressPermille ?: 0) >= VfxJuice5.QUEST_NEAR_COMPLETE_PERMILLE
-            if (spoilWarn && !prevSpoilWarn) audio.play(SfxCue.SPOIL_WARN)
-            if (serviceQueue && !prevServiceQueue) audio.play(SfxCue.SERVICE_QUEUE)
-            if (deadline && !prevDeadline) {
-                audio.play(SfxCue.CONTRACT_DEADLINE)
-                worldBursts.offer(resolveContractDeadlineBurst(view))
-                pendingShakes.offer(ShakeKind.CONTRACT_DEADLINE)
-            }
-            if (questNear && !prevQuestNear) {
-                audio.play(SfxCue.QUEST_NEAR)
-                worldBursts.offer(resolveQuestNearBurst(view))
-            }
-        }
-        if (transaction) publish(force = true)
+        VmStepBus.process(s, commands, this)
     }
 
     /** Encodes on the sim thread (one consistent tick), writes on the IO thread. */
-    private fun save() {
+    override fun save() {
         val s = sim ?: return
         if (!allowSaving) return
         val now = System.currentTimeMillis()
@@ -1546,7 +1141,7 @@ class GameViewModel(app: Application) :
         }
     }
 
-    private fun publish(force: Boolean) {
+    override fun publish(force: Boolean) {
         val s = sim ?: return
         val now = System.nanoTime()
         if (!force && now - lastHudPublishNanos < ShellHudPolicy.PUBLISH_INTERVAL_NANOS) return

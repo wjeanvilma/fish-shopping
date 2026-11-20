@@ -27,6 +27,8 @@ from fish_themes import (  # noqa: E402
     FISH_ART_FINISH5_MIN,
     FISH_ART_MARKER,
     FISH_FINISH5_MARKER,
+    FINISH6_SPECIES_IDS,
+    FISH_FINISH6_MARKER,
     THEME_COLORS,
     authored_body,
     part_dorsal,
@@ -46,8 +48,10 @@ from glb_geometry import (  # noqa: E402
 from product_themes import (  # noqa: E402
     COSMETIC_BANNER_MARKER,
     COSMETIC_FINISH5_MARKER,
+    COSMETIC_FINISH6_MARKER,
     PRODUCT_ART_MARKER,
     PRODUCT_FINISH5_MARKER,
+    PRODUCT_FINISH6_MARKER,
     accent_for,
     cosmetic_banner_parts,
     product_kind_for,
@@ -238,6 +242,9 @@ def write_authored_fish(
     if item_id in FINISH5_ART_AHEAD_IDS:
         extras["fishFinish5"] = FISH_FINISH5_MARKER
         extras["envArt"] = f"{FISH_ART_MARKER}+{FISH_FINISH5_MARKER}"
+    if item_id in FINISH6_SPECIES_IDS:
+        extras["fishFinish6"] = FISH_FINISH6_MARKER
+        extras["envArt"] = f"{FISH_ART_MARKER}+{FISH_FINISH6_MARKER}"
     out.write_bytes(build_multi_mesh_glb(
         name=item_id,
         generator=GENERATOR,
@@ -268,7 +275,10 @@ def write_product(out_dir: Path, item_id: str, asset: str, color: str, kind: str
             "productArt": PRODUCT_ART_MARKER,
             "productKind": kind,
             "productFinish5": PRODUCT_FINISH5_MARKER,
-            "envArt": f"{PRODUCT_ART_MARKER}+{PRODUCT_FINISH5_MARKER}",
+            "productFinish6": PRODUCT_FINISH6_MARKER,
+            "envArt": (
+                f"{PRODUCT_ART_MARKER}+{PRODUCT_FINISH5_MARKER}+{PRODUCT_FINISH6_MARKER}"
+            ),
         },
     ))
     return out
@@ -296,7 +306,10 @@ def write_cosmetic_banner(
             "cosmeticArt": COSMETIC_BANNER_MARKER,
             "cosmeticId": cosmetic_id,
             "cosmeticFinish5": COSMETIC_FINISH5_MARKER,
-            "envArt": f"{COSMETIC_BANNER_MARKER}+{COSMETIC_FINISH5_MARKER}",
+            "cosmeticFinish6": COSMETIC_FINISH6_MARKER,
+            "envArt": (
+                f"{COSMETIC_BANNER_MARKER}+{COSMETIC_FINISH5_MARKER}+{COSMETIC_FINISH6_MARKER}"
+            ),
         },
     ))
     return out

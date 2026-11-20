@@ -1,0 +1,29 @@
+{
+  "schema": "fish.fixture.parity_tutorial_retention_6.v1",
+  "tutorialRetention6Marker": "authored-finish-6.0-phase-19",
+  "phase": 19,
+  "plan": "30_finish_6.0",
+  "description": "Finish 6.0 Phase 19: nest roast_nest/ferment_line friction + nest dailies/weeklies; daily boardSlots ≥6 / weekly slots ≥3.",
+  "sampleFrictionStepId": "tutorial.roast_nest",
+  "sampleWeeklyObjectiveId": "weekly.nest_ember",
+  "sampleDailyObjectiveId": "daily.roast_plate",
+  "expect": {
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "highFrictionMin": 9,
+    "nudgesMin": 9,
+    "dailyObjectivesMin": 18,
+    "boardSlotsMin": 6,
+    "weeklyObjectivesMin": 6,
+    "weeklyBoardSlotsMin": 3,
+    "tutorialRetention6Incomplete": false,
+    "openGapFlagMin": 1,
+    "gates": [
+      "friction_nest",
+      "daily_18",
+      "weekly_6",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

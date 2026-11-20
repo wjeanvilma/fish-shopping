@@ -1,13 +1,15 @@
 /**
- * Finish 2.0/3.0/4.0/5.0 — content authoring CLI entry.
+ * Finish 2.0/3.0/4.0/5.0/6.0 — content authoring CLI entry.
  *
  * Usage (from web/):
  *   npm run content:scaffold -- species --id tide_perch --name "Tide perch"
- *   npm run content:scaffold -- seasonal --id aurora_tide --dry-run
- *   npm run content:scaffold -- endgame --id crest_harbor --dry-run
- *   npm run content:scaffold -- cosmetic --id aurora_bunting --check-pack
+ *   npm run content:scaffold -- chain --id nest_relay --dry-run
+ *   npm run content:scaffold -- sigil --id nest_ember --dry-run
+ *   npm run content:scaffold -- modpack --id nest_saffron --dry-run
  *   npm run content:scaffold -- --list
  *   npm run content:scaffold -- --check-floors
+ *   npm run content:scaffold -- --list-modpacks
+ *   npm run content:scaffold -- --check-modpacks
  *
  * Does not mutate shared/content/content-pack.json — print/write fragment only.
  */
@@ -16,7 +18,12 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ALL_SCAFFOLD_KINDS, isScaffoldKind, type ScaffoldKind } from "./ids";
 import { indexPackIds, packHasId } from "./packIds";
-import { FINISH5_PACK_FLOORS, measurePackFloors } from "./packFloors";
+import {
+  FINISH5_PACK_FLOORS,
+  FINISH6_PACK_FLOORS,
+  measurePackFloors,
+} from "./packFloors";
+import { measureAllModpacks } from "./modpacks";
 import { buildScaffold, type ScaffoldRequest } from "./scaffolds";
 import { structuralScaffoldErrors } from "./validateFragment";
 
@@ -29,6 +36,8 @@ function usage(): never {
   console.error(`Usage: content:scaffold <${ALL_SCAFFOLD_KINDS.join("|")}> --id <slug> [options]
        content:scaffold --list
        content:scaffold --check-floors
+       content:scaffold --list-modpacks
+       content:scaffold --check-modpacks
 
 Options:
   --name <text>           Display name
@@ -36,7 +45,9 @@ Options:
   --out <dir>             Write JSON under dir (default shared/content/scaffolds/out)
   --dry-run               Print JSON only (no write)
   --check-pack            Fail if id already exists in content-pack/entitlements
-  --check-floors          Verify content-pack meets Finish 5.0 floors (no scaffold)
+  --check-floors          Verify content-pack meets Finish 6.0 floors (no scaffold)
+  --list-modpacks         List modular pack manifests under scaffolds/modpacks
+  --check-modpacks        Validate modular pack manifests (no scaffold)
   --base-value <n>        Species baseValue
   --goal-stat <id>        Quest goal stat (default stat.fish_caught)
   --goal-at-least <n>     Quest goal atLeast (default 5)
@@ -57,16 +68,21 @@ Options:
   --period-ticks <n>      Seasonal periodTicks
   --start-tick <n>        Seasonal startTick
   --duration-ticks <n>    Seasonal durationTicks
-  --prestige <n>          Endgame requiresPrestigeCount
+  --prestige <n>          Endgame/sigil requiresPrestigeCount
   --sku <id>              Cosmetic sku override
+  --steps <n>             Chain step count (default 3)
+  --requires-harbor <id>  Chain requiresHarbor
+  --includes <kinds>      Modpack includes kinds (comma)
 
 Examples:
   npm run content:scaffold -- species --id tide_perch --name "Tide perch"
-  npm run content:scaffold -- seasonal --id aurora_tide --dry-run
-  npm run content:scaffold -- endgame --id crest_harbor --dry-run
-  npm run content:scaffold -- cosmetic --id aurora_bunting --check-pack
+  npm run content:scaffold -- chain --id nest_relay --dry-run
+  npm run content:scaffold -- sigil --id nest_ember --dry-run
+  npm run content:scaffold -- modpack --id nest_saffron --dry-run
   npm run content:scaffold -- --list
   npm run content:scaffold -- --check-floors
+  npm run content:scaffold -- --list-modpacks
+  npm run content:scaffold -- --check-modpacks
 `);
   process.exit(2);
 }
@@ -112,6 +128,8 @@ function parseArgs(argv: string[]): ScaffoldRequest & {
   const startRaw = takeFlag(argv, "--start-tick");
   const durationRaw = takeFlag(argv, "--duration-ticks");
   const prestigeRaw = takeFlag(argv, "--prestige");
+  const stepsRaw = takeFlag(argv, "--steps");
+  const includesRaw = takeFlag(argv, "--includes");
   const aiProfileRaw = takeFlag(argv, "--ai-profile") as
     | "siphon"
     | "undercut"
@@ -150,6 +168,11 @@ function parseArgs(argv: string[]): ScaffoldRequest & {
     durationTicks: durationRaw ? Number(durationRaw) : undefined,
     requiresPrestigeCount: prestigeRaw ? Number(prestigeRaw) : undefined,
     sku: takeFlag(argv, "--sku"),
+    steps: stepsRaw ? Number(stepsRaw) : undefined,
+    requiresHarbor: takeFlag(argv, "--requires-harbor"),
+    includes: includesRaw
+      ? includesRaw.split(",").map((s) => s.trim()).filter(Boolean)
+      : undefined,
     outDir: resolve(takeFlag(argv, "--out") ?? defaultOut),
     dryRun: hasFlag(argv, "--dry-run"),
     checkPack: hasFlag(argv, "--check-pack"),
@@ -163,20 +186,45 @@ function main(): number {
     console.log(ALL_SCAFFOLD_KINDS.join("\n"));
     return 0;
   }
+  if (hasFlag(argv, "--list-modpacks")) {
+    const listed = measureAllModpacks(repoRoot);
+    for (const f of listed.files) console.log(f);
+    return listed.files.length > 0 ? 0 : 1;
+  }
+  if (hasFlag(argv, "--check-modpacks")) {
+    const listed = measureAllModpacks(repoRoot);
+    console.log(`modpacks=${listed.files.length}`);
+    for (const m of listed.measures) {
+      if (!m.ok) {
+        console.error(`modpack ${m.path}:`);
+        for (const e of m.errors) console.error(`  - ${e}`);
+      }
+    }
+    if (!listed.ok) return 1;
+    console.log("OK modular packs valid");
+    return 0;
+  }
   if (hasFlag(argv, "--check-floors")) {
     const pack = JSON.parse(readFileSync(defaultPack, "utf8")) as Record<string, unknown>;
-    const measure = measurePackFloors(pack, FINISH5_PACK_FLOORS, { repoRoot });
+    // Soft-floor: Finish 5.0 FINISH5_PACK_FLOORS stay importable for contentcli5:validate.
+    void FINISH5_PACK_FLOORS;
+    const soft5 = measurePackFloors(pack, FINISH5_PACK_FLOORS, { repoRoot });
+    const measure = measurePackFloors(pack, FINISH6_PACK_FLOORS, { repoRoot });
     console.log(
       `pack floors species=${measure.species} quests=${measure.quests} harbors=${measure.harbors} ` +
         `machines=${measure.machines} rivals=${measure.rivals} baits=${measure.baits} ` +
         `seasonal=${measure.seasonal} cosmetics=${measure.cosmetics} chains=${measure.chains}`,
     );
+    if (!soft5.met) {
+      console.error("Finish 5.0 pack floors short (soft):");
+      for (const s of soft5.shortfalls) console.error(`  - ${s}`);
+    }
     if (!measure.met) {
-      console.error("Finish 5.0 pack floors short:");
+      console.error("Finish 6.0 pack floors short:");
       for (const s of measure.shortfalls) console.error(`  - ${s}`);
       return 1;
     }
-    console.log("OK content pack meets Finish 5.0 floors");
+    console.log("OK content pack meets Finish 6.0 floors");
     return 0;
   }
 

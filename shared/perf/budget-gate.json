@@ -1,7 +1,7 @@
 {
   "phase": 15,
   "schema": "fish.perf.budget_gate.v1",
-  "description": "Post-1.0 Phase 15 — CI smoke + fail criteria enforcing device-matrix budgets. Finish 5.0 Phase 27 raises harbor LRU + denser presenter caps for 12 harbors.",
+  "description": "Post-1.0 Phase 15 — CI smoke + fail criteria enforcing device-matrix budgets. Finish 6.0 Phase 28 raises harbor LRU + denser nest presenter caps for 14 harbors.",
   "phase26Catalog": "shared/perf/device-matrix.json",
   "finish4Phase": 27,
   "npmScript": "perf:budget",
@@ -36,19 +36,19 @@
   },
   "presenterCaps": {
     "crowd": {
-      "low": 3,
-      "medium": 6,
-      "high": 10
+      "low": 4,
+      "medium": 8,
+      "high": 12
     },
     "fly": {
-      "low": 4,
-      "medium": 10,
-      "high": 16
+      "low": 5,
+      "medium": 12,
+      "high": 20
     },
     "burst": {
-      "low": 2,
-      "medium": 5,
-      "high": 10
+      "low": 3,
+      "medium": 6,
+      "high": 12
     }
   },
   "vfxJuicePhase": 21,
@@ -63,7 +63,7 @@
     "high": 1.0
   },
   "maxShakeAmplitudeM": 0.12,
-  "harborCacheLimit": 4,
+  "harborCacheLimit": 5,
   "smoke": {
     "syntheticDowngradeStreak": 3,
     "syntheticUpgradeStreak": 3,
@@ -85,7 +85,8 @@
     "Web Chrome desktop @ medium: ≤16.7ms target; CSS height capped at 1080; DPR≤1.5",
     "Web high→medium→low auto-downgrade + reverse upgrade steps only (never touches sim Hz)",
     "Harbor GLB LRU ≤3 on both platforms (10-harbor travel)",
-    "Harbor GLB LRU ≥4 on both platforms (12-harbor travel)"
+    "Harbor GLB LRU ≥4 on both platforms (12-harbor travel)",
+    "Harbor GLB LRU ≥5 on both platforms (14-harbor nest travel)"
   ],
   "failCriteria": [
     "CI: web/android frameTargetMs drift from device-matrix.json",
@@ -99,5 +100,8 @@
   "vfxJuice4Catalog": "shared/ship/vfx-juice-4.json",
   "vfxJuice5Phase": 12,
   "vfxJuice5Catalog": "shared/ship/vfx-juice-5.json",
-  "finish5Phase": 27
+  "finish5Phase": 27,
+  "vfxJuice6Phase": 12,
+  "vfxJuice6Catalog": "shared/ship/vfx-juice-6.json",
+  "finish6Phase": 28
 }

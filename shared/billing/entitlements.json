@@ -1,4 +1,6 @@
 {
+  "schema": "fish.billing.entitlements.v1",
+  "description": "Canonical entitlement SKUs for full-harbor unlock and power-neutral cosmetics, shared by Play Billing, web checkout, and reconcile paths.",
   "phase": 24,
   "androidPlayBillingPhase": 1,
   "webBillingPhase": 2,
@@ -280,6 +282,72 @@
       "powerNeutral": true,
       "title": "Can crest",
       "description": "Can circuit crest plaque. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.saffron_bunting",
+      "sku": "fish.cosmetic.saffron_bunting",
+      "androidProductId": "fish_cosmetic_saffron_bunting",
+      "webProductId": "fish.cosmetic.saffron_bunting",
+      "grantsCosmetic": "banner.iap_saffron_bunting",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Saffron bunting",
+      "description": "Saffron Quay ember bunting. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.cobalt_pennant",
+      "sku": "fish.cosmetic.cobalt_pennant",
+      "androidProductId": "fish_cosmetic_cobalt_pennant",
+      "webProductId": "fish.cosmetic.cobalt_pennant",
+      "grantsCosmetic": "banner.iap_cobalt_pennant",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Cobalt pennant",
+      "description": "Cobalt Sound rime pennant. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.quay_flag",
+      "sku": "fish.cosmetic.quay_flag",
+      "androidProductId": "fish_cosmetic_quay_flag",
+      "webProductId": "fish.cosmetic.quay_flag",
+      "grantsCosmetic": "banner.iap_quay_flag",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Quay flag",
+      "description": "Saffron quay harbor flag. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.sound_streamer",
+      "sku": "fish.cosmetic.sound_streamer",
+      "androidProductId": "fish_cosmetic_sound_streamer",
+      "webProductId": "fish.cosmetic.sound_streamer",
+      "grantsCosmetic": "banner.iap_sound_streamer",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Sound streamer",
+      "description": "Cobalt ferry streamers. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.roast_ribbon",
+      "sku": "fish.cosmetic.roast_ribbon",
+      "androidProductId": "fish_cosmetic_roast_ribbon",
+      "webProductId": "fish.cosmetic.roast_ribbon",
+      "grantsCosmetic": "banner.iap_roast_ribbon",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Roast ribbon",
+      "description": "Roast nest ribbon. Visual only — never changes rates, wages, or sale prices."
+    },
+    {
+      "id": "entitlement.cosmetic.ferment_crest",
+      "sku": "fish.cosmetic.ferment_crest",
+      "androidProductId": "fish_cosmetic_ferment_crest",
+      "webProductId": "fish.cosmetic.ferment_crest",
+      "grantsCosmetic": "banner.iap_ferment_crest",
+      "type": "non_consumable",
+      "powerNeutral": true,
+      "title": "Ferment crest",
+      "description": "Ferment covenant crest plaque. Visual only — never changes rates, wages, or sale prices."
     }
   ]
 }

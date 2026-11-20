@@ -1,6 +1,7 @@
 /**
  * Finish 3.0 Phase 22 — stable web E2E test ids (mirrors Android ComposeUiTags).
  * Finish 5.0 Phase 26 expands Finish 5 surface ids (soft-floor ≥32).
+ * Finish 6.0 Phase 23 expands nest/deep-link surface ids (soft-floor ≥32, live ≥40).
  * Wired as data-testid; presentation-only.
  */
 export const WEB_E2E_IDS = {
@@ -38,6 +39,14 @@ export const WEB_E2E_IDS = {
   DASH_LEDGER: "dash.ledger",
   WAREHOUSE_PANEL: "warehouse.panel",
   FRICTION_NUDGE: "friction.nudge",
+  BAG_PANEL: "bag.panel",
+  NEST_TREASURY: "nest.treasury",
+  NEST_LOANS: "nest.loans",
+  SPECIES_BOOK: "species.book",
+  CONTRACTS_PANEL: "contracts.panel",
+  MAP_PANEL: "map.panel",
+  STAFF_TRAIN: "staff.train",
+  DASH_ROOT: "dash.root",
 } as const;
 
 export type WebE2eId = (typeof WEB_E2E_IDS)[keyof typeof WEB_E2E_IDS];

@@ -23,6 +23,8 @@ object TutorialFriction {
         "tutorial.hire_staff",
         "tutorial.grill_line",
         "tutorial.plot_marker",
+        "tutorial.roast_nest",
+        "tutorial.ferment_line",
     )
 
     data class Nudge(val stepId: String, val hintAfterMs: Int, val nudge: String)
@@ -35,6 +37,8 @@ object TutorialFriction {
         Nudge("tutorial.hire_staff", 11000, "Tip: keep selling until Make 10 sales, then Staff unlocks Hire"),
         Nudge("tutorial.grill_line", 10000, "Tip: the grill In pad is charcoal-side — walk onto it with fish in the bag"),
         Nudge("tutorial.plot_marker", 11000, "Tip: stand centered on the glowing expansion marker, then confirm the spend"),
+        Nudge("tutorial.roast_nest", 11000, "Tip: the roast nest In pad unlocks with the harbor roaster — walk onto it with stock"),
+        Nudge("tutorial.ferment_line", 12000, "Tip: fermenter In is on the nest ferment line — carry goods onto that pad"),
     )
 
     fun nudgeFor(stepId: String): Nudge? = NUDGES.firstOrNull { it.stepId == stepId }

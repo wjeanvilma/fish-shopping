@@ -39,6 +39,12 @@ class RemoteAnalyticsSink(
     var deadLetterCount: Int = 0
         private set
 
+    /** Finish 6.0 Phase 18 — CIRCUIT_BREAKER threshold mirror. */
+    private val CIRCUIT_BREAKER = RemoteAnalyticsPolicy.CIRCUIT_BREAKER_AFTER_DEAD_LETTERS
+
+    val circuitOpen: Boolean
+        get() = RemoteAnalyticsPolicy.circuitOpen(deadLetterCount) || deadLetterCount >= CIRCUIT_BREAKER
+
     private val executor = Executors.newSingleThreadExecutor { r ->
         Thread(r, "fish-remote-analytics").apply { isDaemon = true }
     }
@@ -55,7 +61,7 @@ class RemoteAnalyticsSink(
     }
 
     override fun track(event: Analytics.Event?) {
-        if (!consent || event == null || !enabled()) return
+        if (!consent || event == null || !enabled() || circuitOpen) return
         synchronized(lock) {
             RemoteAnalyticsPolicy.enqueue(queue, event, nowMs())
             eventsAccepted += 1
@@ -71,7 +77,7 @@ class RemoteAnalyticsSink(
     }
 
     fun flushBlocking(): Boolean {
-        if (!enabled() || !flushing.compareAndSet(false, true)) return true
+        if (!enabled() || circuitOpen || !flushing.compareAndSet(false, true)) return true
         var taken: List<RemoteAnalyticsPolicy.QueuedEvent> = emptyList()
         return try {
             val slice = synchronized(lock) {

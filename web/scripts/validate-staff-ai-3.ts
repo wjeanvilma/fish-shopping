@@ -51,8 +51,8 @@ function validate(): string[] {
   if (catalog.contentVersion !== "4.0.0") errors.push("contentVersion must stay 4.0.0");
   if (catalog.schemaVersion !== 26) errors.push("schemaVersion must be 26");
   if (SCHEMA_VERSION < 26) errors.push("engine SCHEMA_VERSION must be >= 26");
-  if (!["4.0.0", "5.0.0"].includes(pack.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0 or 5.0.0");
-  if (pack.saveSchemaVersion !== 26) errors.push("content-pack.saveSchemaVersion must be 26");
+  if (!["4.0.0", "5.0.0", "6.0.0"].includes(pack.contentVersion)) errors.push("content-pack contentVersion must be 4.0.0, 5.0.0, or 6.0.0");
+  if (pack.saveSchemaVersion < 26) errors.push("content-pack.saveSchemaVersion must be >= 26");
 
   if (catalog.depthBehaviors?.length !== 5) errors.push("depthBehaviors must list 5");
   if (catalog.depthStats?.length !== 5) errors.push("depthStats must list 5");

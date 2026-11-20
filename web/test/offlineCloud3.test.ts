@@ -36,7 +36,8 @@ describe("Offline/cloud/analytics hardening 3 (Finish 5.0 Phase 22)", () => {
     expect((storeListing as { offlineCloud3Phase?: number }).offlineCloud3Phase).toBe(22);
     expect(FINISH5_OPEN_GAP_FLAGS).not.toContain("offlineCloud3Incomplete");
     expect(REMOTE_MAX_FLUSH_RETRIES).toBeGreaterThanOrEqual(5);
-    expect(REMOTE_RETRY_JITTER_MS).toBe(500);
+    // Soft-floor: Finish 6.0 Phase 18 raised jitter; keep ≥ Phase-22 floor.
+    expect(REMOTE_RETRY_JITTER_MS).toBeGreaterThanOrEqual(500);
     expect(REMOTE_DEAD_LETTER_AFTER_MAX_RETRIES).toBe(true);
   });
 

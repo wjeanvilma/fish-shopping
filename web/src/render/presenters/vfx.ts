@@ -122,10 +122,11 @@ export class FlyingTransfers {
 
 /** Phase 16/21 — pooled world bursts (catch / pay / celebrate / machine_done). */
 /** Finish 5.0 Phase 27 denser-scene burst pool for 12 harbors. */
-export const VFX_BURST_POOL = 10;
+/** Finish 6.0 Phase 28 denser nest burst pool for 14 harbors. */
+export const VFX_BURST_POOL = 12;
 export const VFX_BURST_POOL_BY_QUALITY = {
-  low: 2,
-  medium: 5,
+  low: 3,
+  medium: 6,
   high: VFX_BURST_POOL,
 } as const;
 
@@ -160,7 +161,12 @@ export type WorldBurstKind =
   | "spoil"
   | "machine_break"
   | "contract_deadline"
-  | "quest_near";
+  | "quest_near"
+  | "nest_settle"
+  | "roast_ready"
+  | "ferment_ready"
+  | "school_flash"
+  | "aurora_crest";
 
 export interface WorldBurstCue {
   xMm: number;
@@ -211,9 +217,14 @@ const BURST_DURATION_S: Record<WorldBurstKind, number> = {
   machine_break: 0.45,
   contract_deadline: 0.4,
   quest_near: 0.35,
+  nest_settle: 0.4,
+  roast_ready: 0.35,
+  ferment_ready: 0.4,
+  school_flash: 0.35,
+  aurora_crest: 0.45,
 };
 
-/** Phase 21 + Finish 2.0/3.0/4.0/5.0 shake kinds. */
+/** Phase 21 + Finish 2.0/3.0/4.0/5.0/6.0 shake kinds. */
 export type ShakeKind =
   | "catch"
   | "cut"
@@ -226,7 +237,9 @@ export type ShakeKind =
   | "endgame_tier"
   | "endgame_challenge"
   | "cast_strike"
-  | "contract_deadline";
+  | "contract_deadline"
+  | "nest_settle"
+  | "aurora_crest";
 
 export const SHAKE_DURATION_S = 0.18;
 /** Hard cap after quality scale (meters). */
@@ -244,6 +257,8 @@ export const SHAKE_AMPLITUDE_M: Record<ShakeKind, number> = {
   endgame_challenge: 0.07,
   cast_strike: 0.06,
   contract_deadline: 0.07,
+  nest_settle: 0.05,
+  aurora_crest: 0.07,
 };
 export const SHAKE_SCALE_BY_QUALITY = {
   low: 0.5,
@@ -469,6 +484,39 @@ export function resolveContractDeadlineBurst(v: SimView): WorldBurstCue {
 /** Finish 5.0 Phase 12 — quest near-complete cue at the player. */
 export function resolveQuestNearBurst(v: SimView): WorldBurstCue {
   return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "quest_near" };
+}
+
+/** Finish 6.0 Phase 12 — nest settle cue at the player. */
+export function resolveNestSettleBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "nest_settle" };
+}
+
+/** Finish 6.0 Phase 12 — roast ready above station output, else player. */
+export function resolveRoastReadyBurst(v: SimView, stationId?: string): WorldBurstCue {
+  if (stationId) {
+    const anchor = v.transferAnchors.find((a) => a.inventoryId === `inv.${stationId}.output`);
+    if (anchor) return { xMm: anchor.xMm, zMm: anchor.zMm, kind: "roast_ready" };
+  }
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "roast_ready" };
+}
+
+/** Finish 6.0 Phase 12 — ferment ready above station output, else player. */
+export function resolveFermentReadyBurst(v: SimView, stationId?: string): WorldBurstCue {
+  if (stationId) {
+    const anchor = v.transferAnchors.find((a) => a.inventoryId === `inv.${stationId}.output`);
+    if (anchor) return { xMm: anchor.xMm, zMm: anchor.zMm, kind: "ferment_ready" };
+  }
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "ferment_ready" };
+}
+
+/** Finish 6.0 Phase 12 — school flash at the player. */
+export function resolveSchoolFlashBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "school_flash" };
+}
+
+/** Finish 6.0 Phase 12 — aurora crest at the player. */
+export function resolveAuroraCrestBurst(v: SimView): WorldBurstCue {
+  return { xMm: v.player.xMm, zMm: v.player.zMm, kind: "aurora_crest" };
 }
 
 /**

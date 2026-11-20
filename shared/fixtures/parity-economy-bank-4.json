@@ -1,0 +1,27 @@
+{
+  "schema": "fish.fixture.parity_economy_bank_4.v1",
+  "economy4Marker": "authored-finish-6.0-phase-17",
+  "phase": 17,
+  "plan": "30_finish_6.0",
+  "description": "Finish 6.0 Phase 17: nest_ember/saffron_crest loans + 16 goal presets + dashboard nestTreasuryLines / wageBurdenPermille surfaces.",
+  "sampleLoanId": "loan.nest_ember",
+  "sampleGoalPreset": 110000,
+  "sampleDashboardField": "nestTreasuryLines",
+  "expect": {
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "loanProductMin": 7,
+    "goalPresetMin": 16,
+    "dashboardFieldCount": 6,
+    "economy4Incomplete": false,
+    "openGapFlagMin": 1,
+    "gates": [
+      "loan_products_7",
+      "goal_presets_16",
+      "nest_treasury_fields",
+      "nest_treasury_ux",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "phase": 26,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ops.analytics_loadtest_6.v1",
+  "description": "Finish 6.0 Phase 26 — nest analytics + loadtest bank soak ops. Secrets never committed.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "analyticsLoadtest6Marker": "authored-finish-6.0-phase-26",
+  "extendsLoadtestBanks": "shared/ship/loadtest-banks.json",
+  "extendsRemoteAnalyticsSink": "shared/ops/remote-analytics-sink.json",
+  "eventNameFloor": 11,
+  "nestEvents": [
+    "nest_sigil_earned",
+    "nest_contract_settled",
+    "loadtest_bank_probed"
+  ],
+  "soakScenarioFloor": 8,
+  "minBytesEach": 85000000,
+  "bankSchemaVersionFloor": 27,
+  "scenarios": [
+    {
+      "id": "probe_save_bank",
+      "title": "Header/size probe save bank ≥85MB schema 27"
+    },
+    {
+      "id": "probe_telemetry_bank",
+      "title": "Header/size probe telemetry bank ≥85MB schema 27"
+    },
+    {
+      "id": "nest_sigil_emit",
+      "title": "Emit nest_sigil_earned analytics event"
+    },
+    {
+      "id": "nest_contract_emit",
+      "title": "Emit nest_contract_settled analytics event"
+    },
+    {
+      "id": "loadtest_bank_probed_emit",
+      "title": "Emit loadtest_bank_probed after dual probe"
+    },
+    {
+      "id": "analytics_batch_soak",
+      "title": "Queue/flush nest events through remote sink policy"
+    },
+    {
+      "id": "dual_platform_parity",
+      "title": "Web GameHost + Android GameViewModel probe wiring"
+    },
+    {
+      "id": "soft_remote_analytics",
+      "title": "remoteanalytics:validate soft-green (≥8 event names)"
+    }
+  ],
+  "softRemoteAnalyticsValidate": "npm run remoteanalytics:validate"
+}

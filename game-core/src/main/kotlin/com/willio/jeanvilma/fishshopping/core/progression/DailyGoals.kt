@@ -184,6 +184,19 @@ object DailyGoalsSystem {
         if (report.revenueDelta > 0L) {
             lines += "Committed sales booked ${report.revenueDelta} coins offline."
         }
+        // Finish 6.0 Phase 18 — nest journal fidelity categories.
+        if (report.loanRepaid > 0L) {
+            lines += "Nest treasury repaid ${report.loanRepaid} loan coins offline."
+        }
+        if (report.contractRevenue > 0L) {
+            lines += "Delivery contracts booked ${report.contractRevenue} coins while away."
+        }
+        if (report.rivalSalesStolen > 0L) {
+            lines += "Rivals siphoned ${report.rivalSalesStolen} coins from the nest."
+        }
+        if (report.endgameSigilsEarned > 0L) {
+            lines += "Nest earned ${report.endgameSigilsEarned} endgame sigil${if (report.endgameSigilsEarned == 1L) "" else "s"} offline."
+        }
         val streak = streak(state)
         if (streak > 0) {
             lines += "Harbor streak: $streak day${if (streak == 1) "" else "s"}."

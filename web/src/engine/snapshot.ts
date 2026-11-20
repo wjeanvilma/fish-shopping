@@ -127,6 +127,7 @@ export function encodeSnapshot(content: ContentPack, s: GameState, savedAtEpochM
     completedEndgameChallenges: [...s.completedEndgameChallenges].sort(compareStrings),
     endgameMarks: [...s.endgameMarks].sort(compareStrings),
     endgameCrests: [...s.endgameCrests].sort(compareStrings),
+    endgameSigils: [...s.endgameSigils].sort(compareStrings),
     unlockedCosmetics: [...s.unlockedCosmetics].sort(compareStrings),
     ownedDecor: [...s.ownedDecor].sort(compareStrings),
     fullHarborUnlock: s.fullHarborUnlock,
@@ -253,6 +254,7 @@ export function decodeSnapshotEnvelope(content: ContentPack, text: string): Deco
  *  - v23 -> v24: beatenRivalIds + unlockedEndgameTiers + completedEndgameChallenges (Finish 3.0 Phase 15).
  *  - v24 -> v25: endgameMarks (Finish 4.0 Phase 17 endgame deepen).
  *  - v25 -> v26: endgameCrests (Finish 5.0 Phase 17 endgame deepen).
+ *  - v26 -> v27: endgameSigils (Finish 6.0 Phase 14 endgame deepen).
  */
 function readState(content: ContentPack, n: Reader, version: number): GameState {
   const harborId = n.get("harborId").string();
@@ -465,6 +467,11 @@ function readState(content: ContentPack, n: Reader, version: number): GameState 
     n.get("endgameCrests").list().map((x) => x.string())
       .filter((id) => id.startsWith("endgame.crest."))
       .forEach((id) => s.endgameCrests.add(id));
+  }
+  if (version >= 27) {
+    n.get("endgameSigils").list().map((x) => x.string())
+      .filter((id) => id.startsWith("endgame.sigil."))
+      .forEach((id) => s.endgameSigils.add(id));
   }
   if (version >= 16) {
     n.get("ownedDecor").list().map((x) => x.string()).filter((id) => content.decorById.has(id))

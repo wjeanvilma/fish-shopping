@@ -5,7 +5,8 @@ package com.willio.jeanvilma.fishshopping.core.sim
  *
  * Consent is enforced by presentation clients. This module only validates
  * allowlisted event names/props and refuses PII / full-save keys.
- * Phase 26 adds session_start + crash_free_session for the ops dashboard.
+ * Finish 3.0 Phase 26 adds session_start + crash_free_session for the ops dashboard.
+ * Finish 6.0 Phase 26 adds nest_sigil_earned / nest_contract_settled / loadtest_bank_probed.
  */
 object Analytics {
     const val SCHEMA = "fish.analytics.v1"
@@ -19,6 +20,9 @@ object Analytics {
         "frame_time_summary",
         "session_start",
         "crash_free_session",
+        "nest_sigil_earned",
+        "nest_contract_settled",
+        "loadtest_bank_probed",
     )
 
     /** Keys that must never appear in an analytics payload. */
@@ -37,6 +41,9 @@ object Analytics {
         "frame_time_summary" to setOf("emaMs", "quality", "samples", "platform"),
         "session_start" to setOf("platform"),
         "crash_free_session" to setOf("clean", "platform"),
+        "nest_sigil_earned" to setOf("sigilId", "count"),
+        "nest_contract_settled" to setOf("contractId", "coins"),
+        "loadtest_bank_probed" to setOf("bank", "floorsMet", "platform"),
     )
 
     data class Event(
@@ -109,6 +116,21 @@ object Analytics {
     /** Phase 26: clean=true when the prior/current session ended without unclean exit. */
     fun crashFreeSession(clean: Boolean, platform: String): Event =
         sanitize("crash_free_session", mapOf("clean" to clean, "platform" to platform))!!
+
+    /** Finish 6.0 Phase 26: nest endgame sigil progress (id + count only). */
+    fun nestSigilEarned(sigilId: String, count: Int): Event =
+        sanitize("nest_sigil_earned", mapOf("sigilId" to sigilId, "count" to count))!!
+
+    /** Finish 6.0 Phase 26: nest contract settlement (id + coins only). */
+    fun nestContractSettled(contractId: String, coins: Long): Event =
+        sanitize("nest_contract_settled", mapOf("contractId" to contractId, "coins" to coins))!!
+
+    /** Finish 6.0 Phase 26: loadtest bank header/size probe result. */
+    fun loadtestBankProbed(bank: String, floorsMet: Boolean, platform: String): Event =
+        sanitize(
+            "loadtest_bank_probed",
+            mapOf("bank" to bank, "floorsMet" to floorsMet, "platform" to platform),
+        )!!
 }
 
 /** In-memory sink for unit tests / local inspection. */

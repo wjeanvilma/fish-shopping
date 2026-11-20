@@ -1,0 +1,83 @@
+{
+  "phase": 17,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.economy_bank_4.v1",
+  "description": "Finish 6.0 Phase 17 — economy/bank/dashboard depth 4. Loans → ≥7 (nest_ember + saffron_crest), coin goals → ≥16, nest treasury analytics + UX on web/Android dashboards. Schema stays 27 / content 5.0.0 (stats + view fields only).",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "economy4Marker": "authored-finish-6.0-phase-17",
+  "extendsEconomy3": "shared/ship/economy-bank-3.json",
+  "loanProductMin": 7,
+  "goalPresetMin": 16,
+  "loanProductIds": [
+    "loan.starter",
+    "loan.expansion",
+    "loan.fleet",
+    "loan.tideglass",
+    "loan.aurora",
+    "loan.nest_ember",
+    "loan.saffron_crest"
+  ],
+  "newLoanProductIds": [
+    "loan.nest_ember",
+    "loan.saffron_crest"
+  ],
+  "goalPresets": [
+    150,
+    300,
+    600,
+    1200,
+    2400,
+    4800,
+    9600,
+    15000,
+    22000,
+    32000,
+    45000,
+    60000,
+    80000,
+    110000,
+    150000,
+    200000
+  ],
+  "dashboardFields": [
+    "wageBurdenPermille",
+    "loanCoveragePermille",
+    "rivalLossCoins",
+    "endgameSigilsEarned",
+    "coinGoalsReached",
+    "nestTreasuryLines"
+  ],
+  "parityFixture": "shared/fixtures/parity-economy-bank-4.json",
+  "authorTool": "shared/tools/author_economy_4.py",
+  "validateScript": "npm run economy4:validate",
+  "softEconomy3Validate": "npm run economy3:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "checklist": [
+    "≥7 loan products including nest_ember + saffron_crest",
+    "≥16 coin goal presets",
+    "Dashboard nest treasury analytics fields",
+    "Web↔Android nest treasury UX",
+    "kickoff economy4Incomplete=false",
+    "economy4:validate green in CI",
+    "economy3:validate soft-green",
+    "schema stays 27 / content 5.0.0",
+    "openGapFlagMin 13→12"
+  ],
+  "preflightGates": [
+    "shared/ship/economy-bank-4.json",
+    "shared/fixtures/parity-economy-bank-4.json",
+    "shared/ship/economy-bank-3.json",
+    "shared/content/content-pack.json",
+    "shared/tools/author_economy_4.py",
+    "web/src/engine/businessDashboard.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/BusinessDashboard.kt",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/economy/Bank.kt",
+    "web/src/ui/BusinessDashboardPanel.tsx",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/BusinessDashboardPanel.kt",
+    "web/src/ship/economy4.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Economy4.kt",
+    "web/scripts/validate-economy-4.ts"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "phase": 14,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.schema_27_prep.v1",
+  "description": "Finish 6.0 Phase 14 applied — live SCHEMA_VERSION is 27. endgame-4 owns the bump (endgameSigils + deepen tiers/challenges).",
+  "contentVersion": "5.0.0",
+  "currentSchemaVersion": 27,
+  "targetSchemaVersion": 27,
+  "status": "applied",
+  "ownedByPhase": 14,
+  "ownedByValidate": "endgame4:validate",
+  "plannedConsumers": [
+    "endgame sigil gates past Tideglass Ascendant",
+    "saffron/cobalt nest prestige deepen"
+  ],
+  "nonGoals": [
+    "Do not bump contentVersion to 6.0.0 yet",
+    "Do not grow rivals/seasonal/cosmetics (Phase 15)"
+  ],
+  "validateScript": "npm run endgame4:validate",
+  "appliedBy": "endgame4:validate",
+  "appliedMarker": "authored-finish-6.0-phase-14"
+}

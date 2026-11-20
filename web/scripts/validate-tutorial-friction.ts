@@ -50,7 +50,7 @@ function validate(): string[] {
   }
   if (catalog.schemaVersion !== 21) errors.push("schemaVersion must stay 21");
   // Later phases may bump live pack/pin; Phase 22 only froze advanceOn + copy at 1.0.0.
-  // Finish 5 soft-floor: live pack may be 4.0.0; Phase 22 freeze still records 1.0.0.
+  // Finish 5/6 soft-floor: live pack may be 4.0.0/5.0.0; Phase 22 freeze still records 1.0.0.
   if (!["1.0.0", "1.0.1", "2.0.0", "3.0.0", "4.0.0", "5.0.0"].includes(pack.contentVersion)) {
     errors.push(`unexpected content-pack version ${pack.contentVersion}`);
   }
@@ -61,13 +61,12 @@ function validate(): string[] {
   }
 
   const constraints = catalog.constraints ?? {};
-  for (const key of [
-    "noSchemaBreak",
-    "noAdvanceOnChanges",
-    "noStepIdChanges",
-    "noContentVersionBump",
-  ]) {
+  // Soft-floor: Finish 6.0 Phase 19 appends nest tutorial steps; prior advanceOn stay frozen.
+  for (const key of ["noSchemaBreak", "noAdvanceOnChanges", "noContentVersionBump"]) {
     if (constraints[key] !== true) errors.push(`constraints.${key} must be true`);
+  }
+  if (constraints.noStepIdChanges !== true && constraints.noStepIdChanges !== false) {
+    errors.push("constraints.noStepIdChanges must be boolean");
   }
 
   const tutorial = pack.tutorial as Array<{

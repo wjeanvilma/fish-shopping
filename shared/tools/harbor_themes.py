@@ -7,6 +7,7 @@ overrides so all harbor GLBs are visibly authored while keeping presenter
 socket names unchanged. Phase 9 raises prop density / scenic accents so
 scenes are no longer mere blockouts. Phase 12 adds Mist Cove + Prism Reach.
 Phase 14 adds Aurora Inlet + Tideglass Bay.
+Finish 6.0 Phase 7 adds Saffron Quay + Cobalt Sound.
 """
 from __future__ import annotations
 
@@ -55,6 +56,8 @@ AUTHORED_THEMES = {
     "prism_reach": "prism",
     "aurora_inlet": "aurora",
     "tideglass_bay": "tideglass",
+    "saffron_quay": "saffron",
+    "cobalt_sound": "cobalt",
 }
 
 
@@ -545,6 +548,34 @@ THEME_PLACEMENTS = {
         ("art_bait_shed", (4.5, 0.0, -4.0), 1.05),
         ("art_dock_ladder", (-15.0, -0.2, 0.8), 1.05),
     ],
+    "saffron": [
+        ("art_lantern", (-6.5, 0.0, 2.0), 1.2),
+        ("art_lantern", (5.0, 0.0, -2.2), 1.15),
+        ("art_flagpole", (8.0, 0.0, -1.0), 1.1),
+        ("art_canopy", (7.0, 0.0, 1.5), 1.05),
+        ("art_crate_stack", (0.5, 0.0, -3.0), 1.0),
+        ("art_bait_shed", (4.5, 0.0, -4.2), 1.05),
+        ("art_bench", (1.5, 0.0, 2.2), 1.05),
+        ("art_planter", (-3.0, 0.0, 2.5), 1.1),
+        ("art_signal_bell", (-8.5, 0.0, 0.8), 0.95),
+        ("art_tide_gauge", (9.0, 0.0, -2.0), 1.0),
+        ("art_dock_ladder", (-15.0, -0.2, 0.5), 1.05),
+        ("art_buoy", (-13.5, -0.25, 3.0), 0.9),
+    ],
+    "cobalt": [
+        ("art_aurora_pole", (-7.0, 0.0, 2.2), 1.2),
+        ("art_ice_marker", (-15.0, -0.1, 2.8), 1.2),
+        ("art_ice_marker", (3.5, -0.05, 3.2), 1.05),
+        ("art_moon_lantern", (6.0, 0.0, 1.2), 1.1),
+        ("art_kelp_cluster", (-14.2, -0.35, 1.2), 1.15),
+        ("art_planter", (2.0, 0.0, 2.4), 1.1),
+        ("art_canopy", (8.2, 0.0, 0.6), 1.05),
+        ("art_crate_stack", (0.0, 0.0, -3.2), 1.0),
+        ("art_signal_bell", (-5.0, 0.0, -2.2), 0.95),
+        ("art_tide_gauge", (9.2, 0.0, -1.8), 1.0),
+        ("art_dock_ladder", (-15.2, -0.15, 0.6), 1.05),
+        ("art_buoy", (-13.0, -0.25, -1.5), 0.9),
+    ],
 }
 
 THEME_PALETTE = {
@@ -618,6 +649,18 @@ THEME_PALETTE = {
         "pier": "#A8C0C8",
         "ground": "#789090",
         "zone_fishing": "#5AD0C8",
+    },
+    "saffron": {
+        "water": "#3A7898",
+        "pier": "#D4A060",
+        "ground": "#C09050",
+        "zone_fishing": "#E0B060",
+    },
+    "cobalt": {
+        "water": "#1A4A88",
+        "pier": "#7090B8",
+        "ground": "#405878",
+        "zone_fishing": "#5090D0",
     },
 }
 

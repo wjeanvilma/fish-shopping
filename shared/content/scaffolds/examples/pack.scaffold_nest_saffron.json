@@ -1,0 +1,18 @@
+{
+  "id": "pack.scaffold_nest_saffron",
+  "name": "Nest Saffron Modular Pack",
+  "description": "Authoring scaffold modular content pack. Lists fragment kinds to author together; never auto-merges content-pack.json.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "includes": [
+    "chain",
+    "sigil",
+    "seasonal",
+    "cosmetic"
+  ],
+  "fragments": [
+    "shared/content/scaffolds/examples/chain.scaffold_nest_relay.json",
+    "shared/content/scaffolds/examples/endgame.sigil.scaffold_nest_ember.json"
+  ],
+  "modular": true
+}

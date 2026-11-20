@@ -2,7 +2,7 @@
  * Finish 4.0 Phase 6 — GameHost sim-step event bus (SFX + VFX cue enqueue).
  */
 import type { Command, Simulation } from "../../engine";
-import { buildView } from "../../engine";
+import { WeatherSystem, buildView } from "../../engine";
 import type { AudioBus } from "../../audio/audioBus";
 import { sfxFromEvent } from "../../audio/sfxCues";
 import { sharedAnalyticsBus } from "../../analytics/analyticsBus";
@@ -26,11 +26,14 @@ import {
   resolveHarborTravelBurst,
   resolveHireBurst,
   resolveLoanBurst,
+  resolveFermentReadyBurst,
   resolveMachineBreakBurst,
   resolveMachineDoneBurst,
   resolvePayBurst,
   resolvePrestigeBurst,
   resolveRivalBeatBurst,
+  resolveRoastReadyBurst,
+  resolveSchoolFlashBurst,
   resolveSpoilBurst,
   resolveTrophySetBurst,
   type FlyingTransferCue,
@@ -86,6 +89,11 @@ export function processHostStep(
     let spoilBurst = false;
     let machineBreakBurst = false;
     let machineBreakStationId: string | undefined;
+    let roastReadyBurst = false;
+    let roastReadyStationId: string | undefined;
+    let fermentReadyBurst = false;
+    let fermentReadyStationId: string | undefined;
+    let schoolFlashBurst = false;
     const events = sim.step(batch);
     sharedAnalyticsBus.onGameEvents(events, sim.state);
     for (const e of events) {
@@ -95,10 +103,22 @@ export function processHostStep(
         case "items_transferred":
           transferred.push({ from: e.from, to: e.to, itemId: e.itemId });
           break;
-        case "batch_completed":
+        case "batch_completed": {
           machineDone.push(e.stationId);
           sink.pendingShakes.push("cut");
+          const machine = sim.state.machines.find((m) => m.stationId === e.stationId);
+          const mid = machine?.machineId ?? "";
+          if (mid.includes("roaster")) {
+            roastReadyBurst = true;
+            roastReadyStationId = e.stationId;
+            sink.audio.play("roast_ready");
+          } else if (mid.includes("fermenter")) {
+            fermentReadyBurst = true;
+            fermentReadyStationId = e.stationId;
+            sink.audio.play("ferment_ready");
+          }
           break;
+        }
         case "sale_committed": {
           const tip = e.preferenceMet === false ? " (substituted)"
             : (e.priceMultPermille ?? 1000) > 1000 ? " Premium tip!" : "";
@@ -111,6 +131,13 @@ export function processHostStep(
         case "fish_caught":
           catchCount += 1;
           sink.pendingShakes.push("catch");
+          {
+            const tide = WeatherSystem.tidePhaseAt(sim.content, sim.state.tick).id;
+            if (tide === "night" || tide === "dusk") {
+              schoolFlashBurst = true;
+              sink.audio.play("school_flash");
+            }
+          }
           if (e.personalBest) {
             const name = sim.content.itemName(e.speciesId);
             sink.say(`New trophy: ${name} · ${e.sizePermille}%`);
@@ -439,6 +466,14 @@ export function processHostStep(
       if (machineBreakBurst) {
         sink.pendingBursts.push(resolveMachineBreakBurst(view, machineBreakStationId));
       }
+      // Finish 6.0 Phase 12 visual juice.
+      if (roastReadyBurst) {
+        sink.pendingBursts.push(resolveRoastReadyBurst(view, roastReadyStationId));
+      }
+      if (fermentReadyBurst) {
+        sink.pendingBursts.push(resolveFermentReadyBurst(view, fermentReadyStationId));
+      }
+      if (schoolFlashBurst) sink.pendingBursts.push(resolveSchoolFlashBurst(view));
     }
     if (transaction) sink.publish(true);
 }

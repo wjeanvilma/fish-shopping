@@ -60,9 +60,15 @@ export function measureRivalMarkets(repoRoot: string): RivalMarketsMeasure {
   }
   const harborsCovered = [...harborIds].every((h) => covered.has(h));
 
-  const tsSystems = existsSync(resolve(repoRoot, "web/src/engine/systems.ts"))
-    ? readFileSync(resolve(repoRoot, "web/src/engine/systems.ts"), "utf8")
-    : "";
+  const tsSystems = [
+    "web/src/engine/systems.ts",
+    "web/src/engine/systems/rivals.ts",
+  ]
+    .map((p) => {
+      const full = resolve(repoRoot, p);
+      return existsSync(full) ? readFileSync(full, "utf8") : "";
+    })
+    .join("\n");
   const ktSystems = existsSync(
     resolve(repoRoot, "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/customers/RivalMarketSystem.kt"),
   )

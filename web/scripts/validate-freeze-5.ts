@@ -89,10 +89,17 @@ function validate(): string[] {
     errors.push("soft floor finish4HistoricalVersionCode must stay ≥5");
   }
 
-  if (pin.contentVersion !== "5.0.0") errors.push("RELEASE_PIN contentVersion must be 5.0.0");
-  if (pin.versionName !== "5.0.0") errors.push("RELEASE_PIN versionName must be 5.0.0");
-  if (pin.versionCode !== 6) errors.push("RELEASE_PIN versionCode must be 6");
-  if (pin.releaseTag !== "v5.0.0") errors.push("RELEASE_PIN releaseTag must be v5.0.0");
+  // Soft-floor: Finish 6.0 Phase 30 may advance live pin to 6.0.0 / vc 7.
+  if (!["5.0.0", "6.0.0"].includes(pin.contentVersion)) {
+    errors.push("RELEASE_PIN contentVersion must be 5.0.0 or 6.0.0");
+  }
+  if (!["5.0.0", "6.0.0"].includes(pin.versionName)) {
+    errors.push("RELEASE_PIN versionName must be 5.0.0 or 6.0.0");
+  }
+  if ((pin.versionCode ?? 0) < 6) errors.push("RELEASE_PIN versionCode must be ≥ 6");
+  if (!["v5.0.0", "v6.0.0"].includes(pin.releaseTag)) {
+    errors.push("RELEASE_PIN releaseTag must be v5.0.0 or v6.0.0");
+  }
   if (pin.schemaVersion < 26) errors.push("RELEASE_PIN schemaVersion must be >= 26");
   if (pin.freeze50 !== "shared/ship/freeze-5.0.0.json") errors.push("RELEASE_PIN.freeze50 path");
   if (pin.freeze40 !== "shared/ship/freeze-4.0.0.json") errors.push("RELEASE_PIN.freeze40 must remain");
@@ -102,8 +109,10 @@ function validate(): string[] {
   if (!pin.fixtures?.includes("parity-freeze-5.0.0.json")) {
     errors.push("RELEASE_PIN.fixtures missing parity-freeze-5.0.0.json");
   }
-  if (pack.contentVersion !== "5.0.0") errors.push("content-pack must be 5.0.0");
-  if (pkg.version !== "5.0.0") errors.push("web/package.json version must be 5.0.0");
+  if (!["5.0.0", "6.0.0"].includes(pack.contentVersion)) errors.push("content-pack must be 5.0.0 or 6.0.0");
+  if (!["5.0.0", "6.0.0"].includes(pkg.version)) {
+    errors.push("web/package.json version must be 5.0.0 or 6.0.0");
+  }
 
   const floors = FREEZE_50_CONTENT_FLOORS;
   const seasonal = pack.seasonalEvents?.events ?? pack.seasonalEvents ?? [];
@@ -147,9 +156,13 @@ function validate(): string[] {
     if (freeze.catalog !== "shared/ship/freeze-5.0.0.json") errors.push("finish5Freeze.catalog mismatch");
     if (freeze.versionCode !== 6) errors.push("finish5Freeze.versionCode must be 6");
   }
-  if (dod.contentVersion !== "5.0.0") errors.push("DoD contentVersion must be 5.0.0");
-  if (dod.releaseTag !== "v5.0.0") errors.push("DoD releaseTag must be v5.0.0");
-  if (dod.schemaVersion !== 26) errors.push("DoD schemaVersion must be 26");
+  if (!["5.0.0", "6.0.0"].includes(dod.contentVersion)) {
+    errors.push("DoD contentVersion must be 5.0.0 or 6.0.0");
+  }
+  if (!["v5.0.0", "v6.0.0"].includes(dod.releaseTag)) {
+    errors.push("DoD releaseTag must be v5.0.0 or v6.0.0");
+  }
+  if ((dod.schemaVersion ?? 0) < 26) errors.push("DoD schemaVersion must be ≥ 26");
   if (dod.completeTag !== "v1.0-complete") errors.push("DoD completeTag archive must stay v1.0-complete");
   if (dod.closeout?.status !== "archived") errors.push("post-1.0 closeout must stay archived");
   if (dod.finish4Freeze?.releaseTag !== "v4.0.0") {
@@ -183,8 +196,9 @@ function validate(): string[] {
     errors.push("webSrc freeze floor must be ≥ 42500");
   }
   if ((loc.productTotalFloor ?? 0) < 90000) errors.push("productTotalFloor must be ≥ 90000");
+  // Soft-floor: Finish 6.0 may refresh freezeCut above Finish 5.0 measured cut.
   if ((loc.freezeCut?.productTotal ?? 0) < 90000) {
-    errors.push("loc-floors freezeCut.productTotal must be refreshed to Finish 5.0 cut");
+    errors.push("loc-floors freezeCut.productTotal must be ≥ Finish 5.0 cut");
   }
   if ((loc.softFloors?.finish4HistoricalProductTotalFloor as number) < 73100) {
     errors.push("soft floor Finish 4.0 productTotalFloor must stay ≥73100");
@@ -205,12 +219,14 @@ function validate(): string[] {
   if (listing.freeze50Catalog !== "shared/ship/freeze-5.0.0.json") {
     errors.push("listing.freeze50Catalog mismatch");
   }
-  if (listing.whatsNewVersion !== "5.0.0") errors.push("listing.whatsNewVersion must be 5.0.0");
-  if (listingCopy.copy?.whatsNewVersion !== "5.0.0") {
-    errors.push("listing-copy whatsNewVersion must be 5.0.0");
+  if (!["5.0.0", "6.0.0"].includes(listing.whatsNewVersion)) {
+    errors.push("listing.whatsNewVersion must be 5.0.0 or 6.0.0");
   }
-  if (!androidEn.includes("5.0.0 freeze") && !androidEn.includes("5.0.0")) {
-    errors.push("Android values/strings.xml must mention 5.0.0 whats-new");
+  if (!["5.0.0", "6.0.0"].includes(listingCopy.copy?.whatsNewVersion)) {
+    errors.push("listing-copy whatsNewVersion must be 5.0.0 or 6.0.0");
+  }
+  if (!androidEn.includes("5.0.0") && !androidEn.includes("6.0.0")) {
+    errors.push("Android values/strings.xml must mention 5.0.0 or 6.0.0 whats-new");
   }
 
   if (pin.storeRelease?.contentVersion !== "1.0.0") {

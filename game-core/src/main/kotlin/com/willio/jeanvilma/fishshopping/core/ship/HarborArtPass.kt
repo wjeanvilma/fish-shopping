@@ -10,7 +10,7 @@ object HarborArtPass {
     const val SCHEMA = "fish.ship.harbor_art_pass.v1"
     const val CONTENT_VERSION = "2.0.0"
     const val SCHEMA_VERSION = 23
-    const val AUTHORED_HARBOR_MIN = 10
+    const val AUTHORED_HARBOR_MIN = 14
     const val HARBOR_ART_MARKER = "authored-finish-4.0-phase-9"
     const val MAX_BYTES_PER_HARBOR = 200_000
     const val MAX_TOTAL_AUTHORED_BYTES = 2_200_000

@@ -162,8 +162,9 @@ function validate(): string[] {
   if (!cliTs.includes("--list") || !cliTs.includes("--check-pack") || !cliTs.includes("--check-floors")) {
     errors.push("cli.ts missing --list/--check-pack/--check-floors");
   }
-  if (!cliTs.includes("Finish 5.0 floors") && !cliTs.includes("FINISH5_PACK_FLOORS")) {
-    errors.push("cli.ts missing Finish 5.0 floors wiring");
+  // Soft-floor: Finish 6.0 may print Finish 6.0 floors while keeping FINISH5_PACK_FLOORS.
+  if (!cliTs.includes("FINISH5_PACK_FLOORS") && !scaffoldTs.includes("FINISH5_PACK_FLOORS")) {
+    errors.push("cli/content-scaffold missing Finish 5.0 floors wiring");
   }
 
   for (const path of fixture.expect.exampleFiles as string[]) {

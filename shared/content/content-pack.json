@@ -1,7 +1,7 @@
 {
   "$schema": "../schema/content-pack.schema.json",
-  "contentVersion": "5.0.0",
-  "saveSchemaVersion": 26,
+  "contentVersion": "6.0.0",
+  "saveSchemaVersion": 27,
   "ticksPerSecond": 20,
   "units": {
     "distance": "millimetres (integer); x/z ground plane, y is up",
@@ -1500,6 +1500,304 @@
       "rarityWeight": 9,
       "asset": "models/fish_mist_tuna.glb",
       "spoilTier": 1
+    },
+    {
+      "id": "species.saffron_sprat",
+      "name": "Saffron sprat",
+      "carryUnits": 1,
+      "catchTicks": 88,
+      "baseValue": 4,
+      "rarityWeight": 70,
+      "asset": "models/fish_saffron_sprat.glb",
+      "spoilTier": 3,
+      "rareUpgrade": {
+        "to": "species.gilt_saffron",
+        "chancePermille": 36
+      }
+    },
+    {
+      "id": "species.gilt_saffron",
+      "name": "Gilt saffron",
+      "carryUnits": 1,
+      "catchTicks": 88,
+      "baseValue": 12,
+      "rarityWeight": 1,
+      "asset": "models/fish_gilt_saffron.glb",
+      "spoilTier": 3
+    },
+    {
+      "id": "species.quay_mullet",
+      "name": "Quay mullet",
+      "carryUnits": 2,
+      "catchTicks": 114,
+      "baseValue": 7,
+      "rarityWeight": 40,
+      "asset": "models/fish_quay_mullet.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.bronze_quay",
+        "chancePermille": 30
+      }
+    },
+    {
+      "id": "species.bronze_quay",
+      "name": "Bronze quay",
+      "carryUnits": 2,
+      "catchTicks": 114,
+      "baseValue": 16,
+      "rarityWeight": 1,
+      "asset": "models/fish_bronze_quay.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.cobalt_smelt",
+      "name": "Cobalt smelt",
+      "carryUnits": 1,
+      "catchTicks": 100,
+      "baseValue": 5,
+      "rarityWeight": 52,
+      "asset": "models/fish_cobalt_smelt.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.aurora_cobalt",
+        "chancePermille": 34
+      }
+    },
+    {
+      "id": "species.aurora_cobalt",
+      "name": "Aurora cobalt",
+      "carryUnits": 1,
+      "catchTicks": 100,
+      "baseValue": 13,
+      "rarityWeight": 1,
+      "asset": "models/fish_aurora_cobalt.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.sound_char",
+      "name": "Sound char",
+      "carryUnits": 2,
+      "catchTicks": 130,
+      "baseValue": 9,
+      "rarityWeight": 30,
+      "asset": "models/fish_sound_char.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.crystal_sound",
+        "chancePermille": 26
+      }
+    },
+    {
+      "id": "species.crystal_sound",
+      "name": "Crystal sound",
+      "carryUnits": 2,
+      "catchTicks": 130,
+      "baseValue": 20,
+      "rarityWeight": 1,
+      "asset": "models/fish_crystal_sound.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.lantern_scad",
+      "name": "Lantern scad",
+      "carryUnits": 1,
+      "catchTicks": 118,
+      "baseValue": 8,
+      "rarityWeight": 36,
+      "asset": "models/fish_lantern_scad.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.prism_scad",
+        "chancePermille": 28
+      }
+    },
+    {
+      "id": "species.prism_scad",
+      "name": "Prism scad",
+      "carryUnits": 1,
+      "catchTicks": 118,
+      "baseValue": 18,
+      "rarityWeight": 1,
+      "asset": "models/fish_prism_scad.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.tide_wrasse",
+      "name": "Tide wrasse",
+      "carryUnits": 1,
+      "catchTicks": 122,
+      "baseValue": 8,
+      "rarityWeight": 34,
+      "asset": "models/fish_tide_wrasse.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.glass_tide",
+        "chancePermille": 27
+      }
+    },
+    {
+      "id": "species.glass_tide",
+      "name": "Glass tide",
+      "carryUnits": 1,
+      "catchTicks": 122,
+      "baseValue": 18,
+      "rarityWeight": 1,
+      "asset": "models/fish_glass_tide.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.dock_blenny",
+      "name": "Dock blenny",
+      "carryUnits": 1,
+      "catchTicks": 92,
+      "baseValue": 5,
+      "rarityWeight": 58,
+      "asset": "models/fish_dock_blenny.glb",
+      "spoilTier": 3,
+      "rareUpgrade": {
+        "to": "species.opal_dock",
+        "chancePermille": 35
+      }
+    },
+    {
+      "id": "species.opal_dock",
+      "name": "Opal dock",
+      "carryUnits": 1,
+      "catchTicks": 92,
+      "baseValue": 13,
+      "rarityWeight": 1,
+      "asset": "models/fish_opal_dock.glb",
+      "spoilTier": 3
+    },
+    {
+      "id": "species.cove_drum",
+      "name": "Cove drum",
+      "carryUnits": 2,
+      "catchTicks": 126,
+      "baseValue": 9,
+      "rarityWeight": 32,
+      "asset": "models/fish_cove_drum.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.thunder_cove",
+        "chancePermille": 26
+      }
+    },
+    {
+      "id": "species.thunder_cove",
+      "name": "Thunder cove",
+      "carryUnits": 2,
+      "catchTicks": 126,
+      "baseValue": 20,
+      "rarityWeight": 1,
+      "asset": "models/fish_thunder_cove.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.reef_jack",
+      "name": "Reef jack",
+      "carryUnits": 2,
+      "catchTicks": 140,
+      "baseValue": 11,
+      "rarityWeight": 26,
+      "asset": "models/fish_reef_jack.glb",
+      "spoilTier": 1,
+      "rareUpgrade": {
+        "to": "species.gilt_reef",
+        "chancePermille": 24
+      }
+    },
+    {
+      "id": "species.gilt_reef",
+      "name": "Gilt reef",
+      "carryUnits": 2,
+      "catchTicks": 140,
+      "baseValue": 24,
+      "rarityWeight": 1,
+      "asset": "models/fish_gilt_reef.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.kiln_shad",
+      "name": "Kiln shad",
+      "carryUnits": 1,
+      "catchTicks": 108,
+      "baseValue": 6,
+      "rarityWeight": 44,
+      "asset": "models/fish_kiln_shad.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.magma_kiln",
+        "chancePermille": 31
+      }
+    },
+    {
+      "id": "species.magma_kiln",
+      "name": "Magma kiln",
+      "carryUnits": 1,
+      "catchTicks": 108,
+      "baseValue": 14,
+      "rarityWeight": 1,
+      "asset": "models/fish_magma_kiln.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.mist_goby",
+      "name": "Mist goby",
+      "carryUnits": 1,
+      "catchTicks": 96,
+      "baseValue": 5,
+      "rarityWeight": 50,
+      "asset": "models/fish_mist_goby.glb",
+      "spoilTier": 2,
+      "rareUpgrade": {
+        "to": "species.veil_goby",
+        "chancePermille": 33
+      }
+    },
+    {
+      "id": "species.veil_goby",
+      "name": "Veil goby",
+      "carryUnits": 1,
+      "catchTicks": 96,
+      "baseValue": 13,
+      "rarityWeight": 1,
+      "asset": "models/fish_veil_goby.glb",
+      "spoilTier": 2
+    },
+    {
+      "id": "species.plaza_bass",
+      "name": "Plaza bass",
+      "carryUnits": 2,
+      "catchTicks": 150,
+      "baseValue": 12,
+      "rarityWeight": 22,
+      "asset": "models/fish_plaza_bass.glb",
+      "spoilTier": 1,
+      "rareUpgrade": {
+        "to": "species.gilt_bass",
+        "chancePermille": 22
+      }
+    },
+    {
+      "id": "species.gilt_bass",
+      "name": "Gilt bass",
+      "carryUnits": 2,
+      "catchTicks": 150,
+      "baseValue": 26,
+      "rarityWeight": 1,
+      "asset": "models/fish_gilt_bass.glb",
+      "spoilTier": 1
+    },
+    {
+      "id": "species.cobalt_tuna",
+      "name": "Cobalt tuna",
+      "carryUnits": 3,
+      "catchTicks": 220,
+      "baseValue": 20,
+      "rarityWeight": 8,
+      "asset": "models/fish_cobalt_tuna.glb",
+      "spoilTier": 1
     }
   ],
   "products": [
@@ -1870,6 +2168,54 @@
       "unitPrice": 104,
       "spoilTier": 1,
       "asset": "models/product_can_carton.glb"
+    },
+    {
+      "id": "product.roasted_fillet",
+      "name": "Roasted fillet",
+      "carryUnits": 1,
+      "unitPrice": 28,
+      "spoilTier": 2,
+      "asset": "models/product_roasted_fillet.glb"
+    },
+    {
+      "id": "product.roast_chip",
+      "name": "Roast chip",
+      "carryUnits": 1,
+      "unitPrice": 19,
+      "spoilTier": 3,
+      "asset": "models/product_roast_chip.glb"
+    },
+    {
+      "id": "product.roast_carton",
+      "name": "Roast carton",
+      "carryUnits": 3,
+      "unitPrice": 108,
+      "spoilTier": 2,
+      "asset": "models/product_roast_carton.glb"
+    },
+    {
+      "id": "product.fermented_fillet",
+      "name": "Fermented fillet",
+      "carryUnits": 1,
+      "unitPrice": 29,
+      "spoilTier": 1,
+      "asset": "models/product_fermented_fillet.glb"
+    },
+    {
+      "id": "product.ferment_paste",
+      "name": "Ferment paste",
+      "carryUnits": 1,
+      "unitPrice": 20,
+      "spoilTier": 2,
+      "asset": "models/product_ferment_paste.glb"
+    },
+    {
+      "id": "product.ferment_carton",
+      "name": "Ferment carton",
+      "carryUnits": 3,
+      "unitPrice": 112,
+      "spoilTier": 1,
+      "asset": "models/product_ferment_carton.glb"
     }
   ],
   "recipes": [
@@ -4489,6 +4835,431 @@
         }
       ],
       "durationTicks": 160
+    },
+    {
+      "id": "recipe.saffron_sprat_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.saffron_sprat",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 76
+    },
+    {
+      "id": "recipe.quay_mullet_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.quay_mullet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 110
+    },
+    {
+      "id": "recipe.cobalt_smelt_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.cobalt_smelt",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 90
+    },
+    {
+      "id": "recipe.sound_char_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.sound_char",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 122
+    },
+    {
+      "id": "recipe.lantern_scad_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.lantern_scad",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 112
+    },
+    {
+      "id": "recipe.tide_wrasse_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.tide_wrasse",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 116
+    },
+    {
+      "id": "recipe.dock_blenny_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.dock_blenny",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 78
+    },
+    {
+      "id": "recipe.cove_drum_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.cove_drum",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 120
+    },
+    {
+      "id": "recipe.reef_jack_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.reef_jack",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 134
+    },
+    {
+      "id": "recipe.kiln_shad_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.kiln_shad",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 98
+    },
+    {
+      "id": "recipe.mist_goby_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.mist_goby",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 84
+    },
+    {
+      "id": "recipe.plaza_bass_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.plaza_bass",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 142
+    },
+    {
+      "id": "recipe.cobalt_tuna_cut",
+      "machine": "machine.basic_cutter",
+      "inputs": [
+        {
+          "item": "species.cobalt_tuna",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.premium_portion",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 175
+    },
+    {
+      "id": "recipe.roast_fillet",
+      "machine": "machine.harbor_roaster",
+      "inputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.roasted_fillet",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 125
+    },
+    {
+      "id": "recipe.roast_portion",
+      "machine": "machine.harbor_roaster",
+      "inputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.roast_chip",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 105
+    },
+    {
+      "id": "recipe.roast_saffron",
+      "machine": "machine.harbor_roaster",
+      "inputs": [
+        {
+          "item": "species.saffron_sole",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.roasted_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 140
+    },
+    {
+      "id": "recipe.roast_kiln",
+      "machine": "machine.harbor_roaster",
+      "inputs": [
+        {
+          "item": "species.kiln_shad",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.roast_chip",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 135
+    },
+    {
+      "id": "recipe.roast_magma",
+      "machine": "machine.harbor_roaster",
+      "inputs": [
+        {
+          "item": "species.magma_kiln",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.roasted_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 150
+    },
+    {
+      "id": "recipe.pack_roast_carton",
+      "machine": "machine.harbor_roaster",
+      "inputs": [
+        {
+          "item": "product.roasted_fillet",
+          "quantity": 4
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.roast_carton",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 160
+    },
+    {
+      "id": "recipe.ferment_fillet",
+      "machine": "machine.harbor_fermenter",
+      "inputs": [
+        {
+          "item": "product.fillet",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fermented_fillet",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 130
+    },
+    {
+      "id": "recipe.ferment_portion",
+      "machine": "machine.harbor_fermenter",
+      "inputs": [
+        {
+          "item": "product.basic_portion",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.ferment_paste",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 110
+    },
+    {
+      "id": "recipe.ferment_mist",
+      "machine": "machine.harbor_fermenter",
+      "inputs": [
+        {
+          "item": "species.mist_goby",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fermented_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 145
+    },
+    {
+      "id": "recipe.ferment_veil",
+      "machine": "machine.harbor_fermenter",
+      "inputs": [
+        {
+          "item": "species.veil_goby",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.ferment_paste",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 140
+    },
+    {
+      "id": "recipe.ferment_plaza",
+      "machine": "machine.harbor_fermenter",
+      "inputs": [
+        {
+          "item": "species.plaza_bass",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.fermented_fillet",
+          "quantity": 2
+        }
+      ],
+      "durationTicks": 155
+    },
+    {
+      "id": "recipe.pack_ferment_carton",
+      "machine": "machine.harbor_fermenter",
+      "inputs": [
+        {
+          "item": "product.fermented_fillet",
+          "quantity": 4
+        }
+      ],
+      "outputs": [
+        {
+          "item": "product.ferment_carton",
+          "quantity": 1
+        }
+      ],
+      "durationTicks": 165
     }
   ],
   "machines": [
@@ -4714,6 +5485,34 @@
         "recipe.can_crystal",
         "recipe.can_tide",
         "recipe.pack_can_carton"
+      ],
+      "inputCapacityUnits": 10,
+      "outputCapacityUnits": 16
+    },
+    {
+      "id": "machine.harbor_roaster",
+      "name": "Harbor roaster",
+      "recipes": [
+        "recipe.roast_fillet",
+        "recipe.roast_portion",
+        "recipe.roast_saffron",
+        "recipe.roast_kiln",
+        "recipe.roast_magma",
+        "recipe.pack_roast_carton"
+      ],
+      "inputCapacityUnits": 10,
+      "outputCapacityUnits": 16
+    },
+    {
+      "id": "machine.harbor_fermenter",
+      "name": "Harbor fermenter",
+      "recipes": [
+        "recipe.ferment_fillet",
+        "recipe.ferment_portion",
+        "recipe.ferment_mist",
+        "recipe.ferment_veil",
+        "recipe.ferment_plaza",
+        "recipe.pack_ferment_carton"
       ],
       "inputCapacityUnits": 10,
       "outputCapacityUnits": 16
@@ -5169,6 +5968,34 @@
         "kind": "unlock_machine",
         "machine": "machine.harbor_canner"
       }
+    },
+    {
+      "id": "upgrade.harbor_roaster",
+      "name": "Harbor roaster",
+      "description": "Install a roaster line for roasted fillets, roast chips, and roast cartons.",
+      "cost": 340,
+      "requires": [
+        "quest.specialty_kitchen",
+        "upgrade.harbor_poacher"
+      ],
+      "effect": {
+        "kind": "unlock_machine",
+        "machine": "machine.harbor_roaster"
+      }
+    },
+    {
+      "id": "upgrade.harbor_fermenter",
+      "name": "Harbor fermenter",
+      "description": "Install a fermenter line for fermented fillets, pastes, and ferment cartons.",
+      "cost": 360,
+      "requires": [
+        "quest.specialty_kitchen",
+        "upgrade.harbor_canner"
+      ],
+      "effect": {
+        "kind": "unlock_machine",
+        "machine": "machine.harbor_fermenter"
+      }
     }
   ],
   "quests": [
@@ -5467,11 +6294,43 @@
       }
     },
     {
+      "id": "quest.saffron_quay_landing",
+      "name": "Saffron Quay landing",
+      "description": "Open the thirteenth harbor route and land at Saffron Quay.",
+      "requires": [
+        "quest.tideglass_bay_landing"
+      ],
+      "goal": {
+        "stat": "stat.harbors_traveled",
+        "atLeast": 13
+      },
+      "reward": {
+        "coins": 380,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.cobalt_sound_landing",
+      "name": "Cobalt Sound landing",
+      "description": "Open the fourteenth harbor route and land at Cobalt Sound.",
+      "requires": [
+        "quest.saffron_quay_landing"
+      ],
+      "goal": {
+        "stat": "stat.harbors_traveled",
+        "atLeast": 14
+      },
+      "reward": {
+        "coins": 400,
+        "unlockUpgrades": []
+      }
+    },
+    {
       "id": "quest.perfect_line",
       "name": "Perfect line",
       "description": "Land 15 perfect reels to prove harbor casting discipline.",
       "requires": [
-        "quest.tideglass_bay_landing"
+        "quest.cobalt_sound_landing"
       ],
       "goal": {
         "stat": "stat.perfect_reels",
@@ -6377,6 +7236,390 @@
         "coins": 1100,
         "unlockUpgrades": []
       }
+    },
+    {
+      "id": "quest.roast_line",
+      "name": "Roast line",
+      "description": "Feed the harbor roaster — log machine inputs on the new roast line.",
+      "requires": [
+        "quest.legend_circuit"
+      ],
+      "goal": {
+        "stat": "stat.machine_inputs",
+        "atLeast": 70
+      },
+      "reward": {
+        "coins": 900,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.ferment_line",
+      "name": "Ferment line",
+      "description": "Run the fermenter through a full board of culture batches.",
+      "requires": [
+        "quest.roast_line"
+      ],
+      "goal": {
+        "stat": "stat.outputs_collected",
+        "atLeast": 50
+      },
+      "reward": {
+        "coins": 920,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.saffron_curator",
+      "name": "Saffron curator",
+      "description": "Complete trophy galleries across the saffron circuit harbors.",
+      "requires": [
+        "quest.ferment_line"
+      ],
+      "goal": {
+        "stat": "stat.trophy_sets_complete",
+        "atLeast": 6
+      },
+      "reward": {
+        "coins": 940,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.cobalt_curator",
+      "name": "Cobalt curator",
+      "description": "Seal cobalt sound galleries with rare catches.",
+      "requires": [
+        "quest.saffron_curator"
+      ],
+      "goal": {
+        "stat": "stat.rare_catches",
+        "atLeast": 18
+      },
+      "reward": {
+        "coins": 960,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.harbor_fourteen",
+      "name": "Harbor fourteen",
+      "description": "Travel the full fourteen-harbor Finish 6 circuit.",
+      "requires": [
+        "quest.cobalt_curator"
+      ],
+      "goal": {
+        "stat": "stat.harbors_traveled",
+        "atLeast": 14
+      },
+      "reward": {
+        "coins": 980,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.nest_admiral",
+      "name": "Nest admiral",
+      "description": "Finish seven full delivery chains across the network.",
+      "requires": [
+        "quest.harbor_fourteen"
+      ],
+      "goal": {
+        "stat": "stat.contract_chains_completed",
+        "atLeast": 7
+      },
+      "reward": {
+        "coins": 1000,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.roast_gourmet",
+      "name": "Roast gourmet",
+      "description": "Sell premium plates after the roaster comes online.",
+      "requires": [
+        "quest.nest_admiral"
+      ],
+      "goal": {
+        "stat": "stat.premium_sales",
+        "atLeast": 36
+      },
+      "reward": {
+        "coins": 940,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.ferment_stockist",
+      "name": "Ferment stockist",
+      "description": "Move fermented SKUs through wholesale buyers.",
+      "requires": [
+        "quest.roast_gourmet"
+      ],
+      "goal": {
+        "stat": "stat.wholesaler_sales",
+        "atLeast": 16
+      },
+      "reward": {
+        "coins": 960,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.board_regent",
+      "name": "Board regent",
+      "description": "Clear a deep run of delivery contracts from the board.",
+      "requires": [
+        "quest.ferment_stockist"
+      ],
+      "goal": {
+        "stat": "stat.contracts_completed",
+        "atLeast": 28
+      },
+      "reward": {
+        "coins": 1020,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.perfect_nest",
+      "name": "Perfect nest",
+      "description": "Land a disciplined run of perfect reels across the nest circuit.",
+      "requires": [
+        "quest.board_regent"
+      ],
+      "goal": {
+        "stat": "stat.perfect_reels",
+        "atLeast": 40
+      },
+      "reward": {
+        "coins": 980,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.school_flash_wave",
+      "name": "School flash wave",
+      "description": "Hit strike-window reels during the nest school push.",
+      "requires": [
+        "quest.perfect_nest"
+      ],
+      "goal": {
+        "stat": "stat.cast_strike_reels",
+        "atLeast": 18
+      },
+      "reward": {
+        "coins": 940,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.nest_pressure",
+      "name": "Nest pressure",
+      "description": "Keep counters stocked through nest spoil pressure rushes.",
+      "requires": [
+        "quest.school_flash_wave"
+      ],
+      "goal": {
+        "stat": "stat.counter_stocked",
+        "atLeast": 55
+      },
+      "reward": {
+        "coins": 920,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.spoil_sentinel",
+      "name": "Spoil sentinel",
+      "description": "Survive the floor without runaway spoilage — keep selling.",
+      "requires": [
+        "quest.nest_pressure"
+      ],
+      "goal": {
+        "stat": "stat.sales",
+        "atLeast": 110
+      },
+      "reward": {
+        "coins": 900,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.critic_nest",
+      "name": "Critic nest",
+      "description": "Serve harbor critics without a miss on the roast/ferment lines.",
+      "requires": [
+        "quest.spoil_sentinel"
+      ],
+      "goal": {
+        "stat": "stat.critic_sales",
+        "atLeast": 12
+      },
+      "reward": {
+        "coins": 1000,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.tourist_nest",
+      "name": "Tourist nest",
+      "description": "Catch a larger tourist wave at the nest harbors.",
+      "requires": [
+        "quest.critic_nest"
+      ],
+      "goal": {
+        "stat": "stat.tourist_sales",
+        "atLeast": 24
+      },
+      "reward": {
+        "coins": 960,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.night_nest",
+      "name": "Night nest",
+      "description": "Ring up a deep night-side sales push across the circuit.",
+      "requires": [
+        "quest.tourist_nest"
+      ],
+      "goal": {
+        "stat": "stat.night_sales",
+        "atLeast": 30
+      },
+      "reward": {
+        "coins": 980,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.staff_nest",
+      "name": "Staff nest",
+      "description": "Level workers across the expanded roast/ferment kitchen.",
+      "requires": [
+        "quest.night_nest"
+      ],
+      "goal": {
+        "stat": "stat.worker_level_ups",
+        "atLeast": 12
+      },
+      "reward": {
+        "coins": 940,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.branch_nest",
+      "name": "Branch nest",
+      "description": "Train staff specialization branches for the nest late game.",
+      "requires": [
+        "quest.staff_nest"
+      ],
+      "goal": {
+        "stat": "stat.staff_branch_training",
+        "atLeast": 5
+      },
+      "reward": {
+        "coins": 960,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.rival_nest",
+      "name": "Rival nest",
+      "description": "Beat rival stalls across the fourteen-harbor nest.",
+      "requires": [
+        "quest.branch_nest"
+      ],
+      "goal": {
+        "stat": "stat.rival_beats",
+        "atLeast": 6
+      },
+      "reward": {
+        "coins": 1020,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.endgame_nest",
+      "name": "Endgame nest",
+      "description": "Earn legend marks from deepen challenges in the nest era.",
+      "requires": [
+        "quest.rival_nest"
+      ],
+      "goal": {
+        "stat": "stat.endgame_marks_earned",
+        "atLeast": 3
+      },
+      "reward": {
+        "coins": 1080,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.bank_nest",
+      "name": "Bank nest",
+      "description": "Clear pier bank loans after the nest expansion spend.",
+      "requires": [
+        "quest.endgame_nest"
+      ],
+      "goal": {
+        "stat": "stat.loan_repaid",
+        "atLeast": 3
+      },
+      "reward": {
+        "coins": 1000,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.revenue_nest",
+      "name": "Revenue nest",
+      "description": "Bank a nest-tier run of harbor revenue.",
+      "requires": [
+        "quest.bank_nest"
+      ],
+      "goal": {
+        "stat": "stat.revenue",
+        "atLeast": 55000
+      },
+      "reward": {
+        "coins": 1200,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.mastery_nest",
+      "name": "Mastery nest",
+      "description": "Level species mastery across the nest circuit.",
+      "requires": [
+        "quest.revenue_nest"
+      ],
+      "goal": {
+        "stat": "stat.mastery_level_ups",
+        "atLeast": 20
+      },
+      "reward": {
+        "coins": 1100,
+        "unlockUpgrades": []
+      }
+    },
+    {
+      "id": "quest.nest_covenant",
+      "name": "Nest covenant",
+      "description": "Seal the Finish 6 quest spine with a nest covenant sales streak.",
+      "requires": [
+        "quest.mastery_nest"
+      ],
+      "goal": {
+        "stat": "stat.items_sold",
+        "atLeast": 280
+      },
+      "reward": {
+        "coins": 1400,
+        "unlockUpgrades": []
+      }
     }
   ],
   "workers": [
@@ -6598,9 +7841,9 @@
   },
   "dailyGoals": {
     "dayLengthMs": 86400000,
-    "boardSlots": 5,
-    "streakBonusCoinsPerDay": 8,
-    "maxStreakBonusDays": 14,
+    "boardSlots": 6,
+    "streakBonusCoinsPerDay": 10,
+    "maxStreakBonusDays": 21,
     "objectives": [
       {
         "id": "daily.catch_five",
@@ -6755,6 +7998,50 @@
         },
         "rewardCoins": 28,
         "weight": 14
+      },
+      {
+        "id": "daily.roast_plate",
+        "name": "Roast plate",
+        "description": "Ring up 3 premium sales today.",
+        "goal": {
+          "stat": "stat.premium_sales",
+          "atLeast": 3
+        },
+        "rewardCoins": 30,
+        "weight": 15
+      },
+      {
+        "id": "daily.nest_haul",
+        "name": "Nest haul",
+        "description": "Move 8 worker hauls today.",
+        "goal": {
+          "stat": "stat.worker_items_moved",
+          "atLeast": 8
+        },
+        "rewardCoins": 28,
+        "weight": 15
+      },
+      {
+        "id": "daily.ember_loan",
+        "name": "Ember loan",
+        "description": "Repay any loan principal today.",
+        "goal": {
+          "stat": "stat.loan_repaid",
+          "atLeast": 1
+        },
+        "rewardCoins": 34,
+        "weight": 12
+      },
+      {
+        "id": "daily.sigil_seek",
+        "name": "Sigil seek",
+        "description": "Earn 1 endgame sigil today.",
+        "goal": {
+          "stat": "stat.endgame_sigils_earned",
+          "atLeast": 1
+        },
+        "rewardCoins": 40,
+        "weight": 12
       }
     ]
   },
@@ -7230,6 +8517,144 @@
           "species.crown_plaza": 1700,
           "species.mist_tuna": 1750
         }
+      },
+      {
+        "id": "habitat.saffron_rail",
+        "name": "Saffron rail",
+        "harbors": [
+          "harbor.saffron_quay"
+        ],
+        "favoredDayParts": [
+          "dawn",
+          "day"
+        ],
+        "speciesWeightMultPermille": {
+          "species.saffron_sprat": 1600,
+          "species.gilt_saffron": 1700,
+          "species.quay_mullet": 1300
+        }
+      },
+      {
+        "id": "habitat.quay_glow",
+        "name": "Quay glow",
+        "harbors": [
+          "harbor.saffron_quay"
+        ],
+        "favoredDayParts": [
+          "dusk",
+          "night"
+        ],
+        "speciesWeightMultPermille": {
+          "species.quay_mullet": 1650,
+          "species.bronze_quay": 1750,
+          "species.saffron_sprat": 1250
+        }
+      },
+      {
+        "id": "habitat.cobalt_shelf",
+        "name": "Cobalt shelf",
+        "harbors": [
+          "harbor.cobalt_sound"
+        ],
+        "favoredDayParts": [
+          "dawn",
+          "night"
+        ],
+        "speciesWeightMultPermille": {
+          "species.cobalt_smelt": 1600,
+          "species.aurora_cobalt": 1700,
+          "species.sound_char": 1350
+        }
+      },
+      {
+        "id": "habitat.sound_cut",
+        "name": "Sound cut",
+        "harbors": [
+          "harbor.cobalt_sound"
+        ],
+        "favoredDayParts": [
+          "day",
+          "dusk"
+        ],
+        "speciesWeightMultPermille": {
+          "species.sound_char": 1650,
+          "species.crystal_sound": 1750,
+          "species.cobalt_tuna": 1800
+        }
+      },
+      {
+        "id": "habitat.lantern_scad_reef",
+        "name": "Lantern scad reef",
+        "harbors": [
+          "harbor.aurora_inlet"
+        ],
+        "favoredDayParts": [
+          "dusk",
+          "night"
+        ],
+        "speciesWeightMultPermille": {
+          "species.lantern_scad": 1650,
+          "species.prism_scad": 1750
+        }
+      },
+      {
+        "id": "habitat.tide_wrasse_lip",
+        "name": "Tide wrasse lip",
+        "harbors": [
+          "harbor.tideglass_bay"
+        ],
+        "favoredDayParts": [
+          "day",
+          "dusk"
+        ],
+        "speciesWeightMultPermille": {
+          "species.tide_wrasse": 1650,
+          "species.glass_tide": 1750
+        }
+      },
+      {
+        "id": "habitat.dock_rim",
+        "name": "Dock rim",
+        "harbors": [
+          "harbor.sunrise_pier"
+        ],
+        "favoredDayParts": [
+          "dawn",
+          "day"
+        ],
+        "speciesWeightMultPermille": {
+          "species.dock_blenny": 1650,
+          "species.opal_dock": 1750
+        }
+      },
+      {
+        "id": "habitat.finish6_cut",
+        "name": "Finish six cut",
+        "harbors": [
+          "harbor.moon_cove",
+          "harbor.coral_lagoon",
+          "harbor.ember_wharf",
+          "harbor.mist_cove",
+          "harbor.prism_reach"
+        ],
+        "favoredDayParts": [
+          "dawn",
+          "day",
+          "dusk",
+          "night"
+        ],
+        "speciesWeightMultPermille": {
+          "species.cove_drum": 1600,
+          "species.thunder_cove": 1700,
+          "species.reef_jack": 1600,
+          "species.gilt_reef": 1750,
+          "species.kiln_shad": 1550,
+          "species.magma_kiln": 1700,
+          "species.mist_goby": 1500,
+          "species.veil_goby": 1650,
+          "species.plaza_bass": 1600,
+          "species.gilt_bass": 1750
+        }
       }
     ]
   },
@@ -7284,7 +8709,8 @@
           "species.cedar_smelt",
           "species.lantern_shad",
           "species.mist_sprat",
-          "species.veil_shad"
+          "species.veil_shad",
+          "species.dock_blenny"
         ],
         "completeStat": "stat.trophy_set_sunrise_pier"
       },
@@ -7300,7 +8726,8 @@
           "species.veil_skate",
           "species.dusk_cuttle",
           "species.dusk_mullet",
-          "species.shelf_blenny"
+          "species.shelf_blenny",
+          "species.cove_drum"
         ],
         "completeStat": "stat.trophy_set_moon_cove"
       },
@@ -7366,7 +8793,8 @@
           "species.glass_goby",
           "species.tidepool_blenny",
           "species.reef_hawkfish",
-          "species.coral_scad"
+          "species.coral_scad",
+          "species.reef_jack"
         ],
         "completeStat": "stat.trophy_set_coral_lagoon"
       },
@@ -7400,7 +8828,8 @@
           "species.kiln_perch",
           "species.cinder_smelt",
           "species.slag_perch",
-          "species.ember_ray"
+          "species.ember_ray",
+          "species.kiln_shad"
         ],
         "completeStat": "stat.trophy_set_ember_wharf"
       },
@@ -7465,7 +8894,19 @@
           "species.gilt_marina",
           "species.prism_lantern",
           "species.crystal_brine",
-          "species.crown_plaza"
+          "species.crown_plaza",
+          "species.gilt_saffron",
+          "species.bronze_quay",
+          "species.aurora_cobalt",
+          "species.crystal_sound",
+          "species.prism_scad",
+          "species.glass_tide",
+          "species.opal_dock",
+          "species.thunder_cove",
+          "species.gilt_reef",
+          "species.magma_kiln",
+          "species.veil_goby",
+          "species.gilt_bass"
         ],
         "completeStat": "stat.trophy_set_rare_gallery"
       },
@@ -7483,7 +8924,8 @@
           "species.harbor_herring",
           "species.moon_flounder",
           "species.lantern_pike",
-          "species.mist_tuna"
+          "species.mist_tuna",
+          "species.mist_goby"
         ],
         "completeStat": "stat.trophy_set_mist_cove"
       },
@@ -7500,7 +8942,8 @@
           "species.aurora_icefish",
           "species.gilt_cedar",
           "species.opal_blenny",
-          "species.plaza_wrasse"
+          "species.plaza_wrasse",
+          "species.plaza_bass"
         ],
         "completeStat": "stat.trophy_set_prism_reach"
       },
@@ -7516,7 +8959,8 @@
           "species.north_smelt",
           "species.crystal_rime",
           "species.rime_herring",
-          "species.frost_jack"
+          "species.frost_jack",
+          "species.lantern_scad"
         ],
         "completeStat": "stat.trophy_set_aurora_inlet"
       },
@@ -7532,9 +8976,47 @@
           "species.crystal_skater",
           "species.crystal_bream",
           "species.opal_shelf",
-          "species.opal_blenny"
+          "species.opal_blenny",
+          "species.tide_wrasse"
         ],
         "completeStat": "stat.trophy_set_tideglass_bay"
+      },
+      {
+        "id": "gallery.saffron_quay",
+        "name": "Saffron Quay gallery",
+        "description": "Mount the Saffron Quay specialty fish.",
+        "species": [
+          "species.saffron_sole",
+          "species.amber_snapper",
+          "species.gilt_sole",
+          "species.gilt_mackerel",
+          "species.ember_ray",
+          "species.cinder_carp",
+          "species.harbor_pompano",
+          "species.marina_tuna",
+          "species.saffron_sprat",
+          "species.quay_mullet"
+        ],
+        "completeStat": "stat.trophy_set_saffron_quay"
+      },
+      {
+        "id": "gallery.cobalt_sound",
+        "name": "Cobalt Sound gallery",
+        "description": "Mount the Cobalt Sound specialty fish.",
+        "species": [
+          "species.arctic_cod",
+          "species.aurora_cod",
+          "species.frost_jack",
+          "species.drift_icefish",
+          "species.north_smelt",
+          "species.polar_herring",
+          "species.rime_herring",
+          "species.ice_char",
+          "species.cobalt_smelt",
+          "species.sound_char",
+          "species.cobalt_tuna"
+        ],
+        "completeStat": "stat.trophy_set_cobalt_sound"
       }
     ]
   },
@@ -7793,6 +9275,42 @@
         }
       },
       {
+        "id": "prestige.thirteen_harbors",
+        "name": "Thirteen Harbors",
+        "description": "Travel the thirteen-harbor circuit.",
+        "requires": [
+          "prestige.twelve_harbors"
+        ],
+        "goal": {
+          "stat": "stat.harbors_traveled",
+          "atLeast": 13
+        },
+        "reward": {
+          "coins": 525,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.thirteen_harbors"
+        }
+      },
+      {
+        "id": "prestige.fourteen_harbors",
+        "name": "Fourteen Harbors",
+        "description": "Travel the fourteen-harbor circuit.",
+        "requires": [
+          "prestige.thirteen_harbors"
+        ],
+        "goal": {
+          "stat": "stat.harbors_traveled",
+          "atLeast": 14
+        },
+        "reward": {
+          "coins": 550,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.fourteen_harbors"
+        }
+      },
+      {
         "id": "prestige.sunrise_curator",
         "name": "Sunrise Curator",
         "description": "Fill the Sunrise Pier trophy gallery.",
@@ -8025,6 +9543,42 @@
           "catchSpeedPermille": 0,
           "priceBonusPermille": 0,
           "cosmetic": "banner.tideglass_museum"
+        }
+      },
+      {
+        "id": "prestige.saffron_curator",
+        "name": "Saffron Curator",
+        "description": "Fill the Saffron Quay trophy gallery.",
+        "requires": [
+          "prestige.thirteen_harbors"
+        ],
+        "goal": {
+          "stat": "stat.trophy_set_saffron_quay",
+          "atLeast": 1
+        },
+        "reward": {
+          "coins": 390,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.saffron_museum"
+        }
+      },
+      {
+        "id": "prestige.cobalt_curator",
+        "name": "Cobalt Curator",
+        "description": "Fill the Cobalt Sound trophy gallery.",
+        "requires": [
+          "prestige.fourteen_harbors"
+        ],
+        "goal": {
+          "stat": "stat.trophy_set_cobalt_sound",
+          "atLeast": 1
+        },
+        "reward": {
+          "coins": 400,
+          "catchSpeedPermille": 0,
+          "priceBonusPermille": 0,
+          "cosmetic": "banner.cobalt_museum"
         }
       }
     ]
@@ -8950,6 +10504,223 @@
         "penalty": 30,
         "weight": 66,
         "requiresSeasonalEvent": "event.can_circuit_carnival"
+      },
+      {
+        "id": "contract.chain_saffron_catch",
+        "name": "Saffron roast · catch",
+        "description": "Chain step 1/3 — saffron sprat for the roast pantry.",
+        "item": "species.saffron_sprat",
+        "quantity": 6,
+        "durationTicks": 1500,
+        "payout": 68,
+        "penalty": 17,
+        "weight": 46,
+        "chainId": "chain.saffron_roast",
+        "chainStep": 1
+      },
+      {
+        "id": "contract.chain_saffron_roast",
+        "name": "Saffron roast · roast",
+        "description": "Chain step 2/3 — roasted fillets for the saffron board.",
+        "item": "product.roasted_fillet",
+        "quantity": 2,
+        "durationTicks": 1350,
+        "payout": 96,
+        "penalty": 22,
+        "weight": 1,
+        "chainId": "chain.saffron_roast",
+        "chainStep": 2
+      },
+      {
+        "id": "contract.chain_saffron_crate",
+        "name": "Saffron roast · crate",
+        "description": "Chain step 3/3 — roast carton to close the saffron run.",
+        "item": "product.roast_carton",
+        "quantity": 1,
+        "durationTicks": 1180,
+        "payout": 130,
+        "penalty": 28,
+        "weight": 1,
+        "chainId": "chain.saffron_roast",
+        "chainStep": 3
+      },
+      {
+        "id": "contract.chain_cobalt_catch",
+        "name": "Cobalt ferment · catch",
+        "description": "Chain step 1/3 — cobalt smelt for the ferment bay.",
+        "item": "species.cobalt_smelt",
+        "quantity": 6,
+        "durationTicks": 1480,
+        "payout": 70,
+        "penalty": 17,
+        "weight": 44,
+        "chainId": "chain.cobalt_ferment",
+        "chainStep": 1
+      },
+      {
+        "id": "contract.chain_cobalt_ferment",
+        "name": "Cobalt ferment · ferment",
+        "description": "Chain step 2/3 — fermented fillets for the cobalt pantry.",
+        "item": "product.fermented_fillet",
+        "quantity": 2,
+        "durationTicks": 1320,
+        "payout": 98,
+        "penalty": 23,
+        "weight": 1,
+        "chainId": "chain.cobalt_ferment",
+        "chainStep": 2
+      },
+      {
+        "id": "contract.chain_cobalt_crate",
+        "name": "Cobalt ferment · crate",
+        "description": "Chain step 3/3 — ferment carton to seal the cobalt ferry.",
+        "item": "product.ferment_carton",
+        "quantity": 1,
+        "durationTicks": 1140,
+        "payout": 132,
+        "penalty": 29,
+        "weight": 1,
+        "chainId": "chain.cobalt_ferment",
+        "chainStep": 3
+      },
+      {
+        "id": "contract.roast_trust",
+        "name": "Trusted roast tray",
+        "description": "Good reputation only — roasted fillets for the co-op kitchen.",
+        "item": "product.roasted_fillet",
+        "quantity": 4,
+        "durationTicks": 1680,
+        "payout": 128,
+        "penalty": 30,
+        "weight": 76,
+        "requiresReputationBand": 2
+      },
+      {
+        "id": "contract.saffron_vip",
+        "name": "Saffron VIP quay",
+        "description": "Great reputation only — gilt saffron for the VIP lounge.",
+        "item": "species.gilt_saffron",
+        "quantity": 3,
+        "durationTicks": 1580,
+        "payout": 160,
+        "penalty": 36,
+        "weight": 68,
+        "requiresReputationBand": 3
+      },
+      {
+        "id": "contract.ferment_legend",
+        "name": "Legend ferment carton",
+        "description": "Excellent reputation only — ferment cartons for the legend lounge.",
+        "item": "product.ferment_carton",
+        "quantity": 2,
+        "durationTicks": 1480,
+        "payout": 210,
+        "penalty": 46,
+        "weight": 56,
+        "requiresReputationBand": 4
+      },
+      {
+        "id": "contract.roast_chip_order",
+        "name": "Roast chip order",
+        "description": "Dockside diners want crisp roast chips by noon.",
+        "item": "product.roast_chip",
+        "quantity": 4,
+        "durationTicks": 1280,
+        "payout": 84,
+        "penalty": 19,
+        "weight": 86
+      },
+      {
+        "id": "contract.ferment_paste_platter",
+        "name": "Ferment paste platter",
+        "description": "Festival stalls want ferment paste bowls by dusk.",
+        "item": "product.ferment_paste",
+        "quantity": 3,
+        "durationTicks": 1240,
+        "payout": 88,
+        "penalty": 20,
+        "weight": 84
+      },
+      {
+        "id": "contract.cobalt_tuna_basket",
+        "name": "Cobalt tuna basket",
+        "description": "Sound buyers need a quick cobalt tuna basket.",
+        "item": "species.cobalt_tuna",
+        "quantity": 5,
+        "durationTicks": 1420,
+        "payout": 80,
+        "penalty": 18,
+        "weight": 81
+      },
+      {
+        "id": "contract.plaza_bass_crate",
+        "name": "Plaza bass crate",
+        "description": "Plaza kitchens want plaza bass for the roast queue.",
+        "item": "species.plaza_bass",
+        "quantity": 7,
+        "durationTicks": 1380,
+        "payout": 82,
+        "penalty": 18,
+        "weight": 80
+      },
+      {
+        "id": "contract.sound_char_order",
+        "name": "Sound char order",
+        "description": "Cobalt sound diners want crystal-fresh sound char.",
+        "item": "species.sound_char",
+        "quantity": 6,
+        "durationTicks": 1360,
+        "payout": 86,
+        "penalty": 19,
+        "weight": 79
+      },
+      {
+        "id": "contract.saffron_ember_roast",
+        "name": "Saffron ember roast tray",
+        "description": "Festival-only — roasted fillets for the quay ember stalls.",
+        "item": "product.roasted_fillet",
+        "quantity": 3,
+        "durationTicks": 1400,
+        "payout": 105,
+        "penalty": 25,
+        "weight": 70,
+        "requiresSeasonalEvent": "event.saffron_quay_ember_fair"
+      },
+      {
+        "id": "contract.cobalt_rime_ferment",
+        "name": "Cobalt rime ferment platter",
+        "description": "Festival-only — fermented fillets for the rime vigil booths.",
+        "item": "product.fermented_fillet",
+        "quantity": 4,
+        "durationTicks": 1350,
+        "payout": 100,
+        "penalty": 23,
+        "weight": 72,
+        "requiresSeasonalEvent": "event.cobalt_sound_rime_vigil"
+      },
+      {
+        "id": "contract.roast_nest_haul",
+        "name": "Roast nest haul",
+        "description": "Festival-only — roast cartons for the nest week kitchens.",
+        "item": "product.roast_carton",
+        "quantity": 2,
+        "durationTicks": 1500,
+        "payout": 125,
+        "penalty": 29,
+        "weight": 68,
+        "requiresSeasonalEvent": "event.roast_nest_week"
+      },
+      {
+        "id": "contract.ferment_carnival_crate",
+        "name": "Ferment carnival crate",
+        "description": "Festival-only — ferment cartons for the carnival docks.",
+        "item": "product.ferment_carton",
+        "quantity": 2,
+        "durationTicks": 1550,
+        "payout": 130,
+        "penalty": 31,
+        "weight": 66,
+        "requiresSeasonalEvent": "event.ferment_covenant_carnival"
       }
     ],
     "failStreakThreshold": 3,
@@ -9005,6 +10776,10 @@
         {
           "item": "product.poach_broth",
           "weight": 10
+        },
+        {
+          "item": "product.roast_chip",
+          "weight": 10
         }
       ],
       "unmetPriceMultPermille": 750,
@@ -9058,6 +10833,10 @@
         },
         {
           "item": "product.can_medley",
+          "weight": 10
+        },
+        {
+          "item": "product.ferment_paste",
           "weight": 10
         }
       ],
@@ -9124,6 +10903,14 @@
         },
         {
           "item": "product.canned_fillet",
+          "weight": 13
+        },
+        {
+          "item": "product.roasted_fillet",
+          "weight": 13
+        },
+        {
+          "item": "product.fermented_fillet",
           "weight": 13
         }
       ],
@@ -9717,6 +11504,98 @@
       "unmetPriceMultPermille": 730,
       "unmetPatienceDrainPermille": 1800,
       "requiresSeasonalEvent": "event.can_circuit_carnival"
+    },
+    {
+      "id": "customer.saffron_ember_guest",
+      "name": "Saffron ember guest",
+      "kind": "premium",
+      "basketMin": 1,
+      "basketMax": 3,
+      "patienceTicks": 1450,
+      "spawnWeight": 72,
+      "priceMultPermille": 1600,
+      "preferredProducts": [
+        {
+          "item": "product.roasted_fillet",
+          "weight": 55
+        },
+        {
+          "item": "product.roast_chip",
+          "weight": 45
+        }
+      ],
+      "unmetPriceMultPermille": 740,
+      "unmetPatienceDrainPermille": 1850,
+      "requiresSeasonalEvent": "event.saffron_quay_ember_fair"
+    },
+    {
+      "id": "customer.cobalt_rime_tourist",
+      "name": "Cobalt rime tourist",
+      "kind": "tourist",
+      "basketMin": 1,
+      "basketMax": 2,
+      "patienceTicks": 1350,
+      "spawnWeight": 74,
+      "priceMultPermille": 1550,
+      "preferredProducts": [
+        {
+          "item": "product.fermented_fillet",
+          "weight": 55
+        },
+        {
+          "item": "product.ferment_paste",
+          "weight": 45
+        }
+      ],
+      "unmetPriceMultPermille": 735,
+      "unmetPatienceDrainPermille": 1900,
+      "requiresSeasonalEvent": "event.cobalt_sound_rime_vigil"
+    },
+    {
+      "id": "customer.roast_nest_buyer",
+      "name": "Roast nest buyer",
+      "kind": "wholesaler",
+      "basketMin": 2,
+      "basketMax": 4,
+      "patienceTicks": 1600,
+      "spawnWeight": 66,
+      "priceMultPermille": 1650,
+      "preferredProducts": [
+        {
+          "item": "product.roast_carton",
+          "weight": 60
+        },
+        {
+          "item": "product.roasted_fillet",
+          "weight": 40
+        }
+      ],
+      "unmetPriceMultPermille": 720,
+      "unmetPatienceDrainPermille": 1750,
+      "requiresSeasonalEvent": "event.roast_nest_week"
+    },
+    {
+      "id": "customer.ferment_carnival_guest",
+      "name": "Ferment carnival guest",
+      "kind": "tourist",
+      "basketMin": 2,
+      "basketMax": 3,
+      "patienceTicks": 1500,
+      "spawnWeight": 70,
+      "priceMultPermille": 1580,
+      "preferredProducts": [
+        {
+          "item": "product.ferment_carton",
+          "weight": 55
+        },
+        {
+          "item": "product.ferment_paste",
+          "weight": 45
+        }
+      ],
+      "unmetPriceMultPermille": 730,
+      "unmetPatienceDrainPermille": 1800,
+      "requiresSeasonalEvent": "event.ferment_covenant_carnival"
     }
   ],
   "tutorial": [
@@ -9815,6 +11694,22 @@
         "kind": "enter_zone",
         "zone": "zone.plot_grill"
       }
+    },
+    {
+      "id": "tutorial.roast_nest",
+      "text": "Feed the harbor roaster — walk stock onto the roast In pad to start the nest line",
+      "advanceOn": {
+        "kind": "enter_zone",
+        "zone": "zone.roaster_in"
+      }
+    },
+    {
+      "id": "tutorial.ferment_line",
+      "text": "Start the ferment nest — walk goods onto the fermenter In pad",
+      "advanceOn": {
+        "kind": "enter_zone",
+        "zone": "zone.fermenter_in"
+      }
     }
   ],
   "harbors": [
@@ -9829,9 +11724,9 @@
         {
           "id": "area.land",
           "minX": -8000,
-          "minZ": -19500,
+          "minZ": -23000,
           "maxX": 14900,
-          "maxZ": 18200
+          "maxZ": 21700
         },
         {
           "id": "area.pier",
@@ -9953,6 +11848,20 @@
           "maxX": 13000,
           "minZ": 15700,
           "maxZ": 17700
+        },
+        {
+          "id": "footprint.roaster_1",
+          "minX": 11400,
+          "maxX": 13000,
+          "minZ": -22500,
+          "maxZ": -20500
+        },
+        {
+          "id": "footprint.fermenter_1",
+          "minX": 11400,
+          "maxX": 13000,
+          "minZ": 19200,
+          "maxZ": 21200
         }
       ],
       "zones": [
@@ -10299,6 +12208,54 @@
           "maxZ": 15500,
           "id": "zone.plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": 10000,
+          "maxX": 11400,
+          "minZ": -22500,
+          "maxZ": -20500,
+          "id": "zone.roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 13000,
+          "maxX": 14400,
+          "minZ": -22500,
+          "maxZ": -20500,
+          "id": "zone.roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 10000,
+          "maxX": 11400,
+          "minZ": 19200,
+          "maxZ": 21200,
+          "id": "zone.fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 13000,
+          "maxX": 14400,
+          "minZ": 19200,
+          "maxZ": 21200,
+          "id": "zone.fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 11600,
+          "maxX": 12800,
+          "minZ": -20300,
+          "maxZ": -19700,
+          "id": "zone.plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": 11600,
+          "maxX": 12800,
+          "minZ": 18400,
+          "maxZ": 19000,
+          "id": "zone.plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -10317,7 +12274,8 @@
             "species.cedar_smelt",
             "species.lantern_shad",
             "species.mist_sprat",
-            "species.veil_shad"
+            "species.veil_shad",
+            "species.dock_blenny"
           ],
           "stockMax": 18,
           "regenTicks": 40,
@@ -10347,7 +12305,8 @@
             "species.cedar_smelt",
             "species.lantern_shad",
             "species.mist_sprat",
-            "species.veil_shad"
+            "species.veil_shad",
+            "species.dock_blenny"
           ],
           "stockMax": 10,
           "regenTicks": 50,
@@ -10456,6 +12415,20 @@
           "inputZone": "zone.canner_in",
           "outputZone": "zone.canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.roaster_1",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.roaster_in",
+          "outputZone": "zone.roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.fermenter_1",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.fermenter_in",
+          "outputZone": "zone.fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -10491,7 +12464,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 30,
           "zone": "zone.counter_1",
@@ -10524,7 +12501,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.wholesale_1",
@@ -10677,6 +12656,20 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.sunrise_roaster",
+          "name": "Sunrise roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.sunrise_fermenter",
+          "name": "Sunrise fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     },
@@ -10691,9 +12684,9 @@
         {
           "id": "area.cove_land",
           "minX": -14900,
-          "minZ": -19500,
+          "minZ": -23000,
           "maxX": 8000,
-          "maxZ": 18200
+          "maxZ": 21700
         },
         {
           "id": "area.cove_pier",
@@ -10815,6 +12808,20 @@
           "maxX": -11400,
           "minZ": 15700,
           "maxZ": 17700
+        },
+        {
+          "id": "footprint.cove_roaster",
+          "minX": -13000,
+          "maxX": -11400,
+          "minZ": -22500,
+          "maxZ": -20500
+        },
+        {
+          "id": "footprint.cove_fermenter",
+          "minX": -13000,
+          "maxX": -11400,
+          "minZ": 19200,
+          "maxZ": 21200
         }
       ],
       "zones": [
@@ -11161,6 +13168,54 @@
           "maxZ": 15500,
           "id": "zone.cove_plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": -11400,
+          "maxX": -10000,
+          "minZ": -22500,
+          "maxZ": -20500,
+          "id": "zone.cove_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -14400,
+          "maxX": -13000,
+          "minZ": -22500,
+          "maxZ": -20500,
+          "id": "zone.cove_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -11400,
+          "maxX": -10000,
+          "minZ": 19200,
+          "maxZ": 21200,
+          "id": "zone.cove_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -14400,
+          "maxX": -13000,
+          "minZ": 19200,
+          "maxZ": 21200,
+          "id": "zone.cove_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -12800,
+          "maxX": -11600,
+          "minZ": -20300,
+          "maxZ": -19700,
+          "id": "zone.cove_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": -12800,
+          "maxX": -11600,
+          "minZ": 18400,
+          "maxZ": 19000,
+          "id": "zone.cove_plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -11179,7 +13234,8 @@
             "species.veil_skate",
             "species.dusk_cuttle",
             "species.dusk_mullet",
-            "species.shelf_blenny"
+            "species.shelf_blenny",
+            "species.cove_drum"
           ],
           "stockMax": 20,
           "regenTicks": 40,
@@ -11207,7 +13263,8 @@
             "species.blue_mackerel",
             "species.dusk_cuttle",
             "species.dusk_mullet",
-            "species.shelf_blenny"
+            "species.shelf_blenny",
+            "species.cove_drum"
           ],
           "stockMax": 10,
           "regenTicks": 55,
@@ -11315,6 +13372,20 @@
           "inputZone": "zone.cove_canner_in",
           "outputZone": "zone.cove_canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.cove_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.cove_roaster_in",
+          "outputZone": "zone.cove_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.cove_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.cove_fermenter_in",
+          "outputZone": "zone.cove_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -11350,7 +13421,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 30,
           "zone": "zone.cove_counter",
@@ -11383,7 +13458,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.cove_wholesale",
@@ -11538,6 +13615,20 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.cove_plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.cove_roaster",
+          "name": "Moon Cove roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.cove_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.cove_fermenter",
+          "name": "Moon Cove fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.cove_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     },
@@ -11552,7 +13643,7 @@
         {
           "id": "area.jetty_land",
           "minX": -8000,
-          "minZ": -31700,
+          "minZ": -35200,
           "maxX": 8000,
           "maxZ": 8000
         },
@@ -11683,6 +13774,20 @@
           "maxX": 4500,
           "minZ": -29200,
           "maxZ": -27600
+        },
+        {
+          "id": "footprint.jetty_roaster",
+          "minX": -5000,
+          "maxX": -3000,
+          "minZ": -34700,
+          "maxZ": -33100
+        },
+        {
+          "id": "footprint.jetty_fermenter",
+          "minX": 3500,
+          "maxX": 4500,
+          "minZ": -32700,
+          "maxZ": -31100
         }
       ],
       "zones": [
@@ -12053,6 +14158,54 @@
           "maxZ": -26200,
           "id": "zone.jetty_plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": -3000,
+          "maxX": -1400,
+          "minZ": -34700,
+          "maxZ": -33100,
+          "id": "zone.jetty_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -6600,
+          "maxX": -5000,
+          "minZ": -34700,
+          "maxZ": -33100,
+          "id": "zone.jetty_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2000,
+          "maxX": 3500,
+          "minZ": -32700,
+          "maxZ": -31100,
+          "id": "zone.jetty_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4500,
+          "maxX": 6000,
+          "minZ": -32700,
+          "maxZ": -31100,
+          "id": "zone.jetty_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -4800,
+          "maxX": -3200,
+          "minZ": -32900,
+          "maxZ": -31700,
+          "id": "zone.jetty_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": 3200,
+          "maxX": 4800,
+          "minZ": -30900,
+          "maxZ": -29700,
+          "id": "zone.jetty_plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -12213,6 +14366,20 @@
           "inputZone": "zone.jetty_canner_in",
           "outputZone": "zone.jetty_canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.jetty_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.jetty_roaster_in",
+          "outputZone": "zone.jetty_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.jetty_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.jetty_fermenter_in",
+          "outputZone": "zone.jetty_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -12250,7 +14417,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 30,
           "zone": "zone.jetty_counter",
@@ -12284,7 +14455,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.jetty_wholesale",
@@ -12448,6 +14621,20 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.jetty_plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.jetty_roaster",
+          "name": "Obsidian Jetty roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.jetty_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.jetty_fermenter",
+          "name": "Obsidian Jetty fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.jetty_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     },
@@ -12462,7 +14649,7 @@
         {
           "id": "area.nl_land",
           "minX": -8500,
-          "minZ": -32000,
+          "minZ": -35500,
           "maxX": 8500,
           "maxZ": 8500
         },
@@ -12593,6 +14780,20 @@
           "maxX": 4600,
           "minZ": -29500,
           "maxZ": -27900
+        },
+        {
+          "id": "footprint.nl_roaster",
+          "minX": -5200,
+          "maxX": -3200,
+          "minZ": -35000,
+          "maxZ": -33400
+        },
+        {
+          "id": "footprint.nl_fermenter",
+          "minX": 3600,
+          "maxX": 4600,
+          "minZ": -33000,
+          "maxZ": -31400
         }
       ],
       "zones": [
@@ -12963,6 +15164,54 @@
           "maxZ": -26500,
           "id": "zone.nl_plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": -3200,
+          "maxX": -1600,
+          "minZ": -35000,
+          "maxZ": -33400,
+          "id": "zone.nl_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -6800,
+          "maxX": -5200,
+          "minZ": -35000,
+          "maxZ": -33400,
+          "id": "zone.nl_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2100,
+          "maxX": 3600,
+          "minZ": -33000,
+          "maxZ": -31400,
+          "id": "zone.nl_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4600,
+          "maxX": 6100,
+          "minZ": -33000,
+          "maxZ": -31400,
+          "id": "zone.nl_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5000,
+          "maxX": -3400,
+          "minZ": -33200,
+          "maxZ": -32000,
+          "id": "zone.nl_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": 3300,
+          "maxX": 4900,
+          "minZ": -31200,
+          "maxZ": -30000,
+          "id": "zone.nl_plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -13123,6 +15372,20 @@
           "inputZone": "zone.nl_canner_in",
           "outputZone": "zone.nl_canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.nl_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.nl_roaster_in",
+          "outputZone": "zone.nl_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.nl_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.nl_fermenter_in",
+          "outputZone": "zone.nl_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -13160,7 +15423,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 30,
           "zone": "zone.nl_counter",
@@ -13194,7 +15461,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.nl_wholesale",
@@ -13359,6 +15628,20 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.nl_plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.nl_roaster",
+          "name": "Northlight roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.nl_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.nl_fermenter",
+          "name": "Northlight fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.nl_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     },
@@ -13373,7 +15656,7 @@
         {
           "id": "area.gm_land",
           "minX": -9500,
-          "minZ": -32200,
+          "minZ": -35700,
           "maxX": 9500,
           "maxZ": 9000
         },
@@ -13511,6 +15794,20 @@
           "maxX": 4800,
           "minZ": -29700,
           "maxZ": -28100
+        },
+        {
+          "id": "footprint.gm_roaster",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -35200,
+          "maxZ": -33600
+        },
+        {
+          "id": "footprint.gm_fermenter",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -33200,
+          "maxZ": -31600
         }
       ],
       "zones": [
@@ -13889,6 +16186,54 @@
           "maxZ": -26700,
           "id": "zone.gm_plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -35200,
+          "maxZ": -33600,
+          "id": "zone.gm_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -35200,
+          "maxZ": -33600,
+          "id": "zone.gm_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -33200,
+          "maxZ": -31600,
+          "id": "zone.gm_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -33200,
+          "maxZ": -31600,
+          "id": "zone.gm_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -33400,
+          "maxZ": -32200,
+          "id": "zone.gm_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -31400,
+          "maxZ": -30200,
+          "id": "zone.gm_plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -14069,6 +16414,20 @@
           "inputZone": "zone.gm_canner_in",
           "outputZone": "zone.gm_canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.gm_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.gm_roaster_in",
+          "outputZone": "zone.gm_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.gm_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.gm_fermenter_in",
+          "outputZone": "zone.gm_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -14106,7 +16465,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 36,
           "zone": "zone.gm_counter",
@@ -14140,7 +16503,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 28,
           "zone": "zone.gm_wholesale",
@@ -14305,6 +16670,20 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.gm_plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.gm_roaster",
+          "name": "Grand Marina roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.gm_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.gm_fermenter",
+          "name": "Grand Marina fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.gm_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     },
@@ -14319,7 +16698,7 @@
         {
           "id": "area.cl_land",
           "minX": -9500,
-          "minZ": -32200,
+          "minZ": -35700,
           "maxX": 9500,
           "maxZ": 9000
         },
@@ -14457,6 +16836,20 @@
           "maxX": 4800,
           "minZ": -29700,
           "maxZ": -28100
+        },
+        {
+          "id": "footprint.cl_roaster",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -35200,
+          "maxZ": -33600
+        },
+        {
+          "id": "footprint.cl_fermenter",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -33200,
+          "maxZ": -31600
         }
       ],
       "zones": [
@@ -14835,6 +17228,54 @@
           "maxZ": -26700,
           "id": "zone.cl_plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -35200,
+          "maxZ": -33600,
+          "id": "zone.cl_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -35200,
+          "maxZ": -33600,
+          "id": "zone.cl_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -33200,
+          "maxZ": -31600,
+          "id": "zone.cl_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -33200,
+          "maxZ": -31600,
+          "id": "zone.cl_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -33400,
+          "maxZ": -32200,
+          "id": "zone.cl_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -31400,
+          "maxZ": -30200,
+          "id": "zone.cl_plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -14852,7 +17293,8 @@
             "species.glass_goby",
             "species.tidepool_blenny",
             "species.reef_hawkfish",
-            "species.coral_scad"
+            "species.coral_scad",
+            "species.reef_jack"
           ],
           "stockMax": 18,
           "regenTicks": 42,
@@ -15020,6 +17462,20 @@
           "inputZone": "zone.cl_canner_in",
           "outputZone": "zone.cl_canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.cl_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.cl_roaster_in",
+          "outputZone": "zone.cl_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.cl_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.cl_fermenter_in",
+          "outputZone": "zone.cl_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -15057,7 +17513,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 36,
           "zone": "zone.cl_counter",
@@ -15091,7 +17551,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 28,
           "zone": "zone.cl_wholesale",
@@ -15256,6 +17718,20 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.cl_plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.cl_roaster",
+          "name": "Coral Lagoon roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.cl_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.cl_fermenter",
+          "name": "Coral Lagoon fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.cl_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     },
@@ -15270,7 +17746,7 @@
         {
           "id": "area.sq_land",
           "minX": -9500,
-          "minZ": -32200,
+          "minZ": -35700,
           "maxX": 9500,
           "maxZ": 9000
         },
@@ -15408,6 +17884,20 @@
           "maxX": 4800,
           "minZ": -29700,
           "maxZ": -28100
+        },
+        {
+          "id": "footprint.sq_roaster",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -35200,
+          "maxZ": -33600
+        },
+        {
+          "id": "footprint.sq_fermenter",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -33200,
+          "maxZ": -31600
         }
       ],
       "zones": [
@@ -15786,6 +18276,54 @@
           "maxZ": -26700,
           "id": "zone.sq_plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -35200,
+          "maxZ": -33600,
+          "id": "zone.sq_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -35200,
+          "maxZ": -33600,
+          "id": "zone.sq_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -33200,
+          "maxZ": -31600,
+          "id": "zone.sq_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -33200,
+          "maxZ": -31600,
+          "id": "zone.sq_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -33400,
+          "maxZ": -32200,
+          "id": "zone.sq_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -31400,
+          "maxZ": -30200,
+          "id": "zone.sq_plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -15971,6 +18509,20 @@
           "inputZone": "zone.sq_canner_in",
           "outputZone": "zone.sq_canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.sq_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.sq_roaster_in",
+          "outputZone": "zone.sq_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.sq_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.sq_fermenter_in",
+          "outputZone": "zone.sq_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -16008,7 +18560,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 36,
           "zone": "zone.sq_counter",
@@ -16042,7 +18598,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 28,
           "zone": "zone.sq_wholesale",
@@ -16208,6 +18766,20 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.sq_plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.sq_roaster",
+          "name": "Storm Quay roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.sq_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.sq_fermenter",
+          "name": "Storm Quay fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.sq_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     },
@@ -16222,7 +18794,7 @@
         {
           "id": "area.ew_land",
           "minX": -9500,
-          "minZ": -32200,
+          "minZ": -35700,
           "maxX": 9500,
           "maxZ": 9000
         },
@@ -16360,6 +18932,20 @@
           "maxX": 4800,
           "minZ": -29700,
           "maxZ": -28100
+        },
+        {
+          "id": "footprint.ew_roaster",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -35200,
+          "maxZ": -33600
+        },
+        {
+          "id": "footprint.ew_fermenter",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -33200,
+          "maxZ": -31600
         }
       ],
       "zones": [
@@ -16738,6 +19324,54 @@
           "maxZ": -26700,
           "id": "zone.ew_plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -35200,
+          "maxZ": -33600,
+          "id": "zone.ew_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -35200,
+          "maxZ": -33600,
+          "id": "zone.ew_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -33200,
+          "maxZ": -31600,
+          "id": "zone.ew_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -33200,
+          "maxZ": -31600,
+          "id": "zone.ew_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -33400,
+          "maxZ": -32200,
+          "id": "zone.ew_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -31400,
+          "maxZ": -30200,
+          "id": "zone.ew_plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -16755,7 +19389,8 @@
             "species.kiln_perch",
             "species.cinder_smelt",
             "species.slag_perch",
-            "species.ember_ray"
+            "species.ember_ray",
+            "species.kiln_shad"
           ],
           "stockMax": 17,
           "regenTicks": 45,
@@ -16783,7 +19418,8 @@
             "species.slag_loach",
             "species.kiln_perch",
             "species.cinder_smelt",
-            "species.slag_perch"
+            "species.slag_perch",
+            "species.kiln_shad"
           ],
           "stockMax": 10,
           "regenTicks": 52,
@@ -16922,6 +19558,20 @@
           "inputZone": "zone.ew_canner_in",
           "outputZone": "zone.ew_canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.ew_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.ew_roaster_in",
+          "outputZone": "zone.ew_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.ew_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.ew_fermenter_in",
+          "outputZone": "zone.ew_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -16959,7 +19609,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 36,
           "zone": "zone.ew_counter",
@@ -16993,7 +19647,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 28,
           "zone": "zone.ew_wholesale",
@@ -17159,6 +19815,20 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.ew_plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.ew_roaster",
+          "name": "Ember Wharf roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.ew_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.ew_fermenter",
+          "name": "Ember Wharf fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.ew_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     },
@@ -17173,7 +19843,7 @@
         {
           "id": "area.mist_land",
           "minX": -14900,
-          "minZ": -19500,
+          "minZ": -23000,
           "maxX": 8000,
           "maxZ": 11200
         },
@@ -17297,6 +19967,20 @@
           "maxX": -11400,
           "minZ": 1700,
           "maxZ": 3700
+        },
+        {
+          "id": "footprint.mist_roaster",
+          "minX": -13000,
+          "maxX": -11400,
+          "minZ": -22500,
+          "maxZ": -20500
+        },
+        {
+          "id": "footprint.mist_fermenter",
+          "minX": -13000,
+          "maxX": -11400,
+          "minZ": -1800,
+          "maxZ": 200
         }
       ],
       "zones": [
@@ -17651,6 +20335,54 @@
           "maxZ": 1500,
           "id": "zone.mist_plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": -11400,
+          "maxX": -10000,
+          "minZ": -22500,
+          "maxZ": -20500,
+          "id": "zone.mist_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -14400,
+          "maxX": -13000,
+          "minZ": -22500,
+          "maxZ": -20500,
+          "id": "zone.mist_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -11400,
+          "maxX": -10000,
+          "minZ": -1800,
+          "maxZ": 200,
+          "id": "zone.mist_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -14400,
+          "maxX": -13000,
+          "minZ": -1800,
+          "maxZ": 200,
+          "id": "zone.mist_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -12800,
+          "maxX": -11600,
+          "minZ": -20300,
+          "maxZ": -19700,
+          "id": "zone.mist_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": -12800,
+          "maxX": -11600,
+          "minZ": -2600,
+          "maxZ": -2000,
+          "id": "zone.mist_plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -17666,7 +20398,8 @@
             "species.harbor_herring",
             "species.moon_flounder",
             "species.lantern_pike",
-            "species.mist_tuna"
+            "species.mist_tuna",
+            "species.mist_goby"
           ],
           "stockMax": 20,
           "regenTicks": 40,
@@ -17694,7 +20427,8 @@
             "species.aurora_cod",
             "species.harbor_herring",
             "species.moon_flounder",
-            "species.squall_smelt"
+            "species.squall_smelt",
+            "species.mist_goby"
           ],
           "stockMax": 10,
           "regenTicks": 55,
@@ -17830,6 +20564,20 @@
           "inputZone": "zone.mist_canner_in",
           "outputZone": "zone.mist_canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.mist_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.mist_roaster_in",
+          "outputZone": "zone.mist_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.mist_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.mist_fermenter_in",
+          "outputZone": "zone.mist_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -17865,7 +20613,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 30,
           "zone": "zone.mist_counter",
@@ -17898,7 +20650,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.mist_wholesale",
@@ -18057,6 +20811,20 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.mist_plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.mist_roaster",
+          "name": "Mist Cove roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.mist_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.mist_fermenter",
+          "name": "Mist Cove fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.mist_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     },
@@ -18071,7 +20839,7 @@
         {
           "id": "area.pr_land",
           "minX": -8500,
-          "minZ": -32000,
+          "minZ": -35500,
           "maxX": 8500,
           "maxZ": 8500
         },
@@ -18202,6 +20970,20 @@
           "maxX": 4600,
           "minZ": -29500,
           "maxZ": -27900
+        },
+        {
+          "id": "footprint.pr_roaster",
+          "minX": -5200,
+          "maxX": -3200,
+          "minZ": -35000,
+          "maxZ": -33400
+        },
+        {
+          "id": "footprint.pr_fermenter",
+          "minX": 3600,
+          "maxX": 4600,
+          "minZ": -33000,
+          "maxZ": -31400
         }
       ],
       "zones": [
@@ -18580,6 +21362,54 @@
           "maxZ": -26500,
           "id": "zone.pr_plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": -3200,
+          "maxX": -1600,
+          "minZ": -35000,
+          "maxZ": -33400,
+          "id": "zone.pr_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -6800,
+          "maxX": -5200,
+          "minZ": -35000,
+          "maxZ": -33400,
+          "id": "zone.pr_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2100,
+          "maxX": 3600,
+          "minZ": -33000,
+          "maxZ": -31400,
+          "id": "zone.pr_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4600,
+          "maxX": 6100,
+          "minZ": -33000,
+          "maxZ": -31400,
+          "id": "zone.pr_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5000,
+          "maxX": -3400,
+          "minZ": -33200,
+          "maxZ": -32000,
+          "id": "zone.pr_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": 3300,
+          "maxX": 4900,
+          "minZ": -31200,
+          "maxZ": -30000,
+          "id": "zone.pr_plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -18594,7 +21424,8 @@
             "species.aurora_icefish",
             "species.gilt_cedar",
             "species.opal_blenny",
-            "species.plaza_wrasse"
+            "species.plaza_wrasse",
+            "species.plaza_bass"
           ],
           "stockMax": 16,
           "regenTicks": 48,
@@ -18766,6 +21597,20 @@
           "inputZone": "zone.pr_canner_in",
           "outputZone": "zone.pr_canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.pr_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.pr_roaster_in",
+          "outputZone": "zone.pr_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.pr_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.pr_fermenter_in",
+          "outputZone": "zone.pr_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -18803,7 +21648,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 30,
           "zone": "zone.pr_counter",
@@ -18837,7 +21686,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.pr_wholesale",
@@ -19003,6 +21854,20 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.pr_plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.pr_roaster",
+          "name": "Prism Reach roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.pr_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.pr_fermenter",
+          "name": "Prism Reach fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.pr_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     },
@@ -19017,7 +21882,7 @@
         {
           "id": "area.au_land",
           "minX": -14900,
-          "minZ": -19500,
+          "minZ": -23000,
           "maxX": 8000,
           "maxZ": 11200
         },
@@ -19141,6 +22006,20 @@
           "maxX": -11400,
           "minZ": 1700,
           "maxZ": 3700
+        },
+        {
+          "id": "footprint.au_roaster",
+          "minX": -13000,
+          "maxX": -11400,
+          "minZ": -22500,
+          "maxZ": -20500
+        },
+        {
+          "id": "footprint.au_fermenter",
+          "minX": -13000,
+          "maxX": -11400,
+          "minZ": -1800,
+          "maxZ": 200
         }
       ],
       "zones": [
@@ -19495,6 +22374,54 @@
           "maxZ": 1500,
           "id": "zone.au_plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": -11400,
+          "maxX": -10000,
+          "minZ": -22500,
+          "maxZ": -20500,
+          "id": "zone.au_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -14400,
+          "maxX": -13000,
+          "minZ": -22500,
+          "maxZ": -20500,
+          "id": "zone.au_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -11400,
+          "maxX": -10000,
+          "minZ": -1800,
+          "maxZ": 200,
+          "id": "zone.au_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -14400,
+          "maxX": -13000,
+          "minZ": -1800,
+          "maxZ": 200,
+          "id": "zone.au_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -12800,
+          "maxX": -11600,
+          "minZ": -20300,
+          "maxZ": -19700,
+          "id": "zone.au_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": -12800,
+          "maxX": -11600,
+          "minZ": -2600,
+          "maxZ": -2000,
+          "id": "zone.au_plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -19508,7 +22435,8 @@
             "species.north_smelt",
             "species.crystal_rime",
             "species.rime_herring",
-            "species.frost_jack"
+            "species.frost_jack",
+            "species.lantern_scad"
           ],
           "stockMax": 20,
           "regenTicks": 40,
@@ -19536,7 +22464,8 @@
             "species.crystal_rime",
             "species.rime_herring",
             "species.frost_jack",
-            "species.veil_shad"
+            "species.veil_shad",
+            "species.lantern_scad"
           ],
           "stockMax": 10,
           "regenTicks": 55,
@@ -19672,6 +22601,20 @@
           "inputZone": "zone.au_canner_in",
           "outputZone": "zone.au_canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.au_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.au_roaster_in",
+          "outputZone": "zone.au_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.au_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.au_fermenter_in",
+          "outputZone": "zone.au_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -19707,7 +22650,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 30,
           "zone": "zone.au_counter",
@@ -19740,7 +22687,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.au_wholesale",
@@ -19899,6 +22848,20 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.au_plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.au_roaster",
+          "name": "Aurora Inlet roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.au_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.au_fermenter",
+          "name": "Aurora Inlet fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.au_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     },
@@ -19913,7 +22876,7 @@
         {
           "id": "area.tg_land",
           "minX": -8500,
-          "minZ": -32000,
+          "minZ": -35500,
           "maxX": 8500,
           "maxZ": 8500
         },
@@ -20044,6 +23007,20 @@
           "maxX": 4600,
           "minZ": -29500,
           "maxZ": -27900
+        },
+        {
+          "id": "footprint.tg_roaster",
+          "minX": -5200,
+          "maxX": -3200,
+          "minZ": -35000,
+          "maxZ": -33400
+        },
+        {
+          "id": "footprint.tg_fermenter",
+          "minX": 3600,
+          "maxX": 4600,
+          "minZ": -33000,
+          "maxZ": -31400
         }
       ],
       "zones": [
@@ -20422,6 +23399,54 @@
           "maxZ": -26500,
           "id": "zone.tg_plot_canner",
           "kind": "plot"
+        },
+        {
+          "minX": -3200,
+          "maxX": -1600,
+          "minZ": -35000,
+          "maxZ": -33400,
+          "id": "zone.tg_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -6800,
+          "maxX": -5200,
+          "minZ": -35000,
+          "maxZ": -33400,
+          "id": "zone.tg_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2100,
+          "maxX": 3600,
+          "minZ": -33000,
+          "maxZ": -31400,
+          "id": "zone.tg_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4600,
+          "maxX": 6100,
+          "minZ": -33000,
+          "maxZ": -31400,
+          "id": "zone.tg_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5000,
+          "maxX": -3400,
+          "minZ": -33200,
+          "maxZ": -32000,
+          "id": "zone.tg_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": 3300,
+          "maxX": 4900,
+          "minZ": -31200,
+          "maxZ": -30000,
+          "id": "zone.tg_plot_fermenter",
+          "kind": "plot"
         }
       ],
       "fishingSpots": [
@@ -20435,7 +23460,8 @@
             "species.crystal_skater",
             "species.crystal_bream",
             "species.opal_shelf",
-            "species.opal_blenny"
+            "species.opal_blenny",
+            "species.tide_wrasse"
           ],
           "stockMax": 16,
           "regenTicks": 48,
@@ -20463,7 +23489,8 @@
             "species.crystal_bream",
             "species.opal_shelf",
             "species.opal_blenny",
-            "species.tide_bass"
+            "species.tide_bass",
+            "species.tide_wrasse"
           ],
           "stockMax": 8,
           "regenTicks": 62,
@@ -20606,6 +23633,20 @@
           "inputZone": "zone.tg_canner_in",
           "outputZone": "zone.tg_canner_out",
           "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.tg_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.tg_roaster_in",
+          "outputZone": "zone.tg_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.tg_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.tg_fermenter_in",
+          "outputZone": "zone.tg_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
         }
       ],
       "counters": [
@@ -20643,7 +23684,11 @@
             "product.poached_fillet",
             "product.poach_broth",
             "product.canned_fillet",
-            "product.can_medley"
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
           ],
           "capacityUnits": 30,
           "zone": "zone.tg_counter",
@@ -20677,7 +23722,9 @@
             "product.braise_carton",
             "product.glaze_carton",
             "product.poach_carton",
-            "product.can_carton"
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
           ],
           "capacityUnits": 24,
           "zone": "zone.tg_wholesale",
@@ -20843,6 +23890,2116 @@
           "description": "Expansion marker for the harbor canner line.",
           "zone": "zone.tg_plot_canner",
           "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.tg_roaster",
+          "name": "Tideglass Bay roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.tg_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.tg_fermenter",
+          "name": "Tideglass Bay fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.tg_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
+        }
+      ]
+    },
+    {
+      "id": "harbor.saffron_quay",
+      "name": "Saffron Quay",
+      "playerSpawn": {
+        "x": 0,
+        "z": 0
+      },
+      "walkable": [
+        {
+          "id": "area.sf_land",
+          "minX": -9500,
+          "minZ": -35700,
+          "maxX": 9500,
+          "maxZ": 9000
+        },
+        {
+          "id": "area.sf_pier",
+          "minX": -1800,
+          "minZ": 8800,
+          "maxX": 1800,
+          "maxZ": 18000
+        },
+        {
+          "id": "area.sf_east_dock",
+          "minX": 1800,
+          "minZ": 12000,
+          "maxX": 5200,
+          "maxZ": 16000
+        },
+        {
+          "id": "area.sf_west_dock",
+          "minX": -5200,
+          "minZ": 12000,
+          "maxX": -1800,
+          "maxZ": 16000
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "footprint.sf_cutter",
+          "minX": -5400,
+          "minZ": -4400,
+          "maxX": -3400,
+          "maxZ": -2400
+        },
+        {
+          "id": "footprint.sf_smoker",
+          "minX": -5400,
+          "minZ": -9000,
+          "maxX": -3400,
+          "maxZ": -7400
+        },
+        {
+          "id": "footprint.sf_counter",
+          "minX": 3800,
+          "minZ": -4900,
+          "maxX": 4800,
+          "maxZ": -1900
+        },
+        {
+          "id": "footprint.sf_wholesale",
+          "minX": 3800,
+          "minZ": -8900,
+          "maxX": 4800,
+          "maxZ": -5900
+        },
+        {
+          "id": "footprint.sf_grill",
+          "minX": -5400,
+          "minZ": -13400,
+          "maxX": -3400,
+          "maxZ": -11800
+        },
+        {
+          "id": "footprint.sf_chiller",
+          "minX": -5400,
+          "minZ": -18000,
+          "maxX": -3400,
+          "maxZ": -16400
+        },
+        {
+          "id": "footprint.sf_fryer",
+          "minX": 3800,
+          "minZ": -13000,
+          "maxX": 4800,
+          "maxZ": -11400
+        },
+        {
+          "id": "footprint.sf_packer",
+          "minX": 3800,
+          "minZ": -16000,
+          "maxX": 4800,
+          "maxZ": -14400
+        },
+        {
+          "id": "footprint.sf_steamer",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -21200,
+          "maxZ": -19600
+        },
+        {
+          "id": "footprint.sf_kiln",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -19200,
+          "maxZ": -17600
+        },
+        {
+          "id": "footprint.sf_press",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -24700,
+          "maxZ": -23100
+        },
+        {
+          "id": "footprint.sf_pickler",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -22700,
+          "maxZ": -21100
+        },
+        {
+          "id": "footprint.sf_braiser",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -28200,
+          "maxZ": -26600
+        },
+        {
+          "id": "footprint.sf_glazer",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -26200,
+          "maxZ": -24600
+        },
+        {
+          "id": "footprint.sf_poacher",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -31700,
+          "maxZ": -30100
+        },
+        {
+          "id": "footprint.sf_canner",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -29700,
+          "maxZ": -28100
+        },
+        {
+          "id": "footprint.sf_roaster",
+          "minX": -5400,
+          "maxX": -3400,
+          "minZ": -35200,
+          "maxZ": -33600
+        },
+        {
+          "id": "footprint.sf_fermenter",
+          "minX": 3800,
+          "maxX": 4800,
+          "minZ": -33200,
+          "maxZ": -31600
+        }
+      ],
+      "zones": [
+        {
+          "id": "zone.sf_end",
+          "kind": "fishing",
+          "minX": -1800,
+          "minZ": 14500,
+          "maxX": 1800,
+          "maxZ": 18000
+        },
+        {
+          "id": "zone.sf_east",
+          "kind": "fishing",
+          "minX": 1800,
+          "minZ": 12000,
+          "maxX": 5200,
+          "maxZ": 16000
+        },
+        {
+          "id": "zone.sf_west",
+          "kind": "fishing",
+          "minX": -5200,
+          "minZ": 12000,
+          "maxX": -1800,
+          "maxZ": 16000
+        },
+        {
+          "id": "zone.sf_cutter_in",
+          "kind": "machine_input",
+          "minX": -3400,
+          "minZ": -4400,
+          "maxX": -1800,
+          "maxZ": -2400
+        },
+        {
+          "id": "zone.sf_cutter_out",
+          "kind": "machine_output",
+          "minX": -7000,
+          "minZ": -4400,
+          "maxX": -5400,
+          "maxZ": -2400
+        },
+        {
+          "id": "zone.sf_smoker_in",
+          "kind": "machine_input",
+          "minX": -3400,
+          "minZ": -9000,
+          "maxX": -1800,
+          "maxZ": -7400
+        },
+        {
+          "id": "zone.sf_smoker_out",
+          "kind": "machine_output",
+          "minX": -7000,
+          "minZ": -9000,
+          "maxX": -5400,
+          "maxZ": -7400
+        },
+        {
+          "id": "zone.sf_counter",
+          "kind": "counter",
+          "minX": 2300,
+          "minZ": -4900,
+          "maxX": 3800,
+          "maxZ": -1900
+        },
+        {
+          "id": "zone.sf_wholesale",
+          "kind": "counter",
+          "minX": 2300,
+          "minZ": -8900,
+          "maxX": 3800,
+          "maxZ": -5900
+        },
+        {
+          "id": "zone.sf_grill_in",
+          "kind": "machine_input",
+          "minX": -3400,
+          "minZ": -13400,
+          "maxX": -1800,
+          "maxZ": -11800
+        },
+        {
+          "id": "zone.sf_grill_out",
+          "kind": "machine_output",
+          "minX": -7000,
+          "minZ": -13400,
+          "maxX": -5400,
+          "maxZ": -11800
+        },
+        {
+          "id": "zone.sf_bait_kiosk",
+          "kind": "kiosk",
+          "minX": -3200,
+          "minZ": 6800,
+          "maxX": -1600,
+          "maxZ": 8400
+        },
+        {
+          "id": "zone.sf_chiller_in",
+          "kind": "machine_input",
+          "minX": -3400,
+          "minZ": -18000,
+          "maxX": -1800,
+          "maxZ": -16400
+        },
+        {
+          "id": "zone.sf_chiller_out",
+          "kind": "machine_output",
+          "minX": -7000,
+          "minZ": -18000,
+          "maxX": -5400,
+          "maxZ": -16400
+        },
+        {
+          "id": "zone.sf_fryer_in",
+          "kind": "machine_input",
+          "minX": 2300,
+          "minZ": -13000,
+          "maxX": 3800,
+          "maxZ": -11400
+        },
+        {
+          "id": "zone.sf_fryer_out",
+          "kind": "machine_output",
+          "minX": 4800,
+          "minZ": -13000,
+          "maxX": 6300,
+          "maxZ": -11400
+        },
+        {
+          "id": "zone.sf_packer_in",
+          "kind": "machine_input",
+          "minX": 2300,
+          "minZ": -16000,
+          "maxX": 3800,
+          "maxZ": -14400
+        },
+        {
+          "id": "zone.sf_packer_out",
+          "kind": "machine_output",
+          "minX": 4800,
+          "minZ": -16000,
+          "maxX": 6300,
+          "maxZ": -14400
+        },
+        {
+          "id": "zone.sf_plot_grill",
+          "kind": "plot",
+          "minX": -5200,
+          "minZ": -11600,
+          "maxX": -3600,
+          "maxZ": -11000
+        },
+        {
+          "id": "zone.sf_plot_chiller",
+          "kind": "plot",
+          "minX": -5200,
+          "minZ": -15200,
+          "maxX": -3600,
+          "maxZ": -14600
+        },
+        {
+          "id": "zone.sf_plot_fryer",
+          "kind": "plot",
+          "minX": 3500,
+          "minZ": -11200,
+          "maxX": 5100,
+          "maxZ": -10600
+        },
+        {
+          "id": "zone.sf_plot_packer",
+          "kind": "plot",
+          "minX": 3500,
+          "minZ": -14200,
+          "maxX": 5100,
+          "maxZ": -13600
+        },
+        {
+          "id": "zone.sf_plot_wholesale",
+          "kind": "plot",
+          "minX": 1300,
+          "minZ": -8900,
+          "maxX": 2100,
+          "maxZ": -5900
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -21200,
+          "maxZ": -19600,
+          "id": "zone.sf_steamer_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -21200,
+          "maxZ": -19600,
+          "id": "zone.sf_steamer_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -19200,
+          "maxZ": -17600,
+          "id": "zone.sf_kiln_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -19200,
+          "maxZ": -17600,
+          "id": "zone.sf_kiln_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -19400,
+          "maxZ": -18200,
+          "id": "zone.sf_plot_steamer",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -17400,
+          "maxZ": -16200,
+          "id": "zone.sf_plot_kiln",
+          "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -24700,
+          "maxZ": -23100,
+          "id": "zone.sf_press_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -24700,
+          "maxZ": -23100,
+          "id": "zone.sf_press_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -22700,
+          "maxZ": -21100,
+          "id": "zone.sf_pickler_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -22700,
+          "maxZ": -21100,
+          "id": "zone.sf_pickler_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -22900,
+          "maxZ": -21700,
+          "id": "zone.sf_plot_press",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -20900,
+          "maxZ": -19700,
+          "id": "zone.sf_plot_pickler",
+          "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -28200,
+          "maxZ": -26600,
+          "id": "zone.sf_braiser_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -28200,
+          "maxZ": -26600,
+          "id": "zone.sf_braiser_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -26200,
+          "maxZ": -24600,
+          "id": "zone.sf_glazer_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -26200,
+          "maxZ": -24600,
+          "id": "zone.sf_glazer_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -26400,
+          "maxZ": -25200,
+          "id": "zone.sf_plot_braiser",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -24400,
+          "maxZ": -23200,
+          "id": "zone.sf_plot_glazer",
+          "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -31700,
+          "maxZ": -30100,
+          "id": "zone.sf_poacher_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -31700,
+          "maxZ": -30100,
+          "id": "zone.sf_poacher_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -29700,
+          "maxZ": -28100,
+          "id": "zone.sf_canner_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -29700,
+          "maxZ": -28100,
+          "id": "zone.sf_canner_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -29900,
+          "maxZ": -28700,
+          "id": "zone.sf_plot_poacher",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -27900,
+          "maxZ": -26700,
+          "id": "zone.sf_plot_canner",
+          "kind": "plot"
+        },
+        {
+          "minX": -3400,
+          "maxX": -1800,
+          "minZ": -35200,
+          "maxZ": -33600,
+          "id": "zone.sf_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -7000,
+          "maxX": -5400,
+          "minZ": -35200,
+          "maxZ": -33600,
+          "id": "zone.sf_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2300,
+          "maxX": 3800,
+          "minZ": -33200,
+          "maxZ": -31600,
+          "id": "zone.sf_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4800,
+          "maxX": 6300,
+          "minZ": -33200,
+          "maxZ": -31600,
+          "id": "zone.sf_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5200,
+          "maxX": -3600,
+          "minZ": -33400,
+          "maxZ": -32200,
+          "id": "zone.sf_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": 3500,
+          "maxX": 5100,
+          "minZ": -31400,
+          "maxZ": -30200,
+          "id": "zone.sf_plot_fermenter",
+          "kind": "plot"
+        }
+      ],
+      "fishingSpots": [
+        {
+          "zone": "zone.sf_end",
+          "species": [
+            "species.saffron_sole",
+            "species.amber_snapper",
+            "species.gilt_sole",
+            "species.gilt_mackerel",
+            "species.ember_ray",
+            "species.cinder_carp",
+            "species.harbor_pompano",
+            "species.marina_tuna",
+            "species.saffron_sprat",
+            "species.quay_mullet"
+          ],
+          "stockMax": 17,
+          "regenTicks": 45,
+          "regenCurvePermille": [
+            2050,
+            1520,
+            1160,
+            905,
+            755
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1080,
+            "day": 1120,
+            "dusk": 1050,
+            "night": 980
+          }
+        },
+        {
+          "zone": "zone.sf_east",
+          "species": [
+            "species.amber_snapper",
+            "species.gilt_sole",
+            "species.gilt_mackerel",
+            "species.ember_ray",
+            "species.cinder_carp",
+            "species.harbor_pompano",
+            "species.marina_tuna",
+            "species.ash_pike",
+            "species.saffron_sprat",
+            "species.quay_mullet"
+          ],
+          "stockMax": 10,
+          "regenTicks": 52,
+          "regenCurvePermille": [
+            2180,
+            1620,
+            1190,
+            915,
+            765
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1040,
+            "day": 1100,
+            "dusk": 1020,
+            "night": 960
+          }
+        },
+        {
+          "zone": "zone.sf_west",
+          "species": [
+            "species.gilt_sole",
+            "species.gilt_mackerel",
+            "species.ember_ray",
+            "species.cinder_carp",
+            "species.harbor_pompano",
+            "species.marina_tuna",
+            "species.ash_pike",
+            "species.kiln_perch"
+          ],
+          "stockMax": 8,
+          "regenTicks": 68,
+          "regenCurvePermille": [
+            2420,
+            1760,
+            1260,
+            955,
+            785
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 990,
+            "day": 1010,
+            "dusk": 1080,
+            "night": 1140
+          }
+        }
+      ],
+      "stations": [
+        {
+          "id": "station.sf_cutter",
+          "machine": "machine.basic_cutter",
+          "inputZone": "zone.sf_cutter_in",
+          "outputZone": "zone.sf_cutter_out"
+        },
+        {
+          "id": "station.sf_smoker",
+          "machine": "machine.basic_smoker",
+          "inputZone": "zone.sf_smoker_in",
+          "outputZone": "zone.sf_smoker_out"
+        },
+        {
+          "id": "station.sf_grill",
+          "machine": "machine.harbor_grill",
+          "inputZone": "zone.sf_grill_in",
+          "outputZone": "zone.sf_grill_out",
+          "requiresUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "station.sf_chiller",
+          "machine": "machine.harbor_chiller",
+          "inputZone": "zone.sf_chiller_in",
+          "outputZone": "zone.sf_chiller_out",
+          "requiresUpgrade": "upgrade.harbor_chiller"
+        },
+        {
+          "id": "station.sf_fryer",
+          "machine": "machine.harbor_fryer",
+          "inputZone": "zone.sf_fryer_in",
+          "outputZone": "zone.sf_fryer_out",
+          "requiresUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "station.sf_packer",
+          "machine": "machine.harbor_packer",
+          "inputZone": "zone.sf_packer_in",
+          "outputZone": "zone.sf_packer_out",
+          "requiresUpgrade": "upgrade.harbor_packer"
+        },
+        {
+          "id": "station.sf_steamer",
+          "machine": "machine.harbor_steamer",
+          "inputZone": "zone.sf_steamer_in",
+          "outputZone": "zone.sf_steamer_out",
+          "requiresUpgrade": "upgrade.harbor_steamer"
+        },
+        {
+          "id": "station.sf_kiln",
+          "machine": "machine.harbor_kiln",
+          "inputZone": "zone.sf_kiln_in",
+          "outputZone": "zone.sf_kiln_out",
+          "requiresUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "station.sf_press",
+          "machine": "machine.harbor_press",
+          "inputZone": "zone.sf_press_in",
+          "outputZone": "zone.sf_press_out",
+          "requiresUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "station.sf_pickler",
+          "machine": "machine.harbor_pickler",
+          "inputZone": "zone.sf_pickler_in",
+          "outputZone": "zone.sf_pickler_out",
+          "requiresUpgrade": "upgrade.harbor_pickler"
+        },
+        {
+          "id": "station.sf_braiser",
+          "machine": "machine.harbor_braiser",
+          "inputZone": "zone.sf_braiser_in",
+          "outputZone": "zone.sf_braiser_out",
+          "requiresUpgrade": "upgrade.harbor_braiser"
+        },
+        {
+          "id": "station.sf_glazer",
+          "machine": "machine.harbor_glazer",
+          "inputZone": "zone.sf_glazer_in",
+          "outputZone": "zone.sf_glazer_out",
+          "requiresUpgrade": "upgrade.harbor_glazer"
+        },
+        {
+          "id": "station.sf_poacher",
+          "machine": "machine.harbor_poacher",
+          "inputZone": "zone.sf_poacher_in",
+          "outputZone": "zone.sf_poacher_out",
+          "requiresUpgrade": "upgrade.harbor_poacher"
+        },
+        {
+          "id": "station.sf_canner",
+          "machine": "machine.harbor_canner",
+          "inputZone": "zone.sf_canner_in",
+          "outputZone": "zone.sf_canner_out",
+          "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.sf_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.sf_roaster_in",
+          "outputZone": "zone.sf_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.sf_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.sf_fermenter_in",
+          "outputZone": "zone.sf_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
+        }
+      ],
+      "counters": [
+        {
+          "id": "counter.sf_1",
+          "kind": "retail",
+          "products": [
+            "product.basic_portion",
+            "product.fillet",
+            "product.premium_portion",
+            "product.smoked_fillet",
+            "product.diced_fish",
+            "product.skewer",
+            "product.soup_stock",
+            "product.grilled_fillet",
+            "product.grilled_skewer",
+            "product.chilled_fillet",
+            "product.chilled_premium",
+            "product.fried_portion",
+            "product.fish_and_chips",
+            "product.crispy_skewer",
+            "product.steamed_fillet",
+            "product.steamed_portion",
+            "product.harbor_broth",
+            "product.cured_fillet",
+            "product.dried_strip",
+            "product.pressed_fillet",
+            "product.fish_cake",
+            "product.pickled_fillet",
+            "product.relish_jar",
+            "product.braised_fillet",
+            "product.braise_stew",
+            "product.glazed_fillet",
+            "product.glaze_skewer",
+            "product.poached_fillet",
+            "product.poach_broth",
+            "product.canned_fillet",
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
+          ],
+          "capacityUnits": 36,
+          "zone": "zone.sf_counter",
+          "footprint": "footprint.sf_counter",
+          "checkoutTicks": 18,
+          "maxQueue": 5,
+          "queueAnchor": {
+            "x": 5600,
+            "z": -3400
+          },
+          "queueStep": {
+            "x": 0,
+            "z": 900
+          }
+        },
+        {
+          "id": "counter.sf_wholesale",
+          "kind": "wholesale",
+          "products": [
+            "product.ice_packed_crate",
+            "product.fillet_crate",
+            "product.chilled_crate",
+            "product.fried_carton",
+            "product.chips_carton",
+            "product.grill_carton",
+            "product.skewer_carton",
+            "product.steam_carton",
+            "product.kiln_carton",
+            "product.press_carton",
+            "product.pickle_carton",
+            "product.braise_carton",
+            "product.glaze_carton",
+            "product.poach_carton",
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
+          ],
+          "capacityUnits": 28,
+          "zone": "zone.sf_wholesale",
+          "footprint": "footprint.sf_wholesale",
+          "checkoutTicks": 26,
+          "maxQueue": 3,
+          "queueAnchor": {
+            "x": 5600,
+            "z": -7400
+          },
+          "queueStep": {
+            "x": 0,
+            "z": 900
+          },
+          "requiresUpgrade": "upgrade.wholesale_pad"
+        }
+      ],
+      "customerSpawnTicks": 120,
+      "customerEntry": {
+        "x": 7200,
+        "z": -10000
+      },
+      "customerWalkMmPerTick": 105,
+      "customerPathWaypoints": [
+        {
+          "x": 7600,
+          "z": -8000
+        },
+        {
+          "x": 7600,
+          "z": -5000
+        },
+        {
+          "x": 6200,
+          "z": -3800
+        }
+      ],
+      "rushes": [
+        {
+          "id": "rush.sf_forge",
+          "name": "Forge rush",
+          "periodTicks": 2400,
+          "startTick": 160,
+          "durationTicks": 350,
+          "spawnSpeedPermille": 2350,
+          "queueBonus": 3,
+          "priceMultPermille": 1190
+        },
+        {
+          "id": "rush.sf_tasting",
+          "name": "Ember tasting",
+          "periodTicks": 2400,
+          "startTick": 1550,
+          "durationTicks": 310,
+          "spawnSpeedPermille": 2200,
+          "queueBonus": 2,
+          "priceMultPermille": 1260
+        }
+      ],
+      "requires": [
+        "prestige.twelve_harbors"
+      ],
+      "specialization": {
+        "id": "spec.saffron_lantern",
+        "name": "Saffron lantern",
+        "description": "Warm lantern quays pull premium diners and rare gilt catches.",
+        "maintenanceDiscountPerStation": 0,
+        "rareChanceBonusPermille": 80,
+        "kindSpawnMultPermille": {
+          "premium": 1340,
+          "tourist": 1220,
+          "critic": 1180
+        }
+      },
+      "plots": [
+        {
+          "id": "plot.sf_grill",
+          "name": "Grill expansion",
+          "description": "Pour a charcoal grill pad for a second cook line.",
+          "zone": "zone.sf_plot_grill",
+          "grantsUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "plot.sf_chiller",
+          "name": "Chiller expansion",
+          "description": "Stake cold-storage foundations for chilled product.",
+          "zone": "zone.sf_plot_chiller",
+          "grantsUpgrade": "upgrade.harbor_chiller"
+        },
+        {
+          "id": "plot.sf_fryer",
+          "name": "Fryer expansion",
+          "description": "Stake out a prep fryer pad for fried portions and chips.",
+          "zone": "zone.sf_plot_fryer",
+          "grantsUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "plot.sf_packer",
+          "name": "Packer expansion",
+          "description": "Mark a carton packing pad for wholesale bulk runs.",
+          "zone": "zone.sf_plot_packer",
+          "grantsUpgrade": "upgrade.harbor_packer"
+        },
+        {
+          "id": "plot.sf_wholesale",
+          "name": "Wholesale expansion",
+          "description": "Survey a B2B pad for crate and carton sales.",
+          "zone": "zone.sf_plot_wholesale",
+          "grantsUpgrade": "upgrade.wholesale_pad"
+        },
+        {
+          "id": "plot.sf_steamer",
+          "name": "Ember Wharf steamer pad",
+          "description": "Expansion marker for the harbor steamer line.",
+          "zone": "zone.sf_plot_steamer",
+          "grantsUpgrade": "upgrade.harbor_steamer"
+        },
+        {
+          "id": "plot.sf_kiln",
+          "name": "Ember Wharf kiln pad",
+          "description": "Expansion marker for the harbor kiln line.",
+          "zone": "zone.sf_plot_kiln",
+          "grantsUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "plot.sf_press",
+          "name": "Ember Wharf press pad",
+          "description": "Expansion marker for the harbor press line.",
+          "zone": "zone.sf_plot_press",
+          "grantsUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "plot.sf_pickler",
+          "name": "Ember Wharf pickler pad",
+          "description": "Expansion marker for the harbor pickler line.",
+          "zone": "zone.sf_plot_pickler",
+          "grantsUpgrade": "upgrade.harbor_pickler"
+        },
+        {
+          "id": "plot.sf_braiser",
+          "name": "Ember Wharf braiser pad",
+          "description": "Expansion marker for the harbor braiser line.",
+          "zone": "zone.sf_plot_braiser",
+          "grantsUpgrade": "upgrade.harbor_braiser"
+        },
+        {
+          "id": "plot.sf_glazer",
+          "name": "Ember Wharf glazer pad",
+          "description": "Expansion marker for the harbor glazer line.",
+          "zone": "zone.sf_plot_glazer",
+          "grantsUpgrade": "upgrade.harbor_glazer"
+        },
+        {
+          "id": "plot.sf_poacher",
+          "name": "Ember Wharf poacher pad",
+          "description": "Expansion marker for the harbor poacher line.",
+          "zone": "zone.sf_plot_poacher",
+          "grantsUpgrade": "upgrade.harbor_poacher"
+        },
+        {
+          "id": "plot.sf_canner",
+          "name": "Ember Wharf canner pad",
+          "description": "Expansion marker for the harbor canner line.",
+          "zone": "zone.sf_plot_canner",
+          "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.sf_roaster",
+          "name": "Saffron Quay roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.sf_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.sf_fermenter",
+          "name": "Saffron Quay fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.sf_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
+        }
+      ]
+    },
+    {
+      "id": "harbor.cobalt_sound",
+      "name": "Cobalt Sound",
+      "playerSpawn": {
+        "x": 0,
+        "z": 0
+      },
+      "walkable": [
+        {
+          "id": "area.cb_land",
+          "minX": -8500,
+          "minZ": -35500,
+          "maxX": 8500,
+          "maxZ": 8500
+        },
+        {
+          "id": "area.cb_pier",
+          "minX": -1600,
+          "minZ": 8400,
+          "maxX": 1600,
+          "maxZ": 17000
+        },
+        {
+          "id": "area.cb_spur",
+          "minX": -4500,
+          "minZ": 12000,
+          "maxX": -1600,
+          "maxZ": 15500
+        }
+      ],
+      "obstacles": [
+        {
+          "id": "footprint.cb_cutter",
+          "minX": -5200,
+          "minZ": -4200,
+          "maxX": -3200,
+          "maxZ": -2200
+        },
+        {
+          "id": "footprint.cb_smoker",
+          "minX": -5200,
+          "minZ": -8800,
+          "maxX": -3200,
+          "maxZ": -7200
+        },
+        {
+          "id": "footprint.cb_counter",
+          "minX": 3600,
+          "minZ": -4700,
+          "maxX": 4600,
+          "maxZ": -1700
+        },
+        {
+          "id": "footprint.cb_wholesale",
+          "minX": 3600,
+          "minZ": -8700,
+          "maxX": 4600,
+          "maxZ": -5700
+        },
+        {
+          "id": "footprint.cb_grill",
+          "minX": -5200,
+          "minZ": -13200,
+          "maxX": -3200,
+          "maxZ": -11600
+        },
+        {
+          "id": "footprint.cb_chiller",
+          "minX": -5200,
+          "minZ": -17800,
+          "maxX": -3200,
+          "maxZ": -16200
+        },
+        {
+          "id": "footprint.cb_fryer",
+          "minX": 3600,
+          "minZ": -12800,
+          "maxX": 4600,
+          "maxZ": -11200
+        },
+        {
+          "id": "footprint.cb_packer",
+          "minX": 3600,
+          "minZ": -15800,
+          "maxX": 4600,
+          "maxZ": -14200
+        },
+        {
+          "id": "footprint.cb_steamer",
+          "minX": -5200,
+          "maxX": -3200,
+          "minZ": -21000,
+          "maxZ": -19400
+        },
+        {
+          "id": "footprint.cb_kiln",
+          "minX": 3600,
+          "maxX": 4600,
+          "minZ": -19000,
+          "maxZ": -17400
+        },
+        {
+          "id": "footprint.cb_press",
+          "minX": -5200,
+          "maxX": -3200,
+          "minZ": -24500,
+          "maxZ": -22900
+        },
+        {
+          "id": "footprint.cb_pickler",
+          "minX": 3600,
+          "maxX": 4600,
+          "minZ": -22500,
+          "maxZ": -20900
+        },
+        {
+          "id": "footprint.cb_braiser",
+          "minX": -5200,
+          "maxX": -3200,
+          "minZ": -28000,
+          "maxZ": -26400
+        },
+        {
+          "id": "footprint.cb_glazer",
+          "minX": 3600,
+          "maxX": 4600,
+          "minZ": -26000,
+          "maxZ": -24400
+        },
+        {
+          "id": "footprint.cb_poacher",
+          "minX": -5200,
+          "maxX": -3200,
+          "minZ": -31500,
+          "maxZ": -29900
+        },
+        {
+          "id": "footprint.cb_canner",
+          "minX": 3600,
+          "maxX": 4600,
+          "minZ": -29500,
+          "maxZ": -27900
+        },
+        {
+          "id": "footprint.cb_roaster",
+          "minX": -5200,
+          "maxX": -3200,
+          "minZ": -35000,
+          "maxZ": -33400
+        },
+        {
+          "id": "footprint.cb_fermenter",
+          "minX": 3600,
+          "maxX": 4600,
+          "minZ": -33000,
+          "maxZ": -31400
+        }
+      ],
+      "zones": [
+        {
+          "id": "zone.cb_end",
+          "kind": "fishing",
+          "minX": -1600,
+          "minZ": 13500,
+          "maxX": 1600,
+          "maxZ": 17000
+        },
+        {
+          "id": "zone.cb_spur",
+          "kind": "fishing",
+          "minX": -4500,
+          "minZ": 12000,
+          "maxX": -1600,
+          "maxZ": 15500
+        },
+        {
+          "id": "zone.cb_cutter_in",
+          "kind": "machine_input",
+          "minX": -3200,
+          "minZ": -4200,
+          "maxX": -1600,
+          "maxZ": -2200
+        },
+        {
+          "id": "zone.cb_cutter_out",
+          "kind": "machine_output",
+          "minX": -6800,
+          "minZ": -4200,
+          "maxX": -5200,
+          "maxZ": -2200
+        },
+        {
+          "id": "zone.cb_smoker_in",
+          "kind": "machine_input",
+          "minX": -3200,
+          "minZ": -8800,
+          "maxX": -1600,
+          "maxZ": -7200
+        },
+        {
+          "id": "zone.cb_smoker_out",
+          "kind": "machine_output",
+          "minX": -6800,
+          "minZ": -8800,
+          "maxX": -5200,
+          "maxZ": -7200
+        },
+        {
+          "id": "zone.cb_counter",
+          "kind": "counter",
+          "minX": 2100,
+          "minZ": -4700,
+          "maxX": 3600,
+          "maxZ": -1700
+        },
+        {
+          "id": "zone.cb_wholesale",
+          "kind": "counter",
+          "minX": 2100,
+          "minZ": -8700,
+          "maxX": 3600,
+          "maxZ": -5700
+        },
+        {
+          "id": "zone.cb_grill_in",
+          "kind": "machine_input",
+          "minX": -3200,
+          "minZ": -13200,
+          "maxX": -1600,
+          "maxZ": -11600
+        },
+        {
+          "id": "zone.cb_grill_out",
+          "kind": "machine_output",
+          "minX": -6800,
+          "minZ": -13200,
+          "maxX": -5200,
+          "maxZ": -11600
+        },
+        {
+          "id": "zone.cb_bait_kiosk",
+          "kind": "kiosk",
+          "minX": -3000,
+          "minZ": 6500,
+          "maxX": -1400,
+          "maxZ": 8100
+        },
+        {
+          "id": "zone.cb_chiller_in",
+          "kind": "machine_input",
+          "minX": -3200,
+          "minZ": -17800,
+          "maxX": -1600,
+          "maxZ": -16200
+        },
+        {
+          "id": "zone.cb_chiller_out",
+          "kind": "machine_output",
+          "minX": -6800,
+          "minZ": -17800,
+          "maxX": -5200,
+          "maxZ": -16200
+        },
+        {
+          "id": "zone.cb_fryer_in",
+          "kind": "machine_input",
+          "minX": 2100,
+          "minZ": -12800,
+          "maxX": 3600,
+          "maxZ": -11200
+        },
+        {
+          "id": "zone.cb_fryer_out",
+          "kind": "machine_output",
+          "minX": 4600,
+          "minZ": -12800,
+          "maxX": 6100,
+          "maxZ": -11200
+        },
+        {
+          "id": "zone.cb_packer_in",
+          "kind": "machine_input",
+          "minX": 2100,
+          "minZ": -15800,
+          "maxX": 3600,
+          "maxZ": -14200
+        },
+        {
+          "id": "zone.cb_packer_out",
+          "kind": "machine_output",
+          "minX": 4600,
+          "minZ": -15800,
+          "maxX": 6100,
+          "maxZ": -14200
+        },
+        {
+          "id": "zone.cb_plot_grill",
+          "kind": "plot",
+          "minX": -5000,
+          "minZ": -11400,
+          "maxX": -3400,
+          "maxZ": -10800
+        },
+        {
+          "id": "zone.cb_plot_chiller",
+          "kind": "plot",
+          "minX": -5000,
+          "minZ": -15000,
+          "maxX": -3400,
+          "maxZ": -14400
+        },
+        {
+          "id": "zone.cb_plot_fryer",
+          "kind": "plot",
+          "minX": 3300,
+          "minZ": -11000,
+          "maxX": 4900,
+          "maxZ": -10400
+        },
+        {
+          "id": "zone.cb_plot_packer",
+          "kind": "plot",
+          "minX": 3300,
+          "minZ": -14000,
+          "maxX": 4900,
+          "maxZ": -13400
+        },
+        {
+          "id": "zone.cb_plot_wholesale",
+          "kind": "plot",
+          "minX": 1100,
+          "minZ": -8700,
+          "maxX": 1900,
+          "maxZ": -5700
+        },
+        {
+          "minX": -3200,
+          "maxX": -1600,
+          "minZ": -21000,
+          "maxZ": -19400,
+          "id": "zone.cb_steamer_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -6800,
+          "maxX": -5200,
+          "minZ": -21000,
+          "maxZ": -19400,
+          "id": "zone.cb_steamer_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2100,
+          "maxX": 3600,
+          "minZ": -19000,
+          "maxZ": -17400,
+          "id": "zone.cb_kiln_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4600,
+          "maxX": 6100,
+          "minZ": -19000,
+          "maxZ": -17400,
+          "id": "zone.cb_kiln_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5000,
+          "maxX": -3400,
+          "minZ": -19200,
+          "maxZ": -18000,
+          "id": "zone.cb_plot_steamer",
+          "kind": "plot"
+        },
+        {
+          "minX": 3300,
+          "maxX": 4900,
+          "minZ": -17200,
+          "maxZ": -16000,
+          "id": "zone.cb_plot_kiln",
+          "kind": "plot"
+        },
+        {
+          "minX": -3200,
+          "maxX": -1600,
+          "minZ": -24500,
+          "maxZ": -22900,
+          "id": "zone.cb_press_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -6800,
+          "maxX": -5200,
+          "minZ": -24500,
+          "maxZ": -22900,
+          "id": "zone.cb_press_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2100,
+          "maxX": 3600,
+          "minZ": -22500,
+          "maxZ": -20900,
+          "id": "zone.cb_pickler_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4600,
+          "maxX": 6100,
+          "minZ": -22500,
+          "maxZ": -20900,
+          "id": "zone.cb_pickler_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5000,
+          "maxX": -3400,
+          "minZ": -22700,
+          "maxZ": -21500,
+          "id": "zone.cb_plot_press",
+          "kind": "plot"
+        },
+        {
+          "minX": 3300,
+          "maxX": 4900,
+          "minZ": -20700,
+          "maxZ": -19500,
+          "id": "zone.cb_plot_pickler",
+          "kind": "plot"
+        },
+        {
+          "minX": -3200,
+          "maxX": -1600,
+          "minZ": -28000,
+          "maxZ": -26400,
+          "id": "zone.cb_braiser_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -6800,
+          "maxX": -5200,
+          "minZ": -28000,
+          "maxZ": -26400,
+          "id": "zone.cb_braiser_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2100,
+          "maxX": 3600,
+          "minZ": -26000,
+          "maxZ": -24400,
+          "id": "zone.cb_glazer_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4600,
+          "maxX": 6100,
+          "minZ": -26000,
+          "maxZ": -24400,
+          "id": "zone.cb_glazer_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5000,
+          "maxX": -3400,
+          "minZ": -26200,
+          "maxZ": -25000,
+          "id": "zone.cb_plot_braiser",
+          "kind": "plot"
+        },
+        {
+          "minX": 3300,
+          "maxX": 4900,
+          "minZ": -24200,
+          "maxZ": -23000,
+          "id": "zone.cb_plot_glazer",
+          "kind": "plot"
+        },
+        {
+          "minX": -3200,
+          "maxX": -1600,
+          "minZ": -31500,
+          "maxZ": -29900,
+          "id": "zone.cb_poacher_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -6800,
+          "maxX": -5200,
+          "minZ": -31500,
+          "maxZ": -29900,
+          "id": "zone.cb_poacher_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2100,
+          "maxX": 3600,
+          "minZ": -29500,
+          "maxZ": -27900,
+          "id": "zone.cb_canner_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4600,
+          "maxX": 6100,
+          "minZ": -29500,
+          "maxZ": -27900,
+          "id": "zone.cb_canner_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5000,
+          "maxX": -3400,
+          "minZ": -29700,
+          "maxZ": -28500,
+          "id": "zone.cb_plot_poacher",
+          "kind": "plot"
+        },
+        {
+          "minX": 3300,
+          "maxX": 4900,
+          "minZ": -27700,
+          "maxZ": -26500,
+          "id": "zone.cb_plot_canner",
+          "kind": "plot"
+        },
+        {
+          "id": "zone.cb_west",
+          "kind": "fishing",
+          "minX": -5300,
+          "minZ": 13500,
+          "maxX": -2100,
+          "maxZ": 17000
+        },
+        {
+          "minX": -3200,
+          "maxX": -1600,
+          "minZ": -35000,
+          "maxZ": -33400,
+          "id": "zone.cb_roaster_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": -6800,
+          "maxX": -5200,
+          "minZ": -35000,
+          "maxZ": -33400,
+          "id": "zone.cb_roaster_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": 2100,
+          "maxX": 3600,
+          "minZ": -33000,
+          "maxZ": -31400,
+          "id": "zone.cb_fermenter_in",
+          "kind": "machine_input"
+        },
+        {
+          "minX": 4600,
+          "maxX": 6100,
+          "minZ": -33000,
+          "maxZ": -31400,
+          "id": "zone.cb_fermenter_out",
+          "kind": "machine_output"
+        },
+        {
+          "minX": -5000,
+          "maxX": -3400,
+          "minZ": -33200,
+          "maxZ": -32000,
+          "id": "zone.cb_plot_roaster",
+          "kind": "plot"
+        },
+        {
+          "minX": 3300,
+          "maxX": 4900,
+          "minZ": -31200,
+          "maxZ": -30000,
+          "id": "zone.cb_plot_fermenter",
+          "kind": "plot"
+        }
+      ],
+      "fishingSpots": [
+        {
+          "zone": "zone.cb_end",
+          "species": [
+            "species.arctic_cod",
+            "species.aurora_cod",
+            "species.frost_jack",
+            "species.drift_icefish",
+            "species.north_smelt",
+            "species.polar_herring",
+            "species.rime_herring",
+            "species.ice_char",
+            "species.cobalt_smelt",
+            "species.sound_char",
+            "species.cobalt_tuna"
+          ],
+          "stockMax": 16,
+          "regenTicks": 48,
+          "regenCurvePermille": [
+            2100,
+            1600,
+            1200,
+            900,
+            750
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1200,
+            "day": 950,
+            "dusk": 1000,
+            "night": 1100
+          }
+        },
+        {
+          "zone": "zone.cb_spur",
+          "species": [
+            "species.aurora_cod",
+            "species.frost_jack",
+            "species.drift_icefish",
+            "species.north_smelt",
+            "species.polar_herring",
+            "species.rime_herring",
+            "species.ice_char",
+            "species.ghost_lanternfish",
+            "species.cobalt_smelt",
+            "species.sound_char"
+          ],
+          "stockMax": 8,
+          "regenTicks": 62,
+          "regenCurvePermille": [
+            2300,
+            1700,
+            1200,
+            950,
+            780
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1150,
+            "day": 1000,
+            "dusk": 1050,
+            "night": 980
+          }
+        },
+        {
+          "zone": "zone.cb_west",
+          "species": [
+            "species.frost_jack",
+            "species.drift_icefish",
+            "species.north_smelt",
+            "species.polar_herring",
+            "species.rime_herring",
+            "species.ice_char",
+            "species.ghost_lanternfish",
+            "species.aurora_icefish"
+          ],
+          "stockMax": 16,
+          "regenTicks": 48,
+          "regenCurvePermille": [
+            2100,
+            1600,
+            1200,
+            900,
+            750
+          ],
+          "dayPartRegenMultPermille": {
+            "dawn": 1200,
+            "day": 950,
+            "dusk": 1000,
+            "night": 1100
+          }
+        }
+      ],
+      "stations": [
+        {
+          "id": "station.cb_cutter",
+          "machine": "machine.basic_cutter",
+          "inputZone": "zone.cb_cutter_in",
+          "outputZone": "zone.cb_cutter_out"
+        },
+        {
+          "id": "station.cb_smoker",
+          "machine": "machine.basic_smoker",
+          "inputZone": "zone.cb_smoker_in",
+          "outputZone": "zone.cb_smoker_out"
+        },
+        {
+          "id": "station.cb_grill",
+          "machine": "machine.harbor_grill",
+          "inputZone": "zone.cb_grill_in",
+          "outputZone": "zone.cb_grill_out",
+          "requiresUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "station.cb_chiller",
+          "machine": "machine.harbor_chiller",
+          "inputZone": "zone.cb_chiller_in",
+          "outputZone": "zone.cb_chiller_out",
+          "requiresUpgrade": "upgrade.harbor_chiller"
+        },
+        {
+          "id": "station.cb_fryer",
+          "machine": "machine.harbor_fryer",
+          "inputZone": "zone.cb_fryer_in",
+          "outputZone": "zone.cb_fryer_out",
+          "requiresUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "station.cb_packer",
+          "machine": "machine.harbor_packer",
+          "inputZone": "zone.cb_packer_in",
+          "outputZone": "zone.cb_packer_out",
+          "requiresUpgrade": "upgrade.harbor_packer"
+        },
+        {
+          "id": "station.cb_steamer",
+          "machine": "machine.harbor_steamer",
+          "inputZone": "zone.cb_steamer_in",
+          "outputZone": "zone.cb_steamer_out",
+          "requiresUpgrade": "upgrade.harbor_steamer"
+        },
+        {
+          "id": "station.cb_kiln",
+          "machine": "machine.harbor_kiln",
+          "inputZone": "zone.cb_kiln_in",
+          "outputZone": "zone.cb_kiln_out",
+          "requiresUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "station.cb_press",
+          "machine": "machine.harbor_press",
+          "inputZone": "zone.cb_press_in",
+          "outputZone": "zone.cb_press_out",
+          "requiresUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "station.cb_pickler",
+          "machine": "machine.harbor_pickler",
+          "inputZone": "zone.cb_pickler_in",
+          "outputZone": "zone.cb_pickler_out",
+          "requiresUpgrade": "upgrade.harbor_pickler"
+        },
+        {
+          "id": "station.cb_braiser",
+          "machine": "machine.harbor_braiser",
+          "inputZone": "zone.cb_braiser_in",
+          "outputZone": "zone.cb_braiser_out",
+          "requiresUpgrade": "upgrade.harbor_braiser"
+        },
+        {
+          "id": "station.cb_glazer",
+          "machine": "machine.harbor_glazer",
+          "inputZone": "zone.cb_glazer_in",
+          "outputZone": "zone.cb_glazer_out",
+          "requiresUpgrade": "upgrade.harbor_glazer"
+        },
+        {
+          "id": "station.cb_poacher",
+          "machine": "machine.harbor_poacher",
+          "inputZone": "zone.cb_poacher_in",
+          "outputZone": "zone.cb_poacher_out",
+          "requiresUpgrade": "upgrade.harbor_poacher"
+        },
+        {
+          "id": "station.cb_canner",
+          "machine": "machine.harbor_canner",
+          "inputZone": "zone.cb_canner_in",
+          "outputZone": "zone.cb_canner_out",
+          "requiresUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "station.cb_roaster",
+          "machine": "machine.harbor_roaster",
+          "inputZone": "zone.cb_roaster_in",
+          "outputZone": "zone.cb_roaster_out",
+          "requiresUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "station.cb_fermenter",
+          "machine": "machine.harbor_fermenter",
+          "inputZone": "zone.cb_fermenter_in",
+          "outputZone": "zone.cb_fermenter_out",
+          "requiresUpgrade": "upgrade.harbor_fermenter"
+        }
+      ],
+      "counters": [
+        {
+          "id": "counter.cb_1",
+          "kind": "retail",
+          "products": [
+            "product.basic_portion",
+            "product.fillet",
+            "product.premium_portion",
+            "product.smoked_fillet",
+            "product.diced_fish",
+            "product.skewer",
+            "product.soup_stock",
+            "product.grilled_fillet",
+            "product.grilled_skewer",
+            "product.chilled_fillet",
+            "product.chilled_premium",
+            "product.fried_portion",
+            "product.fish_and_chips",
+            "product.crispy_skewer",
+            "product.steamed_fillet",
+            "product.steamed_portion",
+            "product.harbor_broth",
+            "product.cured_fillet",
+            "product.dried_strip",
+            "product.pressed_fillet",
+            "product.fish_cake",
+            "product.pickled_fillet",
+            "product.relish_jar",
+            "product.braised_fillet",
+            "product.braise_stew",
+            "product.glazed_fillet",
+            "product.glaze_skewer",
+            "product.poached_fillet",
+            "product.poach_broth",
+            "product.canned_fillet",
+            "product.can_medley",
+            "product.roasted_fillet",
+            "product.roast_chip",
+            "product.fermented_fillet",
+            "product.ferment_paste"
+          ],
+          "capacityUnits": 30,
+          "zone": "zone.cb_counter",
+          "footprint": "footprint.cb_counter",
+          "checkoutTicks": 20,
+          "maxQueue": 4,
+          "queueAnchor": {
+            "x": 5400,
+            "z": -3200
+          },
+          "queueStep": {
+            "x": 0,
+            "z": 900
+          }
+        },
+        {
+          "id": "counter.cb_wholesale",
+          "kind": "wholesale",
+          "products": [
+            "product.ice_packed_crate",
+            "product.fillet_crate",
+            "product.chilled_crate",
+            "product.fried_carton",
+            "product.chips_carton",
+            "product.grill_carton",
+            "product.skewer_carton",
+            "product.steam_carton",
+            "product.kiln_carton",
+            "product.press_carton",
+            "product.pickle_carton",
+            "product.braise_carton",
+            "product.glaze_carton",
+            "product.poach_carton",
+            "product.can_carton",
+            "product.roast_carton",
+            "product.ferment_carton"
+          ],
+          "capacityUnits": 24,
+          "zone": "zone.cb_wholesale",
+          "footprint": "footprint.cb_wholesale",
+          "checkoutTicks": 28,
+          "maxQueue": 3,
+          "queueAnchor": {
+            "x": 5400,
+            "z": -7200
+          },
+          "queueStep": {
+            "x": 0,
+            "z": 900
+          },
+          "requiresUpgrade": "upgrade.wholesale_pad"
+        }
+      ],
+      "customerSpawnTicks": 140,
+      "customerEntry": {
+        "x": 6800,
+        "z": -9800
+      },
+      "customerWalkMmPerTick": 100,
+      "customerPathWaypoints": [
+        {
+          "x": 7200,
+          "z": -7800
+        },
+        {
+          "x": 7200,
+          "z": -4800
+        },
+        {
+          "x": 6000,
+          "z": -3600
+        }
+      ],
+      "rushes": [
+        {
+          "id": "rush.cb_aurora",
+          "name": "Aurora rush",
+          "periodTicks": 2400,
+          "startTick": 100,
+          "durationTicks": 320,
+          "spawnSpeedPermille": 2250,
+          "queueBonus": 2,
+          "priceMultPermille": 1150
+        },
+        {
+          "id": "rush.cb_frost_market",
+          "name": "Frost market",
+          "periodTicks": 2400,
+          "startTick": 1700,
+          "durationTicks": 300,
+          "spawnSpeedPermille": 2150,
+          "queueBonus": 2,
+          "priceMultPermille": 1200
+        }
+      ],
+      "requires": [
+        "prestige.thirteen_harbors"
+      ],
+      "specialization": {
+        "id": "spec.cobalt_shelf",
+        "name": "Cobalt shelf",
+        "description": "Deep cobalt shelves draw critics and rare polar runs.",
+        "maintenanceDiscountPerStation": 0,
+        "rareChanceBonusPermille": 85,
+        "kindSpawnMultPermille": {
+          "critic": 1360,
+          "premium": 1240,
+          "tourist": 1140
+        }
+      },
+      "plots": [
+        {
+          "id": "plot.cb_grill",
+          "name": "Grill expansion",
+          "description": "Pour a charcoal grill pad for a second cook line.",
+          "zone": "zone.cb_plot_grill",
+          "grantsUpgrade": "upgrade.harbor_grill"
+        },
+        {
+          "id": "plot.cb_chiller",
+          "name": "Chiller expansion",
+          "description": "Stake cold-storage foundations for chilled product.",
+          "zone": "zone.cb_plot_chiller",
+          "grantsUpgrade": "upgrade.harbor_chiller"
+        },
+        {
+          "id": "plot.cb_fryer",
+          "name": "Fryer expansion",
+          "description": "Stake out a prep fryer pad for fried portions and chips.",
+          "zone": "zone.cb_plot_fryer",
+          "grantsUpgrade": "upgrade.harbor_fryer"
+        },
+        {
+          "id": "plot.cb_packer",
+          "name": "Packer expansion",
+          "description": "Mark a carton packing pad for wholesale bulk runs.",
+          "zone": "zone.cb_plot_packer",
+          "grantsUpgrade": "upgrade.harbor_packer"
+        },
+        {
+          "id": "plot.cb_wholesale",
+          "name": "Wholesale expansion",
+          "description": "Survey a B2B pad for crate and carton sales.",
+          "zone": "zone.cb_plot_wholesale",
+          "grantsUpgrade": "upgrade.wholesale_pad"
+        },
+        {
+          "id": "plot.cb_steamer",
+          "name": "Northlight steamer pad",
+          "description": "Expansion marker for the harbor steamer line.",
+          "zone": "zone.cb_plot_steamer",
+          "grantsUpgrade": "upgrade.harbor_steamer"
+        },
+        {
+          "id": "plot.cb_kiln",
+          "name": "Northlight kiln pad",
+          "description": "Expansion marker for the harbor kiln line.",
+          "zone": "zone.cb_plot_kiln",
+          "grantsUpgrade": "upgrade.harbor_kiln"
+        },
+        {
+          "id": "plot.cb_press",
+          "name": "Northlight press pad",
+          "description": "Expansion marker for the harbor press line.",
+          "zone": "zone.cb_plot_press",
+          "grantsUpgrade": "upgrade.harbor_press"
+        },
+        {
+          "id": "plot.cb_pickler",
+          "name": "Northlight pickler pad",
+          "description": "Expansion marker for the harbor pickler line.",
+          "zone": "zone.cb_plot_pickler",
+          "grantsUpgrade": "upgrade.harbor_pickler"
+        },
+        {
+          "id": "plot.cb_braiser",
+          "name": "Northlight braiser pad",
+          "description": "Expansion marker for the harbor braiser line.",
+          "zone": "zone.cb_plot_braiser",
+          "grantsUpgrade": "upgrade.harbor_braiser"
+        },
+        {
+          "id": "plot.cb_glazer",
+          "name": "Northlight glazer pad",
+          "description": "Expansion marker for the harbor glazer line.",
+          "zone": "zone.cb_plot_glazer",
+          "grantsUpgrade": "upgrade.harbor_glazer"
+        },
+        {
+          "id": "plot.cb_poacher",
+          "name": "Northlight poacher pad",
+          "description": "Expansion marker for the harbor poacher line.",
+          "zone": "zone.cb_plot_poacher",
+          "grantsUpgrade": "upgrade.harbor_poacher"
+        },
+        {
+          "id": "plot.cb_canner",
+          "name": "Northlight canner pad",
+          "description": "Expansion marker for the harbor canner line.",
+          "zone": "zone.cb_plot_canner",
+          "grantsUpgrade": "upgrade.harbor_canner"
+        },
+        {
+          "id": "plot.cb_roaster",
+          "name": "Cobalt Sound roaster pad",
+          "description": "Expansion marker for the harbor roaster line.",
+          "zone": "zone.cb_plot_roaster",
+          "grantsUpgrade": "upgrade.harbor_roaster"
+        },
+        {
+          "id": "plot.cb_fermenter",
+          "name": "Cobalt Sound fermenter pad",
+          "description": "Expansion marker for the harbor fermenter line.",
+          "zone": "zone.cb_plot_fermenter",
+          "grantsUpgrade": "upgrade.harbor_fermenter"
         }
       ]
     }
@@ -21053,6 +26210,58 @@
       "requires": [
         "upgrade.harbor_canner"
       ]
+    },
+    {
+      "id": "bait.saffron_nibble",
+      "name": "Saffron nibble",
+      "description": "Pack of 3. Warm quay nibble for saffron sole and sprat.",
+      "carryUnits": 1,
+      "packQuantity": 3,
+      "cost": 58,
+      "rareSpeciesWeightMultPermille": 1420,
+      "rareChanceBonusPermille": 85,
+      "requires": [
+        "upgrade.bait_pouch"
+      ]
+    },
+    {
+      "id": "bait.cobalt_flake",
+      "name": "Cobalt flake",
+      "description": "Pack of 2. Sound flake that sweetens cobalt smelt and tuna.",
+      "carryUnits": 1,
+      "packQuantity": 2,
+      "cost": 82,
+      "rareSpeciesWeightMultPermille": 1580,
+      "rareChanceBonusPermille": 105,
+      "requires": [
+        "upgrade.rod_speed_2"
+      ]
+    },
+    {
+      "id": "bait.roast_paste",
+      "name": "Roast paste",
+      "description": "Pack of 2. Kitchen paste for rare saffron runs past the roaster line.",
+      "carryUnits": 1,
+      "packQuantity": 2,
+      "cost": 130,
+      "rareSpeciesWeightMultPermille": 1720,
+      "rareChanceBonusPermille": 135,
+      "requires": [
+        "upgrade.harbor_roaster"
+      ]
+    },
+    {
+      "id": "bait.ferment_spark",
+      "name": "Ferment spark",
+      "description": "Pack of 2. Spark tip for cobalt rares after the fermenter unlock.",
+      "carryUnits": 1,
+      "packQuantity": 2,
+      "cost": 180,
+      "rareSpeciesWeightMultPermille": 1880,
+      "rareChanceBonusPermille": 170,
+      "requires": [
+        "upgrade.harbor_fermenter"
+      ]
     }
   ],
   "reputation": {
@@ -21217,7 +26426,7 @@
         "id": "event.harvest_moon_pier",
         "name": "Harvest Moon Pier",
         "description": "Autumn lanterns draw pier regulars — saffron sole runs thick.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 100,
         "durationTicks": 1500,
         "banner": "banner.harvest_moon_pier",
@@ -21242,7 +26451,7 @@
         "id": "event.coral_carnival",
         "name": "Coral Carnival",
         "description": "Lagoon carnival packs the docks with tourists and tropical runs.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 1700,
         "durationTicks": 1200,
         "banner": "banner.coral_carnival",
@@ -21267,7 +26476,7 @@
         "id": "event.northlight_freeze",
         "name": "Northlight Freeze",
         "description": "Cold currents thicken frost smelt and arctic cod runs.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 3000,
         "durationTicks": 1800,
         "banner": "banner.northlight_freeze",
@@ -21294,7 +26503,7 @@
         "id": "event.storm_regatta",
         "name": "Storm Regatta",
         "description": "Gale-force race weekend — bulk haulers and squall bass surge.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 4900,
         "durationTicks": 1200,
         "banner": "banner.storm_regatta",
@@ -21319,7 +26528,7 @@
         "id": "event.silver_tide",
         "name": "Silver Tide Festival",
         "description": "Sprats run thick — festival buyers post special crates.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 6200,
         "durationTicks": 2000,
         "banner": "banner.silver_tide",
@@ -21337,7 +26546,7 @@
         "id": "event.ember_night_market",
         "name": "Ember Night Market",
         "description": "Wharf night market — ember eels and lantern wanderers.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 8250,
         "durationTicks": 700,
         "banner": "banner.ember_night_market",
@@ -21362,7 +26571,7 @@
         "id": "event.moonlit_market",
         "name": "Moonlit Market",
         "description": "Night cove specialties swell under lantern light.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 9000,
         "durationTicks": 1800,
         "banner": "banner.moonlit_market",
@@ -21390,7 +26599,7 @@
         "id": "event.grand_regatta",
         "name": "Grand Regatta",
         "description": "Regatta week packs the marina with premium guests and tuna runs.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 10850,
         "durationTicks": 1100,
         "banner": "banner.grand_regatta",
@@ -21411,7 +26620,7 @@
         "id": "event.mist_fog_festival",
         "name": "Mist Fog Festival",
         "description": "Lanterns cut the mist while brine mullet and braise trays pack the cove.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 12000,
         "durationTicks": 900,
         "banner": "banner.mist_fog_festival",
@@ -21430,7 +26639,7 @@
         "id": "event.prism_light_fair",
         "name": "Prism Light Fair",
         "description": "Shelf lights blaze for prism gobies and glazed skewers at the fair.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 12950,
         "durationTicks": 850,
         "banner": "banner.prism_light_fair",
@@ -21449,7 +26658,7 @@
         "id": "event.plaza_tuna_week",
         "name": "Plaza Tuna Week",
         "description": "Plaza tuna runs draw bulk buyers and braise kitchens all week.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 13850,
         "durationTicks": 900,
         "banner": "banner.plaza_tuna_week",
@@ -21468,7 +26677,7 @@
         "id": "event.rime_aurora_vigil",
         "name": "Rime Aurora Vigil",
         "description": "Aurora night vigil favors rime herring and crystal rime bites.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 14800,
         "durationTicks": 1000,
         "banner": "banner.rime_aurora_vigil",
@@ -21488,7 +26697,7 @@
         "id": "event.aurora_inlet_lights",
         "name": "Aurora Inlet Lights",
         "description": "Northern lights over the inlet favor aurora cod and icefish runs.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 16000,
         "durationTicks": 900,
         "banner": "banner.aurora_inlet_lights",
@@ -21508,7 +26717,7 @@
         "id": "event.tideglass_mirror_fair",
         "name": "Tideglass Mirror Fair",
         "description": "Mirror stalls pack the bay for glass gobies and tide bass.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 16950,
         "durationTicks": 900,
         "banner": "banner.tideglass_mirror_fair",
@@ -21528,7 +26737,7 @@
         "id": "event.poach_pantry_week",
         "name": "Poach Pantry Week",
         "description": "Poach kitchens draw bulk buyers across the aurora pantry circuit.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 17900,
         "durationTicks": 900,
         "banner": "banner.poach_pantry_week",
@@ -21547,7 +26756,7 @@
         "id": "event.can_circuit_carnival",
         "name": "Can Circuit Carnival",
         "description": "Carnival cans and medleys pack the tideglass ferry docks.",
-        "periodTicks": 21000,
+        "periodTicks": 25200,
         "startTick": 18850,
         "durationTicks": 1000,
         "banner": "banner.can_circuit_carnival",
@@ -21561,6 +26770,85 @@
           "species.crystal_bream": 1700,
           "species.brine_goby": 1600,
           "species.crystal_brine": 1500
+        }
+      },
+      {
+        "id": "event.saffron_quay_ember_fair",
+        "name": "Saffron Quay Ember Fair",
+        "description": "Ember stalls pack the quay for saffron sole and kiln perch runs.",
+        "periodTicks": 25200,
+        "startTick": 19900,
+        "durationTicks": 900,
+        "banner": "banner.saffron_quay_ember_fair",
+        "customerSpawnMultPermille": 1530,
+        "priceMultPermille": 1290,
+        "festivalCustomerIds": [
+          "customer.saffron_ember_guest"
+        ],
+        "speciesWeightMultPermille": {
+          "species.saffron_sole": 2000,
+          "species.saffron_sprat": 1800,
+          "species.kiln_perch": 1600,
+          "species.cinder_carp": 1500
+        }
+      },
+      {
+        "id": "event.cobalt_sound_rime_vigil",
+        "name": "Cobalt Sound Rime Vigil",
+        "description": "Rime lanterns draw cobalt smelt and sound char across the sound.",
+        "periodTicks": 25200,
+        "startTick": 20850,
+        "durationTicks": 900,
+        "banner": "banner.cobalt_sound_rime_vigil",
+        "customerSpawnMultPermille": 1550,
+        "priceMultPermille": 1310,
+        "festivalCustomerIds": [
+          "customer.cobalt_rime_tourist"
+        ],
+        "speciesWeightMultPermille": {
+          "species.cobalt_smelt": 2000,
+          "species.cobalt_tuna": 1900,
+          "species.sound_char": 1600,
+          "species.frost_jack": 1500
+        }
+      },
+      {
+        "id": "event.roast_nest_week",
+        "name": "Roast Nest Week",
+        "description": "Roast kitchens draw bulk buyers across the saffron nest circuit.",
+        "periodTicks": 25200,
+        "startTick": 21800,
+        "durationTicks": 900,
+        "banner": "banner.roast_nest_week",
+        "customerSpawnMultPermille": 1490,
+        "priceMultPermille": 1330,
+        "festivalCustomerIds": [
+          "customer.roast_nest_buyer"
+        ],
+        "speciesWeightMultPermille": {
+          "species.saffron_sole": 1800,
+          "species.gilt_mackerel": 1700,
+          "species.amber_snapper": 1500
+        }
+      },
+      {
+        "id": "event.ferment_covenant_carnival",
+        "name": "Ferment Covenant Carnival",
+        "description": "Carnival ferment trays pack the cobalt ferry docks.",
+        "periodTicks": 25200,
+        "startTick": 22750,
+        "durationTicks": 1000,
+        "banner": "banner.ferment_covenant_carnival",
+        "customerSpawnMultPermille": 1510,
+        "priceMultPermille": 1350,
+        "festivalCustomerIds": [
+          "customer.ferment_carnival_guest"
+        ],
+        "speciesWeightMultPermille": {
+          "species.cobalt_tuna": 1900,
+          "species.aurora_cod": 1700,
+          "species.ice_char": 1600,
+          "species.polar_herring": 1500
         }
       }
     ]
@@ -21585,7 +26873,11 @@
       22000,
       32000,
       45000,
-      60000
+      60000,
+      80000,
+      110000,
+      150000,
+      200000
     ],
     "loanProducts": [
       {
@@ -21639,6 +26931,28 @@
         "termTicks": 14000,
         "requires": [
           "quest.harbor_dozen"
+        ]
+      },
+      {
+        "id": "loan.nest_ember",
+        "name": "Nest ember note",
+        "description": "Roast-nest float after the nest admiral clears fourteen harbors.",
+        "principal": 2200,
+        "repayPermille": 1400,
+        "termTicks": 16000,
+        "requires": [
+          "quest.nest_admiral"
+        ]
+      },
+      {
+        "id": "loan.saffron_crest",
+        "name": "Saffron crest credit",
+        "description": "Late nest credit after the saffron curator seals roast/ferment lines.",
+        "principal": 3200,
+        "repayPermille": 1420,
+        "termTicks": 18000,
+        "requires": [
+          "quest.saffron_curator"
         ]
       }
     ]
@@ -22688,6 +28002,181 @@
         "lore": "Heavy tuna of the mist cove lane.",
         "habitatHint": "Mist Cove deep plaza cuts.",
         "journalTip": "Plaza cuts want open lane water."
+      },
+      {
+        "speciesId": "species.saffron_sprat",
+        "family": "ember",
+        "lore": "Warm silver of the saffron rail.",
+        "habitatHint": "Saffron Quay lantern rails at dawn.",
+        "journalTip": "Warm outflows thicken after dusk."
+      },
+      {
+        "speciesId": "species.gilt_saffron",
+        "family": "ember",
+        "lore": "Gilt rare of the saffron sprat run.",
+        "habitatHint": "Saffron water after Perfect timing.",
+        "journalTip": "Warm outflows thicken after dusk."
+      },
+      {
+        "speciesId": "species.quay_mullet",
+        "family": "ember",
+        "lore": "Salt dusk sides from quay spray.",
+        "habitatHint": "Saffron Quay dusk glow.",
+        "journalTip": "Warm outflows thicken after dusk."
+      },
+      {
+        "speciesId": "species.bronze_quay",
+        "family": "ember",
+        "lore": "Bronze rare of the quay line.",
+        "habitatHint": "Quay pools after a Perfect reel.",
+        "journalTip": "Warm outflows thicken after dusk."
+      },
+      {
+        "speciesId": "species.cobalt_smelt",
+        "family": "polar",
+        "lore": "Deep cobalt smelt of the sound shelf.",
+        "habitatHint": "Cobalt Sound open lanes.",
+        "journalTip": "Cold shelves favor dawn and deep night."
+      },
+      {
+        "speciesId": "species.aurora_cobalt",
+        "family": "polar",
+        "lore": "Aurora rare of the cobalt smelt.",
+        "habitatHint": "Cobalt water under rare luck.",
+        "journalTip": "Cold shelves favor dawn and deep night."
+      },
+      {
+        "speciesId": "species.sound_char",
+        "family": "polar",
+        "lore": "Heavy char of the cobalt cut.",
+        "habitatHint": "Cobalt Sound deep cuts.",
+        "journalTip": "Cold shelves favor dawn and deep night."
+      },
+      {
+        "speciesId": "species.crystal_sound",
+        "family": "polar",
+        "lore": "Crystal rare of the sound char.",
+        "habitatHint": "Sound water after Perfect casts.",
+        "journalTip": "Cold shelves favor dawn and deep night."
+      },
+      {
+        "speciesId": "species.lantern_scad",
+        "family": "cove",
+        "lore": "Scads the inlet under lantern poles.",
+        "habitatHint": "Aurora Inlet night reef.",
+        "journalTip": "Cove shelves reward dusk hops."
+      },
+      {
+        "speciesId": "species.prism_scad",
+        "family": "cove",
+        "lore": "Prism rare scad flash.",
+        "habitatHint": "Lantern scad water on lucky casts.",
+        "journalTip": "Cove shelves reward dusk hops."
+      },
+      {
+        "speciesId": "species.tide_wrasse",
+        "family": "reef",
+        "lore": "Bright wrasse of the tideglass lip.",
+        "habitatHint": "Tideglass Bay clear basins.",
+        "journalTip": "Lagoon schools reward pocket hops."
+      },
+      {
+        "speciesId": "species.glass_tide",
+        "family": "reef",
+        "lore": "Glass rare of the tide wrasse.",
+        "habitatHint": "Tide wrasse water after Perfect timing.",
+        "journalTip": "Lagoon schools reward pocket hops."
+      },
+      {
+        "speciesId": "species.dock_blenny",
+        "family": "pier",
+        "lore": "Perches on dock rims between waves.",
+        "habitatHint": "Sunrise Pier dock lips.",
+        "journalTip": "Move before the pier pocket empties — dawn weight is highest."
+      },
+      {
+        "speciesId": "species.opal_dock",
+        "family": "pier",
+        "lore": "Opal rare blenny of the dock.",
+        "habitatHint": "Dock water after Perfect timing.",
+        "journalTip": "Move before the pier pocket empties — dawn weight is highest."
+      },
+      {
+        "speciesId": "species.cove_drum",
+        "family": "cove",
+        "lore": "Drums ahead of the cove squall.",
+        "habitatHint": "Moon Cove chop lanes.",
+        "journalTip": "Cove shelves reward dusk hops."
+      },
+      {
+        "speciesId": "species.thunder_cove",
+        "family": "cove",
+        "lore": "Thunder rare of the cove drum.",
+        "habitatHint": "Cove drum water after Perfect reels.",
+        "journalTip": "Cove shelves reward dusk hops."
+      },
+      {
+        "speciesId": "species.reef_jack",
+        "family": "reef",
+        "lore": "Heavy jack of the lagoon reef lane.",
+        "habitatHint": "Coral Lagoon deep reef.",
+        "journalTip": "Lagoon schools reward pocket hops."
+      },
+      {
+        "speciesId": "species.gilt_reef",
+        "family": "reef",
+        "lore": "Gilt rare jack of the reef.",
+        "habitatHint": "Reef jack water after Perfect casts.",
+        "journalTip": "Lagoon schools reward pocket hops."
+      },
+      {
+        "speciesId": "species.kiln_shad",
+        "family": "ember",
+        "lore": "Warm shad of the kiln fringe.",
+        "habitatHint": "Ember Wharf heated flats.",
+        "journalTip": "Warm outflows thicken after dusk."
+      },
+      {
+        "speciesId": "species.magma_kiln",
+        "family": "ember",
+        "lore": "Magma rare of the kiln shad.",
+        "habitatHint": "Kiln water on a hot night.",
+        "journalTip": "Warm outflows thicken after dusk."
+      },
+      {
+        "speciesId": "species.mist_goby",
+        "family": "cove",
+        "lore": "Soft goby of the mist cove pools.",
+        "habitatHint": "Mist Cove brine edges.",
+        "journalTip": "Cove shelves reward dusk hops."
+      },
+      {
+        "speciesId": "species.veil_goby",
+        "family": "cove",
+        "lore": "Veil rare of the mist goby.",
+        "habitatHint": "Mist goby water under rare luck.",
+        "journalTip": "Cove shelves reward dusk hops."
+      },
+      {
+        "speciesId": "species.plaza_bass",
+        "family": "marina",
+        "lore": "Heavy bass of the prism plaza.",
+        "habitatHint": "Prism Reach plaza cuts.",
+        "journalTip": "Plaza cuts want open lane water."
+      },
+      {
+        "speciesId": "species.gilt_bass",
+        "family": "marina",
+        "lore": "Gilt rare bass of the plaza.",
+        "habitatHint": "Plaza bass water on lucky casts.",
+        "journalTip": "Plaza cuts want open lane water."
+      },
+      {
+        "speciesId": "species.cobalt_tuna",
+        "family": "marina",
+        "lore": "Heavy tuna of the cobalt sound lane.",
+        "habitatHint": "Cobalt Sound deep plaza cuts.",
+        "journalTip": "Plaza cuts want open lane water."
       }
     ]
   },
@@ -23137,6 +28626,51 @@
         "carryBonus": 0,
         "transferIntervalMultPermille": 720,
         "wageMultPermille": 1180
+      },
+      {
+        "id": "branch.ice_runner.nest_chill",
+        "role": "ice_runner",
+        "name": "Nest chill",
+        "description": "Chains roast/ferment fragile pickups on the nest ice circuit.",
+        "parentId": "branch.ice_runner.chill_haul",
+        "requiresWorkerLevel": 4,
+        "trainingCostCoins": 92,
+        "trainingXpRequired": 26,
+        "catchSpeedMultPermille": 1000,
+        "moveSpeedMultPermille": 1140,
+        "carryBonus": 1,
+        "transferIntervalMultPermille": 780,
+        "wageMultPermille": 1170
+      },
+      {
+        "id": "branch.greeter.nest_host",
+        "role": "greeter",
+        "name": "Nest host",
+        "description": "Entry host who top-ups nest guests faster during ember hours.",
+        "parentId": "branch.greeter.welcome_desk",
+        "requiresWorkerLevel": 4,
+        "trainingCostCoins": 85,
+        "trainingXpRequired": 24,
+        "catchSpeedMultPermille": 1000,
+        "moveSpeedMultPermille": 1100,
+        "carryBonus": 0,
+        "transferIntervalMultPermille": 1000,
+        "wageMultPermille": 1140
+      },
+      {
+        "id": "branch.porter.nest_haul",
+        "role": "porter",
+        "name": "Nest haul",
+        "description": "Clears roast/ferment jammed outputs first on the nest cart line.",
+        "parentId": "branch.porter.cargo_sprint",
+        "requiresWorkerLevel": 4,
+        "trainingCostCoins": 94,
+        "trainingXpRequired": 27,
+        "catchSpeedMultPermille": 1000,
+        "moveSpeedMultPermille": 1200,
+        "carryBonus": 1,
+        "transferIntervalMultPermille": 740,
+        "wageMultPermille": 1180
       }
     ],
     "schedules": [
@@ -23172,6 +28706,17 @@
         ],
         "autoOnShift": true,
         "wageMultPermille": 1050
+      },
+      {
+        "id": "schedule.nest_ember",
+        "name": "Nest ember",
+        "description": "Auto on-shift at dawn and day for the roast/ferment nest circuit.",
+        "dayParts": [
+          "dawn",
+          "day"
+        ],
+        "autoOnShift": true,
+        "wageMultPermille": 1060
       }
     ]
   },
@@ -23493,6 +29038,86 @@
           "day"
         ],
         "aiProfile": "adaptive"
+      },
+      {
+        "id": "rival.saffron_hawker",
+        "name": "Saffron Hawker",
+        "description": "Quay hawker siphoning roasted fillets and chips at Saffron Quay.",
+        "harbors": [
+          "harbor.saffron_quay"
+        ],
+        "aggressionPermille": 510,
+        "specialtyProducts": [
+          "product.roasted_fillet",
+          "product.roast_chip"
+        ],
+        "undercutPriceMultPermille": 860,
+        "activeDayParts": [
+          "dawn",
+          "day",
+          "dusk"
+        ],
+        "aiProfile": "siphon"
+      },
+      {
+        "id": "rival.cobalt_trader",
+        "name": "Cobalt Trader",
+        "description": "Sound trader undercutting fermented fillets and paste at Cobalt Sound.",
+        "harbors": [
+          "harbor.cobalt_sound"
+        ],
+        "aggressionPermille": 520,
+        "specialtyProducts": [
+          "product.fermented_fillet",
+          "product.ferment_paste"
+        ],
+        "undercutPriceMultPermille": 850,
+        "activeDayParts": [
+          "day",
+          "dusk",
+          "night"
+        ],
+        "aiProfile": "undercut"
+      },
+      {
+        "id": "rival.nest_roamer",
+        "name": "Nest Roamer",
+        "description": "Roaming stall hopping Saffron Quay and Cobalt Sound for roast/ferment trays.",
+        "harbors": [
+          "harbor.saffron_quay",
+          "harbor.cobalt_sound"
+        ],
+        "aggressionPermille": 490,
+        "specialtyProducts": [
+          "product.roast_chip",
+          "product.ferment_paste"
+        ],
+        "undercutPriceMultPermille": 875,
+        "activeDayParts": [
+          "dusk",
+          "night"
+        ],
+        "aiProfile": "roamer"
+      },
+      {
+        "id": "rival.covenant_syndicate",
+        "name": "Covenant Syndicate",
+        "description": "Adaptive syndicate working saffron/cobalt wholesale cartons after a beat.",
+        "harbors": [
+          "harbor.saffron_quay",
+          "harbor.cobalt_sound"
+        ],
+        "aggressionPermille": 540,
+        "specialtyProducts": [
+          "product.roast_carton",
+          "product.ferment_carton"
+        ],
+        "undercutPriceMultPermille": 840,
+        "activeDayParts": [
+          "dawn",
+          "day"
+        ],
+        "aiProfile": "adaptive"
       }
     ],
     "adaptiveAggressionBoostPermille": 120,
@@ -23512,7 +29137,8 @@
         "priceBonusPermille": 1025,
         "coins": 400,
         "requiresMarks": 0,
-        "requiresCrests": 0
+        "requiresCrests": 0,
+        "requiresSigils": 0
       },
       {
         "id": "endgame.tier.rival_warden",
@@ -23525,7 +29151,8 @@
         "priceBonusPermille": 1050,
         "coins": 600,
         "requiresMarks": 0,
-        "requiresCrests": 0
+        "requiresCrests": 0,
+        "requiresSigils": 0
       },
       {
         "id": "endgame.tier.legend_pier",
@@ -23538,7 +29165,8 @@
         "priceBonusPermille": 1080,
         "coins": 900,
         "requiresMarks": 0,
-        "requiresCrests": 0
+        "requiresCrests": 0,
+        "requiresSigils": 0
       },
       {
         "id": "endgame.tier.crown_market",
@@ -23551,7 +29179,8 @@
         "priceBonusPermille": 1120,
         "coins": 1500,
         "requiresMarks": 0,
-        "requiresCrests": 0
+        "requiresCrests": 0,
+        "requiresSigils": 0
       },
       {
         "id": "endgame.tier.mist_sovereign",
@@ -23564,7 +29193,8 @@
         "catchSpeedPermille": 1150,
         "priceBonusPermille": 1150,
         "coins": 2000,
-        "requiresCrests": 0
+        "requiresCrests": 0,
+        "requiresSigils": 0
       },
       {
         "id": "endgame.tier.prism_crown",
@@ -23577,7 +29207,8 @@
         "catchSpeedPermille": 1200,
         "priceBonusPermille": 1200,
         "coins": 3500,
-        "requiresCrests": 0
+        "requiresCrests": 0,
+        "requiresSigils": 0
       },
       {
         "id": "endgame.tier.aurora_throne",
@@ -23590,12 +29221,13 @@
         "requiresCrests": 1,
         "catchSpeedPermille": 1250,
         "priceBonusPermille": 1250,
-        "coins": 4500
+        "coins": 4500,
+        "requiresSigils": 0
       },
       {
         "id": "endgame.tier.tideglass_ascendant",
         "name": "Tideglass Ascendant",
-        "description": "Sweep twelve challenges, every legend mark, and three crests on the tideglass circuit.",
+        "description": "Sweep twelve challenges, every legend mark, and three crests on the tideglass circuit before nest sigil tiers.",
         "requiresPrestigeCount": 24,
         "requiresRivalBeats": 12,
         "requiresChallenges": 12,
@@ -23603,7 +29235,36 @@
         "requiresCrests": 3,
         "catchSpeedPermille": 1300,
         "priceBonusPermille": 1300,
-        "coins": 6000
+        "coins": 6000,
+        "requiresSigils": 0
+      },
+      {
+        "id": "endgame.tier.saffron_nest",
+        "name": "Saffron Nest",
+        "description": "Hold every crest, fourteen challenges, and one nest sigil past Tideglass Ascendant.",
+        "requiresPrestigeCount": 26,
+        "requiresRivalBeats": 12,
+        "requiresChallenges": 14,
+        "requiresMarks": 4,
+        "requiresCrests": 4,
+        "requiresSigils": 1,
+        "catchSpeedPermille": 1350,
+        "priceBonusPermille": 1350,
+        "coins": 7500
+      },
+      {
+        "id": "endgame.tier.cobalt_covenant",
+        "name": "Cobalt Covenant",
+        "description": "Sweep sixteen challenges, every crest, and three nest sigils on the cobalt circuit.",
+        "requiresPrestigeCount": 28,
+        "requiresRivalBeats": 12,
+        "requiresChallenges": 16,
+        "requiresMarks": 4,
+        "requiresCrests": 4,
+        "requiresSigils": 3,
+        "catchSpeedPermille": 1400,
+        "priceBonusPermille": 1400,
+        "coins": 9000
       }
     ],
     "challenges": [
@@ -23710,6 +29371,42 @@
         "atLeast": 50000,
         "rewardCoins": 700,
         "grantsCrest": "endgame.crest.revenue_crest"
+      },
+      {
+        "id": "endgame.challenge.nest_circuit",
+        "name": "Nest Circuit",
+        "description": "Travel between harbors fourteen times across the nest prestige map.",
+        "stat": "stat.harbors_traveled",
+        "atLeast": 14,
+        "rewardCoins": 750,
+        "grantsSigil": "endgame.sigil.nest_circuit"
+      },
+      {
+        "id": "endgame.challenge.quest_covenant",
+        "name": "Quest Covenant",
+        "description": "Complete one hundred authored quests on the nest covenant circuit.",
+        "stat": "stat.quests_completed",
+        "atLeast": 100,
+        "rewardCoins": 800,
+        "grantsSigil": "endgame.sigil.quest_covenant"
+      },
+      {
+        "id": "endgame.challenge.roast_ascendant",
+        "name": "Roast Ascendant",
+        "description": "Feed two hundred eighty machine inputs across the nest lines.",
+        "stat": "stat.machine_inputs",
+        "atLeast": 280,
+        "rewardCoins": 780,
+        "grantsSigil": "endgame.sigil.roast_ascendant"
+      },
+      {
+        "id": "endgame.challenge.nest_revenue",
+        "name": "Nest Revenue",
+        "description": "Bank seventy-five thousand lifetime revenue at the counters.",
+        "stat": "stat.revenue",
+        "atLeast": 75000,
+        "rewardCoins": 850,
+        "grantsSigil": "endgame.sigil.nest_revenue"
       }
     ]
   }

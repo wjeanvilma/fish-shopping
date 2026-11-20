@@ -42,8 +42,8 @@ function validate(): string[] {
   if (catalog.schema !== LOC_FLOORS_SCHEMA) errors.push("bad schema");
   if (catalog.plan !== "30_finish_2.0") errors.push("plan must be 30_finish_2.0");
   if (LOC_FLOORS_PHASE !== 6) errors.push("phase mirror mismatch");
-  if (![24, 25, 26].includes(catalog.schemaVersion)) {
-    errors.push("schemaVersion must be 24, 25, or 26");
+  if (![24, 25, 26, 27].includes(catalog.schemaVersion)) {
+    errors.push("schemaVersion must be 24–27");
   }
   if (catalog.metric?.unit !== "physical_lines") errors.push("metric.unit must be physical_lines");
   if (catalog.enforceFloors !== true) errors.push("enforceFloors must be true at Phase 30");
@@ -87,7 +87,9 @@ function validate(): string[] {
     !kotlin.includes("23_500") &&
     !kotlin.includes("23500") &&
     !kotlin.includes("32_000") &&
-    !kotlin.includes("32000")
+    !kotlin.includes("32000") &&
+    !kotlin.includes("35_500") &&
+    !kotlin.includes("35500")
   ) {
     errors.push("Kotlin LocFloors missing game-core freeze floor");
   }

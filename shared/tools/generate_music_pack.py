@@ -211,6 +211,22 @@ def pressure_bed(sr: int, seconds: float) -> list[float]:
     return normalize(out)
 
 
+def nest_bed(sr: int, seconds: float) -> list[float]:
+    n = int(sr * seconds)
+    out = [0.0] * n
+    for i in range(n):
+        t = i / sr
+        pad = (
+            0.16 * math.sin(2 * math.pi * 130.81 * t)
+            + 0.12 * math.sin(2 * math.pi * 164.81 * t)
+            + 0.09 * math.sin(2 * math.pi * 196.0 * t)
+        )
+        pulse = 0.88 + 0.12 * math.sin(2 * math.pi * 1.5 * t / seconds)
+        glow = 0.035 * math.sin(2 * math.pi * 392.0 * t + 0.3 * math.sin(2 * math.pi * 0.8 * t / seconds))
+        out[i] = (pad * pulse + glow) * 0.5
+    return normalize(out)
+
+
 RENDERERS = {
     "harbor": harbor_bed,
     "shop": shop_bed,
@@ -221,6 +237,7 @@ RENDERERS = {
     "endgame": endgame_bed,
     "ledger": ledger_bed,
     "pressure": pressure_bed,
+    "nest": nest_bed,
 }
 
 

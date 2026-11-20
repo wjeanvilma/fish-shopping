@@ -35,10 +35,11 @@
     "dropOldestOnOverflow": true,
     "resyncSanitizeOnFlush": true,
     "requeueOnFlushFailure": true,
-    "maxFlushRetries": 5,
+    "maxFlushRetries": 7,
     "retryBackoffMs": 2000,
-    "retryJitterMs": 500,
-    "deadLetterAfterMaxRetries": true
+    "retryJitterMs": 750,
+    "deadLetterAfterMaxRetries": true,
+    "circuitBreakerAfterDeadLetters": 3
   },
   "envelope": {
     "requiredFields": [

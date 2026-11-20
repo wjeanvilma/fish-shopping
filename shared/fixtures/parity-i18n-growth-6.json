@@ -1,0 +1,23 @@
+{
+  "schema": "fish.fixture.parity_i18n_growth_6.v1",
+  "i18nGrowth6Marker": "authored-finish-6.0-phase-22",
+  "phase": 22,
+  "plan": "30_finish_6.0",
+  "description": "Finish 6.0 Phase 22: UI chrome ≥400 keys / 8 locales.",
+  "expect": {
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "uiStringKeyMin": 400,
+    "localeMin": 8,
+    "a11yStringKeyMin": 40,
+    "a11yI18n6Incomplete": false,
+    "openGapFlagMin": 1,
+    "gates": [
+      "ui_keys",
+      "locale_parity",
+      "android_literals",
+      "kickoff_closed",
+      "ci_gate"
+    ]
+  }
+}

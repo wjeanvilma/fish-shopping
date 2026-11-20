@@ -21,8 +21,8 @@ object WeeklyGoalsSystem {
     const val WEEK_ID = "stat.weekly_goals_week_id"
     const val CLAIMED = Stats.WEEKLY_GOALS_CLAIMED
     const val WEEK_LENGTH_DAYS = 7
-    const val BOARD_SLOTS = 2
-    const val WEEK_BONUS_COINS = 40L
+    const val BOARD_SLOTS = 3
+    const val WEEK_BONUS_COINS = 50L
 
     data class WeeklyObjectiveDef(
         val id: String,
@@ -50,6 +50,14 @@ object WeeklyGoalsSystem {
         WeeklyObjectiveDef(
             "weekly.quest_surge", "Quest surge", "Complete 5 quests this week.",
             Stats.QUESTS_COMPLETED, 5, 110, 30,
+        ),
+        WeeklyObjectiveDef(
+            "weekly.nest_ember", "Nest ember week", "Earn 2 endgame sigils this week.",
+            Stats.ENDGAME_SIGILS_EARNED, 2, 120, 28,
+        ),
+        WeeklyObjectiveDef(
+            "weekly.saffron_circuit", "Saffron circuit", "Travel between harbors 6 times this week.",
+            Stats.HARBORS_TRAVELED, 6, 115, 28,
         ),
     )
 

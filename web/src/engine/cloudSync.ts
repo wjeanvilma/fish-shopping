@@ -55,6 +55,10 @@ export interface CloudConflictOffer {
   ageSkewMs: number;
   /** Finish 5.0 Phase 22 — short sync diagnostic lines. */
   syncDiagnostics: string[];
+  /** Finish 6.0 Phase 18 — nest conflict harden fields. */
+  preferredSide: SyncSource;
+  conflictScore: number;
+  nestConflictHint: string;
   localText: string;
   remoteText: string;
 }
@@ -191,6 +195,29 @@ export function cloudConflictSyncDiagnostics(
   return lines;
 }
 
+/** Finish 6.0 Phase 18 — numeric conflict score for nest UX. */
+export function cloudConflictScore(
+  local: SnapshotSummary,
+  remote: SnapshotSummary,
+  severity: CloudConflictSeverity = cloudConflictSeverity(local, remote),
+): number {
+  const coinSkew = Math.abs(remote.coins - local.coins);
+  const tickSkew = Math.trunc(Math.abs(remote.tick - local.tick) / 100);
+  const ageSkew = Math.trunc(cloudConflictAgeSkewMs(local, remote) / 1000);
+  const base = severity === "high" ? 70 : severity === "medium" ? 40 : 15;
+  return Math.min(100, base + Math.trunc(coinSkew / 25) + Math.min(20, tickSkew) + Math.min(10, ageSkew));
+}
+
+/** Finish 6.0 Phase 18 — short nest conflict hint. */
+export function cloudNestConflictHint(
+  recommended: SyncSource,
+  severity: CloudConflictSeverity,
+  score: number,
+): string {
+  const side = recommended === "remote" ? "cloud" : "device";
+  return `Nest prefers ${side} · ${severity} · score ${score}`;
+}
+
 /**
  * Phase 11: when both sides are checksum-valid and differ, return a dual-choice
  * offer. Recommended side follows chooseCloudSnapshot. Null means auto-apply is fine.
@@ -208,6 +235,8 @@ export function cloudConflictOffer(
   const localSummary = summaryOf(local, "local");
   const remoteSummary = summaryOf(remote, "remote");
   const severity = cloudConflictSeverity(localSummary, remoteSummary);
+  const conflictScore = cloudConflictScore(localSummary, remoteSummary, severity);
+  const preferredSide = recommended;
   return {
     local: localSummary,
     remote: remoteSummary,
@@ -218,6 +247,9 @@ export function cloudConflictOffer(
     severity,
     ageSkewMs: cloudConflictAgeSkewMs(localSummary, remoteSummary),
     syncDiagnostics: cloudConflictSyncDiagnostics(localSummary, remoteSummary, severity),
+    preferredSide,
+    conflictScore,
+    nestConflictHint: cloudNestConflictHint(preferredSide, severity, conflictScore),
     localText: local.text,
     remoteText: remote.text,
   };

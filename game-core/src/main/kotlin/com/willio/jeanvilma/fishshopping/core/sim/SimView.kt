@@ -726,6 +726,8 @@ fun Simulation.view(): SimView {
         endgameMarks = s.endgameMarks.toList(),
         endgameCrestCount = s.endgameCrests.size,
         endgameCrests = s.endgameCrests.toList(),
+        endgameSigilCount = s.endgameSigils.size,
+        endgameSigils = s.endgameSigils.toList(),
         endgameTiers = c.endgame.tiers.map { t ->
             val unlocked = t.id in s.unlockedEndgameTiers
             EndgameTierView(

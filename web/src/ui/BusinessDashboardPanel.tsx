@@ -39,7 +39,14 @@ export function BusinessDashboardPanel({
   useEffect(() => closeRef.current?.focus(), []);
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={t("panels.dashboard")} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="panel sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("panels.dashboard")}
+        data-testid={WEB_E2E_IDS.DASH_ROOT}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sheet-header">
           <h2>{t("panels.dashboard")}</h2>
           <button ref={closeRef} className="button ghost" onClick={onClose}>{t("common.close")}</button>
@@ -153,7 +160,8 @@ export function BusinessDashboardPanel({
               ))}
             </>
           )}
-          {(dash.loansTaken > 0 || dash.loanOwed > 0 || dash.coinGoal > 0 || dash.ledgerLines.length > 0) && (
+          {(dash.loansTaken > 0 || dash.loanOwed > 0 || dash.coinGoal > 0 || dash.ledgerLines.length > 0 ||
+            dash.nestTreasuryLines.length > 0 || dash.rivalLossCoins > 0 || dash.endgameSigilsEarned > 0) && (
             <>
               <li>
                 <div className="grow">
@@ -198,6 +206,23 @@ export function BusinessDashboardPanel({
               )}
             </>
           )}
+          <li aria-label={t("a11y.nestTreasurySection")} data-testid={WEB_E2E_IDS.NEST_TREASURY}>
+            <div className="grow">
+              <strong>{t("dashboard.nestTreasury")}</strong>
+              <div className="small muted">
+                {t("dashboard.wageBurden")} {Math.trunc(dash.wageBurdenPermille / 10)}%
+                {` · ${t("dashboard.loanCoverage")} ${Math.trunc(dash.loanCoveragePermille / 10)}%`}
+              </div>
+              <div className="small muted">
+                {t("dashboard.rivalLoss")} {formatCoins(dash.rivalLossCoins)}
+                {` · ${t("dashboard.sigilsEarned")} ${dash.endgameSigilsEarned}`}
+                {` · ${t("dashboard.coinGoalsHit")} ${dash.coinGoalsReached}`}
+              </div>
+              {dash.nestTreasuryLines.map((line) => (
+                <div key={`nest-${line}`} className="small muted num">{line}</div>
+              ))}
+            </div>
+          </li>
           {dash.bottlenecks.length === 0 ? (
             <li>
               <div className="grow">

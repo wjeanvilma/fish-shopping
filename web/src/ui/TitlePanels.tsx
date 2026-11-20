@@ -157,6 +157,15 @@ export function CloudConflictPanel({ host, conflict }: { host: GameHost; conflic
             ? ` · ${t("cloud.ageSkew")} ${Math.trunc(conflict.ageSkewMs / 1000)}s`
             : ""}
         </p>
+        <p className="small muted" aria-label={t("a11y.nestConflictSection")}>
+          {t("cloud.preferredSide")}: {conflict.preferredSide}
+          {` · ${t("cloud.conflictScore")} ${conflict.conflictScore}`}
+        </p>
+        {conflict.nestConflictHint ? (
+          <p className="small muted" aria-live="polite" aria-label={t("a11y.nestConflictLive")}>
+            {t("cloud.nestConflictHint")}: {conflict.nestConflictHint}
+          </p>
+        ) : null}
         {conflict.syncDiagnostics.length > 0 ? (
           <ul className="small muted conflict-sync-diagnostics" aria-label={t("cloud.syncDiagnostics")}>
             {conflict.syncDiagnostics.map((line) => (

@@ -1,0 +1,32 @@
+{
+  "schema": "fish.fixture.parity_rivals_seasonal_6.v1",
+  "rivalsSeasonal6Marker": "authored-finish-6.0-phase-15",
+  "phase": 15,
+  "plan": "30_finish_6.0",
+  "description": "Finish 6.0 Phase 15: saffron dawn activates Saffron Hawker + Covenant Syndicate; floors rivals/seasonal/baits/cosmetics met; contentFloorsShort closed.",
+  "harborId": "harbor.saffron_quay",
+  "seed": 1515,
+  "sampleRivalId": "rival.saffron_hawker",
+  "sampleEventId": "event.saffron_quay_ember_fair",
+  "sampleBaitId": "bait.saffron_nibble",
+  "sampleCosmeticId": "banner.iap_saffron_bunting",
+  "expect": {
+    "rivalsMin": 20,
+    "seasonalEventsMin": 20,
+    "baitsMin": 20,
+    "cosmeticsMin": 30,
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "contentFloorsShort": false,
+    "openGapFlagMin": 1,
+    "gates": [
+      "rivals_20",
+      "seasonal_20",
+      "baits_20",
+      "cosmetics_30",
+      "harbors_covered",
+      "kickoff_floors",
+      "ci_gate"
+    ]
+  }
+}

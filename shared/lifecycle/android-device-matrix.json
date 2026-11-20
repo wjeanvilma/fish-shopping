@@ -1,7 +1,7 @@
 {
   "phase": 13,
   "schema": "fish.lifecycle.android_device_matrix.v1",
-  "description": "Post-1.0 Phase 13 — Android device lifecycle QA matrix. Finish 5.0 Phase 27 adds desktop class + PiP/thermal scenarios for denser harbors.",
+  "description": "Post-1.0 Phase 13 — Android device lifecycle QA matrix. Finish 6.0 Phase 28 adds ultrawide class + nest travel/cutout scenarios for 14 harbors.",
   "phase28Catalog": "shared/lifecycle/browser-lifecycle.json",
   "finish4Phase": 27,
   "packageName": "com.willio.jeanvilma.fishshopping",
@@ -56,6 +56,16 @@
         "portrait"
       ],
       "note": "Finish 5.0 Phase 27 — Chromebook / desktop-class large window; denser harbor LRU travel."
+    },
+    {
+      "id": "ultrawide",
+      "minWidthDp": 1000,
+      "maxWidthDp": 10000,
+      "orientations": [
+        "landscape",
+        "portrait"
+      ],
+      "note": "Finish 6.0 Phase 28 — ultrawide / nest multi-pane large window; harbor LRU ≥5 travel."
     }
   ],
   "scenarios": [
@@ -215,6 +225,40 @@
       "phase28Keys": [
         "android.checkpointOnStop"
       ]
+    },
+    {
+      "id": "nest_harbor_travel",
+      "title": "Nest harbor travel LRU soak",
+      "trigger": "Travel across ≥5 distinct harbors without process death",
+      "expects": [
+        "glContextRetained",
+        "hudReflow",
+        "noActivityRecreate"
+      ],
+      "hostHooks": [
+        "GameViewModel.travel",
+        "HarborRenderer.harborCache"
+      ],
+      "phase28Keys": [
+        "android.configChangesHandled"
+      ]
+    },
+    {
+      "id": "display_cutout",
+      "title": "Display cutout / edge-to-edge",
+      "trigger": "Notch / cutout device; rotate into cutout-safe insets",
+      "expects": [
+        "hudReflow",
+        "configChangesHandled",
+        "glContextRetained"
+      ],
+      "hostHooks": [
+        "MainActivity.onConfigurationChanged",
+        "AndroidManifest.configChanges"
+      ],
+      "phase28Keys": [
+        "android.configChangesHandled"
+      ]
     }
   ],
   "trimMemoryCheckpointFrom": "TRIM_MEMORY_RUNNING_LOW",
@@ -229,7 +273,10 @@
     "Foldable: hinge open/close or split-screen; no Activity recreate; HUD reflows",
     "Developer options → Don't keep activities: leave and return restores from AtomicFile",
     "Low memory: adb shell am send-trim-memory <pkg> RUNNING_LOW → no crash; save slots updated",
-    "Deep trim: adb shell am send-trim-memory <pkg> COMPLETE → checkpoint, no ANR"
+    "Deep trim: adb shell am send-trim-memory <pkg> COMPLETE → checkpoint, no ANR",
+    "Ultrawide: nest multi-pane landscape; harbor LRU retains ≥5 warm GLBs",
+    "Nest travel: visit 5 harbors without recreate; Filament context retained",
+    "Cutout: notch device rotate; HUD insets reflow, no blank GL surface"
   ],
   "failCriteria": [
     "Activity recreate on rotate (loses Filament / billing host)",
@@ -238,5 +285,6 @@
     "Double offline credit after pause/resume",
     "Split-screen size change recreates Activity"
   ],
-  "finish5Phase": 27
+  "finish5Phase": 27,
+  "finish6Phase": 28
 }

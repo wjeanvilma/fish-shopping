@@ -1,0 +1,32 @@
+{
+  "schema": "fish.ship.loadtest_banks.v1",
+  "label": "Large realistic JSON banks for Android/web load + soak testing (Finish 6.0 schema 27 headers)",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "saveBank": {
+    "fixture": "shared/fixtures/loadtest-save-bank.json",
+    "asset": "loadtest-save-bank.json",
+    "webUrl": "/loadtest/loadtest-save-bank.json",
+    "schema": "fish.fixtures.loadtest_save_bank.v1",
+    "minBytes": 85000000
+  },
+  "telemetryBank": {
+    "fixture": "shared/fixtures/loadtest-telemetry-bank.json",
+    "asset": "loadtest-telemetry-bank.json",
+    "webUrl": "/loadtest/loadtest-telemetry-bank.json",
+    "schema": "fish.fixtures.loadtest_telemetry_bank.v1",
+    "minBytes": 85000000
+  },
+  "parityFixture": "shared/fixtures/parity-loadtest-banks.json",
+  "purpose": "Stress save migration, nest analytics sink, and asset IO with production-shaped schema-27 header / schema-26 body records",
+  "phase": 26,
+  "plan": "30_finish_6.0",
+  "loadtestBanksMarker": "authored-finish-6.0-phase-26",
+  "analyticsEventFloor": 11,
+  "nestEvents": [
+    "nest_sigil_earned",
+    "nest_contract_settled",
+    "loadtest_bank_probed"
+  ],
+  "soakScenarioFloor": 8
+}

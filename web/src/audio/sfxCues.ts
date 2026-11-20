@@ -5,6 +5,7 @@
  * Finish 3.0 Phase 23 adds rival/travel/hire/prestige/loan/trophy stingers.
  * Finish 4.0 Phase 23 adds decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers.
  * Finish 5.0 Phase 12 adds cast/spoil/service/contract/quest pressure stingers.
+ * Finish 6.0 Phase 12 adds nest/roast/ferment/school/aurora cozy stingers.
  */
 export type SfxCue =
   | "catch"
@@ -42,9 +43,14 @@ export type SfxCue =
   | "spoil_warn"
   | "service_queue"
   | "contract_deadline"
-  | "quest_near";
+  | "quest_near"
+  | "nest_settle"
+  | "roast_ready"
+  | "ferment_ready"
+  | "school_flash"
+  | "aurora_crest";
 
-/** All authored pack cue ids (post-1.0 + Finish 2.0/3.0/4.0/5.0 packs). */
+/** All authored pack cue ids (post-1.0 + Finish 2.0/3.0/4.0/5.0/6.0 packs). */
 export const SFX_CUES: readonly SfxCue[] = [
   "catch",
   "machine_done",
@@ -82,6 +88,11 @@ export const SFX_CUES: readonly SfxCue[] = [
   "service_queue",
   "contract_deadline",
   "quest_near",
+  "nest_settle",
+  "roast_ready",
+  "ferment_ready",
+  "school_flash",
+  "aurora_crest",
 ] as const;
 
 /** Pack-2 cue ids (Finish 2.0 Phase 21). */
@@ -129,6 +140,15 @@ export const SFX_PACK5_CUES: readonly SfxCue[] = [
   "quest_near",
 ] as const;
 
+/** Pack-6 cue ids (Finish 6.0 Phase 12). */
+export const SFX_PACK6_CUES: readonly SfxCue[] = [
+  "nest_settle",
+  "roast_ready",
+  "ferment_ready",
+  "school_flash",
+  "aurora_crest",
+] as const;
+
 /** Cues that should also pulse a short haptic on Android / vibrate on web. */
 export const HAPTIC_CUES: ReadonlySet<SfxCue> = new Set([
   "catch",
@@ -142,6 +162,7 @@ export const HAPTIC_CUES: ReadonlySet<SfxCue> = new Set([
   "endgame_challenge",
   "full_unlock",
   "cast_strike",
+  "school_flash",
 ]);
 
 /** Minimal event shape so Kotlin/TS hosts can share the mapping rules. */
@@ -182,6 +203,11 @@ export type SfxEvent =
   | { type: "service_queue_pressure" }
   | { type: "contract_deadline_warn" }
   | { type: "quest_near_complete" }
+  | { type: "nest_settle_pulse" }
+  | { type: "roast_cycle_ready" }
+  | { type: "ferment_cycle_ready" }
+  | { type: "school_flash" }
+  | { type: "aurora_crest" }
   | { type: string; [k: string]: unknown };
 
 export function sfxFromEvent(e: SfxEvent): SfxCue | null {
@@ -258,6 +284,16 @@ export function sfxFromEvent(e: SfxEvent): SfxCue | null {
       return "contract_deadline";
     case "quest_near_complete":
       return "quest_near";
+    case "nest_settle_pulse":
+      return "nest_settle";
+    case "roast_cycle_ready":
+      return "roast_ready";
+    case "ferment_cycle_ready":
+      return "ferment_ready";
+    case "school_flash":
+      return "school_flash";
+    case "aurora_crest":
+      return "aurora_crest";
     default:
       return null;
   }

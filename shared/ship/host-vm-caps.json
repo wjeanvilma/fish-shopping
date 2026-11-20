@@ -1,0 +1,86 @@
+{
+  "phase": 5,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.host_vm_caps.v1",
+  "description": "Finish 6.0 Phase 5 — GameViewModel ≤1200 + GameHost ≤1100 via step/cloud/entitlement module extracts. Closes hostVmCapsIncomplete.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "hostVmCapsMarker": "authored-finish-6.0-phase-5",
+  "closesGap": "hostVmCapsIncomplete",
+  "viewModelPath": "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt",
+  "viewModelMaxLines": 1200,
+  "gameHostPath": "web/src/game/GameHost.ts",
+  "gameHostMaxLines": 1100,
+  "extractedFileMin": 4,
+  "requiredFiles": [
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmStepBus.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmCloudBoot.kt",
+    "web/src/game/host/hostCloudBoot.ts",
+    "web/src/game/host/hostEntitlements.ts"
+  ],
+  "priorSplitFiles": [
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmIntentHost.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmShellIntents.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmEconomyIntents.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmFishingIntents.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmTravelIntents.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmIapIntents.kt",
+    "web/src/game/host/hostState.ts",
+    "web/src/game/host/hostIntentHost.ts",
+    "web/src/game/host/hostShellIntents.ts",
+    "web/src/game/host/hostEconomyIntents.ts",
+    "web/src/game/host/hostFishingIntents.ts",
+    "web/src/game/host/hostTravelIntents.ts",
+    "web/src/game/host/hostIapIntents.ts",
+    "web/src/game/host/hostStepBus.ts"
+  ],
+  "requiredSymbols": {
+    "VmStepBus.kt": ["object VmStepBus", "interface VmStepSink", "fun process"],
+    "VmCloudBoot.kt": ["object VmCloudBoot", "interface VmCloudBootHost", "fun restoreOrCreate"],
+    "hostCloudBoot.ts": ["class HostCloudBoot", "restoreOrCreate", "bootSim"],
+    "hostEntitlements.ts": ["class HostEntitlements", "applyStoreOwned", "consumeBillingReturnQuery"],
+    "GameViewModel.kt": ["VmStepBus", "VmCloudBoot", "VmStepSink", "VmCloudBootHost"],
+    "GameHost.ts": ["HostCloudBoot", "HostEntitlements", "cloudBoot", "entitlements"]
+  },
+  "facadeMustNotDefine": {
+    "GameViewModel.kt": [
+      "is GameEvent.ItemsTransferred",
+      "resolveCatchBurst"
+    ],
+    "GameHost.ts": [
+      "async restoreOrCreate(content: ContentPack): Promise<{ state: GameState; savedAtEpochMs: number | null } | null> {\n    const candidates"
+    ]
+  },
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "priorViewModelSplit": "shared/ship/viewmodel-split.json",
+  "priorGameHostSplit": "shared/ship/gamehost-split.json",
+  "parityFixture": "shared/fixtures/parity-host-vm-caps.json",
+  "validateScript": "npm run hostvmcaps:validate",
+  "smokeScript": "npm run hostvmcaps:smoke",
+  "checklist": [
+    "GameViewModel.kt ≤1200 lines; step + cloud restore extracted",
+    "GameHost.ts ≤1100 lines; cloud boot + entitlements extracted",
+    "≥4 new Phase 5 modules present with required symbols",
+    "Prior Finish 4.0 vm/host intent modules remain",
+    "hostVmCapsIncomplete closed",
+    "hostvmcaps:validate + hostvmcaps:smoke green in CI",
+    "content/version stays 5.0.0 / schema 26"
+  ],
+  "preflightGates": [
+    "shared/ship/host-vm-caps.json",
+    "shared/fixtures/parity-host-vm-caps.json",
+    "shared/ship/finish-6.0-kickoff.json",
+    "shared/ship/viewmodel-split.json",
+    "shared/ship/gamehost-split.json",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/GameViewModel.kt",
+    "web/src/game/GameHost.ts",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmStepBus.kt",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/game/vm/VmCloudBoot.kt",
+    "web/src/game/host/hostCloudBoot.ts",
+    "web/src/game/host/hostEntitlements.ts",
+    "web/src/ship/hostVmCaps.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/HostVmCaps.kt",
+    "web/scripts/validate-host-vm-caps.ts",
+    "web/scripts/smoke-host-vm-caps.ts"
+  ]
+}

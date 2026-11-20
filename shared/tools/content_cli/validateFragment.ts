@@ -156,6 +156,39 @@ export function structuralScaffoldErrors(
     if (typeof document.grantsCosmetic !== "string") errors.push("grantsCosmetic required");
     if (document.powerNeutral !== true) errors.push("powerNeutral must be true");
     if (document.type !== "non_consumable") errors.push("type must be non_consumable");
+  } else if (kind === "chain") {
+    if (typeof id === "string" && !/^chain\.[a-z0-9_]+$/.test(id)) {
+      errors.push("chain id pattern");
+    }
+    if (typeof document.description !== "string") errors.push("description required");
+    if (typeof document.steps !== "number" || document.steps < 1) {
+      errors.push("steps must be positive number");
+    }
+    if (typeof document.requiresHarbor !== "string") errors.push("requiresHarbor required");
+    if (!Array.isArray(document.contractIdHints) || document.contractIdHints.length < 1) {
+      errors.push("contractIdHints must be non-empty array");
+    }
+  } else if (kind === "sigil") {
+    if (typeof id === "string" && !/^endgame\.sigil\.[a-z0-9_]+$/.test(id)) {
+      errors.push("sigil id pattern");
+    }
+    if (typeof document.description !== "string") errors.push("description required");
+    if (typeof document.requiresPrestigeCount !== "number") {
+      errors.push("requiresPrestigeCount must be number");
+    }
+    if (document.powerNeutral !== true) errors.push("powerNeutral must be true");
+  } else if (kind === "modpack") {
+    if (typeof id === "string" && !/^pack\.[a-z0-9_]+$/.test(id)) {
+      errors.push("modpack id pattern");
+    }
+    if (typeof document.description !== "string") errors.push("description required");
+    if (document.contentVersion !== "5.0.0") errors.push("contentVersion must be 5.0.0");
+    if (document.schemaVersion !== 27) errors.push("schemaVersion must be 27");
+    if (!Array.isArray(document.includes) || document.includes.length < 1) {
+      errors.push("includes must be non-empty array");
+    }
+    if (!Array.isArray(document.fragments)) errors.push("fragments must be array");
+    if (document.modular !== true) errors.push("modular must be true");
   }
   return errors;
 }

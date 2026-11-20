@@ -1,0 +1,69 @@
+{
+  "phase": 7,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.harbors_13_14.v1",
+  "description": "Finish 6.0 Phase 7 \u2014 author harbors 13\u201314 (Saffron Quay, Cobalt Sound) with layouts, specializations, thirteen/fourteen prestige circuit, landing quests, trophy galleries, and regenerated scenic blockouts. Schema stays 26.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "harborCount": 14,
+  "newHarborCount": 2,
+  "harbors1314Marker": "authored-finish-6.0-phase-7",
+  "newHarbors": [
+    {
+      "id": "harbor.saffron_quay",
+      "name": "Saffron Quay",
+      "requires": [
+        "prestige.twelve_harbors"
+      ],
+      "specialization": "spec.saffron_lantern",
+      "blockout": "shared/assets/models/saffron_quay_blockout.glb",
+      "landingQuest": "quest.saffron_quay_landing",
+      "prestigeUnlock": "prestige.thirteen_harbors",
+      "gallery": "gallery.saffron_quay",
+      "theme": "saffron"
+    },
+    {
+      "id": "harbor.cobalt_sound",
+      "name": "Cobalt Sound",
+      "requires": [
+        "prestige.thirteen_harbors"
+      ],
+      "specialization": "spec.cobalt_shelf",
+      "blockout": "shared/assets/models/cobalt_sound_blockout.glb",
+      "landingQuest": "quest.cobalt_sound_landing",
+      "prestigeUnlock": "prestige.fourteen_harbors",
+      "gallery": "gallery.cobalt_sound",
+      "theme": "cobalt"
+    }
+  ],
+  "circuitPrestige": [
+    "prestige.thirteen_harbors",
+    "prestige.fourteen_harbors"
+  ],
+  "travelFixture": "shared/fixtures/parity-harbors-13-14.json",
+  "blockoutTool": "shared/tools/generate_blockout.py",
+  "themesModule": "shared/tools/harbor_themes.py",
+  "authorTool": "shared/tools/author_harbors_13_14.py",
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "definitionOfDoneQuota": 14,
+  "validateScript": "npm run harbors1314:validate",
+  "checklist": [
+    "content-pack has 14 harbors including saffron_quay + cobalt_sound",
+    "Blockouts regenerated for saffron_quay + cobalt_sound GLBs",
+    "Prestige thirteen/fourteen + landing quests + galleries/curators wired",
+    "kickoff authoredHarborsRemaining=0 and harborArt6Incomplete=false",
+    "Phase 1 baseline.authoredHarbors stays 12",
+    "DoD quotas.harbors = 14",
+    "parity-harbors-13-14 fixture + harbors1314:validate green",
+    "CI runs harbors1314:validate"
+  ],
+  "preflightGates": [
+    "shared/ship/harbors-13-14.json",
+    "shared/fixtures/parity-harbors-13-14.json",
+    "shared/assets/models/saffron_quay_blockout.glb",
+    "shared/assets/models/cobalt_sound_blockout.glb",
+    "shared/tools/author_harbors_13_14.py",
+    "web/src/ship/harbors1314.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Harbors1314.kt"
+  ]
+}

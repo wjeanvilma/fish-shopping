@@ -1,0 +1,76 @@
+{
+  "name": "parity-harbors-13-14",
+  "description": "Finish 6.0 Phase 7: from twelve-harbor prestige, travel Saffron Quay \u2192 Cobalt Sound; landing quests + thirteen/fourteen prestige unlock.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "harbors1314Marker": "authored-finish-6.0-phase-7",
+  "harborId": "harbor.sunrise_pier",
+  "seed": 60714,
+  "setup": {
+    "completedQuests": [
+      "quest.busy_harbor",
+      "quest.moon_crossing",
+      "quest.obsidian_landing",
+      "quest.northlight_landing",
+      "quest.grand_marina_landing",
+      "quest.coral_lagoon_landing",
+      "quest.storm_quay_landing",
+      "quest.ember_wharf_landing",
+      "quest.mist_cove_landing",
+      "quest.prism_reach_landing",
+      "quest.aurora_inlet_landing",
+      "quest.tideglass_bay_landing"
+    ],
+    "completedPrestige": [
+      "prestige.twin_harbors",
+      "prestige.triple_harbors",
+      "prestige.quad_harbors",
+      "prestige.five_harbors",
+      "prestige.six_harbors",
+      "prestige.seven_harbors",
+      "prestige.eight_harbors",
+      "prestige.nine_harbors",
+      "prestige.ten_harbors",
+      "prestige.eleven_harbors",
+      "prestige.twelve_harbors"
+    ],
+    "unlockedCosmetics": [
+      "banner.twin_harbors",
+      "banner.triple_harbors",
+      "banner.quad_harbors",
+      "banner.five_harbors",
+      "banner.six_harbors",
+      "banner.seven_harbors",
+      "banner.eight_harbors",
+      "banner.nine_harbors",
+      "banner.ten_harbors",
+      "banner.eleven_harbors",
+      "banner.twelve_harbors"
+    ],
+    "harborsTraveled": 12
+  },
+  "travels": [
+    {
+      "harborId": "harbor.saffron_quay",
+      "requestId": "p7-saffron-1",
+      "expectQuest": "quest.saffron_quay_landing",
+      "expectPrestige": "prestige.thirteen_harbors",
+      "expectBanner": "banner.thirteen_harbors",
+      "expectBlockout": "saffron_quay_blockout.glb"
+    },
+    {
+      "harborId": "harbor.cobalt_sound",
+      "requestId": "p7-cobalt-1",
+      "expectQuest": "quest.cobalt_sound_landing",
+      "expectPrestige": "prestige.fourteen_harbors",
+      "expectBanner": "banner.fourteen_harbors",
+      "expectBlockout": "cobalt_sound_blockout.glb"
+    }
+  ],
+  "expectFinal": {
+    "harborId": "harbor.cobalt_sound",
+    "harborsTraveled": 14,
+    "specializationId": "spec.cobalt_shelf",
+    "blockoutAsset": "cobalt_sound_blockout.glb"
+  }
+}

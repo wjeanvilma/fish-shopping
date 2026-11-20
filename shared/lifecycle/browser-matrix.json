@@ -1,7 +1,7 @@
 {
   "phase": 14,
   "schema": "fish.lifecycle.browser_matrix.v1",
-  "description": "Post-1.0 Phase 14 — browser QA matrix. Finish 5.0 Phase 27 adds Chrome Android + bfcache/persistent-storage scenarios.",
+  "description": "Post-1.0 Phase 14 — browser QA matrix. Finish 6.0 Phase 28 adds Safari iOS + nest deeplink/page-lifecycle scenarios.",
   "phase28Catalog": "shared/lifecycle/browser-lifecycle.json",
   "finish4Phase": 27,
   "browsers": [
@@ -82,6 +82,25 @@
         "pointerdown",
         "keydown",
         "touchstart"
+      ]
+    },
+    {
+      "id": "safari_ios",
+      "label": "Safari on iOS",
+      "engines": [
+        "WebKit"
+      ],
+      "minNotes": "Finish 6.0 Phase 28 — iOS Safari WebGL2 + touchstart unlock; nest deeplink resume",
+      "webgl2": "required",
+      "indexedDb": "persistent_or_private_memory",
+      "audioUnlock": [
+        "pointerdown",
+        "keydown",
+        "touchstart"
+      ],
+      "notes": [
+        "ITP may force memory-only saves in private mode",
+        "Nest deeplink resume must re-unlock audio on first tap"
       ]
     }
   ],
@@ -246,6 +265,40 @@
       "phase28Keys": [
         "web.storageUnavailable"
       ]
+    },
+    {
+      "id": "nest_deeplink_resume",
+      "title": "Nest deeplink resume",
+      "trigger": "Open /play?panel=nest (or hash) after cold load",
+      "expects": [
+        "resumeOnVisibilityVisible",
+        "unlockOnGesture"
+      ],
+      "hostHooks": [
+        "App.tsx deep link",
+        "GameHost.pendingDeepLink"
+      ],
+      "phase28Keys": [
+        "web.audioGesture",
+        "web.tabLifecycle.suspendAudioWhenHidden"
+      ]
+    },
+    {
+      "id": "page_lifecycle_freeze",
+      "title": "Page Lifecycle freeze / resume",
+      "trigger": "document freeze/resume (Chrome Page Lifecycle)",
+      "expects": [
+        "suspendOnVisibilityHidden",
+        "resumeOnVisibilityVisible",
+        "keepUnlockAcrossSuspend"
+      ],
+      "hostHooks": [
+        "App.tsx freeze/resume",
+        "GameHost pause/resume"
+      ],
+      "phase28Keys": [
+        "web.tabLifecycle.suspendAudioWhenHidden"
+      ]
     }
   ],
   "audioUnlockEvents": [
@@ -270,7 +323,10 @@
     "Safari iOS: touchstart unlocks audio; rotate portrait/landscape HUD reflows",
     "Fill storage / block site data → title toast + Settings memory-only label; play still works",
     "PWA: install / offline → offline.html shell; Play still boots when online again",
-    "Settings → reduced motion On → no fly/burst/shake; sim tick unchanged"
+    "Settings → reduced motion On → no fly/burst/shake; sim tick unchanged",
+    "Safari iOS: nest deeplink opens panel; first tap unlocks audio",
+    "Chrome: Page Lifecycle freeze → resume keeps unlock + harbor scene",
+    "Nest deeplink: /play?panel=nest after cold load resumes without blank WebGL"
   ],
   "failCriteria": [
     "Blank screen with no WebGL2 gate copy",
@@ -279,5 +335,6 @@
     "Safari iOS never unlocks AudioContext after first tap",
     "Reduced motion still plays fly/burst/shake VFX"
   ],
-  "finish5Phase": 27
+  "finish5Phase": 27,
+  "finish6Phase": 28
 }

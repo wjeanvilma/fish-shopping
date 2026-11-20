@@ -12,6 +12,7 @@ import com.willio.jeanvilma.fishshopping.core.progression.DailyGoalsSystem
  * Finish 2.0 Phase 18 adds daily streak / objectives.
  * Finish 4.0 Phase 20 adds cashflow / scarcity / reputation surfaces.
  * Finish 5.0 Phase 21 adds pier ledger / loan book analytics.
+ * Finish 6.0 Phase 17 adds nest treasury analytics.
  */
 object BusinessDashboard {
 
@@ -23,6 +24,15 @@ object BusinessDashboard {
         "wage",
         "contract_payout",
         "contract_penalty",
+    )
+
+    private val NEST_TREASURY_LINE_TYPES = setOf(
+        "loan",
+        "loan_repay",
+        "loan_collect",
+        "contract_payout",
+        "contract_penalty",
+        "wage",
     )
 
     fun build(
@@ -59,6 +69,17 @@ object BusinessDashboard {
             } else {
                 0
             }
+        val wageBurdenPermille =
+            if (gross > 0L) ((wages * 1000L) / gross).toInt() else 0
+        val loanCoveragePermille =
+            if (state.loanOwed > 0L) {
+                ((state.coins * 1000L) / state.loanOwed).toInt().coerceAtMost(1000)
+            } else {
+                1000
+            }
+        val rivalLossCoins = state.stat(Stats.RIVAL_SALES_STOLEN)
+        val endgameSigilsEarned = state.stat(Stats.ENDGAME_SIGILS_EARNED)
+        val coinGoalsReached = state.stat(Stats.COIN_GOALS_REACHED)
         val minutes = sessionSeconds / 60L
         val revenuePerMinute = if (minutes > 0L) committedRevenue / minutes else 0L
         val salesPerMinute = if (minutes > 0L) sales / minutes else 0L
@@ -117,6 +138,12 @@ object BusinessDashboard {
             ledgerNetCashflow = ledgerNetCashflow,
             contractRevenueSharePermille = contractRevenueSharePermille,
             ledgerLines = buildLedgerLines(state),
+            wageBurdenPermille = wageBurdenPermille,
+            loanCoveragePermille = loanCoveragePermille,
+            rivalLossCoins = rivalLossCoins,
+            endgameSigilsEarned = endgameSigilsEarned,
+            coinGoalsReached = coinGoalsReached,
+            nestTreasuryLines = buildNestTreasuryLines(state),
         )
     }
 
@@ -127,6 +154,20 @@ object BusinessDashboard {
             if (lines.size >= 6) break
             val r = ledger[i]
             if (r.type !in LEDGER_LINE_TYPES) continue
+            val sign = if (r.coinDelta >= 0L) "+" else ""
+            lines += "${r.type} $sign${r.coinDelta}"
+        }
+        return lines
+    }
+
+    /** Finish 6.0 Phase 17 — nest treasury slice (loan/contract/wage focus). */
+    fun buildNestTreasuryLines(state: GameState): List<String> {
+        val lines = ArrayList<String>(5)
+        val ledger = state.ledger.toList()
+        for (i in ledger.lastIndex downTo 0) {
+            if (lines.size >= 5) break
+            val r = ledger[i]
+            if (r.type !in NEST_TREASURY_LINE_TYPES) continue
             val sign = if (r.coinDelta >= 0L) "+" else ""
             lines += "${r.type} $sign${r.coinDelta}"
         }

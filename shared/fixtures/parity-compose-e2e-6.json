@@ -1,0 +1,33 @@
+{
+  "schema": "fish.fixture.parity_compose_e2e_6.v1",
+  "description": "Finish 6.0 Phase 24: Compose E2E ≥20 + nest surface tag expectations.",
+  "composeE2e6Marker": "authored-finish-6.0-phase-24",
+  "plan": "30_finish_6.0",
+  "expect": {
+    "closesGap": "composeE2eThin",
+    "composeE2eThin": false,
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "scenarioFloor": 20,
+    "tagCountFloor": 40,
+    "openGapFlagMin": 1,
+    "requiredTags": [
+      "nest.treasury",
+      "nest.loans",
+      "bag.panel",
+      "dash.root",
+      "contracts.panel",
+      "map.panel",
+      "species.book",
+      "staff.train"
+    ],
+    "robolectricMustContain": [
+      "composeUiTagsNestFloor",
+      "nestTreasuryTagPresent",
+      "nestLoansTagPresent",
+      "bagPanelTagPresent",
+      "nestPanelTagsWired",
+      "photoDecorTagsStable"
+    ]
+  }
+}

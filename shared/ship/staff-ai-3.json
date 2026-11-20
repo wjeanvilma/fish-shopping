@@ -85,7 +85,7 @@
   ],
   "branchesMin": 13,
   "schedulesMin": 3,
-  "webWorkersPath": "web/src/engine/systems.ts",
+  "webWorkersPath": "web/src/engine/systems/workers.ts",
   "kotlinWorkersPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
   "webStatsPath": "web/src/engine/state.ts",
   "kotlinStatsPath": "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/GameState.kt",
@@ -118,7 +118,7 @@
     "web/src/ship/staffAi3.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/StaffAi3.kt",
     "web/scripts/validate-staff-ai-3.ts",
-    "web/src/engine/systems.ts",
+    "web/src/engine/systems/workers.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/workers/WorkerAi.kt",
     "web/src/engine/state.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/GameState.kt"

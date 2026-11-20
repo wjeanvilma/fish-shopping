@@ -59,7 +59,7 @@
     "finish2SuiteFloor": 4,
     "finish3SuiteFloor": 4,
     "finish4SuiteFloor": 4,
-    "note": "parity2/parity3/parity4 stay green on historical 8/12/16 suite floors; Phase 29 enforces live ≥20 + 4 Finish 5.0 suites."
+    "note": "parity2:validate + parity3:validate + parity4:validate + parity5:validate stay green on historical 8/12/16/20 suite floors; Finish 6.0 Phase 29 raises live parity-lock suiteFloor to 24."
   },
   "checklist": [
     "parity-lock.json lists ≥20 suites including 4 Finish 5.0 system suites",

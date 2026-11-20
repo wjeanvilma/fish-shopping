@@ -100,7 +100,14 @@ export function HarborMapPanel({ harbors, fullHarborUnlock, onTravel, onUnlockAl
   useEffect(() => closeRef.current?.focus(), []);
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="panel sheet" role="dialog" aria-modal="true" aria-label={t("panels.map")} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="panel sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("panels.map")}
+        data-testid={WEB_E2E_IDS.MAP_PANEL}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sheet-header">
           <h2>{t("panels.map")}</h2>
           <button ref={closeRef} className="button ghost" onClick={onClose}>{t("common.close")}</button>

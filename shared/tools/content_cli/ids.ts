@@ -1,5 +1,5 @@
 /**
- * Finish 2.0 Phase 27 + Finish 3.0 Phase 28 + Finish 4.0 Phase 28 + Finish 5.0 Phase 28 —
+ * Finish 2.0 Phase 27 + Finish 3.0/4.0/5.0 Phase 28 + Finish 6.0 Phase 27 —
  * content authoring id helpers.
  */
 
@@ -17,11 +17,15 @@ export type Wave3ScaffoldKind = "machine" | "rival";
 /** Finish 5.0 Phase 28 wave-5 kinds. */
 export type Wave5ScaffoldKind = "seasonal" | "endgame" | "cosmetic";
 
+/** Finish 6.0 Phase 27 wave-6 kinds + modular packs. */
+export type Wave6ScaffoldKind = "chain" | "sigil" | "modpack";
+
 export type ScaffoldKind =
   | CoreScaffoldKind
   | ExpansionScaffoldKind
   | Wave3ScaffoldKind
-  | Wave5ScaffoldKind;
+  | Wave5ScaffoldKind
+  | Wave6ScaffoldKind;
 
 export const SCAFFOLD_KINDS: CoreScaffoldKind[] = ["species", "quest", "harbor"];
 
@@ -31,11 +35,14 @@ export const SCAFFOLD_KINDS_3: Wave3ScaffoldKind[] = ["machine", "rival"];
 
 export const SCAFFOLD_KINDS_5: Wave5ScaffoldKind[] = ["seasonal", "endgame", "cosmetic"];
 
+export const SCAFFOLD_KINDS_6: Wave6ScaffoldKind[] = ["chain", "sigil", "modpack"];
+
 export const ALL_SCAFFOLD_KINDS: ScaffoldKind[] = [
   ...SCAFFOLD_KINDS,
   ...SCAFFOLD_KINDS_2,
   ...SCAFFOLD_KINDS_3,
   ...SCAFFOLD_KINDS_5,
+  ...SCAFFOLD_KINDS_6,
 ];
 
 const PREFIXES: Record<ScaffoldKind, string> = {
@@ -50,6 +57,9 @@ const PREFIXES: Record<ScaffoldKind, string> = {
   seasonal: "event.",
   endgame: "endgame.tier.",
   cosmetic: "entitlement.cosmetic.",
+  chain: "chain.",
+  sigil: "endgame.sigil.",
+  modpack: "pack.",
 };
 
 export function normalizeSlug(raw: string): string {

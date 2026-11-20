@@ -1,0 +1,21 @@
+{
+  "schema": "fish.fixtures.parity_ship_codegen.v1",
+  "shipCodegenMarker": "authored-finish-6.0-phase-3",
+  "phase": 3,
+  "plan": "30_finish_6.0",
+  "expect": {
+    "contentVersion": "5.0.0",
+    "schemaVersion": 26,
+    "catalogMin": 3,
+    "featureMin": 4,
+    "gapClosed": "shipCodegenMissing",
+    "gates": [
+      "module_present",
+      "catalogs_registered",
+      "generated_mirrors_written",
+      "check_mode_clean",
+      "kickoff_gap_closed",
+      "ci_gate"
+    ]
+  }
+}

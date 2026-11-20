@@ -24,7 +24,8 @@ import org.robolectric.annotation.Config
  * Finish 3.0 Phase 21 — Compose UI integration tests (Robolectric / JVM).
  * Finish 4.0 Phase 26 — HUD nav toolbar + expanded tag floor.
  * Finish 5.0 Phase 26 — Finish 5 surface tags + ≥14 scenarios.
- * Covers title menu, analytics consent, offline summary, pause, and HUD nav.
+ * Finish 6.0 Phase 24 — nest surface tags + ≥20 scenarios.
+ * Covers title menu, analytics consent, offline summary, pause, HUD nav, and nest tags.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -297,5 +298,56 @@ class ComposeUiIntegrationTest {
     fun deeplinkReadyTagPresent() {
         assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.DEEPLINK_READY))
         assertEquals("deeplink.ready", ComposeUiTags.DEEPLINK_READY)
+    }
+
+    @Test
+    fun composeUiTagsNestFloor() {
+        assertTrue(ComposeUiTags.ALL.size >= 40)
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.NEST_TREASURY))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.NEST_LOANS))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.BAG_PANEL))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.DASH_ROOT))
+        assertEquals(ComposeUiTags.ALL.size, ComposeUiTags.ALL.toSet().size)
+    }
+
+    @Test
+    fun nestTreasuryTagPresent() {
+        assertEquals("nest.treasury", ComposeUiTags.NEST_TREASURY)
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.NEST_TREASURY))
+    }
+
+    @Test
+    fun nestLoansTagPresent() {
+        assertEquals("nest.loans", ComposeUiTags.NEST_LOANS)
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.NEST_LOANS))
+    }
+
+    @Test
+    fun bagPanelTagPresent() {
+        assertEquals("bag.panel", ComposeUiTags.BAG_PANEL)
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.BAG_PANEL))
+    }
+
+    @Test
+    fun nestPanelTagsWired() {
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.CONTRACTS_PANEL))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.MAP_PANEL))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.SPECIES_BOOK))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.STAFF_TRAIN))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.DASH_ROOT))
+        assertEquals("contracts.panel", ComposeUiTags.CONTRACTS_PANEL)
+        assertEquals("map.panel", ComposeUiTags.MAP_PANEL)
+        assertEquals("species.book", ComposeUiTags.SPECIES_BOOK)
+        assertEquals("staff.train", ComposeUiTags.STAFF_TRAIN)
+        assertEquals("dash.root", ComposeUiTags.DASH_ROOT)
+    }
+
+    @Test
+    fun photoDecorTagsStable() {
+        assertEquals("photo.snap", ComposeUiTags.PHOTO_SNAP)
+        assertEquals("decor.place", ComposeUiTags.DECOR_PLACE)
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.PHOTO_SNAP))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.DECOR_PLACE))
+        assertTrue(ComposeUiTags.ALL.contains(ComposeUiTags.FRICTION_NUDGE))
     }
 }

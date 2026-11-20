@@ -1,0 +1,228 @@
+{
+  "phase": 8,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.species_150.v1",
+  "description": "Finish 6.0 Phase 8 — lock species 126–150 into content-pack with ecology depth (8 new habitats) + full 8-locale content i18n + fish-art-6 meshes. Closes speciesRemaining, authoredFishRemaining, fishArt6Incomplete. Schema stays 26.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "speciesCount": 150,
+  "newSpeciesCount": 25,
+  "habitatCount": 32,
+  "newHabitatCount": 8,
+  "species150Marker": "authored-finish-6.0-phase-8",
+  "priorSpeciesFloor": 125,
+  "fishArtMarker": "fish-art-6",
+  "gapsClosed": [
+    "speciesRemaining",
+    "authoredFishRemaining",
+    "fishArt6Incomplete"
+  ],
+  "newBaseSpecies": [
+    {
+      "id": "species.saffron_sprat",
+      "name": "Saffron sprat",
+      "rareUpgrade": "species.gilt_saffron",
+      "harbors": [
+        "harbor.saffron_quay"
+      ],
+      "gallery": "gallery.saffron_quay",
+      "habitat": "habitat.saffron_rail"
+    },
+    {
+      "id": "species.quay_mullet",
+      "name": "Quay mullet",
+      "rareUpgrade": "species.bronze_quay",
+      "harbors": [
+        "harbor.saffron_quay"
+      ],
+      "gallery": "gallery.saffron_quay",
+      "habitat": "habitat.saffron_rail"
+    },
+    {
+      "id": "species.cobalt_smelt",
+      "name": "Cobalt smelt",
+      "rareUpgrade": "species.aurora_cobalt",
+      "harbors": [
+        "harbor.cobalt_sound"
+      ],
+      "gallery": "gallery.cobalt_sound",
+      "habitat": "habitat.cobalt_shelf"
+    },
+    {
+      "id": "species.sound_char",
+      "name": "Sound char",
+      "rareUpgrade": "species.crystal_sound",
+      "harbors": [
+        "harbor.cobalt_sound"
+      ],
+      "gallery": "gallery.cobalt_sound",
+      "habitat": "habitat.cobalt_shelf"
+    },
+    {
+      "id": "species.lantern_scad",
+      "name": "Lantern scad",
+      "rareUpgrade": "species.prism_scad",
+      "harbors": [
+        "harbor.aurora_inlet"
+      ],
+      "gallery": "gallery.aurora_inlet",
+      "habitat": "habitat.lantern_scad_reef"
+    },
+    {
+      "id": "species.tide_wrasse",
+      "name": "Tide wrasse",
+      "rareUpgrade": "species.glass_tide",
+      "harbors": [
+        "harbor.tideglass_bay"
+      ],
+      "gallery": "gallery.tideglass_bay",
+      "habitat": "habitat.tide_wrasse_lip"
+    },
+    {
+      "id": "species.dock_blenny",
+      "name": "Dock blenny",
+      "rareUpgrade": "species.opal_dock",
+      "harbors": [
+        "harbor.sunrise_pier"
+      ],
+      "gallery": "gallery.sunrise_pier",
+      "habitat": "habitat.dock_rim"
+    },
+    {
+      "id": "species.cove_drum",
+      "name": "Cove drum",
+      "rareUpgrade": "species.thunder_cove",
+      "harbors": [
+        "harbor.moon_cove"
+      ],
+      "gallery": "gallery.moon_cove",
+      "habitat": "habitat.finish6_cut"
+    },
+    {
+      "id": "species.reef_jack",
+      "name": "Reef jack",
+      "rareUpgrade": "species.gilt_reef",
+      "harbors": [
+        "harbor.coral_lagoon"
+      ],
+      "gallery": "gallery.coral_lagoon",
+      "habitat": "habitat.finish6_cut"
+    },
+    {
+      "id": "species.kiln_shad",
+      "name": "Kiln shad",
+      "rareUpgrade": "species.magma_kiln",
+      "harbors": [
+        "harbor.ember_wharf"
+      ],
+      "gallery": "gallery.ember_wharf",
+      "habitat": "habitat.finish6_cut"
+    },
+    {
+      "id": "species.mist_goby",
+      "name": "Mist goby",
+      "rareUpgrade": "species.veil_goby",
+      "harbors": [
+        "harbor.mist_cove"
+      ],
+      "gallery": "gallery.mist_cove",
+      "habitat": "habitat.finish6_cut"
+    },
+    {
+      "id": "species.plaza_bass",
+      "name": "Plaza bass",
+      "rareUpgrade": "species.gilt_bass",
+      "harbors": [
+        "harbor.prism_reach"
+      ],
+      "gallery": "gallery.prism_reach",
+      "habitat": "habitat.finish6_cut"
+    },
+    {
+      "id": "species.cobalt_tuna",
+      "name": "Cobalt tuna",
+      "rareUpgrade": null,
+      "harbors": [
+        "harbor.cobalt_sound"
+      ],
+      "gallery": "gallery.cobalt_sound",
+      "habitat": "habitat.sound_cut"
+    }
+  ],
+  "newRareSpecies": [
+    "species.gilt_saffron",
+    "species.bronze_quay",
+    "species.aurora_cobalt",
+    "species.crystal_sound",
+    "species.prism_scad",
+    "species.glass_tide",
+    "species.opal_dock",
+    "species.thunder_cove",
+    "species.gilt_reef",
+    "species.magma_kiln",
+    "species.veil_goby",
+    "species.gilt_bass"
+  ],
+  "habitatIds": [
+    "habitat.saffron_rail",
+    "habitat.quay_glow",
+    "habitat.cobalt_shelf",
+    "habitat.sound_cut",
+    "habitat.lantern_scad_reef",
+    "habitat.tide_wrasse_lip",
+    "habitat.dock_rim",
+    "habitat.finish6_cut"
+  ],
+  "allHabitatFloor": 32,
+  "rareGallery": "gallery.rare_gallery",
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "parityFixture": "shared/fixtures/parity-species-150.json",
+  "authorTool": "shared/tools/author_species_150.py",
+  "validateScript": "npm run species150:validate",
+  "i18n": {
+    "locales": [
+      "en",
+      "es",
+      "pt",
+      "fr",
+      "ht",
+      "it",
+      "ca",
+      "ru"
+    ],
+    "contentStringsEn": "shared/i18n/content-strings.en.json",
+    "waveKeyCount": 25,
+    "habitatKeyCount": 8,
+    "requireTranslatedLocales": true,
+    "requireNonEnglishPassthrough": [
+      "es",
+      "pt",
+      "fr",
+      "ht",
+      "it",
+      "ca",
+      "ru"
+    ]
+  },
+  "checklist": [
+    "content-pack has 150 species including Phase 8 wave + rares",
+    "ecology.habitats ≥32 with 8 Phase 8 pockets covering all 25 wave ids",
+    "All 8 locales translate wave species + new habitats (non-EN ≠ EN)",
+    "fish-art-pass authoredSpecies = 150 with fishFinish6 stamps",
+    "kickoff baseline.species stays 125; remaining gaps closed to 0/false",
+    "species150:validate green in CI",
+    "schema stays 26 / content 5.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/species-150.json",
+    "shared/fixtures/parity-species-150.json",
+    "shared/ship/fish-art-pass.json",
+    "shared/ship/finish-6.0-kickoff.json",
+    "shared/tools/author_species_150.py",
+    "shared/assets/models/fish_saffron_sprat.glb",
+    "shared/assets/models/fish_cobalt_tuna.glb",
+    "web/src/ship/species150.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Species150.kt",
+    "web/scripts/validate-species-150.ts"
+  ]
+}

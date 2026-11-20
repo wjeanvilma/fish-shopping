@@ -5,6 +5,7 @@ package com.willio.jeanvilma.fishshopping.render
  * Finish 3.0 Phase 24 adds tide + rival ambient mixes (still not burst-pool).
  * Finish 4.0 Phase 23 adds endgame ambient modes (still not burst-pool).
  * Finish 5.0 Phase 12 adds pressure ambient modes (still not burst-pool).
+ * Finish 6.0 Phase 12 adds nest ambient modes (still not burst-pool).
  * Presentation-only; does not consume the VfxBurst pool or change 20 Hz sim.
  */
 enum class WeatherAmbientId {
@@ -21,6 +22,10 @@ enum class EndgameAmbientId {
 
 enum class PressureAmbientId {
     CALM, RISING, CRITICAL,
+}
+
+enum class NestAmbientId {
+    IDLE, ROOSTING, SETTLED,
 }
 
 data class WeatherAmbientProfile(
@@ -68,6 +73,12 @@ private data class PressureMix(
     val amount: Float,
 )
 
+private data class NestMix(
+    val sky: Int,
+    val water: Int,
+    val amount: Float,
+)
+
 private val PROFILES = mapOf(
     WeatherAmbientId.CLEAR to AmbientBase(WeatherAmbientId.CLEAR, 0x9fd3ea, 0x1a5f7a, 0x3a9fc4, 1.0, 0.18f),
     WeatherAmbientId.OVERCAST to AmbientBase(WeatherAmbientId.OVERCAST, 0x8aa0b0, 0x2a4a5a, 0x4a7080, 0.7, 0.12f),
@@ -96,6 +107,12 @@ private val PRESSURE_MIX = mapOf(
     PressureAmbientId.CRITICAL to PressureMix(0xa04038, 0x2a3048, 0.22f),
 )
 
+private val NEST_MIX = mapOf(
+    NestAmbientId.IDLE to NestMix(0x9fd3ea, 0x1a5f7a, 0.0f),
+    NestAmbientId.ROOSTING to NestMix(0xd8b878, 0x3a5860, 0.12f),
+    NestAmbientId.SETTLED to NestMix(0xe8c898, 0x4a6870, 0.2f),
+)
+
 val WEATHER_AMBIENT_PATTERN_IDS = listOf(
     "weather.clear",
     "weather.overcast",
@@ -107,6 +124,7 @@ val WEATHER_AMBIENT_PATTERN_IDS = listOf(
 val TIDE_AMBIENT_PHASE_IDS = listOf("dawn", "day", "dusk", "night")
 val ENDGAME_AMBIENT_MODE_IDS = listOf("locked", "active", "crowned")
 val PRESSURE_AMBIENT_MODE_IDS = listOf("calm", "rising", "critical")
+val NEST_AMBIENT_MODE_IDS = listOf("idle", "roosting", "settled")
 
 fun weatherAmbientIdForWeatherId(weatherId: String): WeatherAmbientId = when {
     weatherId.contains("gale") -> WeatherAmbientId.GALE
@@ -156,6 +174,17 @@ fun pressureAmbientIdForView(
     }
 }
 
+fun nestAmbientIdForView(
+    decorPlacementCount: Int,
+    nightActive: Boolean = false,
+    roostingMinPlacements: Int = 1,
+    settledMinPlacements: Int = 3,
+): NestAmbientId = when {
+    decorPlacementCount >= settledMinPlacements -> NestAmbientId.SETTLED
+    decorPlacementCount >= roostingMinPlacements || nightActive -> NestAmbientId.ROOSTING
+    else -> NestAmbientId.IDLE
+}
+
 fun weatherAmbientProfile(
     weatherId: String,
     festivalActive: Boolean = false,
@@ -165,6 +194,7 @@ fun weatherAmbientProfile(
     rivalActive: Boolean = false,
     endgameMode: EndgameAmbientId = EndgameAmbientId.LOCKED,
     pressureMode: PressureAmbientId = PressureAmbientId.CALM,
+    nestMode: NestAmbientId = NestAmbientId.IDLE,
 ): WeatherAmbientProfile {
     val base = PROFILES.getValue(weatherAmbientIdForWeatherId(weatherId))
     val qScale = when (quality) {
@@ -204,6 +234,12 @@ fun weatherAmbientProfile(
         sky = mixRgb(packRgb(sky), pressure.sky, pressure.amount * qScale)
         deep = mixRgb(packRgb(deep), pressure.water, pressure.amount * 0.55f * qScale)
         shallow = mixRgb(packRgb(shallow), pressure.water, pressure.amount * 0.35f * qScale)
+    }
+    val nest = NEST_MIX.getValue(nestMode)
+    if (nest.amount > 0f) {
+        sky = mixRgb(packRgb(sky), nest.sky, nest.amount * qScale)
+        deep = mixRgb(packRgb(deep), nest.water, nest.amount * 0.55f * qScale)
+        shallow = mixRgb(packRgb(shallow), nest.water, nest.amount * 0.35f * qScale)
     }
     return WeatherAmbientProfile(
         id = base.id,

@@ -62,6 +62,7 @@ export type SystemsBridge = {
   smokerSpecialistOnDuty: (content: ContentPack, state: GameState, harbor: HarborDef) => boolean;
   workerGreeterOnDuty: (content: ContentPack, state: GameState) => boolean;
   workerGrantXp: (ctx: StepContext, worker: WorkerState, amount: number) => void;
+  workerSetShift: (ctx: StepContext, workerId: string, onShift: boolean) => void;
   economyIsSlowed: (m: MachineState, tick: number) => boolean;
   customerIsUnlocked: (def: { requiresUpgrade?: string | null }, state: GameState) => boolean;
   productionIsUnlocked: (def: { requiresUpgrade?: string | null }, state: GameState) => boolean;
@@ -111,6 +112,7 @@ export const systemsBridge: SystemsBridge = {
   smokerSpecialistOnDuty: unset("smokerSpecialistOnDuty") as any,
   workerGreeterOnDuty: unset("workerGreeterOnDuty") as any,
   workerGrantXp: unset("workerGrantXp") as any,
+  workerSetShift: unset("workerSetShift") as any,
   economyIsSlowed: unset("economyIsSlowed") as any,
   customerIsUnlocked: unset("customerIsUnlocked") as any,
   productionIsUnlocked: unset("productionIsUnlocked") as any,

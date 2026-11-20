@@ -1,0 +1,118 @@
+{
+  "phase": 14,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.endgame_4.v1",
+  "description": "Finish 6.0 Phase 14 — deepen endgame (≥10 tiers / ≥16 challenges + sigils) and bump live save schema 26→27 with endgameSigils persistence + v26→v27 migration.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "fromSchema": 26,
+  "toSchema": 27,
+  "endgame4Marker": "authored-finish-6.0-phase-14",
+  "tierCountMin": 10,
+  "challengeCountMin": 16,
+  "markCountMin": 3,
+  "crestCountMin": 3,
+  "sigilCountMin": 3,
+  "tierIds": [
+    "endgame.tier.deep_harbor",
+    "endgame.tier.rival_warden",
+    "endgame.tier.legend_pier",
+    "endgame.tier.crown_market",
+    "endgame.tier.mist_sovereign",
+    "endgame.tier.prism_crown",
+    "endgame.tier.aurora_throne",
+    "endgame.tier.tideglass_ascendant",
+    "endgame.tier.saffron_nest",
+    "endgame.tier.cobalt_covenant"
+  ],
+  "challengeIds": [
+    "endgame.challenge.rival_sweep",
+    "endgame.challenge.prestige_surge",
+    "endgame.challenge.codex_depth",
+    "endgame.challenge.market_master",
+    "endgame.challenge.rival_armada",
+    "endgame.challenge.chain_admiral",
+    "endgame.challenge.harbor_decade",
+    "endgame.challenge.mastery_legend",
+    "endgame.challenge.harbor_circuit",
+    "endgame.challenge.quest_sovereign",
+    "endgame.challenge.machine_ascendant",
+    "endgame.challenge.revenue_crest",
+    "endgame.challenge.nest_circuit",
+    "endgame.challenge.quest_covenant",
+    "endgame.challenge.roast_ascendant",
+    "endgame.challenge.nest_revenue"
+  ],
+  "newTierIds": [
+    "endgame.tier.saffron_nest",
+    "endgame.tier.cobalt_covenant"
+  ],
+  "newChallengeIds": [
+    "endgame.challenge.nest_circuit",
+    "endgame.challenge.quest_covenant",
+    "endgame.challenge.roast_ascendant",
+    "endgame.challenge.nest_revenue"
+  ],
+  "sigilIds": [
+    "endgame.sigil.nest_circuit",
+    "endgame.sigil.quest_covenant",
+    "endgame.sigil.roast_ascendant",
+    "endgame.sigil.nest_revenue"
+  ],
+  "stats": [
+    "stat.endgame_tiers_unlocked",
+    "stat.endgame_challenges_completed",
+    "stat.endgame_marks_earned",
+    "stat.endgame_crests_earned",
+    "stat.endgame_sigils_earned"
+  ],
+  "migration": {
+    "fields": [
+      {
+        "field": "endgameSigils",
+        "type": "string[]",
+        "default": []
+      }
+    ]
+  },
+  "extendsEndgame3": "shared/ship/endgame-3.json",
+  "schema27Prep": "shared/ship/schema-27-prep.json",
+  "parityFixture": "shared/fixtures/parity-endgame-4.json",
+  "authorTool": "shared/tools/author_endgame_4.py",
+  "validateScript": "npm run endgame4:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "legacyFixture": "shared/fixtures/legacy/snapshot-v26-starter-line-t2500.json",
+  "checklist": [
+    "≥10 endgame tiers including saffron_nest + cobalt_covenant",
+    "≥16 endgame challenges with grantsSigil sigils",
+    "SCHEMA_VERSION / saveSchemaVersion / RELEASE_PIN / lifecycle = 27",
+    "v26→v27 migration defaults endgameSigils=[]",
+    "endgame3:validate soft floors (≥8 tiers/challenges, schema≥26)",
+    "kickoff gaps.endgameSchema27Pending = false",
+    "parity-endgame-4 + endgame4:validate green",
+    "CI runs endgame4:validate",
+    "content stays 5.0.0",
+    "openGapFlagMin 16→15"
+  ],
+  "preflightGates": [
+    "shared/ship/endgame-4.json",
+    "shared/fixtures/parity-endgame-4.json",
+    "shared/ship/endgame-3.json",
+    "shared/ship/schema-27-prep.json",
+    "shared/fixtures/legacy/snapshot-v26-starter-line-t2500.json",
+    "shared/fixtures/snapshot-starter-line-t2500.json",
+    "shared/content/content-pack.json",
+    "shared/tools/author_endgame_4.py",
+    "web/src/ship/endgame4.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Endgame4.kt",
+    "web/scripts/validate-endgame-4.ts"
+  ],
+  "measured": {
+    "tiers": 10,
+    "challenges": 16,
+    "marks": 4,
+    "crests": 4,
+    "sigils": 4
+  }
+}

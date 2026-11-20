@@ -1,11 +1,11 @@
 {
   "phase": 26,
   "schema": "fish.perf.device_matrix.v1",
-  "description": "Blueprint device budgets for quality presets and soft auto-downgrade/upgrade. Finish 5.0 Phase 27 raises harbor LRU to 4 and denser-scene presenter caps for 12 harbors.",
+  "description": "Blueprint device budgets for quality presets and soft auto-downgrade/upgrade. Finish 6.0 Phase 28 raises harbor LRU to 5 and denser nest presenter caps for 14 harbors.",
   "budgetGatePhase": 15,
   "budgetGateCatalog": "shared/perf/budget-gate.json",
   "finish4Phase": 27,
-  "harborCacheLimit": 4,
+  "harborCacheLimit": 5,
   "platforms": {
     "android": {
       "label": "Android mid-tier",
@@ -39,16 +39,16 @@
   },
   "qualityCosts": {
     "low": {
-      "web": "1× DPR, no shadows, crowd≤3, fly≤4, burst≤2",
-      "android": "no shadows, no MSAA, crowd≤3, fly≤4, burst≤2"
+      "web": "1× DPR, no shadows, crowd≤4, fly≤5, burst≤3",
+      "android": "no shadows, no MSAA, crowd≤4, fly≤5, burst≤3"
     },
     "medium": {
-      "web": "≤1.5× DPR (≤1080 CSS tall), 1024 shadows, crowd≤6, fly≤10, burst≤5",
-      "android": "shadows on, no MSAA, crowd≤6, fly≤10, burst≤5"
+      "web": "≤1.5× DPR (≤1080 CSS tall), 1024 shadows, crowd≤8, fly≤12, burst≤6",
+      "android": "shadows on, no MSAA, crowd≤8, fly≤12, burst≤6"
     },
     "high": {
-      "web": "≤2× DPR, 2048 soft shadows, crowd≤10, fly full pool, burst full pool",
-      "android": "shadows + 4× MSAA, crowd≤10, fly full pool, burst full pool"
+      "web": "≤2× DPR, 2048 soft shadows, crowd≤12, fly full pool, burst full pool",
+      "android": "shadows + 4× MSAA, crowd≤12, fly full pool, burst full pool"
     }
   },
   "autoDowngrade": {
@@ -66,7 +66,8 @@
       "medium→high",
       "capped at requested preset"
     ],
-    "note": "Finish 5.0 Phase 27 — recover quality after sustained under-budget frames without exceeding player preset (12-harbor travel)."
+    "note": "Finish 6.0 Phase 28 — recover quality after sustained under-budget frames without exceeding player preset (14-harbor nest travel)."
   },
-  "finish5Phase": 27
+  "finish5Phase": 27,
+  "finish6Phase": 28
 }

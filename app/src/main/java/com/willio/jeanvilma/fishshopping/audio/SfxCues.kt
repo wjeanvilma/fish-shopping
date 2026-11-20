@@ -9,6 +9,7 @@ import com.willio.jeanvilma.fishshopping.core.sim.GameEvent
  * Finish 3.0 Phase 23 adds rival/travel/hire/prestige/loan/trophy stingers.
  * Finish 4.0 Phase 23 adds decor/cosmetic/endgame/contract/bait/unlock/break/spoil stingers.
  * Finish 5.0 Phase 12 adds cast/spoil/service/contract/quest pressure stingers.
+ * Finish 6.0 Phase 12 adds nest/roast/ferment/school/aurora cozy stingers.
  */
 enum class SfxCue {
     CATCH,
@@ -47,6 +48,11 @@ enum class SfxCue {
     SERVICE_QUEUE,
     CONTRACT_DEADLINE,
     QUEST_NEAR,
+    NEST_SETTLE,
+    ROAST_READY,
+    FERMENT_READY,
+    SCHOOL_FLASH,
+    AURORA_CREST,
     ;
 
     /** Android `res/raw` name without extension (sfx_catch, …). */
@@ -89,6 +95,11 @@ enum class SfxCue {
         SERVICE_QUEUE -> "service_queue"
         CONTRACT_DEADLINE -> "contract_deadline"
         QUEST_NEAR -> "quest_near"
+        NEST_SETTLE -> "nest_settle"
+        ROAST_READY -> "roast_ready"
+        FERMENT_READY -> "ferment_ready"
+        SCHOOL_FLASH -> "school_flash"
+        AURORA_CREST -> "aurora_crest"
     }
 }
 
@@ -104,7 +115,8 @@ fun SfxCue.wantsHaptic(): Boolean =
         this == SfxCue.ENDGAME_TIER ||
         this == SfxCue.ENDGAME_CHALLENGE ||
         this == SfxCue.FULL_UNLOCK ||
-        this == SfxCue.CAST_STRIKE
+        this == SfxCue.CAST_STRIKE ||
+        this == SfxCue.SCHOOL_FLASH
 
 fun sfxFromEvent(e: GameEvent): SfxCue? = when (e) {
     is GameEvent.FishCaught -> SfxCue.CATCH

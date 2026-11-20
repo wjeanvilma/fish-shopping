@@ -1,0 +1,37 @@
+{
+  "schema": "fish.fixtures.parity_finish6_kickoff.v1",
+  "kickoffMarker": "authored-finish-6.0-phase-1",
+  "phase": 1,
+  "plan": "30_finish_6.0",
+  "expect": {
+    "contentVersion": "5.0.0",
+    "schemaVersion": 27,
+    "priorPlanFinished": "30_finish_5.0",
+    "endReleaseTag": "v6.0.0",
+    "baselineProductLoc": 90597,
+    "productLocTarget": 120000,
+    "gapTargets": {
+      "authoredHarbors": 14,
+      "authoredFish": 150,
+      "productLoc": 120000,
+      "speciesMin": 150,
+      "machinesMin": 16,
+      "questsMin": 100,
+      "i18nLocales": 8,
+      "staffComingSoonReasons": 0,
+      "systemsTsMax": 2800,
+      "gameViewModelMax": 1200,
+      "gameHostMax": 1100
+    },
+    "phaseCount": 30,
+    "openGapFlagMin": 0,
+    "gates": [
+      "prior_plan_finished",
+      "baseline_locked",
+      "gaps_scored",
+      "thirty_phases_listed",
+      "mirrors_wired",
+      "ci_gate"
+    ]
+  }
+}

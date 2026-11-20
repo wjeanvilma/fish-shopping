@@ -1,0 +1,16 @@
+{
+  "name": "parity-species-150",
+  "description": "Finish 6.0 Phase 8: species 150 + habitats + i18n + fish-art-6.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "species150Marker": "authored-finish-6.0-phase-8",
+  "expect": {
+    "speciesCount": 150,
+    "newSpeciesCount": 25,
+    "habitatFloor": 32,
+    "speciesRemainingClosed": 0,
+    "authoredFishRemainingClosed": 0,
+    "fishArt6IncompleteClosed": false,
+    "openGapFlagMin": 1
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "phase": 6,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.loc_midcheck_6.v1",
+  "description": "Finish 6.0 Phase 6 — LOC mid-check scoreboard after schema/codegen/systems-split-3/host-vm-caps (Phases 2–5). Locks measured cut vs Finish 6 Phase 1 baseline (~90.6k) and 120k plan; interim soft floors anti-regression. Schema stays 26 / content 5.0.0.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "locMidcheck6Marker": "authored-finish-6.0-phase-6",
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "locCatalog": "shared/ship/loc-floors.json",
+  "priorFreezeCatalog": "shared/ship/freeze-5.0.0.json",
+  "priorLocMidcheckCatalog": "shared/ship/loc-midcheck.json",
+  "planTargets": {
+    "gameCoreLoc": 38000,
+    "appLoc": 26000,
+    "webSrcLoc": 56000,
+    "productLoc": 120000
+  },
+  "priorBaseline": {
+    "source": "finish-6.0-kickoff.json#baseline",
+    "measuredAtPhase": 1,
+    "gameCoreLoc": 32287,
+    "appLoc": 15415,
+    "webSrcLoc": 42895,
+    "productLoc": 90597
+  },
+  "midcheck": {
+    "measuredAtPhase": 6,
+    "afterPhases": [
+      "schema-foundations",
+      "ship-codegen",
+      "systems-split-3",
+      "host-vm-caps"
+    ],
+    "gameCoreLoc": 32920,
+    "appLoc": 15541,
+    "webSrcLoc": 44285,
+    "productLoc": 92746,
+    "productLocProgressPercent": 7,
+    "productLocProgressPermille": 73,
+    "productLocRemainingToPlan": 27254
+  },
+  "interimSoftFloors": {
+    "enabled": true,
+    "note": "Anti-regression soft floors until Phase 30 freeze; set slightly under midcheck measured.",
+    "gameCoreLoc": 32820,
+    "appLoc": 15491,
+    "webSrcLoc": 44185,
+    "productLoc": 92496
+  },
+  "midcheckSlackLines": 500,
+  "enforceMode": "freeze_anti_regression_until_phase_30",
+  "parityFixture": "shared/fixtures/parity-loc-midcheck-6.json",
+  "authorTool": "shared/tools/author_loc_midcheck_6.py",
+  "validateScript": "npm run locmidcheck6:validate",
+  "smokeScript": "npm run locmidcheck6:smoke",
+  "checklist": [
+    "Midcheck LOC locked after Phases 2–5 (schema/codegen/systems/host caps)",
+    "Live measure ≥ interim soft floors and Finish 6 Phase 1 baseline",
+    "loc-floors plan targets 38k/26k/56k/120k unchanged",
+    "freeze-5.0.0 prior freeze remains green",
+    "Finish 5.0 loc-midcheck catalog remains historical",
+    "No padding / duplicate files in product roots",
+    "locmidcheck6:validate + locmidcheck6:smoke green in CI",
+    "schema stays 26 / content 5.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/loc-midcheck-6.json",
+    "shared/fixtures/parity-loc-midcheck-6.json",
+    "shared/ship/finish-6.0-kickoff.json",
+    "shared/ship/loc-floors.json",
+    "shared/ship/freeze-5.0.0.json",
+    "shared/ship/loc-midcheck.json",
+    "web/src/ship/locMidcheck6.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/LocMidcheck6.kt",
+    "web/scripts/validate-loc-midcheck-6.ts",
+    "web/scripts/smoke-loc-midcheck-6.ts",
+    "shared/tools/author_loc_midcheck_6.py"
+  ]
+}

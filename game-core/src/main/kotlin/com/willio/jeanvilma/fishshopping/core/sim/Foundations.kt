@@ -49,8 +49,9 @@ object SimConstants {
      * 24: beatenRivalIds + unlockedEndgameTiers + completedEndgameChallenges (Finish 3.0 Phase 15).
      * 25: endgameMarks (Finish 4.0 Phase 17 — endgame deepen).
      * 26: endgameCrests (Finish 5.0 Phase 17 — endgame deepen).
+     * 27: endgameSigils (Finish 6.0 Phase 14 — endgame deepen).
      */
-    const val SCHEMA_VERSION = 26
+    const val SCHEMA_VERSION = 27
 }
 
 /** Integer arithmetic that refuses to leave the shared safe range. */

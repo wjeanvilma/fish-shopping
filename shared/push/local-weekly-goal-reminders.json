@@ -1,8 +1,8 @@
 {
   "schema": "fish.push.local_weekly_goal_reminders.v1",
   "phase": 19,
-  "plan": "30_finish_5.0",
-  "description": "Finish 5.0 Phase 19 — local weekly-goal push reminder policy (opt-in). Complements Finish 3.0 daily reminders; no remote FCM.",
+  "plan": "30_finish_6.0",
+  "description": "Finish 6.0 Phase 19 — local weekly-goal push reminder policy (opt-in). Extends Finish 5.0 weekly reminders; no remote FCM.",
   "defaultLocalHour": 17,
   "defaultLocalMinute": 30,
   "channelId": "weekly_goals",

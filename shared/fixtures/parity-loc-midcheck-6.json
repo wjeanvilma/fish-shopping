@@ -1,0 +1,26 @@
+{
+  "schema": "fish.fixtures.parity_loc_midcheck_6.v1",
+  "locMidcheck6Marker": "authored-finish-6.0-phase-6",
+  "phase": 6,
+  "plan": "30_finish_6.0",
+  "expect": {
+    "productLocMidcheck": 92746,
+    "productLocInterimFloor": 92496,
+    "productLocBaseline": 90597,
+    "productLocPlan": 120000,
+    "productLocProgressPercent": 7,
+    "gameCoreLocMidcheck": 32920,
+    "appLocMidcheck": 15541,
+    "webSrcLocMidcheck": 44285,
+    "schemaVersion": 26,
+    "contentVersion": "5.0.0",
+    "gates": [
+      "midcheck_locked",
+      "interim_soft_floors",
+      "kickoff_phase_wired",
+      "loc_floors_plan_targets",
+      "freeze5_prior",
+      "ci_gate"
+    ]
+  }
+}

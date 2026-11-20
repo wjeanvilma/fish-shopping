@@ -1,0 +1,99 @@
+{
+  "phase": 13,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.quests_contracts_6.v1",
+  "description": "Finish 6.0 Phase 13 — raise authored quests to ≥100, delivery chains to ≥9 (saffron roast + cobalt ferment), and deepen reputation-gated / board contracts. Schema stays 26 / content 5.0.0. Closes gaps.questsRemaining; contentFloorsShort stays open.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 26,
+  "questsContracts6Marker": "authored-finish-6.0-phase-13",
+  "questsMin": 100,
+  "deliveryChainsMin": 9,
+  "reputationGatedMin": 12,
+  "contractTemplatesMin": 85,
+  "newQuests": [
+    "quest.roast_line",
+    "quest.ferment_line",
+    "quest.saffron_curator",
+    "quest.cobalt_curator",
+    "quest.harbor_fourteen",
+    "quest.nest_admiral",
+    "quest.roast_gourmet",
+    "quest.ferment_stockist",
+    "quest.board_regent",
+    "quest.perfect_nest",
+    "quest.school_flash_wave",
+    "quest.nest_pressure",
+    "quest.spoil_sentinel",
+    "quest.critic_nest",
+    "quest.tourist_nest",
+    "quest.night_nest",
+    "quest.staff_nest",
+    "quest.branch_nest",
+    "quest.rival_nest",
+    "quest.endgame_nest",
+    "quest.bank_nest",
+    "quest.revenue_nest",
+    "quest.mastery_nest",
+    "quest.nest_covenant"
+  ],
+  "newChains": [
+    "chain.saffron_roast",
+    "chain.cobalt_ferment"
+  ],
+  "newChainHeads": [
+    "contract.chain_saffron_catch",
+    "contract.chain_cobalt_catch"
+  ],
+  "newReputationGated": [
+    "contract.roast_trust",
+    "contract.saffron_vip",
+    "contract.ferment_legend"
+  ],
+  "newBoardContracts": [
+    "contract.roast_chip_order",
+    "contract.ferment_paste_platter",
+    "contract.cobalt_tuna_basket",
+    "contract.plaza_bass_crate",
+    "contract.sound_char_order"
+  ],
+  "extendsQuestsContracts5": "shared/ship/quests-contracts-5.json",
+  "parityFixture": "shared/fixtures/parity-quests-contracts-6.json",
+  "authorTool": "shared/tools/author_quests_contracts_6.py",
+  "validateScript": "npm run quests6:validate",
+  "simHzInvariant": 20,
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "gapClosed": "questsRemaining",
+  "gapClosedValue": 0,
+  "checklist": [
+    "≥100 authored quests chained past legend_circuit",
+    "≥9 delivery chains including saffron_roast + cobalt_ferment",
+    "≥12 reputation-gated contract templates",
+    "≥85 contract templates with board depth SKUs",
+    "content-strings 8 locales + ContentStrings.kt for new ids",
+    "Finish 5.0 quests5:validate still green (historical floors)",
+    "parity-quests-contracts-6 + quests6:validate green",
+    "CI runs quests6:validate",
+    "kickoff questsRemaining=0 (baseline.quests stays 75 Phase-1 soft-floor)",
+    "contentFloorsShort stays true",
+    "schema stays 26 / content 5.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/quests-contracts-6.json",
+    "shared/fixtures/parity-quests-contracts-6.json",
+    "shared/ship/quests-contracts-5.json",
+    "shared/content/content-pack.json",
+    "shared/i18n/content-strings.en.json",
+    "shared/i18n/content-strings.es.json",
+    "shared/i18n/content-strings.pt.json",
+    "shared/tools/author_quests_contracts_6.py",
+    "web/src/ship/questsContracts6.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/QuestsContracts6.kt",
+    "web/scripts/validate-quests-contracts-6.ts"
+  ],
+  "measured": {
+    "quests": 101,
+    "deliveryChains": 9,
+    "reputationGated": 13,
+    "contractTemplates": 90
+  }
+}

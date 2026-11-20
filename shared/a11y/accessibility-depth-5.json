@@ -1,0 +1,140 @@
+{
+  "phase": 22,
+  "plan": "30_finish_6.0",
+  "schema": "fish.a11y.accessibility_depth_5.v1",
+  "description": "Finish 6.0 Phase 22 — a11y depth 5 for nest treasury/conflict/loans/offline journal/staff/roast friction. Extends depth-4; presentation-only; schema 27.",
+  "extendsCatalog": "shared/a11y/accessibility-depth-4.json",
+  "extendsDepth3Catalog": "shared/a11y/accessibility-depth-3.json",
+  "extendsDepth2Catalog": "shared/a11y/accessibility-depth-2.json",
+  "extendsDepth1Catalog": "shared/a11y/accessibility-depth.json",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "simHzInvariant": 20,
+  "wcag": {
+    "normalTextMin": 4.5,
+    "largeOrUiMin": 3.0
+  },
+  "screenSurfaceMin": 6,
+  "contrastPairMin": 3,
+  "uiA11yStringKeyMin": 40,
+  "liveRegionMin": 3,
+  "screenSurfaces": [
+    {
+      "id": "nest_treasury",
+      "webDialogLabelKey": "panels.dashboard",
+      "androidPaneTitleKey": "panels.dashboard",
+      "sectionLabelKey": "a11y.nestTreasurySection",
+      "initialFocus": "close",
+      "keyboardPath": "KeyY Dashboard → Nest treasury"
+    },
+    {
+      "id": "nest_conflict",
+      "webDialogLabelKey": "cloud.chooseSave",
+      "androidPaneTitleKey": "cloud.chooseSave",
+      "sectionLabelKey": "a11y.nestConflictSection",
+      "initialFocus": "n/a",
+      "keyboardPath": "Title cloud conflict → Nest hint"
+    },
+    {
+      "id": "nest_loans",
+      "webDialogLabelKey": "nav.goals",
+      "androidPaneTitleKey": "nav.goals",
+      "sectionLabelKey": "a11y.nestLoanSection",
+      "initialFocus": "close",
+      "keyboardPath": "KeyG Goals → Nest loans"
+    },
+    {
+      "id": "offline_nest_journal",
+      "webDialogLabelKey": "offline.title",
+      "androidPaneTitleKey": "offline.title",
+      "sectionLabelKey": "a11y.offlineNestJournal",
+      "initialFocus": "continue",
+      "keyboardPath": "Offline summary → Nest journal"
+    },
+    {
+      "id": "staff_branch_schedule",
+      "webDialogLabelKey": "panels.staff",
+      "androidPaneTitleKey": "panels.staff",
+      "sectionLabelKey": "a11y.staffTrainSection",
+      "initialFocus": "close",
+      "keyboardPath": "KeyH Staff → Branch/schedule"
+    },
+    {
+      "id": "roast_friction",
+      "webDialogLabelKey": "hud.frictionNudge",
+      "androidPaneTitleKey": "hud.frictionNudge",
+      "sectionLabelKey": "a11y.roastFrictionLive",
+      "initialFocus": "n/a",
+      "keyboardPath": "HUD roast/ferment friction nudge"
+    }
+  ],
+  "contrastPairs": [
+    {
+      "id": "nest_ember_on_surface",
+      "fg": "#4A1F08",
+      "bg": "#FBF7EF",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Finish 6 nest ember ink on light surface"
+    },
+    {
+      "id": "saffron_on_surface",
+      "fg": "#6B4A00",
+      "bg": "#FBF7EF",
+      "role": "large_or_ui",
+      "minRatio": 3.0,
+      "use": "Finish 6 saffron accent on light surface"
+    },
+    {
+      "id": "deep_ink_on_nest_fog",
+      "fg": "#0B2A3A",
+      "bg": "#E8F2F4",
+      "role": "normal_text",
+      "minRatio": 4.5,
+      "use": "Finish 6 deep ink on nest fog"
+    }
+  ],
+  "liveRegions": [
+    "nest_conflict",
+    "offline_nest_journal",
+    "roast_friction"
+  ],
+  "talkBack": {
+    "android": {
+      "nestTreasurySectionLabels": true,
+      "nestConflictLiveRegion": true,
+      "nestLoanSectionLabels": true,
+      "offlineNestJournalLabels": true
+    },
+    "web": {
+      "nestConflictAriaLive": "polite",
+      "roastFrictionAriaLive": "polite",
+      "nestTreasuryAriaLabel": true,
+      "offlineNestJournalAriaLabel": true
+    }
+  },
+  "reducedMotion": {
+    "honorsSettingsToggle": true,
+    "crossRef": "shared/ship/audio-vfx-6.json"
+  },
+  "keyboardDocumentedSurfaces": [
+    "Dashboard nest treasury (Y)",
+    "Cloud nest conflict",
+    "Goals nest loans (G)",
+    "Offline nest journal",
+    "Staff branch/schedule (H)",
+    "Roast/ferment friction HUD nudge"
+  ],
+  "sourcePins": {
+    "depth4": "shared/a11y/accessibility-depth-4.json",
+    "webApp": "web/src/ui/App.tsx",
+    "androidGameScreen": "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/hud/GameScreen.kt",
+    "webCss": "web/src/ui/styles.css"
+  },
+  "manualChecklist": [
+    "TalkBack: Nest treasury + nest loans + offline nest journal",
+    "TalkBack: Nest conflict hint live region",
+    "Keyboard: G/Y/H + Esc; roast friction announces politely",
+    "Contrast: nest ember/saffron/deep ink pairs"
+  ]
+}

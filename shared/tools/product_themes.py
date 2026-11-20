@@ -20,6 +20,12 @@ COSMETIC_FINISH5_MARKER = "product-art-5"
 PRODUCT_ART_FINISH5_MIN = 40
 COSMETIC_BANNER_FINISH5_MIN = 18
 
+# Finish 6.0 Phase 10 — product/cosmetic presentation lock.
+PRODUCT_FINISH6_MARKER = "product-art-6"
+COSMETIC_FINISH6_MARKER = "product-art-6"
+PRODUCT_ART_FINISH6_MIN = 52
+COSMETIC_BANNER_FINISH6_MIN = 24
+
 
 def _finish(pos, nrm, idx):
     (x0, y0, z0), (x1, y1, z1) = mesh_bounds(pos)

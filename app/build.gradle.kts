@@ -90,6 +90,11 @@ android {
         buildConfigField("int", "RELEASE_PIN_VERSION_CODE", "$pinVersionCode")
     }
 
+    // Keep loadtest banks seekable so GameViewModel can openFd + header-probe without inflate.
+    androidResources {
+        noCompress += listOf("json")
+    }
+
     signingConfigs {
         // Phase 4 (post-1.0): Play upload keystore. Populated only when credentials resolve.
         create("upload") {
@@ -145,11 +150,24 @@ android {
 
 // Package the shared content pack and 3D assets straight from ../shared so the
 // Android and web clients always ship the same files (blueprint "Shared rules").
+// Also package the ~90MB loadtest banks (hard-linked from fixtures) for runtime probes.
+val loadtestAssetDir = layout.buildDirectory.dir("generated/loadtestAssets").get().asFile
+loadtestAssetDir.mkdirs()
+listOf("loadtest-save-bank.json", "loadtest-telemetry-bank.json").forEach { name ->
+    val src = rootProject.file("shared/fixtures/$name")
+    val dst = File(loadtestAssetDir, name)
+    if (src.isFile && (!dst.exists() || dst.length() != src.length())) {
+        dst.delete()
+        // Kotlin DSL shadows `java`; copy is sufficient for CI asset packaging.
+        src.copyTo(dst, overwrite = true)
+    }
+}
 androidComponents {
     onVariants { variant ->
         variant.sources.assets?.apply {
             addStaticSourceDirectory("../shared/content")
             addStaticSourceDirectory("../shared/assets")
+            addStaticSourceDirectory(loadtestAssetDir.absolutePath)
         }
     }
 }

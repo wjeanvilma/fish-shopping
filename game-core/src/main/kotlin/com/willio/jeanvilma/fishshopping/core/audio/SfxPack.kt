@@ -16,7 +16,7 @@ object SfxPack {
     const val ANDROID_RAW_DIR = "app/src/main/res/raw"
     const val SAMPLE_RATE = 22_050
     const val MAX_BYTES_PER_CLIP = 24_576
-    const val MAX_TOTAL_BYTES = 480_000
+    const val MAX_TOTAL_BYTES = 560_000
     const val MAX_DURATION_MS = 420
     const val VOICE_COST_PER_CLIP = 1
     const val MAX_SFX_VOICES = 6
@@ -54,6 +54,16 @@ object SfxPack {
         "full_unlock",
         "machine_break",
         "spoil",
+        "cast_strike",
+        "spoil_warn",
+        "service_queue",
+        "contract_deadline",
+        "quest_near",
+        "nest_settle",
+        "roast_ready",
+        "ferment_ready",
+        "school_flash",
+        "aurora_crest",
     )
 
     val PACK2_CUE_IDS: List<String> = listOf(
@@ -87,6 +97,22 @@ object SfxPack {
         "full_unlock",
         "machine_break",
         "spoil",
+    )
+
+    val PACK5_CUE_IDS: List<String> = listOf(
+        "cast_strike",
+        "spoil_warn",
+        "service_queue",
+        "contract_deadline",
+        "quest_near",
+    )
+
+    val PACK6_CUE_IDS: List<String> = listOf(
+        "nest_settle",
+        "roast_ready",
+        "ferment_ready",
+        "school_flash",
+        "aurora_crest",
     )
 
     val ROLE_REQUIRED: List<String> = listOf("catch", "cut", "sell", "ui")

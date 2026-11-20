@@ -20,7 +20,10 @@
       "save_recovery",
       "frame_time_summary",
       "session_start",
-      "crash_free_session"
+      "crash_free_session",
+      "nest_sigil_earned",
+      "nest_contract_settled",
+      "loadtest_bank_probed"
     ],
     "batch": {
       "maxEvents": 20,

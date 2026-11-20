@@ -1,0 +1,64 @@
+{
+  "phase": 24,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.compose_e2e_6.v1",
+  "description": "Finish 6.0 Phase 24 — Compose instrumented floors ≥20 with nest surface tags. Closes kickoff gap composeE2eThin. Soft-floors Finish 5.0 deeplinke2e5 composeScenarioFloor ≥14 and Finish 3.0 composeui.",
+  "contentVersion": "5.0.0",
+  "schemaVersion": 27,
+  "composeE2e6Marker": "authored-finish-6.0-phase-24",
+  "closesGap": "composeE2eThin",
+  "extendsCatalog": "shared/ship/compose-ui-tests.json",
+  "composeUiShip": "shared/ship/compose-ui-tests.json",
+  "deeplinkE2e5Ship": "shared/ship/deeplink-e2e-5.json",
+  "scenarioFloor": 20,
+  "tagCountFloor": 40,
+  "softComposeScenarioFloor": 14,
+  "softMinTagCount": 32,
+  "parityFixture": "shared/fixtures/parity-compose-e2e-6.json",
+  "validateScript": "npm run composee2e6:validate",
+  "softDeeplinkE2e5Validate": "npm run deeplinke2e5:validate",
+  "softComposeUiValidate": "npm run composeui:validate",
+  "kickoffCatalog": "shared/ship/finish-6.0-kickoff.json",
+  "authorTool": "shared/tools/author_compose_e2e_6.py",
+  "softFloors": {
+    "deeplinkE2e5ComposeScenarioFloor": 14,
+    "composeUiMinTagCount": 32,
+    "openGapFlagMinPrior": 6,
+    "note": "Finish 5.0 deeplinke2e5 / Finish 3.0 composeui stay green; Phase 24 raises live Compose scenarios to ≥20 and closes composeE2eThin."
+  },
+  "nestTags": [
+    "nest.treasury",
+    "nest.loans",
+    "bag.panel",
+    "dash.root",
+    "contracts.panel",
+    "map.panel",
+    "species.book",
+    "staff.train"
+  ],
+  "checklist": [
+    "≥20 Compose scenarios in compose-ui-tests.json + ComposeUiIntegrationTest",
+    "ComposeUiTags ≥40 including nest surfaces",
+    "nest tags wired on Android dashboard/bag/contracts/map/codex/staff",
+    "kickoff.gaps.composeE2eThin=false; openFlags 6→5",
+    "deeplinke2e5:validate + composeui:validate soft-green",
+    "composee2e6:validate green in CI",
+    "schema stays 27 / content 5.0.0"
+  ],
+  "preflightGates": [
+    "shared/ship/compose-e2e-6.json",
+    "shared/fixtures/parity-compose-e2e-6.json",
+    "shared/ship/compose-ui-tests.json",
+    "shared/ship/deeplink-e2e-5.json",
+    "app/src/main/java/com/willio/jeanvilma/fishshopping/ui/ComposeUiTags.kt",
+    "app/src/test/java/com/willio/jeanvilma/fishshopping/ComposeUiIntegrationTest.kt",
+    "web/src/ship/composeE2e6.ts",
+    "web/scripts/validate-compose-e2e-6.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/ComposeE2e6.kt"
+  ],
+  "measured": {
+    "scenarios": 20,
+    "tagCount": 42,
+    "nestTags": 8
+  }
+}

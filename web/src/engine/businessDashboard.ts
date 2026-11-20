@@ -60,6 +60,13 @@ export interface BusinessDashboardView {
   ledgerNetCashflow: number;
   contractRevenueSharePermille: number;
   ledgerLines: string[];
+  /** Finish 6.0 Phase 17 — nest treasury analytics. */
+  wageBurdenPermille: number;
+  loanCoveragePermille: number;
+  rivalLossCoins: number;
+  endgameSigilsEarned: number;
+  coinGoalsReached: number;
+  nestTreasuryLines: string[];
 }
 
 export function formatSession(totalSeconds: number): string {
@@ -102,11 +109,32 @@ const LEDGER_LINE_TYPES = new Set([
   "contract_penalty",
 ]);
 
+const NEST_TREASURY_LINE_TYPES = new Set([
+  "loan",
+  "loan_repay",
+  "loan_collect",
+  "contract_payout",
+  "contract_penalty",
+  "wage",
+]);
+
 function buildLedgerLines(state: GameState): string[] {
   const lines: string[] = [];
   for (let i = state.ledger.length - 1; i >= 0 && lines.length < 6; i--) {
     const r = state.ledger[i];
     if (!LEDGER_LINE_TYPES.has(r.type)) continue;
+    const sign = r.coinDelta >= 0 ? "+" : "";
+    lines.push(`${r.type} ${sign}${r.coinDelta}`);
+  }
+  return lines;
+}
+
+/** Finish 6.0 Phase 17 — nest treasury slice (loan/contract/wage focus). */
+function buildNestTreasuryLines(state: GameState): string[] {
+  const lines: string[] = [];
+  for (let i = state.ledger.length - 1; i >= 0 && lines.length < 5; i--) {
+    const r = state.ledger[i];
+    if (!NEST_TREASURY_LINE_TYPES.has(r.type)) continue;
     const sign = r.coinDelta >= 0 ? "+" : "";
     lines.push(`${r.type} ${sign}${r.coinDelta}`);
   }
@@ -146,6 +174,14 @@ export const BusinessDashboard = {
       state.coinGoal > 0
         ? Math.min(1000, Math.trunc((state.coins * 1000) / state.coinGoal))
         : 0;
+    const wageBurdenPermille = gross > 0 ? Math.trunc((wages * 1000) / gross) : 0;
+    const loanCoveragePermille =
+      state.loanOwed > 0
+        ? Math.min(1000, Math.trunc((state.coins * 1000) / state.loanOwed))
+        : 1000;
+    const rivalLossCoins = state.stat(Stats.RIVAL_SALES_STOLEN);
+    const endgameSigilsEarned = state.stat(Stats.ENDGAME_SIGILS_EARNED);
+    const coinGoalsReached = state.stat(Stats.COIN_GOALS_REACHED);
     const minutes = Math.trunc(sessionSeconds / 60);
     const revenuePerMinute = minutes > 0 ? Math.trunc(committedRevenue / minutes) : 0;
     const salesPerMinute = minutes > 0 ? Math.trunc(sales / minutes) : 0;
@@ -203,6 +239,12 @@ export const BusinessDashboard = {
       ledgerNetCashflow,
       contractRevenueSharePermille,
       ledgerLines: buildLedgerLines(state),
+      wageBurdenPermille,
+      loanCoveragePermille,
+      rivalLossCoins,
+      endgameSigilsEarned,
+      coinGoalsReached,
+      nestTreasuryLines: buildNestTreasuryLines(state),
     };
   },
 };

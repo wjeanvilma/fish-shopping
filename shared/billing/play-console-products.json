@@ -154,6 +154,42 @@
       "sku": "fish.cosmetic.can_crest",
       "status": "active",
       "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_saffron_bunting",
+      "sku": "fish.cosmetic.saffron_bunting",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_cobalt_pennant",
+      "sku": "fish.cosmetic.cobalt_pennant",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_quay_flag",
+      "sku": "fish.cosmetic.quay_flag",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_sound_streamer",
+      "sku": "fish.cosmetic.sound_streamer",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_roast_ribbon",
+      "sku": "fish.cosmetic.roast_ribbon",
+      "status": "active",
+      "type": "non_consumable"
+    },
+    {
+      "productId": "fish_cosmetic_ferment_crest",
+      "sku": "fish.cosmetic.ferment_crest",
+      "status": "active",
+      "type": "non_consumable"
     }
   ]
 }

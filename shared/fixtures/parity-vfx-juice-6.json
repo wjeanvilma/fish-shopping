@@ -1,0 +1,23 @@
+{
+  "schema": "fish.fixtures.parity_vfx_juice_6.v1",
+  "vfxJuice6Marker": "authored-finish-6.0-phase-12",
+  "phase": 12,
+  "plan": "30_finish_6.0",
+  "expect": {
+    "eventBurstMin": 5,
+    "eventShakeMin": 2,
+    "nestAmbientMin": 3,
+    "schemaVersion": 26,
+    "contentVersion": "5.0.0",
+    "audioVfx6IncompleteClosed": true,
+    "openGapFlagMin": 1,
+    "gates": [
+      "bursts",
+      "shakes",
+      "nest_ambient",
+      "gap_closed",
+      "kickoff_phase_wired",
+      "ci_gate"
+    ]
+  }
+}

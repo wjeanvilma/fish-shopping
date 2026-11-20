@@ -1,7 +1,7 @@
 {
   "phase": 22,
   "schema": "fish.content.tutorial_friction.v1",
-  "description": "Finish 5.0 Phase 19 — first-session + mid-game tutorial friction rewrite. Copy + dwell nudges only; advanceOn triggers and step ids stay frozen.",
+  "description": "Finish 6.0 Phase 19 — nest mid-game tutorial friction deepen. Adds roast_nest / ferment_line friction + nudges; prior steps stay.",
   "contentPack": "shared/content/content-pack.json",
   "schemaVersion": 21,
   "contentVersion": "1.0.0",
@@ -12,7 +12,7 @@
     "noAdvanceOnChanges": true,
     "noStepIdChanges": true,
     "noContentVersionBump": true,
-    "note": "Phase 23 owns balance/contentVersion 1.0.1; this phase only retunes teaching copy and HUD nudge timing."
+    "note": "Finish 6.0 Phase 19 may append nest tutorial steps; prior advanceOn stay frozen. tutorial:validate soft-floors step-id appends after Phase 19."
   },
   "funnel": {
     "source": "Phase 25 consent-gated tutorial_step_completed; closed-test + first-session drop hypotheses",
@@ -23,7 +23,9 @@
       "tutorial.first_contract",
       "tutorial.hire_staff",
       "tutorial.grill_line",
-      "tutorial.plot_marker"
+      "tutorial.plot_marker",
+      "tutorial.roast_nest",
+      "tutorial.ferment_line"
     ],
     "dropHypotheses": [
       {
@@ -53,6 +55,14 @@
       {
         "stepId": "tutorial.plot_marker",
         "reason": "Expansion marker confirm spend missed"
+      },
+      {
+        "stepId": "tutorial.roast_nest",
+        "reason": "Roaster In pad not obvious after nest unlock"
+      },
+      {
+        "stepId": "tutorial.ferment_line",
+        "reason": "Fermenter In pad missed on nest line"
       }
     ]
   },
@@ -100,6 +110,14 @@
     {
       "stepId": "tutorial.plot_marker",
       "text": "Stand on an expansion marker and confirm spend to place a new pad"
+    },
+    {
+      "stepId": "tutorial.roast_nest",
+      "text": "Feed the harbor roaster — walk stock onto the roast In pad to start the nest line"
+    },
+    {
+      "stepId": "tutorial.ferment_line",
+      "text": "Start the ferment nest — walk goods onto the fermenter In pad"
     }
   ],
   "timing": {
@@ -139,6 +157,16 @@
         "stepId": "tutorial.plot_marker",
         "hintAfterMs": 11000,
         "nudge": "Tip: stand centered on the glowing expansion marker, then confirm the spend"
+      },
+      {
+        "stepId": "tutorial.roast_nest",
+        "hintAfterMs": 11000,
+        "nudge": "Tip: the roast nest In pad unlocks with the harbor roaster — walk onto it with stock"
+      },
+      {
+        "stepId": "tutorial.ferment_line",
+        "hintAfterMs": 12000,
+        "nudge": "Tip: fermenter In is on the nest ferment line — carry goods onto that pad"
       }
     ]
   },
@@ -194,6 +222,14 @@
     "tutorial.plot_marker": {
       "kind": "enter_zone",
       "zone": "zone.plot_grill"
+    },
+    "tutorial.roast_nest": {
+      "kind": "enter_zone",
+      "zone": "zone.roaster_in"
+    },
+    "tutorial.ferment_line": {
+      "kind": "enter_zone",
+      "zone": "zone.fermenter_in"
     }
   },
   "sourcePins": {
@@ -207,5 +243,5 @@
     "web/src/engine/tutorialScript.ts",
     "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/sim/TutorialScript.kt"
   ],
-  "phaseNote": "finish-5.0-phase-19"
+  "phaseNote": "finish-6.0-phase-19"
 }

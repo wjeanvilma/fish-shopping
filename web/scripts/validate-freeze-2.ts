@@ -63,15 +63,15 @@ function validate(): string[] {
   if (SCHEMA_23_VERSION !== 23) errors.push("SCHEMA_23_VERSION mismatch");
 
   // Historical freeze catalog stays 2.0.0; live pin/pack may advance to Finish 3.0.
-  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0"].includes(pin.contentVersion)) {
-    errors.push("RELEASE_PIN contentVersion must be 2.0.0–5.0.0");
+  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0", "6.0.0"].includes(pin.contentVersion)) {
+    errors.push("RELEASE_PIN contentVersion must be 2.0.0–6.0.0");
   }
-  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0"].includes(pin.versionName)) {
-    errors.push("RELEASE_PIN versionName must be 2.0.0–5.0.0");
+  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0", "6.0.0"].includes(pin.versionName)) {
+    errors.push("RELEASE_PIN versionName must be 2.0.0–6.0.0");
   }
   if ((pin.versionCode ?? 0) < 3) errors.push("RELEASE_PIN versionCode must be ≥ 3");
-  if (!["v2.0.0", "v3.0.0", "v4.0.0", "v5.0.0"].includes(pin.releaseTag)) {
-    errors.push("RELEASE_PIN releaseTag must be v2.0.0–v5.0.0");
+  if (!["v2.0.0", "v3.0.0", "v4.0.0", "v5.0.0", "v6.0.0"].includes(pin.releaseTag)) {
+    errors.push("RELEASE_PIN releaseTag must be v2.0.0–v6.0.0");
   }
   if (pin.schemaVersion < 23) errors.push("RELEASE_PIN schemaVersion must be >= 23");
   if (pin.freeze20 !== "shared/ship/freeze-2.0.0.json") errors.push("RELEASE_PIN.freeze20 path");
@@ -79,11 +79,11 @@ function validate(): string[] {
   if (!pin.fixtures?.includes("parity-freeze-2.0.0.json")) {
     errors.push("RELEASE_PIN.fixtures missing parity-freeze-2.0.0.json");
   }
-  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0"].includes(pack.contentVersion)) {
+  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0", "6.0.0"].includes(pack.contentVersion)) {
     errors.push("content-pack must be 2.0.0–5.0.0");
   }
-  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0"].includes(pkg.version)) {
-    errors.push("web/package.json version must be 2.0.0–5.0.0");
+  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0", "6.0.0"].includes(pkg.version)) {
+    errors.push("web/package.json version must be 2.0.0–6.0.0");
   }
 
   // Content floors
@@ -123,14 +123,14 @@ function validate(): string[] {
     if (freeze.catalog !== "shared/ship/freeze-2.0.0.json") errors.push("finish2Freeze.catalog mismatch");
     if (freeze.versionCode !== 3) errors.push("finish2Freeze.versionCode must be 3");
   }
-  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0"].includes(dod.contentVersion)) {
-    errors.push("DoD contentVersion must be 2.0.0–5.0.0");
+  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0", "6.0.0"].includes(dod.contentVersion)) {
+    errors.push("DoD contentVersion must be 2.0.0–6.0.0");
   }
-  if (!["v2.0.0", "v3.0.0", "v4.0.0", "v5.0.0"].includes(dod.releaseTag)) {
-    errors.push("DoD releaseTag must be v2.0.0 or v3.0.0");
+  if (!["v2.0.0", "v3.0.0", "v4.0.0", "v5.0.0", "v6.0.0"].includes(dod.releaseTag)) {
+    errors.push("DoD releaseTag must be v2.0.0–v6.0.0");
   }
-  if (![23, 24, 25, 26].includes(dod.schemaVersion)) {
-    errors.push("DoD schemaVersion must be 23–26");
+  if (![23, 24, 25, 26, 27].includes(dod.schemaVersion)) {
+    errors.push("DoD schemaVersion must be 23–27");
   }
   if (dod.completeTag !== "v1.0-complete") errors.push("DoD completeTag archive must stay v1.0-complete");
   if (dod.closeout?.status !== "archived") errors.push("post-1.0 closeout must stay archived");
@@ -164,11 +164,11 @@ function validate(): string[] {
   if (listing.freeze20Catalog !== "shared/ship/freeze-2.0.0.json") {
     errors.push("listing.freeze20Catalog mismatch");
   }
-  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0"].includes(listing.whatsNewVersion)) {
-    errors.push("listing.whatsNewVersion must be 2.0.0–5.0.0");
+  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0", "6.0.0"].includes(listing.whatsNewVersion)) {
+    errors.push("listing.whatsNewVersion must be 2.0.0–6.0.0");
   }
-  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0"].includes(listingCopy.copy?.whatsNewVersion)) {
-    errors.push("listing-copy whatsNewVersion must be 2.0.0–5.0.0");
+  if (!["2.0.0", "3.0.0", "4.0.0", "5.0.0", "6.0.0"].includes(listingCopy.copy?.whatsNewVersion)) {
+    errors.push("listing-copy whatsNewVersion must be 2.0.0–6.0.0");
   }
 
   // Store release / complete archives untouched

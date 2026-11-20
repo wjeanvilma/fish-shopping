@@ -21,7 +21,8 @@ class Endgame3Test {
         assertEquals(25, Endgame3.FROM_SCHEMA)
         assertEquals(26, Endgame3.TO_SCHEMA)
         assertEquals(Endgame3.ENDGAME_3_MARKER, "authored-finish-5.0-phase-17")
-        assertEquals(26, SimConstants.SCHEMA_VERSION)
+        // Soft-floor: Finish 6.0 Phase 14 bumps live schema to 27.
+        assertTrue(SimConstants.SCHEMA_VERSION >= 26)
         assertTrue(Shared.content.endgame.tiers.size >= Endgame3.TIER_COUNT_MIN)
         assertTrue(Shared.content.endgame.challenges.size >= Endgame3.CHALLENGE_COUNT_MIN)
         for (id in Endgame3.NEW_TIER_IDS) {

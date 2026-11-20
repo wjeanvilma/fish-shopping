@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fishshopping.local/schema/ops-catalog.schema.json",
+  "title": "Fish Shopping ops catalog",
+  "description": "Structural contract for shared/ops/*.json runbooks and live-ops catalogs (Stripe ops, analytics, support). Fail-closed without secrets; schemas document readiness and cutover fields.",
+  "type": "object",
+  "required": ["schema", "phase", "description"],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": { "type": "string" },
+    "phase": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "plan": {
+      "type": "string"
+    },
+    "schema": {
+      "type": "string",
+      "pattern": "^fish\\.ops\\.[a-z0-9_]+\\.v[0-9]+$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 16
+    },
+    "contentVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "readinessPath": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "healthPath": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "webhookPath": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "cutoverChecklist": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 4 }
+    },
+    "envPlaceholders": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 2 }
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "schema": "fish.fixtures.parity_device_perf_6.v1",
+  "description": "Finish 6.0 Phase 28: device/browser/perf matrix 6 expectations.",
+  "devicePerf6Marker": "authored-finish-6.0-phase-28",
+  "expect": {
+    "closesGap": "devicePerf6Incomplete",
+    "devicePerf6Incomplete": false,
+    "openGapFlagMin": 0,
+    "schemaVersion": 27,
+    "contentVersion": "5.0.0",
+    "harborCacheFloor": 5,
+    "overBudgetMultMax": 1.12,
+    "underBudgetMult": 0.85,
+    "androidDeviceClassFloor": 6,
+    "androidScenarioFloor": 11,
+    "browserTargetFloor": 6,
+    "browserScenarioFloor": 11,
+    "analyticsContractTestsMin": 5,
+    "requiredAndroidClasses": [
+      "phone",
+      "tablet7",
+      "tablet10",
+      "foldable",
+      "desktop",
+      "ultrawide"
+    ],
+    "requiredAndroidScenarios": [
+      "multi_window",
+      "deep_trim",
+      "picture_in_picture",
+      "thermal_status",
+      "nest_harbor_travel",
+      "display_cutout"
+    ],
+    "requiredBrowsers": [
+      "chrome",
+      "edge",
+      "firefox",
+      "safari",
+      "chrome_android",
+      "safari_ios"
+    ],
+    "requiredBrowserScenarios": [
+      "visibility_hidden",
+      "pwa_offline",
+      "reduced_motion",
+      "bfcache_restore",
+      "persistent_storage",
+      "nest_deeplink_resume",
+      "page_lifecycle_freeze"
+    ],
+    "frameTimingMustContain": [
+      "FRAME_UPGRADE_STREAK",
+      "FRAME_UNDER_BUDGET_MULT",
+      "upgradeQuality",
+      "FrameBudgetAction",
+      "HARBOR_CACHE_LIMIT"
+    ],
+    "androidFrameTimingMustContain": [
+      "FRAME_UPGRADE_STREAK",
+      "UNDER_BUDGET_MULT",
+      "FrameBudgetAction",
+      "HARBOR_CACHE_LIMIT = 5"
+    ],
+    "presenterMustContain": [
+      "medium: 8",
+      "high: 12",
+      "FLYING_TRANSFER_POOL = 20",
+      "MEDIUM -> 8",
+      "HIGH -> 12"
+    ],
+    "analyticsContractMustContain": [
+      "consent fail-closed",
+      "batch schema",
+      "retry backoff",
+      "flush slice empty",
+      "nest loadtest probe"
+    ],
+    "gates": [
+      "harbor_lru_5",
+      "matrix_expand",
+      "denser_caps",
+      "gap_closed",
+      "ci_gate"
+    ]
+  }
+}

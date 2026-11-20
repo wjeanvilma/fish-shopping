@@ -80,7 +80,8 @@ class FrameTiming(
         const val UNDER_BUDGET_MULT = 0.85
 
         /** Harbor GLB LRU size (matches web / device-matrix.json). Finish 5.0 → 4. */
-        const val HARBOR_CACHE_LIMIT = 4
+        /** Finish 6.0 Phase 28 — harbor GLB LRU for 14-harbor nest travel. */
+        const val HARBOR_CACHE_LIMIT = 5
 
         fun downgrade(quality: QualityPreset): QualityPreset = when (quality) {
             QualityPreset.HIGH -> QualityPreset.MEDIUM

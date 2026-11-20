@@ -1,0 +1,351 @@
+{
+  "phase": 1,
+  "plan": "30_finish_6.0",
+  "schema": "fish.ship.finish6_kickoff.v1",
+  "description": "Finish 6.0 Phase 1 — kickoff + gap scoreboard from frozen 5.0.0. Pins Finish 5.0 as finished, locks live LOC/content baseline (~90.6k), and opens the 30-phase path to content 6.0.0 / schema 27 / ≥120k product LOC without padding, plus AI-lab structure (schemas, codegen, module caps, E2E depth).",
+  "contentVersion": "6.0.0",
+  "schemaVersion": 27,
+  "kickoffMarker": "authored-finish-6.0-phase-1",
+  "priorPlan": {
+    "id": "30_finish_5.0",
+    "status": "finished",
+    "freezeCatalog": "shared/ship/freeze-5.0.0.json",
+    "releaseTag": "v5.0.0",
+    "contentVersion": "5.0.0",
+    "schemaVersion": 26
+  },
+  "endState": {
+    "contentVersion": "6.0.0",
+    "schemaVersionMin": 27,
+    "releaseTag": "v6.0.0",
+    "versionName": "6.0.0",
+    "versionCode": 7,
+    "productLocMin": 120000,
+    "gameCoreLocMin": 38000,
+    "appLocMin": 26000,
+    "webSrcLocMin": 56000,
+    "harborsMin": 14,
+    "speciesMin": 150,
+    "authoredFishMin": 150,
+    "machinesMin": 16,
+    "questsMin": 100,
+    "seasonalMin": 20,
+    "baitsMin": 20,
+    "cosmeticsMin": 30,
+    "chainsMin": 9,
+    "rivalsMin": 20,
+    "paritySuitesMin": 24,
+    "i18nLocalesMin": 8,
+    "i18nUiKeysMin": 400,
+    "playwrightE2eMin": 24,
+    "composeE2eMin": 20,
+    "systemsTsMax": 2800,
+    "gameViewModelMax": 1200,
+    "gameHostMax": 1100
+  },
+  "baseline": {
+    "measuredAtPhase": 1,
+    "contentVersion": "5.0.0",
+    "schemaVersion": 26,
+    "gameCoreLoc": 32287,
+    "appLoc": 15415,
+    "webSrcLoc": 42895,
+    "productLoc": 90597,
+    "harbors": 12,
+    "species": 125,
+    "machines": 14,
+    "quests": 75,
+    "seasonalEvents": 16,
+    "baits": 16,
+    "cosmetics": 24,
+    "deliveryChains": 7,
+    "rivalMarkets": 16,
+    "authoredHarbors": 12,
+    "authoredFish": 125,
+    "harborBlockouts": 0,
+    "i18nLocales": 8,
+    "i18nUiKeys": 361,
+    "androidUiStringsCalls": 214,
+    "androidTextLiterals": 0,
+    "staffComingSoonReasons": 0,
+    "paritySuites": 20,
+    "playwrightE2e": 24,
+    "composeE2e": 20,
+    "systemsTsLines": 4293,
+    "gameViewModelLines": 1644,
+    "gameHostLines": 1313
+  },
+  "gaps": {
+    "authoredHarborsRemaining": 0,
+    "authoredFishRemaining": 0,
+    "productLocRemaining": 29403,
+    "speciesRemaining": 0,
+    "machinesRemaining": 0,
+    "questsRemaining": 0,
+    "schemaFoundationsIncomplete": false,
+    "shipCodegenMissing": false,
+    "systemsSplit3Incomplete": false,
+    "hostVmCapsIncomplete": false,
+    "harborArt6Incomplete": false,
+    "fishArt6Incomplete": false,
+    "productArt6Incomplete": false,
+    "atmosphere6Incomplete": false,
+    "audioVfx6Incomplete": false,
+    "contentFloorsShort": false,
+    "endgameSchema27Pending": false,
+    "tutorialRetention6Incomplete": false,
+    "staffAi4Incomplete": false,
+    "economy4Incomplete": false,
+    "offlineCloud4Incomplete": false,
+    "uiParity6Incomplete": false,
+    "a11yI18n6Incomplete": false,
+    "stripeOps6Incomplete": false,
+    "e2eDepthThin": false,
+    "composeE2eThin": false,
+    "devicePerf6Incomplete": false,
+    "contentCli6Missing": false,
+    "parityLock6Missing": false,
+    "presenterHarnessMissing": false,
+    "loadtestBanksIncomplete": false
+  },
+  "gapTargets": {
+    "authoredHarbors": 14,
+    "authoredFish": 150,
+    "i18nLocales": 8,
+    "i18nUiKeysMin": 400,
+    "androidTextLiteralsMax": 0,
+    "staffComingSoonReasons": 0,
+    "productLoc": 120000,
+    "speciesMin": 150,
+    "machinesMin": 16,
+    "questsMin": 100,
+    "harborsMin": 14,
+    "seasonalMin": 20,
+    "baitsMin": 20,
+    "cosmeticsMin": 30,
+    "chainsMin": 9,
+    "rivalsMin": 20,
+    "paritySuitesMin": 24,
+    "playwrightE2eMin": 24,
+    "composeE2eMin": 20,
+    "systemsTsMax": 2800,
+    "gameViewModelMax": 1200,
+    "gameHostMax": 1100
+  },
+  "phases": [
+    {
+      "phase": 1,
+      "id": "kickoff",
+      "title": "Kickoff + gap scoreboard",
+      "validate": "finish6:validate"
+    },
+    {
+      "phase": 2,
+      "id": "schema-foundations",
+      "title": "Schema foundations — ship/billing/ops JSON Schema",
+      "validate": "schema6:validate"
+    },
+    {
+      "phase": 3,
+      "id": "ship-codegen",
+      "title": "Ship catalog codegen for Finish 6 mirrors",
+      "validate": "shipcodegen:validate"
+    },
+    {
+      "phase": 4,
+      "id": "systems-split-3",
+      "title": "systems.ts split 3 (≤2800) + Kotlin parity",
+      "validate": "systemssplit3:validate"
+    },
+    {
+      "phase": 5,
+      "id": "host-vm-caps",
+      "title": "GameViewModel ≤1200 + GameHost ≤1100",
+      "validate": "hostvmcaps:validate"
+    },
+    {
+      "phase": 6,
+      "id": "loc-midcheck-6",
+      "title": "LOC mid-check scoreboard 6",
+      "validate": "locmidcheck6:validate"
+    },
+    {
+      "phase": 7,
+      "id": "harbors-13-14",
+      "title": "Harbors 13–14 with scenic art + prestige",
+      "validate": "harbors1314:validate"
+    },
+    {
+      "phase": 8,
+      "id": "species-150",
+      "title": "Species 126–150 + ecology + i18n",
+      "validate": "species150:validate"
+    },
+    {
+      "phase": 9,
+      "id": "machines-15-16",
+      "title": "Machines 15–16 + recipes/UI",
+      "validate": "machines1516:validate"
+    },
+    {
+      "phase": 10,
+      "id": "product-art-6",
+      "title": "Product/cosmetic art presentation 6",
+      "validate": "productart6:validate"
+    },
+    {
+      "phase": 11,
+      "id": "atmosphere-6",
+      "title": "Atmosphere/cozy render depth 6",
+      "validate": "atmosphere6:validate"
+    },
+    {
+      "phase": 12,
+      "id": "audio-vfx-6",
+      "title": "Audio pack 6 + VFX juice 6",
+      "validate": "audiovfx6:validate"
+    },
+    {
+      "phase": 13,
+      "id": "quests-contracts-6",
+      "title": "Quests→100, chains→9, contracts depth",
+      "validate": "quests6:validate"
+    },
+    {
+      "phase": 14,
+      "id": "endgame-4",
+      "title": "Endgame deepen + schema 27",
+      "validate": "endgame4:validate"
+    },
+    {
+      "phase": 15,
+      "id": "rivals-seasonal-6",
+      "title": "Rivals/seasonal/baits/cosmetics growth 6",
+      "validate": "rivalsseasonal6:validate"
+    },
+    {
+      "phase": 16,
+      "id": "staff-ai-4",
+      "title": "Staff AI 4 + decision-trace fixtures",
+      "validate": "staffai4:validate"
+    },
+    {
+      "phase": 17,
+      "id": "economy-bank-4",
+      "title": "Economy/bank/dashboard depth 4",
+      "validate": "economy4:validate"
+    },
+    {
+      "phase": 18,
+      "id": "offline-cloud-4",
+      "title": "Offline/cloud/analytics hardening 4",
+      "validate": "offlinecloud4:validate"
+    },
+    {
+      "phase": 19,
+      "id": "tutorial-retention-6",
+      "title": "Tutorial friction + retention hooks 6",
+      "validate": "tutorialretention6:validate"
+    },
+    {
+      "phase": 20,
+      "id": "ui-parity-6",
+      "title": "Web↔Android panel parity depth 6",
+      "validate": "uiparity6:validate"
+    },
+    {
+      "phase": 21,
+      "id": "presenter-harness",
+      "title": "Presenter/render CPU snapshot harness",
+      "validate": "presenterharness:validate"
+    },
+    {
+      "phase": 22,
+      "id": "a11y-i18n-6",
+      "title": "A11y depth 5 + i18n key growth (≥400)",
+      "validate": "a11yi18n6:validate"
+    },
+    {
+      "phase": 23,
+      "id": "playwright-e2e-6",
+      "title": "Playwright E2E floors ≥24",
+      "validate": "playwrighte2e6:validate"
+    },
+    {
+      "phase": 24,
+      "id": "compose-e2e-6",
+      "title": "Compose instrumented floors ≥20",
+      "validate": "composee2e6:validate"
+    },
+    {
+      "phase": 25,
+      "id": "stripe-ops-6",
+      "title": "Stripe/checkout live-ready catalog ops 6",
+      "validate": "stripeops6:validate"
+    },
+    {
+      "phase": 26,
+      "id": "analytics-loadtest-6",
+      "title": "Analytics + loadtest banks expansion 6",
+      "validate": "analyticsloadtest6:validate"
+    },
+    {
+      "phase": 27,
+      "id": "content-cli-6",
+      "title": "Content authoring CLI wave 6 + modular packs",
+      "validate": "contentcli6:validate"
+    },
+    {
+      "phase": 28,
+      "id": "device-perf-6",
+      "title": "Device/browser/perf matrix 6",
+      "validate": "deviceperf6:validate"
+    },
+    {
+      "phase": 29,
+      "id": "parity-lock-6",
+      "title": "Parity lock 6.0 (≥24 suites)",
+      "validate": "parity6:validate"
+    },
+    {
+      "phase": 30,
+      "id": "freeze-6",
+      "title": "6.0.0 freeze & DoD",
+      "validate": "freeze6:validate"
+    }
+  ],
+  "definitionOfDone": "shared/ship/definition-of-done.json",
+  "locCatalog": "shared/ship/loc-floors.json",
+  "harborArtCatalog": "shared/ship/harbor-art-pass.json",
+  "fishArtCatalog": "shared/ship/fish-art-pass.json",
+  "priorFreezeCatalog": "shared/ship/freeze-5.0.0.json",
+  "i18nScaffold": "shared/ship/i18n-scaffold.json",
+  "parityFixture": "shared/fixtures/parity-finish-6.0-kickoff.json",
+  "validateScript": "npm run finish6:validate",
+  "smokeScript": "npm run finish6:smoke",
+  "checklist": [
+    "Finish 5.0 priorPlan marked finished; freeze-5.0.0.json still green",
+    "Kickoff catalog locks live baseline LOC from Finish 5 Phase 30 freeze cut (90597)",
+    "Gap scoreboard lists content floors →14/150/16/100/20/20/30/9/20/24 and product LOC →120k",
+    "AI-lab open gaps locked (schemas, codegen, systems≤2800, VM/host caps, E2E depth)",
+    "30 Finish 6.0 phase ids present and ordered 1–30 kickoff→freeze-6",
+    "Kotlin + TS mirrors match catalog; parity fixture marker locked",
+    "listing + RELEASE_PIN + DoD finish6Kickoff wired",
+    "CI runs finish6:validate + finish6:smoke",
+    "Content/version stays 5.0.0 / schema 26 until later Finish 6.0 bumps",
+    "loc-floors plan targets retained at 38k/26k/56k/120k; freeze anti-regression floors retained"
+  ],
+  "preflightGates": [
+    "shared/ship/finish-6.0-kickoff.json",
+    "shared/fixtures/parity-finish-6.0-kickoff.json",
+    "shared/ship/freeze-5.0.0.json",
+    "shared/ship/loc-floors.json",
+    "shared/ship/harbor-art-pass.json",
+    "shared/ship/fish-art-pass.json",
+    "shared/ship/definition-of-done.json",
+    "web/src/ship/finish6Kickoff.ts",
+    "game-core/src/main/kotlin/com/willio/jeanvilma/fishshopping/core/ship/Finish6Kickoff.kt",
+    "web/scripts/validate-finish-6-kickoff.ts",
+    "web/scripts/smoke-finish-6-kickoff.ts"
+  ]
+}
